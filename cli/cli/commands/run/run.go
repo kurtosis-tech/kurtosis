@@ -442,7 +442,7 @@ func run(
 		return nil
 	}
 
-	if currentContext != nil {
+	if currentContext == nil {
 		return nil
 	}
 

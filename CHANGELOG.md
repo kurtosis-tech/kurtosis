@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.84.11](https://github.com/kurtosis-tech/kurtosis/compare/0.84.10...0.84.11) (2023-10-24)
+
+
+### Features
+
+* add full story script ([#1610](https://github.com/kurtosis-tech/kurtosis/issues/1610)) ([de10c7b](https://github.com/kurtosis-tech/kurtosis/commit/de10c7bab36c0c7ee1bea99d181d93134e138d04))
+* allow for named artifact creation in run_sh and run_python ([#1608](https://github.com/kurtosis-tech/kurtosis/issues/1608)) ([1a9d953](https://github.com/kurtosis-tech/kurtosis/commit/1a9d953bb26643c7b0effcf761de49bdb735a0ec)), closes [#1581](https://github.com/kurtosis-tech/kurtosis/issues/1581)
+* disable smooth scrolling for logs and default to select restart services ([#1612](https://github.com/kurtosis-tech/kurtosis/issues/1612)) ([2ee86c4](https://github.com/kurtosis-tech/kurtosis/commit/2ee86c419e081996711ff54e009e8333df28839c))
+
+
+### Bug Fixes
+
+* clean em api get service logs streaming logic ([#1589](https://github.com/kurtosis-tech/kurtosis/issues/1589)) ([f8d8bda](https://github.com/kurtosis-tech/kurtosis/commit/f8d8bda8783995d3c22801fea6586c4af2fc1677))
+* show container status instead of service status  in UI ([#1567](https://github.com/kurtosis-tech/kurtosis/issues/1567)) ([4b75980](https://github.com/kurtosis-tech/kurtosis/commit/4b759806cd522b03fa7eadbfc83f952ded6b1b20))
+
+## [0.84.10](https://github.com/kurtosis-tech/kurtosis/compare/0.84.9...0.84.10) (2023-10-23)
+
+
+### Bug Fixes
+
+* bug in portal forwarding via run ([#1598](https://github.com/kurtosis-tech/kurtosis/issues/1598)) ([bf534c3](https://github.com/kurtosis-tech/kurtosis/commit/bf534c35055f4ec3e19cc1f1e2e32e8d29e61b5a))
+
+## [0.84.9](https://github.com/kurtosis-tech/kurtosis/compare/0.84.8...0.84.9) (2023-10-19)
+
+
+### Features
+
+* Cloud backend method to refresh the default payment method ([#1569](https://github.com/kurtosis-tech/kurtosis/issues/1569)) ([9f3d808](https://github.com/kurtosis-tech/kurtosis/commit/9f3d808264fa1d83d6fd0d2ea3dde3b5d3f9e48e))
+* get package on demand ([#1590](https://github.com/kurtosis-tech/kurtosis/issues/1590)) ([0af4086](https://github.com/kurtosis-tech/kurtosis/commit/0af4086da6887aa80d7a1b06d232254178a022e7))
+
 ## [0.84.8](https://github.com/kurtosis-tech/kurtosis/compare/0.84.7...0.84.8) (2023-10-17)
 
 
