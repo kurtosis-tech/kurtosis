@@ -151,6 +151,9 @@ type RunPythonCapabilities struct {
 }
 
 func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	randomUuid := uuid.NewRandom()
+	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
+
 	pythonScript, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RunArgName)
@@ -254,8 +257,6 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunPythonBuiltinName)
 	}
 	builtin.resultUuid = resultUuid
-	randomUuid := uuid.NewRandom()
-	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
 	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return result, nil
