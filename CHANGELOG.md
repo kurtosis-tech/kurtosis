@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.84.12](https://github.com/kurtosis-tech/kurtosis/compare/0.84.11...0.84.12) (2023-10-25)
+
+
+### Features
+
+* kurtosis run command now accepts URLs with the 'args-file' argument  ([#1607](https://github.com/kurtosis-tech/kurtosis/issues/1607)) ([ec32d0f](https://github.com/kurtosis-tech/kurtosis/commit/ec32d0f48f0a1cd76e26e4fdeecc75e7c1a31929)), closes [#1596](https://github.com/kurtosis-tech/kurtosis/issues/1596)
+* Product and subscription added to the get payment config response ([#1606](https://github.com/kurtosis-tech/kurtosis/issues/1606)) ([0d10726](https://github.com/kurtosis-tech/kurtosis/commit/0d107261422ad918b4a5dbc5dbbb35c8d555d4c5))
+
+
+### Bug Fixes
+
+* add a debug line for the exact command run by lint ([#1615](https://github.com/kurtosis-tech/kurtosis/issues/1615)) ([3fa6d2f](https://github.com/kurtosis-tech/kurtosis/commit/3fa6d2f62b301f97e7ae7ef50b9abe460e7cc283))
+* handle error and fix rendering bug ([#1617](https://github.com/kurtosis-tech/kurtosis/issues/1617)) ([825fd22](https://github.com/kurtosis-tech/kurtosis/commit/825fd2238601f7a95c97f3a695773d3a9c234c49))
+
 ## [0.84.11](https://github.com/kurtosis-tech/kurtosis/compare/0.84.10...0.84.11) (2023-10-24)
 
 
