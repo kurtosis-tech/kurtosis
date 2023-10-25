@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
@@ -17,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -160,7 +158,7 @@ func GetEnclaveNamespaceName(
 	var namespaceName string
 	if cliModeArgs != nil || engineServerModeArgs != nil {
 		matchLabels := getEnclaveMatchLabels()
-		matchLabels[label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString()] = string(enclaveId)
+		matchLabels[kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString()] = string(enclaveId)
 
 		namespaces, err := kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
 		if err != nil {
@@ -287,9 +285,9 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 	}
 
 	kubernetesResourceSearchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString():          string(enclaveId),
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
+		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString():          string(enclaveId),
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 
 	results := map[service.ServiceUUID]*UserServiceKubernetesResources{}
@@ -300,7 +298,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		kubernetesManager,
 		namespaceName,
 		kubernetesResourceSearchLabels,
-		label_key_consts.GUIDKubernetesLabelKey.GetString(),
+		kubernetes_label_key.GUIDKubernetesLabelKey.GetString(),
 		postFilterLabelValues,
 	)
 	if err != nil {
@@ -337,7 +335,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		kubernetesManager,
 		namespaceName,
 		kubernetesResourceSearchLabels,
-		label_key_consts.GUIDKubernetesLabelKey.GetString(),
+		kubernetes_label_key.GUIDKubernetesLabelKey.GetString(),
 		postFilterLabelValues,
 	)
 	if err != nil {
@@ -399,9 +397,9 @@ func GetUserServiceObjectsFromKubernetesResources(
 		}
 
 		serviceLabels := kubernetesService.Labels
-		idLabelStr, found := serviceLabels[label_key_consts.IDKubernetesLabelKey.GetString()]
+		idLabelStr, found := serviceLabels[kubernetes_label_key.IDKubernetesLabelKey.GetString()]
 		if !found {
-			return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.IDKubernetesLabelKey.GetString())
+			return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", kubernetes_label_key.IDKubernetesLabelKey.GetString())
 		}
 		serviceId := service.ServiceName(idLabelStr)
 
@@ -810,8 +808,8 @@ func BuildCombinedError(errorsById map[string]error, titleStr string) error {
 // ====================================================================================================
 func getEnclaveMatchLabels() map[string]string {
 	matchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
+		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return matchLabels
 }

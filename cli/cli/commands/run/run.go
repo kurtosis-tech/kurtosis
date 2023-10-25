@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"gopkg.in/yaml.v2"
+	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path"
@@ -292,15 +295,10 @@ func run(
 
 	if packageArgs == inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
 		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFileFlagKey, packageArgsFileFlagKey)
-		packageArgsFileBytes, err := os.ReadFile(packageArgsFile)
+		packageArgs, err = getArgsFromFilepathOrURL(packageArgsFile)
 		if err != nil {
-			return stacktrace.Propagate(err, "attempted to read file provided by flag '%v' with path '%v' but failed", packageArgsFileFlagKey, packageArgsFile)
+			return stacktrace.Propagate(err, "An error occurred while getting the package args from filepath or URL '%s'", packageArgsFile)
 		}
-		packageArgsFileStr := string(packageArgsFileBytes)
-		if packageArgParsingErr := validateSerializedArgs(packageArgsFileStr); packageArgParsingErr != nil {
-			return stacktrace.Propagate(err, "attempted to validate '%v' but failed", packageArgsFileFlagKey)
-		}
-		packageArgs = packageArgsFileStr
 	} else if packageArgs != inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
 		logrus.Debugf("'%v' arg is not empty; ignoring value of '%v' flag as '%v' arg takes precedence", inputArgsArgKey, packageArgsFileFlagKey, inputArgsArgKey)
 	}
@@ -664,4 +662,44 @@ func validateSerializedArgs(serializedArgs string) error {
 	return stacktrace.Propagate(
 		fmt.Errorf("JSON parsing error '%v', YAML parsing error '%v'", jsonError, yamlError),
 		"Error validating args, because it is not a valid JSON or YAML.")
+}
+
+func getArgsFromFilepathOrURL(packageArgsFile string) (string, error) {
+	var packageArgsFileBytes []byte
+	isFileURL := true
+	_, err := os.Stat(packageArgsFile)
+	if err == nil {
+		isFileURL = false
+		packageArgsFileBytes, err = os.ReadFile(packageArgsFile)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "attempted to read file provided by flag '%v' with path '%v' but failed", packageArgsFileFlagKey, packageArgsFile)
+		}
+	}
+	if err != nil && !os.IsNotExist(err) {
+		return "", stacktrace.Propagate(err, "An error occurred checking for argument's file existence on '%s'", packageArgsFile)
+	}
+
+	if isFileURL {
+		argsFileURL, parseErr := url.Parse(packageArgsFile)
+		if parseErr != nil {
+			return "", stacktrace.Propagate(parseErr, "An error occurred while parsing file args URL '%s'", argsFileURL)
+		}
+		response, getErr := http.Get(argsFileURL.String())
+		if getErr != nil {
+			return "", stacktrace.Propagate(getErr, "An error occurred getting the args file content from URL '%s'", argsFileURL.String())
+		}
+		defer response.Body.Close()
+		responseBodyBytes, readAllErr := io.ReadAll(response.Body)
+		if readAllErr != nil {
+			return "", stacktrace.Propagate(readAllErr, "An error occurred reading the args file content")
+		}
+		packageArgsFileBytes = responseBodyBytes
+	}
+
+	packageArgsFileStr := string(packageArgsFileBytes)
+	if packageArgParsingErr := validateSerializedArgs(packageArgsFileStr); packageArgParsingErr != nil {
+		return "", stacktrace.Propagate(err, "attempted to validate '%v' but failed", packageArgsFileFlagKey)
+	}
+
+	return packageArgsFileStr, nil
 }

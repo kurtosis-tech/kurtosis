@@ -112,6 +112,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		dockerRunSuffix = append(dockerRunSuffix, pathToLint)
 		commandArgs = append(commandArgs, dockerRunSuffix...)
 		cmd := exec.Command(dockerBinary, commandArgs...)
+		logrus.Debugf("Running command '%v'", cmd.String())
 		cmdOutput, err := cmd.CombinedOutput()
 		if err != nil {
 			if exitError, ok := err.(*exec.ExitError); ok {

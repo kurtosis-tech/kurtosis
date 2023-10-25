@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -37,6 +36,7 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 		uuid service.ServiceUUID,
 		id service.ServiceName,
 		privatePorts map[string]*port_spec.PortSpec,
+		userLabels map[string]string,
 	) (KubernetesObjectAttributes, error)
 	ForSinglePersistentDirectoryVolume(
 		serviceUUID service.ServiceUUID,
@@ -134,7 +134,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceSer
 			string(serviceUUID),
 		)
 	}
-	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
+	labels[kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
 
 	//No userServiceService annotations.
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
@@ -151,6 +151,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	serviceUUID service.ServiceUUID,
 	serviceName service.ServiceName,
 	privatePorts map[string]*port_spec.PortSpec,
+	userLabels map[string]string,
 ) (KubernetesObjectAttributes, error) {
 	name, err := getKubernetesObjectName(serviceName)
 	if err != nil {
@@ -171,7 +172,20 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 			serviceUUID,
 		)
 	}
-	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
+	labels[kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
+
+	// add user custom label
+	for userLabelKey, userLabelValue := range userLabels {
+		kubernetesLabelKey, err := kubernetes_label_key.CreateNewKubernetesUserCustomLabelKey(userLabelKey)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a new user custom Kubernetes label key '%s'", userLabelKey)
+		}
+		kubernetesLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(userLabelValue)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a new user custom Kubernetes label value '%s'", userLabelValue)
+		}
+		labels[kubernetesLabelKey] = kubernetesLabelValue
+	}
 
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
 		kubernetes_annotation_key_consts.PortSpecsKubernetesAnnotationKey: serializedPortSpecsAnnotationValue,
@@ -249,8 +263,8 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 		return nil, stacktrace.Propagate(err, "Failed to create Kubernetes label value from enclaveId '%v'", provider.enclaveId)
 	}
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.EnclaveUUIDKubernetesLabelKey:          enclaveIdLabelValue,
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue,
+		kubernetes_label_key.EnclaveUUIDKubernetesLabelKey:          enclaveIdLabelValue,
 	}, nil
 }
 
@@ -263,7 +277,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from UUID string '%v'", uuid)
 	}
-	labels[label_key_consts.GUIDKubernetesLabelKey] = uuidLabelValue
+	labels[kubernetes_label_key.GUIDKubernetesLabelKey] = uuidLabelValue
 	return labels, nil
 }
 
@@ -276,7 +290,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEncla
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes label value from ID string '%v'", id)
 	}
-	labels[label_key_consts.IDKubernetesLabelKey] = idLabelValue
+	labels[kubernetes_label_key.IDKubernetesLabelKey] = idLabelValue
 	return labels, nil
 }
 
