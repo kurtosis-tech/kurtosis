@@ -12,6 +12,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"gopkg.in/yaml.v2"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
@@ -632,17 +633,19 @@ func parseImageDownloadFlag(flags *flags.ParsedFlags) (*kurtosis_core_rpc_api_bi
 		return nil, stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
 	}
 
-	imageDownloadCode := kurtosis_core_rpc_api_bindings.ImageDownloadMode_value[strings.ToLower(imageDownloadStr)]
-	if imageDownloadCode >= 1 {
-		imageDownloadRPC := kurtosis_core_rpc_api_bindings.ImageDownloadMode(imageDownloadCode)
-		return &imageDownloadRPC, nil
-	} else {
-		keys := make([]string, 0, len(kurtosis_core_rpc_api_bindings.ImageDownloadMode_value))
-		for k := range kurtosis_core_rpc_api_bindings.ImageDownloadMode_value {
-			keys = append(keys, k)
-		}
+	imageDownloadStrNorm := strings.ToLower(imageDownloadStr)
+	keys := make([]string, 0, len(kurtosis_core_rpc_api_bindings.ImageDownloadMode_value))
+	for k := range kurtosis_core_rpc_api_bindings.ImageDownloadMode_value {
+		keys = append(keys, k)
+	}
+
+	if !slices.Contains(keys, imageDownloadStrNorm) {
 		return nil, stacktrace.NewError("Invalid image-download value: '%s'. Possible values are: '%s'", imageDownloadStr, strings.Join(keys, "', '"))
 	}
+
+	imageDownloadCode := kurtosis_core_rpc_api_bindings.ImageDownloadMode_value[imageDownloadStrNorm]
+	imageDownloadRPC := kurtosis_core_rpc_api_bindings.ImageDownloadMode(imageDownloadCode)
+	return &imageDownloadRPC, nil
 }
 
 // parseExperimentalFlag parses the sert of experimental features enabled for this run
