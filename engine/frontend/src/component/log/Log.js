@@ -31,7 +31,6 @@ export const Log = ({logs, fileName, currentExecutionStatus, executionStatusText
     const virtuosoRef = useRef(null)
     const {height: windowHeight} = useWindowDimensions();
     const {onCopy, setValue: setCopyValue, hasCopied} = useClipboard("");
-    const [logsExecutionStatus, setLogsExecutionStatus] = useState(<></>)
 
     useEffect(() => {
         setDisplayLogs(logs);
@@ -39,7 +38,6 @@ export const Log = ({logs, fileName, currentExecutionStatus, executionStatusText
             return stripAnsi(log)
         })
         setCopyValue(logsWithoutAnsi.join(os.EOL))
-        setLogsExecutionStatus(currentExecutionStatus)
     }, [logs]);
 
     const handleDownload = () => {
@@ -82,7 +80,7 @@ export const Log = ({logs, fileName, currentExecutionStatus, executionStatusText
                 <Box p='2' m="4"
                      height={"40px"}
                 >
-                    {logsExecutionStatus}
+                    {currentExecutionStatus}
                 </Box>
                 <Tooltip label={`${hasCopied ? "Copied!" : "Copy to clipboard"}`}
                          placement='top-end'
