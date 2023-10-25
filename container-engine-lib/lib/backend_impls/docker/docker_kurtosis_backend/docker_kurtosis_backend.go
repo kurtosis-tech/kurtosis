@@ -2,6 +2,7 @@ package docker_kurtosis_backend
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/sirupsen/logrus"
 	"io"
 	"sync"
@@ -16,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
@@ -488,8 +488,8 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 // ====================================================================================================
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveUuid(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*types.Network, error) {
 	networkSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
 	}
 
 	enclaveNetworksFound, err := backend.dockerManager.GetNetworksByLabels(ctx, networkSearchLabels)
@@ -513,9 +513,9 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveUuid(ctx context
 // Guaranteed to either return an enclave data volume name or throw an error
 func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveUuid(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (string, error) {
 	volumeSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString():  label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.VolumeTypeDockerLabelKey.GetString():  label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
 	}
 	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
 	if err != nil {

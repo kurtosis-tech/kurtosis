@@ -1,8 +1,4 @@
-package label_key_consts
-
-import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
-)
+package kubernetes_label_key
 
 const (
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -11,9 +7,11 @@ const (
 	//
 	// If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 	// These immutable values track resources between Kurtosis versions.
-	labelKeyPrefixStr       = "kurtosistech.com/"
-	appIdLabelKeyStr        = labelKeyPrefixStr + "app-id"
-	resourceTypeLabelKeyStr = labelKeyPrefixStr + "resource-type"
+	kurtosisDomain               = "kurtosistech.com"
+	labelKeyPrefixStr            = kurtosisDomain + "/"
+	appIdLabelKeyStr             = labelKeyPrefixStr + "app-id"
+	resourceTypeLabelKeyStr      = labelKeyPrefixStr + "resource-type"
+	customUserLabelsKeyPrefixStr = kurtosisDomain + ".custom/"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	volumeTypeLabelKeyStr = labelKeyPrefixStr + "volume-type"
@@ -38,14 +36,14 @@ const (
 //	which will cause a resource leak on the user's cluster!
 //
 //	 If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
-var AppIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(appIdLabelKeyStr)
-var KurtosisResourceTypeKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(resourceTypeLabelKeyStr)
+var AppIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(appIdLabelKeyStr)
+var KurtosisResourceTypeKubernetesLabelKey = MustCreateNewKubernetesLabelKey(resourceTypeLabelKeyStr)
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-var KurtosisVolumeTypeKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
-var IDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(idLabelKeyStr)
-var GUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
-var EnclaveUUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
-var EnclaveNameKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveNameLabelKeyStr)
-var UserServiceGUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(userServiceGuidKeyStr)
+var KurtosisVolumeTypeKubernetesLabelKey = MustCreateNewKubernetesLabelKey(volumeTypeLabelKeyStr)
+var IDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(idLabelKeyStr)
+var GUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
+var EnclaveUUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
+var EnclaveNameKubernetesLabelKey = MustCreateNewKubernetesLabelKey(enclaveNameLabelKeyStr)
+var UserServiceGUIDKubernetesLabelKey = MustCreateNewKubernetesLabelKey(userServiceGuidKeyStr)

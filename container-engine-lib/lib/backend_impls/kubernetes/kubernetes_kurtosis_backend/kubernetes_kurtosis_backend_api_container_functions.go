@@ -6,7 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	kubernetes_manager_consts "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -714,7 +714,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 		ctx,
 		backend.kubernetesManager,
 		enclaveMatchLabels,
-		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
+		kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString(),
 		enclaveIdsStrSet,
 	)
 	if err != nil {
@@ -742,7 +742,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
+			kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -781,7 +781,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
+			kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -817,7 +817,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
+			kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -853,7 +853,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
+			kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -889,7 +889,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			backend.kubernetesManager,
 			namespaceName,
 			apiContainerMatchLabels,
-			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
+			kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				enclaveIdStr: true,
 			},
@@ -1087,8 +1087,8 @@ func getApiContainerContainersAndVolumes(
 
 func getApiContainerMatchLabels() map[string]string {
 	engineMatchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.APIContainerKurtosisResourceTypeKubernetesLabelValue.GetString(),
+		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.APIContainerKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return engineMatchLabels
 }

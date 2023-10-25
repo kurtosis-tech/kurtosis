@@ -23,7 +23,7 @@ func MustCreateNewKubernetesLabelValue(str string) *KubernetesLabelValue {
 }
 
 func CreateNewKubernetesLabelValue(labelValue string) (*KubernetesLabelValue, error) {
-	if err := validateLabelValue(labelValue); err != nil {
+	if err := ValidateKubernetesLabelValue(labelValue); err != nil {
 		return nil, stacktrace.Propagate(err, "Label value string '%v' doesn't pass validation of being a Kubernetes label value", labelValue)
 	}
 
@@ -34,8 +34,8 @@ func (key *KubernetesLabelValue) GetString() string {
 	return key.value
 }
 
-// validateLabelStr throws an error if str isn't a "qualified name" in Kubernetes
-func validateLabelValue(str string) error {
+// ValidateKubernetesLabelValue throws an error if str isn't a "qualified name" in Kubernetes
+func ValidateKubernetesLabelValue(str string) error {
 	validationErrs := validation.IsValidLabelValue(str)
 	if len(validationErrs) > 0 {
 		errString := strings.Join(validationErrs, "\n\n")
