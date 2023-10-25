@@ -51,7 +51,7 @@ const (
 
 	successfulPipRunExitCode = 0
 
-	scriptArtifactFormat = "'%v'-python-script"
+	scriptArtifactFormat = "%v-python-script"
 )
 
 func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
