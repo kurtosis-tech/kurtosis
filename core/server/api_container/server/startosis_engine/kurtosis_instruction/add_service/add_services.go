@@ -79,6 +79,8 @@ type AddServicesCapabilities struct {
 
 	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
+	imageBuildSpec map[service.ServiceName]*service_config.ImageBuildSpec
+
 	resultUuids map[service.ServiceName]string
 }
 
@@ -104,7 +106,11 @@ func (builtin *AddServicesCapabilities) Interpret(_ string, arguments *builtin_a
 
 func (builtin *AddServicesCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	for serviceName, serviceConfig := range builtin.serviceConfigs {
-		if err := validateSingleService(validatorEnvironment, serviceName, serviceConfig); err != nil {
+		imageBuildSpec, ok := builtin.imageBuildSpec[serviceName]
+		if !ok {
+			imageBuildSpec = nil
+		}
+		if err := validateSingleService(validatorEnvironment, serviceName, serviceConfig, imageBuildSpec); err != nil {
 			return err
 		}
 	}

@@ -47,7 +47,7 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
-						if _, _, err := validateAndConvertConfigAndReadyCondition(serviceNetwork, value); err != nil {
+						if _, _, _, err := validateAndConvertConfigAndReadyConditionAndImageBuildSpec(serviceNetwork, value); err != nil {
 							return err
 						}
 						return nil
@@ -84,6 +84,9 @@ type AddServiceCapabilities struct {
 	serviceConfig  *service.ServiceConfig
 	readyCondition *service_config.ReadyCondition
 
+	// imageBuildSpec is nil if an image string is provided for the image attr instead of an ImageBuildSpec
+	imageBuildSpec *service_config.ImageBuildSpec
+
 	resultUuid string
 }
 
@@ -97,7 +100,7 @@ func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
-	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(builtin.serviceNetwork, serviceConfig)
+	apiServiceConfig, readyCondition, imageBuildSpec, interpretationErr := validateAndConvertConfigAndReadyConditionAndImageBuildSpec(builtin.serviceNetwork, serviceConfig)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -105,6 +108,8 @@ func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
 	builtin.serviceConfig = apiServiceConfig
 	builtin.readyCondition = readyCondition
+	builtin.imageBuildSpec = imageBuildSpec
+
 	builtin.resultUuid, err = builtin.runtimeValueStore.GetOrCreateValueAssociatedWithService(builtin.serviceName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServiceBuiltinName)
@@ -118,7 +123,7 @@ func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 }
 
 func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if validationErr := validateSingleService(validatorEnvironment, builtin.serviceName, builtin.serviceConfig); validationErr != nil {
+	if validationErr := validateSingleService(validatorEnvironment, builtin.serviceName, builtin.serviceConfig, builtin.imageBuildSpec); validationErr != nil {
 		return validationErr
 	}
 	return nil
@@ -209,23 +214,28 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 	)
 }
 
-func validateAndConvertConfigAndReadyCondition(
+func validateAndConvertConfigAndReadyConditionAndImageBuildSpec(
 	serviceNetwork service_network.ServiceNetwork,
 	rawConfig starlark.Value,
-) (*service.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
+) (*service.ServiceConfig, *service_config.ReadyCondition, *service_config.ImageBuildSpec, *startosis_errors.InterpretationError) {
 	config, ok := rawConfig.(*service_config.ServiceConfig)
 	if !ok {
-		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
+		return nil, nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
 	}
 	apiServiceConfig, interpretationErr := config.ToKurtosisType(serviceNetwork)
 	if interpretationErr != nil {
-		return nil, nil, interpretationErr
+		return nil, nil, nil, interpretationErr
 	}
 
 	readyCondition, interpretationErr := config.GetReadyCondition()
 	if interpretationErr != nil {
-		return nil, nil, interpretationErr
+		return nil, nil, nil, interpretationErr
 	}
 
-	return apiServiceConfig, readyCondition, nil
+	imageBuildSpec, interpretationErr := config.GetImageBuildSpec()
+	if interpretationErr != nil {
+		return nil, nil, nil, interpretationErr
+	}
+
+	return apiServiceConfig, readyCondition, imageBuildSpec, nil
 }
