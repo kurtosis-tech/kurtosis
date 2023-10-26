@@ -1,3 +1,5 @@
+import { Result } from "true-myth";
+
 export function isDefined<T>(it: T | null | undefined): it is T {
   return it !== null && it !== undefined;
 }
@@ -35,4 +37,18 @@ export function stringifyError(err: any): string {
     case "symbol":
       return "symbol";
   }
+}
+
+export type ErrorAndMessage<E> = {
+  error: E;
+  message?: string;
+};
+
+export async function asyncResult<T>(
+  p: Promise<T> | (() => Promise<T>),
+  errorMessage?: string,
+): Promise<Result<T, ErrorAndMessage<any>>> {
+  return (typeof p === "function" ? p() : p)
+    .then((r) => Result.ok<T, ErrorAndMessage<any>>(r))
+    .catch((err: any) => Result.err({ error: err, message: errorMessage }));
 }

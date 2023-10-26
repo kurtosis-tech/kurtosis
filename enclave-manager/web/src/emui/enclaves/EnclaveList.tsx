@@ -1,32 +1,70 @@
-import { Button, ButtonGroup, Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
+  Button,
+  ButtonGroup,
+  Flex,
+  Spinner,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+} from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { FiPlus, FiTrash2 } from "react-icons/fi";
+import { ResultNS } from "true-myth";
 import { useKurtosisClient } from "../../client/KurtosisClientContext";
 import { EnclavesTable } from "../../components/enclaves/EnclavesTable";
 import { isDefined } from "../../utils";
 import { EnclaveFullInfo } from "./types";
 
 export const EnclaveList = () => {
+  const [error, setError] = useState<string>();
   const kurtosisClient = useKurtosisClient();
   const [enclaves, setEnclaves] = useState<EnclaveFullInfo[]>();
   const [selectedEnclaves, setSelectedEnclaves] = useState<EnclaveFullInfo[]>([]);
 
   useEffect(() => {
+    setError(undefined);
     (async () => {
       const enclavesResponse = await kurtosisClient.getEnclaves();
-      const enclaves = Object.values(enclavesResponse.enclaveInfo);
+      if (enclavesResponse.isErr) {
+        setError(enclavesResponse.error.message);
+        return;
+      }
+      const enclaves = Object.values(enclavesResponse.value.enclaveInfo);
       const [starlarkRuns, services, filesAndArtifacts] = await Promise.all([
         Promise.all(enclaves.map((enclave) => kurtosisClient.getStarlarkRun(enclave))),
         Promise.all(enclaves.map((enclave) => kurtosisClient.getServices(enclave))),
         Promise.all(enclaves.map((enclave) => kurtosisClient.listFilesArtifactNamesAndUuids(enclave))),
       ]);
 
+      const starlarkErrors = starlarkRuns.filter(ResultNS.isErr);
+      const servicesErrors = services.filter(ResultNS.isErr);
+      const filesAndArtifactErrors = filesAndArtifacts.filter(ResultNS.isErr);
+      if (starlarkErrors.length + servicesErrors.length + filesAndArtifactErrors.length > 0) {
+        setError(
+          `Starlark errors: ${
+            starlarkErrors.length > 0 ? starlarkErrors.map((r) => r.error.message).join("\n") : "None"
+          }\nServices errors: ${
+            servicesErrors.length > 0 ? servicesErrors.map((r) => r.error.message).join("\n") : "None"
+          }\nFiles and Artifacts errors: ${
+            filesAndArtifactErrors.length > 0 ? filesAndArtifactErrors.map((r) => r.error.message).join("\n") : "None"
+          }`,
+        );
+        return;
+      }
+
       setEnclaves(
         enclaves.map((enclave, i) => ({
           ...enclave,
-          starlarkRun: starlarkRuns[i],
-          services: services[i],
-          filesAndArtifacts: filesAndArtifacts[i],
+          // These values are never actually null because of the checking above
+          starlarkRun: starlarkRuns[i].unwrapOr(null)!,
+          services: services[i].unwrapOr(null)!,
+          filesAndArtifacts: filesAndArtifacts[i].unwrapOr(null)!,
         })),
       );
     })();
@@ -62,7 +100,14 @@ export const EnclaveList = () => {
                 onSelectionChange={setSelectedEnclaves}
               />
             )}
-            {!isDefined(enclaves) && (
+            {isDefined(error) && (
+              <Alert status="error">
+                <AlertIcon />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {!isDefined(enclaves) && !isDefined(error) && (
               <Flex justifyContent={"center"} p={"20px"}>
                 <Spinner size={"xl"} />
               </Flex>

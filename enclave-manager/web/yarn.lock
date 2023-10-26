@@ -9780,6 +9780,11 @@ tr46@^2.1.0:
   dependencies:
     punycode "^2.1.1"
 
+"true-myth@^7.1.0":
+  version "7.1.0"
+  resolved "https://registry.yarnpkg.com/true-myth/-/true-myth-7.1.0.tgz#79077b5f1848af1ea0c241234aec2c4d0c11b91a"
+  integrity sha512-DcdyFRHfNyG31HgNtxqrVAHmBf7y1w4YZCpU7IR2Ohytm4LITv+u075Vc3dLyK9cdEPq6K9398iao6YpkU8hHA==
+
 tryer@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/tryer/-/tryer-1.0.1.tgz#f2c85406800b9b0f74c9f7465b81eaad241252f8"

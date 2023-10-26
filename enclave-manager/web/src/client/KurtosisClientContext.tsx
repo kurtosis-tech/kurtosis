@@ -1,5 +1,5 @@
-import { Alert, AlertDescription, AlertIcon, AlertTitle, Flex, Heading, Spinner } from "@chakra-ui/react";
-import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
+import { Alert, AlertDescription, AlertIcon, AlertTitle, Flex, Heading, Spinner, useToast } from "@chakra-ui/react";
+import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
 import { assertDefined, isDefined, isStringTrue, stringifyError } from "../utils";
 import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
 import { KurtosisClient } from "./KurtosisClient";
@@ -12,9 +12,46 @@ type KurtosisClientContextState = {
 const KurtosisClientContext = createContext<KurtosisClientContextState>({ client: null });
 
 export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
+  const toast = useToast();
   const [client, setClient] = useState<KurtosisClient>();
   const [jwtToken, setJwtToken] = useState<string>();
   const [error, setError] = useState<string>();
+
+  const errorHandlingClient = useMemo(() => {
+    if (isDefined(client)) {
+      return new Proxy(client, {
+        get(target, prop: string | symbol) {
+          if (
+            prop === "getEnclaves" ||
+            prop === "getServices" ||
+            prop === "getStarlarkRun" ||
+            prop === "listFilesArtifactNamesAndUuids"
+          ) {
+            return new Proxy(target[prop], {
+              apply: (target, thisArg, argumentsList) => {
+                const methodResult = Reflect.apply(target, thisArg, argumentsList) as ReturnType<typeof target>;
+                return methodResult.then((r) => {
+                  if (r.isErr) {
+                    toast({
+                      title: "Error",
+                      description: r.error.message,
+                      status: "error",
+                      position: "top",
+                      variant: "solid",
+                    });
+                  }
+                  return r;
+                });
+              },
+            });
+          } else {
+            return Reflect.get(target, prop);
+          }
+        },
+      });
+    }
+    return undefined;
+  }, [client, toast]);
 
   useEffect(() => {
     const receiveMessage = (event: MessageEvent) => {
@@ -54,8 +91,12 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
     }
   }, [jwtToken]);
 
-  if (client) {
-    return <KurtosisClientContext.Provider value={{ client }}>{children}</KurtosisClientContext.Provider>;
+  if (errorHandlingClient) {
+    return (
+      <KurtosisClientContext.Provider value={{ client: errorHandlingClient }}>
+        {children}
+      </KurtosisClientContext.Provider>
+    );
   } else {
     return (
       <Flex width="100%" direction="column" alignItems={"center"} gap={"1rem"} padding={"3rem"}>
