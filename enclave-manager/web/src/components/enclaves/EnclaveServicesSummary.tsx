@@ -29,7 +29,7 @@ export const EnclaveServicesSummary = ({ services }: ServicesSummaryProps) => {
 
   return (
     <Tooltip label={tooltipLabel} size={"xs"}>
-      <ButtonGroup size={"xs"} variant={"kurtosisSolid"}>
+      <ButtonGroup size={"xs"} variant={"solid"}>
         {runningServices > 0 && <Button colorScheme={"green"}>{runningServices}</Button>}
         {stopppedServices > 0 && <Button colorScheme={"red"}>{stopppedServices}</Button>}
         {unknownServices > 0 && <Button colorScheme={"orange"}>{unknownServices}</Button>}

@@ -8,6 +8,7 @@ import { EnclaveFullInfo } from "../../emui/enclaves/types";
 import { DataTable } from "../DataTable";
 import { RelativeDateTime } from "../RelativeDateTime";
 import { EnclaveArtifactsSummary } from "./EnclaveArtifactsSummary";
+import { EnclaveLinkButton } from "./EnclaveLinkButton";
 import { EnclaveServicesSummary } from "./EnclaveServicesSummary";
 import { EnclaveSourceButton } from "./EnclaveSourceButton";
 import { EnclaveStatus } from "./EnclaveStatus";
@@ -74,7 +75,10 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
         ),
         enableSorting: false,
       }),
-      columnHelper.accessor("name", { header: "Name" }),
+      columnHelper.accessor("name", {
+        header: "Name",
+        cell: (nameCell) => <EnclaveLinkButton name={nameCell.row.original.name} uuid={nameCell.row.original.uuid} />,
+      }),
       columnHelper.accessor("status", {
         header: "Status",
         cell: (statusCell) => <EnclaveStatus status={statusCell.getValue()} />,

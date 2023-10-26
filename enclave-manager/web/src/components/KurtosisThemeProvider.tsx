@@ -83,24 +83,16 @@ const theme = extendTheme({
             borderColor: "gray.300",
           };
         },
-        kurtosisSolid: (props: StyleFunctionProps) => {
-          const solid = theme.components.Button.variants!.solid(props);
-          return {
-            ...solid,
-            _hover: { ...solid._hover, bg: "gray.700" },
-            _active: { ...solid._active, bg: "gray.700" },
-            color: `${props.colorScheme}.400`,
-            bg: "gray.700",
-          };
-        },
-        kurtosisGhost: (props: StyleFunctionProps) => {
-          const ghost = theme.components.Button.variants!.ghost(props);
-          return {
-            ...ghost,
-            _hover: { ...ghost._hover, bg: "gray.700" },
-            color: `gray.100`,
-          };
-        },
+        solid: defineStyle((props) => ({
+          _hover: { bg: "gray.700" },
+          _active: { bg: "gray.700" },
+          color: `${props.colorScheme}.400`,
+          bg: "gray.700",
+        })),
+        ghost: defineStyle((props) => ({
+          _hover: { bg: "gray.700" },
+          color: `gray.100`,
+        })),
         nav: {
           _active: {
             bg: "gray.600",

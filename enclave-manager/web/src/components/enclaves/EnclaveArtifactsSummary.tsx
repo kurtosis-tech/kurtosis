@@ -7,7 +7,7 @@ type EnclaveArtifactsSummaryProps = {
 
 export const EnclaveArtifactsSummary = ({ artifacts }: EnclaveArtifactsSummaryProps) => {
   return (
-    <Button variant={"kurtosisGhost"} size={"xs"}>
+    <Button variant={"ghost"} size={"xs"}>
       {artifacts.length}
     </Button>
   );
