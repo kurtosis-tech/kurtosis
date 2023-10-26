@@ -336,4 +336,7 @@ type KurtosisBackend interface {
 
 	// GetAvailableCPUAndMemory - gets available memory in megabytes and cpu in millicores, the boolean indicates whether the information is complete
 	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error)
+
+	// BuildImage builds an image using the provided [buildContext]
+	BuildImage(ctx context.Context, buildContext io.Reader) error
 }

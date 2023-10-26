@@ -40,6 +40,49 @@ func (_m *MockKurtosisBackend) EXPECT() *MockKurtosisBackend_Expecter {
 	return &MockKurtosisBackend_Expecter{mock: &_m.Mock}
 }
 
+// BuildImage provides a mock function with given fields: ctx, buildContext
+func (_m *MockKurtosisBackend) BuildImage(ctx context.Context, buildContext io.Reader) error {
+	ret := _m.Called(ctx, buildContext)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, io.Reader) error); ok {
+		r0 = rf(ctx, buildContext)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockKurtosisBackend_BuildImage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BuildImage'
+type MockKurtosisBackend_BuildImage_Call struct {
+	*mock.Call
+}
+
+// BuildImage is a helper method to define mock.On call
+//   - ctx context.Context
+//   - buildContext io.Reader
+func (_e *MockKurtosisBackend_Expecter) BuildImage(ctx interface{}, buildContext interface{}) *MockKurtosisBackend_BuildImage_Call {
+	return &MockKurtosisBackend_BuildImage_Call{Call: _e.mock.On("BuildImage", ctx, buildContext)}
+}
+
+func (_c *MockKurtosisBackend_BuildImage_Call) Run(run func(ctx context.Context, buildContext io.Reader)) *MockKurtosisBackend_BuildImage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(io.Reader))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_BuildImage_Call) Return(_a0 error) *MockKurtosisBackend_BuildImage_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_BuildImage_Call) RunAndReturn(run func(context.Context, io.Reader) error) *MockKurtosisBackend_BuildImage_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CopyFilesFromUserService provides a mock function with given fields: ctx, enclaveUuid, serviceUuid, srcPathOnService, output
 func (_m *MockKurtosisBackend) CopyFilesFromUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, srcPathOnService string, output io.Writer) error {
 	ret := _m.Called(ctx, enclaveUuid, serviceUuid, srcPathOnService, output)
