@@ -65,7 +65,11 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 	return returnValue, nil
 }
 
-func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEnvironment, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) *startosis_errors.ValidationError {
+func validateSingleService(
+	validatorEnvironment *startosis_validator.ValidatorEnvironment,
+	serviceName service.ServiceName,
+	serviceConfig *service.ServiceConfig,
+	imageBuildSpec *service_config.ImageBuildSpec) *startosis_errors.ValidationError {
 	if isValidServiceName := service.IsServiceNameValid(serviceName); !isValidServiceName {
 		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
 	}
@@ -90,7 +94,13 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	}
 
 	validatorEnvironment.AddServiceName(serviceName)
-	validatorEnvironment.AppendRequiredContainerImage(serviceConfig.GetContainerImageName())
+
+	if imageBuildSpec != nil && serviceConfig.GetContainerImageName() == "" {
+		validatorEnvironment.AppendRequiredImageBuild(serviceName, imageBuildSpec)
+	} else {
+		validatorEnvironment.AppendRequiredContainerImage(serviceConfig.GetContainerImageName())
+	}
+
 	var portIds []string
 	for portId := range serviceConfig.GetPrivatePorts() {
 		portIds = append(portIds, portId)

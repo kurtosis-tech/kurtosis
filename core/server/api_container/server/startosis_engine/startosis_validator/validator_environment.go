@@ -3,6 +3,7 @@ package startosis_validator
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/sirupsen/logrus"
 )
@@ -10,6 +11,7 @@ import (
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
 type ValidatorEnvironment struct {
 	requiredDockerImages          map[string]bool
+	imagesToBuild                 map[service.ServiceName]*service_config.ImageBuildSpec
 	serviceNames                  map[service.ServiceName]ComponentExistence
 	artifactNames                 map[string]ComponentExistence
 	serviceNameToPrivatePortIDs   map[service.ServiceName][]string
@@ -31,6 +33,7 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 	}
 	return &ValidatorEnvironment{
 		requiredDockerImages:          map[string]bool{},
+		imagesToBuild:                 map[service.ServiceName]*service_config.ImageBuildSpec{},
 		serviceNames:                  serviceNamesWithComponentExistence,
 		artifactNames:                 artifactNamesWithComponentExistence,
 		serviceNameToPrivatePortIDs:   serviceNameToPrivatePortIds,
@@ -44,6 +47,10 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 
 func (environment *ValidatorEnvironment) AppendRequiredContainerImage(containerImage string) {
 	environment.requiredDockerImages[containerImage] = true
+}
+
+func (environment *ValidatorEnvironment) AppendRequiredImageBuild(serviceName service.ServiceName, imageBuildSpec *service_config.ImageBuildSpec) {
+	environment.imagesToBuild[serviceName] = imageBuildSpec
 }
 
 func (environment *ValidatorEnvironment) GetNumberOfContainerImages() uint32 {

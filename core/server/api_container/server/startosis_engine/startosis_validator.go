@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
@@ -18,31 +19,39 @@ import (
 )
 
 const (
-	validationInProgressMsg = "Validating Starlark code and downloading container images - execution will begin shortly"
+	validationInProgressMsg = "Validating Starlark code and preparing container images - execution will begin shortly"
 
-	containerDownloadedImagesMsgHeader     = "Container images used in this run:"
-	containerDownloadedImagesMsgFromLocal  = "locally cached"
-	containerDownloadedImagesMsgFromRemote = "remotely downloaded"
-	containerDownloadedImagesMsgLineFormat = "> %s - %s"
-	linebreak                              = "\n"
+	containerImageValidationMsgHeader     = "Container images used in this run:"
+	containerImageValidationMsgFromLocal  = "locally cached"
+	containerImageValidationMsgFromRemote = "remotely downloaded"
+	containerImageValidationBuilt         = "locally built"
+	containerImageValidationMsgLineFormat = "> %s - %s"
+	linebreak                             = "\n"
 )
 
 type StartosisValidator struct {
-	dockerImagesValidator *startosis_validator.DockerImagesValidator
+	imagesValidator *startosis_validator.ImagesValidator
 
 	serviceNetwork    service_network.ServiceNetwork
 	fileArtifactStore *enclave_data_directory.FilesArtifactStore
 
+	packageContentProvider startosis_packages.PackageContentProvider
+
 	backend *backend_interface.KurtosisBackend
 }
 
-func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, serviceNetwork service_network.ServiceNetwork, fileArtifactStore *enclave_data_directory.FilesArtifactStore) *StartosisValidator {
-	dockerImagesValidator := startosis_validator.NewDockerImagesValidator(kurtosisBackend)
+func NewStartosisValidator(
+	kurtosisBackend *backend_interface.KurtosisBackend,
+	serviceNetwork service_network.ServiceNetwork,
+	fileArtifactStore *enclave_data_directory.FilesArtifactStore,
+	packageContentProvider startosis_packages.PackageContentProvider) *StartosisValidator {
+	imagesValidator := startosis_validator.NewImagesValidator(kurtosisBackend)
 	return &StartosisValidator{
-		dockerImagesValidator,
-		serviceNetwork,
-		fileArtifactStore,
-		kurtosisBackend,
+		imagesValidator:        imagesValidator,
+		serviceNetwork:         serviceNetwork,
+		fileArtifactStore:      fileArtifactStore,
+		packageContentProvider: packageContentProvider,
+		backend:                kurtosisBackend,
 	}
 }
 
@@ -92,7 +101,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 		logrus.Debug("Finished validating environment. Validating and downloading container images.")
 
 		isValidationFailure = isValidationFailure ||
-			validator.downloadAndValidateImagesAccountingForProgress(ctx, environment, starlarkRunResponseLineStream)
+			validator.validateImagesAccountingForProgress(ctx, environment, starlarkRunResponseLineStream)
 
 		if isValidationFailure {
 			logrus.Debug("Errors encountered downloading and validating container images.")
@@ -125,13 +134,13 @@ func (validator *StartosisValidator) validateAndUpdateEnvironment(instructionsSe
 	return isValidationFailure
 }
 
-func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgress(ctx context.Context, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
+func (validator *StartosisValidator) validateImagesAccountingForProgress(ctx context.Context, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
 	isValidationFailure := false
 
 	errors := make(chan error)
 	imageValidationStarted := make(chan string)
 	imageValidationFinished := make(chan *startosis_validator.ValidatedImage)
-	go validator.dockerImagesValidator.Validate(ctx, environment, imageValidationStarted, imageValidationFinished, errors)
+	go validator.imagesValidator.Validate(ctx, environment, imageValidationStarted, imageValidationFinished, errors)
 
 	numberOfImageValidated := uint32(0)
 	totalImageNumberToValidate := environment.GetNumberOfContainerImages()
@@ -207,16 +216,20 @@ func sendContainerImageSummaryInfoMsg(
 	imageLines := []string{}
 
 	for image, validatedImage := range imageSuccessfullyValidated {
-		pulledFromStr := containerDownloadedImagesMsgFromLocal
-		if validatedImage.GetPulledFromRemote() {
-			pulledFromStr = containerDownloadedImagesMsgFromRemote
+		imageValidationStr := containerImageValidationMsgFromLocal
+		if validatedImage.IsPulledFromRemote() {
+			imageValidationStr = containerImageValidationMsgFromRemote
 		}
 
-		imageLine := fmt.Sprintf(containerDownloadedImagesMsgLineFormat, image, pulledFromStr)
+		if validatedImage.IsLocallyBuilt() {
+			imageValidationStr = containerImageValidationBuilt
+		}
+
+		imageLine := fmt.Sprintf(containerImageValidationMsgLineFormat, image, imageValidationStr)
 		imageLines = append(imageLines, imageLine)
 	}
 
-	msgLines := []string{containerDownloadedImagesMsgHeader}
+	msgLines := []string{containerImageValidationMsgHeader}
 	msgLines = append(msgLines, imageLines...)
 
 	msg := strings.Join(msgLines, linebreak)
