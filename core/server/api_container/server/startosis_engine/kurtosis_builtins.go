@@ -111,5 +111,6 @@ func KurtosisTypeConstructors() []*starlark.Builtin {
 		starlark.NewBuiltin(store_spec.StoreSpecTypeName, store_spec.NewStoreSpecType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.ServiceConfigTypeName, service_config.NewServiceConfigType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.ReadyConditionTypeName, service_config.NewReadyConditionType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.ImageBuildSpecTypeName, service_config.NewImageBuildSpecType().CreateBuiltin()),
 	}
 }
