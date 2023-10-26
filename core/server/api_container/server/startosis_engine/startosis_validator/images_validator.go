@@ -3,7 +3,7 @@ package startosis_validator
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -96,7 +96,7 @@ func buildImageUsingBackend(
 	imageCurrentlyBuilding chan bool,
 	backend *backend_interface.KurtosisBackend,
 	imageName string,
-	imageBuildSpec *service_config.ImageBuildSpec,
+	imageBuildSpec *image_build_spec.ImageBuildSpec,
 	buildErrors chan<- error,
 	imageBuildStarted chan<- string,
 	imageBuildFinished chan<- *ValidatedImage) {
@@ -122,6 +122,6 @@ func buildImageUsingBackend(
 	logrus.Debugf("Container image '%s' successfully built", imageName)
 }
 
-func getBuildContextFromContextDir(imageBuildSpec *service_config.ImageBuildSpec) io.Reader {
+func getBuildContextFromContextDir(imageBuildSpec *image_build_spec.ImageBuildSpec) io.Reader {
 	return nil
 }

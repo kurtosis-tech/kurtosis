@@ -3,6 +3,7 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
@@ -69,7 +70,7 @@ func validateSingleService(
 	validatorEnvironment *startosis_validator.ValidatorEnvironment,
 	serviceName service.ServiceName,
 	serviceConfig *service.ServiceConfig,
-	imageBuildSpec *service_config.ImageBuildSpec) *startosis_errors.ValidationError {
+	imageBuildSpec *image_build_spec.ImageBuildSpec) *startosis_errors.ValidationError {
 	if isValidServiceName := service.IsServiceNameValid(serviceName); !isValidServiceName {
 		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
 	}

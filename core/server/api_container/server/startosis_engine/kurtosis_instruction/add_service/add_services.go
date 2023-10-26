@@ -3,6 +3,7 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -79,7 +80,7 @@ type AddServicesCapabilities struct {
 
 	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
-	imageBuildSpec map[service.ServiceName]*service_config.ImageBuildSpec
+	imageBuildSpec map[service.ServiceName]*image_build_spec.ImageBuildSpec
 
 	resultUuids map[service.ServiceName]string
 }

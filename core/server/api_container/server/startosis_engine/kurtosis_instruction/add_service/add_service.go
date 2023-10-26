@@ -3,6 +3,7 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -85,7 +86,7 @@ type AddServiceCapabilities struct {
 	readyCondition *service_config.ReadyCondition
 
 	// imageBuildSpec is nil if an image string is provided for the image attr instead of an ImageBuildSpec
-	imageBuildSpec *service_config.ImageBuildSpec
+	imageBuildSpec *image_build_spec.ImageBuildSpec
 
 	resultUuid string
 }
@@ -217,7 +218,7 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 func validateAndConvertConfigAndReadyConditionAndImageBuildSpec(
 	serviceNetwork service_network.ServiceNetwork,
 	rawConfig starlark.Value,
-) (*service.ServiceConfig, *service_config.ReadyCondition, *service_config.ImageBuildSpec, *startosis_errors.InterpretationError) {
+) (*service.ServiceConfig, *service_config.ReadyCondition, *image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
 	config, ok := rawConfig.(*service_config.ServiceConfig)
 	if !ok {
 		return nil, nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
@@ -232,10 +233,17 @@ func validateAndConvertConfigAndReadyConditionAndImageBuildSpec(
 		return nil, nil, nil, interpretationErr
 	}
 
+	var imageBuildSpecObj *image_build_spec.ImageBuildSpec
 	imageBuildSpec, interpretationErr := config.GetImageBuildSpec()
 	if interpretationErr != nil {
 		return nil, nil, nil, interpretationErr
 	}
+	if imageBuildSpec != nil {
+		imageBuildSpecObj, interpretationErr = imageBuildSpec.ToKurtosisType()
+		if interpretationErr != nil {
+			return nil, nil, nil, interpretationErr
+		}
+	}
 
-	return apiServiceConfig, readyCondition, imageBuildSpec, nil
+	return apiServiceConfig, readyCondition, imageBuildSpecObj, nil
 }

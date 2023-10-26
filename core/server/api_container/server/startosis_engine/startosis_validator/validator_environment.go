@@ -2,8 +2,8 @@ package startosis_validator
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/sirupsen/logrus"
 )
@@ -11,7 +11,7 @@ import (
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
 type ValidatorEnvironment struct {
 	requiredDockerImages          map[string]bool
-	imagesToBuild                 map[service.ServiceName]*service_config.ImageBuildSpec
+	imagesToBuild                 map[service.ServiceName]*image_build_spec.ImageBuildSpec
 	serviceNames                  map[service.ServiceName]ComponentExistence
 	artifactNames                 map[string]ComponentExistence
 	serviceNameToPrivatePortIDs   map[service.ServiceName][]string
@@ -33,7 +33,7 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 	}
 	return &ValidatorEnvironment{
 		requiredDockerImages:          map[string]bool{},
-		imagesToBuild:                 map[service.ServiceName]*service_config.ImageBuildSpec{},
+		imagesToBuild:                 map[service.ServiceName]*image_build_spec.ImageBuildSpec{},
 		serviceNames:                  serviceNamesWithComponentExistence,
 		artifactNames:                 artifactNamesWithComponentExistence,
 		serviceNameToPrivatePortIDs:   serviceNameToPrivatePortIds,
@@ -49,7 +49,7 @@ func (environment *ValidatorEnvironment) AppendRequiredContainerImage(containerI
 	environment.requiredDockerImages[containerImage] = true
 }
 
-func (environment *ValidatorEnvironment) AppendRequiredImageBuild(serviceName service.ServiceName, imageBuildSpec *service_config.ImageBuildSpec) {
+func (environment *ValidatorEnvironment) AppendRequiredImageBuild(serviceName service.ServiceName, imageBuildSpec *image_build_spec.ImageBuildSpec) {
 	environment.imagesToBuild[serviceName] = imageBuildSpec
 }
 

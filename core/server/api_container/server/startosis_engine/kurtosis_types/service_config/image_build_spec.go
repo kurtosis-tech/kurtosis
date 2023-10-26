@@ -1,6 +1,7 @@
 package service_config
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -67,4 +68,12 @@ func (imageBuildSpec *ImageBuildSpec) GetContextDir() (string, *startosis_errors
 	}
 	contextDirStr := contextDir.GoString()
 	return contextDirStr, nil
+}
+
+func (imageBuildSpec *ImageBuildSpec) ToKurtosisType() (*image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
+	contextDir, interpretationErr := imageBuildSpec.GetContextDir()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return image_build_spec.NewImageBuildSpec(contextDir), nil
 }
