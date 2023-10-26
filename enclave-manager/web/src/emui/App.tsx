@@ -10,9 +10,7 @@ const router = createBrowserRouter([
   {
     element: (
       <AppLayout Nav={<Navbar />}>
-        <KurtosisClientProvider>
-          <Outlet />
-        </KurtosisClientProvider>
+        <Outlet />
       </AppLayout>
     ),
     children: [
@@ -25,7 +23,9 @@ const router = createBrowserRouter([
 export const EmuiApp = () => {
   return (
     <KurtosisThemeProvider>
-      <RouterProvider router={router} />
+      <KurtosisClientProvider>
+        <RouterProvider router={router} />
+      </KurtosisClientProvider>
     </KurtosisThemeProvider>
   );
 };

@@ -27,7 +27,7 @@ const theme = extendTheme({
   },
   colors: {
     kurtosisSelected: {
-      100: "#1a365D16",
+      100: "#292929",
     },
     kurtosisGreen: {
       100: "#005e11",
@@ -83,6 +83,16 @@ const theme = extendTheme({
             borderColor: "gray.300",
           };
         },
+        kurtosisDisabled: (props: StyleFunctionProps) => {
+          const outline = theme.components.Button.variants!.outline(props);
+          return {
+            ...outline,
+            _hover: { ...outline._hover, bg: "gray.700" },
+            bg: "gray.700",
+            color: `${props.colorScheme}.100`,
+            borderColor: "gray.300",
+          };
+        },
         solid: defineStyle((props) => ({
           _hover: { bg: "gray.700" },
           _active: { bg: "gray.700" },
@@ -113,9 +123,11 @@ const theme = extendTheme({
             "&[aria-current=page]": {
               color: "whiteAlpha.700",
             },
+            fontSize: "16px",
+            lineHeight: "24px",
           },
           separator: {
-            color: "gray.100",
+            color: "gray.400",
           },
         },
       },

@@ -1,6 +1,6 @@
 import { Alert, AlertDescription, AlertIcon, AlertTitle, Flex, Heading, Spinner, useToast } from "@chakra-ui/react";
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
-import { assertDefined, isDefined, isStringTrue, stringifyError } from "../utils";
+import { assertDefined, isDefined, isStringTrue, sleep, stringifyError } from "../utils";
 import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
 import { KurtosisClient } from "./KurtosisClient";
 import { LocalKurtosisClient } from "./LocalKurtosisClient";
@@ -8,6 +8,8 @@ import { LocalKurtosisClient } from "./LocalKurtosisClient";
 type KurtosisClientContextState = {
   client: KurtosisClient | null;
 };
+
+let kurtosisClientCache: KurtosisClient | undefined;
 
 const KurtosisClientContext = createContext<KurtosisClientContextState>({ client: null });
 
@@ -52,6 +54,7 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
     }
     return undefined;
   }, [client, toast]);
+  kurtosisClientCache = errorHandlingClient;
 
   useEffect(() => {
     const receiveMessage = (event: MessageEvent) => {
@@ -126,4 +129,19 @@ export const useKurtosisClient = (): KurtosisClient => {
   assertDefined(client, `useKurtosisClient used incorrectly - KurtosisClient is not currently available.`);
 
   return client;
+};
+
+export const getKurtosisClient = async (): Promise<KurtosisClient> => {
+  let attempts = 0;
+  while (attempts < 100) {
+    if (isDefined(kurtosisClientCache)) {
+      return kurtosisClientCache;
+    }
+    // This is required as the react-router can attempt to load data with its loader
+    // function before we have determined which KurtosisClient
+    // to use.
+    await sleep(100);
+    attempts += 1;
+  }
+  throw new Error("The Kurtosis Client never became available to getKurtosisClient.");
 };

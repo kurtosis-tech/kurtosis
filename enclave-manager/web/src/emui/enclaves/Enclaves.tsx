@@ -1,26 +1,37 @@
-import { Flex } from "@chakra-ui/react";
-import { Outlet, RouteObject } from "react-router-dom";
-import { Enclave, enclaveLoader, EnclaveLoaderReturnType } from "./Enclave";
-import { EnclaveBreadcrumbs } from "./EnclaveBreadcrumbs";
-import { EnclaveList } from "./EnclaveList";
+import { Params, RouteObject } from "react-router-dom";
+import { Enclave, enclaveLoader, enclaveTabLoader } from "./Enclave";
+import { EnclaveList, enclavesLoader } from "./EnclaveList";
 
 export const enclaveRoutes: RouteObject[] = [
   {
-    path: "/",
-    element: (
-      <Flex direction={"column"} gap={"36px"} width={"100%"}>
-        <EnclaveBreadcrumbs />
-        <Outlet />
-      </Flex>
-    ),
-    handle: { name: () => "Enclaves" },
+    path: "",
+    handle: { crumb: () => ({ name: "Enclaves", destination: "/" }) },
+    loader: enclavesLoader,
+    id: "enclaves",
     children: [
-      { path: "/", element: <EnclaveList /> },
+      { path: "", element: <EnclaveList /> },
       {
-        path: "/enclave/:enclaveName",
-        element: <Enclave />,
+        path: "enclave/:uuid",
         loader: enclaveLoader,
-        handle: { name: (data: EnclaveLoaderReturnType) => data.enclave.name },
+        handle: {
+          crumb: (data: Awaited<ReturnType<typeof enclaveLoader>>, params: Params<string>) => ({
+            name: data.routeName,
+            destination: `/enclave/${params.uuid}`,
+          }),
+        },
+        children: [
+          {
+            path: ":activeTab?",
+            loader: enclaveTabLoader,
+            element: <Enclave />,
+            handle: {
+              crumb: (data: Awaited<ReturnType<typeof enclaveTabLoader>>, params: Params<string>) => ({
+                name: data.routeName,
+                destination: `/enclave/${params.uuid}/${params.activeTab || "overview"}`,
+              }),
+            },
+          },
+        ],
       },
     ],
   },
