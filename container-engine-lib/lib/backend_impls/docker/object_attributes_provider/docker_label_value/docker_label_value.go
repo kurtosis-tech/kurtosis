@@ -32,22 +32,29 @@ func MustCreateNewDockerLabelValue(str string) *DockerLabelValue {
 }
 
 func CreateNewDockerLabelValue(str string) (*DockerLabelValue, error) {
+	if err := ValidateDockerLabelValue(str); err != nil {
+		return nil, stacktrace.Propagate(err, "Invalid Docker label value '%s'", str)
+	}
+
+	return &DockerLabelValue{value: str}, nil
+}
+
+func ValidateDockerLabelValue(str string) error {
 	if !dockerLabelValueRegex.MatchString(str) {
-		return nil, stacktrace.NewError("Label value string '%v' doesn't match Docker label value regex '%v'", str, dockerLabelValueRegexStr)
+		return stacktrace.NewError("Label value string '%v' doesn't match Docker label value regex '%v'", str, dockerLabelValueRegexStr)
 	}
 
 	strBytes := []byte(str)
 	numBytes := len(strBytes)
 	if numBytes > maxLabelValueBytes {
-		return nil, stacktrace.NewError(
+		return stacktrace.NewError(
 			"The following label value string is '%v' bytes, which is greater than the max limit '%v':\n%v",
 			numBytes,
 			maxLabelValueBytes,
 			str,
 		)
 	}
-
-	return &DockerLabelValue{value: str}, nil
+	return nil
 }
 
 func (key *DockerLabelValue) GetString() string {
