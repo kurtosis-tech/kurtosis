@@ -443,3 +443,7 @@ func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx con
 	}
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }
+
+func (backend *MetricsReportingKurtosisBackend) BuildImage(ctx context.Context, buildContext io.Reader) error {
+	return nil
+}

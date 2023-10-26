@@ -481,6 +481,10 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }
 
+func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, buildContext io.Reader) error {
+	return nil
+}
+
 // ====================================================================================================
 //
 //	Private helper functions shared by multiple subfunctions files

@@ -457,6 +457,11 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx con
 	return stacktrace.NewError("Destroy the logs collector for enclave isn't yet implemented on Kubernetes")
 }
 
+func (backend *KubernetesKurtosisBackend) BuildImage(ctx context.Context, buildContext io.Reader) error {
+	// TODO IMPLEMENT
+	return stacktrace.NewError("BuildImage isn't yet implemented on Kubernetes.")
+}
+
 // ====================================================================================================
 //
 //	Private Helper Functions
