@@ -8,7 +8,7 @@ type EnclaveSourceProps = {
 export const EnclaveSourceButton = ({ source }: EnclaveSourceProps) => {
   if (source.startsWith("github.com/")) {
     return (
-      <Button leftIcon={<Icon as={IoLogoGithub} color={"kurtosisGray.500"} />} variant={"kurtosisGhost"} size={"xs"}>
+      <Button leftIcon={<Icon as={IoLogoGithub} color={"gray.400"} />} variant={"kurtosisGhost"} size={"xs"}>
         {source.replace("github.com/", "")}
       </Button>
     );

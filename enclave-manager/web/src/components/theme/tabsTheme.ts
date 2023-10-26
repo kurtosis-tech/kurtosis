@@ -16,7 +16,7 @@ export const tabsTheme = defineMultiStyleConfig({
         _selected: {
           fontWeight: 600,
           color: `${props.colorScheme}.400`,
-          bg: `kurtosisGray.100`,
+          bg: `gray.800`,
         },
       },
       tablist: {

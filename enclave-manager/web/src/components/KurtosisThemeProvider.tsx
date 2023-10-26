@@ -38,16 +38,16 @@ const theme = extendTheme({
       600: "#66f27f",
       700: "#99f7aa",
     },
-    kurtosisGray: {
-      50: "#111111", // ui background
-      100: "#1D1D1D", // selected background
-      200: "#1E1E1E",
-      300: "#2E2E2E",
-      400: "#393B3E",
-      500: "#5B5B5B", // icon color
-      600: "#606770",
-      700: "#878787",
-      900: "#E3E3E3", // text
+    gray: {
+      100: "#E3E3E3", // text
+      200: "#878787",
+      300: "#606770",
+      400: "#5B5B5B", // icon color
+      500: "#393B3E",
+      600: "#2E2E2E",
+      700: "#1E1E1E",
+      800: "#1D1D1D", // selected background
+      900: "#111111", // ui background
     },
   },
   styles: {
@@ -56,8 +56,8 @@ const theme = extendTheme({
         bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "black")(props),
       },
       main: {
-        bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "kurtosisGray.50")(props),
-        color: "kurtosisGray.900",
+        bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "gray.900")(props),
+        color: "gray.100",
         fontSize: "14px",
       },
     }),
@@ -71,46 +71,46 @@ const theme = extendTheme({
             ...outline,
             _hover: { ...outline._hover, bg: "initial", borderColor: `${props.colorScheme}.400` },
             color: `${props.colorScheme}.400`,
-            borderColor: "kurtosisGray.600",
+            borderColor: "gray.300",
           };
         },
         kurtosisGroupOutline: (props: StyleFunctionProps) => {
           const outline = theme.components.Button.variants!.outline(props);
           return {
             ...outline,
-            _hover: { ...outline._hover, bg: "kurtosisGray.200" },
+            _hover: { ...outline._hover, bg: "gray.700" },
             color: `${props.colorScheme}.400`,
-            borderColor: "kurtosisGray.600",
+            borderColor: "gray.300",
           };
         },
         kurtosisSolid: (props: StyleFunctionProps) => {
           const solid = theme.components.Button.variants!.solid(props);
           return {
             ...solid,
-            _hover: { ...solid._hover, bg: "kurtosisGray.200" },
-            _active: { ...solid._active, bg: "kurtosisGray.200" },
+            _hover: { ...solid._hover, bg: "gray.700" },
+            _active: { ...solid._active, bg: "gray.700" },
             color: `${props.colorScheme}.400`,
-            bg: "kurtosisGray.200",
+            bg: "gray.700",
           };
         },
         kurtosisGhost: (props: StyleFunctionProps) => {
           const ghost = theme.components.Button.variants!.ghost(props);
           return {
             ...ghost,
-            _hover: { ...ghost._hover, bg: "kurtosisGray.200" },
-            color: `kurtosisGray.900`,
+            _hover: { ...ghost._hover, bg: "gray.700" },
+            color: `gray.100`,
           };
         },
         nav: {
           _active: {
-            bg: "kurtosisGray.300",
+            bg: "gray.600",
             color: "kurtosisGreen.400",
           },
           _hover: {
-            bg: "kurtosisGray.300",
+            bg: "gray.600",
             color: "white",
           },
-          color: "kurtosisGray.700",
+          color: "gray.200",
         },
       },
     },
@@ -131,21 +131,45 @@ const theme = extendTheme({
     Card: {
       baseStyle: {
         container: {
-          bg: "kurtosisGray.200",
+          bg: "gray.700",
           borderWidth: "1px",
-          borderColor: "kurtosisGray.400",
+          borderColor: "gray.500",
           borderRadius: "8px",
           padding: "1rem",
         },
       },
     },
+    Checkbox: {
+      defaultProps: {
+        size: "md",
+      },
+      baseStyle: defineStyle(({ colorScheme }) => ({
+        control: {
+          borderColor: `gray.400`,
+          _checked: {
+            bg: `${colorScheme}.500`,
+            borderColor: `${colorScheme}.500`,
+            color: `white`,
+            _hover: {
+              bg: `${colorScheme}.500`,
+              borderColor: `${colorScheme}.500`,
+            },
+          },
+          _indeterminate: {
+            bg: `${colorScheme}.500`,
+            borderColor: `${colorScheme}.500`,
+            color: `white`,
+          },
+        },
+      })),
+    },
     Table: {
       variants: {
         kurtosis: {
           th: {
-            color: "kurtosisGray.900",
+            color: "gray.100",
             borderBottom: "1px solid",
-            borderColor: "kurtosisGray.400",
+            borderColor: "gray.500",
           },
         },
       },
@@ -180,10 +204,10 @@ const theme = extendTheme({
         }),
       },
       baseStyle: {
-        bg: "kurtosisGray.400",
+        bg: "gray.500",
         //https://github.com/chakra-ui/chakra-ui/issues/4695
-        ["--popper-arrow-bg" as string]: "colors.kurtosisGray.400",
-        color: "kurtosisGray.900",
+        ["--popper-arrow-bg" as string]: "colors.gray.500",
+        color: "gray.100",
       },
       defaultProps: {
         size: "xs",
