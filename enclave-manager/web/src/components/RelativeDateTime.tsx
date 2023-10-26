@@ -1,7 +1,7 @@
-import { DateTime } from "luxon";
 import { Text, TextProps, Tooltip } from "@chakra-ui/react";
-import { isDefined } from "../utils";
+import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
+import { isDefined } from "../utils";
 
 type RelativeDateTimeProps = TextProps & {
   dateTime: DateTime | null;

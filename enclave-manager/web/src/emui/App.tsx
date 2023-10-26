@@ -1,11 +1,10 @@
-import React from "react";
 import { Box } from "@chakra-ui/react";
-import { AppLayout } from "../components/AppLayout";
-import { Navbar } from "./Navbar";
-import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
-import { enclaveRoutes } from "./enclaves/Enclaves";
 import { KurtosisClientProvider } from "../client/KurtosisClientContext";
+import { AppLayout } from "../components/AppLayout";
+import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
+import { enclaveRoutes } from "./enclaves/Enclaves";
+import { Navbar } from "./Navbar";
 
 const router = createBrowserRouter([
   {

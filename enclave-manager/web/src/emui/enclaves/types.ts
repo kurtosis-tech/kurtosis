@@ -1,10 +1,9 @@
-import { EnclaveInfo } from "enclave-manager-sdk/build/engine_service_pb";
 import {
-  FilesArtifactNameAndUuid,
   GetServicesResponse,
   GetStarlarkRunResponse,
   ListFilesArtifactNamesAndUuidsResponse,
 } from "enclave-manager-sdk/build/api_container_service_pb";
+import { EnclaveInfo } from "enclave-manager-sdk/build/engine_service_pb";
 
 type NonFunctionKeyNames<T> = Exclude<
   {

@@ -1,6 +1,6 @@
-import { LoaderFunction, useLoaderData, useMatches } from "react-router-dom";
 import { Box } from "@chakra-ui/react";
 import { UIMatch } from "@remix-run/router";
+import { LoaderFunction, useLoaderData, useMatches } from "react-router-dom";
 
 export type EnclaveLoaderData = {
   name: string;

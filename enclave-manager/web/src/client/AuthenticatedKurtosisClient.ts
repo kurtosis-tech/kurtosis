@@ -1,8 +1,8 @@
-import { KurtosisClient } from "./KurtosisClient";
-import { KURTOSIS_DEFAULT_PORT } from "./constants";
 import { createPromiseClient } from "@connectrpc/connect";
-import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
+import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
+import { KURTOSIS_DEFAULT_PORT } from "./constants";
+import { KurtosisClient } from "./KurtosisClient";
 
 function constructGatewayURL(host: string): string {
   return `https://cloud.kurtosis.com/gateway/ips/${host}/ports/${KURTOSIS_DEFAULT_PORT}`;

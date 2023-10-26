@@ -1,7 +1,6 @@
-import { NavButton, Navigation } from "../components/Navigation";
 import { FiHome, FiPackage } from "react-icons/fi";
-import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { NavButton, Navigation } from "../components/Navigation";
 
 export const Navbar = () => {
   const location = useLocation();

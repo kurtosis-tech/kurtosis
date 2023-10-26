@@ -1,8 +1,8 @@
-import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
-import { KurtosisClient } from "./KurtosisClient";
 import { Alert, AlertDescription, AlertIcon, AlertTitle, Flex, Heading, Spinner } from "@chakra-ui/react";
+import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
 import { assertDefined, isDefined, isStringTrue, stringifyError } from "../utils";
 import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
+import { KurtosisClient } from "./KurtosisClient";
 import { LocalKurtosisClient } from "./LocalKurtosisClient";
 
 type KurtosisClientContextState = {

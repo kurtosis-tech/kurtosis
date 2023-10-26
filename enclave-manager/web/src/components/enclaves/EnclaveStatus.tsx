@@ -1,5 +1,5 @@
-import { EnclaveContainersStatus } from "enclave-manager-sdk/build/engine_service_pb";
 import { Tag } from "@chakra-ui/react";
+import { EnclaveContainersStatus } from "enclave-manager-sdk/build/engine_service_pb";
 
 type EnclaveStatusProps = {
   status: EnclaveContainersStatus;

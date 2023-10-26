@@ -1,9 +1,9 @@
 import { Button, ButtonGroup, Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
-import { useKurtosisClient } from "../../client/KurtosisClientContext";
 import { useEffect, useState } from "react";
-import { isDefined } from "../../utils";
-import { EnclavesTable } from "../../components/enclaves/EnclavesTable";
 import { FiPlus, FiTrash2 } from "react-icons/fi";
+import { useKurtosisClient } from "../../client/KurtosisClientContext";
+import { EnclavesTable } from "../../components/enclaves/EnclavesTable";
+import { isDefined } from "../../utils";
 import { EnclaveFullInfo } from "./types";
 
 export const EnclaveList = () => {

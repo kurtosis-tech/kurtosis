@@ -1,18 +1,18 @@
-import { Table, Thead, Tbody, Tr, Th, Td, chakra } from "@chakra-ui/react";
 import { TriangleDownIcon, TriangleUpIcon } from "@chakra-ui/icons";
+import { chakra, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
 import {
-  useReactTable,
+  ColumnDef,
   flexRender,
   getCoreRowModel,
-  ColumnDef,
-  SortingState,
   getSortedRowModel,
+  SortingState,
   TableState,
+  useReactTable,
 } from "@tanstack/react-table";
+import { type RowSelectionState } from "@tanstack/table-core/src/features/RowSelection";
+import { type OnChangeFn } from "@tanstack/table-core/src/types";
 import { useState } from "react";
 import { assertDefined, isDefined } from "../utils";
-import { type OnChangeFn } from "@tanstack/table-core/src/types";
-import { type RowSelectionState } from "@tanstack/table-core/src/features/RowSelection";
 
 export type DataTableProps<Data extends object> = {
   data: Data[];

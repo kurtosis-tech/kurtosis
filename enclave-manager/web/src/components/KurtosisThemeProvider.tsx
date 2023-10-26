@@ -1,9 +1,9 @@
-import { mode } from "@chakra-ui/theme-tools";
 import { ChakraProvider, defineStyle, extendTheme, StyleFunctionProps, ThemeConfig, Tooltip } from "@chakra-ui/react";
-import { PropsWithChildren } from "react";
 import type { ChakraProviderProps } from "@chakra-ui/react/dist/chakra-provider";
-import { tabsTheme } from "./theme/tabsTheme";
+import { mode } from "@chakra-ui/theme-tools";
+import { PropsWithChildren } from "react";
 import Fonts from "./theme/Fonts";
+import { tabsTheme } from "./theme/tabsTheme";
 import { tagTheme } from "./theme/tagsTheme";
 
 // https://github.com/chakra-ui/chakra-ui/issues/3347

@@ -1,6 +1,6 @@
-import { KurtosisBreadcrumbs, KurtosisBreadcrumb } from "../../components/KurtosisBreadcrumbs";
-import { isDefined } from "../../utils";
 import { Flex } from "@chakra-ui/react";
+import { KurtosisBreadcrumb, KurtosisBreadcrumbs } from "../../components/KurtosisBreadcrumbs";
+import { isDefined } from "../../utils";
 import { useEnclaveRouteMatches } from "./Enclave";
 
 export const EnclaveBreadcrumbs = () => {

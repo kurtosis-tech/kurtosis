@@ -1,16 +1,16 @@
-import { EnclaveContainersStatus } from "enclave-manager-sdk/build/engine_service_pb";
-import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import { DataTable } from "../DataTable";
-import { DateTime } from "luxon";
 import { Button, Checkbox } from "@chakra-ui/react";
-import { EnclaveFullInfo } from "../../emui/enclaves/types";
-import { EnclaveStatus } from "./EnclaveStatus";
-import { EnclaveSourceButton } from "./EnclaveSourceButton";
-import { RelativeDateTime } from "../RelativeDateTime";
+import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
-import { EnclaveServicesSummary } from "./EnclaveServicesSummary";
-import { EnclaveArtifactsSummary } from "./EnclaveArtifactsSummary";
+import { EnclaveContainersStatus } from "enclave-manager-sdk/build/engine_service_pb";
+import { DateTime } from "luxon";
 import { useMemo } from "react";
+import { EnclaveFullInfo } from "../../emui/enclaves/types";
+import { DataTable } from "../DataTable";
+import { RelativeDateTime } from "../RelativeDateTime";
+import { EnclaveArtifactsSummary } from "./EnclaveArtifactsSummary";
+import { EnclaveServicesSummary } from "./EnclaveServicesSummary";
+import { EnclaveSourceButton } from "./EnclaveSourceButton";
+import { EnclaveStatus } from "./EnclaveStatus";
 
 type EnclaveTableRow = {
   uuid: string;

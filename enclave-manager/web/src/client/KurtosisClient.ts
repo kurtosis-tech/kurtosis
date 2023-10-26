@@ -1,6 +1,6 @@
 import { PromiseClient } from "@connectrpc/connect";
-import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import { EnclaveInfo } from "enclave-manager-sdk/build/engine_service_pb";
+import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {
   GetListFilesArtifactNamesAndUuidsRequest,
   GetServicesRequest,
