@@ -12,6 +12,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/docker_compose_tranpsiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"io"
@@ -86,6 +87,7 @@ type ApiContainerService struct {
 
 	startosisRunner *startosis_engine.StartosisRunner
 
+	// TODO rename to packageContentProvider
 	startosisModuleContentProvider startosis_packages.PackageContentProvider
 
 	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy
@@ -160,12 +162,15 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	return nil
 }
 
+// Uploads a Starlark package for later execution
 func (apicService *ApiContainerService) UploadStarlarkPackage(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadStarlarkPackageServer) error {
 	var packageId string
 	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, emptypb.Empty](server)
 
 	err := serverStream.ReceiveData(
 		packageId,
+		// TODO instead, parse the kurtosis.yml on the APIC side
+
 		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
 			if packageId == "" {
 				packageId = dataChunk.GetMetadata().GetName()
@@ -237,6 +242,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
 	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 
+	// TODO maybe move this inside????
 	if relativePathToMainFile == "" {
 		relativePathToMainFile = startosis_constants.MainFileName
 	}
@@ -727,8 +733,8 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	packageId string,
 	clonePackage bool,
-	moduleContentIfLocal []byte,
-	relativePathToMainFile string,
+	moduleContentIfLocal []byte, // This is mutually exclusive with clonePackage - if clonePackage is set, this will be empty
+	relativePathToMainFile string, // TODO handle this in the Compose case
 ) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
@@ -749,20 +755,38 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 		return "", nil, interpretationError
 	}
 
-	kurtosisYml, interpretationError := apicService.startosisModuleContentProvider.GetKurtosisYaml(packageRootPathOnDisk)
-	if interpretationError != nil {
-		return "", nil, interpretationError
-	}
+	var kurtosisYml *yaml_parser.KurtosisYaml
+	var mainScriptToExecute string
 
-	pathToMainFile := path.Join(packageRootPathOnDisk, relativePathToMainFile)
+	// TODO CLEAN THIS GIGANTIC MESS UP
+	//  Shouldn't be duplicating stuff done in CLI!
+	if packageId == "github.com/kurtosis-tech/FAKE-COMPOSE-PACKAGE" {
+		kurtosisYml = &yaml_parser.KurtosisYaml{
+			PackageName:           packageId,
+			PackageDescription:    "TODO",
+			PackageReplaceOptions: nil,
+		}
 
-	if _, err := os.Stat(pathToMainFile); err != nil {
-		return "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
-	}
+		// TODO it'd be really cool if we use the "relativePathToMain" to point to the compose file (that way you could
+		//  even run a compose that's not at the root)
+		mainScriptToExecute = docker_compose_tranpsiler.TranspileDockerComposeToStarlark()
+	} else {
+		kurtosisYml, interpretationError = apicService.startosisModuleContentProvider.GetKurtosisYaml(packageRootPathOnDisk)
+		if interpretationError != nil {
+			return "", nil, interpretationError
+		}
 
-	mainScriptToExecute, err := os.ReadFile(pathToMainFile)
-	if err != nil {
-		return "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		pathToMainFile := path.Join(packageRootPathOnDisk, relativePathToMainFile)
+
+		if _, err := os.Stat(pathToMainFile); err != nil {
+			return "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		}
+
+		mainScriptToExecuteBytes, err := os.ReadFile(pathToMainFile)
+		if err != nil {
+			return "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		}
+		mainScriptToExecute = string(mainScriptToExecuteBytes)
 	}
 
 	return string(mainScriptToExecute), kurtosisYml, nil

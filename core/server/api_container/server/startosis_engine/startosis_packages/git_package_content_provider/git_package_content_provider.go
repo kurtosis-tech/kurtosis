@@ -33,10 +33,13 @@ const (
 	defaultDepth = 1
 	// this gets us the entire history - useful for fetching commits on a repo
 	depthAssumingBranchTagsCommitsAreSpecified = 0
-	howImportWorksLink                         = "https://docs.kurtosis.com/explanations/how-do-kurtosis-imports-work"
-	filePathToKurtosisYamlNotFound             = ""
-	replaceCountPackageDirWithGithubConstant   = 1
 
+	// TODO this should be moved to our list of URLs that get unit-tested to ensure they're valid!
+	howImportWorksLink                       = "https://docs.kurtosis.com/explanations/how-do-kurtosis-imports-work"
+	filePathToKurtosisYamlNotFound           = ""
+	replaceCountPackageDirWithGithubConstant = 1
+
+	// TODO this should be moved our list of URLs that get unit-tested to ensure they're valid!
 	packageDocLink        = "https://docs.kurtosis.com/concepts-reference/packages"
 	osPathSeparatorString = string(os.PathSeparator)
 
@@ -44,6 +47,7 @@ const (
 )
 
 type GitPackageContentProvider struct {
+	// Where to temporarily store packages while
 	packagesTmpDir                  string
 	packagesDir                     string
 	packageReplaceOptionsRepository *packageReplaceOptionsRepository
@@ -197,6 +201,8 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while writing contents of '%v' to '%v'", packageId, tempFile.Name())
 	}
+	// TODO(kevin) shouldn't we unarchive to a temp directory and move after, so that if an error occurs we don't pollute the package store with half-extracted
+	//  stuff?
 	err = archiver.Unarchive(tempFile.Name(), packageAbsolutePathOnDisk)
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while unarchiving '%v' to '%v'", tempFile.Name(), packageAbsolutePathOnDisk)

@@ -20,7 +20,7 @@ require (
 )
 
 require (
-	golang.org/x/exp v0.0.0-20230725093048-515e97ebf090
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	k8s.io/utils v0.0.0-20230711102312-30195339c3c7
 )
 

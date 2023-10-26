@@ -48,6 +48,18 @@ const (
 	dotRelativePathIndicatorString = "."
 )
 
+// TODO(kevin) Remove this once package ID is detected ONLY the APIC side (i.e. the CLI doesn't need to tell the APIC
+//
+//	the name of the package it's sending)
+var supportedDockerComposeYmlFilenames = []string{
+	"compose.yml",
+	"compose.yaml",
+	"docker-compose.yml",
+	"docker-compose.yaml",
+	"docker_compose.yml",
+	"docker_compose.yaml",
+}
+
 // Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
 type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
@@ -142,12 +154,31 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
-	kurtosisYml, err := getKurtosisYaml(packageRootPath)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis yaml file from path '%s'", packageRootPath)
+	// TODO swap this out for something with compose
+	// TODO if compose, set
+
+	// TODO Make this entire if much cleaner
+	var kurtosisYml *KurtosisYaml
+	if false {
+		// We have a kurtosis.yml, so try to parse it
+		kurtosisYml, err = getKurtosisYaml(packageRootPath)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis yaml file from path '%s'", packageRootPath)
+		}
+	} else if true {
+		kurtosisYml = &KurtosisYaml{
+			// TODO does this have to be a Github URL?
+			// TODO Clean this up
+			PackageName:           "github.com/kurtosis-tech/FAKE-COMPOSE-PACKAGE",
+			PackageDescription:    "TODO",
+			PackageReplaceOptions: nil,
+		}
+	} else {
+		// TODO make this a real error if we don't have a kurtosis.yml nor a compose.yml
+		return nil, nil, stacktrace.NewError("SCREAM AND PANIC!")
 	}
 
-	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(kurtosisYml, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId)
+	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(kurtosisYml.PackageName, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
@@ -522,7 +553,7 @@ func getErrFromStarlarkRunResult(result *StarlarkRunResult) error {
 }
 
 func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
-	kurtosisYaml *KurtosisYaml,
+	packageName,
 	relativePathToMainFile string,
 	mainFunctionName string,
 	serializedParams string,
@@ -533,7 +564,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 	cloudUserId string,
 ) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 
-	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId), nil
+	return binding_constructors.NewRunStarlarkPackageArgs(packageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId), nil
 }
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
