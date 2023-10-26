@@ -14,11 +14,13 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
+	"github.com/docker/go-units"
 	kurtosis_sdk_version "github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -1241,6 +1243,72 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository.", dockerImage)
 		}
 	}
+
+	return nil
+}
+
+func (manager *DockerManager) BuildImage(ctx context.Context, buildContext io.Reader) error {
+	// TODO: FIGURE OUT WHAT OPTIONS WE NEED TO BUILD IMAGES
+	imageBuildOpts := types.ImageBuildOptions{
+		Tags:           []string{},              // what tags should we put?
+		SuppressOutput: false,                   // what does this do?
+		RemoteContext:  "",                      // whats a remote context/
+		NoCache:        false,                   // whats no cache? assuming this won't build again if the image is already cached
+		Remove:         false,                   // hmm does this override the existing image?
+		ForceRemove:    false,                   // does this override the existing image?
+		PullParent:     false,                   // what does this do?
+		Isolation:      container.Isolation(""), // tf is this
+		CPUSetCPUs:     "",
+		CPUSetMems:     "string",
+		CPUShares:      0,
+		CPUQuota:       0,
+		CPUPeriod:      0,
+		Memory:         0,
+		MemorySwap:     0,
+		CgroupParent:   "",
+		NetworkMode:    "",
+		ShmSize:        0,
+		Dockerfile:     "", // hmm is this the name of the docker file?
+		Ulimits:        []*units.Ulimit{},
+		// BuildArgs needs to be a *string instead of just a string so that
+		// we can tell the difference between "" (empty string) and no value
+		// at all (nil). See the parsing of buildArgs in
+		// api/server/router/build/build_routes.go for even more info.
+		BuildArgs:   map[string]*string{}, // what build args do we require?
+		AuthConfigs: map[string]registry.AuthConfig{},
+		Context:     buildContext,
+		Labels:      map[string]string{}, // how do we want to label this image?
+		// squash the resulting image's layers to the parent
+		// preserves the original image and creates a new one from the parent with all
+		// the changes applied to a single layer
+		Squash: false, // this will probably make image building faster
+		// CacheFrom specifies images that are used for matching cache. Images
+		// specified here do not need to have a valid parent chain to match cache.
+		CacheFrom:   []string{},
+		SecurityOpt: []string{},
+		ExtraHosts:  []string{}, // List of extra hosts
+		Target:      "",
+		SessionID:   "",
+		Platform:    "",
+		// Version specifies the version of the underlying builder to use
+		Version: types.BuilderVersion(""), //
+		// BuildID is an optional identifier that can be passed together with the
+		// build request. The same identifier can be used to gracefully cancel the
+		// build with the cancel request.
+		BuildID: "", // prob don't need this
+		// Outputs defines configurations for exporting build results. Only supported in BuildKit mode.
+		Outputs: []types.ImageBuildOutput{}, // we prob don't need this
+	}
+
+	imageBuildResponse, err := manager.dockerClient.ImageBuild(ctx, buildContext, imageBuildOpts)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", "PLACEHOLDER")
+	}
+	defer func() {
+		if err := imageBuildResponse.Body.Close(); err != nil {
+			logrus.Warnf("An error occurred attempting to close the image build response body!")
+		}
+	}()
 
 	return nil
 }

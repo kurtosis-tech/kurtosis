@@ -482,7 +482,7 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 }
 
 func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, buildContext io.Reader) error {
-	return nil
+	return backend.dockerManager.BuildImage(ctx, buildContext)
 }
 
 // ====================================================================================================
