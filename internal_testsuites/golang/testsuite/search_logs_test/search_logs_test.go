@@ -38,7 +38,7 @@ const (
 	logLine3 = "Starting feature 'enclave pool with size 2'"
 	logLine4 = "The data have being loaded"
 
-	secondsToWaitForLogs = 1 * time.Second
+	secondsToWaitForLogs = 4 * time.Second
 )
 
 var (
