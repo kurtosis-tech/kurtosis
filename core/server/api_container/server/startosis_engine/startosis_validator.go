@@ -35,8 +35,6 @@ type StartosisValidator struct {
 	serviceNetwork    service_network.ServiceNetwork
 	fileArtifactStore *enclave_data_directory.FilesArtifactStore
 
-	packageContentProvider startosis_packages.PackageContentProvider
-
 	backend *backend_interface.KurtosisBackend
 }
 
@@ -45,13 +43,12 @@ func NewStartosisValidator(
 	serviceNetwork service_network.ServiceNetwork,
 	fileArtifactStore *enclave_data_directory.FilesArtifactStore,
 	packageContentProvider startosis_packages.PackageContentProvider) *StartosisValidator {
-	imagesValidator := startosis_validator.NewImagesValidator(kurtosisBackend)
+	imagesValidator := startosis_validator.NewImagesValidator(kurtosisBackend, packageContentProvider)
 	return &StartosisValidator{
-		imagesValidator:        imagesValidator,
-		serviceNetwork:         serviceNetwork,
-		fileArtifactStore:      fileArtifactStore,
-		packageContentProvider: packageContentProvider,
-		backend:                kurtosisBackend,
+		imagesValidator:   imagesValidator,
+		serviceNetwork:    serviceNetwork,
+		fileArtifactStore: fileArtifactStore,
+		backend:           kurtosisBackend,
 	}
 }
 

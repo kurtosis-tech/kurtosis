@@ -5,8 +5,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"os"
 	"sync"
 )
 
@@ -14,11 +17,15 @@ const maxNumberOfConcurrentDownloads = int64(4)
 
 type ImagesValidator struct {
 	kurtosisBackend *backend_interface.KurtosisBackend
+
+	// packageContentProvider enables retrieving the buildContext for building an image
+	packageContentProvider startosis_packages.PackageContentProvider
 }
 
-func NewImagesValidator(kurtosisBackend *backend_interface.KurtosisBackend) *ImagesValidator {
+func NewImagesValidator(kurtosisBackend *backend_interface.KurtosisBackend, packageContentProvider startosis_packages.PackageContentProvider) *ImagesValidator {
 	return &ImagesValidator{
-		kurtosisBackend,
+		kurtosisBackend:        kurtosisBackend,
+		packageContentProvider: packageContentProvider,
 	}
 }
 
@@ -50,18 +57,18 @@ func (validator *ImagesValidator) Validate(
 	wg := &sync.WaitGroup{}
 	for image := range environment.requiredDockerImages {
 		wg.Add(1)
-		go fetchImageFromBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, image, imageValidationErrors, imageValidationStarted, imageValidationFinished)
+		go validator.fetchImageFromBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, image, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
 	for serviceName, imageBuildSpec := range environment.imagesToBuild {
 		wg.Add(1)
 		image := string(serviceName)
-		go buildImageUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, image, imageBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
+		go validator.buildImageUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, image, imageBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
 	wg.Wait()
 	logrus.Debug("All image validation submitted, currently in progress.")
 }
 
-func fetchImageFromBackend(
+func (validator *ImagesValidator) fetchImageFromBackend(
 	ctx context.Context,
 	wg *sync.WaitGroup,
 	imageCurrentlyDownloading chan bool,
@@ -90,7 +97,7 @@ func fetchImageFromBackend(
 	logrus.Debugf("Container image '%s' successfully downloaded", imageName)
 }
 
-func buildImageUsingBackend(
+func (validator *ImagesValidator) buildImageUsingBackend(
 	ctx context.Context,
 	wg *sync.WaitGroup,
 	imageCurrentlyBuilding chan bool,
@@ -112,8 +119,14 @@ func buildImageUsingBackend(
 	}()
 
 	logrus.Debugf("Starting the build of image: '%s'", imageName)
-	buildContext := getBuildContextFromContextDir(imageBuildSpec)
-	err := (*backend).BuildImage(ctx, buildContext)
+	buildContext, err := validator.getBuildContextFromContextDir(imageBuildSpec)
+	if err != nil {
+		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())
+		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageName)
+		return
+	}
+
+	err = (*backend).BuildImage(ctx, buildContext)
 	if err != nil {
 		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())
 		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageName)
@@ -122,6 +135,19 @@ func buildImageUsingBackend(
 	logrus.Debugf("Container image '%s' successfully built", imageName)
 }
 
-func getBuildContextFromContextDir(imageBuildSpec *image_build_spec.ImageBuildSpec) io.Reader {
-	return nil
+func (validator *ImagesValidator) getBuildContextFromContextDir(imageBuildSpec *image_build_spec.ImageBuildSpec) (io.Reader, error) {
+	contextDir := imageBuildSpec.GetContextDir()
+	buildContextAbsDir, interpretationErr := validator.packageContentProvider.GetOnDiskAbsoluteFilePath(contextDir)
+	if interpretationErr != nil {
+		// TODO: Improve this error message
+		return nil, stacktrace.NewError("An error occurred attempting to get the absolute filepath of the image build context directory.")
+	}
+
+	buildContext, err := os.Open(buildContextAbsDir)
+	if err != nil {
+		// TODO: Improve this error message
+		return nil, stacktrace.Propagate(err, "An error occurred attempting to open the build context.")
+	}
+
+	return buildContext, nil
 }

@@ -22,7 +22,13 @@ type ValidatorEnvironment struct {
 	minMemoryByServiceName        map[service.ServiceName]compute_resources.MemoryInMegaBytes
 }
 
-func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(
+	serviceNames map[service.ServiceName]bool,
+	artifactNames map[string]bool,
+	serviceNameToPrivatePortIds map[service.ServiceName][]string,
+	availableCpuInMilliCores compute_resources.CpuMilliCores,
+	availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes,
+	isResourceInformationComplete bool) *ValidatorEnvironment {
 	serviceNamesWithComponentExistence := map[service.ServiceName]ComponentExistence{}
 	for serviceName := range serviceNames {
 		serviceNamesWithComponentExistence[serviceName] = ComponentExistedBeforePackageRun
