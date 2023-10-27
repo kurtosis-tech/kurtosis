@@ -1,9 +1,6 @@
 package docker_manager
 
 import (
-	"context"
-	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -168,20 +165,20 @@ func TestPullImageWithRetries(t *testing.T) {
 	//require.False(t, retry)
 }
 
-func TestBuildImage(t *testing.T) {
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	require.NoError(t, err)
-	require.NotNil(t, dockerClient)
-
-	ctx := context.Background()
-	clientOpts := []client.Opt{client.FromEnv, client.WithAPIVersionNegotiation()}
-	dockerManager, err := CreateDockerManager(clientOpts)
-	require.NoError(t, err)
-
-	containerImageFilePath := "/Users/tewodrosmitiku/Desktop/kurtosis/awesome-compose/angular/Dockerfile"
-	contextDirPath := "/Users/tewodrosmitiku/Desktop/kurtosis/awesome-compose/angular/angular"
-
-	imageBuildSpec := image_build_spec.NewImageBuildSpec(contextDirPath, containerImageFilePath, "builder")
-	err = dockerManager.BuildImage(ctx, "angular", imageBuildSpec)
-	require.NoError(t, err)
-}
+//func TestBuildImage(t *testing.T) {
+//	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+//	require.NoError(t, err)
+//	require.NotNil(t, dockerClient)
+//
+//	ctx := context.Background()
+//	clientOpts := []client.Opt{client.FromEnv, client.WithAPIVersionNegotiation()}
+//	dockerManager, err := CreateDockerManager(clientOpts)
+//	require.NoError(t, err)
+//
+//	containerImageFilePath := "/Users/argos/code/awesome-compose/angular/angular/Dockerfile"
+//	contextDirPath := "/Users/argos/code/awesome-compose/angular/angular"
+//
+//	imageBuildSpec := image_build_spec.NewImageBuildSpec(contextDirPath, containerImageFilePath, "builder")
+//	err = dockerManager.BuildImage(ctx, "foobarbang", imageBuildSpec)
+//	require.NoError(t, err)
+//}

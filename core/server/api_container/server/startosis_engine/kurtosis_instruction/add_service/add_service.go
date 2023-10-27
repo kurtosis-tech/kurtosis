@@ -254,11 +254,13 @@ func validateAndConvertConfigAndReadyCondition(
 	return apiServiceConfig, readyCondition, nil
 }
 
+// Converts a Starlark ImageBuildSpec object into the equivalent object for the container-engine-lib
 func getImageBuildSpecObj(
 	serviceConfig *service_config.ServiceConfig,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string) (*image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
+	packageReplaceOptions map[string]string,
+) (*image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
 	var imageBuildSpecObj *image_build_spec.ImageBuildSpec
 	var interpretationErr *startosis_errors.InterpretationError
 
