@@ -17,6 +17,7 @@ import (
 	"go.starlark.net/starlark"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -103,25 +104,28 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		return "", stacktrace.Propagate(err, "An error occurred parsing the Compose file in preparation for Starlark transpilation")
 	}
 
-	starlarkLines := []string{}
+	perServiceDependencies := map[string]map[string]bool{}
+
+	// Mapping of services -> lines of Starlark that they need to run
+	perServiceLines := map[string][]string{}
+	numTotalServiceLines := 0
+
+	// List of sorted service names that we'll use to make sure we process depends_on correctly
+	sortedServiceNames := []string{}
+
 	for _, serviceConfig := range compose.Services {
 		serviceName := serviceConfig.Name
 
+		// TODO(kevin): handle the dependencyType
+		dependencyServiceNames := map[string]bool{}
+		for dependencyName := range serviceConfig.DependsOn {
+			dependencyServiceNames[dependencyName] = true
+		}
+		perServiceDependencies[serviceName] = dependencyServiceNames
+
+		sortedServiceNames = append(sortedServiceNames, serviceName)
+
 		serviceConfigKwargs := []starlark.Tuple{}
-
-		/*
-			artifactsPiecesStr := []string{}
-			for volumeIdx, volume := range serviceConfig.Volumes {
-				if volume.Type != types.VolumeTypeBind {
-					return "", stacktrace.NewError("Volume #%v on service '%v' has type '%v', which isn't supported", serviceName, volumeIdx, volume.Type)
-				}
-				if _, ok := requiredFileUploads[volume.Source]; !ok {
-					requiredFileUploads[volume.Source] = name_generator.GenerateNatureThemeNameForFileArtifacts()
-				}
-				artifactsPiecesStr = append(artifactsPiecesStr, fmt.Sprintf("%s:%s", volume.Target, requiredFileUploads[volume.Source]))
-			}
-
-		*/
 
 		// Image: use either serviceConfig.Image(docker compose) or ImageBuildSpec
 		if serviceConfig.Image != "" {
@@ -295,14 +299,56 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		}
 		serviceConfigStr := serviceConfigKurtosisType.String()
 
+		linesForService := []string{}
+
 		for relativePath, filesArtifactName := range pathsToUpload {
 			// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
 			uploadFilesLine := fmt.Sprintf("plan.upload_files(src = \"%s\", name = \"%s\")", relativePath, filesArtifactName)
-			starlarkLines = append(starlarkLines, uploadFilesLine)
+			linesForService = append(linesForService, uploadFilesLine)
 		}
 		// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
 		addServiceLine := fmt.Sprintf("plan.add_service(name = \"%s\", config = %s)", serviceName, serviceConfigStr)
-		starlarkLines = append(starlarkLines, addServiceLine)
+		linesForService = append(linesForService, addServiceLine)
+
+		perServiceLines[serviceName] = linesForService
+		numTotalServiceLines += len(linesForService)
+	}
+
+	sort.Strings(sortedServiceNames)
+
+	// TODO(kevin) SWITCH THIS TO BE A PROPER DAG!!! This doesn't catch circular depencies
+	// This is a superjanky, inefficient (but deterministic) topological sort
+	starlarkLines := make([]string, 0, numTotalServiceLines)
+	alreadyProcessedServices := map[string]bool{} // "Set" of service lines that we've already written
+	for len(alreadyProcessedServices) < len(perServiceLines) {
+		// Important to iterate over the sorted version, to have a deterministic topological sort
+		var serviceToProcess string
+		for _, serviceName := range sortedServiceNames {
+			//
+			if _, found := alreadyProcessedServices[serviceName]; found {
+				continue
+			}
+
+			// Check if all dependencies have already been processed
+			allDependenciesProcessed := true
+			for dependencyName := range perServiceDependencies[serviceName] {
+				if _, found := alreadyProcessedServices[dependencyName]; !found {
+					allDependenciesProcessed = false
+					break
+				}
+			}
+			if !allDependenciesProcessed {
+				continue
+			}
+
+			// We've found a service that can be processed now
+			serviceToProcess = serviceName
+			break
+		}
+
+		linesForService := perServiceLines[serviceToProcess]
+		starlarkLines = append(starlarkLines, linesForService...)
+		alreadyProcessedServices[serviceToProcess] = true
 	}
 
 	// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
