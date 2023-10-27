@@ -1311,7 +1311,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		SessionID:   "",
 		Platform:    "",
 		// Version specifies the version of the underlying builder to use
-		Version: types.BuilderVersion("2"), // Use 2 for BuildKit
+		Version: types.BuilderVersion(types.BuilderBuildKit),
 		// BuildID is an optional identifier that can be passed together with the
 		// build request. The same identifier can be used to gracefully cancel the
 		// build with the cancel request.
