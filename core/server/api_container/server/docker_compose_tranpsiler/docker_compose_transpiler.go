@@ -40,11 +40,11 @@ var supportedComposeFilenames = []string{
 
 // TODO actually take in a Compose file
 func TranspileDockerComposePackageToStarlark(packageAbsDirpath string) (string, error) {
-	composeFilepath, err := getComposeFilepath(packageAbsDirpath)
+	// Useful for logging, to not leak internals of APIC
+	composeFilename, composeBytes, err := getComposeFilenameAndContent(packageAbsDirpath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the Compose file to parse")
+		return "", stacktrace.Propagate(err, "An error occurred reading the Compose file")
 	}
-	composeFilename := path.Base(composeFilepath) // Useful for logging, to not leak internals of APIC
 
 	// Use the envvars file next to the Compose if it exists
 	envVarsFilepath := path.Join(packageAbsDirpath, envVarsFilename)
@@ -58,20 +58,9 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string) (string, 
 	}
 	envVars = envVarsInFile
 
-	project, err := loader.Load(types.ConfigDetails{ //nolint:exhaustruct
-		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
-		ConfigFiles: []types.ConfigFile{{
-			Filename: composeFilepath,
-		}},
-		Environment: envVars,
-	})
+	script, err := convertComposeToStarlark(composeBytes, envVars)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred parsing the '%v' Compose file in preparation for Starlark transpilation", composeFilename)
-	}
-
-	script, _, err := convertComposeProjectToStarlark(project)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred transpiling the '%v' Compose file to Starlark", composeFilename)
+		return "", stacktrace.Propagate(err, "An error occurred transpiling Compose file '%v' to Starlark", composeFilename)
 	}
 	return script, nil
 }
@@ -80,25 +69,34 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string) (string, 
 //                                   Private Helper Functions
 // ====================================================================================================
 
-func getComposeFilepath(packageAbsDirpath string) (string, error) {
+func getComposeFilenameAndContent(packageAbsDirpath string) (string, []byte, error) {
 	for _, composeFilename := range supportedComposeFilenames {
 		composeFilepath := path.Join(packageAbsDirpath, composeFilename)
-		if _, err := os.Stat(composeFilepath); err != nil {
-			return composeFilepath, nil
+		composeBytes, err := os.ReadFile(composeFilepath)
+		if err != nil {
+			continue
 		}
+
+		return composeFilename, composeBytes, nil
 	}
 
 	joinedComposeFilenames := strings.Join(supportedComposeFilenames, ", ")
-	return "", stacktrace.NewError("Failed to transpile Docker Compose package to Starlark because no Compose file was found at the package root after looking for the following files: %s", joinedComposeFilenames)
+	return "", nil, stacktrace.NewError("Failed to transpile Docker Compose package to Starlark because no Compose file was found at the package root after looking for the following files: %s", joinedComposeFilenames)
 }
 
 // TODO(victor.colombo): Have a better UX letting people know ports have been remapped
 // NOTE: This returns Go errors, not
-func convertComposeProjectToStarlark(compose *types.Project) (string, map[string]string, error) {
-	return `
-	def run(plan):
-		plan.print("It's working!")
-	`, nil, nil
+func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (string, error) {
+	project, err := loader.Load(types.ConfigDetails{ //nolint:exhaustruct
+		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
+		ConfigFiles: []types.ConfigFile{{
+			Content: composeBytes,
+		}},
+		Environment: envVars,
+	})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred parsing the Compose file in preparation for Stalrark transpilation")
+	}
 
 	serviceStarlarks := map[string]string{}
 	requiredFileUploads := map[string]string{}
