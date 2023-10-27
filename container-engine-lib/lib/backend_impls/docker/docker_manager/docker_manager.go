@@ -29,8 +29,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver/v3"
+	"github.com/moby/buildkit/session"
 	"github.com/sirupsen/logrus"
 	"io"
 	"math"
@@ -152,6 +154,9 @@ const (
 	defaultTmpDir             = ""
 	ownerAllPermissions       = 0700
 	readonlyPermissions       = 0400
+
+	// Per https://github.com/hashicorp/waypoint/pull/1937/files
+	buildkitSessionSharedKey = ""
 )
 
 type RestartPolicy string
@@ -193,6 +198,9 @@ Args:
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
 func CreateDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
+
+	// TODOO VALIDATION FOR A DOCKER VERSION THAT HAS BUILDKIT, like https://github.com/hashicorp/waypoint/pull/1937/files
+
 	optsWithTimeout := []client.Opt{
 		client.WithTimeout(dockerClientTimeout),
 	}
@@ -1269,10 +1277,34 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		return stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
 	}
 
+	// This whole sessions thing was blocking us from using Docker build, until we found this:
+	// https://github.com/hashicorp/waypoint/pull/1937
+	uuidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred generating a UUID to give the Docker Buildkit session")
+	}
+	sessionName := fmt.Sprintf("kurtosis-%s", uuidStr)
+
+	// We generate a new session every time because, per https://github.com/moby/buildkit/issues/1432 ,
+	// sharing sessions is an optimization
+	// We don't bother reusing sessions so that we don't hit bugs
+	buildkitSession, err := session.NewSession(ctx, sessionName, buildkitSessionSharedKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error")
+	}
+
+	dialSessionFunc := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
+		return manager.dockerClient.DialHijack(ctx, "/session", proto, meta)
+	}
+
+	// Activate the session
+	go buildkitSession.Run(ctx, dialSessionFunc)
+	defer buildkitSession.Close()
+
 	imageBuildOpts := types.ImageBuildOptions{
 		Tags:           []string{imageName},
 		SuppressOutput: false,
-		RemoteContext:  "",
+		RemoteContext:  "",    // We don't have a remote context (we're uploading it)
 		NoCache:        false, // needs to be false so image only rebuilds if docker detects changes to cached image
 		Remove:         false,
 		ForceRemove:    false,
@@ -1308,7 +1340,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		SecurityOpt: []string{},
 		ExtraHosts:  []string{}, // List of extra hosts
 		Target:      imageBuildSpec.GetTargetStage(),
-		SessionID:   "",
+		SessionID:   buildkitSession.ID(),
 		Platform:    "",
 		// Version specifies the version of the underlying builder to use
 		Version: types.BuilderVersion("2"), // Use 2 for BuildKit
