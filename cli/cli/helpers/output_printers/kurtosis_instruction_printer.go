@@ -107,6 +107,8 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 		return stacktrace.NewError("Cannot print with a non started printer")
 	}
 
+	logrus.Tracef("Response line from APIC: %+v", responseLine)
+
 	// process response payload
 	if responseLine.GetInstruction() != nil && verbosity != run.OutputOnly {
 		formattedInstruction := formatInstruction(responseLine.GetInstruction(), verbosity)

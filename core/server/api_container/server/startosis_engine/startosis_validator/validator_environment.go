@@ -10,7 +10,7 @@ import (
 
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
 type ValidatorEnvironment struct {
-	requiredDockerImages          map[string]bool
+	imagesToPull                  map[string]bool // "set" of images that need to be downloaded
 	imagesToBuild                 map[service.ServiceName]*image_build_spec.ImageBuildSpec
 	serviceNames                  map[service.ServiceName]ComponentExistence
 	artifactNames                 map[string]ComponentExistence
@@ -38,7 +38,7 @@ func NewValidatorEnvironment(
 		artifactNamesWithComponentExistence[artifactName] = ComponentExistedBeforePackageRun
 	}
 	return &ValidatorEnvironment{
-		requiredDockerImages:          map[string]bool{},
+		imagesToPull:                  map[string]bool{},
 		imagesToBuild:                 map[service.ServiceName]*image_build_spec.ImageBuildSpec{},
 		serviceNames:                  serviceNamesWithComponentExistence,
 		artifactNames:                 artifactNamesWithComponentExistence,
@@ -51,16 +51,16 @@ func NewValidatorEnvironment(
 	}
 }
 
-func (environment *ValidatorEnvironment) AppendRequiredContainerImage(containerImage string) {
-	environment.requiredDockerImages[containerImage] = true
+func (environment *ValidatorEnvironment) AppendRequiredImagePull(containerImage string) {
+	environment.imagesToPull[containerImage] = true
 }
 
 func (environment *ValidatorEnvironment) AppendRequiredImageBuild(serviceName service.ServiceName, imageBuildSpec *image_build_spec.ImageBuildSpec) {
 	environment.imagesToBuild[serviceName] = imageBuildSpec
 }
 
-func (environment *ValidatorEnvironment) GetNumberOfContainerImages() uint32 {
-	return uint32(len(environment.requiredDockerImages))
+func (environment *ValidatorEnvironment) GetNumberOfContainerImagesToProcess() uint32 {
+	return uint32(len(environment.imagesToPull) + len(environment.imagesToBuild))
 }
 
 func (environment *ValidatorEnvironment) AddServiceName(serviceName service.ServiceName) {
