@@ -295,7 +295,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		}
 		serviceConfigStr := serviceConfigKurtosisType.String()
 
-		for filesArtifactName, relativePath := range pathsToUpload {
+		for relativePath, filesArtifactName := range pathsToUpload {
 			// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
 			uploadFilesLine := fmt.Sprintf("plan.upload_files(src = \"%s\", name = \"%s\")", relativePath, filesArtifactName)
 			starlarkLines = append(starlarkLines, uploadFilesLine)
