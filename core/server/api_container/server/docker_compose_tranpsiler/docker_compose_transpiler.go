@@ -53,7 +53,6 @@ var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtoco
 	"sctp": port_spec.TransportProtocol_SCTP,
 }
 
-// TODO actually take in a Compose file
 func TranspileDockerComposePackageToStarlark(packageAbsDirpath string) (string, error) {
 	// Useful for logging, to not leak internals of APIC
 	composeFilename, composeBytes, err := getComposeFilenameAndContent(packageAbsDirpath)

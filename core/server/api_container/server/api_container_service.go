@@ -169,7 +169,6 @@ func (apicService *ApiContainerService) UploadStarlarkPackage(server kurtosis_co
 
 	err := serverStream.ReceiveData(
 		packageId,
-		// TODO instead, parse the kurtosis.yml on the APIC side
 
 		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
 			if packageId == "" {
@@ -230,7 +229,7 @@ func (apicService *ApiContainerService) InspectFilesArtifactContents(_ context.C
 }
 
 func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
-	packageId := args.GetPackageId()
+	packageIdFromArgs := args.GetPackageId()
 	parallelism := int(args.GetParallelism())
 	if parallelism == 0 {
 		parallelism = defaultParallelism
@@ -242,44 +241,43 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
 	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 
-	// TODO maybe move this inside????
 	if relativePathToMainFile == "" {
 		relativePathToMainFile = startosis_constants.MainFileName
 	}
 
-	// TODO: remove this fork once everything uses the UploadStarlarkPackage endpoint prior to calling this
-	//  right now the TS SDK still uses the old deprecated behavior
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
 	var isRemote bool
 	var kurtosisYml *yaml_parser.KurtosisYaml
 	if args.ClonePackage != nil {
-		scriptWithRunFunction, kurtosisYml, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
+		scriptWithRunFunction, kurtosisYml, interpretationError = apicService.runStarlarkPackageSetup(packageIdFromArgs, args.GetClonePackage(), nil, relativePathToMainFile)
 		isRemote = args.GetClonePackage()
 	} else {
-		// old deprecated syntax in use
+		// OLD DEPRECATED SYNTAX
+		// TODO: remove this fork once everything uses the UploadStarlarkPackage endpoint prior to calling this
+		//  right now the TS SDK still uses the old deprecated behavior
 		moduleContentIfLocal := args.GetLocal()
 		isRemote = args.GetRemote()
-		scriptWithRunFunction, kurtosisYml, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
+		scriptWithRunFunction, kurtosisYml, interpretationError = apicService.runStarlarkPackageSetup(packageIdFromArgs, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
 	}
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
-			return stacktrace.Propagate(err, "Error preparing for package execution and this error could not be sent through the output stream: '%s'", packageId)
+			return stacktrace.Propagate(err, "Error preparing for package execution and this error could not be sent through the output stream: '%s'", packageIdFromArgs)
 		}
 		return nil
 	}
-	packageName := kurtosisYml.GetPackageName()
+	packageNameFromKurtosisYml := kurtosisYml.GetPackageName()
 	packageReplaceOptions := kurtosisYml.GetPackageReplaceOptions()
 	logrus.Debugf("package replace options received '%+v'", packageReplaceOptions)
 
-	metricsErr := apicService.metricsClient.TrackKurtosisRun(packageName, isRemote, dryRun, isNotScript, cloudInstanceID, cloudUserId)
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(packageNameFromKurtosisYml, isRemote, dryRun, isNotScript, cloudInstanceID, cloudUserId)
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
-	apicService.runStarlark(parallelism, dryRun, packageName, packageReplaceOptions, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
+	apicService.runStarlark(parallelism, dryRun, packageNameFromKurtosisYml, packageReplaceOptions, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-		PackageId:              packageId,
+		PackageId:              packageIdFromArgs,
 		SerializedScript:       scriptWithRunFunction,
 		SerializedParams:       serializedParams,
 		Parallelism:            int32(parallelism),
@@ -734,7 +732,7 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	packageId string,
 	clonePackage bool,
-	moduleContentIfLocal []byte, // This is mutually exclusive with clonePackage - if clonePackage is set, this will be empty
+	moduleContentIfLocal []byte,   // This is mutually exclusive with clonePackage - if clonePackage is set, this will be empty
 	relativePathToMainFile string, // TODO handle this in the Compose case
 ) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
@@ -755,6 +753,8 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	if interpretationError != nil {
 		return "", nil, interpretationError
 	}
+
+	getPackageIdAndReplaces()
 
 	var kurtosisYml *yaml_parser.KurtosisYaml
 	var mainScriptToExecute string
@@ -985,4 +985,8 @@ func convertContainerStatusToServiceInfoContainerStatus(containerStatus containe
 	default:
 		return kurtosis_core_rpc_api_bindings.Container_UNKNOWN, stacktrace.NewError("Failed to convert container status %v", containerStatus)
 	}
+}
+
+func getPackageIdAndReplaces() {
+
 }
