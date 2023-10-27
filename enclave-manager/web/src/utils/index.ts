@@ -14,8 +14,6 @@ export function assertDefined<T>(v: T | null | undefined, message: string = "Val
   }
 }
 
-export const sleep = (ms: number = 5000) => new Promise((res) => setTimeout(res, ms));
-
 export function stringifyError(err: any): string {
   switch (typeof err) {
     case "bigint":
