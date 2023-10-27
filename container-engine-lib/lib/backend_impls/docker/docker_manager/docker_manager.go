@@ -15,13 +15,12 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/client/buildkit"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
-	"github.com/docker/go-units"
 	kurtosis_sdk_version "github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -31,6 +30,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver/v3"
+	bkclient "github.com/moby/buildkit/client"
+	bksession "github.com/moby/buildkit/session"
 	"github.com/sirupsen/logrus"
 	"io"
 	"math"
@@ -45,7 +46,7 @@ import (
 )
 
 const (
-	dockerClientTimeout = 30 * time.Second
+	dockerClientTimeout = 1000000 * time.Second
 	// We use a bridge network because, as of 2020-08-01, we're only running locally; however, this may need to change
 	//  at some point in the future
 	dockerNetworkDriver = "bridge"
@@ -1269,58 +1270,33 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		return stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
 	}
 
-	imageBuildOpts := types.ImageBuildOptions{
-		Tags:           []string{imageName},
-		SuppressOutput: false,
-		RemoteContext:  "",
-		NoCache:        false, // needs to be false so image only rebuilds if docker detects changes to cached image
-		Remove:         false,
-		ForceRemove:    false,
-		PullParent:     false,
-		Isolation:      container.Isolation(""),
-		CPUSetCPUs:     "",
-		CPUSetMems:     "",
-		CPUShares:      0,
-		CPUQuota:       0,
-		CPUPeriod:      0,
-		Memory:         0,
-		MemorySwap:     0,
-		CgroupParent:   "",
-		NetworkMode:    "",
-		ShmSize:        0,
-		Dockerfile:     defaultContainerImageFile,
-		Ulimits:        []*units.Ulimit{},
-		// BuildArgs needs to be a *string instead of just a string so that
-		// we can tell the difference between "" (empty string) and no value
-		// at all (nil). See the parsing of buildArgs in
-		// api/server/router/build/build_routes.go for even more info.
-		BuildArgs:   map[string]*string{}, // what build args do we require?
-		AuthConfigs: map[string]registry.AuthConfig{},
-		Context:     containerImageFileTarReader,
-		Labels:      map[string]string{}, // how do we want to label this image?
-		// squash the resulting image's layers to the parent
-		// preserves the original image and creates a new one from the parent with all
-		// the changes applied to a single layer
-		Squash: false, // this will probably make image building faster
-		// CacheFrom specifies images that are used for matching cache. Images
-		// specified here do not need to have a valid parent chain to match cache.
-		CacheFrom:   []string{},
-		SecurityOpt: []string{},
-		ExtraHosts:  []string{}, // List of extra hosts
-		Target:      imageBuildSpec.GetTargetStage(),
-		SessionID:   "",
-		Platform:    "",
-		// Version specifies the version of the underlying builder to use
-		Version: types.BuilderVersion(types.BuilderBuildKit),
-		// BuildID is an optional identifier that can be passed together with the
-		// build request. The same identifier can be used to gracefully cancel the
-		// build with the cancel request.
-		BuildID: "",
-		// Outputs defines configurations for exporting build results. Only supported in BuildKit mode.
-		Outputs: []types.ImageBuildOutput{},
+	//create a connection to the build kit client
+	commonApiClient := client.CommonAPIClient(manager.dockerClientNoTimeout)
+	bkClientOpts := buildkit.ClientOpts(commonApiClient)
+	buildkitClient, err := bkclient.New(ctx, "", bkClientOpts...)
+	if err != nil {
+		return err
 	}
 
-	imageBuildResponse, err := manager.dockerClient.ImageBuild(ctx, containerImageFileTarReader, imageBuildOpts)
+	session, err := bksession.NewSession(ctx, imageName, "")
+	if err != nil {
+		return err
+	}
+	go session.Run(ctx, buildkitClient.Dialer())
+	defer session.Close()
+
+	imageBuildOpts := types.ImageBuildOptions{ // eslint-disable-line
+		Tags:           []string{imageName},
+		SuppressOutput: false,
+		NoCache:        false, // needs to be false so image only rebuilds if docker detects changes to cached image
+		Dockerfile:     defaultContainerImageFile,
+		Context:        containerImageFileTarReader,
+		Target:         imageBuildSpec.GetTargetStage(),
+		SessionID:      session.ID(),
+		Version:        types.BuilderBuildKit,
+	}
+
+	imageBuildResponse, err := manager.dockerClientNoTimeout.ImageBuild(ctx, containerImageFileTarReader, imageBuildOpts)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", imageName)
 	}
@@ -2157,7 +2133,7 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) (io.ReadC
 	return compressedFile, compressedFileSize, compressedFileContentMd5, nil
 }
 
-// CompressPathToFile compresses the entire content of the file or directory at pathToCompress and returns the path
+// CompressPathToFile compresses the entire content of ther directory at pathToCom file opress and returns the path
 // to the TGZ archive created, alongside the size (in bytes) of the archive and the md5 of its content
 // Note: the MD5 is NOT the MD% of the archive file itself. See inline comments below for more info on this MD5 hash
 func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (string, uint64, []byte, error) {
