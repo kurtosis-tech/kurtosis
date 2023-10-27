@@ -440,7 +440,7 @@ func createPersistentDirectoryKurtosisType(persistenceKey string) (starlark.Valu
 		return nil, interpretationErr
 	}
 
-	directoryKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ServiceConfigTypeName, argumentValuesSet)
+	directoryKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(directory.DirectoryTypeName, argumentValuesSet)
 	if interpretationErr != nil {
 		// TODO FIX THIS! INTERPRETATION ERROR VS GO ERROR
 		return nil, interpretationErr

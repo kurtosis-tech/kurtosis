@@ -244,7 +244,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	}
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	serializedParams := args.GetSerializedParams()
-	relativePathToMainFile := args.GetRelativePathToMainFile()
+	requestedRelativePathToMainFile := args.GetRelativePathToMainFile()
 	mainFuncName := args.GetMainFunctionName()
 	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
 	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
@@ -254,8 +254,9 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	var isRemote bool
 	var detectedPackageId string
 	var detectedPackageReplaceOptions map[string]string
+	var actualRelativePathToMainFile string
 	if args.ClonePackage != nil {
-		scriptWithRunFunction, detectedPackageId, detectedPackageReplaceOptions, interpretationError = apicService.runStarlarkPackageSetup(packageIdFromArgs, args.GetClonePackage(), nil, relativePathToMainFile)
+		scriptWithRunFunction, actualRelativePathToMainFile, detectedPackageId, detectedPackageReplaceOptions, interpretationError = apicService.runStarlarkPackageSetup(packageIdFromArgs, args.GetClonePackage(), nil, requestedRelativePathToMainFile)
 		isRemote = args.GetClonePackage()
 	} else {
 		// OLD DEPRECATED SYNTAX
@@ -263,7 +264,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		//  right now the TS SDK still uses the old deprecated behavior
 		moduleContentIfLocal := args.GetLocal()
 		isRemote = args.GetRemote()
-		scriptWithRunFunction, detectedPackageId, detectedPackageReplaceOptions, interpretationError = apicService.runStarlarkPackageSetup(packageIdFromArgs, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
+		scriptWithRunFunction, actualRelativePathToMainFile, detectedPackageId, detectedPackageReplaceOptions, interpretationError = apicService.runStarlarkPackageSetup(packageIdFromArgs, args.GetRemote(), moduleContentIfLocal, requestedRelativePathToMainFile)
 	}
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
@@ -277,14 +278,14 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
-	apicService.runStarlark(parallelism, dryRun, detectedPackageId, detectedPackageReplaceOptions, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
+	apicService.runStarlark(parallelism, dryRun, detectedPackageId, detectedPackageReplaceOptions, mainFuncName, actualRelativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 		PackageId:              packageIdFromArgs,
 		SerializedScript:       scriptWithRunFunction,
 		SerializedParams:       serializedParams,
 		Parallelism:            int32(parallelism),
-		RelativePathToMainFile: relativePathToMainFile,
+		RelativePathToMainFile: requestedRelativePathToMainFile,
 		MainFunctionName:       mainFuncName,
 		ExperimentalFeatures:   args.ExperimentalFeatures,
 		RestartPolicy:          apicService.restartPolicy,
@@ -736,9 +737,10 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	packageIdFromArgs string,
 	clonePackage bool,
 	moduleContentIfLocal []byte, // This is mutually exclusive with clonePackage - if clonePackage is set, this will be empty
-	relativePathToMainFile string, // TODO handle this in the Compose case
+	relativePathToMainFile string, // As provided in the run args (so this may be empty)
 ) (
 	string, // Entrypoint script to execute
+	string, // Relative path (from package root) to main script
 	string, // Package ID detected from the files we got
 	map[string]string, // Replaces detected from the files we got
 	*startosis_errors.InterpretationError,
@@ -761,7 +763,7 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 
 	}
 	if interpretationError != nil {
-		return "", "", nil, interpretationError
+		return "", "", "", nil, interpretationError
 	}
 
 	// First, check if we have a kurtosis.yml in the root
@@ -770,7 +772,7 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	if _, err := os.Stat(candidateKurtosisYmlAbsFilepath); err == nil {
 		kurtosisYml, interpretationError := apicService.startosisModuleContentProvider.GetKurtosisYaml(packageRootPathOnDisk)
 		if interpretationError != nil {
-			return "", "", nil, interpretationError
+			return "", "", "", nil, interpretationError
 		}
 
 		if relativePathToMainFile == "" {
@@ -779,15 +781,15 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 		pathToMainFile := path.Join(packageRootPathOnDisk, relativePathToMainFile)
 
 		if _, err := os.Stat(pathToMainFile); err != nil {
-			return "", "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageIdFromArgs, pathToMainFile)
+			return "", "", "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageIdFromArgs, pathToMainFile)
 		}
 
 		mainScriptToExecuteBytes, err := os.ReadFile(pathToMainFile)
 		if err != nil {
-			return "", "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageIdFromArgs, pathToMainFile)
+			return "", "", "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageIdFromArgs, pathToMainFile)
 		}
 
-		return string(mainScriptToExecuteBytes), kurtosisYml.PackageName, kurtosisYml.PackageReplaceOptions, nil
+		return string(mainScriptToExecuteBytes), relativePathToMainFile, kurtosisYml.PackageName, kurtosisYml.PackageReplaceOptions, nil
 	}
 
 	// If we don't have a kurtosis.yml, assume that it's a Compose and fall back to looking for default Compose files
@@ -800,7 +802,7 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 			}
 		}
 		if relativePathToMainFile == "" {
-			return "", "", nil, startosis_errors.NewInterpretationError(
+			return "", "", "", nil, startosis_errors.NewInterpretationError(
 				"No '%s' file was found in the package root so fell back to Docker Compose transpilation, but none of the "+
 					"default Compose files (%s) were found. Either add a '%s' file to the package root or add one of the "+
 					"default Compose files.",
@@ -813,12 +815,12 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 
 	mainScriptToExecute, transpilationErr := docker_compose_transpiler.TranspileDockerComposePackageToStarlark(packageRootPathOnDisk, relativePathToMainFile)
 	if transpilationErr != nil {
-		return "", "", nil, startosis_errors.WrapWithInterpretationError(transpilationErr, "An error occurred transpiling the Docker Compose package '%v' to Starlark", packageIdFromArgs)
+		return "", "", "", nil, startosis_errors.WrapWithInterpretationError(transpilationErr, "An error occurred transpiling the Docker Compose package '%v' to Starlark", packageIdFromArgs)
 	}
 
 	replacesForComposePackage := map[string]string{}
 
-	return mainScriptToExecute, packageIdFromArgs, replacesForComposePackage, nil
+	return mainScriptToExecute, relativePathToMainFile, packageIdFromArgs, replacesForComposePackage, nil
 
 	// Otherwise, fall back to regular kurtosis.yml parsing
 }
