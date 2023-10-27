@@ -1,13 +1,14 @@
 import { Params, RouteObject } from "react-router-dom";
 import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
 import { Enclave, enclaveLoader, enclaveTabLoader } from "./Enclave";
-import { EnclaveList, enclavesLoader } from "./EnclaveList";
+import { EnclaveList, enclavesAction, enclavesLoader } from "./EnclaveList";
 
 export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => [
   {
-    path: "",
+    path: "/enclaves?",
     handle: { crumb: () => ({ name: "Enclaves", destination: "/" }) },
     loader: enclavesLoader(kurtosisClient),
+    action: enclavesAction(kurtosisClient),
     id: "enclaves",
     children: [
       { path: "", element: <EnclaveList /> },

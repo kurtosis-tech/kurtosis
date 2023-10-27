@@ -1,11 +1,14 @@
-import { Button, Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
-import { FiEdit2, FiTrash2 } from "react-icons/fi";
-import { LoaderFunctionArgs, useParams, useRouteLoaderData } from "react-router-dom";
+import { Button, Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import { FiEdit2 } from "react-icons/fi";
+import { Await, LoaderFunctionArgs, useParams, useRouteLoaderData } from "react-router-dom";
 import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
 import { EnclaveOverview } from "../../components/enclaves/EnclaveOverview";
+
+import { Suspense } from "react";
+import { DeleteEnclavesButton } from "../../components/enclaves/widgets/DeleteEnclavesButton";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { isDefined } from "../../utils";
-import { enclavesLoader } from "./EnclaveList";
+import { EnclavesLoaderResolved } from "./EnclaveList";
 
 export const enclaveLoader =
   (kurtosisClient: KurtosisClient) =>
@@ -51,8 +54,28 @@ export const enclaveTabLoader = async ({ params }: LoaderFunctionArgs): Promise<
 };
 
 export const Enclave = () => {
+  const { enclaves } = useRouteLoaderData("enclaves") as EnclavesLoaderResolved;
+
+  return (
+    <Suspense
+      fallback={
+        <Flex justifyContent={"center"} p={"20px"}>
+          <Spinner size={"xl"} />
+        </Flex>
+      }
+    >
+      <Await resolve={enclaves} children={(enclaves) => <EnclaveImpl enclaves={enclaves} />} />
+    </Suspense>
+  );
+};
+
+type EnclaveImplProps = {
+  enclaves: EnclavesLoaderResolved["enclaves"];
+};
+
+const EnclaveImpl = ({ enclaves }: EnclaveImplProps) => {
   const { enclaveUUID, activeTab } = useParams();
-  const enclaves = useRouteLoaderData("enclaves") as Awaited<ReturnType<ReturnType<typeof enclavesLoader>>>;
+
   if (enclaves.isErr) {
     return <KurtosisAlert message={"Enclaves could not load"} />;
   }
@@ -70,9 +93,7 @@ export const Enclave = () => {
               <Tab>Source</Tab>
             </TabList>
             <Flex gap={"8px"} alignItems={"center"}>
-              <Button colorScheme={"red"} leftIcon={<FiTrash2 />} size={"md"}>
-                Delete
-              </Button>
+              <DeleteEnclavesButton enclaves={[enclave]} />
               <Button colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
                 Edit
               </Button>
