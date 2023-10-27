@@ -164,3 +164,19 @@ func TestPullImageWithRetries(t *testing.T) {
 	//require.NoError(t, err)
 	//require.False(t, retry)
 }
+
+func TestBuildImage(t *testing.T) {
+	//dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	//require.NoError(t, err)
+	//require.NotNil(t, dockerClient)
+	//
+	//ctx := context.Background()
+	//clientOpts := []client.Opt{client.FromEnv, client.WithAPIVersionNegotiation()}
+	//dockerManager, err := CreateDockerManager(clientOpts)
+	//require.NoError(t, err)
+	//
+	//containerImageFilePath := "/Users/tewodrosmitiku/Desktop/kurtosis/test/service/Dockerfile"
+	//contextDirPath := "/Users/tewodrosmitiku/Desktop/kurtosis/test/service"
+	//err = dockerManager.BuildImage(ctx, containerImageFilePath, contextDirPath)
+	//require.NoError(t, err)
+}

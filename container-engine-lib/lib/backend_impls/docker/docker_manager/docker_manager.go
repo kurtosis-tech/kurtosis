@@ -6,7 +6,9 @@
 package docker_manager
 
 import (
+	"archive/tar"
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -1248,24 +1250,47 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 	return nil
 }
 
-func (manager *DockerManager) BuildImage(ctx context.Context, containerImageFilePath string, contextDirPath string) error {
-	// TODO: remove placeholder build context with taring build context
-	buildContext, err := os.Open(containerImageFilePath)
+func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, containerImageFilePath string, contextDirPath string) error {
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+	defer tw.Close()
+
+	dockerFile := "Dockerfile"
+	dockerFileReader, err := os.Open(containerImageFilePath)
 	if err != nil {
-		return err
+		logrus.Errorf("%v :unable to open Dockerfile", err)
 	}
+	readDockerFile, err := io.ReadAll(dockerFileReader)
+	if err != nil {
+		logrus.Errorf("%v :unable to read Dockerfile", err)
+	}
+
+	tarHeader := &tar.Header{
+		Name: dockerFile,
+		Size: int64(len(readDockerFile)),
+	}
+	err = tw.WriteHeader(tarHeader)
+	if err != nil {
+		logrus.Errorf("%v :unable to write tar header", err)
+	}
+	_, err = tw.Write(readDockerFile)
+	if err != nil {
+		logrus.Errorf("%v :unable to write tar body", err)
+	}
+	dockerFileTarReader := bytes.NewReader(buf.Bytes())
+
 	// TODO: FIGURE OUT WHAT OPTIONS WE NEED TO BUILD IMAGES
 	imageBuildOpts := types.ImageBuildOptions{
-		Tags:           []string{},              // what tags should we put?
+		Tags:           []string{imageName},     // what tags should we put?
 		SuppressOutput: false,                   // what does this do?
 		RemoteContext:  "",                      // whats a remote context/
 		NoCache:        false,                   // whats no cache? assuming this won't build again if the image is already cached
-		Remove:         false,                   // hmm does this override the existing image?
+		Remove:         true,                    // hmm does this override the existing image?
 		ForceRemove:    false,                   // does this override the existing image?
 		PullParent:     false,                   // what does this do?
 		Isolation:      container.Isolation(""), // tf is this
 		CPUSetCPUs:     "",
-		CPUSetMems:     "string",
+		CPUSetMems:     "",
 		CPUShares:      0,
 		CPUQuota:       0,
 		CPUPeriod:      0,
@@ -1274,7 +1299,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, containerImageFile
 		CgroupParent:   "",
 		NetworkMode:    "",
 		ShmSize:        0,
-		Dockerfile:     "", // hmm is this the name of the docker file?
+		Dockerfile:     dockerFile, // hmm is this the name of the docker file?
 		Ulimits:        []*units.Ulimit{},
 		// BuildArgs needs to be a *string instead of just a string so that
 		// we can tell the difference between "" (empty string) and no value
@@ -1282,7 +1307,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, containerImageFile
 		// api/server/router/build/build_routes.go for even more info.
 		BuildArgs:   map[string]*string{}, // what build args do we require?
 		AuthConfigs: map[string]registry.AuthConfig{},
-		Context:     buildContext,
+		Context:     dockerFileTarReader,
 		Labels:      map[string]string{}, // how do we want to label this image?
 		// squash the resulting image's layers to the parent
 		// preserves the original image and creates a new one from the parent with all
@@ -1306,15 +1331,16 @@ func (manager *DockerManager) BuildImage(ctx context.Context, containerImageFile
 		Outputs: []types.ImageBuildOutput{}, // we prob don't need this
 	}
 
-	imageBuildResponse, err := manager.dockerClient.ImageBuild(ctx, buildContext, imageBuildOpts)
+	imageBuildResponse, err := manager.dockerClient.ImageBuild(ctx, dockerFileTarReader, imageBuildOpts)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", "PLACEHOLDER")
 	}
-	defer func() {
-		if err := imageBuildResponse.Body.Close(); err != nil {
-			logrus.Warnf("An error occurred attempting to close the image build response body!")
-		}
-	}()
+	defer imageBuildResponse.Body.Close()
+
+	_, err = io.Copy(os.Stdout, imageBuildResponse.Body)
+	if err != nil {
+		logrus.Warnf("An error occurred while trying to pipe image build output to stdout: %v", err)
+	}
 
 	return nil
 }
