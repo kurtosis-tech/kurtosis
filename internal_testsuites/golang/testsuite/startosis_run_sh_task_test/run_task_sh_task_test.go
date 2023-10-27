@@ -11,7 +11,7 @@ const (
 	runshTest           = "run-sh-test"
 	runshStarlarkSimple = `
 def run(plan):
-  result1 = plan.run_sh(run="echo kurtosis")
+  result1 = plan.run_sh(run="echo kurtosis | tr -d '\n'")
   result2 = plan.run_sh(run="mkdir -p /src/{0} && cd /src/{0} && echo $(pwd)".format(result1.output))
   plan.verify(result2.output, "==", "/src/kurtosis\n")
 `
@@ -59,8 +59,9 @@ def run(plan):
 
 func TestStarlark_RunshTaskSimple(t *testing.T) {
 	ctx := context.Background()
-	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkSimple)
-	expectedOutput := "Command returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nCommand returned with exit code '0' and the following output:\n--------------------\n/src/kurtosis\n\n--------------------\nVerification succeeded. Value is '\"/src/kurtosis\\n\"'.\n"
+	runResult, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkSimple)
+	require.Nil(t, err)
+	expectedOutput := "Command returned with exit code '0' and the following output: kurtosis\nCommand returned with exit code '0' and the following output:\n--------------------\n/src/kurtosis\n\n--------------------\nVerification succeeded. Value is '\"/src/kurtosis\\n\"'.\n"
 	require.Equal(t, expectedOutput, string(runResult.RunOutput))
 }
 
