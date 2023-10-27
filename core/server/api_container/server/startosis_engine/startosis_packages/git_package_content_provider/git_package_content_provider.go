@@ -98,6 +98,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(absoluteFil
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred parsing Git URL for absolute file locator '%s'", absoluteFileLocator)
 	}
+	// TODO(kevin): Remove this; it will allow users to do `upload_files` on the entire contents of the package (which is very useful for Composes that mount the entire directory like https://github.com/docker/awesome-compose/blob/master/flask-redis/compose.yaml )
 	if parsedURL.GetRelativeFilePath() == "" {
 		return "", startosis_errors.NewInterpretationError("The path '%v' needs to point to a specific file but it didn't. Users can only read or import specific files and not entire packages.", absoluteFileLocator)
 	}
