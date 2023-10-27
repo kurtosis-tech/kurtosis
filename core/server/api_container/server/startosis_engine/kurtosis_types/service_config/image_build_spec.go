@@ -57,6 +57,7 @@ func (imageBuildSpec *ImageBuildSpec) Copy() (builtin_argument.KurtosisValueType
 	}, nil
 }
 
+// Relative locator of context directory
 func (imageBuildSpec *ImageBuildSpec) GetContextDir() (string, *startosis_errors.InterpretationError) {
 	contextDir, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](imageBuildSpec.KurtosisValueTypeDefault, ContextDirAttr)
 	if interpretationErr != nil {
@@ -70,10 +71,6 @@ func (imageBuildSpec *ImageBuildSpec) GetContextDir() (string, *startosis_errors
 	return contextDirStr, nil
 }
 
-func (imageBuildSpec *ImageBuildSpec) ToKurtosisType() (*image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
-	contextDir, interpretationErr := imageBuildSpec.GetContextDir()
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	return image_build_spec.NewImageBuildSpec(contextDir), nil
+func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(contextDirAbsFilePath string) (*image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
+	return image_build_spec.NewImageBuildSpec(contextDirAbsFilePath), nil
 }

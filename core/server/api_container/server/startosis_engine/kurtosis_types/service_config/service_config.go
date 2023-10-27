@@ -60,11 +60,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              ImageAttr,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						// TODO: MAKE SURE THIS ALSO VALIDATES IMAGE BUILD SPEC
-						// TODO: DO A SAFE CASE TO STRING BEFORE NON EMPTY STRING CALL
-						return builtin_argument.NonEmptyString(value, ImageAttr)
-					},
+					Validator:         nil,
+					//	func(value starlark.Value) *startosis_errors.InterpretationError {
+					//	// TODO: MAKE SURE THIS ALSO VALIDATES IMAGE BUILD SPEC
+					//	// TODO: DO A SAFE CASE TO STRING BEFORE NON EMPTY STRING CALL
+					//	return builtin_argument.NonEmptyString(value, ImageAttr)
+					//},
 				},
 				{
 					Name:              PortsAttr,

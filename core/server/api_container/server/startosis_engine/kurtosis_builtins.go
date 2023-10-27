@@ -61,7 +61,7 @@ func KurtosisPlanInstructions(
 	packageReplaceOptions map[string]string,
 ) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
-		add_service.NewAddService(serviceNetwork, runtimeValueStore),
+		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageContentProvider, packageReplaceOptions),
 		add_service.NewAddServices(serviceNetwork, runtimeValueStore),
 		verify.NewVerify(runtimeValueStore),
 		exec.NewExec(serviceNetwork, runtimeValueStore),

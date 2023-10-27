@@ -140,6 +140,7 @@ func (validator *ImagesValidator) getBuildContextFromContextDir(imageBuildSpec *
 	buildContextAbsDir, interpretationErr := validator.packageContentProvider.GetOnDiskAbsoluteFilePath(contextDir)
 	if interpretationErr != nil {
 		// TODO: Improve this error message
+		logrus.Errorf("AN ERROR OCCURRED GETTING ABSOLUTE FILEPATH OF DIRECTORY: %v", interpretationErr)
 		return nil, stacktrace.NewError("An error occurred attempting to get the absolute filepath of the image build context directory.")
 	}
 

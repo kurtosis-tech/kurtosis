@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -27,7 +28,11 @@ const (
 	ServiceConfigArgName = "config"
 )
 
-func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewAddService(
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServiceBuiltinName,
@@ -48,7 +53,7 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
-						if _, _, _, err := validateAndConvertConfigAndReadyConditionAndImageBuildSpec(serviceNetwork, value); err != nil {
+						if _, _, err := validateAndConvertConfigAndReadyCondition(serviceNetwork, value); err != nil {
 							return err
 						}
 						return nil
@@ -59,11 +64,12 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &AddServiceCapabilities{
-				serviceNetwork:    serviceNetwork,
-				runtimeValueStore: runtimeValueStore,
-
-				serviceName:   "",  // populated at interpretation time
-				serviceConfig: nil, // populated at interpretation time
+				serviceNetwork:         serviceNetwork,
+				runtimeValueStore:      runtimeValueStore,
+				packageContentProvider: packageContentProvider,
+				packageReplaceOptions:  packageReplaceOptions,
+				serviceName:            "",  // populated at interpretation time
+				serviceConfig:          nil, // populated at interpretation time
 
 				resultUuid:     "",  // populated at interpretation time
 				readyCondition: nil, // populated at interpretation time
@@ -78,8 +84,10 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 }
 
 type AddServiceCapabilities struct {
-	serviceNetwork    service_network.ServiceNetwork
-	runtimeValueStore *runtime_value_store.RuntimeValueStore
+	serviceNetwork         service_network.ServiceNetwork
+	runtimeValueStore      *runtime_value_store.RuntimeValueStore
+	packageContentProvider startosis_packages.PackageContentProvider
+	packageReplaceOptions  map[string]string
 
 	serviceName    service.ServiceName
 	serviceConfig  *service.ServiceConfig
@@ -91,7 +99,7 @@ type AddServiceCapabilities struct {
 	resultUuid string
 }
 
-func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
@@ -101,7 +109,7 @@ func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
-	apiServiceConfig, readyCondition, imageBuildSpec, interpretationErr := validateAndConvertConfigAndReadyConditionAndImageBuildSpec(builtin.serviceNetwork, serviceConfig)
+	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(builtin.serviceNetwork, serviceConfig)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -109,7 +117,12 @@ func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
 	builtin.serviceConfig = apiServiceConfig
 	builtin.readyCondition = readyCondition
-	builtin.imageBuildSpec = imageBuildSpec
+
+	imageBuildSpecObj, interpretationErr := getImageBuildSpecObj(serviceConfig, locatorOfModuleInWhichThisBuiltInIsBeingCalled, builtin.packageContentProvider, builtin.packageReplaceOptions)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	builtin.imageBuildSpec = imageBuildSpecObj
 
 	builtin.resultUuid, err = builtin.runtimeValueStore.GetOrCreateValueAssociatedWithService(builtin.serviceName)
 	if err != nil {
@@ -215,35 +228,64 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 	)
 }
 
-func validateAndConvertConfigAndReadyConditionAndImageBuildSpec(
+func validateAndConvertConfigAndReadyCondition(
 	serviceNetwork service_network.ServiceNetwork,
 	rawConfig starlark.Value,
-) (*service.ServiceConfig, *service_config.ReadyCondition, *image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
+) (*service.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
 	config, ok := rawConfig.(*service_config.ServiceConfig)
 	if !ok {
-		return nil, nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
+		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
 	}
 	apiServiceConfig, interpretationErr := config.ToKurtosisType(serviceNetwork)
 	if interpretationErr != nil {
-		return nil, nil, nil, interpretationErr
+		return nil, nil, interpretationErr
 	}
 
 	readyCondition, interpretationErr := config.GetReadyCondition()
 	if interpretationErr != nil {
-		return nil, nil, nil, interpretationErr
+		return nil, nil, interpretationErr
 	}
 
+	return apiServiceConfig, readyCondition, nil
+}
+
+func getImageBuildSpecObj(
+	serviceConfig *service_config.ServiceConfig,
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string) (*image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
 	var imageBuildSpecObj *image_build_spec.ImageBuildSpec
-	imageBuildSpec, interpretationErr := config.GetImageBuildSpec()
+	var interpretationErr *startosis_errors.InterpretationError
+
+	imageBuildSpec, interpretationErr := serviceConfig.GetImageBuildSpec()
 	if interpretationErr != nil {
-		return nil, nil, nil, interpretationErr
+		return nil, interpretationErr
 	}
+
 	if imageBuildSpec != nil {
-		imageBuildSpecObj, interpretationErr = imageBuildSpec.ToKurtosisType()
+		// get the relative locator of context directory
+		contextDir, interpretationErr := imageBuildSpec.GetContextDir()
 		if interpretationErr != nil {
-			return nil, nil, nil, interpretationErr
+			return nil, interpretationErr
+		}
+
+		// get absolute locator of context driectory
+		contextDirAbsoluteLocator, interpretationErr := packageContentProvider.GetAbsoluteLocatorForRelativeLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, contextDir, packageReplaceOptions)
+		if interpretationErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert locator '%v' into absolute locator but failed", contextDir)
+		}
+
+		// based on absolute directory, get the context directory absolute path on disk
+		contextDirPathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsoluteFilePath(contextDirAbsoluteLocator)
+		if interpretationErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert absolute file locator '%v' into an absolute file path on disk but failed.", contextDirPathOnDisk)
+		}
+
+		// turn that into a kurtosis object that uses the context dir absolute path on disk
+		imageBuildSpecObj, interpretationErr = imageBuildSpec.ToKurtosisType(contextDirPathOnDisk)
+		if interpretationErr != nil {
+			return nil, interpretationErr
 		}
 	}
-
-	return apiServiceConfig, readyCondition, imageBuildSpecObj, nil
+	return imageBuildSpecObj, nil
 }

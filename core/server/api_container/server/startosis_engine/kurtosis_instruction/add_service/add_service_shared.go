@@ -96,6 +96,8 @@ func validateSingleService(
 
 	validatorEnvironment.AddServiceName(serviceName)
 
+	// if image build spec exists, and we set the image name to empty, this indicates we need to build an image
+	// otherwise, fetch the image
 	if imageBuildSpec != nil && serviceConfig.GetContainerImageName() == "" {
 		validatorEnvironment.AppendRequiredImageBuild(serviceName, imageBuildSpec)
 	} else {
