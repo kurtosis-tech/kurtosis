@@ -121,7 +121,24 @@ This repository is structured as a monorepo, containing the following projects:
 - `docs`: Documentation that is published to [docs.kurtosis.com](docs)
 - `internal_testsuites`: End to end tests
 
-Dev Dependencies
+Dev Dependencies (Nix)
+----------------
+
+Install the [Nix package manager](https://nixos.org/download).
+```bash
+sh <(curl -L https://nixos.org/nix/install)
+```
+
+And to bring the environment up use:
+```bash
+nix develop
+```
+
+One can also use the [`direnv`](https://direnv.net/) (installation via Nix can be found [here](https://github.com/nix-community/nix-direnv#installation)) to automatically load the environment when entering the main folder or using a plugin in your preferred IDE:
+- `vscode`: [mkhl.direnv](https://github.com/direnv/direnv-vscode)
+- `jet brains`: [Direnv integration](https://plugins.jetbrains.com/plugin/15285-direnv-integration)
+
+Dev Dependencies (Manual install)
 ----------------
 
 The commands below assume that the env variable BREW_PREFIX contains the brew prefix.
