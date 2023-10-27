@@ -95,16 +95,16 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateAndUpdateEnvironment(instructionsSequence, environment, starlarkRunResponseLineStream)
-		logrus.Debug("Finished validating environment. Validating and downloading container images.")
+		logrus.Debug("Finished validating environment. Validating container images...")
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateImagesAccountingForProgress(ctx, environment, starlarkRunResponseLineStream)
 
 		if isValidationFailure {
-			logrus.Debug("Errors encountered downloading and validating container images.")
+			logrus.Debug("Errors encountered validating container images.")
 			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 		} else {
-			logrus.Debug("All images successfully downloaded and validated.")
+			logrus.Debug("All images successfully validated..")
 		}
 	}()
 	return starlarkRunResponseLineStream
@@ -237,7 +237,7 @@ func sendContainerImageSummaryInfoMsg(
 func updateProgressWithDownloadInfo(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, imageCurrentlyInProgress []string, numberOfImageValidated uint32, totalNumberOfImagesToValidate uint32) {
 	msgLines := []string{validationInProgressMsg}
 	for _, imageName := range imageCurrentlyInProgress {
-		msgLines = append(msgLines, fmt.Sprintf("Downloading %s", imageName))
+		msgLines = append(msgLines, fmt.Sprintf("Validating %s", imageName))
 	}
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromMultilineProgressInfo(
 		msgLines, numberOfImageValidated, totalNumberOfImagesToValidate)

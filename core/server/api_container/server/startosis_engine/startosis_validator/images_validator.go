@@ -124,6 +124,7 @@ func (validator *ImagesValidator) buildImageUsingBackend(
 
 	// Assume container image file path is 1) a Dockerfile and 2) at the root of context directory
 	containerImgFilePath := path.Join(contextDirPath, defaultContainerImageFile)
+	logrus.Debugf("CALLING BUILD IMAGE")
 	err := (*backend).BuildImage(ctx, containerImgFilePath, contextDirPath)
 	if err != nil {
 		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())

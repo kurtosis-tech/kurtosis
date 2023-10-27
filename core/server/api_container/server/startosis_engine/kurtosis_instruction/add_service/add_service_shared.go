@@ -99,8 +99,12 @@ func validateSingleService(
 	// if image build spec exists, and we set the image name to empty, this indicates we need to build an image
 	// otherwise, fetch the image
 	if imageBuildSpec != nil && serviceConfig.GetContainerImageName() == "" {
+		logrus.Errorf("APPEND A BUILD IMAGE")
+		logrus.Errorf("IMAGE BUILD SPEC: %v", imageBuildSpec)
 		validatorEnvironment.AppendRequiredImageBuild(serviceName, imageBuildSpec)
 	} else {
+		logrus.Errorf("APPEND A REQUIRED IMAGE PULL")
+		logrus.Errorf("IMAGE BUILD SPEC: %v", imageBuildSpec)
 		validatorEnvironment.AppendRequiredContainerImage(serviceConfig.GetContainerImageName())
 	}
 

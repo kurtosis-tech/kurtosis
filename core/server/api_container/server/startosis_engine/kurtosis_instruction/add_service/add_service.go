@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"reflect"
 )
@@ -122,6 +123,7 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
+	logrus.Errorf("SUCCESSFULLY RETURNED IMAGE BUILD OBJECT: %v", imageBuildSpecObj)
 	builtin.imageBuildSpec = imageBuildSpecObj
 
 	builtin.resultUuid, err = builtin.runtimeValueStore.GetOrCreateValueAssociatedWithService(builtin.serviceName)
@@ -263,6 +265,7 @@ func getImageBuildSpecObj(
 	}
 
 	if imageBuildSpec != nil {
+		logrus.Infof("IMAGE BUILD SPEC FOUND: '%v'", imageBuildSpec)
 		// get the relative locator of context directory
 		contextDir, interpretationErr := imageBuildSpec.GetContextDir()
 		if interpretationErr != nil {
@@ -287,5 +290,6 @@ func getImageBuildSpecObj(
 			return nil, interpretationErr
 		}
 	}
+	logrus.Errorf("RETURNED IMAGE BUILD OBJECT: %v", imageBuildSpec)
 	return imageBuildSpecObj, nil
 }

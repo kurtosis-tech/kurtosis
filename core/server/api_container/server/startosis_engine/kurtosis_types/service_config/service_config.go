@@ -517,17 +517,11 @@ func (config *ServiceConfig) GetImageBuildSpec() (*ImageBuildSpec, *startosis_er
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
 			ImageAttr, ServiceConfigTypeName)
 	}
-
 	// convert to image build spec
 	imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := rawImageValue.(*ImageBuildSpec)
 	if !isImageBuildSpecStarlarkType {
 		return nil, nil
 	}
-	_, interpretationErr = imageBuildSpecStarlarkType.GetContextDir()
-	if interpretationErr != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred while trying to get the context director of the image build spec.")
-	}
-
 	return imageBuildSpecStarlarkType, nil
 }
 
