@@ -1,7 +1,7 @@
 import { Button, Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { LoaderFunctionArgs, useParams, useRouteLoaderData } from "react-router-dom";
-import { KurtosisClient } from "../../client/KurtosisClient";
+import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
 import { EnclaveOverview } from "../../components/enclaves/EnclaveOverview";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { isDefined } from "../../utils";

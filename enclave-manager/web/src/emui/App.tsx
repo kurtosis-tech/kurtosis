@@ -1,7 +1,8 @@
 import { Box } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
-import { KurtosisClientProvider, useKurtosisClient } from "../client/KurtosisClientContext";
+import { KurtosisClientProvider, useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
+import { KurtosisPackageIndexerProvider } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { AppLayout } from "../components/AppLayout";
 import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
 import { enclaveRoutes } from "./enclaves/Enclaves";
@@ -10,9 +11,11 @@ import { Navbar } from "./Navbar";
 export const EmuiApp = () => {
   return (
     <KurtosisThemeProvider>
-      <KurtosisClientProvider>
-        <KurtosisRouter />
-      </KurtosisClientProvider>
+      <KurtosisPackageIndexerProvider>
+        <KurtosisClientProvider>
+          <KurtosisRouter />
+        </KurtosisClientProvider>
+      </KurtosisPackageIndexerProvider>
     </KurtosisThemeProvider>
   );
 };

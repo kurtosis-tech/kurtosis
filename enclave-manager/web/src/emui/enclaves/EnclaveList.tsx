@@ -3,7 +3,7 @@ import { useState } from "react";
 import { FiPlus, FiTrash2 } from "react-icons/fi";
 import { useRouteLoaderData } from "react-router-dom";
 import { Result, ResultNS } from "true-myth";
-import { KurtosisClient } from "../../client/KurtosisClient";
+import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
 import { EnclavesTable } from "../../components/enclaves/tables/EnclavesTable";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { isDefined } from "../../utils";

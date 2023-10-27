@@ -1,6 +1,7 @@
-import { Alert, AlertDescription, AlertIcon, AlertTitle, Flex, Heading, Spinner, useToast } from "@chakra-ui/react";
+import { Flex, Heading, Spinner, useToast } from "@chakra-ui/react";
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
-import { assertDefined, isDefined, isStringTrue, stringifyError } from "../utils";
+import { KurtosisAlert } from "../../components/KurtosisAlert";
+import { assertDefined, isDefined, isStringTrue, stringifyError } from "../../utils";
 import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
 import { KurtosisClient } from "./KurtosisClient";
 import { LocalKurtosisClient } from "./LocalKurtosisClient";
@@ -36,7 +37,6 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
                       title: "Error",
                       description: r.error.message,
                       status: "error",
-                      position: "top",
                       variant: "solid",
                     });
                   }
@@ -119,13 +119,7 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
             </Heading>
           </>
         )}
-        {isDefined(error) && (
-          <Alert status="error">
-            <AlertIcon />
-            <AlertTitle>Error:</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        {isDefined(error) && <KurtosisAlert message={error} />}
       </Flex>
     );
   }

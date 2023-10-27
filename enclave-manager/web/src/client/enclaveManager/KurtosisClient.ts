@@ -6,7 +6,7 @@ import {
   GetServicesRequest,
   GetStarlarkRunRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
-import { assertDefined, asyncResult } from "../utils";
+import { assertDefined, asyncResult } from "../../utils";
 
 export abstract class KurtosisClient {
   protected client: PromiseClient<typeof KurtosisEnclaveManagerServer>;

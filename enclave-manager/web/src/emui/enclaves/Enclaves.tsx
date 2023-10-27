@@ -1,5 +1,5 @@
 import { Params, RouteObject } from "react-router-dom";
-import { KurtosisClient } from "../../client/KurtosisClient";
+import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
 import { Enclave, enclaveLoader, enclaveTabLoader } from "./Enclave";
 import { EnclaveList, enclavesLoader } from "./EnclaveList";
 
