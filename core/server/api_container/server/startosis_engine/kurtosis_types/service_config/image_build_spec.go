@@ -91,7 +91,7 @@ func (imageBuildSpec *ImageBuildSpec) GetTargetStage() (string, *startosis_error
 	if !found {
 		return "", nil
 	}
-	targetStageStr := targetStage.String()
+	targetStageStr := targetStage.GoString()
 	return targetStageStr, nil
 }
 
