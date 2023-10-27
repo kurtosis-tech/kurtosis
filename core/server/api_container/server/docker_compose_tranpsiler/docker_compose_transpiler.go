@@ -116,12 +116,40 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 
 		*/
 
-		// Image
-		serviceConfigKwargs = appendKwarg(
-			serviceConfigKwargs,
-			service_config.ImageAttr,
-			starlark.String(serviceConfig.Image), // change this into an ImageBuildSpec guy, probably case it to a starlark.Value
-		)
+		// Image: use either serviceConfig.Image(docker compose) or ImageBuildSpec
+		if serviceConfig.Image != "" {
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.ImageAttr,
+				starlark.String(serviceConfig.Image),
+			)
+		} else {
+			// Create ImageBuildSpec
+			imageBuildSpecKwargs, err := getImageBuildSpecKwargs(serviceConfig)
+			if err != nil {
+				return "", err
+			}
+			imageBuildSpecArgumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
+				service_config.ImageBuildSpecTypeName,
+				service_config.NewImageBuildSpecType().KurtosisBaseBuiltin.Arguments,
+				[]starlark.Value{},
+				imageBuildSpecKwargs,
+			)
+			if interpretationErr != nil {
+				// TODO: interpretation err vs. golang err
+				return "", interpretationErr
+			}
+			imageBuildSpecKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ImageBuildSpecTypeName, imageBuildSpecArgumentValuesSet)
+			if interpretationErr != nil {
+				// TODO: interpretation err vs. golang err
+				return "", interpretationErr
+			}
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.ImageAttr,
+				imageBuildSpecKurtosisType,
+			)
+		}
 
 		// Ports
 		portSpecsSLDict, err := getPortSpecsSLDict(serviceConfig)
@@ -215,6 +243,30 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		script += fmt.Sprintf("    plan.add_service(name = '%s', config = %s)\n", serviceName, serviceConfig)
 	}
 	return script, nil
+}
+
+func getImageBuildSpecKwargs(
+	serviceConfig types.ServiceConfig,
+) ([]starlark.Tuple, error) {
+	var imageBuildSpecKwargs []starlark.Tuple
+
+	if serviceConfig.Build != nil && serviceConfig.Build.Context != "" {
+		contextDirKwarg := []starlark.Value{
+			starlark.String(service_config.ContextDirAttr),
+			starlark.String(serviceConfig.Build.Context),
+		}
+		imageBuildSpecKwargs = append(imageBuildSpecKwargs, contextDirKwarg)
+	}
+
+	if serviceConfig.Build != nil && serviceConfig.Build.Target != "" {
+		targetStageKwarg := []starlark.Value{
+			starlark.String(service_config.TargetStageAttr),
+			starlark.String(serviceConfig.Build.Target),
+		}
+		imageBuildSpecKwargs = append(imageBuildSpecKwargs, targetStageKwarg)
+	}
+
+	return imageBuildSpecKwargs, nil
 }
 
 func getPortSpecsSLDict(

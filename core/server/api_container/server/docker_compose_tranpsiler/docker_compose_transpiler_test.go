@@ -35,12 +35,12 @@ func TestAspnetComposeImageBuildSpec(t *testing.T) {
 	composeBytes := []byte(`
 services:
   web:
-    build: app/aspnetapp
+    build: app/aspnet
     ports:
       - 80:80
 `)
 	expectedResult := `def run(plan):
-    plan.add_service(name = 'web', config = ServiceConfig(image=ImageBuildSpec(context_dir="./app/aspnet"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}))
+    plan.add_service(name = 'web', config = ServiceConfig(image=ImageBuildSpec(context_dir="./app/aspnet"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
 `
 
 	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
@@ -59,7 +59,7 @@ services:
       - '8000:8000'
 `)
 	expectedResult := `def run(plan):
-    plan.add_service(name = 'web', config = ServiceConfig(image=ImageBuildSpec(context_dir="./app",target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP")}))
+    plan.add_service(name = 'web', config = ServiceConfig(image=ImageBuildSpec(context_dir="./app", target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP")}, env_vars={}))
 `
 
 	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
