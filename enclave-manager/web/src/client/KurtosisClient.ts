@@ -17,6 +17,10 @@ export abstract class KurtosisClient {
 
   abstract getHeaderOptions(): { headers?: Headers };
 
+  async checkHealth() {
+    return asyncResult(this.client.check({}, this.getHeaderOptions()));
+  }
+
   async getEnclaves() {
     return asyncResult(this.client.getEnclaves({}, this.getHeaderOptions()), "KurtosisClient could not getEnclaves");
   }

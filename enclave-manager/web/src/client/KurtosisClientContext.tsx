@@ -70,25 +70,36 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
   }, []);
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const requireAuth = isStringTrue(searchParams.get("require_authentication"));
-    const requestedApiHost = searchParams.get("api_host");
-    // eslint-disable-next-line
-    const preloadedPackage = searchParams.get("package");
-    try {
-      setError(undefined);
-      if (requireAuth) {
-        assertDefined(requestedApiHost, `The parameter 'requestedApiHost' is not defined`);
-        if (isDefined(jwtToken)) {
-          setClient(new AuthenticatedKurtosisClient(requestedApiHost, jwtToken));
+    (async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const requireAuth = isStringTrue(searchParams.get("require_authentication"));
+      const requestedApiHost = searchParams.get("api_host");
+      // eslint-disable-next-line
+      const preloadedPackage = searchParams.get("package");
+      try {
+        setError(undefined);
+        let newClient: KurtosisClient | null = null;
+        if (requireAuth) {
+          assertDefined(requestedApiHost, `The parameter 'requestedApiHost' is not defined`);
+          if (isDefined(jwtToken)) {
+            newClient = new AuthenticatedKurtosisClient(requestedApiHost, jwtToken);
+          }
+        } else {
+          newClient = new LocalKurtosisClient();
         }
-      } else {
-        setClient(new LocalKurtosisClient());
+        if (isDefined(newClient)) {
+          const checkResp = await newClient.checkHealth();
+          if (checkResp.isErr) {
+            setError("Cannot reach the enclave manager backend - is your enclave manager definitely running?");
+            return;
+          }
+          setClient(newClient);
+        }
+      } catch (e: any) {
+        console.error(e);
+        setError(stringifyError(e));
       }
-    } catch (e: any) {
-      console.error(e);
-      setError(stringifyError(e));
-    }
+    })();
   }, [jwtToken]);
 
   if (errorHandlingClient) {
