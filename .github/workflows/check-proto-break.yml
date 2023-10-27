@@ -20,7 +20,7 @@ jobs:
         fetch-depth: 0
     - name: Check if PR is breaking
       run: |
-        if [[ ${{ github.event.pull_request.title }} == *'!'* ]]; then
+        if [[ "${{ github.event.pull_request.title }}" == *'!'* ]]; then
           echo "PR is a breaking change by title"
           exit 0
         else
