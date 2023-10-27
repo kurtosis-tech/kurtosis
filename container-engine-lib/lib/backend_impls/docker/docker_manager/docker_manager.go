@@ -1281,14 +1281,14 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 
 	// TODO: FIGURE OUT WHAT OPTIONS WE NEED TO BUILD IMAGES
 	imageBuildOpts := types.ImageBuildOptions{
-		Tags:           []string{imageName},     // what tags should we put?
-		SuppressOutput: false,                   // what does this do?
-		RemoteContext:  "",                      // whats a remote context/
-		NoCache:        false,                   // whats no cache? assuming this won't build again if the image is already cached
-		Remove:         true,                    // hmm does this override the existing image?
-		ForceRemove:    false,                   // does this override the existing image?
-		PullParent:     false,                   // what does this do?
-		Isolation:      container.Isolation(""), // tf is this
+		Tags:           []string{imageName},
+		SuppressOutput: false,
+		RemoteContext:  "",
+		NoCache:        false,
+		Remove:         true,
+		ForceRemove:    false,
+		PullParent:     false,
+		Isolation:      container.Isolation(""),
 		CPUSetCPUs:     "",
 		CPUSetMems:     "",
 		CPUShares:      0,
