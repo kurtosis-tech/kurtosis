@@ -1,40 +1,41 @@
 import { Button, Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { LoaderFunctionArgs, useParams, useRouteLoaderData } from "react-router-dom";
-import { getKurtosisClient } from "../../client/KurtosisClientContext";
+import { KurtosisClient } from "../../client/KurtosisClient";
 import { EnclaveOverview } from "../../components/enclaves/EnclaveOverview";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { isDefined } from "../../utils";
 import { enclavesLoader } from "./EnclaveList";
 
-export const enclaveLoader = async ({ params }: LoaderFunctionArgs): Promise<{ routeName: string }> => {
-  const uuid = params.enclaveUUID;
+export const enclaveLoader =
+  (kurtosisClient: KurtosisClient) =>
+  async ({ params }: LoaderFunctionArgs): Promise<{ routeName: string }> => {
+    const uuid = params.enclaveUUID;
 
-  if (!isDefined(uuid)) {
+    if (!isDefined(uuid)) {
+      return {
+        routeName: "Missing uuid",
+      };
+    }
+
+    const enclavesResult = await kurtosisClient.getEnclaves();
+    if (enclavesResult.isErr) {
+      return {
+        routeName: uuid,
+      };
+    }
+
+    const enclave = Object.values(enclavesResult.value.enclaveInfo).find((enclave) => enclave.shortenedUuid === uuid);
+    if (!isDefined(enclave)) {
+      return {
+        routeName: uuid,
+      };
+    }
+
     return {
-      routeName: "Missing uuid",
+      routeName: enclave.name,
     };
-  }
-
-  const kurtosisClient = await getKurtosisClient();
-  const enclavesResult = await kurtosisClient.getEnclaves();
-  if (enclavesResult.isErr) {
-    return {
-      routeName: uuid,
-    };
-  }
-
-  const enclave = Object.values(enclavesResult.value.enclaveInfo).find((enclave) => enclave.shortenedUuid === uuid);
-  if (!isDefined(enclave)) {
-    return {
-      routeName: uuid,
-    };
-  }
-
-  return {
-    routeName: enclave.name,
   };
-};
 
 export const enclaveTabLoader = async ({ params }: LoaderFunctionArgs): Promise<{ routeName: string }> => {
   const activeTab = params.activeTab;
@@ -51,7 +52,7 @@ export const enclaveTabLoader = async ({ params }: LoaderFunctionArgs): Promise<
 
 export const Enclave = () => {
   const { enclaveUUID, activeTab } = useParams();
-  const enclaves = useRouteLoaderData("enclaves") as Awaited<ReturnType<typeof enclavesLoader>>;
+  const enclaves = useRouteLoaderData("enclaves") as Awaited<ReturnType<ReturnType<typeof enclavesLoader>>>;
   if (enclaves.isErr) {
     return <KurtosisAlert message={"Enclaves could not load"} />;
   }

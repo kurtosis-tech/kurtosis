@@ -1,31 +1,41 @@
 import { Box } from "@chakra-ui/react";
+import { useMemo } from "react";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
-import { KurtosisClientProvider } from "../client/KurtosisClientContext";
+import { KurtosisClientProvider, useKurtosisClient } from "../client/KurtosisClientContext";
 import { AppLayout } from "../components/AppLayout";
 import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
 import { enclaveRoutes } from "./enclaves/Enclaves";
 import { Navbar } from "./Navbar";
 
-const router = createBrowserRouter([
-  {
-    element: (
-      <AppLayout Nav={<Navbar />}>
-        <Outlet />
-      </AppLayout>
-    ),
-    children: [
-      { path: "/", children: enclaveRoutes },
-      { path: "/catalog", element: <Box>Goodby World</Box> },
-    ],
-  },
-]);
-
 export const EmuiApp = () => {
   return (
     <KurtosisThemeProvider>
       <KurtosisClientProvider>
-        <RouterProvider router={router} />
+        <KurtosisRouter />
       </KurtosisClientProvider>
     </KurtosisThemeProvider>
   );
+};
+
+const KurtosisRouter = () => {
+  const kurtosisClient = useKurtosisClient();
+  const router = useMemo(
+    () =>
+      createBrowserRouter([
+        {
+          element: (
+            <AppLayout Nav={<Navbar />}>
+              <Outlet />
+            </AppLayout>
+          ),
+          children: [
+            { path: "/", children: enclaveRoutes(kurtosisClient) },
+            { path: "/catalog", element: <Box>Goodby World</Box> },
+          ],
+        },
+      ]),
+    [kurtosisClient],
+  );
+
+  return <RouterProvider router={router} />;
 };
