@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 	apiv1 "k8s.io/api/core/v1"
@@ -27,7 +27,7 @@ func GetEngineLogs(
 		ctx,
 		kubernetesManager,
 		engineMatchLabels,
-		label_key_consts.IDKubernetesLabelKey.GetString(),
+		kubernetes_label_key.IDKubernetesLabelKey.GetString(),
 		engineGuidStrs,
 	)
 	if err != nil {
@@ -63,7 +63,7 @@ func GetEngineLogs(
 			kubernetesManager,
 			namespaceName,
 			engineMatchLabels,
-			label_key_consts.IDKubernetesLabelKey.GetString(),
+			kubernetes_label_key.IDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				engineGuidStr: true,
 			},
