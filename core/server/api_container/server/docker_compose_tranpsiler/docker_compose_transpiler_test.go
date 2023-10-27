@@ -30,3 +30,39 @@ services:
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
+
+func TestAspnetComposeImageBuildSpec(t *testing.T) {
+	composeBytes := []byte(`
+services:
+  web:
+    build: app/aspnetapp
+    ports:
+      - 80:80
+`)
+	expectedResult := `def run(plan):
+    plan.add_service(name = 'web', config = ServiceConfig(image=ImageBuildSpec(context_dir="./app/aspnet"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}))
+`
+
+	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
+func TestDjangoComposeImageBuildSpecWithTarget(t *testing.T) {
+	composeBytes := []byte(`
+services:
+  web: 
+    build:
+      context: app
+      target: builder
+    ports: 
+      - '8000:8000'
+`)
+	expectedResult := `def run(plan):
+    plan.add_service(name = 'web', config = ServiceConfig(image=ImageBuildSpec(context_dir="./app",target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP")}))
+`
+
+	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}

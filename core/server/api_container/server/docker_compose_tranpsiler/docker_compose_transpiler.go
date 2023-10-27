@@ -120,7 +120,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		serviceConfigKwargs = appendKwarg(
 			serviceConfigKwargs,
 			service_config.ImageAttr,
-			starlark.String(serviceConfig.Image),
+			starlark.String(serviceConfig.Image), // change this into an ImageBuildSpec guy, probably case it to a starlark.Value
 		)
 
 		// Ports
