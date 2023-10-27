@@ -27,6 +27,7 @@ import (
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver/v3"
@@ -1261,7 +1262,8 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 	return nil
 }
 
-func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, containerImageFilePath string, contextDirPath string) error {
+func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+	contextDirPath := imageBuildSpec.GetContextDir()
 	containerImageFileTarReader, err := getBuildContext(contextDirPath)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
@@ -1305,7 +1307,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		CacheFrom:   []string{},
 		SecurityOpt: []string{},
 		ExtraHosts:  []string{}, // List of extra hosts
-		Target:      "",         // TODO: add this
+		Target:      imageBuildSpec.GetTargetStage(),
 		SessionID:   "",
 		Platform:    "",
 		// Version specifies the version of the underlying builder to use

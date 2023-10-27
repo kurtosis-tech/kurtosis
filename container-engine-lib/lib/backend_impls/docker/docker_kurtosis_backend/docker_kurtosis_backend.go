@@ -3,6 +3,7 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/sirupsen/logrus"
 	"io"
 	"sync"
@@ -481,8 +482,8 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }
 
-func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, containerImageFilePath string, contextDirPath string) error {
-	return backend.dockerManager.BuildImage(ctx, imageName, containerImageFilePath, contextDirPath)
+func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+	return backend.dockerManager.BuildImage(ctx, imageName, imageBuildSpec)
 }
 
 // ====================================================================================================

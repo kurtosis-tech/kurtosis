@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -457,7 +458,7 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx con
 	return stacktrace.NewError("Destroy the logs collector for enclave isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) BuildImage(ctx context.Context, imageName string, containerImageFilePath string, contextDirPath string) error {
+func (backend *KubernetesKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
 	// TODO IMPLEMENT
 	return stacktrace.NewError("BuildImage isn't yet implemented on Kubernetes.")
 }

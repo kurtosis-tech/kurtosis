@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/sirupsen/logrus"
-	"path"
 	"sync"
 )
 
@@ -120,11 +119,7 @@ func (validator *ImagesValidator) buildImageUsingBackend(
 	}()
 
 	logrus.Debugf("Starting the build of image: '%s'", imageName)
-	contextDirPath := imageBuildSpec.GetContextDir()
-
-	// Assume container image file path is 1) a Dockerfile and 2) at the root of context directory
-	containerImgFilePath := path.Join(contextDirPath, defaultContainerImageFile)
-	err := (*backend).BuildImage(ctx, imageName, containerImgFilePath, contextDirPath)
+	err := (*backend).BuildImage(ctx, imageName, imageBuildSpec)
 	if err != nil {
 		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())
 		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageName)

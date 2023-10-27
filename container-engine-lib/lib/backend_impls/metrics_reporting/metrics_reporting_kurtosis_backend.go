@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -444,6 +445,6 @@ func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx con
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) BuildImage(ctx context.Context, imageName string, containerImageFilePath string, contextDirPath string) error {
-	return backend.underlying.BuildImage(ctx, imageName, containerImageFilePath, contextDirPath)
+func (backend *MetricsReportingKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+	return backend.underlying.BuildImage(ctx, imageName, imageBuildSpec)
 }

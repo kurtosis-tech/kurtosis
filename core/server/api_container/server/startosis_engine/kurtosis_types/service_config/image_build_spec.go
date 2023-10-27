@@ -7,12 +7,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
+	"path"
 )
 
 const (
 	ImageBuildSpecTypeName = "ImageBuildSpec"
 
-	ContextDirAttr = "context_dir"
+	ContextDirAttr  = "context_dir"
+	TargetStageAttr = "target_stage"
+
+	defaultContainerImageFileName = "Dockerfile"
 )
 
 func NewImageBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -23,8 +27,16 @@ func NewImageBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor 
 				{
 					Name:              ContextDirAttr,
 					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String], // what does this do?
-					Validator:         nil,                                                 // what does this do?
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					// TODO: add a validator
+					Validator: nil,
+				},
+				{
+					Name:              TargetStageAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					// TODO: add a validator
+					Validator: nil,
 				},
 			},
 		},
@@ -48,7 +60,7 @@ type ImageBuildSpec struct {
 }
 
 func (imageBuildSpec *ImageBuildSpec) Copy() (builtin_argument.KurtosisValueType, error) {
-	copiedValueType, err := imageBuildSpec.KurtosisValueTypeDefault.Copy() // need to implement this for build spec
+	copiedValueType, err := imageBuildSpec.KurtosisValueTypeDefault.Copy()
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +83,23 @@ func (imageBuildSpec *ImageBuildSpec) GetContextDir() (string, *startosis_errors
 	return contextDirStr, nil
 }
 
+func (imageBuildSpec *ImageBuildSpec) GetTargetStage() (string, *startosis_errors.InterpretationError) {
+	targetStage, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](imageBuildSpec.KurtosisValueTypeDefault, TargetStageAttr)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if !found {
+		return "", nil
+	}
+	targetStageStr := targetStage.String()
+	return targetStageStr, nil
+}
+
 func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(contextDirAbsFilePath string) (*image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
-	return image_build_spec.NewImageBuildSpec(contextDirAbsFilePath), nil
+	targetStageStr, interpretationErr := imageBuildSpec.GetTargetStage()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	containerImageFilePath := path.Join(contextDirAbsFilePath, defaultContainerImageFileName)
+	return image_build_spec.NewImageBuildSpec(contextDirAbsFilePath, containerImageFilePath, targetStageStr), nil
 }

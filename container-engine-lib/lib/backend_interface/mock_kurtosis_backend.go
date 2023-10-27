@@ -14,6 +14,8 @@ import (
 
 	exec_result "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 
+	image_build_spec "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+
 	io "io"
 
 	logs_aggregator "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
@@ -40,13 +42,13 @@ func (_m *MockKurtosisBackend) EXPECT() *MockKurtosisBackend_Expecter {
 	return &MockKurtosisBackend_Expecter{mock: &_m.Mock}
 }
 
-// BuildImage provides a mock function with given fields: ctx, imageName, containerImageFilePath, contextDirPath
-func (_m *MockKurtosisBackend) BuildImage(ctx context.Context, imageName string, containerImageFilePath string, contextDirPath string) error {
-	ret := _m.Called(ctx, imageName, containerImageFilePath, contextDirPath)
+// BuildImage provides a mock function with given fields: ctx, imageName, imageBuildSpec
+func (_m *MockKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+	ret := _m.Called(ctx, imageName, imageBuildSpec)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, imageName, containerImageFilePath, contextDirPath)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *image_build_spec.ImageBuildSpec) error); ok {
+		r0 = rf(ctx, imageName, imageBuildSpec)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -62,15 +64,14 @@ type MockKurtosisBackend_BuildImage_Call struct {
 // BuildImage is a helper method to define mock.On call
 //   - ctx context.Context
 //   - imageName string
-//   - containerImageFilePath string
-//   - contextDirPath string
-func (_e *MockKurtosisBackend_Expecter) BuildImage(ctx interface{}, imageName interface{}, containerImageFilePath interface{}, contextDirPath interface{}) *MockKurtosisBackend_BuildImage_Call {
-	return &MockKurtosisBackend_BuildImage_Call{Call: _e.mock.On("BuildImage", ctx, imageName, containerImageFilePath, contextDirPath)}
+//   - imageBuildSpec *image_build_spec.ImageBuildSpec
+func (_e *MockKurtosisBackend_Expecter) BuildImage(ctx interface{}, imageName interface{}, imageBuildSpec interface{}) *MockKurtosisBackend_BuildImage_Call {
+	return &MockKurtosisBackend_BuildImage_Call{Call: _e.mock.On("BuildImage", ctx, imageName, imageBuildSpec)}
 }
 
-func (_c *MockKurtosisBackend_BuildImage_Call) Run(run func(ctx context.Context, imageName string, containerImageFilePath string, contextDirPath string)) *MockKurtosisBackend_BuildImage_Call {
+func (_c *MockKurtosisBackend_BuildImage_Call) Run(run func(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec)) *MockKurtosisBackend_BuildImage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(*image_build_spec.ImageBuildSpec))
 	})
 	return _c
 }
@@ -80,7 +81,7 @@ func (_c *MockKurtosisBackend_BuildImage_Call) Return(_a0 error) *MockKurtosisBa
 	return _c
 }
 
-func (_c *MockKurtosisBackend_BuildImage_Call) RunAndReturn(run func(context.Context, string, string, string) error) *MockKurtosisBackend_BuildImage_Call {
+func (_c *MockKurtosisBackend_BuildImage_Call) RunAndReturn(run func(context.Context, string, *image_build_spec.ImageBuildSpec) error) *MockKurtosisBackend_BuildImage_Call {
 	_c.Call.Return(run)
 	return _c
 }

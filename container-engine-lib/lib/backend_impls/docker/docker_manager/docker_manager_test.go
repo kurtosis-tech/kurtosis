@@ -1,6 +1,8 @@
 package docker_manager
 
 import (
+	"context"
+	"github.com/docker/docker/client"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -166,17 +168,20 @@ func TestPullImageWithRetries(t *testing.T) {
 }
 
 func TestBuildImage(t *testing.T) {
-	//dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	//require.NoError(t, err)
-	//require.NotNil(t, dockerClient)
-	//
-	//ctx := context.Background()
-	//clientOpts := []client.Opt{client.FromEnv, client.WithAPIVersionNegotiation()}
-	//dockerManager, err := CreateDockerManager(clientOpts)
-	//require.NoError(t, err)
-	//
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	require.NoError(t, err)
+	require.NotNil(t, dockerClient)
+
+	ctx := context.Background()
+	clientOpts := []client.Opt{client.FromEnv, client.WithAPIVersionNegotiation()}
+	dockerManager, err := CreateDockerManager(clientOpts)
+	require.NoError(t, err)
+
 	//containerImageFilePath := "/Users/tewodrosmitiku/Desktop/kurtosis/test/service/Dockerfile"
 	//contextDirPath := "/Users/tewodrosmitiku/Desktop/kurtosis/test/service"
-	//err = dockerManager.BuildImage(ctx, containerImageFilePath, contextDirPath)
-	//require.NoError(t, err)
+
+	containerImageFilePath := "/Users/tewodrosmitiku/Desktop/kurtosis/engine/server/Dockerfile"
+	contextDirPath := "/Users/tewodrosmitiku/Desktop/kurtosis/engine/server"
+	err = dockerManager.BuildImage(ctx, "kurtosis-engine", containerImageFilePath, contextDirPath)
+	require.NoError(t, err)
 }
