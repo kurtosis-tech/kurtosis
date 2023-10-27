@@ -47,7 +47,9 @@ import (
 )
 
 const (
+	// TODO(kevin): Set this more reasonably!
 	dockerClientTimeout = 30 * time.Second
+
 	// We use a bridge network because, as of 2020-08-01, we're only running locally; however, this may need to change
 	//  at some point in the future
 	dockerNetworkDriver = "bridge"
@@ -184,8 +186,10 @@ type DockerManager struct {
 	// This client has a timeout so that request that should return quickly do not end up hanging forever.
 	dockerClient *client.Client
 
-	// We need to use a specific docker client with no timeout for long-running requests on docker, such as tailing
-	// service logs for a long time, or even downloading large container images than can take longer than the timeout
+	// We need to use a specific docker client with no timeout for long-running requests on docker, such as:
+	// - tailing service logs for a long time
+	// - downloading large container images
+	// - building large images
 	dockerClientNoTimeout *client.Client
 }
 
@@ -1294,7 +1298,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	}
 
 	dialSessionFunc := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
-		return manager.dockerClient.DialHijack(ctx, "/session", proto, meta)
+		return manager.dockerClientNoTimeout.DialHijack(ctx, "/session", proto, meta)
 	}
 
 	// Activate the session
@@ -1352,7 +1356,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		Outputs: []types.ImageBuildOutput{},
 	}
 
-	imageBuildResponse, err := manager.dockerClient.ImageBuild(ctx, containerImageFileTarReader, imageBuildOpts)
+	imageBuildResponse, err := manager.dockerClientNoTimeout.ImageBuild(ctx, containerImageFileTarReader, imageBuildOpts)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", imageName)
 	}
