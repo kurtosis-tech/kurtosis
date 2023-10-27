@@ -3,7 +3,8 @@
 This codebase produces the enclave manager UI (ie `kurtosis web`). The `src` directory contains:
 
 - `components` - components used in the application. This includes theme definitions and application context definitions
-- `client` - libraries for interacting with the local `kurtosis` backend - used to instantiate a `KurtosisAppContext` and interacted with using `useKurtosis`
+- `client/enclaveManager` - libraries for interacting with the local `kurtosis` backend - used to instantiate a `KurtosisClientContext` and interacted with using `useKurtosisClient`
+- `client/packageIndexer` - libraries for interacting with the package indexer - used to instantiate a `KurtosisPackageIndexerClientContext` and interacted with using `useKurtosisPackageIndexerClient`
 - `emui` - the composition of the above to produce the Enclave Manager UI using react router
 
 ## Available Scripts

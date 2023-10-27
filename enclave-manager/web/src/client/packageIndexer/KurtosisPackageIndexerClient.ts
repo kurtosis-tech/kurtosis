@@ -22,10 +22,10 @@ export class KurtosisPackageIndexerClient {
     return asyncResult(() => {
       const components = packageUrl.split("/");
       if (components.length < 3) {
-        throw `Illegal url, invalid number of components: ${packageUrl}`;
+        throw Error(`Illegal url, invalid number of components: ${packageUrl}`);
       }
       if (components[1].length < 1 || components[2].length < 1) {
-        throw `Illegal url, empty components: ${packageUrl}`;
+        throw Error(`Illegal url, empty components: ${packageUrl}`);
       }
       return this.client.readPackage(
         new ReadPackageRequest({
