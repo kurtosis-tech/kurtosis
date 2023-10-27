@@ -55,7 +55,7 @@ func (validator *ImagesValidator) Validate(
 	}()
 
 	wg := &sync.WaitGroup{}
-	for image := range environment.requiredDockerImages {
+	for image := range environment.imagesToPull {
 		wg.Add(1)
 		go validator.fetchImageFromBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, image, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}

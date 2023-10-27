@@ -140,7 +140,7 @@ func (validator *StartosisValidator) validateImagesAccountingForProgress(ctx con
 	go validator.imagesValidator.Validate(ctx, environment, imageValidationStarted, imageValidationFinished, errors)
 
 	numberOfImageValidated := uint32(0)
-	totalImageNumberToValidate := environment.GetNumberOfContainerImages()
+	totalImageNumberToValidate := environment.GetNumberOfContainerImagesToProcess()
 
 	waitForErrorChannelToBeClosed := make(chan bool)
 	defer close(waitForErrorChannelToBeClosed)

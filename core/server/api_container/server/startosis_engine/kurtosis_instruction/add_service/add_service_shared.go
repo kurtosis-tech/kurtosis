@@ -104,7 +104,7 @@ func validateSingleService(
 	} else {
 		logrus.Errorf("APPEND A REQUIRED IMAGE PULL")
 		logrus.Errorf("IMAGE BUILD SPEC: %v", imageBuildSpec)
-		validatorEnvironment.AppendRequiredContainerImage(serviceConfig.GetContainerImageName())
+		validatorEnvironment.AppendRequiredImagePull(serviceConfig.GetContainerImageName())
 	}
 
 	var portIds []string
