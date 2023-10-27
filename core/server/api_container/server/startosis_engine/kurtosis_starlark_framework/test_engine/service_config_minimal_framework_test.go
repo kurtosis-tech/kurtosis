@@ -33,7 +33,8 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
-	serviceConfig, interpretationErr := serviceConfigStarlark.ToKurtosisType(t.serviceNetwork)
+	mockServiceName := ""
+	serviceConfig, interpretationErr := serviceConfigStarlark.ToKurtosisType(mockServiceName, t.serviceNetwork)
 	require.Nil(t, interpretationErr)
 
 	expectedServiceConfig, err := service.CreateServiceConfig(

@@ -410,7 +410,7 @@ func validateAndConvertConfigsAndReadyConditions(
 		if !isDictValueAServiceConfig {
 			return nil, nil, startosis_errors.NewInterpretationError("One value of the '%s' dictionary is not a ServiceConfig (was '%s'). Values of this argument should correspond to the config of the service to be added", ConfigsArgName, reflect.TypeOf(dictValue))
 		}
-		apiServiceConfig, interpretationErr := serviceConfig.ToKurtosisType(serviceNetwork)
+		apiServiceConfig, interpretationErr := serviceConfig.ToKurtosisType(serviceNameStr.GoString(), serviceNetwork)
 		if interpretationErr != nil {
 			return nil, nil, interpretationErr
 		}

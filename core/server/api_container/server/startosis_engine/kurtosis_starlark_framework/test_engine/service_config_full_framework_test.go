@@ -59,7 +59,8 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
-	serviceConfig, err := serviceConfigStarlark.ToKurtosisType(t.serviceNetwork)
+	mockServiceName := ""
+	serviceConfig, err := serviceConfigStarlark.ToKurtosisType(mockServiceName, t.serviceNetwork)
 	require.Nil(t, err)
 
 	require.Equal(t, testContainerImageName, serviceConfig.GetContainerImageName())
