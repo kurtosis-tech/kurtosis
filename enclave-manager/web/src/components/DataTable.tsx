@@ -57,7 +57,7 @@ export function DataTable<Data extends object>({
   });
 
   return (
-    <Table variant={"kurtosis"}>
+    <Table>
       <Thead>
         {table.getHeaderGroups().map((headerGroup) => (
           <Tr key={headerGroup.id}>

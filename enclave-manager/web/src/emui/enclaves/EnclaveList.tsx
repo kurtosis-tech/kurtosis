@@ -4,7 +4,7 @@ import { FiPlus, FiTrash2 } from "react-icons/fi";
 import { useRouteLoaderData } from "react-router-dom";
 import { Result, ResultNS } from "true-myth";
 import { getKurtosisClient } from "../../client/KurtosisClientContext";
-import { EnclavesTable } from "../../components/enclaves/EnclavesTable";
+import { EnclavesTable } from "../../components/enclaves/tables/EnclavesTable";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { isDefined } from "../../utils";
 import { EnclaveFullInfo } from "./types";
@@ -72,7 +72,7 @@ export const EnclaveList = () => {
                 </Button>
               </ButtonGroup>
             )}
-            <Button variant={"kurtosisOutline"} colorScheme={"kurtosisGreen"} leftIcon={<FiPlus />} size={"md"}>
+            <Button colorScheme={"kurtosisGreen"} leftIcon={<FiPlus />} size={"md"}>
               Create Enclave
             </Button>
           </Flex>

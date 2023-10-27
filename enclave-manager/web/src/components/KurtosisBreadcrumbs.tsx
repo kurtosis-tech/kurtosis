@@ -22,7 +22,7 @@ export const KurtosisBreadcrumbs = () => {
 
   return (
     <Flex h="40px" p={"4px 0"} alignItems={"center"}>
-      <Breadcrumb variant={"topNavigation"} separator={<ChevronRightIcon h={"24px"} />}>
+      <Breadcrumb variant={"topNavigation"} separator={<ChevronRightIcon h={"20px"} w={"24px"} />}>
         {crumbs.map(({ name, destination }, i, arr) => (
           <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
             <BreadcrumbLink as={i === arr.length - 1 ? undefined : Link} to={destination}>

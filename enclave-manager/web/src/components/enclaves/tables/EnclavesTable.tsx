@@ -4,14 +4,14 @@ import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build
 import { EnclaveContainersStatus } from "enclave-manager-sdk/build/engine_service_pb";
 import { DateTime } from "luxon";
 import { useMemo } from "react";
-import { EnclaveFullInfo } from "../../emui/enclaves/types";
-import { DataTable } from "../DataTable";
-import { RelativeDateTime } from "../RelativeDateTime";
-import { EnclaveArtifactsSummary } from "./EnclaveArtifactsSummary";
-import { EnclaveLinkButton } from "./EnclaveLinkButton";
-import { EnclaveServicesSummary } from "./EnclaveServicesSummary";
-import { EnclaveSourceButton } from "./EnclaveSourceButton";
-import { EnclaveStatus } from "./EnclaveStatus";
+import { Link } from "react-router-dom";
+import { EnclaveFullInfo } from "../../../emui/enclaves/types";
+import { DataTable } from "../../DataTable";
+import { FormatDateTime } from "../../FormatDateTime";
+import { EnclaveArtifactsSummary } from "../widgets/EnclaveArtifactsSummary";
+import { EnclaveServicesSummary } from "../widgets/EnclaveServicesSummary";
+import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
+import { EnclaveStatus } from "../widgets/EnclaveStatus";
 
 type EnclaveTableRow = {
   uuid: string;
@@ -25,7 +25,7 @@ type EnclaveTableRow = {
 
 const enclaveToRow = (enclave: EnclaveFullInfo): EnclaveTableRow => {
   return {
-    uuid: enclave.enclaveUuid,
+    uuid: enclave.shortenedUuid,
     name: enclave.name,
     status: enclave.containersStatus,
     created: enclave.creationTime ? DateTime.fromJSDate(enclave.creationTime.toDate()) : null,
@@ -77,7 +77,13 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
       }),
       columnHelper.accessor("name", {
         header: "Name",
-        cell: (nameCell) => <EnclaveLinkButton name={nameCell.row.original.name} uuid={nameCell.row.original.uuid} />,
+        cell: (nameCell) => (
+          <Link to={`/enclave/${nameCell.row.original.uuid}/overview`}>
+            <Button size={"sm"} variant={"ghost"}>
+              {nameCell.row.original.name}
+            </Button>
+          </Link>
+        ),
       }),
       columnHelper.accessor("status", {
         header: "Status",
@@ -86,8 +92,8 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
       columnHelper.accessor("created", {
         header: "Created",
         cell: (createdCell) => (
-          <Button size={"xs"} variant={"kurtosisGhost"}>
-            <RelativeDateTime dateTime={createdCell.getValue()} fontSize={""} />
+          <Button size={"xs"} variant={"ghost"}>
+            <FormatDateTime dateTime={createdCell.getValue()} format={"relative"} />
           </Button>
         ),
       }),

@@ -13,12 +13,12 @@ export const tabsTheme = defineMultiStyleConfig({
     "soft-rounded": (props: StyleFunctionProps) => ({
       tab: {
         fontStyle: "normal",
-        fontWeight: 500,
-        fontSize: "18px",
+        fontWeight: "medium",
+        fontSize: "lg",
         color: "gray.200",
         lineHeight: "28px",
         _selected: {
-          fontWeight: 600,
+          fontWeight: "semibold",
           color: `${props.colorScheme}.400`,
           bg: `gray.800`,
         },

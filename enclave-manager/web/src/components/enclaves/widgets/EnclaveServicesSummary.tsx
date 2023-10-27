@@ -1,6 +1,6 @@
 import { Button, ButtonGroup, Text, Tooltip } from "@chakra-ui/react";
 import { ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
-import { isDefined } from "../../utils";
+import { isDefined } from "../../../utils";
 
 type ServicesSummaryProps = {
   services: ServiceInfo[];
@@ -13,7 +13,7 @@ export const EnclaveServicesSummary = ({ services }: ServicesSummaryProps) => {
 
   if (runningServices + stopppedServices + unknownServices === 0) {
     return (
-      <Text fontSize={"12px"} as={"i"}>
+      <Text fontSize={"xs"} as={"i"}>
         No Services
       </Text>
     );

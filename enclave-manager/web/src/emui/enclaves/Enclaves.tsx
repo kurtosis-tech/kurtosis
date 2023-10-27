@@ -11,15 +11,21 @@ export const enclaveRoutes: RouteObject[] = [
     children: [
       { path: "", element: <EnclaveList /> },
       {
-        path: "enclave/:uuid",
+        path: "enclave/:enclaveUUID",
         loader: enclaveLoader,
         handle: {
           crumb: (data: Awaited<ReturnType<typeof enclaveLoader>>, params: Params<string>) => ({
             name: data.routeName,
-            destination: `/enclave/${params.uuid}`,
+            destination: `/enclave/${params.enclaveUUID}`,
           }),
         },
         children: [
+          {
+            path: "service/:serviceUUID",
+          },
+          {
+            path: "file/:fileUUID",
+          },
           {
             path: ":activeTab?",
             loader: enclaveTabLoader,
@@ -27,7 +33,7 @@ export const enclaveRoutes: RouteObject[] = [
             handle: {
               crumb: (data: Awaited<ReturnType<typeof enclaveTabLoader>>, params: Params<string>) => ({
                 name: data.routeName,
-                destination: `/enclave/${params.uuid}/${params.activeTab || "overview"}`,
+                destination: `/enclave/${params.enclaveUUID}/${params.activeTab || "overview"}`,
               }),
             },
           },

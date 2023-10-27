@@ -38,42 +38,56 @@ const theme = extendTheme({
       600: "#66f27f",
       700: "#99f7aa",
     },
+    darkBlue: {
+      400: "#516A77",
+    },
     gray: {
       100: "#E3E3E3", // text
       200: "#878787",
+      250: "#7A7A7A",
       300: "#606770",
       400: "#5B5B5B", // icon color
       500: "#393B3E",
       600: "#2E2E2E",
+      650: "#292929",
       700: "#1E1E1E",
       800: "#1D1D1D", // selected background
       900: "#111111", // ui background
     },
   },
+  fontSizes: {
+    xs: "12px",
+    sm: "14px",
+    md: "16px",
+    lg: "18px",
+    xl: "20px",
+    ["2xl"]: "22px",
+  },
   styles: {
     global: (props: StyleFunctionProps) => ({
+      body: {
+        bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "gray.900")(props),
+      },
       "nav.primaryNav": {
         bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "black")(props),
       },
       main: {
-        bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "gray.900")(props),
         color: "gray.100",
-        fontSize: "14px",
+        fontSize: "sm",
       },
     }),
   },
   components: {
     Button: {
+      defaultProps: {
+        variant: "outline",
+      },
       variants: {
-        kurtosisOutline: (props: StyleFunctionProps) => {
-          const outline = theme.components.Button.variants!.outline(props);
-          return {
-            ...outline,
-            _hover: { ...outline._hover, bg: "initial", borderColor: `${props.colorScheme}.400` },
-            color: `${props.colorScheme}.400`,
-            borderColor: "gray.300",
-          };
-        },
+        outline: (props: StyleFunctionProps) => ({
+          _hover: { bg: "initial", borderColor: `${props.colorScheme}.400` },
+          color: `${props.colorScheme}.400`,
+          borderColor: "gray.300",
+        }),
         kurtosisGroupOutline: (props: StyleFunctionProps) => {
           const outline = theme.components.Button.variants!.outline(props);
           return {
@@ -100,7 +114,7 @@ const theme = extendTheme({
           bg: "gray.700",
         })),
         ghost: defineStyle((props) => ({
-          _hover: { bg: "gray.700" },
+          _hover: { bg: "gray.650" },
           color: `gray.100`,
         })),
         nav: {
@@ -121,13 +135,13 @@ const theme = extendTheme({
         topNavigation: {
           link: {
             "&[aria-current=page]": {
-              color: "whiteAlpha.700",
+              color: "gray.250",
             },
-            fontSize: "16px",
+            fontSize: "sm",
             lineHeight: "24px",
           },
           separator: {
-            color: "gray.400",
+            color: "gray.250",
           },
         },
       },
@@ -135,11 +149,9 @@ const theme = extendTheme({
     Card: {
       baseStyle: {
         container: {
-          bg: "gray.700",
-          borderWidth: "1px",
-          borderColor: "gray.500",
+          bg: "gray.800",
           borderRadius: "8px",
-          padding: "1rem",
+          padding: "16px",
         },
       },
     },
@@ -167,13 +179,22 @@ const theme = extendTheme({
         },
       })),
     },
+    Popover: {
+      baseStyle: {
+        content: {
+          bg: "gray.500",
+          p: "8px",
+        },
+      },
+    },
     Table: {
       variants: {
-        kurtosis: {
+        simple: {
           th: {
             color: "gray.100",
             borderBottom: "1px solid",
             borderColor: "gray.500",
+            textTransform: "uppercase",
           },
         },
       },
@@ -225,7 +246,7 @@ export const KurtosisThemeProvider = ({
   ...chakraProps
 }: PropsWithChildren<Omit<ChakraProviderProps, "theme">>) => {
   return (
-    <ChakraProvider theme={theme} {...chakraProps}>
+    <ChakraProvider theme={theme} toastOptions={{ defaultOptions: { position: "top" } }} {...chakraProps}>
       <Fonts />
       {children}
     </ChakraProvider>
