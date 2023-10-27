@@ -15,10 +15,14 @@ export const DeleteEnclavesButton = ({ enclaves }: DeleteEnclavesButtonProps) =>
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    setIsLoading(false);
-    setShowModal(false);
-  }, [enclaves]);
+  useEffect(
+    () => {
+      setIsLoading(false);
+      setShowModal(false);
+    },
+    // These deps are defined this way to detect whether or not the enclaves in props are actually different
+    [enclaves.map(({ enclaveUuid }) => enclaveUuid).join(",")],
+  );
 
   const handleDelete = async () => {
     setIsLoading(true);

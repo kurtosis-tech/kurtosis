@@ -23,11 +23,8 @@ export const tabsTheme = defineMultiStyleConfig({
           bg: `gray.800`,
         },
       },
-      tablist: {
-        marginBottom: "8px",
-      },
       tabpanel: {
-        padding: "12px",
+        padding: "32px 0px",
       },
     }),
   },
