@@ -6,10 +6,14 @@ import (
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/joho/godotenv"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
-	"github.com/kurtosis-tech/kurtosis/name_generator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
+	port_spec_starlark "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"go.starlark.net/starlark"
 	"os"
 	"path"
 	"strconv"
@@ -26,6 +30,13 @@ const (
 	// Look for an environment variables file at the package root, and if persent use the values found there
 	// to fill out the Compose
 	envVarsFilename = ".env"
+
+	// Every Compose project needs a project name
+	// This is the one we give by default, but we let it be overridden if the Compose file specifies a 'name' stanza
+	composeProjectName = "root-compose-project"
+
+	// Our project name should cede to the project name in the Compose
+	shouldOverrideComposeYamlKeyProjectName = false
 )
 
 // TODO remove this, and instead use the mainFileName that the user passes in!
@@ -36,6 +47,12 @@ var supportedComposeFilenames = []string{
 	"docker-compose.yaml",
 	"docker_compose.yml",
 	"docker_compose.yaml",
+}
+
+var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtocol{
+	"tcp":  port_spec.TransportProtocol_TCP,
+	"udp":  port_spec.TransportProtocol_UDP,
+	"sctp": port_spec.TransportProtocol_SCTP,
 }
 
 // TODO actually take in a Compose file
@@ -87,70 +104,165 @@ func getComposeFilenameAndContent(packageAbsDirpath string) (string, []byte, err
 // TODO(victor.colombo): Have a better UX letting people know ports have been remapped
 // NOTE: This returns Go errors, not
 func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (string, error) {
-	project, err := loader.Load(types.ConfigDetails{ //nolint:exhaustruct
+	composeParseConfig := types.ConfigDetails{ //nolint:exhaustruct
 		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
 		ConfigFiles: []types.ConfigFile{{
 			Content: composeBytes,
 		}},
 		Environment: envVars,
-	})
+	}
+
+	setProjectNameOpt := func(options *loader.Options) {
+		options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
+	}
+
+	compose, err := loader.Load(composeParseConfig, setProjectNameOpt)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred parsing the Compose file in preparation for Stalrark transpilation")
+		return "", stacktrace.Propagate(err, "An error occurred parsing the Compose file in preparation for Starlark transpilation")
 	}
 
 	serviceStarlarks := map[string]string{}
-	requiredFileUploads := map[string]string{}
 	for _, serviceConfig := range compose.Services {
-		artifactsPiecesStr := []string{}
-		for _, volume := range serviceConfig.Volumes {
-			if volume.Type != types.VolumeTypeBind {
-				return "", nil, stacktrace.NewError("Volume type '%v' is not supported", volume.Type)
+		serviceName := serviceConfig.Name
+
+		serviceConfigKwargs := []starlark.Tuple{}
+
+		/*
+			artifactsPiecesStr := []string{}
+			for volumeIdx, volume := range serviceConfig.Volumes {
+				if volume.Type != types.VolumeTypeBind {
+					return "", stacktrace.NewError("Volume #%v on service '%v' has type '%v', which isn't supported", serviceName, volumeIdx, volume.Type)
+				}
+				if _, ok := requiredFileUploads[volume.Source]; !ok {
+					requiredFileUploads[volume.Source] = name_generator.GenerateNatureThemeNameForFileArtifacts()
+				}
+				artifactsPiecesStr = append(artifactsPiecesStr, fmt.Sprintf("%s:%s", volume.Target, requiredFileUploads[volume.Source]))
 			}
-			if _, ok := requiredFileUploads[volume.Source]; !ok {
-				requiredFileUploads[volume.Source] = name_generator.GenerateNatureThemeNameForFileArtifacts()
-			}
-			artifactsPiecesStr = append(artifactsPiecesStr, fmt.Sprintf("%s:%s", volume.Target, requiredFileUploads[volume.Source]))
-		}
-		portPiecesStr := []string{}
-		for _, port := range serviceConfig.Ports {
-			portStr := fmt.Sprintf("docker-%s=%d", port.Published, port.Target)
-			if port.Protocol != "" {
-				portStr += fmt.Sprintf("/%s", port.Protocol)
-			}
-			portPiecesStr = append(portPiecesStr, portStr)
-		}
-		envvarsPiecesStr := []string{}
-		for envKey, envValue := range serviceConfig.Environment {
-			envValueStr := ""
-			if envValue != nil {
-				envValueStr = *envValue
-			}
-			envvarsPiecesStr = append(envvarsPiecesStr, fmt.Sprintf("%s=%s", envKey, envValueStr))
-		}
-		memMinLimit := getMemoryMegabytesReservation(serviceConfig.Deploy)
-		cpuMinLimit := getMilliCpusReservation(serviceConfig.Deploy)
-		starlarkConfig, err := add.GetServiceConfigStarlark(
-			serviceConfig.Image,
-			strings.Join(portPiecesStr, ","),
-			serviceConfig.Command,
-			serviceConfig.Entrypoint,
-			strings.Join(envvarsPiecesStr, ","),
-			strings.Join(artifactsPiecesStr, ","),
-			0,
-			0,
-			cpuMinLimit,
-			memMinLimit,
-			emptyPrivateIpPlaceholder)
+
+		*/
+
+		// Image
+		serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs,
+			service_config.ImageAttr,
+			starlark.String(serviceConfig.Image),
+		)
+
+		// Ports
+		portSpecsSLDict, err := getPortSpecsSLDict(serviceConfig)
 		if err != nil {
-			return "", nil, stacktrace.Propagate(err, "Error getting service config starlark for '%v'", serviceConfig)
+			return "", stacktrace.Propagate(err, "An error occurred creating the port specs dict for service '%s'", serviceName)
 		}
-		serviceStarlarks[serviceConfig.Name] = starlarkConfig
+		serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs,
+			service_config.PortsAttr,
+			portSpecsSLDict,
+		)
+
+		// ENTRYPOINT
+		if serviceConfig.Entrypoint != nil {
+			entrypointSLStrs := make([]starlark.Value, len(serviceConfig.Entrypoint))
+			for idx, entrypointFragment := range serviceConfig.Entrypoint {
+				entrypointSLStrs[idx] = starlark.String(entrypointFragment)
+			}
+
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.EnvVarsAttr,
+				starlark.NewList(entrypointSLStrs),
+			)
+		}
+
+		// CMD
+		if serviceConfig.Command != nil {
+			commandSLStrs := make([]starlark.Value, len(serviceConfig.Command))
+			for idx, commandFragment := range serviceConfig.Command {
+				commandSLStrs[idx] = starlark.String(commandFragment)
+			}
+
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.EnvVarsAttr,
+				starlark.NewList(commandSLStrs),
+			)
+		}
+
+		// TODO uncomment
+		/*
+			memMinLimit := getMemoryMegabytesReservation(serviceConfig.Deploy)
+			cpuMinLimit := getMilliCpusReservation(serviceConfig.Deploy)
+		*/
+
+		argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
+			service_config.ServiceConfigTypeName,
+			service_config.NewServiceConfigType().KurtosisBaseBuiltin.Arguments,
+			[]starlark.Value{},
+			serviceConfigKwargs,
+		)
+		if interpretationErr != nil {
+			// TODO HANDLE THIS! interpretionerror vs go error
+			return "", interpretationErr
+		}
+
+		serviceConfigKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ServiceConfigTypeName, argumentValuesSet)
+		if interpretationErr != nil {
+			// TODO HANDLE THIS! interpretionerror vs go error
+			return "", interpretationErr
+		}
+
+		serviceStarlarks[serviceName] = serviceConfigKurtosisType.String()
 	}
+
 	script := "def run(plan):\n"
 	for serviceName, serviceConfig := range serviceStarlarks {
 		script += fmt.Sprintf("\tplan.add_service(name = '%s', config = %s)\n", serviceName, serviceConfig)
 	}
-	return script, requiredFileUploads, nil
+	return script, nil
+}
+
+func getPortSpecsSLDict(
+	serviceConfig types.ServiceConfig,
+) (*starlark.Dict, error) {
+	portSpecs := starlark.NewDict(len(serviceConfig.Ports))
+	for portIdx, dockerPort := range serviceConfig.Ports {
+		portName := fmt.Sprintf("port%d", portIdx)
+
+		dockerProto := dockerPort.Protocol
+		kurtosisProto, found := dockerPortProtosToKurtosisPortProtos[strings.ToLower(dockerProto)]
+		if !found {
+			return nil, stacktrace.NewError("Port #%d has unsupported protocol '%v'", portIdx, dockerProto)
+		}
+
+		portSpec, interpretationErr := port_spec_starlark.CreatePortSpecUsingGoValues(
+			uint16(dockerPort.Target),
+			kurtosisProto,
+			nil, // Application protocol (which Compose doesn't have). Maybe we could guess it in the future?
+			"",  // Wait timeout (Compose doesn't have a way to override this)
+		)
+		if interpretationErr != nil {
+			logrus.Debugf(
+				"Interpretation error that occurred when creating a %s object from port #%d:\n%s",
+				port_spec_starlark.PortSpecTypeName,
+				portIdx,
+				interpretationErr.Error(),
+			)
+			return nil, stacktrace.NewError(
+				"An error occurred creating a %s object from port #%d",
+				port_spec_starlark.PortSpecTypeName,
+				portIdx,
+			)
+		}
+		if err := portSpecs.SetKey(
+			starlark.String(portName),
+			portSpec,
+		); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred putting port #%d in Starlark dict", portIdx)
+		}
+
+		// TODO public ports??
+	}
+
+	return portSpecs, nil
 }
 
 func getMemoryMegabytesReservation(deployConfig *types.DeployConfig) int {
@@ -181,4 +293,12 @@ func getMilliCpusReservation(deployConfig *types.DeployConfig) int {
 		}
 	}
 	return reservation
+}
+
+func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Value) []starlark.Tuple {
+	tuple := []starlark.Value{
+		starlark.String(argName),
+		argValue,
+	}
+	return append(kwargs, tuple)
 }

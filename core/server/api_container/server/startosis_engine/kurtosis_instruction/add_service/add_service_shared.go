@@ -46,7 +46,7 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 			maybeWaitTimeout = port.GetWait().GetTimeout().String()
 		}
 
-		portSpec, interpretationErr := port_spec.CreatePortSpec(number, transportProtocol, maybeApplicationProtocol, maybeWaitTimeout)
+		portSpec, interpretationErr := port_spec.CreatePortSpecUsingGoValues(number, transportProtocol, maybeApplicationProtocol, maybeWaitTimeout)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}

@@ -22,7 +22,7 @@ services:
      - "~/minecraft_data:/data"
 `)
 	expectedResult := `def run(plan):
-    plan.add_service(name="minecraft",config=ServiceConfig(image="itzg/minecraft-server",ports={"port0":PortSpec(number=25565)},env_vars={"EULA":"TRUE"}))
+    plan.add_service(name = 'minecraft', config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}))
 `
 
 	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
