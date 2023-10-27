@@ -6,14 +6,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
-	"os"
+	"path"
 	"sync"
 )
 
-const maxNumberOfConcurrentDownloads = int64(4)
+const (
+	maxNumberOfConcurrentDownloads = int64(4)
+	defaultContainerImageFile      = "Dockerfile"
+)
 
 type ImagesValidator struct {
 	kurtosisBackend *backend_interface.KurtosisBackend
@@ -119,36 +120,15 @@ func (validator *ImagesValidator) buildImageUsingBackend(
 	}()
 
 	logrus.Debugf("Starting the build of image: '%s'", imageName)
-	buildContext, err := validator.getBuildContextFromContextDir(imageBuildSpec)
-	if err != nil {
-		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())
-		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageName)
-		return
-	}
+	contextDirPath := imageBuildSpec.GetContextDir()
 
-	err = (*backend).BuildImage(ctx, buildContext)
+	// Assume container image file path is 1) a Dockerfile and 2) at the root of context directory
+	containerImgFilePath := path.Join(contextDirPath, defaultContainerImageFile)
+	err := (*backend).BuildImage(ctx, containerImgFilePath, contextDirPath)
 	if err != nil {
 		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())
 		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageName)
 		return
 	}
 	logrus.Debugf("Container image '%s' successfully built", imageName)
-}
-
-func (validator *ImagesValidator) getBuildContextFromContextDir(imageBuildSpec *image_build_spec.ImageBuildSpec) (io.Reader, error) {
-	contextDir := imageBuildSpec.GetContextDir()
-	buildContextAbsDir, interpretationErr := validator.packageContentProvider.GetOnDiskAbsoluteFilePath(contextDir)
-	if interpretationErr != nil {
-		// TODO: Improve this error message
-		logrus.Errorf("AN ERROR OCCURRED GETTING ABSOLUTE FILEPATH OF DIRECTORY: %v", interpretationErr)
-		return nil, stacktrace.NewError("An error occurred attempting to get the absolute filepath of the image build context directory.")
-	}
-
-	buildContext, err := os.Open(buildContextAbsDir)
-	if err != nil {
-		// TODO: Improve this error message
-		return nil, stacktrace.Propagate(err, "An error occurred attempting to open the build context.")
-	}
-
-	return buildContext, nil
 }

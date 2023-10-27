@@ -32,6 +32,7 @@ import (
 	"io"
 	"math"
 	"net"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -1247,7 +1248,12 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 	return nil
 }
 
-func (manager *DockerManager) BuildImage(ctx context.Context, buildContext io.Reader) error {
+func (manager *DockerManager) BuildImage(ctx context.Context, containerImageFilePath string, contextDirPath string) error {
+	// TODO: remove placeholder build context with taring build context
+	buildContext, err := os.Open(containerImageFilePath)
+	if err != nil {
+		return err
+	}
 	// TODO: FIGURE OUT WHAT OPTIONS WE NEED TO BUILD IMAGES
 	imageBuildOpts := types.ImageBuildOptions{
 		Tags:           []string{},              // what tags should we put?

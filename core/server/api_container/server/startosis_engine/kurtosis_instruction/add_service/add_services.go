@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -30,7 +31,11 @@ const (
 	ConfigsArgName = "configs"
 )
 
-func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewAddServices(
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServicesBuiltinName,
@@ -80,6 +85,7 @@ type AddServicesCapabilities struct {
 
 	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
+	// TODO: Update add_services to handle building images
 	imageBuildSpec map[service.ServiceName]*image_build_spec.ImageBuildSpec
 
 	resultUuids map[service.ServiceName]string
