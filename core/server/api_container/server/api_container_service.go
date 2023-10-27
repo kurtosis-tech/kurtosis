@@ -12,7 +12,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/docker_compose_tranpsiler"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/docker_compose_transpiler"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"io"
 	"math"
@@ -811,7 +811,7 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 		}
 	}
 
-	mainScriptToExecute, transpilationErr := docker_compose_tranpsiler.TranspileDockerComposePackageToStarlark(packageRootPathOnDisk, relativePathToMainFile)
+	mainScriptToExecute, transpilationErr := docker_compose_transpiler.TranspileDockerComposePackageToStarlark(packageRootPathOnDisk, relativePathToMainFile)
 	if transpilationErr != nil {
 		return "", "", nil, startosis_errors.WrapWithInterpretationError(transpilationErr, "An error occurred transpiling the Docker Compose package '%v' to Starlark", packageIdFromArgs)
 	}

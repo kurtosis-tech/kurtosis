@@ -1,4 +1,4 @@
-package docker_compose_tranpsiler
+package docker_compose_transpiler
 
 import (
 	"errors"
@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
 	port_spec_starlark "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/stacktrace"
@@ -87,16 +88,22 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		Environment: envVars,
 	}
 
-	setProjectNameOpt := func(options *loader.Options) {
+	setOptionsFunc := func(options *loader.Options) {
 		options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
+
+		// We don't want to resolve paths; these should get resolved by our package content provider instead
+		options.ResolvePaths = false
+
+		// We do want to convert Windows paths into Linux paths, since the APIC runs on Linux
+		options.ConvertWindowsPaths = true
 	}
 
-	compose, err := loader.Load(composeParseConfig, setProjectNameOpt)
+	compose, err := loader.Load(composeParseConfig, setOptionsFunc)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing the Compose file in preparation for Starlark transpilation")
 	}
 
-	serviceStarlarks := map[string]string{}
+	starlarkLines := []string{}
 	for _, serviceConfig := range compose.Services {
 		serviceName := serviceConfig.Name
 
@@ -116,11 +123,18 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 
 		*/
 
+		// TODO REMOVE
+		image := serviceConfig.Image
+		if image == "" {
+			image = "alpine"
+		}
+
 		// Image
 		serviceConfigKwargs = appendKwarg(
 			serviceConfigKwargs,
 			service_config.ImageAttr,
-			starlark.String(serviceConfig.Image),
+			// starlark.String(serviceConfig.Image),
+			starlark.String(image),
 		)
 
 		// Ports
@@ -173,7 +187,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 					starlark.String(key),
 					starlark.String(*value),
 				); err != nil {
-					return "", stacktrace.Propagate(err, "An error occurred setting key '%s' in environment variables Starlark dict", key)
+					return "", stacktrace.Propagate(err, "An error occurred setting key '%s' in environment variables Starlark dict for service '%s'", key, serviceName)
 				}
 			}
 
@@ -189,6 +203,57 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 			memMinLimit := getMemoryMegabytesReservation(serviceConfig.Deploy)
 			cpuMinLimit := getMilliCpusReservation(serviceConfig.Deploy)
 		*/
+
+		// A map of starlark_variable_name -> relative_upload_path for files artifacts
+		pathsToUpload := make(map[string]string)
+
+		// Volumes
+		if serviceConfig.Volumes != nil {
+			filesArgSLDict := starlark.NewDict(len(serviceConfig.Volumes))
+
+			for volumeIdx, volume := range serviceConfig.Volumes {
+				volumeType := volume.Type
+
+				var shouldPersist bool
+				switch volumeType {
+				case types.VolumeTypeBind:
+					source := volume.Source
+
+					// We guess that when the user specifies an absolute (not relative) path, they want to use the volume
+					// as a persistence layer. We further guess that relative paths are just read-only.
+					shouldPersist = path.IsAbs(source)
+				case types.VolumeTypeVolume:
+					shouldPersist = true
+				}
+
+				var filesDictValue starlark.Value
+				if shouldPersist {
+					persistenceKey := fmt.Sprintf("volume%d", volumeIdx)
+					persistentDirectory, err := createPersistentDirectoryKurtosisType(persistenceKey)
+					if err != nil {
+						return "", stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d on service '%s'", persistenceKey, volumeIdx, serviceName)
+					}
+					filesDictValue = persistentDirectory
+				} else {
+					// If not persistent, do an upload_files
+					filesArtifactVariableName := fmt.Sprintf("%s_volume%d", serviceName, volumeIdx)
+					pathsToUpload[filesArtifactVariableName] = volume.Source
+				}
+
+				if err := filesArgSLDict.SetKey(
+					starlark.String(volume.Target),
+					filesDictValue,
+				); err != nil {
+					return "", stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict for service '%s'", volume.Target, serviceName)
+				}
+			}
+
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.FilesAttr,
+				filesArgSLDict,
+			)
+		}
 
 		argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
 			service_config.ServiceConfigTypeName,
@@ -206,13 +271,22 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 			// TODO HANDLE THIS! interpretionerror vs go error
 			return "", interpretationErr
 		}
+		serviceConfigStr := serviceConfigKurtosisType.String()
 
-		serviceStarlarks[serviceName] = serviceConfigKurtosisType.String()
+		for filesArtifactVariableName, relativePath := range pathsToUpload {
+			// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
+			uploadFilesLine := fmt.Sprintf("%s = plan.upload_files(\"%s\")", filesArtifactVariableName, relativePath)
+			starlarkLines = append(starlarkLines, uploadFilesLine)
+		}
+		// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
+		addServiceLine := fmt.Sprintf("plan.add_service(name = \"%s\", config = %s)", serviceName, serviceConfigStr)
+		starlarkLines = append(starlarkLines, addServiceLine)
 	}
 
+	// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
 	script := "def run(plan):\n"
-	for serviceName, serviceConfig := range serviceStarlarks {
-		script += fmt.Sprintf("    plan.add_service(name = '%s', config = %s)\n", serviceName, serviceConfig)
+	for _, line := range starlarkLines {
+		script += fmt.Sprintf("    %s\n", line)
 	}
 	return script, nil
 }
@@ -298,4 +372,33 @@ func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Valu
 		argValue,
 	}
 	return append(kwargs, tuple)
+}
+
+func createPersistentDirectoryKurtosisType(persistenceKey string) (starlark.Value, error) {
+	directoryKwargs := []starlark.Tuple{}
+
+	directoryKwargs = appendKwarg(
+		directoryKwargs,
+		directory.PersistentKeyAttr,
+		starlark.String(persistenceKey),
+	)
+
+	argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
+		directory.DirectoryTypeName,
+		directory.NewDirectoryType().KurtosisBaseBuiltin.Arguments,
+		[]starlark.Value{},
+		directoryKwargs,
+	)
+	if interpretationErr != nil {
+		// TODO HANDLE THIS! interpretionerror vs go error
+		return nil, interpretationErr
+	}
+
+	directoryKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ServiceConfigTypeName, argumentValuesSet)
+	if interpretationErr != nil {
+		// TODO FIX THIS! INTERPRETATION ERROR VS GO ERROR
+		return nil, interpretationErr
+	}
+
+	return directoryKurtosisType, nil
 }
