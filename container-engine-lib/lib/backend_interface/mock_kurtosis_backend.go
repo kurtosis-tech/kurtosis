@@ -40,13 +40,13 @@ func (_m *MockKurtosisBackend) EXPECT() *MockKurtosisBackend_Expecter {
 	return &MockKurtosisBackend_Expecter{mock: &_m.Mock}
 }
 
-// BuildImage provides a mock function with given fields: ctx, buildContext
-func (_m *MockKurtosisBackend) BuildImage(ctx context.Context, buildContext io.Reader) error {
-	ret := _m.Called(ctx, buildContext)
+// BuildImage provides a mock function with given fields: ctx, containerImageFilePath, contextDirPath
+func (_m *MockKurtosisBackend) BuildImage(ctx context.Context, containerImageFilePath string, contextDirPath string) error {
+	ret := _m.Called(ctx, containerImageFilePath, contextDirPath)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, io.Reader) error); ok {
-		r0 = rf(ctx, buildContext)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, containerImageFilePath, contextDirPath)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -61,14 +61,15 @@ type MockKurtosisBackend_BuildImage_Call struct {
 
 // BuildImage is a helper method to define mock.On call
 //   - ctx context.Context
-//   - buildContext io.Reader
-func (_e *MockKurtosisBackend_Expecter) BuildImage(ctx interface{}, buildContext interface{}) *MockKurtosisBackend_BuildImage_Call {
-	return &MockKurtosisBackend_BuildImage_Call{Call: _e.mock.On("BuildImage", ctx, buildContext)}
+//   - containerImageFilePath string
+//   - contextDirPath string
+func (_e *MockKurtosisBackend_Expecter) BuildImage(ctx interface{}, containerImageFilePath interface{}, contextDirPath interface{}) *MockKurtosisBackend_BuildImage_Call {
+	return &MockKurtosisBackend_BuildImage_Call{Call: _e.mock.On("BuildImage", ctx, containerImageFilePath, contextDirPath)}
 }
 
-func (_c *MockKurtosisBackend_BuildImage_Call) Run(run func(ctx context.Context, buildContext io.Reader)) *MockKurtosisBackend_BuildImage_Call {
+func (_c *MockKurtosisBackend_BuildImage_Call) Run(run func(ctx context.Context, containerImageFilePath string, contextDirPath string)) *MockKurtosisBackend_BuildImage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(io.Reader))
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
 	return _c
 }
@@ -78,7 +79,7 @@ func (_c *MockKurtosisBackend_BuildImage_Call) Return(_a0 error) *MockKurtosisBa
 	return _c
 }
 
-func (_c *MockKurtosisBackend_BuildImage_Call) RunAndReturn(run func(context.Context, io.Reader) error) *MockKurtosisBackend_BuildImage_Call {
+func (_c *MockKurtosisBackend_BuildImage_Call) RunAndReturn(run func(context.Context, string, string) error) *MockKurtosisBackend_BuildImage_Call {
 	_c.Call.Return(run)
 	return _c
 }

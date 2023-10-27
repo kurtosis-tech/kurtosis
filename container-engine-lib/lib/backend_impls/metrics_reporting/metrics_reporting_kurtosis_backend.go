@@ -444,6 +444,6 @@ func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx con
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) BuildImage(ctx context.Context, buildContext io.Reader) error {
+func (backend *MetricsReportingKurtosisBackend) BuildImage(ctx context.Context, containerImageFilePath string, contextDirPath string) error {
 	return nil
 }
