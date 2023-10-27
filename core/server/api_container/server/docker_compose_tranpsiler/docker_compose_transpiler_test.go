@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// From https://github.com/docker/awesome-compose/tree/master/minecraft
 func TestMinecraftCompose(t *testing.T) {
 	composeBytes := []byte(`
 services:
@@ -22,7 +23,7 @@ services:
      - "~/minecraft_data:/data"
 `)
 	expectedResult := `def run(plan):
-    plan.add_service(name = 'minecraft', config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}))
+    plan.add_service(name = 'minecraft', config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, env_vars={"EULA": "TRUE"}))
 `
 
 	result, err := convertComposeToStarlark(composeBytes, map[string]string{})

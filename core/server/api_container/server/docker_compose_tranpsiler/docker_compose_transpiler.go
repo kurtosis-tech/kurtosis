@@ -21,13 +21,11 @@ import (
 )
 
 const (
-	emptyPrivateIpPlaceholder = ""
-	cpuToMilliCpuConstant     = 1024
-	bytesToMegabytes          = 1024 * 1024
-	float64BitWidth           = 64
-	readWriteEveryone         = 0666
+	cpuToMilliCpuConstant = 1024
+	bytesToMegabytes      = 1024 * 1024
+	float64BitWidth       = 64
 
-	// Look for an environment variables file at the package root, and if persent use the values found there
+	// Look for an environment variables file at the package root, and if present use the values found there
 	// to fill out the Compose
 	envVarsFilename = ".env"
 
@@ -187,6 +185,28 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 			)
 		}
 
+		// Env vars
+		if serviceConfig.Environment != nil {
+			enVarsSLDict := starlark.NewDict(len(serviceConfig.Environment))
+			for key, value := range serviceConfig.Environment {
+				if value == nil {
+					continue
+				}
+				if err := enVarsSLDict.SetKey(
+					starlark.String(key),
+					starlark.String(*value),
+				); err != nil {
+					return "", stacktrace.Propagate(err, "An error occurred setting key '%s' in environment variables Starlark dict", key)
+				}
+			}
+
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.EnvVarsAttr,
+				enVarsSLDict,
+			)
+		}
+
 		// TODO uncomment
 		/*
 			memMinLimit := getMemoryMegabytesReservation(serviceConfig.Deploy)
@@ -215,7 +235,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 
 	script := "def run(plan):\n"
 	for serviceName, serviceConfig := range serviceStarlarks {
-		script += fmt.Sprintf("\tplan.add_service(name = '%s', config = %s)\n", serviceName, serviceConfig)
+		script += fmt.Sprintf("    plan.add_service(name = '%s', config = %s)\n", serviceName, serviceConfig)
 	}
 	return script, nil
 }
