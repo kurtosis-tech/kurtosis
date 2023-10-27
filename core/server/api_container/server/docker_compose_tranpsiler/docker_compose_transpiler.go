@@ -1,241 +1,288 @@
 package docker_compose_tranpsiler
 
-const (
-	enclaveNameFlagKey        = "enclave"
-	pathArgKey                = "file-path"
-	dotEnvPathFlagKey         = "env"
-	convertOnlyFlagKey        = "convert"
-	convertOnlyDefaultFlag    = false
-	isPathArgOptional         = false
-	defaultPathArg            = ""
-	defaultDotEnvPathFlag     = ".env"
-	emptyPrivateIpPlaceholder = ""
-	cpuToMilliCpuConstant     = 1024
-	bytesToMegabytes          = 1024 * 1024
-	float64BitWidth           = 64
-	readWriteEveryone         = 0666
-
-	// Signifies that an enclave name should be auto-generated
-	autogenerateEnclaveNameKeyword = ""
-
-	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey    = "engine-client"
-	doNotShowFullUuids    = false
-	doNotDryRun           = false
-	noParallelism         = 1
+import (
+	"errors"
+	"fmt"
+	"github.com/compose-spec/compose-go/loader"
+	"github.com/compose-spec/compose-go/types"
+	"github.com/joho/godotenv"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
+	port_spec_starlark "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
+	"go.starlark.net/starlark"
+	"os"
+	"path"
+	"strconv"
+	"strings"
 )
 
+const (
+	cpuToMilliCpuConstant = 1024
+	bytesToMegabytes      = 1024 * 1024
+	float64BitWidth       = 64
+
+	// Look for an environment variables file at the package root, and if present use the values found there
+	// to fill out the Compose
+	envVarsFilename = ".env"
+
+	// Every Compose project needs a project name
+	// This is the one we give by default, but we let it be overridden if the Compose file specifies a 'name' stanza
+	composeProjectName = "root-compose-project"
+
+	// Our project name should cede to the project name in the Compose
+	shouldOverrideComposeYamlKeyProjectName = false
+)
+
+// TODO remove this, and instead use the mainFileName that the user passes in!
+var supportedComposeFilenames = []string{
+	"compose.yml",
+	"compose.yaml",
+	"docker-compose.yml",
+	"docker-compose.yaml",
+	"docker_compose.yml",
+	"docker_compose.yaml",
+}
+
+var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtocol{
+	"tcp":  port_spec.TransportProtocol_TCP,
+	"udp":  port_spec.TransportProtocol_UDP,
+	"sctp": port_spec.TransportProtocol_SCTP,
+}
+
 // TODO actually take in a Compose file
-func TranspileDockerComposeToStarlark() string {
-	return `
-def run(plan):
-	plan.add_service(
-		name = "dont-doubt-the-dag",
-		config = ServiceConfig(
-			image = ImageBuildSpec("./service"),
-		)
-	)
-`
-}
-
-/*
-
-var ImportCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:                command_str_consts.ImportCmdStr,
-	ShortDescription:          "Import external workflows into Kurtosis",
-	LongDescription:           "Import external workflow into Kurtosis (currently only supports Docker Compose)",
-	KurtosisBackendContextKey: kurtosisBackendCtxKey,
-	EngineClientContextKey:    engineClientCtxKey,
-	Flags: []*flags.FlagConfig{
-		{
-			Key:       enclaveNameFlagKey,
-			Shorthand: "n",
-			Default:   autogenerateEnclaveNameKeyword,
-			Usage: fmt.Sprintf(
-				"The enclave name to give the new enclave, which must match regex '%v' "+
-					"(emptystring will autogenerate an enclave name)",
-				enclave_consts.AllowedEnclaveNameCharsRegexStr,
-			),
-			Type: flags.FlagType_String,
-		},
-		{
-			Key:       dotEnvPathFlagKey,
-			Shorthand: "e",
-			Default:   defaultDotEnvPathFlag,
-			Usage:     "The .env file path to be loaded into docker compose",
-			Type:      flags.FlagType_String,
-		},
-		{
-			Key:       convertOnlyFlagKey,
-			Shorthand: "c",
-			Default:   fmt.Sprintf("%v", convertOnlyDefaultFlag),
-			Usage:     "If enabled, only converts Docker Compose into Starlark without running it",
-			Type:      flags.FlagType_Bool,
-		},
-		// TODO: Add connect flag similar to the run command.
-	},
-	Args: []*args.ArgConfig{
-		file_system_path_arg.NewFilepathOrDirpathArg(
-			pathArgKey,
-			isPathArgOptional,
-			defaultPathArg,
-			file_system_path_arg.DefaultValidationFunc,
-		),
-	},
-	RunFunc: run,
-}
-
-func run(
-	ctx context.Context,
-	kurtosisBackend backend_interface.KurtosisBackend,
-	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	_ metrics_client.MetricsClient,
-	flags *flags.ParsedFlags,
-	args *args.ParsedArgs) error {
-	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+func TranspileDockerComposePackageToStarlark(packageAbsDirpath string) (string, error) {
+	// Useful for logging, to not leak internals of APIC
+	composeFilename, composeBytes, err := getComposeFilenameAndContent(packageAbsDirpath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
+		return "", stacktrace.Propagate(err, "An error occurred reading the Compose file")
 	}
 
-	path, err := args.GetNonGreedyArg(pathArgKey)
+	// Use the envvars file next to the Compose if it exists
+	envVarsFilepath := path.Join(packageAbsDirpath, envVarsFilename)
+	var envVars map[string]string
+	envVarsInFile, err := godotenv.Read(envVarsFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "Path arg '%v' is missing", pathArgKey)
-	}
-
-	dotEnvPath, err := flags.GetString(dotEnvPathFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Dot env path flag '%v' is missing", dotEnvPath)
-	}
-
-	convertOnly, err := flags.GetBool(convertOnlyFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Convert only flag '%v' is missing", convertOnlyFlagKey)
-	}
-
-	dotEnvMap, err := godotenv.Read(dotEnvPath)
-	if err != nil {
-		logrus.Debugf("No dotenv file was found: %v", err)
-		dotEnvMap = map[string]string{}
-	}
-	logrus.Debugf("Enviroment loaded: %v", dotEnvMap)
-
-	script, artifacts, err := convertComposeFileToStarlark(path, dotEnvMap)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to convert compose to starlark")
-	}
-	// TODO(victor.colombo): Make this as pretty as run is
-	if convertOnly {
-		fileBase := filepath.Base(path)
-		fileName := fmt.Sprintf("%s.star", strings.TrimSuffix(fileBase, filepath.Ext(fileBase)))
-		if err := os.WriteFile(fileName, []byte(script), readWriteEveryone); err != nil {
-			return stacktrace.Propagate(err, "failed to write starlark file '%v'", fileName)
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", stacktrace.Propagate(err, "Failed to transpile Docker Compose package to Starlark; a %v file was detected in the package, but an error occurred reading", envVarsFilename)
 		}
-		return nil
+		envVarsInFile = map[string]string{}
 	}
-	logrus.Debugf("Generated starlark:\n%s", script)
+	envVars = envVarsInFile
 
-	enclaveName, err := flags.GetString(enclaveNameFlagKey)
+	script, err := convertComposeToStarlark(composeBytes, envVars)
 	if err != nil {
-		return stacktrace.Propagate(err, "Couldn't find enclave name flag '%v'", enclaveNameFlagKey)
+		return "", stacktrace.Propagate(err, "An error occurred transpiling Compose file '%v' to Starlark", composeFilename)
 	}
-	enclaveCtx, err := createEnclave(ctx, kurtosisCtx, enclaveName)
-	if err != nil {
-		return stacktrace.Propagate(err, "Couldn't create enclave")
-	}
-	err = uploadArtifacts(enclaveCtx, artifacts)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to upload all required artifacts for execution")
-	}
-	err = runStarlark(ctx, enclaveCtx, script)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to run generated starlark from compose")
-	}
-	if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), doNotShowFullUuids); err != nil {
-		logrus.Errorf("An error occurred while printing enclave status and contents:\n%s", err)
-	}
-	return nil
+	return script, nil
 }
 
-func convertComposeFileToStarlark(path string, dotEnvMap map[string]string) (string, map[string]string, error) {
-	project, err := loader.Load(types.ConfigDetails{ //nolint:exhaustruct
-		ConfigFiles: []types.ConfigFile{{Filename: path}},
-		Environment: dotEnvMap,
-	})
-	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "Error parsing docker compose")
-	}
-	script, artifacts, err := convertComposeProjectToStarlark(project)
-	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "Error translating docker compose to Starlark")
-	}
-	return script, artifacts, nil
-}
+// ====================================================================================================
+//                                   Private Helper Functions
+// ====================================================================================================
 
-func uploadArtifacts(enclaveCtx *enclaves.EnclaveContext, artifactUploadMap map[string]string) error {
-	for source, artifactName := range artifactUploadMap {
-		_, _, err := enclaveCtx.UploadFiles(source, artifactName)
+func getComposeFilenameAndContent(packageAbsDirpath string) (string, []byte, error) {
+	for _, composeFilename := range supportedComposeFilenames {
+		composeFilepath := path.Join(packageAbsDirpath, composeFilename)
+		composeBytes, err := os.ReadFile(composeFilepath)
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to upload path '%v' as artifact '%s'", source, artifactName)
+			continue
 		}
+
+		return composeFilename, composeBytes, nil
 	}
-	return nil
+
+	joinedComposeFilenames := strings.Join(supportedComposeFilenames, ", ")
+	return "", nil, stacktrace.NewError("Failed to transpile Docker Compose package to Starlark because no Compose file was found at the package root after looking for the following files: %s", joinedComposeFilenames)
 }
 
 // TODO(victor.colombo): Have a better UX letting people know ports have been remapped
-func convertComposeProjectToStarlark(compose *types.Project) (string, map[string]string, error) {
-	serviceStarlarks := map[string]string{}
-	requiredFileUploads := map[string]string{}
-	for _, serviceConfig := range compose.Services {
-		artifactsPiecesStr := []string{}
-		for _, volume := range serviceConfig.Volumes {
-			if volume.Type != types.VolumeTypeBind {
-				return "", nil, stacktrace.NewError("Volume type '%v' is not supported", volume.Type)
-			}
-			if _, ok := requiredFileUploads[volume.Source]; !ok {
-				requiredFileUploads[volume.Source] = name_generator.GenerateNatureThemeNameForFileArtifacts()
-			}
-			artifactsPiecesStr = append(artifactsPiecesStr, fmt.Sprintf("%s:%s", volume.Target, requiredFileUploads[volume.Source]))
-		}
-		portPiecesStr := []string{}
-		for _, port := range serviceConfig.Ports {
-			portStr := fmt.Sprintf("docker-%s=%d", port.Published, port.Target)
-			if port.Protocol != "" {
-				portStr += fmt.Sprintf("/%s", port.Protocol)
-			}
-			portPiecesStr = append(portPiecesStr, portStr)
-		}
-		envvarsPiecesStr := []string{}
-		for envKey, envValue := range serviceConfig.Environment {
-			envValueStr := ""
-			if envValue != nil {
-				envValueStr = *envValue
-			}
-			envvarsPiecesStr = append(envvarsPiecesStr, fmt.Sprintf("%s=%s", envKey, envValueStr))
-		}
-		memMinLimit := getMemoryMegabytesReservation(serviceConfig.Deploy)
-		cpuMinLimit := getMilliCpusReservation(serviceConfig.Deploy)
-		starlarkConfig, err := add.GetServiceConfigStarlark(
-			serviceConfig.Image,
-			strings.Join(portPiecesStr, ","),
-			serviceConfig.Command,
-			serviceConfig.Entrypoint,
-			strings.Join(envvarsPiecesStr, ","),
-			strings.Join(artifactsPiecesStr, ","),
-			0,
-			0,
-			cpuMinLimit,
-			memMinLimit,
-			emptyPrivateIpPlaceholder)
-		if err != nil {
-			return "", nil, stacktrace.Propagate(err, "Error getting service config starlark for '%v'", serviceConfig)
-		}
-		serviceStarlarks[serviceConfig.Name] = starlarkConfig
+// NOTE: This returns Go errors, not
+func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (string, error) {
+	composeParseConfig := types.ConfigDetails{ //nolint:exhaustruct
+		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
+		ConfigFiles: []types.ConfigFile{{
+			Content: composeBytes,
+		}},
+		Environment: envVars,
 	}
+
+	setProjectNameOpt := func(options *loader.Options) {
+		options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
+	}
+
+	compose, err := loader.Load(composeParseConfig, setProjectNameOpt)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred parsing the Compose file in preparation for Starlark transpilation")
+	}
+
+	serviceStarlarks := map[string]string{}
+	for _, serviceConfig := range compose.Services {
+		serviceName := serviceConfig.Name
+
+		serviceConfigKwargs := []starlark.Tuple{}
+
+		/*
+			artifactsPiecesStr := []string{}
+			for volumeIdx, volume := range serviceConfig.Volumes {
+				if volume.Type != types.VolumeTypeBind {
+					return "", stacktrace.NewError("Volume #%v on service '%v' has type '%v', which isn't supported", serviceName, volumeIdx, volume.Type)
+				}
+				if _, ok := requiredFileUploads[volume.Source]; !ok {
+					requiredFileUploads[volume.Source] = name_generator.GenerateNatureThemeNameForFileArtifacts()
+				}
+				artifactsPiecesStr = append(artifactsPiecesStr, fmt.Sprintf("%s:%s", volume.Target, requiredFileUploads[volume.Source]))
+			}
+
+		*/
+
+		// Image
+		serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs,
+			service_config.ImageAttr,
+			starlark.String(serviceConfig.Image),
+		)
+
+		// Ports
+		portSpecsSLDict, err := getPortSpecsSLDict(serviceConfig)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred creating the port specs dict for service '%s'", serviceName)
+		}
+		serviceConfigKwargs = appendKwarg(
+			serviceConfigKwargs,
+			service_config.PortsAttr,
+			portSpecsSLDict,
+		)
+
+		// ENTRYPOINT
+		if serviceConfig.Entrypoint != nil {
+			entrypointSLStrs := make([]starlark.Value, len(serviceConfig.Entrypoint))
+			for idx, entrypointFragment := range serviceConfig.Entrypoint {
+				entrypointSLStrs[idx] = starlark.String(entrypointFragment)
+			}
+
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.EnvVarsAttr,
+				starlark.NewList(entrypointSLStrs),
+			)
+		}
+
+		// CMD
+		if serviceConfig.Command != nil {
+			commandSLStrs := make([]starlark.Value, len(serviceConfig.Command))
+			for idx, commandFragment := range serviceConfig.Command {
+				commandSLStrs[idx] = starlark.String(commandFragment)
+			}
+
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.EnvVarsAttr,
+				starlark.NewList(commandSLStrs),
+			)
+		}
+
+		// Env vars
+		if serviceConfig.Environment != nil {
+			enVarsSLDict := starlark.NewDict(len(serviceConfig.Environment))
+			for key, value := range serviceConfig.Environment {
+				if value == nil {
+					continue
+				}
+				if err := enVarsSLDict.SetKey(
+					starlark.String(key),
+					starlark.String(*value),
+				); err != nil {
+					return "", stacktrace.Propagate(err, "An error occurred setting key '%s' in environment variables Starlark dict", key)
+				}
+			}
+
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.EnvVarsAttr,
+				enVarsSLDict,
+			)
+		}
+
+		// TODO uncomment
+		/*
+			memMinLimit := getMemoryMegabytesReservation(serviceConfig.Deploy)
+			cpuMinLimit := getMilliCpusReservation(serviceConfig.Deploy)
+		*/
+
+		argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
+			service_config.ServiceConfigTypeName,
+			service_config.NewServiceConfigType().KurtosisBaseBuiltin.Arguments,
+			[]starlark.Value{},
+			serviceConfigKwargs,
+		)
+		if interpretationErr != nil {
+			// TODO HANDLE THIS! interpretionerror vs go error
+			return "", interpretationErr
+		}
+
+		serviceConfigKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ServiceConfigTypeName, argumentValuesSet)
+		if interpretationErr != nil {
+			// TODO HANDLE THIS! interpretionerror vs go error
+			return "", interpretationErr
+		}
+
+		serviceStarlarks[serviceName] = serviceConfigKurtosisType.String()
+	}
+
 	script := "def run(plan):\n"
 	for serviceName, serviceConfig := range serviceStarlarks {
-		script += fmt.Sprintf("\tplan.add_service(name = '%s', config = %s)\n", serviceName, serviceConfig)
+		script += fmt.Sprintf("    plan.add_service(name = '%s', config = %s)\n", serviceName, serviceConfig)
 	}
-	return script, requiredFileUploads, nil
+	return script, nil
+}
+
+func getPortSpecsSLDict(
+	serviceConfig types.ServiceConfig,
+) (*starlark.Dict, error) {
+	portSpecs := starlark.NewDict(len(serviceConfig.Ports))
+	for portIdx, dockerPort := range serviceConfig.Ports {
+		portName := fmt.Sprintf("port%d", portIdx)
+
+		dockerProto := dockerPort.Protocol
+		kurtosisProto, found := dockerPortProtosToKurtosisPortProtos[strings.ToLower(dockerProto)]
+		if !found {
+			return nil, stacktrace.NewError("Port #%d has unsupported protocol '%v'", portIdx, dockerProto)
+		}
+
+		portSpec, interpretationErr := port_spec_starlark.CreatePortSpecUsingGoValues(
+			uint16(dockerPort.Target),
+			kurtosisProto,
+			nil, // Application protocol (which Compose doesn't have). Maybe we could guess it in the future?
+			"",  // Wait timeout (Compose doesn't have a way to override this)
+		)
+		if interpretationErr != nil {
+			logrus.Debugf(
+				"Interpretation error that occurred when creating a %s object from port #%d:\n%s",
+				port_spec_starlark.PortSpecTypeName,
+				portIdx,
+				interpretationErr.Error(),
+			)
+			return nil, stacktrace.NewError(
+				"An error occurred creating a %s object from port #%d",
+				port_spec_starlark.PortSpecTypeName,
+				portIdx,
+			)
+		}
+		if err := portSpecs.SetKey(
+			starlark.String(portName),
+			portSpec,
+		); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred putting port #%d in Starlark dict", portIdx)
+		}
+
+		// TODO public ports??
+	}
+
+	return portSpecs, nil
 }
 
 func getMemoryMegabytesReservation(deployConfig *types.DeployConfig) int {
@@ -268,26 +315,10 @@ func getMilliCpusReservation(deployConfig *types.DeployConfig) int {
 	return reservation
 }
 
-func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveName string) (*enclaves.EnclaveContext, error) {
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave '%v'", enclaveName)
+func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Value) []starlark.Tuple {
+	tuple := []starlark.Value{
+		starlark.String(argName),
+		argValue,
 	}
-	return enclaveCtx, nil
+	return append(kwargs, tuple)
 }
-
-// TODO(victor.colombo): This should be part of the SDK, since we implement this over and over again
-func runStarlark(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, starlarkScript string) error {
-	responseLineChan, cancelFunc, err := enclaveCtx.RunStarlarkScript(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithParallelism(noParallelism)))
-	if err != nil {
-		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
-	}
-	errRunningKurtosis := _run.ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, command_args_run.OutputOnly, doNotDryRun)
-	if errRunningKurtosis != nil {
-		return stacktrace.Propagate(errRunningKurtosis, "An error running starlark happaned")
-	}
-	return nil
-}
-
-
-*/

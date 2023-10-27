@@ -85,7 +85,9 @@ type PortSpec struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
 }
 
-func CreatePortSpec(
+// This creates a PortSpec object just like the instantiate function, but with the added convenience of first converting Go values
+// into Starlark values
+func CreatePortSpecUsingGoValues(
 	portNumber uint16,
 	transportProtocol port_spec.TransportProtocol,
 	maybeApplicationProtocol *string,

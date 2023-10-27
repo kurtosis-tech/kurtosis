@@ -10,10 +10,11 @@ import (
 	"strings"
 )
 
-// ArgumentValuesSet object stores both the definition of all argument types for a given builtin and the values passed
-// by the Starlark interpreter. It can be seen as a concrete "instantiation" for a given schema
+// ArgumentValuesSet object stores both the definition of all argument types for a given builtin, and the values passed
+// by the Starlark interpreter. It can be seen as a concrete "instantiation" for a given schema.
 //
 // It has multiple functions:
+// - It validates to ensure that the set of values is valid according to the argument definition
 // - It provides a way to get an argument definition from its name
 // - It provides a way to access the value of an argument from its name
 type ArgumentValuesSet struct {
@@ -29,6 +30,7 @@ func NewArgumentValuesSet(argumentsDefinition []*BuiltinArgument, values []starl
 	}
 }
 
+// (kevin) Why is this separate from NewArgumentValuesSet?
 func CreateNewArgumentValuesSet(builtinName string, argumentsDefinition []*BuiltinArgument, args starlark.Tuple, kwargs []starlark.Tuple) (*ArgumentValuesSet, *startosis_errors.InterpretationError) {
 	argumentValues, err := parseArguments(argumentsDefinition, builtinName, args, kwargs)
 	if err != nil {

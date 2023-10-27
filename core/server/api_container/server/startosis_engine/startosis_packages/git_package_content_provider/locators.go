@@ -19,6 +19,7 @@ func isLocalLocator(locator string) bool {
 }
 
 func isSamePackageLocalAbsoluteLocator(locator string, parentPackageId string) bool {
+	// TODO Fix bug https://github.com/kurtosis-tech/kurtosis/issues/1637 here!!!
 	return strings.HasPrefix(locator, parentPackageId)
 }
 

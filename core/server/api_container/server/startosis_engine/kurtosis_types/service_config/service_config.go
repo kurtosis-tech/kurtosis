@@ -205,6 +205,8 @@ type ServiceConfig struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
 }
 
+// TODO Maybe a CreateServiceConfigUsingGoValues(), as a convenience for transforming Go values to SL values?
+
 func (config *ServiceConfig) Copy() (builtin_argument.KurtosisValueType, error) {
 	copiedValueType, err := config.KurtosisValueTypeDefault.Copy()
 	if err != nil {
