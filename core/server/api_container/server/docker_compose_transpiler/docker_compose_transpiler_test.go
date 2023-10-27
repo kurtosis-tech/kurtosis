@@ -23,7 +23,8 @@ services:
      - "~/minecraft_data:/data"
 `)
 	expectedResult := `def run(plan):
-    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={}, env_vars={"EULA": "TRUE"}))
+    plan.upload_files(src = "minecraft--volume0", name = "~/minecraft_data")
+    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": "minecraft--volume0"}, env_vars={"EULA": "TRUE"}))
 `
 
 	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
@@ -46,7 +47,8 @@ func TestAngularCompose(t *testing.T) {
       - /project/node_modules
 `)
 	expectedResult := `def run(plan):
-    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={}, env_vars={"EULA": "TRUE"}))
+    plan.upload_files(src = "web--volume0", name = "./angular")
+    plan.add_service(name = "web", config = ServiceConfig(image="alpine", ports={"port0": PortSpec(number=4200, transport_protocol="TCP")}, files={"/project": "web--volume0", "/project/node_modules": ServiceConfig(persistent_key="volume1")}, env_vars={}))
 `
 
 	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
