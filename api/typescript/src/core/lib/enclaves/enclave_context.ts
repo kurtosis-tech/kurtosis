@@ -151,6 +151,8 @@ export class EnclaveContext {
             return err(new Error(`Unexpected error while getting the Kurtosis yaml file from path '${packageRootPath}'`))
         }
 
+        // TODO TODO TODO TODO put in Compose stuff here!!!
+
         const kurtosisYaml: KurtosisYaml = kurtosisYmlResult.value
         const packageId: string = kurtosisYaml.name
         const packageReplaceOptions: Map<string, string> = kurtosisYaml.packageReplaceOptions
