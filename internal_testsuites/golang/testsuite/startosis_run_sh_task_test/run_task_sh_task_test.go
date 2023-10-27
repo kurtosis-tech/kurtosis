@@ -46,6 +46,15 @@ def run(plan):
   result2 = plan.run_sh(files={"/temp": files_artifacts[0]}, run="cat /temp/data/kurtosis.txt")
   plan.verify(result2.output, "==", "kurtosis\n")
 `
+	runShWithNewLineRemoval = `
+def run(plan):
+  result = plan.run_sh(run="mkdir -p /src && echo kurtosis > /src/tech.txt", store=["/src/tech.txt"])
+  file_artifacts = result.files_artifacts
+  result2 = plan.run_sh(run="cat /temp/tech.txt", files={"/temp": file_artifacts[0]})
+  plan.verify(result2.output, "==", "kurtosis\n")
+  result2 = plan.run_sh(run="cat /temp/tech.txt | tr -d '\n'", files={"/temp": file_artifacts[0]})
+  plan.verify(result2.output, "==", "kurtosis")
+`
 )
 
 func TestStarlark_RunshTaskSimple(t *testing.T) {
@@ -84,4 +93,10 @@ func TestStarlark_RunshFileArtifactWithoutParentDir(t *testing.T) {
 	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkIgnoreParentDir)
 	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nVerification succeeded. Value is '\"kurtosis\\n\"'.\n"
 	require.Equal(t, expectedOutput, string(runResult.RunOutput))
+}
+
+func TestStarlark_RunShWithNewLineRemovalPipe(t *testing.T) {
+	ctx := context.Background()
+	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runShWithNewLineRemoval)
+	require.Nil(t, err)
 }
