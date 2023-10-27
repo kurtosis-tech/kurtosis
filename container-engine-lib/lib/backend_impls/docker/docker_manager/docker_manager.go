@@ -6,10 +6,9 @@
 package docker_manager
 
 import (
-	"archive/tar"
 	"bufio"
-	"bytes"
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
@@ -30,12 +29,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/mholt/archiver/v3"
 	"github.com/sirupsen/logrus"
 	"io"
 	"math"
 	"net"
 	"os"
+	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -140,6 +142,15 @@ const (
 	dontStreamStats        = false
 
 	kurtosisTagPrefix = "kurtosistech/"
+
+	defaultContainerImageFile = "Dockerfile"
+
+	kurtosisDataTransferLimit = 100 * 1024 * 1024 // 100 MB
+	tempCompressionDirPattern = "upload-compression-cache-"
+	compressionExtension      = ".tgz"
+	defaultTmpDir             = ""
+	ownerAllPermissions       = 0700
+	readonlyPermissions       = 0400
 )
 
 type RestartPolicy string
@@ -1251,41 +1262,17 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 }
 
 func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, containerImageFilePath string, contextDirPath string) error {
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-	defer tw.Close()
-
-	dockerFile := "Dockerfile"
-	dockerFileReader, err := os.Open(containerImageFilePath)
+	containerImageFileTarReader, err := getBuildContext(contextDirPath)
 	if err != nil {
-		logrus.Errorf("%v :unable to open Dockerfile", err)
-	}
-	readDockerFile, err := io.ReadAll(dockerFileReader)
-	if err != nil {
-		logrus.Errorf("%v :unable to read Dockerfile", err)
+		return stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
 	}
 
-	tarHeader := &tar.Header{
-		Name: dockerFile,
-		Size: int64(len(readDockerFile)),
-	}
-	err = tw.WriteHeader(tarHeader)
-	if err != nil {
-		logrus.Errorf("%v :unable to write tar header", err)
-	}
-	_, err = tw.Write(readDockerFile)
-	if err != nil {
-		logrus.Errorf("%v :unable to write tar body", err)
-	}
-	dockerFileTarReader := bytes.NewReader(buf.Bytes())
-
-	// TODO: FIGURE OUT WHAT OPTIONS WE NEED TO BUILD IMAGES
 	imageBuildOpts := types.ImageBuildOptions{
 		Tags:           []string{imageName},
 		SuppressOutput: false,
 		RemoteContext:  "",
-		NoCache:        false,
-		Remove:         true,
+		NoCache:        false, // needs to be false so image only rebuilds if docker detects changes to cached image
+		Remove:         false,
 		ForceRemove:    false,
 		PullParent:     false,
 		Isolation:      container.Isolation(""),
@@ -1299,7 +1286,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		CgroupParent:   "",
 		NetworkMode:    "",
 		ShmSize:        0,
-		Dockerfile:     dockerFile, // hmm is this the name of the docker file?
+		Dockerfile:     defaultContainerImageFile,
 		Ulimits:        []*units.Ulimit{},
 		// BuildArgs needs to be a *string instead of just a string so that
 		// we can tell the difference between "" (empty string) and no value
@@ -1307,7 +1294,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		// api/server/router/build/build_routes.go for even more info.
 		BuildArgs:   map[string]*string{}, // what build args do we require?
 		AuthConfigs: map[string]registry.AuthConfig{},
-		Context:     dockerFileTarReader,
+		Context:     containerImageFileTarReader,
 		Labels:      map[string]string{}, // how do we want to label this image?
 		// squash the resulting image's layers to the parent
 		// preserves the original image and creates a new one from the parent with all
@@ -1318,7 +1305,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		CacheFrom:   []string{},
 		SecurityOpt: []string{},
 		ExtraHosts:  []string{}, // List of extra hosts
-		Target:      "",
+		Target:      "",         // TODO: add this
 		SessionID:   "",
 		Platform:    "",
 		// Version specifies the version of the underlying builder to use
@@ -1326,14 +1313,14 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		// BuildID is an optional identifier that can be passed together with the
 		// build request. The same identifier can be used to gracefully cancel the
 		// build with the cancel request.
-		BuildID: "", // prob don't need this
+		BuildID: "",
 		// Outputs defines configurations for exporting build results. Only supported in BuildKit mode.
-		Outputs: []types.ImageBuildOutput{}, // we prob don't need this
+		Outputs: []types.ImageBuildOutput{},
 	}
 
-	imageBuildResponse, err := manager.dockerClient.ImageBuild(ctx, dockerFileTarReader, imageBuildOpts)
+	imageBuildResponse, err := manager.dockerClient.ImageBuild(ctx, containerImageFileTarReader, imageBuildOpts)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", "PLACEHOLDER")
+		return stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", imageName)
 	}
 	defer imageBuildResponse.Body.Close()
 
@@ -1343,6 +1330,15 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	}
 
 	return nil
+}
+
+// returns a reader to a tarball of [contextDirPath]
+func getBuildContext(contextDirPath string) (io.Reader, error) {
+	buildContext, _, _, err := CompressPath(contextDirPath, false)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred compressing the path to context directory path '%v'", contextDirPath)
+	}
+	return buildContext, nil
 }
 
 func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
@@ -2140,4 +2136,158 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (comp
 	}
 	wg.Wait()
 	return compute_resources.MemoryInMegaBytes((totalFreeMemory - totalUsedMemory) / bytesInMegaBytes), compute_resources.CpuMilliCores(float64(totalCPUs*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu)), nil
+}
+
+// TODO: THESE ARE TAKEN COPIED FROM SHARED UTILS IN THE CLI, DRY THESE FUNCTIONS
+// CompressPath is similar to CompressPathToFile but opens the archive and returns a ReadCloser to it.
+// It's the consumer's responsibility to make sure the result gets closed appropriately
+func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) (io.ReadCloser, uint64, []byte, error) {
+	compressedFilePath, compressedFileSize, compressedFileContentMd5, err := CompressPathToFile(pathToCompress, enforceMaxFileSizeLimit)
+	if err != nil {
+		return nil, 0, nil, stacktrace.Propagate(err,
+			"An error occurred creating the archive from the files at '%s'", pathToCompress)
+	}
+	compressedFile, err := os.OpenFile(compressedFilePath, os.O_RDONLY, ownerAllPermissions)
+	if err != nil {
+		return nil, 0, nil, stacktrace.Propagate(err,
+			"Failed to open the archive file at '%s' during files upload for '%s'.", compressedFilePath, pathToCompress)
+	}
+	return compressedFile, compressedFileSize, compressedFileContentMd5, nil
+}
+
+// CompressPathToFile compresses the entire content of the file or directory at pathToCompress and returns the path
+// to the TGZ archive created, alongside the size (in bytes) of the archive and the md5 of its content
+// Note: the MD5 is NOT the MD% of the archive file itself. See inline comments below for more info on this MD5 hash
+func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (string, uint64, []byte, error) {
+	// First we compute the hash of the content about to be compressed
+	// Note that we're computing this "complex" hash here because the way tar.gz works, it writes files metadata to the
+	// archive, like last date of modification for each file. In our case, we just want to hash the content, regardless
+	// of those metadata.
+	filesInPathRecursive, err := listFilesInPathDeterministic(pathToCompress, true)
+	if err != nil {
+		return "", 0, nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
+	}
+	compressedFileContentMd5 := md5.New()
+	for _, filePath := range filesInPathRecursive {
+		pathRelativeToRoot := strings.Replace(filePath, pathToCompress, "", 1)
+		// we write both the file path relative to the root AND the file content to the hash, such that if the structure
+		// of the archive change but the files remains the same, the hash will change as well
+		compressedFileContentMd5.Write([]byte(pathRelativeToRoot))
+		if err = writeFileContent(filePath, compressedFileContentMd5); err != nil {
+			return "", 0, nil, stacktrace.Propagate(err, "An error occurred computing files artifact hash for '%s' in '%s'", filePath, pathToCompress)
+		}
+	}
+
+	// Then we compress the content into an archive
+	filepathsToUpload, err := listFilesInPathDeterministic(pathToCompress, false)
+	if err != nil {
+		return "", 0, nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
+	}
+
+	tempDir, err := os.MkdirTemp(defaultTmpDir, tempCompressionDirPattern)
+	if err != nil {
+		return "", 0, nil, stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
+	}
+
+	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToCompress)+compressionExtension)
+	if err = archiver.Archive(filepathsToUpload, compressedFilePath); err != nil {
+		return "", 0, nil, stacktrace.Propagate(err, "Failed to compress '%s'.", pathToCompress)
+	}
+
+	compressedFileInfo, err := os.Stat(compressedFilePath)
+	if err != nil {
+		return "", 0, nil, stacktrace.Propagate(err,
+			"Failed to inspect temporary archive file at '%s' during files upload for '%s'.",
+			tempDir, pathToCompress)
+	}
+
+	var compressedFileSize uint64
+	if compressedFileInfo.Size() >= 0 {
+		compressedFileSize = uint64(compressedFileInfo.Size())
+	} else {
+		return "", 0, nil, stacktrace.Propagate(err,
+			"Failed to compute archive size for temporary file '%s' obtained compressing path '%s'",
+			tempDir, pathToCompress)
+	}
+
+	if enforceMaxFileSizeLimit && compressedFileSize >= kurtosisDataTransferLimit {
+		return "", 0, nil, stacktrace.NewError(
+			"The files you are trying to upload, which are now compressed, exceed or reach 100mb. " +
+				"Manipulation (i.e. uploads or downloads) of files larger than 100mb is currently disallowed in Kurtosis.")
+	}
+
+	return compressedFilePath, compressedFileSize, compressedFileContentMd5.Sum(nil), nil
+}
+
+// listFilesInPathDeterministic returns the list of file paths in the path passed as an argument.
+// If the path points to a file, it only returns the given file path
+// If recursiveMode is true, it recursively iterates over the directory inside the given path
+func listFilesInPathDeterministic(path string, recursiveMode bool) ([]string, error) {
+	var listOfFiles []string
+	err := listFilesInPathInternal(&listOfFiles, path, recursiveMode, true)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error listing files in '%s'", path)
+	}
+	sort.Strings(listOfFiles)
+	return listOfFiles, nil
+}
+
+func listFilesInPathInternal(filesInPath *[]string, path string, recursiveMode bool, topLevel bool) error {
+	trimmedPath := strings.TrimRight(path, string(filepath.Separator))
+	uploadFileInfo, err := os.Stat(trimmedPath)
+	if err != nil {
+		return stacktrace.Propagate(err, "There was a path error for '%s'.", trimmedPath)
+	}
+
+	// This allows us to archive contents of dirs in root instead of nesting
+	if uploadFileInfo.IsDir() {
+		filesInDirectory, err := os.ReadDir(trimmedPath)
+		if err != nil {
+			return stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", trimmedPath)
+		}
+		if topLevel && len(filesInDirectory) == 0 {
+			return stacktrace.NewError("The directory '%s' you are trying to compress is empty", path)
+		}
+		for _, fileInDirectory := range filesInDirectory {
+			fileInDirectoryPath := filepath.Join(trimmedPath, fileInDirectory.Name())
+			*filesInPath = append(*filesInPath, fileInDirectoryPath)
+			if recursiveMode && fileInDirectory.IsDir() {
+				err := listFilesInPathInternal(filesInPath, fileInDirectoryPath, recursiveMode, false)
+				if err != nil {
+					return stacktrace.Propagate(err, "Error recursively listing files in '%s'", fileInDirectoryPath)
+				}
+			}
+		}
+	} else {
+		*filesInPath = append(*filesInPath, trimmedPath)
+	}
+	return nil
+}
+
+// writeFileContent writes the content of the file at filePath to the provided writer.
+// If the path points to a directory, it does nothing
+func writeFileContent(filePath string, writer io.Writer) error {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return stacktrace.Propagate(err, "There was a path error for '%s'.", filePath)
+	}
+	if fileInfo.IsDir() {
+		// no content for directories
+		return nil
+	}
+	file, err := os.OpenFile(filePath, os.O_RDONLY, readonlyPermissions)
+	defer func() {
+		if err := file.Close(); err != nil {
+			logrus.Errorf("An unexpected error occured closing file '%s'. It will remain open, this is not critical"+
+				"but might indicate a malfunction in how files are handled. Error was:\n%v", filePath, err)
+		}
+	}()
+	if err != nil {
+		return stacktrace.Propagate(err, "Fail to read file '%s' to hash its content.", filePath)
+	}
+	_, err = io.Copy(writer, file)
+	if err != nil {
+		return stacktrace.Propagate(err, "Unable to hash file content for file '%s'.", filePath)
+	}
+	return nil
 }
