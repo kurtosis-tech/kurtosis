@@ -19,7 +19,9 @@
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs;
             let
-              
+              frameworks = darwin.apple_sdk.frameworks;
+              inherit (lib) optional optionals;
+
               renamed_grpc_tools = stdenv.mkDerivation {
                 name = "renamed-grpc-tools";
                 version = "0.1";
@@ -52,6 +54,34 @@
                 '';
               };
 
+              elixir_pkgs = [
+                unstable_pkgs.elixir
+                unstable_pkgs.elixir_ls
+                nodejs
+                unstable_pkgs.erlang
+                rebar3
+              ] ++ optionals stdenv.isDarwin [
+                # Dev environment
+                flyctl
+                postgresql
+                docker
+              ] ++ optionals stdenv.isLinux [
+                # Docker build
+                (python3.withPackages (ps: with ps; [ pip numpy ]))
+                stdenv
+                gcc
+                gnumake
+                bazel
+                glibc
+                gcc
+                glibcLocales
+              ] ++ optionals stdenv.isDarwin [
+                # add macOS headers to build mac_listener and ELXA
+                frameworks.CoreServices
+                frameworks.CoreFoundation
+                frameworks.Foundation
+              ];
+
             in [
               goreleaser
               go_1_19
@@ -77,7 +107,7 @@
               # local definition (see above)
               renamed_grpc_tools
               ts_protoc
-            ];
+            ] ++ elixir_pkgs;
 
           shellHook = ''
             export CARGO_NET_GIT_FETCH_WITH_CLI=true
