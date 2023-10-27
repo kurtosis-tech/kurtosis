@@ -23,7 +23,7 @@ services:
      - "~/minecraft_data:/data"
 `)
 	expectedResult := `def run(plan):
-    plan.upload_files(src = "minecraft--volume0", name = "~/minecraft_data")
+    plan.upload_files(src = "~/minecraft_data", name = "minecraft--volume0")
     plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": "minecraft--volume0"}, env_vars={"EULA": "TRUE"}))
 `
 
