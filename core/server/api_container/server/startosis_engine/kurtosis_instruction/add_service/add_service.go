@@ -54,7 +54,7 @@ func NewAddService(
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
-						if _, _, err := validateAndConvertConfigAndReadyCondition(serviceNetwork, value); err != nil {
+						if _, _, err := validateAndConvertConfigAndReadyCondition("", serviceNetwork, value); err != nil {
 							return err
 						}
 						return nil
@@ -105,17 +105,19 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
 	}
+	serviceNameStr := serviceName.GoString()
 
 	serviceConfig, err := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, ServiceConfigArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
-	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(builtin.serviceNetwork, serviceConfig)
+
+	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(serviceNameStr, builtin.serviceNetwork, serviceConfig)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	builtin.serviceName = service.ServiceName(serviceName.GoString())
+	builtin.serviceName = service.ServiceName(serviceNameStr)
 	builtin.serviceConfig = apiServiceConfig
 	builtin.readyCondition = readyCondition
 
@@ -231,6 +233,7 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 }
 
 func validateAndConvertConfigAndReadyCondition(
+	serviceName string,
 	serviceNetwork service_network.ServiceNetwork,
 	rawConfig starlark.Value,
 ) (*service.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
@@ -238,7 +241,7 @@ func validateAndConvertConfigAndReadyCondition(
 	if !ok {
 		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
 	}
-	apiServiceConfig, interpretationErr := config.ToKurtosisType(serviceNetwork)
+	apiServiceConfig, interpretationErr := config.ToKurtosisType(serviceName, serviceNetwork)
 	if interpretationErr != nil {
 		return nil, nil, interpretationErr
 	}
@@ -265,14 +268,13 @@ func getImageBuildSpecObj(
 	}
 
 	if imageBuildSpec != nil {
-		logrus.Infof("IMAGE BUILD SPEC FOUND: '%v'", imageBuildSpec)
 		// get the relative locator of context directory
 		contextDir, interpretationErr := imageBuildSpec.GetContextDir()
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
 
-		// get absolute locator of context driectory
+		// get absolute locator of context directory
 		contextDirAbsoluteLocator, interpretationErr := packageContentProvider.GetAbsoluteLocatorForRelativeLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, contextDir, packageReplaceOptions)
 		if interpretationErr != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert locator '%v' into absolute locator but failed", contextDir)
@@ -290,6 +292,5 @@ func getImageBuildSpecObj(
 			return nil, interpretationErr
 		}
 	}
-	logrus.Errorf("RETURNED IMAGE BUILD OBJECT: %v", imageBuildSpec)
 	return imageBuildSpecObj, nil
 }

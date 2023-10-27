@@ -338,5 +338,5 @@ type KurtosisBackend interface {
 	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error)
 
 	// BuildImage builds an image based on the image located at [containerImageFilePath] and build context located at [contextDirPath]
-	BuildImage(ctx context.Context, containerImageFilePath string, contextDirPath string) error
+	BuildImage(ctx context.Context, imageName string, containerImageFilePath string, contextDirPath string) error
 }

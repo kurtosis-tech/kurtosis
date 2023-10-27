@@ -62,8 +62,8 @@ func (validator *ImagesValidator) Validate(
 	}
 	for serviceName, imageBuildSpec := range environment.imagesToBuild {
 		wg.Add(1)
-		image := string(serviceName)
-		go validator.buildImageUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, image, imageBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
+		imageName := string(serviceName)
+		go validator.buildImageUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, imageBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
 	wg.Wait()
 	logrus.Debug("All image validation submitted, currently in progress.")
@@ -124,8 +124,7 @@ func (validator *ImagesValidator) buildImageUsingBackend(
 
 	// Assume container image file path is 1) a Dockerfile and 2) at the root of context directory
 	containerImgFilePath := path.Join(contextDirPath, defaultContainerImageFile)
-	logrus.Debugf("CALLING BUILD IMAGE")
-	err := (*backend).BuildImage(ctx, containerImgFilePath, contextDirPath)
+	err := (*backend).BuildImage(ctx, imageName, containerImgFilePath, contextDirPath)
 	if err != nil {
 		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())
 		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageName)

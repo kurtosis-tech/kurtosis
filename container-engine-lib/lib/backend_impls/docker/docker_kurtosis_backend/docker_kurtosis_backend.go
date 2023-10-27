@@ -481,9 +481,8 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }
 
-func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, containerImageFilePath string, contextDirPath string) error {
-	logrus.Debugf("CALLING BUILD IMAGE IN DOCKER MANAGER")
-	return backend.dockerManager.BuildImage(ctx, containerImageFilePath, contextDirPath)
+func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, containerImageFilePath string, contextDirPath string) error {
+	return backend.dockerManager.BuildImage(ctx, imageName, containerImageFilePath, contextDirPath)
 }
 
 // ====================================================================================================

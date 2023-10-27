@@ -270,7 +270,7 @@ func convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap map[strin
 	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
 }
 
-func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.ServiceNetwork) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
+func (config *ServiceConfig) ToKurtosisType(serviceName string, serviceNetwork service_network.ServiceNetwork) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
 	var ok bool
 	rawImageAttrValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](config.KurtosisValueTypeDefault, ImageAttr)
 	if interpretationErr != nil {
@@ -286,7 +286,8 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		imageName = imageNameStr
 	} else {
 		// if imageName is empty, this means this image should be built and there should be an associated ImageBuildSpec
-		imageName = ""
+		// we label the image name service name as this will be the image
+		imageName = serviceName
 	}
 
 	privatePorts := map[string]*port_spec.PortSpec{}
