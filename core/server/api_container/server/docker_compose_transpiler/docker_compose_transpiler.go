@@ -204,7 +204,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 			cpuMinLimit := getMilliCpusReservation(serviceConfig.Deploy)
 		*/
 
-		// A map of starlark_variable_name -> relative_upload_path for files artifacts
+		// A map of relative_path_to_upload -> files_artifact_name
 		pathsToUpload := make(map[string]string)
 
 		// Volumes
@@ -236,8 +236,9 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 					filesDictValue = persistentDirectory
 				} else {
 					// If not persistent, do an upload_files
-					filesArtifactVariableName := fmt.Sprintf("%s_volume%d", serviceName, volumeIdx)
-					pathsToUpload[filesArtifactVariableName] = volume.Source
+					filesArtifactName := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
+					pathsToUpload[volume.Source] = filesArtifactName
+					filesDictValue = starlark.String(filesArtifactName)
 				}
 
 				if err := filesArgSLDict.SetKey(
@@ -273,9 +274,9 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		}
 		serviceConfigStr := serviceConfigKurtosisType.String()
 
-		for filesArtifactVariableName, relativePath := range pathsToUpload {
+		for filesArtifactName, relativePath := range pathsToUpload {
 			// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
-			uploadFilesLine := fmt.Sprintf("%s = plan.upload_files(\"%s\")", filesArtifactVariableName, relativePath)
+			uploadFilesLine := fmt.Sprintf("plan.upload_files(src = \"%s\", name = \"%s\")", relativePath, filesArtifactName)
 			starlarkLines = append(starlarkLines, uploadFilesLine)
 		}
 		// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
