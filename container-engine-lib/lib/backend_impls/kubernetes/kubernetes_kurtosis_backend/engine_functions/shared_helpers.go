@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -104,7 +104,7 @@ func getMatchingEngineKubernetesResources(
 		ctx,
 		kubernetesManager,
 		engineMatchLabels,
-		label_key_consts.IDKubernetesLabelKey.GetString(),
+		kubernetes_label_key.IDKubernetesLabelKey.GetString(),
 		engineGuidStrs,
 	)
 	if err != nil {
@@ -139,7 +139,7 @@ func getMatchingEngineKubernetesResources(
 		ctx,
 		kubernetesManager,
 		engineMatchLabels,
-		label_key_consts.IDKubernetesLabelKey.GetString(),
+		kubernetes_label_key.IDKubernetesLabelKey.GetString(),
 		engineGuidStrs,
 	)
 	if err != nil {
@@ -174,7 +174,7 @@ func getMatchingEngineKubernetesResources(
 		ctx,
 		kubernetesManager,
 		engineMatchLabels,
-		label_key_consts.IDKubernetesLabelKey.GetString(),
+		kubernetes_label_key.IDKubernetesLabelKey.GetString(),
 		engineGuidStrs,
 	)
 	if err != nil {
@@ -219,7 +219,7 @@ func getMatchingEngineKubernetesResources(
 			kubernetesManager,
 			namespaceName,
 			engineMatchLabels,
-			label_key_consts.IDKubernetesLabelKey.GetString(),
+			kubernetes_label_key.IDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				engineGuidStr: true,
 			},
@@ -247,7 +247,7 @@ func getMatchingEngineKubernetesResources(
 			kubernetesManager,
 			namespaceName,
 			engineMatchLabels,
-			label_key_consts.IDKubernetesLabelKey.GetString(),
+			kubernetes_label_key.IDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				engineGuidStr: true,
 			},
@@ -275,7 +275,7 @@ func getMatchingEngineKubernetesResources(
 			kubernetesManager,
 			namespaceName,
 			engineMatchLabels,
-			label_key_consts.IDKubernetesLabelKey.GetString(),
+			kubernetes_label_key.IDKubernetesLabelKey.GetString(),
 			map[string]bool{
 				engineGuidStr: true,
 			},
@@ -307,8 +307,8 @@ func getMatchingEngineKubernetesResources(
 
 func getEngineMatchLabels() map[string]string {
 	engineMatchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue.GetString(),
+		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EngineKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return engineMatchLabels
 }

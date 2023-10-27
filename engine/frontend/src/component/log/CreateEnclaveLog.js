@@ -83,7 +83,6 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
     }
 
     const readStreamData = (result) => {
-        // console.log(`${result.case} ${JSON.stringify(result.value)}`)
         if (result.case === INSTRUCTION) {
             setLogs(logs => [...logs, result.value.executableInstruction])
         }
@@ -145,6 +144,8 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
                 }
             } catch (ex) {
                 console.error("Error occurred while reading data from the enclave: ", enclave.name)
+                setLogsExecutionStatusText("Script failed to run with an error")
+                setLogsCurrentExecutionStatus(logsStatus(SCRIPT_RUN_STATUS_ERROR, null))
             } finally {
                 setLoading(false)
             }
