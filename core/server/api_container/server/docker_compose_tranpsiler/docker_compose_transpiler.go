@@ -1,188 +1,105 @@
 package docker_compose_tranpsiler
 
+import (
+	"errors"
+	"fmt"
+	"github.com/compose-spec/compose-go/loader"
+	"github.com/compose-spec/compose-go/types"
+	"github.com/joho/godotenv"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
+	"github.com/kurtosis-tech/kurtosis/name_generator"
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
+	"os"
+	"path"
+	"strconv"
+	"strings"
+)
+
 const (
-	enclaveNameFlagKey        = "enclave"
-	pathArgKey                = "file-path"
-	dotEnvPathFlagKey         = "env"
-	convertOnlyFlagKey        = "convert"
-	convertOnlyDefaultFlag    = false
-	isPathArgOptional         = false
-	defaultPathArg            = ""
-	defaultDotEnvPathFlag     = ".env"
 	emptyPrivateIpPlaceholder = ""
 	cpuToMilliCpuConstant     = 1024
 	bytesToMegabytes          = 1024 * 1024
 	float64BitWidth           = 64
 	readWriteEveryone         = 0666
 
-	// Signifies that an enclave name should be auto-generated
-	autogenerateEnclaveNameKeyword = ""
-
-	kurtosisBackendCtxKey = "kurtosis-backend"
-	engineClientCtxKey    = "engine-client"
-	doNotShowFullUuids    = false
-	doNotDryRun           = false
-	noParallelism         = 1
+	// Look for an environment variables file at the package root, and if persent use the values found there
+	// to fill out the Compose
+	envVarsFilename = ".env"
 )
 
+// TODO remove this, and instead use the mainFileName that the user passes in!
+var supportedComposeFilenames = []string{
+	"compose.yml",
+	"compose.yaml",
+	"docker-compose.yml",
+	"docker-compose.yaml",
+	"docker_compose.yml",
+	"docker_compose.yaml",
+}
+
 // TODO actually take in a Compose file
-func TranspileDockerComposeToStarlark() string {
-	return `
-def run(plan):
-	plan.add_service(
-		name = "dont-doubt-the-dag",
-		config = ServiceConfig(
-			image = ImageBuildSpec("./service"),
-		)
-	)
-`
-}
-
-/*
-
-var ImportCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:                command_str_consts.ImportCmdStr,
-	ShortDescription:          "Import external workflows into Kurtosis",
-	LongDescription:           "Import external workflow into Kurtosis (currently only supports Docker Compose)",
-	KurtosisBackendContextKey: kurtosisBackendCtxKey,
-	EngineClientContextKey:    engineClientCtxKey,
-	Flags: []*flags.FlagConfig{
-		{
-			Key:       enclaveNameFlagKey,
-			Shorthand: "n",
-			Default:   autogenerateEnclaveNameKeyword,
-			Usage: fmt.Sprintf(
-				"The enclave name to give the new enclave, which must match regex '%v' "+
-					"(emptystring will autogenerate an enclave name)",
-				enclave_consts.AllowedEnclaveNameCharsRegexStr,
-			),
-			Type: flags.FlagType_String,
-		},
-		{
-			Key:       dotEnvPathFlagKey,
-			Shorthand: "e",
-			Default:   defaultDotEnvPathFlag,
-			Usage:     "The .env file path to be loaded into docker compose",
-			Type:      flags.FlagType_String,
-		},
-		{
-			Key:       convertOnlyFlagKey,
-			Shorthand: "c",
-			Default:   fmt.Sprintf("%v", convertOnlyDefaultFlag),
-			Usage:     "If enabled, only converts Docker Compose into Starlark without running it",
-			Type:      flags.FlagType_Bool,
-		},
-		// TODO: Add connect flag similar to the run command.
-	},
-	Args: []*args.ArgConfig{
-		file_system_path_arg.NewFilepathOrDirpathArg(
-			pathArgKey,
-			isPathArgOptional,
-			defaultPathArg,
-			file_system_path_arg.DefaultValidationFunc,
-		),
-	},
-	RunFunc: run,
-}
-
-func run(
-	ctx context.Context,
-	kurtosisBackend backend_interface.KurtosisBackend,
-	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	_ metrics_client.MetricsClient,
-	flags *flags.ParsedFlags,
-	args *args.ParsedArgs) error {
-	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+func TranspileDockerComposePackageToStarlark(packageAbsDirpath string) (string, error) {
+	composeFilepath, err := getComposeFilepath(packageAbsDirpath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
+		return "", stacktrace.Propagate(err, "An error occurred getting the Compose file to parse")
 	}
+	composeFilename := path.Base(composeFilepath) // Useful for logging, to not leak internals of APIC
 
-	path, err := args.GetNonGreedyArg(pathArgKey)
+	// Use the envvars file next to the Compose if it exists
+	envVarsFilepath := path.Join(packageAbsDirpath, envVarsFilename)
+	var envVars map[string]string
+	envVarsInFile, err := godotenv.Read(envVarsFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "Path arg '%v' is missing", pathArgKey)
-	}
-
-	dotEnvPath, err := flags.GetString(dotEnvPathFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Dot env path flag '%v' is missing", dotEnvPath)
-	}
-
-	convertOnly, err := flags.GetBool(convertOnlyFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Convert only flag '%v' is missing", convertOnlyFlagKey)
-	}
-
-	dotEnvMap, err := godotenv.Read(dotEnvPath)
-	if err != nil {
-		logrus.Debugf("No dotenv file was found: %v", err)
-		dotEnvMap = map[string]string{}
-	}
-	logrus.Debugf("Enviroment loaded: %v", dotEnvMap)
-
-	script, artifacts, err := convertComposeFileToStarlark(path, dotEnvMap)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to convert compose to starlark")
-	}
-	// TODO(victor.colombo): Make this as pretty as run is
-	if convertOnly {
-		fileBase := filepath.Base(path)
-		fileName := fmt.Sprintf("%s.star", strings.TrimSuffix(fileBase, filepath.Ext(fileBase)))
-		if err := os.WriteFile(fileName, []byte(script), readWriteEveryone); err != nil {
-			return stacktrace.Propagate(err, "failed to write starlark file '%v'", fileName)
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", stacktrace.Propagate(err, "Failed to transpile Docker Compose package to Starlark; a %v file was detected in the package, but an error occurred reading", envVarsFilename)
 		}
-		return nil
+		envVarsInFile = map[string]string{}
 	}
-	logrus.Debugf("Generated starlark:\n%s", script)
+	envVars = envVarsInFile
 
-	enclaveName, err := flags.GetString(enclaveNameFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Couldn't find enclave name flag '%v'", enclaveNameFlagKey)
-	}
-	enclaveCtx, err := createEnclave(ctx, kurtosisCtx, enclaveName)
-	if err != nil {
-		return stacktrace.Propagate(err, "Couldn't create enclave")
-	}
-	err = uploadArtifacts(enclaveCtx, artifacts)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to upload all required artifacts for execution")
-	}
-	err = runStarlark(ctx, enclaveCtx, script)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to run generated starlark from compose")
-	}
-	if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), doNotShowFullUuids); err != nil {
-		logrus.Errorf("An error occurred while printing enclave status and contents:\n%s", err)
-	}
-	return nil
-}
-
-func convertComposeFileToStarlark(path string, dotEnvMap map[string]string) (string, map[string]string, error) {
 	project, err := loader.Load(types.ConfigDetails{ //nolint:exhaustruct
-		ConfigFiles: []types.ConfigFile{{Filename: path}},
-		Environment: dotEnvMap,
+		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
+		ConfigFiles: []types.ConfigFile{{
+			Filename: composeFilepath,
+		}},
+		Environment: envVars,
 	})
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "Error parsing docker compose")
+		return "", stacktrace.Propagate(err, "An error occurred parsing the '%v' Compose file in preparation for Starlark transpilation", composeFilename)
 	}
-	script, artifacts, err := convertComposeProjectToStarlark(project)
+
+	script, _, err := convertComposeProjectToStarlark(project)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "Error translating docker compose to Starlark")
+		return "", stacktrace.Propagate(err, "An error occurred transpiling the '%v' Compose file to Starlark", composeFilename)
 	}
-	return script, artifacts, nil
+	return script, nil
 }
 
-func uploadArtifacts(enclaveCtx *enclaves.EnclaveContext, artifactUploadMap map[string]string) error {
-	for source, artifactName := range artifactUploadMap {
-		_, _, err := enclaveCtx.UploadFiles(source, artifactName)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to upload path '%v' as artifact '%s'", source, artifactName)
+// ====================================================================================================
+//                                   Private Helper Functions
+// ====================================================================================================
+
+func getComposeFilepath(packageAbsDirpath string) (string, error) {
+	for _, composeFilename := range supportedComposeFilenames {
+		composeFilepath := path.Join(packageAbsDirpath, composeFilename)
+		if _, err := os.Stat(composeFilepath); err != nil {
+			return composeFilepath, nil
 		}
 	}
-	return nil
+
+	joinedComposeFilenames := strings.Join(supportedComposeFilenames, ", ")
+	return "", stacktrace.NewError("Failed to transpile Docker Compose package to Starlark because no Compose file was found at the package root after looking for the following files: %s", joinedComposeFilenames)
 }
 
 // TODO(victor.colombo): Have a better UX letting people know ports have been remapped
+// NOTE: This returns Go errors, not
 func convertComposeProjectToStarlark(compose *types.Project) (string, map[string]string, error) {
+	return `
+	def run(plan):
+		plan.print("It's working!")
+	`, nil, nil
+
 	serviceStarlarks := map[string]string{}
 	requiredFileUploads := map[string]string{}
 	for _, serviceConfig := range compose.Services {
@@ -267,27 +184,3 @@ func getMilliCpusReservation(deployConfig *types.DeployConfig) int {
 	}
 	return reservation
 }
-
-func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveName string) (*enclaves.EnclaveContext, error) {
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave '%v'", enclaveName)
-	}
-	return enclaveCtx, nil
-}
-
-// TODO(victor.colombo): This should be part of the SDK, since we implement this over and over again
-func runStarlark(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, starlarkScript string) error {
-	responseLineChan, cancelFunc, err := enclaveCtx.RunStarlarkScript(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithParallelism(noParallelism)))
-	if err != nil {
-		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
-	}
-	errRunningKurtosis := _run.ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, command_args_run.OutputOnly, doNotDryRun)
-	if errRunningKurtosis != nil {
-		return stacktrace.Propagate(errRunningKurtosis, "An error running starlark happaned")
-	}
-	return nil
-}
-
-
-*/

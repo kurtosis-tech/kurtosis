@@ -730,6 +730,7 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 	return serviceInfo, nil
 }
 
+// TODO(kevin) shouldn't this return a normal `error` rather than an `InterpretationError`, because SL interpretation hasn't started yet?
 func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	packageId string,
 	clonePackage bool,
@@ -767,9 +768,18 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 			PackageReplaceOptions: nil,
 		}
 
-		// TODO it'd be really cool if we use the "relativePathToMain" to point to the compose file (that way you could
-		//  even run a compose that's not at the root)
-		mainScriptToExecute = docker_compose_tranpsiler.TranspileDockerComposeToStarlark()
+		path.Join(packageId)
+
+		packageAbsDirpath, err := apicService.startosisModuleContentProvider.GetOnDiskAbsolutePackagePath(packageId)
+		if err != nil {
+			return "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the on-disk package path for the Docker Compose pseudo-package '%v'", packageId)
+		}
+
+		var transpilationErr error
+		mainScriptToExecute, transpilationErr = docker_compose_tranpsiler.TranspileDockerComposePackageToStarlark(packageAbsDirpath)
+		if transpilationErr != nil {
+			return "", nil, startosis_errors.WrapWithInterpretationError(transpilationErr, "An error occurred transpiling the Docker Compose package '%v' to Starlark", packageId)
+		}
 	} else {
 		kurtosisYml, interpretationError = apicService.startosisModuleContentProvider.GetKurtosisYaml(packageRootPathOnDisk)
 		if interpretationError != nil {
@@ -789,7 +799,7 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 		mainScriptToExecute = string(mainScriptToExecuteBytes)
 	}
 
-	return string(mainScriptToExecute), kurtosisYml, nil
+	return mainScriptToExecute, kurtosisYml, nil
 }
 
 func (apicService *ApiContainerService) runStarlark(
