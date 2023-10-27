@@ -12,6 +12,8 @@ service KurtosisCloudBackendServer {
   rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {};
   rpc GetOrCreateApiKey(GetOrCreateApiKeyRequest) returns (GetOrCreateApiKeyResponse) {};
   rpc GetOrCreateInstance(GetOrCreateInstanceRequest) returns (GetOrCreateInstanceResponse) {};
+  rpc GetOrCreatePaymentConfig(GetOrCreatePaymentConfigArgs) returns (GetOrCreatePaymentConfigResponse) {};
+  rpc RefreshDefaultPaymentMethod (RefreshDefaultPaymentMethodArgs) returns (google.protobuf.Empty) {};
 }
 
 message GetOrCreateApiKeyRequest {
@@ -66,6 +68,41 @@ message GetCloudInstanceConfigResponse {
 
   // TODO: remove the optional once this is released and the cloud BE is upgraded
   optional AwsEnvironment aws_environment = 9;
+}
+
+message GetOrCreatePaymentConfigArgs {
+  string access_token = 1;
+}
+
+message PaymentMethod {
+  int32 exp_month = 1;
+  int32 exp_year = 2;
+  string last_four = 3;
+}
+
+message PaymentProduct {
+  string name = 1;
+  int32 price_unit_amount = 2;
+  string price_currency = 3;
+  string tax_code_name = 4;
+}
+
+message PaymentSubscription {
+  PaymentProduct product = 1;
+}
+
+message GetOrCreatePaymentConfigResponse {
+  string user_id = 1;
+  string client_secret = 2;
+  optional PaymentMethod payment_method = 3;
+  PaymentProduct product = 4;
+  optional PaymentSubscription subscription = 5;
+  int32 trial_end = 6;
+}
+
+message RefreshDefaultPaymentMethodArgs {
+  string access_token = 1;
+  string payment_method_id = 2;
 }
 
 message AwsKey {

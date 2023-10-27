@@ -11,6 +11,7 @@ import {
     GetExistingAndHistoricalServiceIdentifiersResponse,
     GetServicesArgs,
     GetServicesResponse,
+    GetStarlarkRunResponse,
     ListFilesArtifactNamesAndUuidsResponse,
     RunStarlarkPackageArgs,
     RunStarlarkScriptArgs,
@@ -201,6 +202,50 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(uploadFilesArtifactResponse)
     }
 
+    public async uploadStarlarkPackage(packageId: string, payload: Uint8Array): Promise<Result<null, Error>> {
+        const uploadStarlarkPackagePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
+            const clientStream = this.client.uploadStarlarkPackage((error: ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(null));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+
+            const constantChunkMetadata = new DataChunkMetadata()
+                .setName(packageId)
+
+            let previousChunkHash = ""
+            for (let idx = 0; idx < payload.length; idx += DATA_STREAM_CHUNK_SIZE) {
+                const currentChunk = payload.subarray(idx, Math.min(idx + DATA_STREAM_CHUNK_SIZE, payload.length))
+
+                const dataChunk = new StreamedDataChunk()
+                    .setData(currentChunk)
+                    .setPreviousChunkHash(previousChunkHash)
+                    .setMetadata(constantChunkMetadata)
+                clientStream.write(dataChunk, (streamErr: Error | null | undefined) => {
+                    if (streamErr != undefined) {
+                        resolve(err(new Error(`An error occurred sending data through the stream:\n${streamErr.message}`)))
+                    }
+                })
+                previousChunkHash = this.computeHexHash(currentChunk)
+            }
+            clientStream.end() // close the stream, no more data will be sent
+        });
+
+        const uploadStarlarkPackageResponseResult: Result<null, Error> = await uploadStarlarkPackagePromise;
+        if(uploadStarlarkPackageResponseResult.isErr()){
+            return err(uploadStarlarkPackageResponseResult.error)
+        }
+
+        const uploadStarlarkPackageResponse = uploadStarlarkPackageResponseResult.value
+        return ok(uploadStarlarkPackageResponse)
+    }
+
     public async storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
         const storeWebFilesArtifactPromise: Promise<Result<StoreWebFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.storeWebFilesArtifact(storeWebFilesArtifactArgs, (error: ServiceError | null, response?: StoreWebFilesArtifactResponse) => {
@@ -346,5 +391,30 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
         const connectServicesResponse = resultConnectServices.value;
         return ok(connectServicesResponse)
+    }
+    
+    public async getStarlarkRun(): Promise<Result<GetStarlarkRunResponse, Error>> {
+        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+        const getStarlarkRunPromise: Promise<Result<GetStarlarkRunResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.getStarlarkRun(emptyArg, {},(error: ServiceError | null, response?: GetStarlarkRunResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+
+        const getStarlarkRunResponseResult: Result<GetStarlarkRunResponse, Error> = await getStarlarkRunPromise;
+        if(getStarlarkRunResponseResult.isErr()){
+            return err(getStarlarkRunResponseResult.error)
+        }
+
+        const getStarlarkRunResponse = getStarlarkRunResponseResult.value;
+        return ok(getStarlarkRunResponse)
     }
 }

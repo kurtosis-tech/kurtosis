@@ -19,9 +19,9 @@ type ContextsConfigStore interface {
 	// GetCurrentContext returns the current context information.
 	GetCurrentContext() (*generated.KurtosisContext, error)
 
-	// SwitchContext switches to the context passed as an argument.
+	// SetContext switches to the context passed as an argument.
 	// It throws an error if the contextUuid does not point to any known context.
-	SwitchContext(contextUuid *generated.ContextUuid) error
+	SetContext(contextUuid *generated.ContextUuid) error
 
 	// AddNewContext adds a new context to the store.
 	// It throws an error if a context with the same UUID already exists

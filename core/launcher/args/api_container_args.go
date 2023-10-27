@@ -38,6 +38,12 @@ type APIContainerArgs struct {
 	EnclaveEnvVars string `json:"enclaveEnvVars"`
 
 	IsProductionEnclave bool `json:"isProductionEnclave"`
+
+	//The anonymized user ID for metrics analytics purpose
+	MetricsUserID string `json:"metricsUserID"`
+
+	//User consent to send metrics
+	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
 }
 
 func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
@@ -84,17 +90,21 @@ func NewAPIContainerArgs(
 	kurtosisBackendConfig interface{},
 	enclaveEnvVars string,
 	isProductionEnclave bool,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
-		Version:                  version,
-		LogLevel:                 logLevel,
-		GrpcListenPortNum:        grpcListenPortNum,
-		EnclaveUUID:              enclaveUuid,
-		EnclaveDataVolumeDirpath: enclaveDataVolumeDirpath,
-		KurtosisBackendType:      kurtosisBackendType,
-		KurtosisBackendConfig:    kurtosisBackendConfig,
-		EnclaveEnvVars:           enclaveEnvVars,
-		IsProductionEnclave:      isProductionEnclave,
+		Version:                     version,
+		LogLevel:                    logLevel,
+		GrpcListenPortNum:           grpcListenPortNum,
+		EnclaveUUID:                 enclaveUuid,
+		EnclaveDataVolumeDirpath:    enclaveDataVolumeDirpath,
+		KurtosisBackendType:         kurtosisBackendType,
+		KurtosisBackendConfig:       kurtosisBackendConfig,
+		EnclaveEnvVars:              enclaveEnvVars,
+		IsProductionEnclave:         isProductionEnclave,
+		MetricsUserID:               metricsUserID,
+		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 	}
 
 	if err := result.validate(); err != nil {

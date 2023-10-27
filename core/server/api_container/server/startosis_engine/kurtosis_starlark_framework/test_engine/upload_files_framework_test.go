@@ -20,10 +20,10 @@ type uploadFilesTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestUploadFiles() {
-	suite.Require().Nil(suite.packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
+	suite.Require().Nil(suite.packageContentProvider.AddFileContent(testModuleFileName, "Hello World!"))
 
 	suite.serviceNetwork.EXPECT().GetFilesArtifactMd5(
-		TestArtifactName,
+		testArtifactName,
 	).Times(1).Return(
 		enclave_data_directory.FilesArtifactUUID(""),
 		nil,
@@ -33,9 +33,9 @@ func (suite *KurtosisPlanInstructionTestSuite) TestUploadFiles() {
 	suite.serviceNetwork.EXPECT().UploadFilesArtifact(
 		mock.Anything, // data gets written to disk and compressed to it's a bit tricky to replicate here.
 		mock.Anything, // and same for the hash
-		TestArtifactName,
+		testArtifactName,
 	).Times(1).Return(
-		TestArtifactUuid,
+		testArtifactUuid,
 		nil,
 	)
 
@@ -47,11 +47,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestUploadFiles() {
 }
 
 func (t *uploadFilesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return upload_files.NewUploadFiles(t.serviceNetwork, t.packageContentProvider)
+	return upload_files.NewUploadFiles(testModulePackageId, t.serviceNetwork, t.packageContentProvider, testNoPackageReplaceOptions)
 }
 
 func (t *uploadFilesTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleFileName, upload_files.ArtifactNameArgName, TestArtifactName)
+	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, testModuleRelativeLocator, upload_files.ArtifactNameArgName, testArtifactName)
 }
 
 func (t *uploadFilesTestCase) GetStarlarkCodeForAssertion() string {
@@ -59,8 +59,8 @@ func (t *uploadFilesTestCase) GetStarlarkCodeForAssertion() string {
 }
 
 func (t *uploadFilesTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
-	require.Equal(t, starlark.String(TestArtifactName), interpretationResult)
+	require.Equal(t, starlark.String(testArtifactName), interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", TestArtifactName, TestArtifactUuid)
+	expectedExecutionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", testArtifactName, testArtifactUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 }

@@ -96,14 +96,14 @@ services will be rolled back and the instruction will return an execution error.
 
 :::
 
-assert
+verify
 ------
 
-The `assert` instruction throws an [Execution phase error][multi-phase-runs-reference] if the defined assertion fails.
+The `verify` instruction throws an [Execution phase error][multi-phase-runs-reference] if the defined assertion fails.
 
 ```python
-plan.assert(
-    # The value currently being asserted.
+plan.verify(
+    # The value currently being verified.
     # MANDATORY
     value = "test1",
 
@@ -117,7 +117,7 @@ plan.assert(
     target_value = "test2",
 ) # This fails in runtime given that "test1" == "test2" is false
 
-plan.assert(
+plan.verify(
     # Value can also be a runtime value derived from a `get_value` call
     value = response["body"],
     assertion = "==",
@@ -127,10 +127,10 @@ plan.assert(
 
 :::caution
 
-Asserts are typed, so running
+Verifications are typed, so running
 
 ```python
-plan.assert(
+plan.verify(
     value = "0",
     assertion = "==",
     target_value = 0,
@@ -180,7 +180,7 @@ plan.print(result["code"])
 
 The instruction returns a `dict` whose values are [future reference][future-references-reference] to the output and exit code of the command. `result["output"]` is a future reference to the output of the command, and `result["code"]` is a future reference to the exit code.
 
-They can be chained to [`assert`][assert] and [`wait`][wait]:
+They can be chained to [`verify`][verify] and [`wait`][wait]:
 
 ```python
 exec_recipe = ExecRecipe(
@@ -188,7 +188,7 @@ exec_recipe = ExecRecipe(
 )
 
 result = plan.exec(service_name="my_service", recipe=exec_recipe)
-plan.assert(result["code"], "==", 0)
+plan.verify(result["code"], "==", 0)
 
 plan.wait(service_name="my_service", recipe=exec_recipe, field="output", assertion="!=", target_value="Greetings, world")
 ```
@@ -220,6 +220,17 @@ render_templates
 ----------------
 
 The `render_templates` instruction combines a template and data to produce a [files artifact][files-artifacts-reference]. Files artifacts can be used with the `files` property of the `ServiceConfig` object, allowing for reuse of config files across services.
+
+**Returns**: a [future reference][future-references-reference] resolving to a `string` representing the name of a [files artifact][files-artifacts-reference].
+
+**Args**:
+- `config`: a dictionary with the following keys and values:
+  - **keys**: `string`s representing the filepaths to be produced within the returned files artifact
+  - **values**: `struct`s with the following root level keys:
+    - `template`: a string with representing the template in [Go template format](https://pkg.go.dev/text/template#pkg-overview)
+    - `data`: a `struct` or `dict` type, with keys matching the variables used in the template, and values matching the intended replacement values.
+
+**Examples**:
 
 ```python
 # Example data to slot into the template
@@ -259,7 +270,10 @@ artifact_name = plan.render_templates(
 )
 ```
 
-The return value is a [future reference][future-references-reference] to the name of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
+**See also**:
+- [add-service]
+- [add-services]
+- [service-config]
 
 request
 -------
@@ -322,7 +336,7 @@ post_response = plan.request(
 
 NOTE: In the above example, `response` also has a custom field `extract.second-element-from-list-head` and the value is `world` which is extracted from the `response[body]`.
 
-These fields can be used in conjunction with [`assert`][assert] and [`wait`][wait] instructions, like so:
+These fields can be used in conjunction with [`verify`][verify] and [`wait`][wait] instructions, like so:
 ```python
 # Following the example above, response["extract.second-element-from-list-head"] is world
 post_response = plan.request(
@@ -331,7 +345,7 @@ post_response = plan.request(
 )
 
 # Assert if the extracted field in the response is world
-plan.assert(response["extract.second-element-from-list-head"], "==", "world")
+plan.verify(response["extract.second-element-from-list-head"], "==", "world")
 
 # Make a post request and check if the extracted field in the response is world
 plan.wait(service_name="my_service", recipe=post_request_recipe, field="extract.second-element-from-list-head", assertion="==", target_value="world")
@@ -403,15 +417,22 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
             "/path/to/file/2": files_artifact_2,
         },
 
-        # list of paths to directories or files that will be copied to a file artifact
-        # CAUTION: all the paths in this list must be unique 
-        # OPTIONAL (Default:[])
+        # A list of filepaths to store inside files artifacts after the run_python finishes
+        # Entries in the list can either be a string containing the path to store, or a
+        # StoreSpec object that can optionally name the files artifact.
+        # CAUTION: Both the paths in `src` and the files artifact names must be unique!
+        # OPTIONAL (Default: [])
         store = [
-            # copies a file into a file artifact
-            "/src/kurtosis.txt", 
+            # EXAMPLE: Creates a files artifact named `kurtosis_txt` containing the `kurtosis.txt` file
+            StoreSpec(src = "/src/kurtosis.txt", name = "kurtosis_txt"),
             
-            # copies the entire directory into a file artifact
-            "/src",
+            # EXAMPLE: Creates a files artifact with an automatically-generated name containing `genesis.json`
+            StoreSpec(src = "/genesis.json"),
+
+            # EXAMPLE: Creates a files artifact with an automatically-generated name containing `address.json`
+            # This is just syntactic sugar for:
+            # StoreSpec(src = "/coinbase/address.json")
+            "/coinbase/address.json"
         ],
 
         # The time to allow for the command to complete. If the Python script takes longer than this,
@@ -464,15 +485,22 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
             "/path/to/file/2": files_artifact_2,
         },
 
-        # list of paths to directories or files that will be copied to a file artifact
-        # CAUTION: all the paths in this list must be unique 
-        # OPTIONAL (Default:[])
+        # A list of filepaths to store inside files artifacts after the run_sh finishes
+        # Entries in the list can either be a string containing the path to store, or a
+        # StoreSpec object that can optionally name the files artifact.
+        # CAUTION: Both the paths in `src` and the files artifact names must be unique!
+        # OPTIONAL (Default: [])
         store = [
-            # copies a file into a file artifact
-            "/src/kurtosis.txt", 
+            # EXAMPLE: Creates a files artifact named `kurtosis_txt` containing the `kurtosis.txt` file
+            StoreSpec(src = "/src/kurtosis.txt", name = "kurtosis_txt"),
             
-            # copies the entire directory into a file artifact
-            "/src",
+            # EXAMPLE: Creates a files artifact with an automatically-generated name containing `genesis.json`
+            StoreSpec(src = "/genesis.json"),
+
+            # EXAMPLE: Creates a files artifact with an automatically-generated name containing `address.json`
+            # This is just syntactic sugar for:
+            # StoreSpec(src = "/coinbase/address.json")
+            "/coinbase/address.json"
         ],
 
         # The time to allow for the command to complete. If the command takes longer than this,
@@ -588,7 +616,7 @@ The return value is a [future reference][future-references-reference] to the nam
 upload_files
 ------------
 
-`upload_files` instruction packages the files specified by the [locator][locators-reference] into a [files artifact][files-artifacts-reference] that gets stored inside the enclave. This is particularly useful when a static file needs to be loaded to a service container.
+The `upload_files` instruction packages the files specified by the [locator][locators-reference] into a [files artifact][files-artifacts-reference] that gets stored inside the enclave. This is particularly useful when a static file needs to be loaded to a service container. 
 
 ```python
 artifact_name = plan.upload_files(
@@ -609,7 +637,7 @@ The return value is a [future reference][future-references-reference] to the nam
 wait
 ----
 
-The `wait` instruction fails the Starlark script or package with an execution error if the provided [assertion][assert] does not succeed within a given period of time. 
+The `wait` instruction fails the Starlark script or package with an execution error if the provided [verification][verify] does not succeed within a given period of time. 
 
 If the assertion succeeds, `wait` returns the result of the given Recipe  - i.e. the same output as [`plan.request`][request] or [`plan.exec`][exec].
 
@@ -665,7 +693,7 @@ plan.print(recipe_result["code"])
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service]: #add_service
 [add-services]: #add_services
-[assert]: #assert
+[verify]: #verify
 [extract]: #extract
 [exec]: #exec
 [request]: #request

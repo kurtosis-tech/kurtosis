@@ -191,7 +191,16 @@ parameters:
     default: "engine-server-image.tgz"
   startosis-test-script-file-relative-path:
     type: string
-    default: "internal_testsuites/starlark/ci_tests/startosis_simple_script.star"
+    default: "internal_testsuites/starlark/ci_tests/simple_no_arg_test/startosis_simple_script.star"
+  starlark-test-args-file-test-main-star-relative-path:
+    type: string
+    default: "internal_testsuites/starlark/ci_tests/simple_arg_test/main.star"
+  starlark-test-args-file-test-args-json-relative-path:
+    type: string
+    default: "internal_testsuites/starlark/ci_tests/simple_arg_test/args.json"
+  starlark-test-args-file-url:
+    type: string
+    default: "https://raw.githubusercontent.com/kurtosis-tech/sample-startosis-load/main/args.json"
   rendertemplate-cli-test-template-relative-path:
     type: string
     default: "internal_testsuites/resources/render_template_cli_test/template.txt"
@@ -315,6 +324,9 @@ jobs:
           root: .
           paths:
             - "<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+            - "<< pipeline.parameters.starlark-test-args-file-test-main-star-relative-path >>"
+            - "<< pipeline.parameters.starlark-test-args-file-test-args-json-relative-path >>"
+            - "<< pipeline.parameters.starlark-test-args-file-url >>"
 
   build_core_launcher:
     docker:
@@ -736,6 +748,9 @@ jobs:
       - run: "${KURTOSIS_BINPATH} service stop test-enclave test1"
       - run: "${KURTOSIS_BINPATH} service start test-enclave test1"
 
+      # Service inspect
+      - run: "${KURTOSIS_BINPATH} service inspect test-enclave test1"
+
       # Service Exec
       # Emulates GitHub Actions
       - run: "${KURTOSIS_BINPATH} service exec test-enclave test1 'echo hello'"
@@ -754,8 +769,17 @@ jobs:
       # Execute simple startosis script in new enclave
       - run: "${KURTOSIS_BINPATH} run --enclave test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
+      # Execute Simple Starlark Script to test --args-file
+      - run: "${KURTOSIS_BINPATH} run --enclave args-file-test << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-args-file-test-main-star-relative-path >> --args-file << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-args-file-test-args-json-relative-path >>"
+
+      # Execute Simple Starlark Script to test --args-file from URL
+      - run: "${KURTOSIS_BINPATH} run --enclave args-file-from-url-test << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-args-file-test-main-star-relative-path >> --args-file << pipeline.parameters.starlark-test-args-file-url >>"
+
       # Execute github starlark module
       - run: "${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
+
+      # Execute port print
+      - run: "${KURTOSIS_BINPATH} port print test-datastore datastore-0 grpc"
 
       # Execute docker compose import
       - run: "${KURTOSIS_BINPATH} import --enclave test-import --env << pipeline.parameters.dockerimport-cli-dotenv-relative-path >> << pipeline.parameters.dockerimport-cli-dockerfile-relative-path >>"
@@ -790,6 +814,25 @@ jobs:
                   apic_container_id=$(docker ps --filter "label=com.kurtosistech.container-type=api-container" --filter "label=com.kurtosistech.enclave-id=$(echo $enclave_uuid)" --format "{{.ID}}")
                   docker container restart $(echo $apic_container_id)
                   ${KURTOSIS_BINPATH} service rm test-apic-restart service-test
+
+       # Test APIC idempotent runs restart
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            - run:
+                name: Test APIC idempotent restart
+                command: |
+                  ${KURTOSIS_BINPATH} enclave add -n test-apic-idempotent-restart
+                  ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package --enclave test-apic-idempotent-restart
+                  ${KURTOSIS_BINPATH} enclave inspect --full-uuids test-apic-idempotent-restart > /tmp/inspect_output2.txt
+                  inspect_output_uuid_line=$(grep "^UUID:" /tmp/inspect_output2.txt) 
+                  enclave_uuid=$(echo ${inspect_output_uuid_line:17:54})
+                  apic_container_id=$(docker ps --filter "label=com.kurtosistech.container-type=api-container" --filter "label=com.kurtosistech.enclave-id=$(echo $enclave_uuid)" --format "{{.ID}}")
+                  docker container restart $(echo $apic_container_id)
+                  ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package --enclave test-apic-idempotent-restart > /tmp/output_idempotent_runs.txt
+                  number_skipped_instructions=$(grep -o -i SKIPPED /tmp/output_idempotent_runs.txt | wc -l )
+                  if [ $number_skipped_instructions -ne 7 ]; then exit 1; fi 
 
       # Clean all at the end
       - run: "${KURTOSIS_BINPATH} clean -a"
@@ -940,6 +983,10 @@ jobs:
           skip_docker_image_building=true
           core/files_artifacts_expander/scripts/build.sh "${skip_docker_image_building}"
       - run: |
+          skip_docker_image_building=true
+          build_architecture=arm64
+          core/files_artifacts_expander/scripts/build.sh "${skip_docker_image_building}" "${build_architecture}"
+      - run: |
           set -euo pipefail
           source core/files_artifacts_expander/scripts/_constants.env
           dockerfile_filepath='core/files_artifacts_expander/Dockerfile'
@@ -977,6 +1024,10 @@ jobs:
       - run: |
           skip_docker_image_building=true
           core/server/scripts/build.sh "${skip_docker_image_building}"
+      - run: |
+          skip_docker_image_building=true
+          build_architecture=arm64
+          core/server/scripts/build.sh "${skip_docker_image_building}" "${build_architecture}"
       - run: |
           set -euo pipefail
           source core/server/scripts/_constants.env
@@ -1016,6 +1067,10 @@ jobs:
       - run: |
           skip_docker_image_building=true
           engine/server/scripts/build.sh "${skip_docker_image_building}"
+      - run: |
+          skip_docker_image_building=true
+          build_architecture=arm64          
+          engine/server/scripts/build.sh "${skip_docker_image_building}" "${build_architecture}"
       - run: |
           set -euo pipefail
           source engine/server/scripts/_constants.env

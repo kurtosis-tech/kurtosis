@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
@@ -34,4 +35,18 @@ func TestOneToOneApiAndPortSpecProtoMapping(t *testing.T) {
 		)
 		seenPortSpecProtos[portSpecProto] = apiPortProto
 	}
+}
+
+func TestGetTextRepresentation(t *testing.T) {
+	input := `my
+line
+input
+`
+	expectedOutput := `my
+line
+`
+	output, err := getTextRepresentation(strings.NewReader(input), 2)
+	require.NoError(t, err)
+	require.NotNil(t, output)
+	require.Equal(t, expectedOutput, *output)
 }

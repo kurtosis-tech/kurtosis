@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -14,15 +15,6 @@ const (
 	enclaveNameTemplate = "idempotent-run-test-%d"
 
 	skippedInstructionMessage = "SKIPPED - This instruction has already been run in this enclave"
-
-	runFunctionName = "run"
-	noParams        = "{}"
-	noDryRun        = false
-	noParallelism   = 1
-)
-
-var (
-	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
 )
 
 func TestStartosisIdempotentRun_RunSameScriptTwice(t *testing.T) {
@@ -168,7 +160,7 @@ func TestStartosisIdempotentRun_DeactivateInstructionsCaching(t *testing.T) {
 	deactivateInstructionsCaching := []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{
 		kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING,
 	}
-	run2result, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, runFunctionName, scriptToRun, noParams, noDryRun, noParallelism, deactivateInstructionsCaching)
+	run2result, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, scriptToRun, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithExperimentalFeatureFlags(deactivateInstructionsCaching)))
 	require.NoError(t, err)
 
 	require.Nil(t, run2result.InterpretationError)
@@ -182,7 +174,7 @@ func TestStartosisIdempotentRun_DeactivateInstructionsCaching(t *testing.T) {
 }
 
 func mustRunStarlarkScript(t *testing.T, enclaveCtx *enclaves.EnclaveContext, ctx context.Context, script string) string {
-	result, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, runFunctionName, script, noParams, noDryRun, noParallelism, noExperimentalFeature)
+	result, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, script, starlark_run_config.NewRunStarlarkConfig())
 	require.NoError(t, err)
 
 	require.Nil(t, result.InterpretationError)

@@ -3,9 +3,11 @@ package user_services_functions
 import (
 	"bytes"
 	"context"
+	"reflect"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -13,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/stacktrace"
 	v1 "k8s.io/api/core/v1"
-	"reflect"
 )
 
 // TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
@@ -81,12 +82,12 @@ func runExecOperationsInParallel(namespaceName string, commandArgs map[service.S
 			)
 			continue
 		}
-		if userServiceKubernetesService.GetStatus() != container_status.ContainerStatus_Running {
+		if userServiceKubernetesService.GetContainer().GetStatus() != container.ContainerStatus_Running {
 			failedExecs[serviceUuid] = stacktrace.NewError(
 				"Cannot execute command '%+v' on service '%v' because the service status is '%v'",
 				commandArgs,
 				serviceUuid,
-				userServiceKubernetesService.GetStatus().String(),
+				userServiceKubernetesService.GetContainer().GetStatus().String(),
 			)
 			continue
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"io"
 	"math/rand"
 	"net/http"
@@ -81,9 +82,6 @@ const (
 	testDatastoreKey   = "my-key"
 	testDatastoreValue = "test-value"
 
-	defaultDryRun = false
-	emptyParams   = "{}"
-
 	waitForGetAvaliabilityStalarkScript = `
 def run(plan, args):
 	get_recipe = GetHttpRequestRecipe(
@@ -105,11 +103,9 @@ def run(plan, args):
 
 	artifactNamePrefix = "artifact-uploaded-via-helper-%v"
 
-	defaultParallelism = 4
-
-	defaultWaitTimeoutForTest = "2m"
-
-	useDefaultMainFile = ""
+	defaultWaitTimeoutForTest  = "2m"
+	defaultShouldReturnAllLogs = true
+	defaultNumLogLines         = 0 // bc return all logs is true, what this is set to doesn't matter
 )
 
 var (
@@ -118,7 +114,6 @@ var (
 	emptyEntrypointArgs          = []string{}
 	emptyCmdArgs                 = []string{}
 	emptyEnvVars                 = map[string]string{}
-	noExperimentalFeature        = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
 )
 
 var fileServerPortSpec = &kurtosis_core_rpc_api_bindings.Port{
@@ -157,11 +152,12 @@ func AddService(
 ) (
 	*services.ServiceContext, error,
 ) {
+	starlarkRunConfig := starlark_run_config.NewRunStarlarkConfig()
 	starlarkScript := fmt.Sprintf(`
 def run(plan):
 	plan.add_service(name = "%s", config = %s)
 `, serviceName, serviceConfigStarlark)
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature)
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlarkRunConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
@@ -190,7 +186,8 @@ func RemoveService(
 def run(plan):
 	plan.remove_service(name = "%s")
 `, serviceName)
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature)
+	starlarkRunConfig := starlark_run_config.NewRunStarlarkConfig()
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlarkRunConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to remove service")
 	}
@@ -338,7 +335,8 @@ func AddAPIService(ctx context.Context, serviceName services.ServiceName, enclav
 }
 
 func RunScriptWithDefaultConfig(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, script string) (*enclaves.StarlarkRunResult, error) {
-	return enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, script, emptyParams, defaultDryRun, defaultParallelism, noExperimentalFeature)
+	starlarkRunConfig := starlark_run_config.NewRunStarlarkConfig()
+	return enclaveCtx.RunStarlarkScriptBlocking(ctx, script, starlarkRunConfig)
 }
 
 func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName string, script string) (*enclaves.StarlarkRunResult, error) {
@@ -459,7 +457,7 @@ func GetLogsResponse(
 	receivedNotFoundServiceGuids := map[services.ServiceUUID]bool{}
 	var testEvaluationErr error
 
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, serviceUuids, shouldFollowLogs, logLineFilter)
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, serviceUuids, shouldFollowLogs, defaultShouldReturnAllLogs, defaultNumLogLines, logLineFilter)
 	defer cancelStreamUserServiceLogsFunc()
 	require.NoError(t, err, "An error occurred getting user service logs from user services with UUIDs '%+v' in enclave '%v' and with follow logs value '%v'", serviceUuids, enclaveIdentifier, shouldFollowLogs)
 
@@ -663,7 +661,8 @@ func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bin
 
 func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName, portId string, endpoint string, initialDelayMilliseconds uint32, timeoutMilliseconds uint32) error {
 	starlarkParams := fmt.Sprintf(waitForGetAvaliabilityStalarkScriptParams, serviceName, portId, endpoint, initialDelayMilliseconds, timeoutMilliseconds)
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, waitForGetAvaliabilityStalarkScript, starlarkParams, false, defaultParallelism, noExperimentalFeature)
+	starlarkRunConfig := starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(starlarkParams))
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, waitForGetAvaliabilityStalarkScript, starlarkRunConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error has occurred getting endpoint availability using Starlark")
 	}

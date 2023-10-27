@@ -47,9 +47,12 @@ service ApiContainerService {
   rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (ListFilesArtifactNamesAndUuidsResponse) {}
 
   rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (InspectFilesArtifactContentsResponse) {}
-  
+
   // User services port forwarding
   rpc ConnectServices(ConnectServicesArgs) returns (ConnectServicesResponse) {};
+  
+  // Get last Starlark run
+  rpc GetStarlarkRun(google.protobuf.Empty) returns (GetStarlarkRunResponse) {};
 }
 
 // ==============================================================================================
@@ -69,6 +72,20 @@ message Port {
   string maybe_application_protocol = 3;
   // The wait timeout duration in string
   string maybe_wait_timeout = 4;
+}
+
+message Container {
+  enum Status {
+    STOPPED = 0;
+    RUNNING = 1;
+    UNKNOWN = 2;
+  }
+
+  Status status = 1;
+  string image_name = 2;
+  repeated string entrypoint_args = 3;
+  repeated string cmd_args = 4;
+  map<string, string> env_vars = 5;
 }
 
 enum ServiceStatus {
@@ -105,6 +122,9 @@ message ServiceInfo {
 
   // Service status: stopped, running.
   ServiceStatus service_status = 8;
+
+  // Docker container or Kubernetes pod container
+  Container container = 9;
 }
 
 // ==============================================================================================
@@ -136,6 +156,12 @@ message RunStarlarkScriptArgs {
   string main_function_name = 5;
 
   repeated KurtosisFeatureFlag experimental_features = 6;
+
+  // Defaults to empty
+  optional string cloud_instance_id = 7;
+
+  // Defaults to empty
+  optional string cloud_user_id = 8;
 }
 
 message RunStarlarkPackageArgs {
@@ -172,6 +198,12 @@ message RunStarlarkPackageArgs {
   string main_function_name = 10;
 
   repeated KurtosisFeatureFlag experimental_features = 11;
+
+  // Defaults to empty
+  optional string cloud_instance_id = 12;
+
+  // Defaults to empty
+  optional string cloud_user_id = 13;
 }
 
 enum KurtosisFeatureFlag {
@@ -483,4 +515,31 @@ message ConnectServicesArgs {
 }
 
 message ConnectServicesResponse {
+}
+
+// ==============================================================================================
+//                               Get Run Starlark
+// ==============================================================================================
+
+enum RestartPolicy {
+  NEVER = 0;
+  ALWAYS = 1;
+}
+
+message GetStarlarkRunResponse {
+  string package_id = 1;
+
+  string serialized_script = 2;
+
+  string serialized_params = 3;
+
+  int32 parallelism = 4;
+
+  string relative_path_to_main_file = 5;
+
+  string main_function_name = 6;
+
+  repeated KurtosisFeatureFlag experimental_features = 7;
+
+  RestartPolicy restart_policy = 8;
 }

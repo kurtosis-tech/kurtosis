@@ -147,6 +147,7 @@ export const EnclaveInfo = proto3.makeMessageType(
     { no: 6, name: "api_container_info", kind: "message", T: EnclaveAPIContainerInfo },
     { no: 7, name: "api_container_host_machine_info", kind: "message", T: EnclaveAPIContainerHostMachineInfo },
     { no: 8, name: "creation_time", kind: "message", T: Timestamp },
+    { no: 9, name: "mode", kind: "enum", T: proto3.getEnumType(EnclaveMode) },
   ],
 );
 
@@ -261,6 +262,8 @@ export const GetServiceLogsArgs = proto3.makeMessageType(
     { no: 2, name: "service_uuid_set", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 8 /* ScalarType.BOOL */} },
     { no: 3, name: "follow_logs", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 4, name: "conjunctive_filters", kind: "message", T: LogLineFilter, repeated: true },
+    { no: 5, name: "return_all_logs", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 6, name: "num_log_lines", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
   ],
 );
 

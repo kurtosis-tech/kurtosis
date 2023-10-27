@@ -32,9 +32,11 @@ const renderServices = (services, handleClick) => {
         )
     }
 
-    return services.map((service) => {
+    return services.map((service, index) => {
+        const key = `${service.name}-${index}`
         return (
-            <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
+            <div key={key}
+                 className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
                  onClick={() => handleClick(service, services)}>
                 <div> {service.name} </div>
             </div>
@@ -53,9 +55,11 @@ const renderFileArtifacts = (file_artifacts, handleFileArtifactClick) => {
         )
     }
 
-    return file_artifacts.map((file_artifact) => {
+    return file_artifacts.map((file_artifact, index) => {
+        const key = `${file_artifact.name}-${index}`
         return (
-            <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
+            <div key={key}
+                 className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
                  onClick={() => handleFileArtifactClick(file_artifact.name, file_artifacts)}>
                 <div>{file_artifact.name}</div>
             </div>
@@ -63,7 +67,7 @@ const renderFileArtifacts = (file_artifacts, handleFileArtifactClick) => {
     })
 }
 
-const EncalveInfo = ({enclaves}) => {
+const EnclaveInfo = ({enclaves}) => {
     const navigate = useNavigate();
     const {appData} = useAppContext()
 
@@ -75,7 +79,6 @@ const EncalveInfo = ({enclaves}) => {
     const [encalveInfoLoading, setEnclaveInfoLoading] = useState(false)
 
     useEffect(() => {
-        // console.log("EnclaveInfo: ", enclaves)
         setEnclaveInfoLoading(true)
         const fetch = async () => {
             const selected = enclaves.filter(enclave => enclave.name === name);
@@ -93,7 +96,7 @@ const EncalveInfo = ({enclaves}) => {
     }, [name, enclaves])
 
     const handleServiceClick = (service, services) => {
-        navigate(`/enclaves/${name}/services/${service.uuid}`, {state: {services, selected: service}})
+        navigate(`/enclaves/${name}/services/${service.serviceUuid}`, {state: {services, selected: service}})
     }
 
     const handleLeftPanelClick = (enclaveName) => {
@@ -101,7 +104,6 @@ const EncalveInfo = ({enclaves}) => {
     }
 
     const handleFileArtifactClick = async (fileArtifactName, fileArtifacts) => {
-        // console.log("Artifacts: ", fileArtifacts)
         const selected = enclaves.filter(enclave => enclave.name === name);
         if (selected.length > 0) {
             navigate(`/enclaves/${selected[0].name}/files/${fileArtifactName}`, {state: {fileArtifacts}})
@@ -110,14 +112,14 @@ const EncalveInfo = ({enclaves}) => {
 
     const EnclaveInfoComponent = ({services, fileArtifacts, handleServiceClick, handleFileArtifactClick}) => (
         <div className='flex flex-col h-[calc(100vh-3rem)] space-y-1 overflow-auto'>
-            <div className="flex flex-col h-1/2 min-h-1/2 border-8">
-                <Heading content={"Services"} size={"text-xl"}/>
+            <div className="flex flex-col h-1/2 min-h-1/2 border-2">
+                <Heading color={"text-white"} content={"Services"} size={"text-xl"}/>
                 <div className="overflow-auto space-y-2">
                     {renderServices(services, handleServiceClick)}
                 </div>
             </div>
-            <div className="flex flex-col h-[46%] border-8">
-                <Heading content={"File Artifacts"} size={"text-xl"} padding={"p-1"}/>
+            <div className="flex flex-col h-[46%] border-2">
+                <Heading color={"text-white"} content={"File Artifacts"} size={"text-xl"} padding={"p-1"}/>
                 <div className="overflow-auto space-y-2">
                     {renderFileArtifacts(fileArtifacts, handleFileArtifactClick)}
                 </div>
@@ -133,7 +135,7 @@ const EncalveInfo = ({enclaves}) => {
                 renderList={() => renderEnclaves(enclaves, handleLeftPanelClick)}
             />
 
-            <div className="flex bg-white w-[calc(100vw-39rem)] flex-col space-y-5">
+            <div className="flex bg-[#171923] w-[calc(100vw-39rem)] flex-col space-y-5">
                 <div className="h-[3rem] flex items-center justify-center m-2">
                     <Heading content={name}/>
                 </div>
@@ -153,4 +155,4 @@ const EncalveInfo = ({enclaves}) => {
     )
 }
 
-export default EncalveInfo;
+export default EnclaveInfo;

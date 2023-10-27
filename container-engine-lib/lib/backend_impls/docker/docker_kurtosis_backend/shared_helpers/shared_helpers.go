@@ -5,21 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/docker/go-connections/nat"
-	"github.com/gammazero/workerpool"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"io"
 	"net"
 	"os"
@@ -27,6 +13,21 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/docker/go-connections/nat"
+	"github.com/gammazero/workerpool"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -76,8 +77,8 @@ type UserServiceDockerResources struct {
 
 func GetEnclaveNetworkByEnclaveUuid(ctx context.Context, enclaveUuid enclave.EnclaveUUID, dockerManager *docker_manager.DockerManager) (*types.Network, error) {
 	networkSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
 	}
 
 	enclaveNetworksFound, err := dockerManager.GetNetworksByLabels(ctx, networkSearchLabels)
@@ -229,21 +230,21 @@ func GetIpAndPortInfoFromContainer(
 	resultPublicPortSpecs map[string]*port_spec.PortSpec,
 	resultErr error,
 ) {
-	privateIpAddrStr, found := labels[label_key_consts.PrivateIPDockerLabelKey.GetString()]
+	privateIpAddrStr, found := labels[docker_label_key.PrivateIPDockerLabelKey.GetString()]
 	if !found {
-		return nil, nil, nil, nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.PrivateIPDockerLabelKey.GetString(), containerName)
+		return nil, nil, nil, nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", docker_label_key.PrivateIPDockerLabelKey.GetString(), containerName)
 	}
 	privateIp := net.ParseIP(privateIpAddrStr)
 	if privateIp == nil {
 		return nil, nil, nil, nil, stacktrace.NewError("Couldn't parse private IP string '%v' on container '%v' to an IP address", privateIpAddrStr, containerName)
 	}
 
-	serializedPortSpecs, found := labels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
+	serializedPortSpecs, found := labels[docker_label_key.PortSpecsDockerLabelKey.GetString()]
 	if !found {
 		return nil, nil, nil, nil, stacktrace.NewError(
 			"Expected to find port specs label '%v' on container '%v' but none was found",
 			containerName,
-			label_key_consts.PortSpecsDockerLabelKey.GetString(),
+			docker_label_key.PortSpecsDockerLabelKey.GetString(),
 		)
 	}
 
@@ -334,7 +335,7 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 		}
 
 		if filters.Statuses != nil && len(filters.Statuses) > 0 {
-			if _, found := filters.Statuses[serviceObj.GetStatus()]; !found {
+			if _, found := filters.Statuses[serviceObj.GetContainer().GetStatus()]; !found {
 				continue
 			}
 		}
@@ -512,9 +513,9 @@ func getMatchingUserServiceDockerResources(
 
 	// Grab services, INDEPENDENT OF volumes
 	userServiceContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString():   string(enclaveId),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString(),
+		docker_label_key.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString():   string(enclaveId),
+		docker_label_key.ContainerTypeDockerLabelKey.GetString(): label_value_consts.UserServiceContainerTypeDockerLabelValue.GetString(),
 	}
 	userServiceContainers, err := dockerManager.GetContainersByLabels(ctx, userServiceContainerSearchLabels, shouldGetStoppedContainersWhenGettingServiceInfo)
 	if err != nil {
@@ -522,9 +523,9 @@ func getMatchingUserServiceDockerResources(
 	}
 
 	for _, container := range userServiceContainers {
-		serviceUuidStr, found := container.GetLabels()[label_key_consts.GUIDDockerLabelKey.GetString()]
+		serviceUuidStr, found := container.GetLabels()[docker_label_key.GUIDDockerLabelKey.GetString()]
 		if !found {
-			return nil, stacktrace.NewError("Found user service container '%v' that didn't have expected GUID label '%v'", container.GetId(), label_key_consts.GUIDDockerLabelKey.GetString())
+			return nil, stacktrace.NewError("Found user service container '%v' that didn't have expected GUID label '%v'", container.GetId(), docker_label_key.GUIDDockerLabelKey.GetString())
 		}
 		serviceUuid := service.ServiceUUID(serviceUuidStr)
 
@@ -547,9 +548,9 @@ func getMatchingUserServiceDockerResources(
 
 	// Grab volumes, INDEPENDENT OF whether there are any containers
 	filesArtifactExpansionVolumeSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveId),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString():  label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue.GetString(),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveId),
+		docker_label_key.VolumeTypeDockerLabelKey.GetString():  label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue.GetString(),
 	}
 	matchingFilesArtifactExpansionVolumes, err := dockerManager.GetVolumesByLabels(ctx, filesArtifactExpansionVolumeSearchLabels)
 	if err != nil {
@@ -557,9 +558,9 @@ func getMatchingUserServiceDockerResources(
 	}
 
 	for _, volume := range matchingFilesArtifactExpansionVolumes {
-		serviceUuidStr, found := volume.Labels[label_key_consts.UserServiceGUIDDockerLabelKey.GetString()]
+		serviceUuidStr, found := volume.Labels[docker_label_key.UserServiceGUIDDockerLabelKey.GetString()]
 		if !found {
-			return nil, stacktrace.NewError("Found files artifact expansion volume '%v' that didn't have expected service GUID label '%v'", volume.Name, label_key_consts.UserServiceGUIDDockerLabelKey.GetString())
+			return nil, stacktrace.NewError("Found files artifact expansion volume '%v' that didn't have expected service GUID label '%v'", volume.Name, docker_label_key.UserServiceGUIDDockerLabelKey.GetString())
 		}
 		serviceUuid := service.ServiceUUID(serviceUuidStr)
 
@@ -591,33 +592,33 @@ func getUserServiceObjsFromDockerResources(
 
 	// If we have an entry in the map, it means there's at least one Docker resource
 	for serviceUuid, resources := range allDockerResources {
-		container := resources.ServiceContainer
+		serviceContainer := resources.ServiceContainer
 
 		// If we don't have a container, we don't have the service ID label which means we can't actually construct a Service object
 		// The only case where this would happen is if, during deletion, we delete the container but an error occurred deleting the volumes
-		if container == nil {
+		if serviceContainer == nil {
 			return nil, stacktrace.NewError(
 				"Service '%v' has Docker resources but not a container; this indicates that there the service's "+
 					"container was deleted but errors occurred deleting the rest of the resources",
 				serviceUuid,
 			)
 		}
-		containerName := container.GetName()
-		containerLabels := container.GetLabels()
+		containerName := serviceContainer.GetName()
+		containerLabels := serviceContainer.GetLabels()
 
-		serviceIdStr, found := containerLabels[label_key_consts.IDDockerLabelKey.GetString()]
+		serviceIdStr, found := containerLabels[docker_label_key.IDDockerLabelKey.GetString()]
 		if !found {
-			return nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", label_key_consts.IDDockerLabelKey.GetString(), containerName)
+			return nil, stacktrace.NewError("Expected to find label '%v' on container '%v' but label was missing", docker_label_key.IDDockerLabelKey.GetString(), containerName)
 		}
 		serviceName := service.ServiceName(serviceIdStr)
 
 		privateIp, privatePorts, maybePublicIp, maybePublicPorts, err := GetIpAndPortInfoFromContainer(
 			containerName,
 			containerLabels,
-			container.GetHostPortBindings(),
+			serviceContainer.GetHostPortBindings(),
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting IP & port info from container '%v'", container.GetName())
+			return nil, stacktrace.Propagate(err, "An error occurred getting IP & port info from container '%v'", serviceContainer.GetName())
 		}
 
 		registration := service.NewServiceRegistration(
@@ -628,22 +629,28 @@ func getUserServiceObjsFromDockerResources(
 			string(serviceName), // in Docker, hostname = serviceName because we're setting the "alias" of the container to serviceName
 		)
 
-		containerStatus := container.GetStatus()
+		containerStatus := serviceContainer.GetStatus()
 		isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 		if !found {
 			return nil, stacktrace.NewError("No is-running determination found for status '%v' for container '%v'", containerStatus.String(), containerName)
 		}
-		serviceStatus := container_status.ContainerStatus_Stopped
+		serviceContainerStatus := container.ContainerStatus_Stopped
 		if isContainerRunning {
-			serviceStatus = container_status.ContainerStatus_Running
+			serviceContainerStatus = container.ContainerStatus_Running
 		}
 
 		result[serviceUuid] = service.NewService(
 			registration,
-			serviceStatus,
 			privatePorts,
 			maybePublicIp,
 			maybePublicPorts,
+			container.NewContainer(
+				serviceContainerStatus,
+				serviceContainer.GetImageName(),
+				serviceContainer.GetEntrypointArgs(),
+				serviceContainer.GetCmdArgs(),
+				serviceContainer.GetEnvVars(),
+			),
 		)
 	}
 	return result, nil

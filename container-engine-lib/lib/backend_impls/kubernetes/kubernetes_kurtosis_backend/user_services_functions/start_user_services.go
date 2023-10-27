@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -376,7 +375,7 @@ func createStartServiceOperation(
 		}()
 
 		// Create the pod
-		podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceUuid, serviceName, privatePorts)
+		podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceUuid, serviceName, privatePorts, serviceConfig.GetLabels())
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new pod for service with UUID '%v'", serviceUuid)
 		}
@@ -796,9 +795,9 @@ func createRegisterUserServiceOperation(
 			return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes pod match label value for the enclave ID '%v'", enclaveID)
 		}
 		matchedPodLabels := map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-			label_key_consts.AppIDKubernetesLabelKey:       label_value_consts.AppIDKubernetesLabelValue,
-			label_key_consts.EnclaveUUIDKubernetesLabelKey: enclaveIdLabelValue,
-			label_key_consts.GUIDKubernetesLabelKey:        serviceUuidLabelValue,
+			kubernetes_label_key.AppIDKubernetesLabelKey:       label_value_consts.AppIDKubernetesLabelValue,
+			kubernetes_label_key.EnclaveUUIDKubernetesLabelKey: enclaveIdLabelValue,
+			kubernetes_label_key.GUIDKubernetesLabelKey:        serviceUuidLabelValue,
 		}
 		matchedPodLabelStrs := shared_helpers.GetStringMapFromLabelMap(matchedPodLabels)
 

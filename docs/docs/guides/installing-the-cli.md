@@ -33,6 +33,10 @@ I. Install & Start Docker
    docker image ls
    ```
 
+:::note
+For some users, Kurtosis fails to run if Docker was not installed in `sudo` mode. We have a workaround detailed in [#1140](https://github.com/kurtosis-tech/kurtosis/issues/1140) while we work on a more graceful solution, outlined in [#1469](https://github.com/kurtosis-tech/kurtosis/issues/1469).
+:::
+
 II. Install the CLI
 -------------------------
 
@@ -110,7 +114,7 @@ If you're new to Kurtosis, you might like the [quickstart][quickstart] as a good
 [cli-changelog]: ../changelog.md
 [metrics-philosophy]: ../explanations/metrics-philosophy.md
 [analytics-disable]: ../cli-reference/analytics-disable.md
-[quickstart]: ../quickstart.md
+[quickstart]: ../get-started/quickstart.md
 [installing-command-line-completion]: ./adding-command-line-completion.md
 [install-historical-guide]: ./installing-historical-versions.md
 [upgrade-guide]: ./upgrading-the-cli.md

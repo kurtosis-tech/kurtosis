@@ -41,6 +41,17 @@ export const KurtosisFeatureFlag = proto3.makeEnum(
 );
 
 /**
+ * @generated from enum api_container_api.RestartPolicy
+ */
+export const RestartPolicy = proto3.makeEnum(
+  "api_container_api.RestartPolicy",
+  [
+    {no: 0, name: "NEVER"},
+    {no: 1, name: "ALWAYS"},
+  ],
+);
+
+/**
  * ==============================================================================================
  *                           Shared Objects (Used By Multiple Endpoints)
  * ==============================================================================================
@@ -70,6 +81,32 @@ export const Port_TransportProtocol = proto3.makeEnum(
 );
 
 /**
+ * @generated from message api_container_api.Container
+ */
+export const Container = proto3.makeMessageType(
+  "api_container_api.Container",
+  () => [
+    { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(Container_Status) },
+    { no: 2, name: "image_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "entrypoint_args", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 4, name: "cmd_args", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 5, name: "env_vars", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
+  ],
+);
+
+/**
+ * @generated from enum api_container_api.Container.Status
+ */
+export const Container_Status = proto3.makeEnum(
+  "api_container_api.Container.Status",
+  [
+    {no: 0, name: "STOPPED"},
+    {no: 1, name: "RUNNING"},
+    {no: 2, name: "UNKNOWN"},
+  ],
+);
+
+/**
  * @generated from message api_container_api.ServiceInfo
  */
 export const ServiceInfo = proto3.makeMessageType(
@@ -83,6 +120,7 @@ export const ServiceInfo = proto3.makeMessageType(
     { no: 6, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 7, name: "shortened_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 8, name: "service_status", kind: "enum", T: proto3.getEnumType(ServiceStatus) },
+    { no: 9, name: "container", kind: "message", T: Container },
   ],
 );
 
@@ -98,6 +136,8 @@ export const RunStarlarkScriptArgs = proto3.makeMessageType(
     { no: 4, name: "parallelism", kind: "scalar", T: 5 /* ScalarType.INT32 */, opt: true },
     { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 6, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
+    { no: 7, name: "cloud_instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 8, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 
@@ -117,6 +157,8 @@ export const RunStarlarkPackageArgs = proto3.makeMessageType(
     { no: 9, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 10, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 11, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
+    { no: 12, name: "cloud_instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 13, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 
@@ -559,5 +601,22 @@ export const ConnectServicesArgs = proto3.makeMessageType(
 export const ConnectServicesResponse = proto3.makeMessageType(
   "api_container_api.ConnectServicesResponse",
   [],
+);
+
+/**
+ * @generated from message api_container_api.GetStarlarkRunResponse
+ */
+export const GetStarlarkRunResponse = proto3.makeMessageType(
+  "api_container_api.GetStarlarkRunResponse",
+  () => [
+    { no: 1, name: "package_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "serialized_script", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "parallelism", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 5, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
+    { no: 8, name: "restart_policy", kind: "enum", T: proto3.getEnumType(RestartPolicy) },
+  ],
 );
 

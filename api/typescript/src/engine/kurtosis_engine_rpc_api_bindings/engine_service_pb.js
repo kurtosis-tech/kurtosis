@@ -1345,7 +1345,8 @@ proto.engine_api.EnclaveInfo.toObject = function(includeInstance, msg) {
     apiContainerStatus: jspb.Message.getFieldWithDefault(msg, 5, 0),
     apiContainerInfo: (f = msg.getApiContainerInfo()) && proto.engine_api.EnclaveAPIContainerInfo.toObject(includeInstance, f),
     apiContainerHostMachineInfo: (f = msg.getApiContainerHostMachineInfo()) && proto.engine_api.EnclaveAPIContainerHostMachineInfo.toObject(includeInstance, f),
-    creationTime: (f = msg.getCreationTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    creationTime: (f = msg.getCreationTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    mode: jspb.Message.getFieldWithDefault(msg, 9, 0)
   };
 
   if (includeInstance) {
@@ -1416,6 +1417,10 @@ proto.engine_api.EnclaveInfo.deserializeBinaryFromReader = function(msg, reader)
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setCreationTime(value);
+      break;
+    case 9:
+      var value = /** @type {!proto.engine_api.EnclaveMode} */ (reader.readEnum());
+      msg.setMode(value);
       break;
     default:
       reader.skipField();
@@ -1503,6 +1508,13 @@ proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer)
       8,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
+  f = message.getMode();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      9,
+      f
     );
   }
 };
@@ -1706,6 +1718,24 @@ proto.engine_api.EnclaveInfo.prototype.clearCreationTime = function() {
  */
 proto.engine_api.EnclaveInfo.prototype.hasCreationTime = function() {
   return jspb.Message.getField(this, 8) != null;
+};
+
+
+/**
+ * optional EnclaveMode mode = 9;
+ * @return {!proto.engine_api.EnclaveMode}
+ */
+proto.engine_api.EnclaveInfo.prototype.getMode = function() {
+  return /** @type {!proto.engine_api.EnclaveMode} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+};
+
+
+/**
+ * @param {!proto.engine_api.EnclaveMode} value
+ * @return {!proto.engine_api.EnclaveInfo} returns this
+ */
+proto.engine_api.EnclaveInfo.prototype.setMode = function(value) {
+  return jspb.Message.setProto3EnumField(this, 9, value);
 };
 
 
@@ -2945,7 +2975,9 @@ proto.engine_api.GetServiceLogsArgs.toObject = function(includeInstance, msg) {
     serviceUuidSetMap: (f = msg.getServiceUuidSetMap()) ? f.toObject(includeInstance, undefined) : [],
     followLogs: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
     conjunctiveFiltersList: jspb.Message.toObjectList(msg.getConjunctiveFiltersList(),
-    proto.engine_api.LogLineFilter.toObject, includeInstance)
+    proto.engine_api.LogLineFilter.toObject, includeInstance),
+    returnAllLogs: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
+    numLogLines: jspb.Message.getFieldWithDefault(msg, 6, 0)
   };
 
   if (includeInstance) {
@@ -3001,6 +3033,14 @@ proto.engine_api.GetServiceLogsArgs.deserializeBinaryFromReader = function(msg, 
       reader.readMessage(value,proto.engine_api.LogLineFilter.deserializeBinaryFromReader);
       msg.addConjunctiveFilters(value);
       break;
+    case 5:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setReturnAllLogs(value);
+      break;
+    case 6:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setNumLogLines(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -3054,6 +3094,20 @@ proto.engine_api.GetServiceLogsArgs.serializeBinaryToWriter = function(message, 
       4,
       f,
       proto.engine_api.LogLineFilter.serializeBinaryToWriter
+    );
+  }
+  f = message.getReturnAllLogs();
+  if (f) {
+    writer.writeBool(
+      5,
+      f
+    );
+  }
+  f = message.getNumLogLines();
+  if (f !== 0) {
+    writer.writeUint32(
+      6,
+      f
     );
   }
 };
@@ -3152,6 +3206,42 @@ proto.engine_api.GetServiceLogsArgs.prototype.addConjunctiveFilters = function(o
  */
 proto.engine_api.GetServiceLogsArgs.prototype.clearConjunctiveFiltersList = function() {
   return this.setConjunctiveFiltersList([]);
+};
+
+
+/**
+ * optional bool return_all_logs = 5;
+ * @return {boolean}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.getReturnAllLogs = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 5, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.setReturnAllLogs = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 5, value);
+};
+
+
+/**
+ * optional uint32 num_log_lines = 6;
+ * @return {number}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.getNumLogLines = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.setNumLogLines = function(value) {
+  return jspb.Message.setProto3IntField(this, 6, value);
 };
 
 

@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -211,7 +210,7 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) getLabelsFor
 		return nil, stacktrace.Propagate(err, "Failed to create Kubernetes label value from enclaveId '%v'", provider.enclaveId)
 	}
 	return map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue{
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.APIContainerKurtosisResourceTypeKubernetesLabelValue,
-		label_key_consts.EnclaveUUIDKubernetesLabelKey:          enclaveIdLabelValue,
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey: label_value_consts.APIContainerKurtosisResourceTypeKubernetesLabelValue,
+		kubernetes_label_key.EnclaveUUIDKubernetesLabelKey:          enclaveIdLabelValue,
 	}, nil
 }

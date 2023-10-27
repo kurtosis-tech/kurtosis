@@ -61,6 +61,21 @@ export declare enum KurtosisFeatureFlag {
 }
 
 /**
+ * @generated from enum api_container_api.RestartPolicy
+ */
+export declare enum RestartPolicy {
+  /**
+   * @generated from enum value: NEVER = 0;
+   */
+  NEVER = 0,
+
+  /**
+   * @generated from enum value: ALWAYS = 1;
+   */
+  ALWAYS = 1,
+}
+
+/**
  * ==============================================================================================
  *                           Shared Objects (Used By Multiple Endpoints)
  * ==============================================================================================
@@ -128,6 +143,70 @@ export declare enum Port_TransportProtocol {
 }
 
 /**
+ * @generated from message api_container_api.Container
+ */
+export declare class Container extends Message<Container> {
+  /**
+   * @generated from field: api_container_api.Container.Status status = 1;
+   */
+  status: Container_Status;
+
+  /**
+   * @generated from field: string image_name = 2;
+   */
+  imageName: string;
+
+  /**
+   * @generated from field: repeated string entrypoint_args = 3;
+   */
+  entrypointArgs: string[];
+
+  /**
+   * @generated from field: repeated string cmd_args = 4;
+   */
+  cmdArgs: string[];
+
+  /**
+   * @generated from field: map<string, string> env_vars = 5;
+   */
+  envVars: { [key: string]: string };
+
+  constructor(data?: PartialMessage<Container>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.Container";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Container;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Container;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Container;
+
+  static equals(a: Container | PlainMessage<Container> | undefined, b: Container | PlainMessage<Container> | undefined): boolean;
+}
+
+/**
+ * @generated from enum api_container_api.Container.Status
+ */
+export declare enum Container_Status {
+  /**
+   * @generated from enum value: STOPPED = 0;
+   */
+  STOPPED = 0,
+
+  /**
+   * @generated from enum value: RUNNING = 1;
+   */
+  RUNNING = 1,
+
+  /**
+   * @generated from enum value: UNKNOWN = 2;
+   */
+  UNKNOWN = 2,
+}
+
+/**
  * @generated from message api_container_api.ServiceInfo
  */
 export declare class ServiceInfo extends Message<ServiceInfo> {
@@ -191,6 +270,13 @@ export declare class ServiceInfo extends Message<ServiceInfo> {
    */
   serviceStatus: ServiceStatus;
 
+  /**
+   * Docker container or Kubernetes pod container
+   *
+   * @generated from field: api_container_api.Container container = 9;
+   */
+  container?: Container;
+
   constructor(data?: PartialMessage<ServiceInfo>);
 
   static readonly runtime: typeof proto3;
@@ -245,6 +331,20 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
    * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 6;
    */
   experimentalFeatures: KurtosisFeatureFlag[];
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_instance_id = 7;
+   */
+  cloudInstanceId?: string;
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_user_id = 8;
+   */
+  cloudUserId?: string;
 
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
@@ -345,6 +445,20 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 11;
    */
   experimentalFeatures: KurtosisFeatureFlag[];
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_instance_id = 12;
+   */
+  cloudInstanceId?: string;
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_user_id = 13;
+   */
+  cloudUserId?: string;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
@@ -1584,5 +1698,64 @@ export declare class ConnectServicesResponse extends Message<ConnectServicesResp
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ConnectServicesResponse;
 
   static equals(a: ConnectServicesResponse | PlainMessage<ConnectServicesResponse> | undefined, b: ConnectServicesResponse | PlainMessage<ConnectServicesResponse> | undefined): boolean;
+}
+
+/**
+ * @generated from message api_container_api.GetStarlarkRunResponse
+ */
+export declare class GetStarlarkRunResponse extends Message<GetStarlarkRunResponse> {
+  /**
+   * @generated from field: string package_id = 1;
+   */
+  packageId: string;
+
+  /**
+   * @generated from field: string serialized_script = 2;
+   */
+  serializedScript: string;
+
+  /**
+   * @generated from field: string serialized_params = 3;
+   */
+  serializedParams: string;
+
+  /**
+   * @generated from field: int32 parallelism = 4;
+   */
+  parallelism: number;
+
+  /**
+   * @generated from field: string relative_path_to_main_file = 5;
+   */
+  relativePathToMainFile: string;
+
+  /**
+   * @generated from field: string main_function_name = 6;
+   */
+  mainFunctionName: string;
+
+  /**
+   * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 7;
+   */
+  experimentalFeatures: KurtosisFeatureFlag[];
+
+  /**
+   * @generated from field: api_container_api.RestartPolicy restart_policy = 8;
+   */
+  restartPolicy: RestartPolicy;
+
+  constructor(data?: PartialMessage<GetStarlarkRunResponse>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.GetStarlarkRunResponse";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetStarlarkRunResponse;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetStarlarkRunResponse;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetStarlarkRunResponse;
+
+  static equals(a: GetStarlarkRunResponse | PlainMessage<GetStarlarkRunResponse> | undefined, b: GetStarlarkRunResponse | PlainMessage<GetStarlarkRunResponse> | undefined): boolean;
 }
 

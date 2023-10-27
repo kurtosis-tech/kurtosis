@@ -11,10 +11,14 @@ const (
 
 func (suite *StartosisPackageTestSuite) TestStartosisPackage_NoMainInMainStar() {
 	ctx := context.Background()
-	runResult, _ := suite.RunPackage(ctx, packageWithNoMainInMainStarRelPath)
+	runResult, err := suite.RunPackage(ctx, packageWithNoMainInMainStarRelPath)
 
 	t := suite.T()
-	expectedInterpretationErr := "No 'run' function found in the main file of package 'github.com/sample/sample-kurtosis-package'; a 'run' entrypoint function with the signature `run(plan, args)` or `run()` is required in the main file of the Kurtosis package"
+
+	require.Error(t, err)
+	require.NotNil(t, runResult)
+
+	expectedInterpretationErr := "No 'run' function found in the main file of package 'github.com/kurtosis-tech/kurtosis/internal_testsuites/starlark/no-run-in-main-star'; a 'run' entrypoint function with the signature `run(plan, args)` or `run()` is required in the main file of the Kurtosis package"
 	require.NotNil(t, runResult.InterpretationError)
 	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), expectedInterpretationErr)
 	require.Empty(t, runResult.ValidationErrors)

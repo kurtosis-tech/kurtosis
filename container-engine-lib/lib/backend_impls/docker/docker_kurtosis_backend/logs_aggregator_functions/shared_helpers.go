@@ -2,15 +2,16 @@ package logs_aggregator_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"net"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/stacktrace"
-	"net"
 )
 
 const (
@@ -48,8 +49,8 @@ func getLogsAggregatorObjectAndContainerId(
 // Returns nil [Container] object and false if no logs aggregator container is found
 func getLogsAggregatorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, bool, error) {
 	logsAggregatorContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsAggregatorTypeDockerLabelValue.GetString(),
+		docker_label_key.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsAggregatorTypeDockerLabelValue.GetString(),
 	}
 
 	matchingLogsAggregatorContainers, err := dockerManager.GetContainersByLabels(ctx, logsAggregatorContainerSearchLabels, shouldShowStoppedLogsAggregatorContainers)
@@ -80,9 +81,9 @@ func getLogsAggregatorObjectFromContainerInfo(
 		return nil, stacktrace.NewError("No is-running designation found for logs aggregator container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
 	}
 
-	var logsAggregatorStatus container_status.ContainerStatus
+	var logsAggregatorStatus container.ContainerStatus
 	if isContainerRunning {
-		logsAggregatorStatus = container_status.ContainerStatus_Running
+		logsAggregatorStatus = container.ContainerStatus_Running
 
 		privateIpAddrStr, err := dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
 		if err != nil {
@@ -93,7 +94,7 @@ func getLogsAggregatorObjectFromContainerInfo(
 			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 		}
 	} else {
-		logsAggregatorStatus = container_status.ContainerStatus_Stopped
+		logsAggregatorStatus = container.ContainerStatus_Stopped
 	}
 
 	logsAggregatorObj := logs_aggregator.NewLogsAggregator(

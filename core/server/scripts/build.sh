@@ -13,6 +13,7 @@ source "${script_dirpath}/_constants.env"
 BUILD_DIRNAME="build"
 
 DEFAULT_SKIP_DOCKER_IMAGE_BUILDING=false
+DEFAULT_ARCHITECTURE_TO_BUILD=amd64
 
 MAIN_DIRNAME="api_container"
 MAIN_GO_FILEPATH="${server_root_dirpath}/${MAIN_DIRNAME}/main.go"
@@ -25,6 +26,11 @@ MAIN_BINARY_OUTPUT_FILEPATH="${server_root_dirpath}/${BUILD_DIRNAME}/${MAIN_BINA
 skip_docker_image_building="${1:-"${DEFAULT_SKIP_DOCKER_IMAGE_BUILDING}"}"
 if [ "${skip_docker_image_building}" != "true" ] && [ "${skip_docker_image_building}" != "false" ]; then
     echo "Error: Invalid skip-docker-image-building arg '${skip_docker_image_building}'" >&2
+fi
+
+architecture_to_build="${2:-"${DEFAULT_ARCHITECTURE_TO_BUILD}"}"
+if [ "${architecture_to_build}" != "amd64" ] && [ "${architecture_to_build}" != "arm64" ]; then
+    echo "Error: Invalid architecture-to-build arg '${architecture_to_build}'" >&2
 fi
 
 # Checks if dockerignore file is in the root path
@@ -47,7 +53,7 @@ echo "Tests succeeded"
 
 # Build binary for packaging inside an Alpine Linux image
 echo "Building server main.go '${MAIN_GO_FILEPATH}'..."
-if ! CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "${MAIN_BINARY_OUTPUT_FILEPATH}" "${MAIN_GO_FILEPATH}"; then
+if ! CGO_ENABLED=0 GOOS=linux GOARCH=${architecture_to_build} go build -o "${MAIN_BINARY_OUTPUT_FILEPATH}.${architecture_to_build}" "${MAIN_GO_FILEPATH}"; then
   echo "Error: An error occurred building the server code" >&2
   exit 1
 fi

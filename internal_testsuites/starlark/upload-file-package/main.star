@@ -3,7 +3,7 @@
 # named large-file.bin. This file is generated on the spot to avoid checking it into GitHub
 def run(plan, args):
     plan.print("Starting upload")
-    large_file_artifact_id = plan.upload_files("github.com/sample/sample-kurtosis-package/large-file.bin")
+    large_file_artifact_id = plan.upload_files("./large-file.bin")
 
     plan.print("Upload finished - Comparing file hash to parameter")
 
@@ -24,7 +24,7 @@ def run(plan, args):
     )
 
     expected_file_hash = args["file_hash"]
-    plan.assert(
+    plan.verify(
         value=result["output"],
         assertion="==",
         target_value=expected_file_hash,

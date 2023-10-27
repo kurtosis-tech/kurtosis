@@ -39,6 +39,50 @@ export namespace Port {
   }
 }
 
+export class Container extends jspb.Message {
+  getStatus(): Container.Status;
+  setStatus(value: Container.Status): Container;
+
+  getImageName(): string;
+  setImageName(value: string): Container;
+
+  getEntrypointArgsList(): Array<string>;
+  setEntrypointArgsList(value: Array<string>): Container;
+  clearEntrypointArgsList(): Container;
+  addEntrypointArgs(value: string, index?: number): Container;
+
+  getCmdArgsList(): Array<string>;
+  setCmdArgsList(value: Array<string>): Container;
+  clearCmdArgsList(): Container;
+  addCmdArgs(value: string, index?: number): Container;
+
+  getEnvVarsMap(): jspb.Map<string, string>;
+  clearEnvVarsMap(): Container;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Container.AsObject;
+  static toObject(includeInstance: boolean, msg: Container): Container.AsObject;
+  static serializeBinaryToWriter(message: Container, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Container;
+  static deserializeBinaryFromReader(message: Container, reader: jspb.BinaryReader): Container;
+}
+
+export namespace Container {
+  export type AsObject = {
+    status: Container.Status,
+    imageName: string,
+    entrypointArgsList: Array<string>,
+    cmdArgsList: Array<string>,
+    envVarsMap: Array<[string, string]>,
+  }
+
+  export enum Status { 
+    STOPPED = 0,
+    RUNNING = 1,
+    UNKNOWN = 2,
+  }
+}
+
 export class ServiceInfo extends jspb.Message {
   getServiceUuid(): string;
   setServiceUuid(value: string): ServiceInfo;
@@ -64,6 +108,11 @@ export class ServiceInfo extends jspb.Message {
   getServiceStatus(): ServiceStatus;
   setServiceStatus(value: ServiceStatus): ServiceInfo;
 
+  getContainer(): Container | undefined;
+  setContainer(value?: Container): ServiceInfo;
+  hasContainer(): boolean;
+  clearContainer(): ServiceInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
@@ -82,6 +131,7 @@ export namespace ServiceInfo {
     name: string,
     shortenedUuid: string,
     serviceStatus: ServiceStatus,
+    container?: Container.AsObject,
   }
 }
 
@@ -110,6 +160,16 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   clearExperimentalFeaturesList(): RunStarlarkScriptArgs;
   addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkScriptArgs;
 
+  getCloudInstanceId(): string;
+  setCloudInstanceId(value: string): RunStarlarkScriptArgs;
+  hasCloudInstanceId(): boolean;
+  clearCloudInstanceId(): RunStarlarkScriptArgs;
+
+  getCloudUserId(): string;
+  setCloudUserId(value: string): RunStarlarkScriptArgs;
+  hasCloudUserId(): boolean;
+  clearCloudUserId(): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -126,6 +186,8 @@ export namespace RunStarlarkScriptArgs {
     parallelism?: number,
     mainFunctionName: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
+    cloudInstanceId?: string,
+    cloudUserId?: string,
   }
 
   export enum DryRunCase { 
@@ -136,6 +198,16 @@ export namespace RunStarlarkScriptArgs {
   export enum ParallelismCase { 
     _PARALLELISM_NOT_SET = 0,
     PARALLELISM = 4,
+  }
+
+  export enum CloudInstanceIdCase { 
+    _CLOUD_INSTANCE_ID_NOT_SET = 0,
+    CLOUD_INSTANCE_ID = 7,
+  }
+
+  export enum CloudUserIdCase { 
+    _CLOUD_USER_ID_NOT_SET = 0,
+    CLOUD_USER_ID = 8,
   }
 }
 
@@ -180,6 +252,16 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   clearExperimentalFeaturesList(): RunStarlarkPackageArgs;
   addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkPackageArgs;
 
+  getCloudInstanceId(): string;
+  setCloudInstanceId(value: string): RunStarlarkPackageArgs;
+  hasCloudInstanceId(): boolean;
+  clearCloudInstanceId(): RunStarlarkPackageArgs;
+
+  getCloudUserId(): string;
+  setCloudUserId(value: string): RunStarlarkPackageArgs;
+  hasCloudUserId(): boolean;
+  clearCloudUserId(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -202,6 +284,8 @@ export namespace RunStarlarkPackageArgs {
     relativePathToMainFile: string,
     mainFunctionName: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
+    cloudInstanceId?: string,
+    cloudUserId?: string,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -223,6 +307,16 @@ export namespace RunStarlarkPackageArgs {
   export enum ClonePackageCase { 
     _CLONE_PACKAGE_NOT_SET = 0,
     CLONE_PACKAGE = 8,
+  }
+
+  export enum CloudInstanceIdCase { 
+    _CLOUD_INSTANCE_ID_NOT_SET = 0,
+    CLOUD_INSTANCE_ID = 12,
+  }
+
+  export enum CloudUserIdCase { 
+    _CLOUD_USER_ID_NOT_SET = 0,
+    CLOUD_USER_ID = 13,
   }
 }
 
@@ -1133,6 +1227,54 @@ export namespace ConnectServicesResponse {
   }
 }
 
+export class GetStarlarkRunResponse extends jspb.Message {
+  getPackageId(): string;
+  setPackageId(value: string): GetStarlarkRunResponse;
+
+  getSerializedScript(): string;
+  setSerializedScript(value: string): GetStarlarkRunResponse;
+
+  getSerializedParams(): string;
+  setSerializedParams(value: string): GetStarlarkRunResponse;
+
+  getParallelism(): number;
+  setParallelism(value: number): GetStarlarkRunResponse;
+
+  getRelativePathToMainFile(): string;
+  setRelativePathToMainFile(value: string): GetStarlarkRunResponse;
+
+  getMainFunctionName(): string;
+  setMainFunctionName(value: string): GetStarlarkRunResponse;
+
+  getExperimentalFeaturesList(): Array<KurtosisFeatureFlag>;
+  setExperimentalFeaturesList(value: Array<KurtosisFeatureFlag>): GetStarlarkRunResponse;
+  clearExperimentalFeaturesList(): GetStarlarkRunResponse;
+  addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): GetStarlarkRunResponse;
+
+  getRestartPolicy(): RestartPolicy;
+  setRestartPolicy(value: RestartPolicy): GetStarlarkRunResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetStarlarkRunResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetStarlarkRunResponse): GetStarlarkRunResponse.AsObject;
+  static serializeBinaryToWriter(message: GetStarlarkRunResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetStarlarkRunResponse;
+  static deserializeBinaryFromReader(message: GetStarlarkRunResponse, reader: jspb.BinaryReader): GetStarlarkRunResponse;
+}
+
+export namespace GetStarlarkRunResponse {
+  export type AsObject = {
+    packageId: string,
+    serializedScript: string,
+    serializedParams: string,
+    parallelism: number,
+    relativePathToMainFile: string,
+    mainFunctionName: string,
+    experimentalFeaturesList: Array<KurtosisFeatureFlag>,
+    restartPolicy: RestartPolicy,
+  }
+}
+
 export enum ServiceStatus { 
   STOPPED = 0,
   RUNNING = 1,
@@ -1144,4 +1286,8 @@ export enum Connect {
 }
 export enum KurtosisFeatureFlag { 
   NO_INSTRUCTIONS_CACHING = 0,
+}
+export enum RestartPolicy { 
+  NEVER = 0,
+  ALWAYS = 1,
 }

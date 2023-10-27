@@ -2,7 +2,9 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -14,7 +16,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"testing"
 )
 
 type addServiceTestCase struct {
@@ -24,13 +25,13 @@ type addServiceTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
-	suite.serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName).Times(1).Return(false, nil)
+	suite.serviceNetwork.EXPECT().ExistServiceRegistration(testServiceName).Times(1).Return(false, nil)
 	suite.serviceNetwork.EXPECT().AddService(
 		mock.Anything,
-		TestServiceName,
+		testServiceName,
 		mock.MatchedBy(func(serviceConfig *service.ServiceConfig) bool {
-			expectedServiceConfig := service.NewServiceConfig(
-				TestContainerImageName,
+			expectedServiceConfig, err := service.CreateServiceConfig(
+				testContainerImageName,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
 				nil,
@@ -43,14 +44,16 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
+				map[string]string{},
 			)
+			require.NoError(suite.T(), err)
 
 			actualServiceConfig := serviceConfig
 			suite.Assert().Equal(expectedServiceConfig, actualServiceConfig)
 			return true
 		}),
 	).Times(1).Return(
-		service.NewService(service.NewServiceRegistration(TestServiceName, TestServiceUuid, TestEnclaveUuid, nil, string(TestServiceName)), container_status.ContainerStatus_Running, nil, nil, nil),
+		service.NewService(service.NewServiceRegistration(testServiceName, testServiceUuid, testEnclaveUuid, nil, string(testServiceName)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, "", nil, nil, nil)),
 		nil,
 	)
 
@@ -66,8 +69,8 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 }
 
 func (t *addServiceTestCase) GetStarlarkCode() string {
-	serviceConfig := fmt.Sprintf("ServiceConfig(image=%q)", TestContainerImageName)
-	return fmt.Sprintf(`%s(%s=%q, %s=%s)`, add_service.AddServiceBuiltinName, add_service.ServiceNameArgName, TestServiceName, add_service.ServiceConfigArgName, serviceConfig)
+	serviceConfig := fmt.Sprintf("ServiceConfig(image=%q)", testContainerImageName)
+	return fmt.Sprintf(`%s(%s=%q, %s=%s)`, add_service.AddServiceBuiltinName, add_service.ServiceNameArgName, testServiceName, add_service.ServiceConfigArgName, serviceConfig)
 }
 
 func (t *addServiceTestCase) GetStarlarkCodeForAssertion() string {
@@ -78,9 +81,9 @@ func (t *addServiceTestCase) Assert(interpretationResult starlark.Value, executi
 	serviceObj, ok := interpretationResult.(*kurtosis_types.Service)
 	require.True(t, ok, "interpretation result should be a dictionary")
 	require.NotNil(t, serviceObj)
-	expectedServiceObj := fmt.Sprintf(`Service\(name="%v", hostname="{{kurtosis:[0-9a-f]{32}:hostname.runtime_value}}", ip_address="{{kurtosis:[0-9a-f]{32}:ip_address.runtime_value}}", ports={}\)`, TestServiceName)
+	expectedServiceObj := fmt.Sprintf(`Service\(name="%v", hostname="{{kurtosis:[0-9a-f]{32}:hostname.runtime_value}}", ip_address="{{kurtosis:[0-9a-f]{32}:ip_address.runtime_value}}", ports={}\)`, testServiceName)
 	require.Regexp(t, expectedServiceObj, serviceObj.String())
 
-	expectedExecutionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", TestServiceName, TestServiceUuid)
+	expectedExecutionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", testServiceName, testServiceUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 }

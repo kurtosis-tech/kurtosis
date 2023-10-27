@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/stacktrace"
@@ -39,6 +40,8 @@ type EngineConnectServerService struct {
 	// per file pulls logs from enclaves created pre log retention feature
 	// TODO: remove once users are fully migrated to log retention/new log schema
 	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient
+
+	logFileManager *log_file_manager.LogFileManager
 }
 
 func NewEngineConnectServerService(
@@ -48,6 +51,7 @@ func NewEngineConnectServerService(
 	didUserAcceptSendingMetrics bool,
 	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient,
 	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient,
+	logFileManager *log_file_manager.LogFileManager,
 ) *EngineConnectServerService {
 	service := &EngineConnectServerService{
 		imageVersionTag:             imageVersionTag,
@@ -56,6 +60,7 @@ func NewEngineConnectServerService(
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		perWeekLogsDatabaseClient:   perWeekLogsDatabaseClient,
 		perFileLogsDatabaseClient:   perFileLogsDatabaseClient,
+		logFileManager:              logFileManager,
 	}
 	return service
 }
@@ -143,7 +148,11 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
 	}
-
+	if args.ShouldCleanAll {
+		if err = service.logFileManager.RemoveAllLogs(); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred removing all logs.")
+		}
+	}
 	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveNameAndUuids: removedEnclaveUuidsAndNames}
 	return connect.NewResponse(response), nil
 }
@@ -164,6 +173,8 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 	serviceUuidStrSet := args.GetServiceUuidSet()
 	requestedServiceUuids := make(map[user_service.ServiceUUID]bool, len(serviceUuidStrSet))
 	shouldFollowLogs := args.FollowLogs
+	shouldReturnAllLogs := args.ReturnAllLogs
+	numLogLines := args.NumLogLines
 
 	for serviceUuidStr := range serviceUuidStrSet {
 		serviceUuid := user_service.ServiceUUID(serviceUuidStr)
@@ -197,7 +208,14 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 	}
 	logsDatabaseClient := service.getLogsDatabaseClient(enclaveCreationTime)
 
-	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(contextWithCancel, enclaveUuid, requestedServiceUuids, conjunctiveLogLineFilters, shouldFollowLogs)
+	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(
+		contextWithCancel,
+		enclaveUuid,
+		requestedServiceUuids,
+		conjunctiveLogLineFilters,
+		shouldFollowLogs,
+		shouldReturnAllLogs,
+		numLogLines)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -236,8 +254,8 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		//error from logs database case
 		case err, isChanOpen := <-errChan:
 			if isChanOpen {
-				logrus.Debug("Exiting the stream because and error from the logs database client was received through the error chan")
-				return stacktrace.Propagate(err, "An error occurred streaming user service logs")
+				logrus.Debug("Exiting the stream because an error from the logs database client was received through the error chan.")
+				return stacktrace.Propagate(err, "An error occurred streaming user service logs.")
 			}
 			logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
 			return nil

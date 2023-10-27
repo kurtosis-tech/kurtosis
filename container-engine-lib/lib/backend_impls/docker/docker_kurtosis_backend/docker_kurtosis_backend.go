@@ -2,20 +2,24 @@ package docker_kurtosis_backend
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/sirupsen/logrus"
+	"io"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
+	user_service_functions "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
@@ -25,8 +29,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/stacktrace"
-	"io"
-	"sync"
 )
 
 const (
@@ -88,7 +90,10 @@ func (backend *DockerKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]
 	prunedImages, err := backend.dockerManager.PruneUnusedImages(ctx)
 	prunedImageNames := []string{}
 	for _, prunedImage := range prunedImages {
-		prunedImageNames = append(prunedImageNames, prunedImage.ID)
+		if lenPrunedImageTags := len(prunedImage.RepoTags); lenPrunedImageTags != 1 {
+			return nil, stacktrace.NewError("Expected exactly one repo tag, but found %d (%v). This is a bug in Kurtosis.", lenPrunedImageTags, prunedImage.RepoTags)
+		}
+		prunedImageNames = append(prunedImageNames, prunedImage.RepoTags[0])
 	}
 	if err != nil {
 		return prunedImageNames, stacktrace.Propagate(err, "An error occurred pruning image from kurtosis backend")
@@ -209,7 +214,7 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
-	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running {
+	if logsCollector == nil || logsCollector.GetStatus() != container.ContainerStatus_Running {
 		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for it to send logs to.")
 	}
 
@@ -404,14 +409,26 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	*logs_collector.LogsCollector,
 	error,
 ) {
-	logsAggregator, err := backend.GetLogsAggregator(ctx)
+	var logsAggregator *logs_aggregator.LogsAggregator
+	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(ctx, backend.dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator; the logs collector cannot be run without a logs aggregator")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator. The logs collector cannot be run without a logs aggregator.")
 	}
-
-	if logsAggregator == nil || logsAggregator.GetStatus() != container_status.ContainerStatus_Running {
-		return nil, stacktrace.NewError("The logs aggregator is not running; the logs collector cannot be run without a running logs aggregator")
+	if maybeLogsAggregator == nil {
+		logrus.Warnf("Logs aggregator container does not exist. This is unexpected as docker should have restarted the container automatically.")
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
+		return nil, stacktrace.Propagate(err, "No logs aggregator container exists. The logs collector cannot be run without a logs aggregator.")
 	}
+	if maybeLogsAggregator.GetStatus() != container.ContainerStatus_Running {
+		logrus.Warnf("Logs aggregator exists but is not running. Instead container status is '%v'. This is unexpected as docker should have restarted the container automatically.",
+			maybeLogsAggregator.GetStatus())
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
+		return nil, stacktrace.Propagate(err,
+			"The logs aggregator container exists but is not running. Instead container status is '%v'. The logs collector cannot be run without a logs aggregator.",
+			maybeLogsAggregator.GetStatus(),
+		)
+	}
+	logsAggregator = maybeLogsAggregator
 
 	//Declaring the implementation
 	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()
@@ -471,8 +488,8 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 // ====================================================================================================
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveUuid(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*types.Network, error) {
 	networkSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
 	}
 
 	enclaveNetworksFound, err := backend.dockerManager.GetNetworksByLabels(ctx, networkSearchLabels)
@@ -496,9 +513,9 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveUuid(ctx context
 // Guaranteed to either return an enclave data volume name or throw an error
 func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveUuid(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (string, error) {
 	volumeSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString():  label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.VolumeTypeDockerLabelKey.GetString():  label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
 	}
 	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
 	if err != nil {

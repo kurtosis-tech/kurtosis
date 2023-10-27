@@ -20,7 +20,7 @@ type uploadFilesWithoutNameTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesWithoutName() {
-	suite.Require().Nil(suite.packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
+	suite.Require().Nil(suite.packageContentProvider.AddFileContent(testModuleFileName, "Hello World!"))
 
 	suite.serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Times(1).Return(
 		mockedFileArtifactName,
@@ -40,7 +40,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesWithoutName() {
 		mock.Anything, // and same for the hash
 		mockedFileArtifactName,
 	).Times(1).Return(
-		TestArtifactUuid,
+		testArtifactUuid,
 		nil,
 	)
 
@@ -52,11 +52,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesWithoutName() {
 }
 
 func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return upload_files.NewUploadFiles(t.serviceNetwork, t.packageContentProvider)
+	return upload_files.NewUploadFiles(testModulePackageId, t.serviceNetwork, t.packageContentProvider, testNoPackageReplaceOptions)
 }
 
 func (t *uploadFilesWithoutNameTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleFileName)
+	return fmt.Sprintf("%s(%s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, testModuleRelativeLocator)
 }
 
 func (t *uploadFilesWithoutNameTestCase) GetStarlarkCodeForAssertion() string {
@@ -66,6 +66,6 @@ func (t *uploadFilesWithoutNameTestCase) GetStarlarkCodeForAssertion() string {
 func (t *uploadFilesWithoutNameTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(mockedFileArtifactName), interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", mockedFileArtifactName, TestArtifactUuid)
+	expectedExecutionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", mockedFileArtifactName, testArtifactUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 }

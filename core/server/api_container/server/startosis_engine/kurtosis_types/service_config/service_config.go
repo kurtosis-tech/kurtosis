@@ -38,6 +38,7 @@ const (
 	MinMemoryMegaBytesAttr          = "min_memory"
 	MaxCpuMilliCoresAttr            = "max_cpu"
 	MaxMemoryMegaBytesAttr          = "max_memory"
+	LabelsAttr                      = "labels"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -113,9 +114,13 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.Uint64InRange(value, CpuAllocationAttr, 0, math.MaxUint64)
 					},
-					Deprecation: starlark_warning.Deprecation(starlark_warning.DeprecationDate{
-						Day: 25, Year: 2023, Month: 6, //nolint:gomnd
-					}, "This field is being deprecated in favour of `max_cpu` to set a maximum cpu a container can use"),
+					Deprecation: starlark_warning.Deprecation(
+						starlark_warning.DeprecationDate{
+							Day: 25, Year: 2023, Month: 6, //nolint:gomnd
+						},
+						"This field is being deprecated in favour of `max_cpu` to set a maximum cpu a container can use",
+						nil,
+					),
 				},
 				{
 					Name:              MemoryAllocationAttr,
@@ -124,9 +129,13 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.Uint64InRange(value, MemoryAllocationAttr, minimumMemoryAllocationMegabytes, math.MaxUint64)
 					},
-					Deprecation: starlark_warning.Deprecation(starlark_warning.DeprecationDate{
-						Day: 25, Year: 2023, Month: 6, //nolint:gomnd
-					}, "This field is being deprecated in favour of `max_memory` to set maximum memory a container can use"),
+					Deprecation: starlark_warning.Deprecation(
+						starlark_warning.DeprecationDate{
+							Day: 25, Year: 2023, Month: 6, //nolint:gomnd
+						},
+						"This field is being deprecated in favour of `max_memory` to set maximum memory a container can use",
+						nil,
+					),
 				},
 				{
 					Name:              MaxCpuMilliCoresAttr,
@@ -161,6 +170,14 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*ReadyCondition],
 					Validator:         nil,
+				},
+				{
+					Name:              LabelsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.ServiceConfigLabels(value, LabelsAttr)
+					},
 				},
 			},
 		},
@@ -434,7 +451,19 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		minMemory = 0
 	}
 
-	return service.NewServiceConfig(
+	labels := map[string]string{}
+	labelsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, LabelsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && labelsStarlark.Len() > 0 {
+		labels, interpretationErr = kurtosis_types.SafeCastToMapStringString(labelsStarlark, LabelsAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
+	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		privatePorts,
 		publicPorts,
@@ -448,7 +477,12 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		privateIpAddressPlaceholder,
 		minCpu,
 		minMemory,
-	), nil
+		labels,
+	)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
+	}
+	return serviceConfig, nil
 }
 
 func (config *ServiceConfig) GetReadyCondition() (*ReadyCondition, *startosis_errors.InterpretationError) {

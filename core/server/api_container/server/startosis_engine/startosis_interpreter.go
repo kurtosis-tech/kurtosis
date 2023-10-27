@@ -85,6 +85,7 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	ctx context.Context,
 	packageId string,
+	packageReplaceOptions map[string]string,
 	mainFunctionName string,
 	relativePathtoMainFile string,
 	serializedStarlark string,
@@ -92,10 +93,14 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	currentEnclavePlan *enclave_plan_persistence.EnclavePlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
+	if interpretationErr := interpreter.moduleContentProvider.CloneReplacedPackagesIfNeeded(packageReplaceOptions); interpretationErr != nil {
+		return "", nil, interpretationErr.ToAPIType()
+	}
+
 	// run interpretation with no mask at all to generate the list of instructions as if the enclave was empty
 	enclaveComponents := enclave_structure.NewEnclaveComponents()
 	emptyPlanInstructionsMask := resolver.NewInstructionsPlanMask(0)
-	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, relativePathtoMainFile, serializedStarlark, serializedJsonParams, enclaveComponents, emptyPlanInstructionsMask)
+	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, enclaveComponents, emptyPlanInstructionsMask)
 	if interpretationErrorApi != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErrorApi
 	}
@@ -165,7 +170,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 		}
 
 		// Now that we have a potential plan mask, try running interpretation again using this plan mask
-		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, relativePathtoMainFile, serializedStarlark, serializedJsonParams, enclaveComponents, potentialMask)
+		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, enclaveComponents, potentialMask)
 		if interpretationErrorApi != nil {
 			// Note: there's no real reason why this interpretation would fail with an error, given that the package
 			// has been interpreted once already (right above). But to be on the safe side, check the error
@@ -209,6 +214,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	_ context.Context,
 	packageId string,
 	mainFunctionName string,
+	packageReplaceOptions map[string]string,
 	relativePathtoMainFile string,
 	serializedStarlark string,
 	serializedJsonParams string,
@@ -226,7 +232,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 
 	// we use a new cache for every interpretation b/c the content of the module might have changed
 	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
-	globalVariables, interpretationErr := interpreter.interpretInternal(moduleLocator, serializedStarlark, newInstructionsPlan, moduleGlobalCache)
+	globalVariables, interpretationErr := interpreter.interpretInternal(packageId, moduleLocator, serializedStarlark, newInstructionsPlan, moduleGlobalCache, packageReplaceOptions)
 	if interpretationErr != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
 	}
@@ -262,7 +268,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	if mainFuncParamsNum >= minimumParamsRequiredForPlan {
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
-			kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
+			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider, packageReplaceOptions)
 			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, interpreter.starlarkValueSerde, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}
@@ -312,13 +318,19 @@ func (interpreter *StartosisInterpreter) Interpret(
 	return startosis_constants.NoOutputObject, newInstructionsPlan, nil
 }
 
-func (interpreter *StartosisInterpreter) interpretInternal(moduleLocator string, serializedStarlark string, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) interpretInternal(
+	packageId string,
+	moduleLocator string,
+	serializedStarlark string,
+	instructionPlan *instructions_plan.InstructionsPlan,
+	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
+	packageReplaceOptions map[string]string,
+) (starlark.StringDict, *startosis_errors.InterpretationError) {
 	// We spin up a new thread for every call to interpreterInternal such that the stacktrace provided by the Starlark
 	// Go interpreter is relative to each individual thread, and we don't keep accumulating stacktrace entries from the
 	// previous calls inside the same thread
-	// The thread name is set to the locator of the module so that we can use it to resolve relative paths
 	thread := newStarlarkThread(moduleLocator)
-	predeclared, interpretationErr := interpreter.buildBindings(thread, instructionPlan, moduleGlobalCache)
+	predeclared, interpretationErr := interpreter.buildBindings(packageId, thread, instructionPlan, moduleGlobalCache, packageReplaceOptions)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -331,9 +343,15 @@ func (interpreter *StartosisInterpreter) interpretInternal(moduleLocator string,
 	return globalVariables, nil
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) buildBindings(
+	packageId string,
+	thread *starlark.Thread,
+	instructionPlan *instructions_plan.InstructionsPlan,
+	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
+	packageReplaceOptions map[string]string,
+) (*starlark.StringDict, *startosis_errors.InterpretationError) {
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
-		result, err := interpreter.interpretInternal(moduleId, serializedStartosis, instructionPlan, moduleGlobalCache)
+		result, err := interpreter.interpretInternal(packageId, moduleId, serializedStartosis, instructionPlan, moduleGlobalCache, packageReplaceOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -350,7 +368,7 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 	predeclared[builtins.KurtosisModuleName] = kurtosisModule
 
 	// Add all Kurtosis helpers
-	for _, kurtosisHelper := range KurtosisHelpers(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, moduleGlobalCache) {
+	for _, kurtosisHelper := range KurtosisHelpers(packageId, recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, moduleGlobalCache, packageReplaceOptions) {
 		predeclared[kurtosisHelper.Name()] = kurtosisHelper
 	}
 

@@ -3,9 +3,9 @@ package stop
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -26,7 +27,7 @@ const (
 
 	serviceIdentifierArgKey        = "service"
 	isServiceIdentifierArgOptional = false
-	isServiceIdentifierArgGreedy   = false
+	isServiceIdentifierArgGreedy   = true
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -35,14 +36,6 @@ const (
 def run(plan, args):
 	plan.stop_service(name=args["service_name"])
 `
-	doNotDryRun        = false
-	defaultParallelism = 4
-
-	useDefaultMainFile = ""
-)
-
-var (
-	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
 )
 
 var ServiceStopCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -61,8 +54,8 @@ var ServiceStopCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		service_identifier_arg.NewServiceIdentifierArg(
 			serviceIdentifierArgKey,
 			enclaveIdentifierArgKey,
-			isServiceIdentifierArgGreedy,
 			isServiceIdentifierArgOptional,
+			isServiceIdentifierArgGreedy,
 		),
 	},
 	Flags:   []*flags.FlagConfig{},
@@ -82,7 +75,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier value using key '%v'", enclaveIdentifierArgKey)
 	}
 
-	serviceIdentifier, err := args.GetNonGreedyArg(serviceIdentifierArgKey)
+	serviceIdentifiers, err := args.GetGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the service identifier value using key '%v'", serviceIdentifierArgKey)
 	}
@@ -97,22 +90,25 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
-	serviceContext, err := enclaveCtx.GetServiceContext(serviceIdentifier)
-	if err != nil {
-		return stacktrace.NewError("Couldn't validate whether the service exists for identifier '%v'", serviceIdentifier)
-	}
+	for _, serviceIdentifier := range serviceIdentifiers {
+		logrus.Infof("Stopping service '%v'", serviceIdentifier)
+		serviceContext, err := enclaveCtx.GetServiceContext(serviceIdentifier)
+		if err != nil {
+			return stacktrace.NewError("Couldn't validate whether the service exists for identifier '%v'", serviceIdentifier)
+		}
 
-	serviceName := serviceContext.GetServiceName()
+		serviceName := serviceContext.GetServiceName()
 
-	if err := stopServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping service '%v' from enclave '%v'", serviceIdentifier, enclaveIdentifier)
+		if err := stopServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping service '%v' from enclave '%v'", serviceIdentifier, enclaveIdentifier)
+		}
 	}
 	return nil
 }
 
 func stopServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
 	params := fmt.Sprintf(`{"service_name": "%s"}`, serviceName)
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, params, doNotDryRun, defaultParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(params)))
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for stopping service")
 	}

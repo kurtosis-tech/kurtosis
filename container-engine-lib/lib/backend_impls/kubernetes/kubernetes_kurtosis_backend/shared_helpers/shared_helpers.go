@@ -16,24 +16,24 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 
-	"github.com/sirupsen/logrus"
 	"io"
-	apiv1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"net"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	apiv1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // !!!WARNING!!!
@@ -63,6 +63,8 @@ const (
 	enclaveDumpJsonSerializationPrefix = ""
 
 	dumpPodErrorTitle = "Pod"
+
+	emptyImageName = ""
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
@@ -156,7 +158,7 @@ func GetEnclaveNamespaceName(
 	var namespaceName string
 	if cliModeArgs != nil || engineServerModeArgs != nil {
 		matchLabels := getEnclaveMatchLabels()
-		matchLabels[label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString()] = string(enclaveId)
+		matchLabels[kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString()] = string(enclaveId)
 
 		namespaces, err := kubernetesManager.GetNamespacesByLabels(ctx, matchLabels)
 		if err != nil {
@@ -248,7 +250,7 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 				continue
 			}
 
-			if _, found := filters.Statuses[kubernetesService.GetStatus()]; !found {
+			if _, found := filters.Statuses[kubernetesService.GetContainer().GetStatus()]; !found {
 				continue
 			}
 		}
@@ -283,9 +285,9 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 	}
 
 	kubernetesResourceSearchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString():          string(enclaveId),
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
+		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString():          string(enclaveId),
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 
 	results := map[service.ServiceUUID]*UserServiceKubernetesResources{}
@@ -296,7 +298,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		kubernetesManager,
 		namespaceName,
 		kubernetesResourceSearchLabels,
-		label_key_consts.GUIDKubernetesLabelKey.GetString(),
+		kubernetes_label_key.GUIDKubernetesLabelKey.GetString(),
 		postFilterLabelValues,
 	)
 	if err != nil {
@@ -333,7 +335,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		kubernetesManager,
 		namespaceName,
 		kubernetesResourceSearchLabels,
-		label_key_consts.GUIDKubernetesLabelKey.GetString(),
+		kubernetes_label_key.GUIDKubernetesLabelKey.GetString(),
 		postFilterLabelValues,
 	)
 	if err != nil {
@@ -348,6 +350,11 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v'; this is a bug in Kurtosis", numPodsForGuid, serviceUuid)
 		} else if numPodsForGuid == 1 {
 			kubernetesPod := kubernetesPodsForGuid[0]
+
+			numContainersForPod := len(kubernetesPod.Spec.Containers)
+			if numContainersForPod != 1 {
+				return nil, stacktrace.NewError("Found %v containers associated with service GUID '%v'; this is a bug in Kurtosis", numContainersForPod, serviceUuid)
+			}
 
 			resultObj, found := results[serviceUuid]
 			if !found {
@@ -390,9 +397,9 @@ func GetUserServiceObjectsFromKubernetesResources(
 		}
 
 		serviceLabels := kubernetesService.Labels
-		idLabelStr, found := serviceLabels[label_key_consts.IDKubernetesLabelKey.GetString()]
+		idLabelStr, found := serviceLabels[kubernetes_label_key.IDKubernetesLabelKey.GetString()]
 		if !found {
-			return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", label_key_consts.IDKubernetesLabelKey.GetString())
+			return nil, stacktrace.NewError("Expected to find label '%v' on the Kubernetes service but none was found", kubernetes_label_key.IDKubernetesLabelKey.GetString())
 		}
 		serviceId := service.ServiceName(idLabelStr)
 
@@ -433,10 +440,15 @@ func GetUserServiceObjectsFromKubernetesResources(
 			// This means that there  used to be a Pod but it was stopped/removed
 			resultObj.Service = service.NewService(
 				serviceRegistrationObj,
-				container_status.ContainerStatus_Stopped,
 				privatePorts,
 				servicePublicIp,
 				servicePublicPorts,
+				container.NewContainer(
+					container.ContainerStatus_Stopped,
+					emptyImageName,
+					nil,
+					nil,
+					nil),
 			)
 			continue
 		}
@@ -446,12 +458,24 @@ func GetUserServiceObjectsFromKubernetesResources(
 			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesToParse.Pod)
 		}
 
+		podContainer := resourcesToParse.Pod.Spec.Containers[0]
+		podContainerEnvVars := map[string]string{}
+		for _, env := range podContainer.Env {
+			podContainerEnvVars[env.Name] = env.Value
+		}
+
 		resultObj.Service = service.NewService(
 			serviceRegistrationObj,
-			containerStatus,
 			privatePorts,
 			servicePublicIp,
 			servicePublicPorts,
+			container.NewContainer(
+				containerStatus,
+				podContainer.Image,
+				podContainer.Command,
+				podContainer.Args,
+				podContainerEnvVars,
+			),
 		)
 	}
 
@@ -515,9 +539,9 @@ func GetPrivatePortsAndValidatePortExistence(kubernetesService *apiv1.Service, e
 	return privatePortSpecs, nil
 }
 
-func GetContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
+func GetContainerStatusFromPod(pod *apiv1.Pod) (container.ContainerStatus, error) {
 	// TODO Rename this; this shouldn't be called "ContainerStatus" since there's no longer a 1:1 mapping between container:kurtosis_object
-	status := container_status.ContainerStatus_Stopped
+	status := container.ContainerStatus_Stopped
 
 	if pod != nil {
 		podPhase := pod.Status.Phase
@@ -527,7 +551,7 @@ func GetContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus
 			return status, stacktrace.NewError("No is-pod-running determination found for pod phase '%v' on pod '%v'; this is a bug in Kurtosis", podPhase, pod.Name)
 		}
 		if isPodRunning {
-			status = container_status.ContainerStatus_Running
+			status = container.ContainerStatus_Running
 		}
 	}
 	return status, nil
@@ -784,8 +808,8 @@ func BuildCombinedError(errorsById map[string]error, titleStr string) error {
 // ====================================================================================================
 func getEnclaveMatchLabels() map[string]string {
 	matchLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
+		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return matchLabels
 }
