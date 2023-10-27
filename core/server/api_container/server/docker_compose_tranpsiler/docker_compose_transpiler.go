@@ -37,27 +37,22 @@ const (
 	shouldOverrideComposeYamlKeyProjectName = false
 )
 
-// TODO remove this, and instead use the mainFileName that the user passes in!
-var supportedComposeFilenames = []string{
-	"compose.yml",
-	"compose.yaml",
-	"docker-compose.yml",
-	"docker-compose.yaml",
-	"docker_compose.yml",
-	"docker_compose.yaml",
-}
-
 var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtocol{
 	"tcp":  port_spec.TransportProtocol_TCP,
 	"udp":  port_spec.TransportProtocol_UDP,
 	"sctp": port_spec.TransportProtocol_SCTP,
 }
 
-func TranspileDockerComposePackageToStarlark(packageAbsDirpath string) (string, error) {
+// TODO Make this return an interpretation error????
+func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRelativeFilepath string) (string, error) {
+	composeAbsFilepath := path.Join(packageAbsDirpath, composeRelativeFilepath)
+
 	// Useful for logging, to not leak internals of APIC
-	composeFilename, composeBytes, err := getComposeFilenameAndContent(packageAbsDirpath)
+	composeFilename := path.Base(composeRelativeFilepath)
+
+	composeBytes, err := os.ReadFile(composeAbsFilepath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred reading the Compose file")
+		return "", stacktrace.Propagate(err, "An error occurred reading Compose file '%v'", composeFilename)
 	}
 
 	// Use the envvars file next to the Compose if it exists
@@ -83,23 +78,6 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string) (string, 
 //                                   Private Helper Functions
 // ====================================================================================================
 
-func getComposeFilenameAndContent(packageAbsDirpath string) (string, []byte, error) {
-	for _, composeFilename := range supportedComposeFilenames {
-		composeFilepath := path.Join(packageAbsDirpath, composeFilename)
-		composeBytes, err := os.ReadFile(composeFilepath)
-		if err != nil {
-			continue
-		}
-
-		return composeFilename, composeBytes, nil
-	}
-
-	joinedComposeFilenames := strings.Join(supportedComposeFilenames, ", ")
-	return "", nil, stacktrace.NewError("Failed to transpile Docker Compose package to Starlark because no Compose file was found at the package root after looking for the following files: %s", joinedComposeFilenames)
-}
-
-// TODO(victor.colombo): Have a better UX letting people know ports have been remapped
-// NOTE: This returns Go errors, not
 func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (string, error) {
 	composeParseConfig := types.ConfigDetails{ //nolint:exhaustruct
 		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
