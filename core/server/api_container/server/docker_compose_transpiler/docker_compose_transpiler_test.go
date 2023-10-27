@@ -47,7 +47,7 @@ func TestAngularCompose(t *testing.T) {
       - /project/node_modules
 `)
 	expectedResult := `def run(plan):
-    plan.upload_files(src = "web--volume0", name = "./angular")
+    plan.upload_files(src = "./angular", name = "web--volume0")
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(context_dir="angular", target_stage="builder"), ports={"port0": PortSpec(number=4200, transport_protocol="TCP")}, files={"/project": "web--volume0", "/project/node_modules": ServiceConfig(persistent_key="volume1")}, env_vars={}))
 `
 
