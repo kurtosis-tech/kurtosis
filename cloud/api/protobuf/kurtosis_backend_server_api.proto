@@ -91,6 +91,13 @@ message PaymentProduct {
 
 message PaymentSubscription {
   PaymentProduct product = 1;
+
+  enum Status {
+    ACTIVE = 0;
+    CANCELLED = 1;
+    UNKNOWN = 2;
+  }
+  Status status = 2;
 }
 
 message GetOrCreatePaymentConfigResponse {
