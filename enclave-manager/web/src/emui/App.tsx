@@ -5,7 +5,7 @@ import { KurtosisClientProvider, useKurtosisClient } from "../client/enclaveMana
 import { KurtosisPackageIndexerProvider } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { AppLayout } from "../components/AppLayout";
 import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
-import { enclaveRoutes } from "./enclaves/Enclaves";
+import { enclaveRoutes } from "./enclaves/EnclaveRoutes";
 import { Navbar } from "./Navbar";
 
 export const EmuiApp = () => {
