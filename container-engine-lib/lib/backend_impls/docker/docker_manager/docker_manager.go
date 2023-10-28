@@ -10,6 +10,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math"
+	"net"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -24,16 +32,10 @@ import (
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
-	"math"
-	"net"
-	"regexp"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -522,7 +524,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	_, err := manager.FetchImage(ctx, dockerImage)
+	_, err := manager.FetchImage(ctx, dockerImage, args.imageDownloadMode)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
@@ -1180,10 +1182,10 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	return result, nil
 }
 
-// [FetchImage] uses the local [dockerImage] if it's available.
+// [FetchImageIfMissing] uses the local [dockerImage] if it's available.
 // If unavailable, will attempt to fetch the latest image.
 // Returns error if local [dockerImage] is unavailable and pulling image fails.
-func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string) (bool, error) {
+func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerImage string) (bool, error) {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
 	// this allows us to be deterministic in our behaviour
@@ -1243,6 +1245,27 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 	}
 
 	return nil
+}
+
+func (manager *DockerManager) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, error) {
+	var err error
+	var pulledFromRemote bool = true
+	logrus.Infof("Fetching image '%s' is running in '%s' mode", image, downloadMode)
+
+	switch image_fetching := downloadMode; image_fetching {
+	case image_download_mode.ImageDownloadMode_Always:
+		err = manager.FetchLatestImage(ctx, image)
+	case image_download_mode.ImageDownloadMode_Missing:
+		pulledFromRemote, err = manager.FetchImageIfMissing(ctx, image)
+	default:
+		return false, stacktrace.NewError("Undefined image pulling mode: '%v'", image_fetching)
+	}
+
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred fetching image '%v'", image)
+	}
+
+	return pulledFromRemote, nil
 }
 
 func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {

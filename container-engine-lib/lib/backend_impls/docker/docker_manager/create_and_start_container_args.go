@@ -1,8 +1,10 @@
 package docker_manager
 
 import (
-	"github.com/docker/go-connections/nat"
 	"net"
+
+	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 )
 
 // See CreateAndStartContainerArgsBuilder for detailed documentation on the fields
@@ -29,6 +31,7 @@ type CreateAndStartContainerArgs struct {
 	skipAddingToBridgeNetworkIfStaticIpIsSet bool
 	containerInitEnabled                     bool
 	restartPolicy                            RestartPolicy
+	imageDownloadMode                        image_download_mode.ImageDownloadMode
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -55,6 +58,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	skipAddingToBridgeNetworkIfStaticIpIsSet bool
 	containerInitEnabled                     bool
 	restartPolicy                            RestartPolicy
+	imageDownloadMode                        image_download_mode.ImageDownloadMode
 }
 
 /*
@@ -88,6 +92,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		skipAddingToBridgeNetworkIfStaticIpIsSet: false,
 		containerInitEnabled:                     false,
 		restartPolicy:                            NoRestart,
+		imageDownloadMode:                        image_download_mode.ImageDownloadMode_Missing,
 	}
 }
 
@@ -115,6 +120,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		skipAddingToBridgeNetworkIfStaticIpIsSet: builder.skipAddingToBridgeNetworkIfStaticIpIsSet,
 		containerInitEnabled:                     builder.containerInitEnabled,
 		restartPolicy:                            builder.restartPolicy,
+		imageDownloadMode:                        builder.imageDownloadMode,
 	}
 }
 
@@ -247,5 +253,15 @@ func (builder *CreateAndStartContainerArgsBuilder) WithSkipAddingToBridgeNetwork
 // container. tini makes sure it keeps track of all processes and can kill the zombie ones appropriately.
 func (builder *CreateAndStartContainerArgsBuilder) WithContainerInitEnabled(containerInitEnabled bool) *CreateAndStartContainerArgsBuilder {
 	builder.containerInitEnabled = containerInitEnabled
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageAlways() *CreateAndStartContainerArgsBuilder {
+	builder.imageDownloadMode = image_download_mode.ImageDownloadMode_Always
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageIfMissing() *CreateAndStartContainerArgsBuilder {
+	builder.imageDownloadMode = image_download_mode.ImageDownloadMode_Missing
 	return builder
 }

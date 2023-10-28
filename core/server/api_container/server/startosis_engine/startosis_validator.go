@@ -3,9 +3,12 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
@@ -14,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 const (
@@ -46,7 +48,7 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, s
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, instructionsSequence []*instructions_plan.ScheduledInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (validator *StartosisValidator) Validate(ctx context.Context, instructionsSequence []*instructions_plan.ScheduledInstruction, imageDownloadMode image_download_mode.ImageDownloadMode) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
 		defer close(starlarkRunResponseLineStream)
@@ -85,7 +87,8 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 			serviceNamePortIdMapping,
 			availableCpuInMilliCores,
 			availableMemoryInMegaBytes,
-			isResourceInformationComplete)
+			isResourceInformationComplete,
+			imageDownloadMode)
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateAndUpdateEnvironment(instructionsSequence, environment, starlarkRunResponseLineStream)
