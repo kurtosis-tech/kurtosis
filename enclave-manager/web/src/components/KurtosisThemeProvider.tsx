@@ -179,6 +179,13 @@ const theme = extendTheme({
         },
       })),
     },
+    Menu: {
+      baseStyle: {
+        list: {
+          minW: "unset",
+        },
+      },
+    },
     Popover: {
       baseStyle: {
         content: {
