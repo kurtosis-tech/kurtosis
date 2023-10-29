@@ -1,8 +1,8 @@
 import { Button, ButtonGroup, Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { Suspense, useEffect, useState } from "react";
 import { Await, useRouteLoaderData } from "react-router-dom";
+import { CreateEnclaveButton } from "../../components/enclaves/CreateEnclaveButton";
 import { EnclavesTable } from "../../components/enclaves/tables/EnclavesTable";
-import { CreateEnclaveButton } from "../../components/enclaves/widgets/CreateEnclaveButton";
 import { DeleteEnclavesButton } from "../../components/enclaves/widgets/DeleteEnclavesButton";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { EnclavesLoaderResolved } from "./loader";

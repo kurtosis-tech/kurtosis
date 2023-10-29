@@ -3,6 +3,7 @@ import type { ChakraProviderProps } from "@chakra-ui/react/dist/chakra-provider"
 import { mode } from "@chakra-ui/theme-tools";
 import { PropsWithChildren } from "react";
 import Fonts from "./theme/Fonts";
+import { formsTheme } from "./theme/formsTheme";
 import { tabsTheme } from "./theme/tabsTheme";
 import { tagTheme } from "./theme/tagsTheme";
 
@@ -78,6 +79,12 @@ const theme = extendTheme({
     }),
   },
   components: {
+    Badge: {
+      baseStyle: {
+        textTransform: "none",
+        color: "gray.100",
+      },
+    },
     Button: {
       defaultProps: {
         variant: "outline",
@@ -179,6 +186,7 @@ const theme = extendTheme({
         },
       })),
     },
+    Form: formsTheme,
     Menu: {
       baseStyle: {
         list: {
