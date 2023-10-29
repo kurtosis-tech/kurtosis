@@ -44,6 +44,7 @@ const (
 )
 
 type GitPackageContentProvider struct {
+	// Where to temporarily store packages while
 	packagesTmpDir                  string
 	packagesDir                     string
 	packageReplaceOptionsRepository *packageReplaceOptionsRepository
@@ -205,28 +206,31 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	return packageAbsolutePathOnDisk, nil
 }
 
-func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
-	parentModuleId string,
-	maybeRelativeLocator string,
+func (provider *GitPackageContentProvider) GetAbsoluteLocator(
+	packageId string,
+	sourceModuleLocator string,
+	relativeOrAbsoluteLocator string,
 	packageReplaceOptions map[string]string,
 ) (string, *startosis_errors.InterpretationError) {
 	var absoluteLocator string
 
-	if isSamePackageLocalAbsoluteLocator(maybeRelativeLocator, parentModuleId) {
-		return "", startosis_errors.NewInterpretationError("The locator '%s' set in attribute is not a 'local relative locator'. Local absolute locators are not allowed you should modified it to be a valid 'local relative locator'", maybeRelativeLocator)
+	if shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage(relativeOrAbsoluteLocator, sourceModuleLocator, packageId) {
+		return "", startosis_errors.NewInterpretationError("Locator '%s' is referencing a file within the same package using absolute import syntax, but only relative import syntax (path starting with '/' or '.') is allowed for within-package imports", relativeOrAbsoluteLocator)
 	}
 
 	// maybe it's not a relative url in which case we return the url
-	_, errorParsingUrl := shared_utils.ParseGitURL(maybeRelativeLocator)
+	_, errorParsingUrl := shared_utils.ParseGitURL(relativeOrAbsoluteLocator)
 	if errorParsingUrl == nil {
-		absoluteLocator = maybeRelativeLocator
+		// Parsing succeeded, meaning this is already an absolute locator and no relative -> absolute translation is needed
+		absoluteLocator = relativeOrAbsoluteLocator
 	} else {
-		parsedParentModuleId, errorParsingPackageId := shared_utils.ParseGitURL(parentModuleId)
+		// Parsing did not succeed, meaning this is a relative locator
+		sourceModuleParsedGitUrl, errorParsingPackageId := shared_utils.ParseGitURL(sourceModuleLocator)
 		if errorParsingPackageId != nil {
-			return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parentModuleId)
+			return "", startosis_errors.NewInterpretationError("Source module locator '%v' isn't a valid locator; relative URLs don't work with standalone scripts", sourceModuleLocator)
 		}
 
-		absoluteLocator = parsedParentModuleId.GetAbsoluteLocatorRelativeToThisURL(maybeRelativeLocator)
+		absoluteLocator = sourceModuleParsedGitUrl.GetAbsoluteLocatorRelativeToThisURL(relativeOrAbsoluteLocator)
 	}
 
 	replacedAbsoluteLocator := replaceAbsoluteLocator(absoluteLocator, packageReplaceOptions)

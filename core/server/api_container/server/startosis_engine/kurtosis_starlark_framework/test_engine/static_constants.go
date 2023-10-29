@@ -22,6 +22,7 @@ var (
 	testSrcPath = "/path/to/file.txt"
 
 	testModulePackageId       = "github.com/kurtosistech/test-package"
+	testModuleMainFileLocator = "github.com/kurtosistech/test-package/main.star"
 	testModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
 	testModuleRelativeLocator = "./helpers.star"
 
