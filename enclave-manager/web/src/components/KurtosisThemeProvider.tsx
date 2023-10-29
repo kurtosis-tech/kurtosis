@@ -202,6 +202,16 @@ const theme = extendTheme({
         },
       },
     },
+    Switch: {
+      baseStyle: defineStyle((props) => ({
+        track: {
+          _checked: {
+            bg: `${props.colorScheme}.500`,
+          },
+        },
+      })),
+    },
+
     Table: {
       variants: {
         simple: {

@@ -1,6 +1,7 @@
 import {
   Button,
   Flex,
+  FormControl,
   Input,
   Modal,
   ModalBody,
@@ -14,7 +15,9 @@ import {
 import { useState } from "react";
 import { SubmitHandler } from "react-hook-form";
 import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
+import { CopyButton } from "../../CopyButton";
 import { EnclaveConfigurationForm } from "../configuration/EnclaveConfigurationForm";
+import { BooleanArgumentInput } from "../configuration/inputs/BooleanArgumentInput";
 import { StringArgumentInput } from "../configuration/inputs/StringArgumentInput";
 import { KurtosisArgumentFormControl } from "../configuration/KurtosisArgumentFormControl";
 import { KurtosisPackageArgumentInput } from "../configuration/KurtosisPackageArgumentInput";
@@ -56,6 +59,13 @@ export const ConfigureEnclaveModal = ({ isOpen, onClose, kurtosisPackage }: Conf
               <Input size={"sm"} placeholder={"an unamed environment"} width={"auto"} />
             </Flex>
             <Flex flexDirection={"column"} gap={"24px"} p={"12px 24px"} bg={"gray.900"}>
+              <Flex justifyContent={"space-between"} alignItems={"center"}>
+                <FormControl display={"flex"} alignItems={"center"} gap={"16px"}>
+                  <BooleanArgumentInput inputType={"switch"} name={"restartServices"} />
+                  <Text fontSize={"xs"}>Restart services</Text>
+                </FormControl>
+                <CopyButton valueToCopy={"some value"} />
+              </Flex>
               <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
                 <StringArgumentInput name={"enclaveName"} />
               </KurtosisArgumentFormControl>
