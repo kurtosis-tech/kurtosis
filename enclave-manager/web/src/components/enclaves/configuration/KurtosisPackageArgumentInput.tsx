@@ -15,11 +15,16 @@ export const KurtosisPackageArgumentInput = ({ argument, disabled }: KurtosisPac
   }
 
   const fieldName: `args.${string}` = `args.${argument.name}`;
+  const label = argument.name
+    .split("_")
+    .filter((w) => w.length > 0)
+    .map((w) => `${w[0].toUpperCase()}${w.substring(1)}`)
+    .join(" ");
 
   return (
     <KurtosisArgumentFormControl
       name={fieldName}
-      label={argument.name}
+      label={label}
       type={argToTypeString(argument)}
       disabled={disabled}
       isRequired={argument.isRequired}
