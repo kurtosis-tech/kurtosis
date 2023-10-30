@@ -36,9 +36,15 @@ type ConfigureEnclaveModalProps = {
   isOpen: boolean;
   onClose: () => void;
   kurtosisPackage: KurtosisPackage;
+  existingValues?: ConfigureEnclaveForm;
 };
 
-export const ConfigureEnclaveModal = ({ isOpen, onClose, kurtosisPackage }: ConfigureEnclaveModalProps) => {
+export const ConfigureEnclaveModal = ({
+  isOpen,
+  onClose,
+  kurtosisPackage,
+  existingValues,
+}: ConfigureEnclaveModalProps) => {
   const kurtosisClient = useKurtosisClient();
   const navigator = useNavigate();
   const submit = useSubmit();
@@ -47,13 +53,16 @@ export const ConfigureEnclaveModal = ({ isOpen, onClose, kurtosisPackage }: Conf
   const formRef = useRef<EnclaveConfigurationFormImperativeAttributes>(null);
 
   const initialValues = useMemo(() => {
+    if (isDefined(existingValues)) {
+      return existingValues;
+    }
     const searchParams = new URLSearchParams(window.location.search);
     const preloadArgs = searchParams.get("preloadArgs");
     if (!isDefined(preloadArgs)) {
       return undefined;
     }
     return JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
-  }, [window.location.search]);
+  }, [window.location.search, existingValues]);
 
   // TODO: Improve for cloud config
   const getLinkToCurrentConfig = () =>
