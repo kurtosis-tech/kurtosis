@@ -1,12 +1,16 @@
-import { Button, ButtonGroup, Text, Tooltip } from "@chakra-ui/react";
+import { Button, ButtonGroup, Tag, Text, Tooltip } from "@chakra-ui/react";
 import { ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
 import { isDefined } from "../../../utils";
 
 type ServicesSummaryProps = {
-  services: ServiceInfo[];
+  services: ServiceInfo[] | null;
 };
 
 export const EnclaveServicesSummary = ({ services }: ServicesSummaryProps) => {
+  if (!isDefined(services)) {
+    return <Tag>Unknown</Tag>;
+  }
+
   const runningServices = services.filter(({ serviceStatus }) => serviceStatus === ServiceStatus.RUNNING).length;
   const stopppedServices = services.filter(({ serviceStatus }) => serviceStatus === ServiceStatus.STOPPED).length;
   const unknownServices = services.filter(({ serviceStatus }) => serviceStatus === ServiceStatus.UNKNOWN).length;

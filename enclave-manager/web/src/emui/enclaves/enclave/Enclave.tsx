@@ -51,7 +51,6 @@ type EnclaveImpl = {
 
 const EnclaveImpl = ({ enclave }: EnclaveImpl) => {
   const actionData = useActionData() as undefined | EnclaveActionResolvedType;
-  console.log("action", actionData);
 
   useEffect(() => {
     if (actionData) {

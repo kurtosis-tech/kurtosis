@@ -1,4 +1,4 @@
-import { Flex, Heading, Spinner, useToast } from "@chakra-ui/react";
+import { Flex, Heading, Spinner } from "@chakra-ui/react";
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { assertDefined, isDefined, isStringTrue, stringifyError } from "../../utils";
@@ -13,7 +13,6 @@ type KurtosisClientContextState = {
 const KurtosisClientContext = createContext<KurtosisClientContextState>({ client: null });
 
 export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
-  const toast = useToast();
   const [client, setClient] = useState<KurtosisClient>();
   const [jwtToken, setJwtToken] = useState<string>();
   const [error, setError] = useState<string>();
@@ -33,12 +32,7 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
                 const methodResult = Reflect.apply(target, thisArg, argumentsList) as ReturnType<typeof target>;
                 return methodResult.then((r) => {
                   if (r.isErr) {
-                    toast({
-                      title: "Error",
-                      description: r.error.message,
-                      status: "error",
-                      variant: "solid",
-                    });
+                    console.error(r.error);
                   }
                   return r;
                 });
@@ -51,7 +45,7 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
       });
     }
     return undefined;
-  }, [client, toast]);
+  }, [client]);
 
   useEffect(() => {
     const receiveMessage = (event: MessageEvent) => {
@@ -74,8 +68,6 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
       const searchParams = new URLSearchParams(window.location.search);
       const requireAuth = isStringTrue(searchParams.get("require_authentication"));
       const requestedApiHost = searchParams.get("api_host");
-      // eslint-disable-next-line
-      const preloadedPackage = searchParams.get("package");
       try {
         setError(undefined);
         let newClient: KurtosisClient | null = null;

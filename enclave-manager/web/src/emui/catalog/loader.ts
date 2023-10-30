@@ -8,7 +8,7 @@ const loadCatalog = async (
 ): Promise<Result<KurtosisPackage[], string>> => {
   const packagesResponse = await kurtosisIndexerClient.getPackages();
   if (packagesResponse.isErr) {
-    return Result.err(packagesResponse.error.message || "Unknown api error");
+    return Result.err(packagesResponse.error || "Unknown api error");
   }
 
   return Result.ok(packagesResponse.value.packages);

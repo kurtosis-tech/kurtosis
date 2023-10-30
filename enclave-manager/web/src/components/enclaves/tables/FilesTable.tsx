@@ -1,9 +1,12 @@
 import { Button } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import { FilesArtifactNameAndUuid } from "enclave-manager-sdk/build/api_container_service_pb";
+import {
+  FilesArtifactNameAndUuid,
+  ListFilesArtifactNamesAndUuidsResponse,
+} from "enclave-manager-sdk/build/api_container_service_pb";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { EnclaveFullInfo } from "../../../emui/enclaves/types";
+import { RemoveFunctions } from "../../../utils/types";
 import { DataTable } from "../../DataTable";
 
 type FilesTableRow = {
@@ -23,18 +26,19 @@ const fileToRow = (file: FilesArtifactNameAndUuid): FilesTableRow => {
 const columnHelper = createColumnHelper<FilesTableRow>();
 
 type FilesTableProps = {
-  enclave: EnclaveFullInfo;
+  enclaveShortUUID: string;
+  filesAndArtifacts: RemoveFunctions<ListFilesArtifactNamesAndUuidsResponse>;
 };
 
-export const FilesTable = ({ enclave }: FilesTableProps) => {
-  const services = enclave.filesAndArtifacts.fileNamesAndUuids.map(fileToRow);
+export const FilesTable = ({ filesAndArtifacts, enclaveShortUUID }: FilesTableProps) => {
+  const services = filesAndArtifacts.fileNamesAndUuids.map(fileToRow);
 
   const columns = useMemo<ColumnDef<FilesTableRow, any>[]>(
     () => [
       columnHelper.accessor("name", {
         header: "Name",
         cell: ({ row, getValue }) => (
-          <Link to={`/enclave/${enclave.enclaveUuid}/file/${row.original.uuid}`}>
+          <Link to={`/enclave/${enclaveShortUUID}/file/${row.original.uuid}`}>
             <Button size={"sm"} variant={"ghost"}>
               {getValue()}
             </Button>

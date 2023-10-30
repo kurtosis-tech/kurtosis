@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
 import { isDefined } from "../../utils";
 import { FormatDateTime } from "../FormatDateTime";
+import { KurtosisAlert } from "../KurtosisAlert";
 import { FLEX_STANDARD_GAP } from "../theme/constants";
 import { TitledCard } from "../TitledCard";
 import { ValueCard } from "../ValueCard";
@@ -47,10 +48,16 @@ export const EnclaveOverview = ({ enclave }: EnclaveOverviewProps) => {
         </GridItem>
       </Grid>
       <TitledCard title={"Services"}>
-        <ServicesTable enclave={enclave} />
+        {enclave.services.isOk && (
+          <ServicesTable servicesResponse={enclave.services.value} enclaveShortUUID={enclave.shortenedUuid} />
+        )}
+        {enclave.services.isErr && <KurtosisAlert message={enclave.services.error} />}
       </TitledCard>
       <TitledCard title={"Files"}>
-        <FilesTable enclave={enclave} />
+        {enclave.filesAndArtifacts.isOk && (
+          <FilesTable filesAndArtifacts={enclave.filesAndArtifacts.value} enclaveShortUUID={enclave.shortenedUuid} />
+        )}
+        {enclave.filesAndArtifacts.isErr && <KurtosisAlert message={enclave.filesAndArtifacts.error} />}
       </TitledCard>
     </Flex>
   );

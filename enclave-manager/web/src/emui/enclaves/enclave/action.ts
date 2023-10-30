@@ -14,7 +14,6 @@ const handleEnclaveAction = async (
     packageId: string;
     enclave: RemoveFunctions<EnclaveInfo>;
   };
-  console.log(enclave);
 
   const logs = await kurtosisClient.runStarlarkPackage(enclave, packageId, config.args);
   return { logs };
