@@ -3,6 +3,7 @@ import { RunStarlarkPackageArgs } from "enclave-manager-sdk/build/api_container_
 import {
   CreateEnclaveArgs,
   DestroyEnclaveArgs,
+  EnclaveAPIContainerInfo,
   EnclaveInfo,
   EnclaveMode,
 } from "enclave-manager-sdk/build/engine_service_pb";
@@ -99,13 +100,12 @@ export abstract class KurtosisClient {
     });
   }
 
-  async runStarlarkPackage(enclave: RemoveFunctions<EnclaveInfo>, packageId: string, args: Record<string, any>) {
+  async runStarlarkPackage(
+    apicInfo: RemoveFunctions<EnclaveAPIContainerInfo>,
+    packageId: string,
+    args: Record<string, any>,
+  ) {
     // Not currently using asyncResult as the return type here is an asyncIterable
-    const apicInfo = enclave.apiContainerInfo;
-    assertDefined(
-      apicInfo,
-      `Cannot listFilesArtifactNamesAndUuids because the passed enclave '${enclave.name}' does not have apicInfo`,
-    );
     const request = new RunStarlarkPackageRequest({
       apicIpAddress: apicInfo.bridgeIpAddress,
       apicPort: apicInfo.grpcPortInsideEnclave,
