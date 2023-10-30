@@ -49,19 +49,14 @@ export function stringifyError(err: any): string {
   }
 }
 
-export type ErrorAndMessage<E> = {
-  error: E;
-  message?: string;
-};
-
-export async function asyncResult<T, E = any>(
+export async function asyncResult<T>(
   p: Promise<T> | (() => Promise<T>),
   errorMessage?: string,
-): Promise<Result<T, ErrorAndMessage<E>>> {
+): Promise<Result<T, string>> {
   try {
     const r = await (typeof p === "function" ? p() : p);
-    return Result.ok<T, ErrorAndMessage<E>>(r);
+    return Result.ok<T, string>(r);
   } catch (e: any) {
-    return Result.err({ error: e, message: errorMessage || stringifyError(e) });
+    return Result.err(errorMessage || stringifyError(e));
   }
 }

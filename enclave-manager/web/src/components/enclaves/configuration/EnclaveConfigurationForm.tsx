@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { forwardRef, PropsWithChildren, useImperativeHandle } from "react";
 import { FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import {
   ArgumentValueType,
@@ -8,13 +8,31 @@ import {
 import { isDefined, isStringTrue } from "../../../utils";
 import { ConfigureEnclaveForm } from "./types";
 
-type PackageConfigurationFormProps = PropsWithChildren<{
+type EnclaveConfigurationFormProps = PropsWithChildren<{
   onSubmit: SubmitHandler<ConfigureEnclaveForm>;
   kurtosisPackage: KurtosisPackage;
+  initialValues?: ConfigureEnclaveForm;
 }>;
 
-export const EnclaveConfigurationForm = ({ children, kurtosisPackage, onSubmit }: PackageConfigurationFormProps) => {
-  const methods = useForm<ConfigureEnclaveForm>();
+export type EnclaveConfigurationFormImperativeAttributes = {
+  getValues: () => ConfigureEnclaveForm;
+};
+
+export const EnclaveConfigurationForm = forwardRef<
+  EnclaveConfigurationFormImperativeAttributes,
+  EnclaveConfigurationFormProps
+>(({ children, kurtosisPackage, onSubmit, initialValues }: EnclaveConfigurationFormProps, ref) => {
+  const methods = useForm<ConfigureEnclaveForm>({ values: initialValues });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      getValues: () => {
+        return methods.getValues();
+      },
+    }),
+    [methods],
+  );
 
   const handleSubmit: SubmitHandler<ConfigureEnclaveForm> = (data) => {
     const transformValue = (
@@ -88,6 +106,6 @@ export const EnclaveConfigurationForm = ({ children, kurtosisPackage, onSubmit }
       <form onSubmit={methods.handleSubmit(handleSubmit)}>{children}</form>
     </FormProvider>
   );
-};
+});
 
 export const useEnclaveConfigurationFormContext = () => useFormContext<ConfigureEnclaveForm>();

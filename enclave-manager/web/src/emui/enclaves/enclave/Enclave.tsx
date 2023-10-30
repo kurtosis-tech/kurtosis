@@ -1,9 +1,9 @@
-import { Button, Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
-import { FiEdit2 } from "react-icons/fi";
+import { Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { Await, useActionData, useParams, useRouteLoaderData } from "react-router-dom";
 import { EnclaveOverview } from "../../../components/enclaves/EnclaveOverview";
 
 import { Suspense, useEffect } from "react";
+import { EditEnclaveButton } from "../../../components/enclaves/EditEnclaveButton";
 import { DeleteEnclavesButton } from "../../../components/enclaves/widgets/DeleteEnclavesButton";
 import { KurtosisAlert } from "../../../components/KurtosisAlert";
 import { isDefined } from "../../../utils";
@@ -51,7 +51,6 @@ type EnclaveImpl = {
 
 const EnclaveImpl = ({ enclave }: EnclaveImpl) => {
   const actionData = useActionData() as undefined | EnclaveActionResolvedType;
-  console.log("action", actionData);
 
   useEffect(() => {
     if (actionData) {
@@ -74,9 +73,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImpl) => {
             </TabList>
             <Flex gap={"8px"} alignItems={"center"}>
               <DeleteEnclavesButton enclaves={[enclave]} />
-              <Button colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
-                Edit
-              </Button>
+              <EditEnclaveButton enclave={enclave} />
             </Flex>
           </Flex>
         </TabList>

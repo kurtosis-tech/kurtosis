@@ -1,4 +1,3 @@
-import { useToast } from "@chakra-ui/react";
 import { createContext, PropsWithChildren, useContext, useMemo } from "react";
 import { assertDefined } from "../../utils";
 import { KurtosisPackageIndexerClient } from "./KurtosisPackageIndexerClient";
@@ -10,8 +9,6 @@ type KurtosisPackageIndexerClientContextState = {
 const KurtosisPackageIndexerClientContext = createContext<KurtosisPackageIndexerClientContextState>({ client: null });
 
 export const KurtosisPackageIndexerProvider = ({ children }: PropsWithChildren) => {
-  const toast = useToast();
-
   const errorHandlingClient = useMemo(() => {
     return new Proxy(new KurtosisPackageIndexerClient(), {
       get(target, prop: string | symbol) {
@@ -21,12 +18,7 @@ export const KurtosisPackageIndexerProvider = ({ children }: PropsWithChildren) 
               const methodResult = Reflect.apply(target, thisArg, argumentsList) as ReturnType<typeof target>;
               return methodResult.then((r) => {
                 if (r.isErr) {
-                  toast({
-                    title: "Error",
-                    description: r.error.message,
-                    status: "error",
-                    variant: "solid",
-                  });
+                  console.error(r.error);
                 }
                 return r;
               });
@@ -37,7 +29,7 @@ export const KurtosisPackageIndexerProvider = ({ children }: PropsWithChildren) 
         }
       },
     });
-  }, [toast]);
+  }, []);
 
   return (
     <KurtosisPackageIndexerClientContext.Provider value={{ client: errorHandlingClient }}>

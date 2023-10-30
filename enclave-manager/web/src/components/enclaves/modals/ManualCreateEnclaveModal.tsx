@@ -53,7 +53,7 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
     const packageResponse = await kurtosisIndexerClient.readPackage(form.url);
     setIsLoading(false);
     if (packageResponse.isErr) {
-      setError("url", { message: `Could not load '${form.url}', got error ${packageResponse.error.message}` });
+      setError("url", { message: `Could not load '${form.url}', got error ${packageResponse.error}` });
       return;
     }
     if (!isDefined(packageResponse.value.package)) {
@@ -82,7 +82,6 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
                   {...register("url", {
                     disabled: isLoading,
                     required: true,
-                    value: "github.com/kurtosis-tech/etcd-package",
                   })}
                 />
               </InputGroup>
@@ -95,7 +94,7 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
                 Cancel
               </Button>
               <Button type={"submit"} isLoading={isLoading} colorScheme={"kurtosisGreen"}>
-                Load
+                Configure
               </Button>
             </Flex>
           </ModalFooter>

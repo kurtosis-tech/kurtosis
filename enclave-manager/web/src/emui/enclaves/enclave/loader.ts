@@ -35,38 +35,13 @@ export const loadEnclave = async (
     kurtosisClient.listFilesArtifactNamesAndUuids(enclave),
   ]);
 
-  if (services.isErr) {
-    return {
-      routeName: enclave.name,
-      enclave: Result.err(`Could not get services for enclave ${enclave.shortenedUuid}: ${services.error.message}`),
-    };
-  }
-
-  if (starlarkRun.isErr) {
-    return {
-      routeName: enclave.name,
-      enclave: Result.err(
-        `Could not get starlark run for enclave ${enclave.shortenedUuid}: ${starlarkRun.error.message}`,
-      ),
-    };
-  }
-
-  if (filesAndArtifacts.isErr) {
-    return {
-      routeName: enclave.name,
-      enclave: Result.err(
-        `Could not get files for enclave ${enclave.shortenedUuid}: ${filesAndArtifacts.error.message}`,
-      ),
-    };
-  }
-
   return {
     routeName: enclave.name,
     enclave: Result.ok({
       ...enclave,
-      starlarkRun: starlarkRun.value,
-      services: services.value,
-      filesAndArtifacts: filesAndArtifacts.value,
+      starlarkRun: starlarkRun,
+      services: services,
+      filesAndArtifacts: filesAndArtifacts,
     }),
   };
 };

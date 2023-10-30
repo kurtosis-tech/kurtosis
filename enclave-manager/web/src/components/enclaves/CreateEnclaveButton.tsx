@@ -1,11 +1,12 @@
 import { Button, Menu, MenuButton, MenuItem, MenuList } from "@chakra-ui/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { FiPackage, FiPlus, FiSettings } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { isDefined } from "../../utils";
 import { ConfigureEnclaveModal } from "./modals/ConfigureEnclaveModal";
 import { ManualCreateEnclaveModal } from "./modals/ManualCreateEnclaveModal";
+import { PreloadEnclave } from "./PreloadEnclave";
 
 export const CreateEnclaveButton = () => {
   const navigate = useNavigate();
@@ -24,6 +25,11 @@ export const CreateEnclaveButton = () => {
     setConfigureEnclaveOpen(true);
   };
 
+  const handlePreloadEnclave = useCallback((kurtosisPackage: KurtosisPackage) => {
+    setKurtosisPackage(kurtosisPackage);
+    setConfigureEnclaveOpen(true);
+  }, []);
+
   return (
     <>
       <Menu matchWidth>
@@ -39,6 +45,7 @@ export const CreateEnclaveButton = () => {
           </MenuItem>
         </MenuList>
       </Menu>
+      <PreloadEnclave onPackageLoaded={handlePreloadEnclave} />
       <ManualCreateEnclaveModal
         isOpen={manualCreateEnclaveOpen}
         onClose={() => setManualCreateEnclaveOpen(false)}

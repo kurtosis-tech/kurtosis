@@ -3,17 +3,19 @@ import { FiCopy } from "react-icons/fi";
 import { isDefined } from "../utils";
 
 type CopyButtonProps = ButtonProps & {
-  valueToCopy?: string | null;
+  valueToCopy?: (() => string) | string | null;
+  text?: string;
 };
 
-export const CopyButton = ({ valueToCopy, ...buttonProps }: CopyButtonProps) => {
+export const CopyButton = ({ valueToCopy, text, ...buttonProps }: CopyButtonProps) => {
   const toast = useToast();
 
   const handleCopyClick = () => {
     if (isDefined(valueToCopy)) {
-      navigator.clipboard.writeText(valueToCopy);
+      const v = typeof valueToCopy === "string" ? valueToCopy : valueToCopy();
+      navigator.clipboard.writeText(v);
       toast({
-        title: `Copied '${valueToCopy}' to the clipboard`,
+        title: `Copied '${v}' to the clipboard`,
         status: `success`,
       });
     }
@@ -25,7 +27,7 @@ export const CopyButton = ({ valueToCopy, ...buttonProps }: CopyButtonProps) => 
 
   return (
     <Button leftIcon={<FiCopy />} size={"xs"} colorScheme={"darkBlue"} onClick={handleCopyClick} {...buttonProps}>
-      Copy
+      {text || "Copy"}
     </Button>
   );
 };

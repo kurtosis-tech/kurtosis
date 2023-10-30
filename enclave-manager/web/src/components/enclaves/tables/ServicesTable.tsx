@@ -1,9 +1,14 @@
 import { Button } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import { Port, ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
+import {
+  GetServicesResponse,
+  Port,
+  ServiceInfo,
+  ServiceStatus,
+} from "enclave-manager-sdk/build/api_container_service_pb";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { EnclaveFullInfo } from "../../../emui/enclaves/types";
+import { RemoveFunctions } from "../../../utils/types";
 import { DataTable } from "../../DataTable";
 import { ImageButton } from "../widgets/ImageButton";
 import { PortsSummary } from "../widgets/PortsSummary";
@@ -34,18 +39,19 @@ const serviceToRow = (service: ServiceInfo): ServicesTableRow => {
 const columnHelper = createColumnHelper<ServicesTableRow>();
 
 type EnclavesTableProps = {
-  enclave: EnclaveFullInfo;
+  enclaveShortUUID: string;
+  servicesResponse: RemoveFunctions<GetServicesResponse>;
 };
 
-export const ServicesTable = ({ enclave }: EnclavesTableProps) => {
-  const services = Object.values(enclave.services.serviceInfo).map(serviceToRow);
+export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: EnclavesTableProps) => {
+  const services = Object.values(servicesResponse.serviceInfo).map(serviceToRow);
 
   const columns = useMemo<ColumnDef<ServicesTableRow, any>[]>(
     () => [
       columnHelper.accessor("name", {
         header: "Name",
         cell: ({ row, getValue }) => (
-          <Link to={`/enclave/${enclave.shortenedUuid}/service/${row.original.serviceUUID}`}>
+          <Link to={`/enclave/${enclaveShortUUID}/service/${row.original.serviceUUID}`}>
             <Button size={"sm"} variant={"ghost"}>
               {getValue()}
             </Button>
@@ -77,7 +83,7 @@ export const ServicesTable = ({ enclave }: EnclavesTableProps) => {
       columnHelper.accessor("serviceUUID", {
         header: "Logs",
         cell: (portsCell) => (
-          <Link to={`/enclave/${enclave.enclaveUuid}/service/${portsCell.getValue()}/logs`}>
+          <Link to={`/enclave/${enclaveShortUUID}/service/${portsCell.getValue()}/logs`}>
             <Button size={"xs"} variant={"ghost"}>
               View
             </Button>

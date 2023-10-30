@@ -18,9 +18,9 @@ type EnclaveTableRow = {
   name: string;
   status: EnclaveContainersStatus;
   created: DateTime | null;
-  source: string;
-  services: ServiceInfo[];
-  artifacts: FilesArtifactNameAndUuid[];
+  source: string | null;
+  services: ServiceInfo[] | null;
+  artifacts: FilesArtifactNameAndUuid[] | null;
 };
 
 const enclaveToRow = (enclave: EnclaveFullInfo): EnclaveTableRow => {
@@ -29,9 +29,9 @@ const enclaveToRow = (enclave: EnclaveFullInfo): EnclaveTableRow => {
     name: enclave.name,
     status: enclave.containersStatus,
     created: enclave.creationTime ? DateTime.fromJSDate(enclave.creationTime.toDate()) : null,
-    source: enclave.starlarkRun.packageId,
-    services: Object.values(enclave.services.serviceInfo),
-    artifacts: enclave.filesAndArtifacts.fileNamesAndUuids,
+    source: enclave.starlarkRun.isOk ? enclave.starlarkRun.value.packageId : null,
+    services: enclave.services.isOk ? Object.values(enclave.services.value.serviceInfo) : null,
+    artifacts: enclave.filesAndArtifacts.isOk ? enclave.filesAndArtifacts.value.fileNamesAndUuids : null,
   };
 };
 
