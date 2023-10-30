@@ -14,8 +14,12 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { SubmitHandler } from "react-hook-form";
+import { useSubmit } from "react-router-dom";
+import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
 import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
+import { isDefined } from "../../../utils";
 import { CopyButton } from "../../CopyButton";
+import { KurtosisAlert } from "../../KurtosisAlert";
 import { EnclaveConfigurationForm } from "../configuration/EnclaveConfigurationForm";
 import { BooleanArgumentInput } from "../configuration/inputs/BooleanArgumentInput";
 import { StringArgumentInput } from "../configuration/inputs/StringArgumentInput";
@@ -31,17 +35,38 @@ type ConfigureEnclaveModalProps = {
 };
 
 export const ConfigureEnclaveModal = ({ isOpen, onClose, kurtosisPackage }: ConfigureEnclaveModalProps) => {
+  const kurtosisClient = useKurtosisClient();
+  const submit = useSubmit();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>();
 
   const handleClose = () => {
     onClose();
   };
 
-  const handleLoadSubmit: SubmitHandler<ConfigureEnclaveForm> = async (form) => {
+  const handleLoadSubmit: SubmitHandler<ConfigureEnclaveForm> = async (formData) => {
     setIsLoading(true);
-    console.log(form);
-    //const packageResponse = await kurtosisIndexerClient.readPackage(form.url);
+    setError(undefined);
+    const newEnclave = await kurtosisClient.createEnclave(formData.enclaveName, "info", formData.restartServices);
     setIsLoading(false);
+
+    if (newEnclave.isErr) {
+      setError(`Could not create enclave, got: ${newEnclave.error.message}`);
+      return;
+    }
+    if (!isDefined(newEnclave.value.enclaveInfo)) {
+      setError(`Did not receive enclave info when running createEnclave`);
+      return;
+    }
+    console.log(formData);
+    submit(
+      { config: formData, packageId: kurtosisPackage.name, enclave: newEnclave.value.enclaveInfo.toJson() },
+      {
+        method: "post",
+        action: `/enclave/${newEnclave.value.enclaveInfo.shortenedUuid}`,
+        encType: "application/json",
+      },
+    );
   };
 
   return (
@@ -57,12 +82,16 @@ export const ConfigureEnclaveModal = ({ isOpen, onClose, kurtosisPackage }: Conf
               <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
               <Text>to</Text>
               <Input size={"sm"} placeholder={"an unamed environment"} width={"auto"} />
+              {isDefined(error) && <KurtosisAlert message={error} />}
             </Flex>
             <Flex flexDirection={"column"} gap={"24px"} p={"12px 24px"} bg={"gray.900"}>
               <Flex justifyContent={"space-between"} alignItems={"center"}>
                 <FormControl display={"flex"} alignItems={"center"} gap={"16px"}>
                   <BooleanArgumentInput inputType={"switch"} name={"restartServices"} />
-                  <Text fontSize={"xs"}>Restart services</Text>
+                  <Text fontSize={"xs"}>
+                    Restart services (When enabled, Kurtosis will automatically restart any services that crash inside
+                    the enclave)
+                  </Text>
                 </FormControl>
                 <CopyButton valueToCopy={"some value"} />
               </Flex>

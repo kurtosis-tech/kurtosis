@@ -1,16 +1,18 @@
 import { Button, Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { FiEdit2 } from "react-icons/fi";
-import { Await, useParams, useRouteLoaderData } from "react-router-dom";
+import { Await, useActionData, useParams, useRouteLoaderData } from "react-router-dom";
 import { EnclaveOverview } from "../../../components/enclaves/EnclaveOverview";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { DeleteEnclavesButton } from "../../../components/enclaves/widgets/DeleteEnclavesButton";
 import { KurtosisAlert } from "../../../components/KurtosisAlert";
 import { isDefined } from "../../../utils";
-import { EnclavesLoaderResolved } from "../loader";
+import { EnclaveFullInfo } from "../types";
+import { EnclaveActionResolvedType } from "./action";
+import { EnclaveLoaderResolved } from "./loader";
 
 export const Enclave = () => {
-  const { enclaves } = useRouteLoaderData("enclaves") as EnclavesLoaderResolved;
+  const { data } = useRouteLoaderData("enclave") as EnclaveLoaderResolved;
 
   return (
     <Suspense
@@ -20,25 +22,47 @@ export const Enclave = () => {
         </Flex>
       }
     >
-      <Await resolve={enclaves} children={(enclaves) => <EnclaveImpl enclaves={enclaves} />} />
+      <Await resolve={data} children={(data) => <MaybeEnclaveImpl enclave={data.enclave} />} />
     </Suspense>
   );
 };
 
 type EnclaveImplProps = {
-  enclaves: EnclavesLoaderResolved["enclaves"];
+  enclave: EnclaveLoaderResolved["data"]["enclave"];
 };
 
-const EnclaveImpl = ({ enclaves }: EnclaveImplProps) => {
+const MaybeEnclaveImpl = ({ enclave: enclaveResult }: EnclaveImplProps) => {
   const { enclaveUUID, activeTab } = useParams();
 
-  if (enclaves.isErr) {
-    return <KurtosisAlert message={"Enclaves could not load"} />;
-  }
-  const enclave = enclaves.value.find((e) => e.shortenedUuid === enclaveUUID);
-  if (!isDefined(enclave)) {
+  if (!isDefined(enclaveResult)) {
     return <KurtosisAlert message={`Could not find enclave ${enclaveUUID}`} />;
   }
+
+  if (enclaveResult.isErr) {
+    return <KurtosisAlert message={"Enclave could not load"} />;
+  }
+
+  return <EnclaveImpl enclave={enclaveResult.value} />;
+};
+
+type EnclaveImpl = {
+  enclave: EnclaveFullInfo;
+};
+
+const EnclaveImpl = ({ enclave }: EnclaveImpl) => {
+  const actionData = useActionData() as undefined | EnclaveActionResolvedType;
+  console.log("action", actionData);
+
+  useEffect(() => {
+    if (actionData) {
+      (async () => {
+        for await (const line of actionData.logs) {
+          console.log(line.runResponseLine.value);
+        }
+      })();
+    }
+  }, [actionData]);
+
   return (
     <Flex direction="column" width={"100%"}>
       <Tabs>

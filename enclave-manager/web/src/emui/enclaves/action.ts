@@ -12,11 +12,9 @@ export const enclavesAction =
       if (!isDefined(uuids)) {
         throw json({ message: "Missing enclaveUUIDs" }, { status: 400 });
       }
-      console.log(uuids);
       await Promise.all(uuids.map((uuid: string) => kurtosisClient.destroy(uuid)));
       return redirect("/enclaves");
     } else {
-      console.log("blep");
       throw json({ message: "Invalid intent" }, { status: 400 });
     }
   };
