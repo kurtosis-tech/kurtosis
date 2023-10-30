@@ -108,6 +108,7 @@ tar -xvzf kurtosis.tar.gz
 
 Add Kurtosis to Environment Variables and mae a bat script which would take care of running kurtosis as a cmdlet.
 ```bash
+$currentDir = Get-Location
 $systemPath = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::Machine)
 if (-not $systemPath.Contains($currentDir)) {
     $newPath = $systemPath + ";" + $currentDir
