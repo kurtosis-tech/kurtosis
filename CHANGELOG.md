@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.84.13](https://github.com/kurtosis-tech/kurtosis/compare/0.84.12...0.84.13) (2023-10-25)
+
+
+### Features
+
+* user-configurable labels (in ServiceConfig type) for Docker containers and k8s pods ([#1604](https://github.com/kurtosis-tech/kurtosis/issues/1604)) ([e98cdf6](https://github.com/kurtosis-tech/kurtosis/commit/e98cdf6874b610f158a0ff798a01cf9a1b70d183))
+
+
+### Bug Fixes
+
+* name temporary python script for run_python with suitable name ([#1616](https://github.com/kurtosis-tech/kurtosis/issues/1616)) ([88edb39](https://github.com/kurtosis-tech/kurtosis/commit/88edb39c8f424d5f6b2126739948206ce5829e98))
+
+## [0.84.12](https://github.com/kurtosis-tech/kurtosis/compare/0.84.11...0.84.12) (2023-10-25)
+
+
+### Features
+
+* kurtosis run command now accepts URLs with the 'args-file' argument  ([#1607](https://github.com/kurtosis-tech/kurtosis/issues/1607)) ([ec32d0f](https://github.com/kurtosis-tech/kurtosis/commit/ec32d0f48f0a1cd76e26e4fdeecc75e7c1a31929)), closes [#1596](https://github.com/kurtosis-tech/kurtosis/issues/1596)
+* Product and subscription added to the get payment config response ([#1606](https://github.com/kurtosis-tech/kurtosis/issues/1606)) ([0d10726](https://github.com/kurtosis-tech/kurtosis/commit/0d107261422ad918b4a5dbc5dbbb35c8d555d4c5))
+
+
+### Bug Fixes
+
+* add a debug line for the exact command run by lint ([#1615](https://github.com/kurtosis-tech/kurtosis/issues/1615)) ([3fa6d2f](https://github.com/kurtosis-tech/kurtosis/commit/3fa6d2f62b301f97e7ae7ef50b9abe460e7cc283))
+* handle error and fix rendering bug ([#1617](https://github.com/kurtosis-tech/kurtosis/issues/1617)) ([825fd22](https://github.com/kurtosis-tech/kurtosis/commit/825fd2238601f7a95c97f3a695773d3a9c234c49))
+
+## [0.84.11](https://github.com/kurtosis-tech/kurtosis/compare/0.84.10...0.84.11) (2023-10-24)
+
+
+### Features
+
+* add full story script ([#1610](https://github.com/kurtosis-tech/kurtosis/issues/1610)) ([de10c7b](https://github.com/kurtosis-tech/kurtosis/commit/de10c7bab36c0c7ee1bea99d181d93134e138d04))
+* allow for named artifact creation in run_sh and run_python ([#1608](https://github.com/kurtosis-tech/kurtosis/issues/1608)) ([1a9d953](https://github.com/kurtosis-tech/kurtosis/commit/1a9d953bb26643c7b0effcf761de49bdb735a0ec)), closes [#1581](https://github.com/kurtosis-tech/kurtosis/issues/1581)
+* disable smooth scrolling for logs and default to select restart services ([#1612](https://github.com/kurtosis-tech/kurtosis/issues/1612)) ([2ee86c4](https://github.com/kurtosis-tech/kurtosis/commit/2ee86c419e081996711ff54e009e8333df28839c))
+
+
+### Bug Fixes
+
+* clean em api get service logs streaming logic ([#1589](https://github.com/kurtosis-tech/kurtosis/issues/1589)) ([f8d8bda](https://github.com/kurtosis-tech/kurtosis/commit/f8d8bda8783995d3c22801fea6586c4af2fc1677))
+* show container status instead of service status  in UI ([#1567](https://github.com/kurtosis-tech/kurtosis/issues/1567)) ([4b75980](https://github.com/kurtosis-tech/kurtosis/commit/4b759806cd522b03fa7eadbfc83f952ded6b1b20))
+
+## [0.84.10](https://github.com/kurtosis-tech/kurtosis/compare/0.84.9...0.84.10) (2023-10-23)
+
+
+### Bug Fixes
+
+* bug in portal forwarding via run ([#1598](https://github.com/kurtosis-tech/kurtosis/issues/1598)) ([bf534c3](https://github.com/kurtosis-tech/kurtosis/commit/bf534c35055f4ec3e19cc1f1e2e32e8d29e61b5a))
+
 ## [0.84.9](https://github.com/kurtosis-tech/kurtosis/compare/0.84.8...0.84.9) (2023-10-19)
 
 

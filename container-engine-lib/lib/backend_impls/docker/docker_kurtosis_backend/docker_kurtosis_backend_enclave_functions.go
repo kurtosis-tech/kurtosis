@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
@@ -42,8 +42,8 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
 	searchNetworkLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
 	}
 
 	networks, err := backend.dockerManager.GetNetworksByLabels(ctx, searchNetworkLabels)
@@ -55,9 +55,9 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 	}
 
 	volumeSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString():  label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.VolumeTypeDockerLabelKey.GetString():  label_value_consts.EnclaveDataVolumeTypeDockerLabelValue.GetString(),
 	}
 	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
 	if err != nil {
@@ -196,7 +196,7 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 		// and extracts out whether enclave is running on production mode
 		for _, container := range matchingNetworkInfo.containers {
 			labels := container.GetLabels()
-			containerType, ok := labels[label_key_consts.ContainerTypeDockerLabelKey.GetString()]
+			containerType, ok := labels[docker_label_key.ContainerTypeDockerLabelKey.GetString()]
 			if !ok {
 				continue
 			}
@@ -308,8 +308,8 @@ func (backend *DockerKurtosisBackend) DumpEnclave(
 	outputDirpath string,
 ) error {
 	enclaveContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
 	}
 
 	enclaveContainers, err := backend.dockerManager.GetContainersByLabels(ctx, enclaveContainerSearchLabels, shouldFetchStoppedContainersWhenDumpingEnclave)
@@ -417,7 +417,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	error,
 ) {
 	kurtosisNetworkLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.AppIDDockerLabelKey.GetString(): label_value_consts.AppIDDockerLabelValue.GetString(),
 		// NOTE: we don't search by enclave ID here because Docker has no way to do disjunctive search
 	}
 
@@ -511,8 +511,8 @@ func (backend *DockerKurtosisBackend) getAllEnclaveContainers(
 	var containers []*types.Container
 
 	searchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
 	}
 	containers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchStoppedContainersWhenGettingEnclaveStatus)
 	if err != nil {
@@ -530,8 +530,8 @@ func getAllEnclaveVolumes(
 	var volumes []*volume.Volume
 
 	searchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
 	}
 
 	volumes, err := dockerManager.GetVolumesByLabels(ctx, searchLabels)
@@ -736,9 +736,9 @@ func destroyEnclaveNetworks(
 
 func getEnclaveUuidFromNetwork(network *types.Network) (enclave.EnclaveUUID, error) {
 	labels := network.GetLabels()
-	enclaveUuidLabelValue, found := labels[label_key_consts.EnclaveUUIDDockerLabelKey.GetString()]
+	enclaveUuidLabelValue, found := labels[docker_label_key.EnclaveUUIDDockerLabelKey.GetString()]
 	if !found {
-		return "", stacktrace.NewError("Expected to find network's label with key '%v' but none was found", label_key_consts.EnclaveUUIDDockerLabelKey.GetString())
+		return "", stacktrace.NewError("Expected to find network's label with key '%v' but none was found", docker_label_key.EnclaveUUIDDockerLabelKey.GetString())
 	}
 	enclaveUuid := enclave.EnclaveUUID(enclaveUuidLabelValue)
 	return enclaveUuid, nil
@@ -747,7 +747,7 @@ func getEnclaveUuidFromNetwork(network *types.Network) (enclave.EnclaveUUID, err
 func getEnclaveCreationTimeFromNetwork(network *types.Network) (*time.Time, error) {
 
 	labels := network.GetLabels()
-	enclaveCreationTimeStr, found := labels[label_key_consts.EnclaveCreationTimeLabelKey.GetString()]
+	enclaveCreationTimeStr, found := labels[docker_label_key.EnclaveCreationTimeLabelKey.GetString()]
 	if !found {
 		//Handling retro-compatibility, enclaves that did not track enclave's creation time
 		return nil, nil //TODO remove this return after 2023-01-01
@@ -766,7 +766,7 @@ func getEnclaveCreationTimeFromNetwork(network *types.Network) (*time.Time, erro
 func getEnclaveNameFromNetwork(network *types.Network) string {
 
 	labels := network.GetLabels()
-	enclaveNameStr, found := labels[label_key_consts.EnclaveNameDockerLabelKey.GetString()]
+	enclaveNameStr, found := labels[docker_label_key.EnclaveNameDockerLabelKey.GetString()]
 	if !found {
 		//Handling retro-compatibility, enclaves that did not track enclave's name
 		return ""

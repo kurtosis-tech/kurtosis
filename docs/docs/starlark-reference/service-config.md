@@ -94,7 +94,22 @@ config = ServiceConfig(
     # This field can be used to check the service's readiness after the service has started,
     # to confirm that it is ready to receive connections and traffic
     # OPTIONAL (Default: no ready conditions)
-    ready_conditions = ReadyCondition(...)
+    ready_conditions = ReadyCondition(...),
+
+    # This field is used to specify custom labels at the container level in Docker and Pod level in Kubernetes.
+    # For Docker, the label syntax and format will follow: "com.kurtosistech.custom.key": "value"
+    # For Kubernetes, the label syntax & format will follow: kurtosistech.com.custom/key=value
+
+    # Labels must follow the label standards outlined in [RFC-1035](https://datatracker.ietf.org/doc/html/rfc1035), 
+    # meaning that both the label key and label value must contain at most 63 characters, contain only lowercase 
+    # alphanumeric characters, dashes (-), underscores (_) or dots (.), start with an alphabetic character, and end with an alphanumeric character.
+    # Empty value and capital letters are valid on label values.
+    # OPTIONAL
+    labels = {
+        "key": "value",
+        # Examples
+        "name": "alice",
+    }
 )
 ```
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
@@ -107,6 +122,37 @@ You can view more information on [configuring the `ReadyCondition` type here][re
 :::tip
 If you are trying to use a more complex versions of `cmd` and are running into issues, we recommend using `cmd` in combination with `entrypoint`. You can
 set the `entrypoint` to `["/bin/sh", "-c"]` and then set the `cmd` to the command as you would type it in your shell. For example, `cmd = ["echo foo | grep foo"]`
+:::
+
+:::tip Example of a rendered label
+If you have defined the pod label key:value pair in `ServiceConfig` to be:
+
+```py
+config = ServiceConfig(
+    ...
+    labels = {
+        "name": "alice",
+	"age": "20",
+	"height": "175"
+    }
+)
+```
+
+then the labels for the pods on Kubernetes will look like:
+```
+labels:
+	kurtosistech.com.custom/name=alice
+	kurtosistech.com.custom/age=20
+	kurotsistech.com.custom/height=175
+```
+
+while on Docker, the container labels will look like:
+```
+labels:
+	"com.kurtosistech.custom.name": "alice"
+	"com.kurtosistech.custom.age": "20"
+	"com.kurtosistech.custom.height": "175"
+```
 :::
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->

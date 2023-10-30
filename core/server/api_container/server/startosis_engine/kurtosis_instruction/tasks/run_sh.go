@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -73,15 +74,14 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &RunShCapabilities{
-				serviceNetwork:      serviceNetwork,
-				runtimeValueStore:   runtimeValueStore,
-				name:                "",
-				serviceConfig:       nil, // populated at interpretation time
-				run:                 "",  // populated at interpretation time
-				resultUuid:          "",  // populated at interpretation time
-				fileArtifactNames:   nil,
-				pathToFileArtifacts: nil,
-				wait:                DefaultWaitTimeoutDurationStr,
+				serviceNetwork:    serviceNetwork,
+				runtimeValueStore: runtimeValueStore,
+				name:              "",
+				serviceConfig:     nil, // populated at interpretation time
+				run:               "",  // populated at interpretation time
+				resultUuid:        "",  // populated at interpretation time
+				storeSpecList:     nil,
+				wait:              DefaultWaitTimeoutDurationStr,
 			}
 		},
 
@@ -103,10 +103,9 @@ type RunShCapabilities struct {
 	name       string
 	run        string
 
-	serviceConfig       *service.ServiceConfig
-	fileArtifactNames   []string
-	pathToFileArtifacts []string
-	wait                string
+	serviceConfig *service.ServiceConfig
+	storeSpecList []*store_spec.StoreSpec
+	wait          string
 }
 
 func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -146,15 +145,17 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig = getServiceConfig(image, filesArtifactExpansion)
+	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
+	}
 
 	if arguments.IsSet(StoreFilesArgName) {
-		pathToFileArtifacts, fileArtifactNames, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
+		storeSpecList, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
-		builtin.pathToFileArtifacts = pathToFileArtifacts
-		builtin.fileArtifactNames = fileArtifactNames
+		builtin.storeSpecList = storeSpecList
 	}
 
 	if arguments.IsSet(WaitArgName) {
@@ -173,7 +174,7 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	randomUuid := uuid.NewRandom()
 	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
-	result := createInterpretationResult(resultUuid, builtin.fileArtifactNames)
+	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return result, nil
 }
 
@@ -183,7 +184,7 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		serviceDirpathsToArtifactIdentifiers = builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers
 	}
-	return validateTasksCommon(validatorEnvironment, builtin.fileArtifactNames, builtin.pathToFileArtifacts, serviceDirpathsToArtifactIdentifiers, builtin.serviceConfig.GetContainerImageName())
+	return validateTasksCommon(validatorEnvironment, builtin.storeSpecList, serviceDirpathsToArtifactIdentifiers, builtin.serviceConfig.GetContainerImageName())
 }
 
 // Execute This is just v0 for run_sh task - we can later improve on it.
@@ -226,8 +227,8 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		return "", stacktrace.NewError(formatErrorMessage(errorMessage, createDefaultDirectoryResult.GetOutput()))
 	}
 
-	if builtin.fileArtifactNames != nil && builtin.pathToFileArtifacts != nil {
-		err = copyFilesFromTask(ctx, builtin.serviceNetwork, builtin.name, builtin.fileArtifactNames, builtin.pathToFileArtifacts)
+	if builtin.storeSpecList != nil {
+		err = copyFilesFromTask(ctx, builtin.serviceNetwork, builtin.name, builtin.storeSpecList)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "error occurred while copying files from  a task")
 		}

@@ -2,17 +2,16 @@ package docker_labels_for_logs
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 )
 
 // The following docker labels will be added into the logs stream
 // These are necessary for propagating information for log filtering and retrieval through the logging pipeline
 var LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream = []*docker_label_key.DockerLabelKey{
-	label_key_consts.ContainerTypeDockerLabelKey,
-	label_key_consts.LogsEnclaveUUIDDockerLabelKey,
-	label_key_consts.LogsServiceUUIDDockerLabelKey,
-	label_key_consts.LogsServiceShortUUIDDockerLabelKey,
-	label_key_consts.LogsServiceNameDockerLabelKey,
+	docker_label_key.ContainerTypeDockerLabelKey,
+	docker_label_key.LogsEnclaveUUIDDockerLabelKey,
+	docker_label_key.LogsServiceUUIDDockerLabelKey,
+	docker_label_key.LogsServiceShortUUIDDockerLabelKey,
+	docker_label_key.LogsServiceNameDockerLabelKey,
 }
 
 // These are all the logs database Kurtosis tracked Docker Labels used
