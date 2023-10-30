@@ -94,6 +94,11 @@ enum ServiceStatus {
   UNKNOWN = 2;
 }
 
+enum ImageDownloadMode {
+	always  = 0;
+	missing = 1;
+}
+
 message ServiceInfo {
   // UUID of the service
   string service_uuid = 1;
@@ -162,6 +167,9 @@ message RunStarlarkScriptArgs {
 
   // Defaults to empty
   optional string cloud_user_id = 8;
+
+  // Defaults to empty
+  optional ImageDownloadMode image_download_mode = 9;
 }
 
 message RunStarlarkPackageArgs {
@@ -204,6 +212,9 @@ message RunStarlarkPackageArgs {
 
   // Defaults to empty
   optional string cloud_user_id = 13;
+
+  // Defaults to empty
+  optional ImageDownloadMode image_download_mode = 14;
 }
 
 enum KurtosisFeatureFlag {

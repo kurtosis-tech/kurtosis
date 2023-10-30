@@ -5,22 +5,19 @@ import {useNavigate} from "react-router-dom";
 import {runStarlark} from "../../api/enclave";
 import {getEnclaveInformation} from "../../api/container";
 import LoadingOverlay from "../LoadingOverflow";
-import {Box, Text, Flex, Spacer, Center, Tooltip, Spinner, CircularProgress} from "@chakra-ui/react";
+import {Box, Center, CircularProgress, Flex, Spacer, Text, Tooltip} from "@chakra-ui/react";
 import React, {useEffect, useState} from "react";
 import {CheckIcon, WarningIcon} from "@chakra-ui/icons";
 
-const SERVICE_IS_ADDED = "added with service";
 export const ERROR = "error"
+export const RUN_FINISHED_EVENT = "runFinishedEvent"
+
+const SERVICE_IS_ADDED = "added with service";
 const INSTRUCTION = "instruction"
 const PROGRESS_INFO = "progressInfo"
 const INSTRUCTION_RESULT = "instructionResult"
-export const RUN_FINISHED_EVENT = "runFinishedEvent"
-export const PROCESSING_EVENT = PROGRESS_INFO
-
 const EXECUTION_IN_PROGRESS = "Execution in progress"
 const STARTING_EXECUTION = "Starting execution"
-
-
 const SCRIPT_RUN_STATUS_PROCESSING_INDETERMINATE = "processing_indeterminate"
 const SCRIPT_RUN_STATUS_PROCESSING = "processing"
 const SCRIPT_RUN_STATUS_ERROR = "error"
@@ -86,7 +83,6 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
     }
 
     const readStreamData = (result) => {
-        // console.log(`${result.case} ${JSON.stringify(result.value)}`)
         if (result.case === INSTRUCTION) {
             setLogs(logs => [...logs, result.value.executableInstruction])
         }
@@ -148,6 +144,8 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
                 }
             } catch (ex) {
                 console.error("Error occurred while reading data from the enclave: ", enclave.name)
+                setLogsExecutionStatusText("Script failed to run with an error")
+                setLogsCurrentExecutionStatus(logsStatus(SCRIPT_RUN_STATUS_ERROR, null))
             } finally {
                 setLoading(false)
             }

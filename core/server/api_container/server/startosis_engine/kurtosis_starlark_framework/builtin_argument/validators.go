@@ -1,6 +1,7 @@
 package builtin_argument
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"reflect"
@@ -107,6 +108,36 @@ func DurationOrNone(value starlark.Value, attributeName string) *startosis_error
 			return interpretationErr
 		}
 		return Duration(value, attributeName)
+	}
+	return nil
+}
+
+func ServiceConfigLabels(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
+	labelsMap := map[string]string{}
+	labelsDict, ok := value.(*starlark.Dict)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Attribute '%s' is expected to be a dictionary of strings, got '%s'", attributeName, reflect.TypeOf(value))
+	}
+	for _, labelKey := range labelsDict.Keys() {
+		labelValue, found, err := labelsDict.Get(labelKey)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unexpected error iterating on dictionary. Value associated to key '%v' could not be found", labelKey)
+		} else if !found {
+			return startosis_errors.NewInterpretationError("Unexpected error iterating on dictionary. Value associated to key '%v' could not be found", labelKey)
+		}
+
+		labelKeyStr, ok := labelKey.(starlark.String)
+		if !ok {
+			return startosis_errors.NewInterpretationError("Key in '%s' dictionary was expected to be a string, got '%s'", attributeName, reflect.TypeOf(labelKey))
+		}
+		labelValueStr, ok := labelValue.(starlark.String)
+		if !ok {
+			return startosis_errors.NewInterpretationError("Value associated to key '%s' in dictionary '%s' was expected to be a string, got '%s'", labelKeyStr, attributeName, reflect.TypeOf(value))
+		}
+		labelsMap[labelKeyStr.GoString()] = labelValueStr.GoString()
+	}
+	if err := service.ValidateServiceConfigLabels(labelsMap); err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "An error occurred validating service config labels '%+v'", labelsMap)
 	}
 	return nil
 }

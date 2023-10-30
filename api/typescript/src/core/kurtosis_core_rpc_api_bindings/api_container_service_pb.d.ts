@@ -174,6 +174,11 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   hasCloudUserId(): boolean;
   clearCloudUserId(): RunStarlarkScriptArgs;
 
+  getImageDownloadMode(): ImageDownloadMode;
+  setImageDownloadMode(value: ImageDownloadMode): RunStarlarkScriptArgs;
+  hasImageDownloadMode(): boolean;
+  clearImageDownloadMode(): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -192,6 +197,7 @@ export namespace RunStarlarkScriptArgs {
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
     cloudInstanceId?: string,
     cloudUserId?: string,
+    imageDownloadMode?: ImageDownloadMode,
   }
 
   export enum SerializedParamsCase { 
@@ -222,6 +228,11 @@ export namespace RunStarlarkScriptArgs {
   export enum CloudUserIdCase { 
     _CLOUD_USER_ID_NOT_SET = 0,
     CLOUD_USER_ID = 8,
+  }
+
+  export enum ImageDownloadModeCase { 
+    _IMAGE_DOWNLOAD_MODE_NOT_SET = 0,
+    IMAGE_DOWNLOAD_MODE = 9,
   }
 }
 
@@ -282,6 +293,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasCloudUserId(): boolean;
   clearCloudUserId(): RunStarlarkPackageArgs;
 
+  getImageDownloadMode(): ImageDownloadMode;
+  setImageDownloadMode(value: ImageDownloadMode): RunStarlarkPackageArgs;
+  hasImageDownloadMode(): boolean;
+  clearImageDownloadMode(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -306,6 +322,7 @@ export namespace RunStarlarkPackageArgs {
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
     cloudInstanceId?: string,
     cloudUserId?: string,
+    imageDownloadMode?: ImageDownloadMode,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -352,6 +369,11 @@ export namespace RunStarlarkPackageArgs {
   export enum CloudUserIdCase { 
     _CLOUD_USER_ID_NOT_SET = 0,
     CLOUD_USER_ID = 13,
+  }
+
+  export enum ImageDownloadModeCase { 
+    _IMAGE_DOWNLOAD_MODE_NOT_SET = 0,
+    IMAGE_DOWNLOAD_MODE = 14,
   }
 }
 
@@ -1391,6 +1413,10 @@ export enum ServiceStatus {
   STOPPED = 0,
   RUNNING = 1,
   UNKNOWN = 2,
+}
+export enum ImageDownloadMode { 
+  ALWAYS = 0,
+  MISSING = 1,
 }
 export enum Connect { 
   CONNECT = 0,
