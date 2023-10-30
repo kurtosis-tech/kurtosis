@@ -4,33 +4,34 @@ import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build
 import { EnclaveContainersStatus } from "enclave-manager-sdk/build/engine_service_pb";
 import { DateTime } from "luxon";
 import { useMemo } from "react";
-import { EnclaveFullInfo } from "../../emui/enclaves/types";
-import { DataTable } from "../DataTable";
-import { RelativeDateTime } from "../RelativeDateTime";
-import { EnclaveArtifactsSummary } from "./EnclaveArtifactsSummary";
-import { EnclaveServicesSummary } from "./EnclaveServicesSummary";
-import { EnclaveSourceButton } from "./EnclaveSourceButton";
-import { EnclaveStatus } from "./EnclaveStatus";
+import { Link } from "react-router-dom";
+import { EnclaveFullInfo } from "../../../emui/enclaves/types";
+import { DataTable } from "../../DataTable";
+import { FormatDateTime } from "../../FormatDateTime";
+import { EnclaveArtifactsSummary } from "../widgets/EnclaveArtifactsSummary";
+import { EnclaveServicesSummary } from "../widgets/EnclaveServicesSummary";
+import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
+import { EnclaveStatus } from "../widgets/EnclaveStatus";
 
 type EnclaveTableRow = {
   uuid: string;
   name: string;
   status: EnclaveContainersStatus;
   created: DateTime | null;
-  source: string;
-  services: ServiceInfo[];
-  artifacts: FilesArtifactNameAndUuid[];
+  source: string | null;
+  services: ServiceInfo[] | null;
+  artifacts: FilesArtifactNameAndUuid[] | null;
 };
 
 const enclaveToRow = (enclave: EnclaveFullInfo): EnclaveTableRow => {
   return {
-    uuid: enclave.enclaveUuid,
+    uuid: enclave.shortenedUuid,
     name: enclave.name,
     status: enclave.containersStatus,
     created: enclave.creationTime ? DateTime.fromJSDate(enclave.creationTime.toDate()) : null,
-    source: enclave.starlarkRun.packageId,
-    services: Object.values(enclave.services.serviceInfo),
-    artifacts: enclave.filesAndArtifacts.fileNamesAndUuids,
+    source: enclave.starlarkRun.isOk ? enclave.starlarkRun.value.packageId : null,
+    services: enclave.services.isOk ? Object.values(enclave.services.value.serviceInfo) : null,
+    artifacts: enclave.filesAndArtifacts.isOk ? enclave.filesAndArtifacts.value.fileNamesAndUuids : null,
   };
 };
 
@@ -74,7 +75,16 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
         ),
         enableSorting: false,
       }),
-      columnHelper.accessor("name", { header: "Name" }),
+      columnHelper.accessor("name", {
+        header: "Name",
+        cell: (nameCell) => (
+          <Link to={`/enclave/${nameCell.row.original.uuid}/overview`}>
+            <Button size={"sm"} variant={"ghost"}>
+              {nameCell.row.original.name}
+            </Button>
+          </Link>
+        ),
+      }),
       columnHelper.accessor("status", {
         header: "Status",
         cell: (statusCell) => <EnclaveStatus status={statusCell.getValue()} />,
@@ -82,8 +92,8 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
       columnHelper.accessor("created", {
         header: "Created",
         cell: (createdCell) => (
-          <Button size={"xs"} variant={"kurtosisGhost"}>
-            <RelativeDateTime dateTime={createdCell.getValue()} fontSize={""} />
+          <Button size={"xs"} variant={"ghost"}>
+            <FormatDateTime dateTime={createdCell.getValue()} format={"relative"} />
           </Button>
         ),
       }),

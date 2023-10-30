@@ -1151,6 +1151,9 @@ workflows:
                     },
                     {
                         "pattern": "https://twitter.com/.*"
+                    },
+                    {
+                        "pattern": "https://github.com/kurtosis-tech/kurtosis/enclave-manager/web/README.md"
                     }
                 ]
             }

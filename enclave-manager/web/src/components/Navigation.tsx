@@ -9,6 +9,8 @@ export const Navigation = ({ children }: PropsWithChildren) => {
       flexDirection={"column"}
       alignItems={"center"}
       gap={"36px"}
+      position={"fixed"}
+      top={"0"}
       h={"100vh"}
       p={"20px 16px"}
     >

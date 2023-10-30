@@ -1,23 +1,21 @@
-import { Button, ButtonGroup, Text, Tooltip } from "@chakra-ui/react";
+import { Button, ButtonGroup, Tag, Tooltip } from "@chakra-ui/react";
 import { ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
-import { isDefined } from "../../utils";
+import { isDefined } from "../../../utils";
 
 type ServicesSummaryProps = {
-  services: ServiceInfo[];
+  services: ServiceInfo[] | null;
 };
 
 export const EnclaveServicesSummary = ({ services }: ServicesSummaryProps) => {
+  if (!isDefined(services)) {
+    return <Tag>Unknown</Tag>;
+  }
+
   const runningServices = services.filter(({ serviceStatus }) => serviceStatus === ServiceStatus.RUNNING).length;
   const stopppedServices = services.filter(({ serviceStatus }) => serviceStatus === ServiceStatus.STOPPED).length;
   const unknownServices = services.filter(({ serviceStatus }) => serviceStatus === ServiceStatus.UNKNOWN).length;
 
-  if (runningServices + stopppedServices + unknownServices === 0) {
-    return (
-      <Text fontSize={"12px"} as={"i"}>
-        No Services
-      </Text>
-    );
-  }
+  const totalServices = runningServices + stopppedServices + unknownServices;
 
   const tooltipLabel = [
     runningServices > 0 ? `${runningServices} running` : null,
@@ -29,7 +27,8 @@ export const EnclaveServicesSummary = ({ services }: ServicesSummaryProps) => {
 
   return (
     <Tooltip label={tooltipLabel} size={"xs"}>
-      <ButtonGroup size={"xs"} variant={"kurtosisSolid"}>
+      <ButtonGroup size={"xs"} isAttached variant={"solid"}>
+        {totalServices === 0 && <Button color={"#A0AEC0"}>NONE</Button>}
         {runningServices > 0 && <Button colorScheme={"green"}>{runningServices}</Button>}
         {stopppedServices > 0 && <Button colorScheme={"red"}>{stopppedServices}</Button>}
         {unknownServices > 0 && <Button colorScheme={"orange"}>{unknownServices}</Button>}

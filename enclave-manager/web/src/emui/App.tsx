@@ -1,31 +1,48 @@
-import { Box } from "@chakra-ui/react";
+import { useMemo } from "react";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
-import { KurtosisClientProvider } from "../client/KurtosisClientContext";
+import { KurtosisClientProvider, useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
+import {
+  KurtosisPackageIndexerProvider,
+  useKurtosisPackageIndexerClient,
+} from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { AppLayout } from "../components/AppLayout";
 import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
-import { enclaveRoutes } from "./enclaves/Enclaves";
+import { catalogRoutes } from "./catalog/CatalogRoutes";
+import { enclaveRoutes } from "./enclaves/EnclaveRoutes";
 import { Navbar } from "./Navbar";
-
-const router = createBrowserRouter([
-  {
-    element: (
-      <AppLayout Nav={<Navbar />}>
-        <KurtosisClientProvider>
-          <Outlet />
-        </KurtosisClientProvider>
-      </AppLayout>
-    ),
-    children: [
-      { path: "/", children: enclaveRoutes },
-      { path: "/catalog", element: <Box>Goodby World</Box> },
-    ],
-  },
-]);
 
 export const EmuiApp = () => {
   return (
     <KurtosisThemeProvider>
-      <RouterProvider router={router} />
+      <KurtosisPackageIndexerProvider>
+        <KurtosisClientProvider>
+          <KurtosisRouter />
+        </KurtosisClientProvider>
+      </KurtosisPackageIndexerProvider>
     </KurtosisThemeProvider>
   );
+};
+
+const KurtosisRouter = () => {
+  const kurtosisClient = useKurtosisClient();
+  const kurtosisIndexerClient = useKurtosisPackageIndexerClient();
+  const router = useMemo(
+    () =>
+      createBrowserRouter([
+        {
+          element: (
+            <AppLayout Nav={<Navbar />}>
+              <Outlet />
+            </AppLayout>
+          ),
+          children: [
+            { path: "/", children: enclaveRoutes(kurtosisClient) },
+            { path: "/catalog", children: catalogRoutes(kurtosisIndexerClient) },
+          ],
+        },
+      ]),
+    [kurtosisClient],
+  );
+
+  return <RouterProvider router={router} />;
 };
