@@ -92,12 +92,41 @@ If you want to run a native executable, you can download the latest build for yo
 
 Or do it using PowerShell:
 
+### 1. Downloading Kurtosis
+
+> **Note:** This step needs to be executed in an administrative PowerShell session.
+
+Download latest Kurtosis package and extract it to current directory.
 ```bash
 Invoke-WebRequest -Uri "https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases/download/REPLACE_VERSION/kurtosis-cli_REPLACE_VERSION_windows_REPLACE_ARCH.tar.gz" -OutFile kurtosis.tar.gz
 tar -xvzf kurtosis.tar.gz
-kurtosis.exe
 ```
 
+### 2. Adding to Environment Variables
+
+> **Note:** This step needs to be executed in an administrative PowerShell session.
+
+Add Kurtosis to Environment Variables and mae a bat script which would take care of running kurtosis as a cmdlet.
+```bash
+$systemPath = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::Machine)
+$currentDir = (Get-Location).Path
+if (-not $systemPath.Contains($currentDir)) {
+    [Environment]::SetEnvironmentVariable("Path", "$systemPath;$currentDir", [EnvironmentVariableTarget]::Machine)
+}
+"@ 
+@echo off
+kurtosis.exe %*
+"@ | Out-File "kurtosis.bat"
+```
+
+### 3. Example Usage
+
+> ⚠️ **Warning**: Ensure you open a new PowerShell window after completing steps 1 and 2 to reflect the updated environment variables.
+
+Usage of Kurtosis command using Path approach:
+```bash
+kurtosis version
+```
 </TabItem>
 
 </Tabs>
