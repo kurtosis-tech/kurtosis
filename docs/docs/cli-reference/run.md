@@ -77,11 +77,16 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 
 `kurtosis run` has additional flags that can further modify its behaviour:
 
-1. The `--args-file` flag can be used to send in a YAML/JSON file as an argument to the Kurtosis Package. Note that if you pass in package arguments as CLI arguments and via the flag, the CLI arguments will be the one used.
+1. The `--args-file` flag can be used to send in a YAML/JSON file, from a local file through the filepath or from remote using the URL, as an argument to the Kurtosis Package. Note that if you pass in package arguments as CLI arguments and via the flag, the CLI arguments will be the one used.
    For example:
    ```bash
    kurtosis run github.com/kurtosis-tech/ethereum-package --args-file "devnet-5.yaml"
    ```
+   or
+   ```bash
+   kurtosis run github.com/kurtosis-tech/ethereum-package --args-file "https://www.myhost.com/devnet-5.json"
+   ```
+
 1. The `--dry-run` flag can be used to print the changes proposed by the script without executing them
 1. The `--parallelism` flag can be used to specify to what degree of parallelism certain commands can be run. For example: if the script contains an [`add_services`][add-services-reference] instruction and is run with `--parallelism 100`, up to 100 services will be run at one time.
 1. The `--enclave` flag can be used to instruct Kurtosis to run the script inside the specified enclave or create a new enclave (with the given enclave [identifier](../concepts-reference/resource-identifier.md)) if one does not exist. If this flag is not used, Kurtosis will create a new enclave with an auto-generated name, and run the script or package inside it.
@@ -120,6 +125,8 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 1. The `--production` flag can be used to make sure services restart in case of failure (default behavior is not restart)
 
 1. The `--no-connect` flag can be used to disable user services port forwarding (default behavior is to forward the ports)
+
+1. The `--image-download` flag can be used to determine what is the behavior to fetch images tagged as latest during the package deployment. Use `missing` to fetch the latest image only if not available in local cache and use `always` to always fetch the latest image from remote repository (default behavior is `missing`).
 
 1. The `--experimental` flag can be used to enable experimental or incubating features. Please reach out to Kurtosis team if you wish to try any of those.
 

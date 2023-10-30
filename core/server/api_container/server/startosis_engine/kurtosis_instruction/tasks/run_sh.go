@@ -21,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 const (
@@ -145,7 +144,10 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig = getServiceConfig(image, filesArtifactExpansion)
+	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
+	}
 
 	if arguments.IsSet(StoreFilesArgName) {
 		storeSpecList, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
@@ -250,7 +252,6 @@ func getCommandToRun(builtin *RunShCapabilities) (string, error) {
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while replacing runtime values in run_sh")
 	}
-	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, newlineChar, " ")
 
-	return commandWithNoNewLines, nil
+	return maybeSubCommandWithRuntimeValues, nil
 }

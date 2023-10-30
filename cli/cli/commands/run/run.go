@@ -4,13 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
-	"gopkg.in/yaml.v2"
+	"io"
+	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
+	"gopkg.in/yaml.v2"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
@@ -96,6 +101,9 @@ const (
 
 	runFailed    = false
 	runSucceeded = true
+
+	imageDownloadFlagKey = "image-download"
+	defaultImageDownload = "missing"
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -190,6 +198,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:    flags.FlagType_String,
 			Default: packageArgsFileDefaultValue,
 		},
+		{
+			Key:     imageDownloadFlagKey,
+			Usage:   "If unset, it defaults to `missing` for fetching the latest image only if not available in local cache. Use `always` to always fetch the latest image.",
+			Type:    flags.FlagType_String,
+			Default: defaultImageDownload,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -250,6 +264,11 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
 	}
 
+	imageDownload, err := parseImageDownloadFlag(flags)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
+	}
+
 	showFullUuids, err := flags.GetBool(fullUuidsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
@@ -292,15 +311,10 @@ func run(
 
 	if packageArgs == inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
 		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFileFlagKey, packageArgsFileFlagKey)
-		packageArgsFileBytes, err := os.ReadFile(packageArgsFile)
+		packageArgs, err = getArgsFromFilepathOrURL(packageArgsFile)
 		if err != nil {
-			return stacktrace.Propagate(err, "attempted to read file provided by flag '%v' with path '%v' but failed", packageArgsFileFlagKey, packageArgsFile)
+			return stacktrace.Propagate(err, "An error occurred while getting the package args from filepath or URL '%s'", packageArgsFile)
 		}
-		packageArgsFileStr := string(packageArgsFileBytes)
-		if packageArgParsingErr := validateSerializedArgs(packageArgsFileStr); packageArgParsingErr != nil {
-			return stacktrace.Propagate(err, "attempted to validate '%v' but failed", packageArgsFileFlagKey)
-		}
-		packageArgs = packageArgsFileStr
 	} else if packageArgs != inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
 		logrus.Debugf("'%v' arg is not empty; ignoring value of '%v' flag as '%v' arg takes precedence", inputArgsArgKey, packageArgsFileFlagKey, inputArgsArgKey)
 	}
@@ -329,6 +343,7 @@ func run(
 		starlark_run_config.WithSerializedParams(packageArgs),
 		starlark_run_config.WithCloudUserId(cloudUserId),
 		starlark_run_config.WithCloudInstanceId(cloudInstanceId),
+		starlark_run_config.WithImageDownloadMode(*imageDownload),
 	)
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -608,6 +623,29 @@ func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, e
 	return verbosity, nil
 }
 
+// Get the image download flag is present, and parse it to a valid ImageDownload value
+func parseImageDownloadFlag(flags *flags.ParsedFlags) (*kurtosis_core_rpc_api_bindings.ImageDownloadMode, error) {
+
+	imageDownloadStr, err := flags.GetString(imageDownloadFlagKey)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
+	}
+
+	imageDownloadStrNorm := strings.ToLower(imageDownloadStr)
+	keys := make([]string, 0, len(kurtosis_core_rpc_api_bindings.ImageDownloadMode_value))
+	for k := range kurtosis_core_rpc_api_bindings.ImageDownloadMode_value {
+		keys = append(keys, k)
+	}
+
+	if !slices.Contains(keys, imageDownloadStrNorm) {
+		return nil, stacktrace.NewError("Invalid image-download value: '%s'. Possible values are: '%s'", imageDownloadStr, strings.Join(keys, "', '"))
+	}
+
+	imageDownloadCode := kurtosis_core_rpc_api_bindings.ImageDownloadMode_value[imageDownloadStrNorm]
+	imageDownloadRPC := kurtosis_core_rpc_api_bindings.ImageDownloadMode(imageDownloadCode)
+	return &imageDownloadRPC, nil
+}
+
 // parseExperimentalFlag parses the sert of experimental features enabled for this run
 func parseExperimentalFlag(flags *flags.ParsedFlags) ([]kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag, error) {
 	experimentalFeaturesStr, err := flags.GetString(experimentalFeaturesFlagKey)
@@ -664,4 +702,44 @@ func validateSerializedArgs(serializedArgs string) error {
 	return stacktrace.Propagate(
 		fmt.Errorf("JSON parsing error '%v', YAML parsing error '%v'", jsonError, yamlError),
 		"Error validating args, because it is not a valid JSON or YAML.")
+}
+
+func getArgsFromFilepathOrURL(packageArgsFile string) (string, error) {
+	var packageArgsFileBytes []byte
+	isFileURL := true
+	_, err := os.Stat(packageArgsFile)
+	if err == nil {
+		isFileURL = false
+		packageArgsFileBytes, err = os.ReadFile(packageArgsFile)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "attempted to read file provided by flag '%v' with path '%v' but failed", packageArgsFileFlagKey, packageArgsFile)
+		}
+	}
+	if err != nil && !os.IsNotExist(err) {
+		return "", stacktrace.Propagate(err, "An error occurred checking for argument's file existence on '%s'", packageArgsFile)
+	}
+
+	if isFileURL {
+		argsFileURL, parseErr := url.Parse(packageArgsFile)
+		if parseErr != nil {
+			return "", stacktrace.Propagate(parseErr, "An error occurred while parsing file args URL '%s'", argsFileURL)
+		}
+		response, getErr := http.Get(argsFileURL.String())
+		if getErr != nil {
+			return "", stacktrace.Propagate(getErr, "An error occurred getting the args file content from URL '%s'", argsFileURL.String())
+		}
+		defer response.Body.Close()
+		responseBodyBytes, readAllErr := io.ReadAll(response.Body)
+		if readAllErr != nil {
+			return "", stacktrace.Propagate(readAllErr, "An error occurred reading the args file content")
+		}
+		packageArgsFileBytes = responseBodyBytes
+	}
+
+	packageArgsFileStr := string(packageArgsFileBytes)
+	if packageArgParsingErr := validateSerializedArgs(packageArgsFileStr); packageArgParsingErr != nil {
+		return "", stacktrace.Propagate(err, "attempted to validate '%v' but failed", packageArgsFileFlagKey)
+	}
+
+	return packageArgsFileStr, nil
 }

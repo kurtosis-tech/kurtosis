@@ -94,4 +94,14 @@ var (
 	testGetRequestMethod = "GET"
 
 	testNoPackageReplaceOptions = map[string]string{}
+
+	testServiceConfigLabelsKey1   = "app-version"
+	testServiceConfigLabelsValue1 = "2.4"
+	testServiceConfigLabelsKey2   = "environment"
+	testServiceConfigLabelsValue2 = "production"
+
+	testServiceConfigLabels = map[string]string{
+		testServiceConfigLabelsKey1: testServiceConfigLabelsValue1,
+		testServiceConfigLabelsKey2: testServiceConfigLabelsValue2,
+	}
 )
