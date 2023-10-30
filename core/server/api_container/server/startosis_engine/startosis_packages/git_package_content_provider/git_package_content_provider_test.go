@@ -350,6 +350,16 @@ func TestGetAbsoluteLocator_AbsoluteLocatorIsInRootPackageButSourceIsNotShouldNo
 	require.Nil(t, err)
 }
 
+func Test_isSamePackageLocalAbsoluteLocator_TestDetectionInSubpath(t *testing.T) {
+	result := shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/bang/lib.star", "github.com/author/package/main.star", "github.com/author/package/")
+	require.True(t, result)
+}
+
+func Test_isSamePackageLocalAbsoluteLocator_TestDetectionInDifferentSubdirectories(t *testing.T) {
+	result := shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage("github.com/author/package/subdir1/file1.star", "github.com/author/package/subdir2/file2.star", "github.com/author/package/")
+	require.True(t, result)
+}
+
 func Test_getPathToPackageRoot(t *testing.T) {
 	githubUrlWithKurtosisPackageInSubfolder := "github.com/sample/sample-package/folder/subpackage"
 	parsedGitUrl, err := shared_utils.ParseGitURL(githubUrlWithKurtosisPackageInSubfolder)
