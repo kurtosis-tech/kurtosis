@@ -1,5 +1,6 @@
 import { ChevronRightIcon } from "@chakra-ui/icons";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, Flex } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 import { Link, Params, UIMatch, useMatches } from "react-router-dom";
 import { isDefined } from "../utils";
 
@@ -11,19 +12,29 @@ export type KurtosisBreadcrumb = {
 export const KurtosisBreadcrumbs = () => {
   const matches = useMatches() as UIMatch<
     object,
-    { crumb?: (data: object, params: Params<string>) => KurtosisBreadcrumb }
+    { crumb?: (data: object, params: Params<string>) => KurtosisBreadcrumb | Promise<KurtosisBreadcrumb> }
   >[];
 
-  const matchCrumbs = matches
-    .map((match) => (isDefined(match.handle?.crumb) ? match.handle.crumb(match.data, match.params) : null))
-    .filter(isDefined);
+  const [matchCrumbs, setMatchCrumbs] = useState<KurtosisBreadcrumb[]>([]);
 
-  const crumbs: KurtosisBreadcrumb[] = [...(matchCrumbs.length > 1 ? matchCrumbs : [])];
+  useEffect(() => {
+    (async () => {
+      setMatchCrumbs(
+        await Promise.all(
+          matches
+            .map((match) =>
+              isDefined(match.handle?.crumb) ? Promise.resolve(match.handle.crumb(match.data, match.params)) : null,
+            )
+            .filter(isDefined),
+        ),
+      );
+    })();
+  }, [matches]);
 
   return (
     <Flex h="40px" p={"4px 0"} alignItems={"center"}>
       <Breadcrumb variant={"topNavigation"} separator={<ChevronRightIcon h={"20px"} w={"24px"} />}>
-        {crumbs.map(({ name, destination }, i, arr) => (
+        {matchCrumbs.map(({ name, destination }, i, arr) => (
           <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
             <BreadcrumbLink as={i === arr.length - 1 ? undefined : Link} to={destination}>
               {name}
