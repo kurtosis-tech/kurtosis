@@ -141,6 +141,8 @@ export class RunStarlarkScriptArgs extends jspb.Message {
 
   getSerializedParams(): string;
   setSerializedParams(value: string): RunStarlarkScriptArgs;
+  hasSerializedParams(): boolean;
+  clearSerializedParams(): RunStarlarkScriptArgs;
 
   getDryRun(): boolean;
   setDryRun(value: boolean): RunStarlarkScriptArgs;
@@ -154,6 +156,8 @@ export class RunStarlarkScriptArgs extends jspb.Message {
 
   getMainFunctionName(): string;
   setMainFunctionName(value: string): RunStarlarkScriptArgs;
+  hasMainFunctionName(): boolean;
+  clearMainFunctionName(): RunStarlarkScriptArgs;
 
   getExperimentalFeaturesList(): Array<KurtosisFeatureFlag>;
   setExperimentalFeaturesList(value: Array<KurtosisFeatureFlag>): RunStarlarkScriptArgs;
@@ -186,14 +190,19 @@ export class RunStarlarkScriptArgs extends jspb.Message {
 export namespace RunStarlarkScriptArgs {
   export type AsObject = {
     serializedScript: string,
-    serializedParams: string,
+    serializedParams?: string,
     dryRun?: boolean,
     parallelism?: number,
-    mainFunctionName: string,
+    mainFunctionName?: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
     cloudInstanceId?: string,
     cloudUserId?: string,
     imageDownloadMode?: ImageDownloadMode,
+  }
+
+  export enum SerializedParamsCase { 
+    _SERIALIZED_PARAMS_NOT_SET = 0,
+    SERIALIZED_PARAMS = 2,
   }
 
   export enum DryRunCase { 
@@ -204,6 +213,11 @@ export namespace RunStarlarkScriptArgs {
   export enum ParallelismCase { 
     _PARALLELISM_NOT_SET = 0,
     PARALLELISM = 4,
+  }
+
+  export enum MainFunctionNameCase { 
+    _MAIN_FUNCTION_NAME_NOT_SET = 0,
+    MAIN_FUNCTION_NAME = 5,
   }
 
   export enum CloudInstanceIdCase { 
@@ -236,6 +250,8 @@ export class RunStarlarkPackageArgs extends jspb.Message {
 
   getSerializedParams(): string;
   setSerializedParams(value: string): RunStarlarkPackageArgs;
+  hasSerializedParams(): boolean;
+  clearSerializedParams(): RunStarlarkPackageArgs;
 
   getDryRun(): boolean;
   setDryRun(value: boolean): RunStarlarkPackageArgs;
@@ -254,9 +270,13 @@ export class RunStarlarkPackageArgs extends jspb.Message {
 
   getRelativePathToMainFile(): string;
   setRelativePathToMainFile(value: string): RunStarlarkPackageArgs;
+  hasRelativePathToMainFile(): boolean;
+  clearRelativePathToMainFile(): RunStarlarkPackageArgs;
 
   getMainFunctionName(): string;
   setMainFunctionName(value: string): RunStarlarkPackageArgs;
+  hasMainFunctionName(): boolean;
+  clearMainFunctionName(): RunStarlarkPackageArgs;
 
   getExperimentalFeaturesList(): Array<KurtosisFeatureFlag>;
   setExperimentalFeaturesList(value: Array<KurtosisFeatureFlag>): RunStarlarkPackageArgs;
@@ -293,12 +313,12 @@ export namespace RunStarlarkPackageArgs {
     packageId: string,
     local: Uint8Array | string,
     remote: boolean,
-    serializedParams: string,
+    serializedParams?: string,
     dryRun?: boolean,
     parallelism?: number,
     clonePackage?: boolean,
-    relativePathToMainFile: string,
-    mainFunctionName: string,
+    relativePathToMainFile?: string,
+    mainFunctionName?: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
     cloudInstanceId?: string,
     cloudUserId?: string,
@@ -309,6 +329,11 @@ export namespace RunStarlarkPackageArgs {
     STARLARK_PACKAGE_CONTENT_NOT_SET = 0,
     LOCAL = 3,
     REMOTE = 4,
+  }
+
+  export enum SerializedParamsCase { 
+    _SERIALIZED_PARAMS_NOT_SET = 0,
+    SERIALIZED_PARAMS = 5,
   }
 
   export enum DryRunCase { 
@@ -324,6 +349,16 @@ export namespace RunStarlarkPackageArgs {
   export enum ClonePackageCase { 
     _CLONE_PACKAGE_NOT_SET = 0,
     CLONE_PACKAGE = 8,
+  }
+
+  export enum RelativePathToMainFileCase { 
+    _RELATIVE_PATH_TO_MAIN_FILE_NOT_SET = 0,
+    RELATIVE_PATH_TO_MAIN_FILE = 9,
+  }
+
+  export enum MainFunctionNameCase { 
+    _MAIN_FUNCTION_NAME_NOT_SET = 0,
+    MAIN_FUNCTION_NAME = 10,
   }
 
   export enum CloudInstanceIdCase { 
@@ -851,18 +886,28 @@ export class WaitForHttpGetEndpointAvailabilityArgs extends jspb.Message {
 
   getPath(): string;
   setPath(value: string): WaitForHttpGetEndpointAvailabilityArgs;
+  hasPath(): boolean;
+  clearPath(): WaitForHttpGetEndpointAvailabilityArgs;
 
   getInitialDelayMilliseconds(): number;
   setInitialDelayMilliseconds(value: number): WaitForHttpGetEndpointAvailabilityArgs;
+  hasInitialDelayMilliseconds(): boolean;
+  clearInitialDelayMilliseconds(): WaitForHttpGetEndpointAvailabilityArgs;
 
   getRetries(): number;
   setRetries(value: number): WaitForHttpGetEndpointAvailabilityArgs;
+  hasRetries(): boolean;
+  clearRetries(): WaitForHttpGetEndpointAvailabilityArgs;
 
   getRetriesDelayMilliseconds(): number;
   setRetriesDelayMilliseconds(value: number): WaitForHttpGetEndpointAvailabilityArgs;
+  hasRetriesDelayMilliseconds(): boolean;
+  clearRetriesDelayMilliseconds(): WaitForHttpGetEndpointAvailabilityArgs;
 
   getBodyText(): string;
   setBodyText(value: string): WaitForHttpGetEndpointAvailabilityArgs;
+  hasBodyText(): boolean;
+  clearBodyText(): WaitForHttpGetEndpointAvailabilityArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WaitForHttpGetEndpointAvailabilityArgs.AsObject;
@@ -876,11 +921,36 @@ export namespace WaitForHttpGetEndpointAvailabilityArgs {
   export type AsObject = {
     serviceIdentifier: string,
     port: number,
-    path: string,
-    initialDelayMilliseconds: number,
-    retries: number,
-    retriesDelayMilliseconds: number,
-    bodyText: string,
+    path?: string,
+    initialDelayMilliseconds?: number,
+    retries?: number,
+    retriesDelayMilliseconds?: number,
+    bodyText?: string,
+  }
+
+  export enum PathCase { 
+    _PATH_NOT_SET = 0,
+    PATH = 3,
+  }
+
+  export enum InitialDelayMillisecondsCase { 
+    _INITIAL_DELAY_MILLISECONDS_NOT_SET = 0,
+    INITIAL_DELAY_MILLISECONDS = 4,
+  }
+
+  export enum RetriesCase { 
+    _RETRIES_NOT_SET = 0,
+    RETRIES = 5,
+  }
+
+  export enum RetriesDelayMillisecondsCase { 
+    _RETRIES_DELAY_MILLISECONDS_NOT_SET = 0,
+    RETRIES_DELAY_MILLISECONDS = 6,
+  }
+
+  export enum BodyTextCase { 
+    _BODY_TEXT_NOT_SET = 0,
+    BODY_TEXT = 7,
   }
 }
 
@@ -893,21 +963,33 @@ export class WaitForHttpPostEndpointAvailabilityArgs extends jspb.Message {
 
   getPath(): string;
   setPath(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  hasPath(): boolean;
+  clearPath(): WaitForHttpPostEndpointAvailabilityArgs;
 
   getRequestBody(): string;
   setRequestBody(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  hasRequestBody(): boolean;
+  clearRequestBody(): WaitForHttpPostEndpointAvailabilityArgs;
 
   getInitialDelayMilliseconds(): number;
   setInitialDelayMilliseconds(value: number): WaitForHttpPostEndpointAvailabilityArgs;
+  hasInitialDelayMilliseconds(): boolean;
+  clearInitialDelayMilliseconds(): WaitForHttpPostEndpointAvailabilityArgs;
 
   getRetries(): number;
   setRetries(value: number): WaitForHttpPostEndpointAvailabilityArgs;
+  hasRetries(): boolean;
+  clearRetries(): WaitForHttpPostEndpointAvailabilityArgs;
 
   getRetriesDelayMilliseconds(): number;
   setRetriesDelayMilliseconds(value: number): WaitForHttpPostEndpointAvailabilityArgs;
+  hasRetriesDelayMilliseconds(): boolean;
+  clearRetriesDelayMilliseconds(): WaitForHttpPostEndpointAvailabilityArgs;
 
   getBodyText(): string;
   setBodyText(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  hasBodyText(): boolean;
+  clearBodyText(): WaitForHttpPostEndpointAvailabilityArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WaitForHttpPostEndpointAvailabilityArgs.AsObject;
@@ -921,12 +1003,42 @@ export namespace WaitForHttpPostEndpointAvailabilityArgs {
   export type AsObject = {
     serviceIdentifier: string,
     port: number,
-    path: string,
-    requestBody: string,
-    initialDelayMilliseconds: number,
-    retries: number,
-    retriesDelayMilliseconds: number,
-    bodyText: string,
+    path?: string,
+    requestBody?: string,
+    initialDelayMilliseconds?: number,
+    retries?: number,
+    retriesDelayMilliseconds?: number,
+    bodyText?: string,
+  }
+
+  export enum PathCase { 
+    _PATH_NOT_SET = 0,
+    PATH = 3,
+  }
+
+  export enum RequestBodyCase { 
+    _REQUEST_BODY_NOT_SET = 0,
+    REQUEST_BODY = 4,
+  }
+
+  export enum InitialDelayMillisecondsCase { 
+    _INITIAL_DELAY_MILLISECONDS_NOT_SET = 0,
+    INITIAL_DELAY_MILLISECONDS = 5,
+  }
+
+  export enum RetriesCase { 
+    _RETRIES_NOT_SET = 0,
+    RETRIES = 6,
+  }
+
+  export enum RetriesDelayMillisecondsCase { 
+    _RETRIES_DELAY_MILLISECONDS_NOT_SET = 0,
+    RETRIES_DELAY_MILLISECONDS = 7,
+  }
+
+  export enum BodyTextCase { 
+    _BODY_TEXT_NOT_SET = 0,
+    BODY_TEXT = 8,
   }
 }
 
