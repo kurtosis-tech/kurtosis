@@ -94,7 +94,7 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
                 Cancel
               </Button>
               <Button type={"submit"} isLoading={isLoading} colorScheme={"kurtosisGreen"}>
-                Load
+                Configure
               </Button>
             </Flex>
           </ModalFooter>
