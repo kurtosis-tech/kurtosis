@@ -30,7 +30,7 @@ const (
 	DefaultGrpcEngineServerPortNum = uint16(9710)
 
 	// Blank tells the engine server to use the default
-	defaultApiContainerVersionTag = ""
+	defaultApiContainerVersionTagStr = ""
 
 	serviceLogsStreamContentChanBufferSize = 5
 
@@ -42,7 +42,7 @@ const (
 )
 
 var (
-	apiContainerLogLevel = logrus.DebugLevel
+	defaultApiContainerLogLevelStr = logrus.DebugLevel.String()
 
 	apicPortTransportProtocol = portal_api.TransportProtocol_TCP
 
@@ -110,12 +110,7 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 	enclaveName string,
 ) (*enclaves.EnclaveContext, error) {
 
-	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveName:            enclaveName,
-		ApiContainerVersionTag: defaultApiContainerVersionTag,
-		ApiContainerLogLevel:   apiContainerLogLevel.String(),
-		Mode:                   kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST,
-	}
+	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValues(enclaveName)
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
@@ -136,12 +131,7 @@ func (kurtosisCtx *KurtosisContext) CreateProductionEnclave(
 	enclaveName string,
 ) (*enclaves.EnclaveContext, error) {
 
-	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveName:            enclaveName,
-		ApiContainerVersionTag: defaultApiContainerVersionTag,
-		ApiContainerLogLevel:   apiContainerLogLevel.String(),
-		Mode:                   kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION,
-	}
+	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValues(enclaveName)
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
@@ -260,7 +250,7 @@ func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveI
 // Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---enclavenameanduuid-removedenclavenameanduuids
 func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bool) ([]*kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid, error) {
 	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{
-		ShouldCleanAll: shouldCleanAll,
+		ShouldCleanAll: &shouldCleanAll,
 	}
 	cleanResponse, err := kurtosisCtx.engineClient.Clean(ctx, cleanArgs)
 	if err != nil {
@@ -519,10 +509,10 @@ func newGetServiceLogsArgs(
 	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs{
 		EnclaveIdentifier:  enclaveIdentifier,
 		ServiceUuidSet:     userServiceUuuidSet,
-		FollowLogs:         shouldFollowLogs,
+		FollowLogs:         &shouldFollowLogs,
 		ConjunctiveFilters: grpcConjunctiveFilters,
-		ReturnAllLogs:      shouldReturnAllLogs,
-		NumLogLines:        numLogLines,
+		ReturnAllLogs:      &shouldReturnAllLogs,
+		NumLogLines:        &numLogLines,
 	}
 
 	return getUserServiceLogsArgs, nil
@@ -597,4 +587,20 @@ func newServiceLogsStreamContentFromGrpcStreamResponse(
 	newServiceLogsStreamContentObj := newServiceLogsStreamContent(serviceLogsByServiceUuidMap, notFoundServiceUuids)
 
 	return newServiceLogsStreamContentObj
+}
+
+func newCreateEnclaveArgsWithDefaultValues(enclaveName string) *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs {
+
+	defaultApiContainerVersionTag := defaultApiContainerVersionTagStr
+	defaultApiContainerLogLevel := defaultApiContainerLogLevelStr
+	defaultEnclaveMode := kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
+
+	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
+		EnclaveName:            &enclaveName,
+		ApiContainerVersionTag: &defaultApiContainerVersionTag,
+		ApiContainerLogLevel:   &defaultApiContainerLogLevel,
+		Mode:                   &defaultEnclaveMode,
+	}
+
+	return createEnclaveArgs
 }

@@ -323,23 +323,23 @@ func (apicService *ApiContainerService) ExecCommand(ctx context.Context, args *k
 
 func (apicService *ApiContainerService) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 
-	serviceIdentifier := args.ServiceIdentifier
+	serviceIdentifier := args.GetServiceIdentifier()
 
 	if err := apicService.waitForEndpointAvailability(
 		ctx,
 		serviceIdentifier,
 		http.MethodGet,
-		args.Port,
-		args.Path,
-		args.InitialDelayMilliseconds,
-		args.Retries,
-		args.RetriesDelayMilliseconds,
+		args.GetPort(),
+		args.GetPath(),
+		args.GetInitialDelayMilliseconds(),
+		args.GetRetries(),
+		args.GetRetriesDelayMilliseconds(),
 		"",
-		args.BodyText); err != nil {
+		args.GetBodyText()); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred waiting for HTTP endpoint '%v' to become available",
-			args.Path,
+			args.GetPath(),
 		)
 	}
 
@@ -347,23 +347,23 @@ func (apicService *ApiContainerService) WaitForHttpGetEndpointAvailability(ctx c
 }
 
 func (apicService *ApiContainerService) WaitForHttpPostEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
-	serviceIdentifier := args.ServiceIdentifier
+	serviceIdentifier := args.GetServiceIdentifier()
 
 	if err := apicService.waitForEndpointAvailability(
 		ctx,
 		serviceIdentifier,
 		http.MethodPost,
-		args.Port,
-		args.Path,
-		args.InitialDelayMilliseconds,
-		args.Retries,
-		args.RetriesDelayMilliseconds,
-		args.RequestBody,
-		args.BodyText); err != nil {
+		args.GetPort(),
+		args.GetPath(),
+		args.GetInitialDelayMilliseconds(),
+		args.GetRetries(),
+		args.GetRetriesDelayMilliseconds(),
+		args.GetRequestBody(),
+		args.GetBodyText()); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred waiting for HTTP endpoint '%v' to become available",
-			args.Path,
+			args.GetPath(),
 		)
 	}
 

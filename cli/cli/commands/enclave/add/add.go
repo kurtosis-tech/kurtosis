@@ -135,10 +135,10 @@ func run(
 	}
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveName:            enclaveName,
-		ApiContainerVersionTag: apiContainerVersion,
-		ApiContainerLogLevel:   kurtosisLogLevelStr,
-		Mode:                   mode,
+		EnclaveName:            &enclaveName,
+		ApiContainerVersionTag: &apiContainerVersion,
+		ApiContainerLogLevel:   &kurtosisLogLevelStr,
+		Mode:                   &mode,
 	}
 	createdEnclaveResponse, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
