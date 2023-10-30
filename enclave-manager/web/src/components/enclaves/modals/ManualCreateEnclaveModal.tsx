@@ -82,7 +82,6 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
                   {...register("url", {
                     disabled: isLoading,
                     required: true,
-                    value: "github.com/kurtosis-tech/etcd-package",
                   })}
                 />
               </InputGroup>
