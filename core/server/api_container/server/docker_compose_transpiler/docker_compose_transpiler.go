@@ -246,7 +246,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 
 					// We guess that when the user specifies an absolute (not relative) path, they want to use the volume
 					// as a persistence layer. We further guess that relative paths are just read-only.
-					shouldPersist = path.IsAbs(source)
+					shouldPersist = path.IsAbs(source) || strings.HasPrefix(source, "~")
 				case types.VolumeTypeVolume:
 					shouldPersist = true
 				}
@@ -352,7 +352,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 	}
 
 	// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
-	script := "def run(plan):\n"
+	script := "def run(plan, args):\n"
 	for _, line := range starlarkLines {
 		script += fmt.Sprintf("    %s\n", line)
 	}

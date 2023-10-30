@@ -22,9 +22,8 @@ services:
    volumes:
      - "~/minecraft_data:/data"
 `)
-	expectedResult := `def run(plan):
-    plan.upload_files(src = "~/minecraft_data", name = "minecraft--volume0")
-    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": "minecraft--volume0"}, env_vars={"EULA": "TRUE"}))
+	expectedResult := `def run(plan, args):
+    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": Directory(persistent_key="volume0")}, env_vars={"EULA": "TRUE"}))
 `
 
 	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
@@ -46,7 +45,7 @@ func TestAngularCompose(t *testing.T) {
       - ./angular:/project
       - /project/node_modules
 `)
-	expectedResult := `def run(plan):
+	expectedResult := `def run(plan, args):
     plan.upload_files(src = "./angular", name = "web--volume0")
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(context_dir="angular", target_stage="builder"), ports={"port0": PortSpec(number=4200, transport_protocol="TCP")}, files={"/project": "web--volume0", "/project/node_modules": Directory(persistent_key="volume1")}, env_vars={}))
 `
@@ -64,7 +63,7 @@ services:
     ports:
       - 80:80
 `)
-	expectedResult := `def run(plan):
+	expectedResult := `def run(plan, args):
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(context_dir="app/aspnet"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
 `
 
@@ -83,7 +82,7 @@ services:
     ports: 
       - '8000:8000'
 `)
-	expectedResult := `def run(plan):
+	expectedResult := `def run(plan, args):
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP")}, env_vars={}))
 `
 
@@ -119,7 +118,7 @@ services:
     - web1
     - web2
 `)
-	expectedResult := `def run(plan):
+	expectedResult := `def run(plan, args):
     plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
     plan.add_service(name = "web1", config = ServiceConfig(image=ImageBuildSpec(context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
     plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
