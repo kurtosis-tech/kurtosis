@@ -21,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
-	"strings"
 )
 
 const (
@@ -253,7 +252,6 @@ func getCommandToRun(builtin *RunShCapabilities) (string, error) {
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while replacing runtime values in run_sh")
 	}
-	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, newlineChar, " ")
 
-	return commandWithNoNewLines, nil
+	return maybeSubCommandWithRuntimeValues, nil
 }
