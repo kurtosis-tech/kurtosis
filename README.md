@@ -131,7 +131,12 @@ sh <(curl -L https://nixos.org/nix/install)
 
 And to bring the environment up use:
 ```bash
-nix develop
+nix --extra-experimental-features 'nix-command flakes' develop
+```
+
+The `extra-experimental-features` can set globally by adding the following to `~/.config/nix/nix.conf` or `/etc/nix/nix.conf`:
+```
+experimental-features = nix-command flakes
 ```
 
 One can also use the [`direnv`](https://direnv.net/) (installation via Nix can be found [here](https://github.com/nix-community/nix-direnv#installation)) to automatically load the environment when entering the main folder or using a plugin in your preferred IDE:
