@@ -14,6 +14,16 @@ export function assertDefined<T>(v: T | null | undefined, message: string = "Val
   }
 }
 
+export function range(until: number): number[];
+export function range(from: number, to: number): [];
+export function range(from: number, to: number, step: number): number[];
+export function range(a: number, b?: number, c?: number) {
+  const start = isDefined(b) ? a : 0;
+  const stop = isDefined(b) ? b : a;
+  const step = isDefined(c) ? c : 1;
+  return Array.from({ length: (stop - start) / step + 1 }, (_, i) => start + i * step);
+}
+
 export function stringifyError(err: any): string {
   switch (typeof err) {
     case "bigint":
@@ -44,11 +54,14 @@ export type ErrorAndMessage<E> = {
   message?: string;
 };
 
-export async function asyncResult<T>(
+export async function asyncResult<T, E = any>(
   p: Promise<T> | (() => Promise<T>),
   errorMessage?: string,
-): Promise<Result<T, ErrorAndMessage<any>>> {
-  return (typeof p === "function" ? p() : p)
-    .then((r) => Result.ok<T, ErrorAndMessage<any>>(r))
-    .catch((err: any) => Result.err({ error: err, message: errorMessage }));
+): Promise<Result<T, ErrorAndMessage<E>>> {
+  try {
+    const r = await (typeof p === "function" ? p() : p);
+    return Result.ok<T, ErrorAndMessage<E>>(r);
+  } catch (e: any) {
+    return Result.err({ error: e, message: errorMessage || stringifyError(e) });
+  }
 }
