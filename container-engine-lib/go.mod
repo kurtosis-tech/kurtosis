@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/dmarkham/enumer v1.5.5
-	github.com/docker/docker v24.0.5+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/gammazero/workerpool v1.1.2
 	github.com/google/uuid v1.3.0
