@@ -77,10 +77,10 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 
 `kurtosis run` has additional flags that can further modify its behaviour:
 
-1. The `--args-file` flag can be used to send in a JSON/YAML file as an argument to the Kurtosis Package. Note that if you pass in package arguments as CLI arguments and via the flag, the CLI arguments will be the one used.
+1. The `--args-file` flag can be used to send in a YAML/JSON file as an argument to the Kurtosis Package. Note that if you pass in package arguments as CLI arguments and via the flag, the CLI arguments will be the one used.
    For example:
    ```bash
-   kurtosis run github.com/kurtosis-tech/ethereum-package --args-file "devnet-5.json"
+   kurtosis run github.com/kurtosis-tech/ethereum-package --args-file "devnet-5.yaml"
    ```
 1. The `--dry-run` flag can be used to print the changes proposed by the script without executing them
 1. The `--parallelism` flag can be used to specify to what degree of parallelism certain commands can be run. For example: if the script contains an [`add_services`][add-services-reference] instruction and is run with `--parallelism 100`, up to 100 services will be run at one time.
