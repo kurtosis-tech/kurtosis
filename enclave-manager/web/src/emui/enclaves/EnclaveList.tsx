@@ -1,7 +1,7 @@
 import { Button, ButtonGroup, Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { Suspense, useEffect, useState } from "react";
-import { FiPlus } from "react-icons/fi";
 import { Await, useRouteLoaderData } from "react-router-dom";
+import { CreateEnclaveButton } from "../../components/enclaves/CreateEnclaveButton";
 import { EnclavesTable } from "../../components/enclaves/tables/EnclavesTable";
 import { DeleteEnclavesButton } from "../../components/enclaves/widgets/DeleteEnclavesButton";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
@@ -51,9 +51,7 @@ const EnclaveListImpl = ({ enclaves }: EnclaveListImplProps) => {
                 <DeleteEnclavesButton enclaves={selectedEnclaves} />
               </ButtonGroup>
             )}
-            <Button colorScheme={"kurtosisGreen"} leftIcon={<FiPlus />} size={"md"}>
-              Create Enclave
-            </Button>
+            <CreateEnclaveButton />
           </Flex>
         </Flex>
         <TabPanels>

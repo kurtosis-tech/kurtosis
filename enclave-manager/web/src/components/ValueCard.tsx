@@ -1,7 +1,7 @@
-import { Button, Card, Flex, Text, useToast } from "@chakra-ui/react";
+import { Card, Flex, Text, useToast } from "@chakra-ui/react";
 import { ReactElement } from "react";
-import { FiCopy } from "react-icons/fi";
-import { assertDefined, isDefined } from "../utils";
+import { isDefined } from "../utils";
+import { CopyButton } from "./CopyButton";
 
 type ValueCardProps = {
   title: string;
@@ -13,16 +13,6 @@ type ValueCardProps = {
 export const ValueCard = ({ title, value, copyEnabled, copyValue }: ValueCardProps) => {
   const toast = useToast();
 
-  const handleCopyClick = () => {
-    const valueToUse = isDefined(copyValue) ? copyValue : typeof value === "string" ? value : null;
-    assertDefined(valueToUse, `Cannot work out which value to copy in ${title} value card`);
-    navigator.clipboard.writeText(valueToUse);
-    toast({
-      title: `Copied '${valueToUse}' to the clipboard`,
-      status: `success`,
-    });
-  };
-
   return (
     <Card height={"100%"} display={"flex"} flexDirection={"column"} justifyContent={"space-between"} gap={"16px"}>
       <Flex flexDirection={"row"} justifyContent={"space-between"} alignItems={"center"} width={"100%"}>
@@ -30,9 +20,7 @@ export const ValueCard = ({ title, value, copyEnabled, copyValue }: ValueCardPro
           {title}
         </Text>
         {copyEnabled && (
-          <Button leftIcon={<FiCopy />} size={"xs"} colorScheme={"darkBlue"} onClick={handleCopyClick}>
-            Copy
-          </Button>
+          <CopyButton valueToCopy={isDefined(copyValue) ? copyValue : typeof value === "string" ? value : null} />
         )}
       </Flex>
       <Text fontSize={"xl"}>{value}</Text>
