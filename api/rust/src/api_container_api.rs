@@ -159,8 +159,8 @@ pub struct ServiceInfo {
 pub struct RunStarlarkScriptArgs {
     #[prost(string, tag = "1")]
     pub serialized_script: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub serialized_params: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
     /// Defaults to false
     #[prost(bool, optional, tag = "3")]
     pub dry_run: ::core::option::Option<bool>,
@@ -168,8 +168,8 @@ pub struct RunStarlarkScriptArgs {
     #[prost(int32, optional, tag = "4")]
     pub parallelism: ::core::option::Option<i32>,
     /// The name of the main function, the default value is "run"
-    #[prost(string, tag = "5")]
-    pub main_function_name: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "5")]
+    pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "6")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
     /// Defaults to empty
@@ -178,6 +178,9 @@ pub struct RunStarlarkScriptArgs {
     /// Defaults to empty
     #[prost(string, optional, tag = "8")]
     pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Defaults to empty
+    #[prost(enumeration = "ImageDownloadMode", optional, tag = "9")]
+    pub image_download_mode: ::core::option::Option<i32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -186,8 +189,8 @@ pub struct RunStarlarkPackageArgs {
     pub package_id: ::prost::alloc::string::String,
     /// Serialized parameters data for the Starlark package main function
     /// This should be a valid JSON string
-    #[prost(string, tag = "5")]
-    pub serialized_params: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "5")]
+    pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
     /// Defaults to false
     #[prost(bool, optional, tag = "6")]
     pub dry_run: ::core::option::Option<bool>,
@@ -201,11 +204,13 @@ pub struct RunStarlarkPackageArgs {
     #[prost(bool, optional, tag = "8")]
     pub clone_package: ::core::option::Option<bool>,
     /// The relative main file filepath, the default value is the "main.star" file in the root of a package
-    #[prost(string, tag = "9")]
-    pub relative_path_to_main_file: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "9")]
+    pub relative_path_to_main_file: ::core::option::Option<
+        ::prost::alloc::string::String,
+    >,
     /// The name of the main function, the default value is "run"
-    #[prost(string, tag = "10")]
-    pub main_function_name: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "10")]
+    pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "11")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
     /// Defaults to empty
@@ -214,6 +219,9 @@ pub struct RunStarlarkPackageArgs {
     /// Defaults to empty
     #[prost(string, optional, tag = "13")]
     pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Defaults to empty
+    #[prost(enumeration = "ImageDownloadMode", optional, tag = "14")]
+    pub image_download_mode: ::core::option::Option<i32>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -458,20 +466,20 @@ pub struct WaitForHttpGetEndpointAvailabilityArgs {
     #[prost(uint32, tag = "2")]
     pub port: u32,
     /// The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-    #[prost(string, tag = "3")]
-    pub path: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "3")]
+    pub path: ::core::option::Option<::prost::alloc::string::String>,
     /// The number of milliseconds to wait until executing the first HTTP call
-    #[prost(uint32, tag = "4")]
-    pub initial_delay_milliseconds: u32,
+    #[prost(uint32, optional, tag = "4")]
+    pub initial_delay_milliseconds: ::core::option::Option<u32>,
     /// Max number of HTTP call attempts that this will execute until giving up and returning an error
-    #[prost(uint32, tag = "5")]
-    pub retries: u32,
+    #[prost(uint32, optional, tag = "5")]
+    pub retries: ::core::option::Option<u32>,
     /// Number of milliseconds to wait between retries
-    #[prost(uint32, tag = "6")]
-    pub retries_delay_milliseconds: u32,
+    #[prost(uint32, optional, tag = "6")]
+    pub retries_delay_milliseconds: ::core::option::Option<u32>,
     /// If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-    #[prost(string, tag = "7")]
-    pub body_text: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "7")]
+    pub body_text: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ==============================================================================================
 ///                            Wait For HTTP Post Endpoint Availability
@@ -486,23 +494,23 @@ pub struct WaitForHttpPostEndpointAvailabilityArgs {
     #[prost(uint32, tag = "2")]
     pub port: u32,
     /// The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-    #[prost(string, tag = "3")]
-    pub path: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "3")]
+    pub path: ::core::option::Option<::prost::alloc::string::String>,
     /// The content of the request body.
-    #[prost(string, tag = "4")]
-    pub request_body: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "4")]
+    pub request_body: ::core::option::Option<::prost::alloc::string::String>,
     /// The number of milliseconds to wait until executing the first HTTP call
-    #[prost(uint32, tag = "5")]
-    pub initial_delay_milliseconds: u32,
+    #[prost(uint32, optional, tag = "5")]
+    pub initial_delay_milliseconds: ::core::option::Option<u32>,
     /// Max number of HTTP call attempts that this will execute until giving up and returning an error
-    #[prost(uint32, tag = "6")]
-    pub retries: u32,
+    #[prost(uint32, optional, tag = "6")]
+    pub retries: ::core::option::Option<u32>,
     /// Number of milliseconds to wait between retries
-    #[prost(uint32, tag = "7")]
-    pub retries_delay_milliseconds: u32,
+    #[prost(uint32, optional, tag = "7")]
+    pub retries_delay_milliseconds: ::core::option::Option<u32>,
     /// If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-    #[prost(string, tag = "8")]
-    pub body_text: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "8")]
+    pub body_text: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ==============================================================================================
 ///                                           Streamed Data Chunk
@@ -686,6 +694,32 @@ impl ServiceStatus {
             "STOPPED" => Some(Self::Stopped),
             "RUNNING" => Some(Self::Running),
             "UNKNOWN" => Some(Self::Unknown),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ImageDownloadMode {
+    Always = 0,
+    Missing = 1,
+}
+impl ImageDownloadMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            ImageDownloadMode::Always => "always",
+            ImageDownloadMode::Missing => "missing",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "always" => Some(Self::Always),
+            "missing" => Some(Self::Missing),
             _ => None,
         }
     }
