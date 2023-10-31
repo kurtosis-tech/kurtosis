@@ -7,7 +7,7 @@ hide_table_of_contents: true
 ---
 
 ## What is Kurtosis?
-[Kurtosis](https://www.kurtosis.com) is a platform for packaging and launching environments of containerized services ("distributed applications") with a focus on approachability for the average developer. What Docker did for shipping binaries, Kurtosis aims to do even better for distributed applications. 
+[Kurtosis](https://github.com/kurtosis-tech/kurtosis) is a platform for packaging and launching environments of containerized services ("distributed applications") with a focus on approachability for the average developer. What Docker did for shipping binaries, Kurtosis aims to do even better for distributed applications. 
 
 Kurtosis is formed of:
 
