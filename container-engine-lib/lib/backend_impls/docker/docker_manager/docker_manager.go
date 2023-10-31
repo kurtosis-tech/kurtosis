@@ -524,7 +524,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	_, err := manager.FetchImage(ctx, dockerImage, args.imageDownloadMode)
+	_, _, err := manager.FetchImage(ctx, dockerImage, args.imageDownloadMode)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
@@ -1247,7 +1247,7 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 	return nil
 }
 
-func (manager *DockerManager) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, error) {
+func (manager *DockerManager) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	var err error
 	var pulledFromRemote bool = true
 	logrus.Infof("Fetching image '%s' is running in '%s' mode", image, downloadMode)
@@ -1258,14 +1258,19 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, down
 	case image_download_mode.ImageDownloadMode_Missing:
 		pulledFromRemote, err = manager.FetchImageIfMissing(ctx, image)
 	default:
-		return false, stacktrace.NewError("Undefined image pulling mode: '%v'", image_fetching)
+		return false, "", stacktrace.NewError("Undefined image pulling mode: '%v'", image_fetching)
 	}
 
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred fetching image '%v'", image)
+		return false, "", stacktrace.Propagate(err, "An error occurred fetching image '%v'", image)
 	}
 
-	return pulledFromRemote, nil
+	imageArchitecture, err := manager.getImagePlatform(ctx, image)
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred while fetching the architecture of the image")
+	}
+
+	return pulledFromRemote, imageArchitecture, nil
 }
 
 func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
@@ -1402,6 +1407,15 @@ func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args 
 		return nil, stacktrace.Propagate(err, "Failed to list networks while doing a filter search using args '%+v'", args)
 	}
 	return networks, nil
+}
+
+func (manager *DockerManager) getImagePlatform(ctx context.Context, imageName string) (string, error) {
+	imageInspect, _, err := manager.dockerClient.ImageInspectWithRaw(ctx, imageName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "an error occurred while running image inspect on image '%v'", imageName)
+	}
+
+	return imageInspect.Architecture, nil
 }
 
 /*

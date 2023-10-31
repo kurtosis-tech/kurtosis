@@ -24,6 +24,7 @@ const (
 	UpgradeCLIInstructionsPage        = DocumentationUrl + "/install#upgrading"
 	MetricsPhilosophyDocs             = DocumentationUrl + "/explanations/metrics-philosophy"
 	HowImportWorksLink                = DocumentationUrl + "/explanations/how-do-kurtosis-imports-work"
+	PackageDocLink                    = DocumentationUrl + "/concepts-reference/packages"
 	GoogleRe2SyntaxDocumentation      = "https://github.com/google/re2/wiki/Syntax"
 	KurtosisDiscordUrl                = "https://discord.gg/6Jjp9c89z9"
 	KurtosisOnBoardCalendlyUrl        = "https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding"
@@ -57,4 +58,5 @@ var urlsToValidateInTest = []string{
 	HowImportWorksLink,
 	KurtosisTechTwitterProfileLink,
 	KurtosisCloudLink,
+	PackageDocLink,
 }

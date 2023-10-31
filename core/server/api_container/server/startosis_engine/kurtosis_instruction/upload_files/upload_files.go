@@ -68,6 +68,7 @@ func NewUploadFiles(
 				archivePathOnDisk:     "",  // populated at interpretation time
 				filesArtifactMd5:      nil, // populated at interpretation time
 				packageReplaceOptions: packageReplaceOptions,
+				packageId:             packageId,
 			}
 		},
 
@@ -87,6 +88,7 @@ type UploadFilesCapabilities struct {
 	archivePathOnDisk     string
 	filesArtifactMd5      []byte
 	packageReplaceOptions map[string]string
+	packageId             string
 }
 
 func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -109,7 +111,7 @@ func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SrcArgName)
 	}
 
-	absoluteLocator, interpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, src.GoString(), builtin.packageReplaceOptions)
+	absoluteLocator, interpretationErr := builtin.packageContentProvider.GetAbsoluteLocator(builtin.packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, src.GoString(), builtin.packageReplaceOptions)
 	if interpretationErr != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert locator '%v' into absolute locator but failed", src.GoString())
 	}

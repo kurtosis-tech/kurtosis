@@ -5,6 +5,7 @@ set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 server_root_dirpath="$(dirname "${script_dirpath}")"
 git_repo_dirpath="$(dirname "$(dirname "${server_root_dirpath}")")"
+uname_arch=$(uname -m)
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
@@ -13,7 +14,14 @@ source "${script_dirpath}/_constants.env"
 BUILD_DIRNAME="build"
 
 DEFAULT_SKIP_DOCKER_IMAGE_BUILDING=false
-DEFAULT_ARCHITECTURE_TO_BUILD=amd64
+
+DEFAULT_ARCHITECTURE_TO_BUILD="unknown"
+
+if [ "$uname_arch" == "x86_64" ] || [ "$uname_arch" == "amd64" ]; then
+    DEFAULT_ARCHITECTURE_TO_BUILD="amd64"
+elif [ "$uname_arch" == "aarch64" ] || [ "$uname_arch" == "arm64" ]; then
+    DEFAULT_ARCHITECTURE_TO_BUILD="arm64"
+fi
 
 MAIN_DIRNAME="api_container"
 MAIN_GO_FILEPATH="${server_root_dirpath}/${MAIN_DIRNAME}/main.go"

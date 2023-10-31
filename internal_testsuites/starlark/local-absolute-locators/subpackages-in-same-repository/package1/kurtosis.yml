@@ -1,0 +1,5 @@
+name: github.com/kurtosis-tech/subpackages-in-same-repository/package1
+replace:
+  # Replacing the package with the 'local version' of the package
+  github.com/kurtosis-tech/subpackages-in-same-repository/package2/: ../package2
+  
