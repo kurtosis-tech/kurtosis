@@ -339,6 +339,17 @@ func TestGetAbsoluteLocator_SameRepositorySubpackagesShouldNotBeBlocked(t *testi
 	require.Nil(t, err)
 }
 
+func TestGetAbsoluteLocator_RelativeLocatorShouldNotBeBlocked(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "", nil)
+
+	packageId := "github.com/main-package"
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled := "github.com/main-package/main.star"
+	maybeRelativeLocator := "./sub-folder/file.star"
+
+	_, err := provider.GetAbsoluteLocator(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, maybeRelativeLocator, noPackageReplaceOptions)
+	require.Nil(t, err)
+}
+
 func TestGetAbsoluteLocator_AbsoluteLocatorIsInRootPackageButSourceIsNotShouldNotBeBlocked(t *testing.T) {
 	provider := NewGitPackageContentProvider("", "", nil)
 
