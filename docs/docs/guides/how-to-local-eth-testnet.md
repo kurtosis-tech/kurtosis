@@ -11,13 +11,13 @@ sidebar_position: 10
 This guide walks you through the process of instantiating a configurable local Ethereum testnet, deploying a smart contract to it, and using the testnet to run tests against your dApp. This guide is designed for dApp developers who want to develop and test their dApps locally against different network configurations before deploying to a live testnet or the mainnet.
 
 In this guide, you will:
-* Instantiate a local Ethereum testnet with the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) using [Kurtosis](https://www.kurtosis.com/),
+* Instantiate a local Ethereum testnet with the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) using [Kurtosis](https://github.com/kurtosis-tech/kurtosis),
 * Connect your Hardhat dApp development environment to the local testnet to compile, deploy, and test a dApp, and
 * Configure the local testnet, including parameters like number of nodes and specific EL/CL client pairings, to enable development and testing workflows against various network configurations.
 
 ### What is Kurtosis?
 
-[Kurtosis](https://www.kurtosis.com/) is a composable build system designed for configuring multi-container environments. It specifically enables developers to create reproducible environments that require dynamic setup logic, such as blockchain testnets.
+[Kurtosis](https://github.com/kurtosis-tech/kurtosis) is a composable build system designed for configuring multi-container environments. It specifically enables developers to create reproducible environments that require dynamic setup logic, such as blockchain testnets.
 
 In this guide, the Kurtosis ethereum-package spins up a local Ethereum testnet with support for the [`geth`](https://geth.ethereum.org/) Execution Layer (EL) client, as well as [`teku`](https://consensys.net/knowledge-base/ethereum-2/teku/), [`lighthouse`](https://lighthouse.sigmaprime.io/), and [`lodestar`](https://lodestar.chainsafe.io/) Consensus Layer (CL) clients. This package serves as a configurable and composable alternative to networks in frameworks like Hardhat Network, Ganache, and Anvil. Kurtosis offers developers greater control and flexibility over the testnets they use, which is a major reason why the [Ethereum Foundation used Kurtosis to test the Merge](https://www.kurtosis.com/blog/testing-the-ethereum-merge) and continues to use it for testing network upgrades.
 
