@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.85.2](https://github.com/kurtosis-tech/kurtosis/compare/0.85.1...0.85.2) (2023-10-31)
+
+
+### Bug Fixes
+
+* block local absolute locators ([#1659](https://github.com/kurtosis-tech/kurtosis/issues/1659)) ([a4daeb3](https://github.com/kurtosis-tech/kurtosis/commit/a4daeb3437219245d5b04a15f28b6addae1c29b6)), closes [#1637](https://github.com/kurtosis-tech/kurtosis/issues/1637)
+* use full path for running black to allow older versions of docker ([#1666](https://github.com/kurtosis-tech/kurtosis/issues/1666)) ([fdcd3d9](https://github.com/kurtosis-tech/kurtosis/commit/fdcd3d94086365e62bab07cf34a91df2fa5bff73))
+
+## [0.85.1](https://github.com/kurtosis-tech/kurtosis/compare/0.85.0...0.85.1) (2023-10-31)
+
+
+### Features
+
+* initial new enclave manager ([#1603](https://github.com/kurtosis-tech/kurtosis/issues/1603)) ([9944658](https://github.com/kurtosis-tech/kurtosis/commit/9944658f5036d45dde64721e9a958322e17b9d5b))
+* warn users of diff architecture image running ([#1649](https://github.com/kurtosis-tech/kurtosis/issues/1649)) ([77f2f69](https://github.com/kurtosis-tech/kurtosis/commit/77f2f694210e35d98b37b31396596791a2a2d0c7))
+
+## [0.85.0](https://github.com/kurtosis-tech/kurtosis/compare/0.84.13...0.85.0) (2023-10-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* protobuf definitions for more idiomatic SDKs ([#1586](https://github.com/kurtosis-tech/kurtosis/issues/1586))
+
+### Features
+
+* Add cli argument to control image download ([#1495](https://github.com/kurtosis-tech/kurtosis/issues/1495)) ([f210a76](https://github.com/kurtosis-tech/kurtosis/commit/f210a7604a283d014d79eff109654486c0b7cc83))
+
+
+### Bug Fixes
+
+* run_sh doesn't remove new lines from input ([#1642](https://github.com/kurtosis-tech/kurtosis/issues/1642)) ([a969dff](https://github.com/kurtosis-tech/kurtosis/commit/a969dffd1902952c4500c4f329480909e3f81dfd))
+
+
+### Code Refactoring
+
+* protobuf definitions for more idiomatic SDKs ([#1586](https://github.com/kurtosis-tech/kurtosis/issues/1586)) ([e7ab58a](https://github.com/kurtosis-tech/kurtosis/commit/e7ab58a1d2a286fcfb9af35e01997c2e05f7a107)), closes [#843](https://github.com/kurtosis-tech/kurtosis/issues/843)
+
 ## [0.84.13](https://github.com/kurtosis-tech/kurtosis/compare/0.84.12...0.84.13) (2023-10-25)
 
 

@@ -119,9 +119,9 @@ func NewKubernetesKurtosisBackend(
 	}
 }
 
-func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, error) {
+func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	logrus.Warnf("FetchImage isn't implemented for Kubernetes yet")
-	return false, nil
+	return false, "", nil
 }
 
 func (backend *KubernetesKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {

@@ -25,15 +25,23 @@ export namespace GetEngineInfoResponse {
 export class CreateEnclaveArgs extends jspb.Message {
   getEnclaveName(): string;
   setEnclaveName(value: string): CreateEnclaveArgs;
+  hasEnclaveName(): boolean;
+  clearEnclaveName(): CreateEnclaveArgs;
 
   getApiContainerVersionTag(): string;
   setApiContainerVersionTag(value: string): CreateEnclaveArgs;
+  hasApiContainerVersionTag(): boolean;
+  clearApiContainerVersionTag(): CreateEnclaveArgs;
 
   getApiContainerLogLevel(): string;
   setApiContainerLogLevel(value: string): CreateEnclaveArgs;
+  hasApiContainerLogLevel(): boolean;
+  clearApiContainerLogLevel(): CreateEnclaveArgs;
 
   getMode(): EnclaveMode;
   setMode(value: EnclaveMode): CreateEnclaveArgs;
+  hasMode(): boolean;
+  clearMode(): CreateEnclaveArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateEnclaveArgs.AsObject;
@@ -45,10 +53,30 @@ export class CreateEnclaveArgs extends jspb.Message {
 
 export namespace CreateEnclaveArgs {
   export type AsObject = {
-    enclaveName: string,
-    apiContainerVersionTag: string,
-    apiContainerLogLevel: string,
-    mode: EnclaveMode,
+    enclaveName?: string,
+    apiContainerVersionTag?: string,
+    apiContainerLogLevel?: string,
+    mode?: EnclaveMode,
+  }
+
+  export enum EnclaveNameCase { 
+    _ENCLAVE_NAME_NOT_SET = 0,
+    ENCLAVE_NAME = 1,
+  }
+
+  export enum ApiContainerVersionTagCase { 
+    _API_CONTAINER_VERSION_TAG_NOT_SET = 0,
+    API_CONTAINER_VERSION_TAG = 2,
+  }
+
+  export enum ApiContainerLogLevelCase { 
+    _API_CONTAINER_LOG_LEVEL_NOT_SET = 0,
+    API_CONTAINER_LOG_LEVEL = 3,
+  }
+
+  export enum ModeCase { 
+    _MODE_NOT_SET = 0,
+    MODE = 4,
   }
 }
 
@@ -283,6 +311,8 @@ export namespace DestroyEnclaveArgs {
 export class CleanArgs extends jspb.Message {
   getShouldCleanAll(): boolean;
   setShouldCleanAll(value: boolean): CleanArgs;
+  hasShouldCleanAll(): boolean;
+  clearShouldCleanAll(): CleanArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CleanArgs.AsObject;
@@ -294,7 +324,12 @@ export class CleanArgs extends jspb.Message {
 
 export namespace CleanArgs {
   export type AsObject = {
-    shouldCleanAll: boolean,
+    shouldCleanAll?: boolean,
+  }
+
+  export enum ShouldCleanAllCase { 
+    _SHOULD_CLEAN_ALL_NOT_SET = 0,
+    SHOULD_CLEAN_ALL = 1,
   }
 }
 
@@ -349,6 +384,8 @@ export class GetServiceLogsArgs extends jspb.Message {
 
   getFollowLogs(): boolean;
   setFollowLogs(value: boolean): GetServiceLogsArgs;
+  hasFollowLogs(): boolean;
+  clearFollowLogs(): GetServiceLogsArgs;
 
   getConjunctiveFiltersList(): Array<LogLineFilter>;
   setConjunctiveFiltersList(value: Array<LogLineFilter>): GetServiceLogsArgs;
@@ -357,9 +394,13 @@ export class GetServiceLogsArgs extends jspb.Message {
 
   getReturnAllLogs(): boolean;
   setReturnAllLogs(value: boolean): GetServiceLogsArgs;
+  hasReturnAllLogs(): boolean;
+  clearReturnAllLogs(): GetServiceLogsArgs;
 
   getNumLogLines(): number;
   setNumLogLines(value: number): GetServiceLogsArgs;
+  hasNumLogLines(): boolean;
+  clearNumLogLines(): GetServiceLogsArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceLogsArgs.AsObject;
@@ -373,10 +414,25 @@ export namespace GetServiceLogsArgs {
   export type AsObject = {
     enclaveIdentifier: string,
     serviceUuidSetMap: Array<[string, boolean]>,
-    followLogs: boolean,
+    followLogs?: boolean,
     conjunctiveFiltersList: Array<LogLineFilter.AsObject>,
-    returnAllLogs: boolean,
-    numLogLines: number,
+    returnAllLogs?: boolean,
+    numLogLines?: number,
+  }
+
+  export enum FollowLogsCase { 
+    _FOLLOW_LOGS_NOT_SET = 0,
+    FOLLOW_LOGS = 3,
+  }
+
+  export enum ReturnAllLogsCase { 
+    _RETURN_ALL_LOGS_NOT_SET = 0,
+    RETURN_ALL_LOGS = 5,
+  }
+
+  export enum NumLogLinesCase { 
+    _NUM_LOG_LINES_NOT_SET = 0,
+    NUM_LOG_LINES = 6,
   }
 }
 

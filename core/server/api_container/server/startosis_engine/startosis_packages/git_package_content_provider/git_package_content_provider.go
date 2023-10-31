@@ -6,6 +6,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
@@ -33,17 +34,17 @@ const (
 	defaultDepth = 1
 	// this gets us the entire history - useful for fetching commits on a repo
 	depthAssumingBranchTagsCommitsAreSpecified = 0
-	howImportWorksLink                         = "https://docs.kurtosis.com/explanations/how-do-kurtosis-imports-work"
-	filePathToKurtosisYamlNotFound             = ""
-	replaceCountPackageDirWithGithubConstant   = 1
 
-	packageDocLink        = "https://docs.kurtosis.com/concepts-reference/packages"
+	filePathToKurtosisYamlNotFound           = ""
+	replaceCountPackageDirWithGithubConstant = 1
+
 	osPathSeparatorString = string(os.PathSeparator)
 
 	onlyOneReplace = 1
 )
 
 type GitPackageContentProvider struct {
+	// Where to temporarily store packages while
 	packagesTmpDir                  string
 	packagesDir                     string
 	packageReplaceOptionsRepository *packageReplaceOptionsRepository
@@ -78,7 +79,7 @@ func (provider *GitPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOn
 	pathToKurtosisYaml := path.Join(packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName)
 	if _, err := os.Stat(pathToKurtosisYaml); err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
-			startosis_constants.KurtosisYamlName, packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName, packageDocLink)
+			startosis_constants.KurtosisYamlName, packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName, user_support_constants.PackageDocLink)
 	}
 
 	kurtosisYaml, interpretationError := validateAndGetKurtosisYaml(pathToKurtosisYaml, provider.packagesDir)
@@ -125,7 +126,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(absoluteFil
 	}
 
 	if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
-		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, absoluteFileLocator, howImportWorksLink)
+		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, absoluteFileLocator, user_support_constants.HowImportWorksLink)
 	}
 
 	if _, interpretationError = validateAndGetKurtosisYaml(maybeKurtosisYamlPath, provider.packagesDir); interpretationError != nil {
@@ -205,28 +206,31 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	return packageAbsolutePathOnDisk, nil
 }
 
-func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
-	parentModuleId string,
-	maybeRelativeLocator string,
+func (provider *GitPackageContentProvider) GetAbsoluteLocator(
+	packageId string,
+	sourceModuleLocator string,
+	relativeOrAbsoluteLocator string,
 	packageReplaceOptions map[string]string,
 ) (string, *startosis_errors.InterpretationError) {
 	var absoluteLocator string
 
-	if isSamePackageLocalAbsoluteLocator(maybeRelativeLocator, parentModuleId) {
-		return "", startosis_errors.NewInterpretationError("The locator '%s' set in attribute is not a 'local relative locator'. Local absolute locators are not allowed you should modified it to be a valid 'local relative locator'", maybeRelativeLocator)
+	if shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage(relativeOrAbsoluteLocator, sourceModuleLocator, packageId) {
+		return "", startosis_errors.NewInterpretationError("Locator '%s' is referencing a file within the same package using absolute import syntax, but only relative import syntax (path starting with '/' or '.') is allowed for within-package imports", relativeOrAbsoluteLocator)
 	}
 
 	// maybe it's not a relative url in which case we return the url
-	_, errorParsingUrl := shared_utils.ParseGitURL(maybeRelativeLocator)
+	_, errorParsingUrl := shared_utils.ParseGitURL(relativeOrAbsoluteLocator)
 	if errorParsingUrl == nil {
-		absoluteLocator = maybeRelativeLocator
+		// Parsing succeeded, meaning this is already an absolute locator and no relative -> absolute translation is needed
+		absoluteLocator = relativeOrAbsoluteLocator
 	} else {
-		parsedParentModuleId, errorParsingPackageId := shared_utils.ParseGitURL(parentModuleId)
+		// Parsing did not succeed, meaning this is a relative locator
+		sourceModuleParsedGitUrl, errorParsingPackageId := shared_utils.ParseGitURL(sourceModuleLocator)
 		if errorParsingPackageId != nil {
-			return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parentModuleId)
+			return "", startosis_errors.NewInterpretationError("Source module locator '%v' isn't a valid locator; relative URLs don't work with standalone scripts", sourceModuleLocator)
 		}
 
-		absoluteLocator = parsedParentModuleId.GetAbsoluteLocatorRelativeToThisURL(maybeRelativeLocator)
+		absoluteLocator = sourceModuleParsedGitUrl.GetAbsoluteLocatorRelativeToThisURL(relativeOrAbsoluteLocator)
 	}
 
 	replacedAbsoluteLocator := replaceAbsoluteLocator(absoluteLocator, packageReplaceOptions)
