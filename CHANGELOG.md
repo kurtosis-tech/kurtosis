@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.85.2](https://github.com/kurtosis-tech/kurtosis/compare/0.85.1...0.85.2) (2023-10-31)
+
+
+### Bug Fixes
+
+* block local absolute locators ([#1659](https://github.com/kurtosis-tech/kurtosis/issues/1659)) ([a4daeb3](https://github.com/kurtosis-tech/kurtosis/commit/a4daeb3437219245d5b04a15f28b6addae1c29b6)), closes [#1637](https://github.com/kurtosis-tech/kurtosis/issues/1637)
+* use full path for running black to allow older versions of docker ([#1666](https://github.com/kurtosis-tech/kurtosis/issues/1666)) ([fdcd3d9](https://github.com/kurtosis-tech/kurtosis/commit/fdcd3d94086365e62bab07cf34a91df2fa5bff73))
+
 ## [0.85.1](https://github.com/kurtosis-tech/kurtosis/compare/0.85.0...0.85.1) (2023-10-31)
 
 
