@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 )
 
 const (
@@ -104,9 +105,13 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 
 	for _, fileOrDirToLint := range fileOrDirToLintArg {
 		logrus.Infof("Linting '%v'", fileOrDirToLint)
-		volumeToMount, pathToLint, err := getVolumeToMountAndPathToLint(fileOrDirToLint)
+		absolutePathForFileOrDirToLint, err := filepath.Abs(fileOrDirToLint)
 		if err != nil {
-			return stacktrace.Propagate(err, "an error occurred while attempting to parse the volume to mount and file to lint for path '%v'", fileOrDirToLint)
+			return stacktrace.Propagate(err, "tried to get absolute path for dir to lint '%v but failed'", fileOrDirToLint)
+		}
+		volumeToMount, pathToLint, err := getVolumeToMountAndPathToLint(absolutePathForFileOrDirToLint)
+		if err != nil {
+			return stacktrace.Propagate(err, "an error occurred while attempting to parse the volume to mount and file to lint for path '%v'", absolutePathForFileOrDirToLint)
 		}
 		commandArgs := append(dockerRunPrefix, volumeToMount+dirVolumeSeparator+lintVolumeName)
 		dockerRunSuffix = append(dockerRunSuffix, pathToLint)
