@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 )
 
 const (
@@ -154,9 +155,14 @@ func getVolumeToMountAndPathToLint(pathOfFileOrDirToLint string) (string, string
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "an error occurred while verifying that '%v' exist", pathOfFileOrDirToLint)
 	}
+	absolutePathForFileOrDirToLint, err := filepath.Abs(pathOfFileOrDirToLint)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "tried to get absolute path for dir to lint '%v but failed'", absolutePathForFileOrDirToLint)
+	}
+
 	if fileInfo.IsDir() {
-		return pathOfFileOrDirToLint, presentWorkingDirectory, nil
+		return absolutePathForFileOrDirToLint, presentWorkingDirectory, nil
 	} else {
-		return path.Dir(pathOfFileOrDirToLint), path.Base(pathOfFileOrDirToLint), nil
+		return path.Dir(absolutePathForFileOrDirToLint), path.Base(absolutePathForFileOrDirToLint), nil
 	}
 }
