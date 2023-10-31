@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.85.1](https://github.com/kurtosis-tech/kurtosis/compare/0.85.0...0.85.1) (2023-10-31)
+
+
+### Features
+
+* initial new enclave manager ([#1603](https://github.com/kurtosis-tech/kurtosis/issues/1603)) ([9944658](https://github.com/kurtosis-tech/kurtosis/commit/9944658f5036d45dde64721e9a958322e17b9d5b))
+* warn users of diff architecture image running ([#1649](https://github.com/kurtosis-tech/kurtosis/issues/1649)) ([77f2f69](https://github.com/kurtosis-tech/kurtosis/commit/77f2f694210e35d98b37b31396596791a2a2d0c7))
+
 ## [0.85.0](https://github.com/kurtosis-tech/kurtosis/compare/0.84.13...0.85.0) (2023-10-30)
 
 
