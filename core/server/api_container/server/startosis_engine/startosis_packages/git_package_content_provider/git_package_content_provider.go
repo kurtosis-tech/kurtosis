@@ -6,6 +6,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
@@ -33,11 +34,10 @@ const (
 	defaultDepth = 1
 	// this gets us the entire history - useful for fetching commits on a repo
 	depthAssumingBranchTagsCommitsAreSpecified = 0
-	howImportWorksLink                         = "https://docs.kurtosis.com/explanations/how-do-kurtosis-imports-work"
-	filePathToKurtosisYamlNotFound             = ""
-	replaceCountPackageDirWithGithubConstant   = 1
 
-	packageDocLink        = "https://docs.kurtosis.com/concepts-reference/packages"
+	filePathToKurtosisYamlNotFound           = ""
+	replaceCountPackageDirWithGithubConstant = 1
+
 	osPathSeparatorString = string(os.PathSeparator)
 
 	onlyOneReplace = 1
@@ -78,7 +78,7 @@ func (provider *GitPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOn
 	pathToKurtosisYaml := path.Join(packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName)
 	if _, err := os.Stat(pathToKurtosisYaml); err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
-			startosis_constants.KurtosisYamlName, packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName, packageDocLink)
+			startosis_constants.KurtosisYamlName, packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName, user_support_constants.PackageDocLink)
 	}
 
 	kurtosisYaml, interpretationError := validateAndGetKurtosisYaml(pathToKurtosisYaml, provider.packagesDir)
@@ -125,7 +125,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(absoluteFil
 	}
 
 	if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
-		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, absoluteFileLocator, howImportWorksLink)
+		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, absoluteFileLocator, user_support_constants.HowImportWorksLink)
 	}
 
 	if _, interpretationError = validateAndGetKurtosisYaml(maybeKurtosisYamlPath, provider.packagesDir); interpretationError != nil {
