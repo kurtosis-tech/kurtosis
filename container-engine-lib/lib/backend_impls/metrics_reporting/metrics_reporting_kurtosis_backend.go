@@ -27,12 +27,12 @@ func NewMetricsReportingKurtosisBackend(underlying backend_interface.KurtosisBac
 	return &MetricsReportingKurtosisBackend{underlying: underlying}
 }
 
-func (backend *MetricsReportingKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, error) {
-	pulledFromRemote, err := backend.underlying.FetchImage(ctx, image, downloadMode)
+func (backend *MetricsReportingKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+	pulledFromRemote, architecture, err := backend.underlying.FetchImage(ctx, image, downloadMode)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred pulling image '%v'", image)
+		return false, "", stacktrace.Propagate(err, "An error occurred pulling image '%v'", image)
 	}
-	return pulledFromRemote, nil
+	return pulledFromRemote, architecture, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
