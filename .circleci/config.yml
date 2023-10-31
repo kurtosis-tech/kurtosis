@@ -1153,7 +1153,7 @@ workflows:
                         "pattern": "https://twitter.com/.*"
                     },
                     {
-                        "pattern": "\.\/enclave-manager\/web\/README\.md"
+                        "pattern": "enclave-manager\/web\/README\.md"
                     }
                 ]
             }
