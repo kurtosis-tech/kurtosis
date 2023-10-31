@@ -77,23 +77,67 @@ func (_c *MockPackageContentProvider_ClonePackage_Call) RunAndReturn(run func(st
 	return _c
 }
 
-// GetAbsoluteLocatorForRelativeLocator provides a mock function with given fields: packageId, relativeOrAbsoluteLocator, packageReplaceOptions
-func (_m *MockPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(packageId string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError) {
-	ret := _m.Called(packageId, relativeOrAbsoluteLocator, packageReplaceOptions)
+// CloneReplacedPackagesIfNeeded provides a mock function with given fields: currentPackageReplaceOptions
+func (_m *MockPackageContentProvider) CloneReplacedPackagesIfNeeded(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
+	ret := _m.Called(currentPackageReplaceOptions)
+
+	var r0 *startosis_errors.InterpretationError
+	if rf, ok := ret.Get(0).(func(map[string]string) *startosis_errors.InterpretationError); ok {
+		r0 = rf(currentPackageReplaceOptions)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*startosis_errors.InterpretationError)
+		}
+	}
+
+	return r0
+}
+
+// MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CloneReplacedPackagesIfNeeded'
+type MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call struct {
+	*mock.Call
+}
+
+// CloneReplacedPackagesIfNeeded is a helper method to define mock.On call
+//   - currentPackageReplaceOptions map[string]string
+func (_e *MockPackageContentProvider_Expecter) CloneReplacedPackagesIfNeeded(currentPackageReplaceOptions interface{}) *MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call {
+	return &MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call{Call: _e.mock.On("CloneReplacedPackagesIfNeeded", currentPackageReplaceOptions)}
+}
+
+func (_c *MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call) Run(run func(currentPackageReplaceOptions map[string]string)) *MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call) Return(_a0 *startosis_errors.InterpretationError) *MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call) RunAndReturn(run func(map[string]string) *startosis_errors.InterpretationError) *MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetAbsoluteLocatorForRelativeLocator provides a mock function with given fields: packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions
+func (_m *MockPackageContentProvider) GetAbsoluteLocator(packageId string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError) {
+	ret := _m.Called(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions)
 
 	var r0 string
 	var r1 *startosis_errors.InterpretationError
-	if rf, ok := ret.Get(0).(func(string, string, map[string]string) (string, *startosis_errors.InterpretationError)); ok {
-		return rf(packageId, relativeOrAbsoluteLocator, packageReplaceOptions)
+	if rf, ok := ret.Get(0).(func(string, string, string, map[string]string) (string, *startosis_errors.InterpretationError)); ok {
+		return rf(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions)
 	}
-	if rf, ok := ret.Get(0).(func(string, string, map[string]string) string); ok {
-		r0 = rf(packageId, relativeOrAbsoluteLocator, packageReplaceOptions)
+	if rf, ok := ret.Get(0).(func(string, string, string, map[string]string) string); ok {
+		r0 = rf(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string, map[string]string) *startosis_errors.InterpretationError); ok {
-		r1 = rf(packageId, relativeOrAbsoluteLocator, packageReplaceOptions)
+	if rf, ok := ret.Get(1).(func(string, string, string, map[string]string) *startosis_errors.InterpretationError); ok {
+		r1 = rf(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*startosis_errors.InterpretationError)
@@ -103,22 +147,24 @@ func (_m *MockPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(packa
 	return r0, r1
 }
 
-// MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAbsoluteLocatorForRelativeLocator'
+// MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAbsoluteLocator'
 type MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call struct {
 	*mock.Call
 }
 
-// GetAbsoluteLocatorForRelativeLocator is a helper method to define mock.On call
+// GetAbsoluteLocator is a helper method to define mock.On call
 //   - packageId string
+//   - locatorOfModuleInWhichThisBuiltInIsBeingCalled string
 //   - relativeOrAbsoluteLocator string
 //   - packageReplaceOptions map[string]string
-func (_e *MockPackageContentProvider_Expecter) GetAbsoluteLocatorForRelativeLocator(packageId interface{}, relativeOrAbsoluteLocator interface{}, packageReplaceOptions interface{}) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
-	return &MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call{Call: _e.mock.On("GetAbsoluteLocatorForRelativeLocator", packageId, relativeOrAbsoluteLocator, packageReplaceOptions)}
+
+func (_e *MockPackageContentProvider_Expecter) GetAbsoluteLocatorForRelativeLocator(packageId interface{}, locatorOfModuleInWhichThisBuiltInIsBeingCalled interface{}, relativeOrAbsoluteLocator interface{}, packageReplaceOptions interface{}) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
+	return &MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call{Call: _e.mock.On("GetAbsoluteLocator", packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions)}
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) Run(run func(packageId string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) Run(run func(packageId string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string), args[2].(map[string]string))
+		run(args[0].(string), args[1].(string), args[2].(string), args[3].(map[string]string))
 	})
 	return _c
 }
@@ -128,7 +174,7 @@ func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) 
 	return _c
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) RunAndReturn(run func(string, string, map[string]string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) RunAndReturn(run func(string, string, string, map[string]string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -347,50 +393,6 @@ func (_c *MockPackageContentProvider_GetOnDiskAbsolutePackagePath_Call) Return(_
 }
 
 func (_c *MockPackageContentProvider_GetOnDiskAbsolutePackagePath_Call) RunAndReturn(run func(string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetOnDiskAbsolutePackagePath_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// RefreshCache provides a mock function with given fields: currentPackageReplaceOptions
-func (_m *MockPackageContentProvider) CloneReplacedPackagesIfNeeded(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
-	ret := _m.Called(currentPackageReplaceOptions)
-
-	var r0 *startosis_errors.InterpretationError
-	if rf, ok := ret.Get(0).(func(map[string]string) *startosis_errors.InterpretationError); ok {
-		r0 = rf(currentPackageReplaceOptions)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*startosis_errors.InterpretationError)
-		}
-	}
-
-	return r0
-}
-
-// MockPackageContentProvider_RefreshCache_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CloneReplacedPackagesIfNeeded'
-type MockPackageContentProvider_RefreshCache_Call struct {
-	*mock.Call
-}
-
-// RefreshCache is a helper method to define mock.On call
-//   - currentPackageReplaceOptions map[string]string
-func (_e *MockPackageContentProvider_Expecter) RefreshCache(currentPackageReplaceOptions interface{}) *MockPackageContentProvider_RefreshCache_Call {
-	return &MockPackageContentProvider_RefreshCache_Call{Call: _e.mock.On("CloneReplacedPackagesIfNeeded", currentPackageReplaceOptions)}
-}
-
-func (_c *MockPackageContentProvider_RefreshCache_Call) Run(run func(currentPackageReplaceOptions map[string]string)) *MockPackageContentProvider_RefreshCache_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]string))
-	})
-	return _c
-}
-
-func (_c *MockPackageContentProvider_RefreshCache_Call) Return(_a0 *startosis_errors.InterpretationError) *MockPackageContentProvider_RefreshCache_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockPackageContentProvider_RefreshCache_Call) RunAndReturn(run func(map[string]string) *startosis_errors.InterpretationError) *MockPackageContentProvider_RefreshCache_Call {
 	_c.Call.Return(run)
 	return _c
 }
