@@ -15,7 +15,7 @@ export const CopyButton = ({ valueToCopy, text, ...buttonProps }: CopyButtonProp
       const v = typeof valueToCopy === "string" ? valueToCopy : valueToCopy();
       navigator.clipboard.writeText(v);
       toast({
-        title: `Copied '${v}' to the clipboard`,
+        title: `Copied url to the clipboard`,
         status: `success`,
       });
     }

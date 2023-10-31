@@ -33,6 +33,7 @@ import { KurtosisArgumentFormControl } from "../configuration/KurtosisArgumentFo
 import { KurtosisPackageArgumentInput } from "../configuration/KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../configuration/types";
 import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
+import {KURTOSIS_PACKAGE_NAME_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG} from "../../constants";
 
 type ConfigureEnclaveModalProps = {
   isOpen: boolean;
@@ -115,7 +116,7 @@ export const ConfigureEnclaveModal = ({
       }
     }
     const searchParams = new URLSearchParams(window.location.search);
-    const preloadArgs = searchParams.get("preloadArgs");
+    const preloadArgs = searchParams.get(KURTOSIS_PACKAGE_PARAMS_URL_ARG);
     if (!isDefined(preloadArgs)) {
       return undefined;
     }
@@ -123,11 +124,14 @@ export const ConfigureEnclaveModal = ({
   }, [window.location.search, existingEnclave]);
 
   // TODO: Improve for cloud config
-  const getLinkToCurrentConfig = () =>
-    `${window.location.href.split("?")[0]}?${new URLSearchParams({
-      preloadPackage: kurtosisPackage.name,
-      preloadArgs: btoa(JSON.stringify(formRef.current?.getValues())),
-    })}`;
+  const getLinkToCurrentConfig = () => {
+      const params = new URLSearchParams({
+          [KURTOSIS_PACKAGE_NAME_URL_ARG]: kurtosisPackage.name,
+          [KURTOSIS_PACKAGE_PARAMS_URL_ARG]: btoa(JSON.stringify(formRef.current?.getValues())),
+      });
+
+      return `${window.location.href.split("?")[0]}?${params}`
+  };
 
   const handleClose = () => {
     // TODO: verify how this effects cloud
