@@ -353,7 +353,7 @@ func TestGetAbsoluteLocator_RelativeLocatorShouldNotBeBlocked(t *testing.T) {
 func TestGetAbsoluteLocator_AbsoluteLocatorIsInRootPackageButSourceIsNotShouldNotBeBlocked(t *testing.T) {
 	provider := NewGitPackageContentProvider("", "", nil)
 
-	packageId := "github.com/root-package"
+	packageId := "github.com/main-package"
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled := "github.com/child-package/main.star"
 	maybeRelativeLocator := "github.com/main-package/file.star"
 
