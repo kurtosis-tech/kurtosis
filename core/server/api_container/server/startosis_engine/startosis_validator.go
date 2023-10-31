@@ -3,6 +3,7 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -26,7 +27,11 @@ const (
 	containerDownloadedImagesMsgFromLocal  = "locally cached"
 	containerDownloadedImagesMsgFromRemote = "remotely downloaded"
 	containerDownloadedImagesMsgLineFormat = "> %s - %s"
-	linebreak                              = "\n"
+
+	containerImageArchWarningHeaderFormat   = "Container images with different architecture than expected(%s):"
+	containerImageArchitectureMsgLineFormat = "> %s - %s"
+
+	linebreak = "\n"
 )
 
 type StartosisValidator struct {
@@ -208,11 +213,19 @@ func sendContainerImageSummaryInfoMsg(
 	}
 
 	imageLines := []string{}
+	imagesWithIncorrectArchLines := []string{}
 
 	for image, validatedImage := range imageSuccessfullyValidated {
 		pulledFromStr := containerDownloadedImagesMsgFromLocal
 		if validatedImage.GetPulledFromRemote() {
 			pulledFromStr = containerDownloadedImagesMsgFromRemote
+		}
+
+		architecture := validatedImage.GetArchitecture()
+
+		if architecture != runtime.GOARCH {
+			imageWithIncorrectArchLine := fmt.Sprintf(containerImageArchitectureMsgLineFormat, image, architecture)
+			imagesWithIncorrectArchLines = append(imagesWithIncorrectArchLines, imageWithIncorrectArchLine)
 		}
 
 		imageLine := fmt.Sprintf(containerDownloadedImagesMsgLineFormat, image, pulledFromStr)
@@ -225,6 +238,14 @@ func sendContainerImageSummaryInfoMsg(
 	msg := strings.Join(msgLines, linebreak)
 
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg(msg)
+
+	if len(imagesWithIncorrectArchLines) > 0 {
+		imageWarningHeader := fmt.Sprintf(containerImageArchWarningHeaderFormat, runtime.GOARCH)
+		imagesWithArchMsgLines := []string{imageWarningHeader}
+		imagesWithArchMsgLines = append(imagesWithArchMsgLines, imagesWithIncorrectArchLines...)
+		imagesWithDiffArchWarningMessage := strings.Join(imagesWithArchMsgLines, linebreak)
+		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromWarning(imagesWithDiffArchWarningMessage)
+	}
 }
 
 func updateProgressWithDownloadInfo(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, imageCurrentlyInProgress []string, numberOfImageValidated uint32, totalNumberOfImagesToValidate uint32) {

@@ -80,7 +80,7 @@ func NewDockerKurtosisBackend(
 	}
 }
 
-func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, error) {
+func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	return backend.dockerManager.FetchImage(ctx, image, downloadMode)
 }
 
