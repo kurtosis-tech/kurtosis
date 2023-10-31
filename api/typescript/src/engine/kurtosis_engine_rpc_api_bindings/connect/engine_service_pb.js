@@ -88,10 +88,10 @@ export const GetEngineInfoResponse = proto3.makeMessageType(
 export const CreateEnclaveArgs = proto3.makeMessageType(
   "engine_api.CreateEnclaveArgs",
   () => [
-    { no: 1, name: "enclave_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "api_container_version_tag", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "api_container_log_level", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "mode", kind: "enum", T: proto3.getEnumType(EnclaveMode) },
+    { no: 1, name: "enclave_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 2, name: "api_container_version_tag", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 3, name: "api_container_log_level", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 4, name: "mode", kind: "enum", T: proto3.getEnumType(EnclaveMode), opt: true },
   ],
 );
 
@@ -223,7 +223,7 @@ export const DestroyEnclaveArgs = proto3.makeMessageType(
 export const CleanArgs = proto3.makeMessageType(
   "engine_api.CleanArgs",
   () => [
-    { no: 1, name: "should_clean_all", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 1, name: "should_clean_all", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 
@@ -260,10 +260,10 @@ export const GetServiceLogsArgs = proto3.makeMessageType(
   () => [
     { no: 1, name: "enclave_identifier", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "service_uuid_set", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 8 /* ScalarType.BOOL */} },
-    { no: 3, name: "follow_logs", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 3, name: "follow_logs", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
     { no: 4, name: "conjunctive_filters", kind: "message", T: LogLineFilter, repeated: true },
-    { no: 5, name: "return_all_logs", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 6, name: "num_log_lines", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 5, name: "return_all_logs", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 6, name: "num_log_lines", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
   ],
 );
 

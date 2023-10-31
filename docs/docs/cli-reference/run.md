@@ -126,6 +126,8 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 
 1. The `--no-connect` flag can be used to disable user services port forwarding (default behavior is to forward the ports)
 
+1. The `--image-download` flag can be used to configure the download behavior for a given run. When set to `missing`, Kurtosis will only download the latest image tag if the image does not already exist locally (irrespective of the tag of the locally cached image). When set to `always`, Kurtosis will always check and download the latest image tag, even if the image exists locally.
+
 1. The `--experimental` flag can be used to enable experimental or incubating features. Please reach out to Kurtosis team if you wish to try any of those.
 
 

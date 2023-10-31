@@ -12,8 +12,6 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"io"
 	"math"
 	"net/http"
@@ -23,12 +21,16 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -64,12 +66,13 @@ const (
 	unlimitedLineCount          = math.MaxInt
 	allFilePermissionsForOwner  = 0700
 
-	defaultCloudUserId     = ""
-	defaultCloudInstanceId = ""
-	isScript               = true
-	isNotScript            = false
-	isNotRemote            = false
-	defaultParallelism     = 4
+	defaultCloudUserId       = ""
+	defaultCloudInstanceId   = ""
+	defaultImageDownloadMode = kurtosis_core_rpc_api_bindings.ImageDownloadMode_missing
+	isScript                 = true
+	isNotScript              = false
+	isNotRemote              = false
+	defaultParallelism       = 4
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -137,6 +140,9 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	experimentalFeatures := args.GetExperimentalFeatures()
 	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
 	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
+	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
+
+	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 
 	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, cloudInstanceID, cloudUserId)
 	if metricsErr != nil {
@@ -144,7 +150,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	}
 	noPackageReplaceOptions := map[string]string{}
 
-	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, noPackageReplaceOptions, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
+	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, noPackageReplaceOptions, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, downloadMode, args.GetExperimentalFeatures(), stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 		PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
@@ -236,6 +242,9 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	mainFuncName := args.GetMainFunctionName()
 	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
 	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
+	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
+
+	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 
 	if relativePathToMainFile == "" {
 		relativePathToMainFile = startosis_constants.MainFileName
@@ -270,7 +279,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
-	apicService.runStarlark(parallelism, dryRun, packageName, packageReplaceOptions, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
+	apicService.runStarlark(parallelism, dryRun, packageName, packageReplaceOptions, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, downloadMode, args.ExperimentalFeatures, stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 		PackageId:              packageId,
@@ -314,23 +323,23 @@ func (apicService *ApiContainerService) ExecCommand(ctx context.Context, args *k
 
 func (apicService *ApiContainerService) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 
-	serviceIdentifier := args.ServiceIdentifier
+	serviceIdentifier := args.GetServiceIdentifier()
 
 	if err := apicService.waitForEndpointAvailability(
 		ctx,
 		serviceIdentifier,
 		http.MethodGet,
-		args.Port,
-		args.Path,
-		args.InitialDelayMilliseconds,
-		args.Retries,
-		args.RetriesDelayMilliseconds,
+		args.GetPort(),
+		args.GetPath(),
+		args.GetInitialDelayMilliseconds(),
+		args.GetRetries(),
+		args.GetRetriesDelayMilliseconds(),
 		"",
-		args.BodyText); err != nil {
+		args.GetBodyText()); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred waiting for HTTP endpoint '%v' to become available",
-			args.Path,
+			args.GetPath(),
 		)
 	}
 
@@ -338,23 +347,23 @@ func (apicService *ApiContainerService) WaitForHttpGetEndpointAvailability(ctx c
 }
 
 func (apicService *ApiContainerService) WaitForHttpPostEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
-	serviceIdentifier := args.ServiceIdentifier
+	serviceIdentifier := args.GetServiceIdentifier()
 
 	if err := apicService.waitForEndpointAvailability(
 		ctx,
 		serviceIdentifier,
 		http.MethodPost,
-		args.Port,
-		args.Path,
-		args.InitialDelayMilliseconds,
-		args.Retries,
-		args.RetriesDelayMilliseconds,
-		args.RequestBody,
-		args.BodyText); err != nil {
+		args.GetPort(),
+		args.GetPath(),
+		args.GetInitialDelayMilliseconds(),
+		args.GetRetries(),
+		args.GetRetriesDelayMilliseconds(),
+		args.GetRequestBody(),
+		args.GetBodyText()); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred waiting for HTTP endpoint '%v' to become available",
-			args.Path,
+			args.GetPath(),
 		)
 	}
 
@@ -777,10 +786,11 @@ func (apicService *ApiContainerService) runStarlark(
 	relativePathToMainFile string,
 	serializedStarlark string,
 	serializedParams string,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():
@@ -950,5 +960,16 @@ func convertContainerStatusToServiceInfoContainerStatus(containerStatus containe
 		return kurtosis_core_rpc_api_bindings.Container_STOPPED, nil
 	default:
 		return kurtosis_core_rpc_api_bindings.Container_UNKNOWN, stacktrace.NewError("Failed to convert container status %v", containerStatus)
+	}
+}
+
+func convertFromImageDownloadModeAPI(api_mode kurtosis_core_rpc_api_bindings.ImageDownloadMode) image_download_mode.ImageDownloadMode {
+	switch api_mode {
+	case kurtosis_core_rpc_api_bindings.ImageDownloadMode_always:
+		return image_download_mode.ImageDownloadMode_Always
+	case kurtosis_core_rpc_api_bindings.ImageDownloadMode_missing:
+		return image_download_mode.ImageDownloadMode_Missing
+	default:
+		panic(stacktrace.NewError("Failed to convert image download mode %v", api_mode))
 	}
 }

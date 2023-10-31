@@ -1,0 +1,5 @@
+name: github.com/kurtosis-tech/parent-package
+replace:
+  # Replacing the package with the 'local version' of the package
+  github.com/kurtosis-tech/child-package: ../child-package
+  
