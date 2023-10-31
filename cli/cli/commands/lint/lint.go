@@ -105,13 +105,9 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 
 	for _, fileOrDirToLint := range fileOrDirToLintArg {
 		logrus.Infof("Linting '%v'", fileOrDirToLint)
-		absolutePathForFileOrDirToLint, err := filepath.Abs(fileOrDirToLint)
+		volumeToMount, pathToLint, err := getVolumeToMountAndPathToLint(fileOrDirToLint)
 		if err != nil {
-			return stacktrace.Propagate(err, "tried to get absolute path for dir to lint '%v but failed'", fileOrDirToLint)
-		}
-		volumeToMount, pathToLint, err := getVolumeToMountAndPathToLint(absolutePathForFileOrDirToLint)
-		if err != nil {
-			return stacktrace.Propagate(err, "an error occurred while attempting to parse the volume to mount and file to lint for path '%v'", absolutePathForFileOrDirToLint)
+			return stacktrace.Propagate(err, "an error occurred while attempting to parse the volume to mount and file to lint for path '%v'", fileOrDirToLint)
 		}
 		commandArgs := append(dockerRunPrefix, volumeToMount+dirVolumeSeparator+lintVolumeName)
 		dockerRunSuffix = append(dockerRunSuffix, pathToLint)
@@ -159,9 +155,14 @@ func getVolumeToMountAndPathToLint(pathOfFileOrDirToLint string) (string, string
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "an error occurred while verifying that '%v' exist", pathOfFileOrDirToLint)
 	}
+	absolutePathForFileOrDirToLint, err := filepath.Abs(pathOfFileOrDirToLint)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "tried to get absolute path for dir to lint '%v but failed'", absolutePathForFileOrDirToLint)
+	}
+
 	if fileInfo.IsDir() {
-		return pathOfFileOrDirToLint, presentWorkingDirectory, nil
+		return absolutePathForFileOrDirToLint, presentWorkingDirectory, nil
 	} else {
-		return path.Dir(pathOfFileOrDirToLint), path.Base(pathOfFileOrDirToLint), nil
+		return path.Dir(absolutePathForFileOrDirToLint), path.Base(absolutePathForFileOrDirToLint), nil
 	}
 }
