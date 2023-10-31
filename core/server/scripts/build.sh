@@ -13,7 +13,7 @@ source "${script_dirpath}/_constants.env"
 BUILD_DIRNAME="build"
 
 DEFAULT_SKIP_DOCKER_IMAGE_BUILDING=false
-DEFAULT_ARCHITECTURE_TO_BUILD=amd64
+DEFAULT_ARCHITECTURE_TO_BUILD="$(arch)"
 
 MAIN_DIRNAME="api_container"
 MAIN_GO_FILEPATH="${server_root_dirpath}/${MAIN_DIRNAME}/main.go"
