@@ -15,16 +15,12 @@ BUILD_DIRNAME="build"
 
 DEFAULT_SKIP_DOCKER_IMAGE_BUILDING=false
 
-# Set the default architecture to unknown
 DEFAULT_ARCHITECTURE_TO_BUILD="unknown"
 
-# Check if the architecture is amd64 or x86_64
 if [ "$uname_arch" == "x86_64" ] || [ "$uname_arch" == "amd64" ]; then
     DEFAULT_ARCHITECTURE_TO_BUILD="amd64"
-# Check if the architecture is arm64
 elif [ "$uname_arch" == "aarch64" ] || [ "$uname_arch" == "arm64" ]; then
     DEFAULT_ARCHITECTURE_TO_BUILD="arm64"
-# Add more conditions for other architectures if needed
 fi
 
 MAIN_DIRNAME="engine"

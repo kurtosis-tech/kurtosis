@@ -36,7 +36,6 @@ if [ -z "${image_tags}" ]; then
     show_helptext_and_exit
 fi
 
-# Get the system architecture using uname
 uname_arch=$(uname -m)
 
 architecture="amd64"
