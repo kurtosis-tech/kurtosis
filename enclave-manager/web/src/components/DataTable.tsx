@@ -5,6 +5,7 @@ import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
+  RowData,
   SortingState,
   TableState,
   useReactTable,
@@ -13,6 +14,13 @@ import { type RowSelectionState } from "@tanstack/table-core/src/features/RowSel
 import { type OnChangeFn } from "@tanstack/table-core/src/types";
 import { useState } from "react";
 import { assertDefined, isDefined } from "../utils";
+
+declare module "@tanstack/table-core" {
+  interface ColumnMeta<TData extends RowData, TValue> {
+    isNumeric?: boolean;
+    centerAligned?: boolean;
+  }
+}
 
 export type DataTableProps<Data extends object> = {
   data: Data[];
@@ -62,20 +70,24 @@ export function DataTable<Data extends object>({
         {table.getHeaderGroups().map((headerGroup) => (
           <Tr key={headerGroup.id}>
             {headerGroup.headers.map((header) => {
-              // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
-              const meta: any = header.column.columnDef.meta;
+              const meta = header.column.columnDef.meta;
               return (
-                <Th key={header.id} onClick={header.column.getToggleSortingHandler()} isNumeric={meta?.isNumeric}>
+                <Th
+                  key={header.id}
+                  onClick={header.column.getToggleSortingHandler()}
+                  isNumeric={meta?.isNumeric}
+                  textAlign={!!meta?.centerAligned ? "center" : undefined}
+                >
                   {flexRender(header.column.columnDef.header, header.getContext())}
-                  <chakra.span pl="4">
-                    {header.column.getIsSorted() ? (
-                      header.column.getIsSorted() === "desc" ? (
+                  {header.column.getIsSorted() && (
+                    <chakra.span pl="4">
+                      {header.column.getIsSorted() === "desc" ? (
                         <TriangleDownIcon aria-label="sorted descending" />
                       ) : (
                         <TriangleUpIcon aria-label="sorted ascending" />
-                      )
-                    ) : null}
-                  </chakra.span>
+                      )}
+                    </chakra.span>
+                  )}
                 </Th>
               );
             })}
@@ -86,10 +98,9 @@ export function DataTable<Data extends object>({
         {table.getRowModel().rows.map((row) => (
           <Tr key={row.id} bg={row.getIsSelected() ? "kurtosisSelected.100" : ""}>
             {row.getVisibleCells().map((cell) => {
-              // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
-              const meta: any = cell.column.columnDef.meta;
+              const meta = cell.column.columnDef.meta;
               return (
-                <Td key={cell.id} isNumeric={meta?.isNumeric}>
+                <Td key={cell.id} isNumeric={meta?.isNumeric} textAlign={!!meta?.centerAligned ? "center" : undefined}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </Td>
               );
