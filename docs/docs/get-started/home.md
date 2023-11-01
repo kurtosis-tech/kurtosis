@@ -20,7 +20,7 @@ kurtosis run github.com/kurtosis-tech/basic-service-package
 
 <details><summary>Example A Output</summary>
 
-
+![basic-service-default-output.png](/img/home/basic-service-default-output.png)
  
 </details>
 
