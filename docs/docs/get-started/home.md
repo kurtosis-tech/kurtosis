@@ -67,7 +67,8 @@ kurtosis run github.com/galenmarchetti/kurtosis-tech \
 
 <details><summary><b>Result</b></summary>
 
-Note: Experience on remote k8s is the same as local docker.
+**Note:** The experience on remote k8s is the same as local docker.
+
 *CLI Output*
 
 ![basic-service-modified-cli-output.png](/img/home/basic-service-modified-cli-output.png)
