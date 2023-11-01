@@ -51,3 +51,29 @@ kurtosis run github.com/galenmarchetti/kurtosis-tech \
 ![service-c-partying.png](/img/home/service-c-partying.png)
  
 </details>
+
+### Deploy remotely on Kubernetes instead of locally
+
+```bash
+kurtosis cluster set remote-kubernetes; kurtosis gateway > /dev/null 2>&1 &
+```
+```bash
+kurtosis run github.com/galenmarchetti/kurtosis-tech \
+  '{"service_a_count": 2, 
+    "service_b_count": 2, 
+    "service_c_count": 1,
+    "party_mode": true}'
+```
+
+<details><summary><b>Result</b></summary>
+
+Note: Experience on remote k8s is the same as local docker.
+*CLI Output*
+
+![basic-service-modified-cli-output.png](/img/home/basic-service-modified-cli-output.png)
+
+*Example Service C UI, mapped locally*
+
+![service-c-partying.png](/img/home/service-c-partying.png)
+ 
+</details>
