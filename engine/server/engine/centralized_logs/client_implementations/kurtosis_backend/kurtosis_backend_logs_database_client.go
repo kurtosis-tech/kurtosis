@@ -14,6 +14,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -192,7 +193,8 @@ func streamServiceLogLines(
 				return
 			}
 
-			logLine := logline.NewLogLine(logLineStr)
+			// TODO: Parse out the timestamp from docker container logs string instead of time.Now
+			logLine := logline.NewLogLine(logLineStr, time.Now())
 
 			//filtering it
 			shouldReturnLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
