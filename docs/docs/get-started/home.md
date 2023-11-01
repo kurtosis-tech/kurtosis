@@ -14,17 +14,17 @@ hide_table_of_contents: true
 
 ### Simple 1-line local deploy
 
-```
+```bash
 kurtosis run github.com/kurtosis-tech/basic-service-package
 ```
 
-<details><summary>**Result**</summary>
+<details><summary><b>Result</b></summary>
 
 *CLI Output*
 
 ![basic-service-default-output.png](/img/home/basic-service-default-output.png)
 
-*Service C UI, mapped locally*
+*Example Service C UI, mapped locally*
 
 ![service-c-default.png](/img/home/service-c-default.png)
  
@@ -32,7 +32,7 @@ kurtosis run github.com/kurtosis-tech/basic-service-package
 
 ### 1-line deploy with feature flag and different numbers of each service
 
-```
+```bash
 kurtosis run github.com/galenmarchetti/kurtosis-tech \
   '{"service_a_count": 2, 
     "service_b_count": 2, 
@@ -40,13 +40,13 @@ kurtosis run github.com/galenmarchetti/kurtosis-tech \
     "party_mode": true}'
 ```
 
-<details><summary>**Result**</summary>
+<details><summary><b>Result</b></summary>
 
 *CLI Output*
 
 ![basic-service-modified-cli-output.png](/img/home/basic-service-modified-cli-output.png)
 
-*Service C UI, mapped locally*
+*Example Service C UI, mapped locally*
 
 ![service-c-partying.png](/img/home/service-c-partying.png)
  
