@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"io"
 	"net/http"
 	"net/url"
@@ -31,7 +32,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
@@ -200,7 +200,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 		{
 			Key:     imageDownloadFlagKey,
-			Usage:   "If unset, it defaults to `missing` for fetching the latest image only if not available in local cache. Use `always` to always fetch the latest image.",
+			Usage:   "If unset, it defaults to `missing` which will only download the latest image tag if the image does not already exist locally (irrespective of the tag of the locally cached image). Use `always` to have Kurtosis always check and download the latest image tag, even if the image exists locally.",
 			Type:    flags.FlagType_String,
 			Default: defaultImageDownload,
 		},

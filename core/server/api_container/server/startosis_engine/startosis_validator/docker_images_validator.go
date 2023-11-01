@@ -54,16 +54,17 @@ func (validator *DockerImagesValidator) Validate(ctx context.Context, environmen
 func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, imageCurrentlyDownloading chan bool, backend *backend_interface.KurtosisBackend, imageName string, imageDownloadMode image_download_mode.ImageDownloadMode, pullErrors chan<- error, imageDownloadStarted chan<- string, imageDownloadFinished chan<- *ValidatedImage) {
 	logrus.Debugf("Requesting the download of image: '%s'", imageName)
 	var imagePulledFromRemote bool
+	var imageArch string
 	defer wg.Done()
 	imageCurrentlyDownloading <- true
 	imageDownloadStarted <- imageName
 	defer func() {
 		<-imageCurrentlyDownloading
-		imageDownloadFinished <- NewValidatedImage(imageName, imagePulledFromRemote)
+		imageDownloadFinished <- NewValidatedImage(imageName, imagePulledFromRemote, imageArch)
 	}()
 
 	logrus.Debugf("Starting the download of image: '%s'", imageName)
-	imagePulledFromRemote, err := (*backend).FetchImage(ctx, imageName, imageDownloadMode)
+	imagePulledFromRemote, imageArch, err := (*backend).FetchImage(ctx, imageName, imageDownloadMode)
 	if err != nil {
 		logrus.Warnf("Container image '%s' download failed. Error was: '%s'", imageName, err.Error())
 		pullErrors <- startosis_errors.WrapWithValidationError(err, "Failed fetching the required image '%v'.", imageName)

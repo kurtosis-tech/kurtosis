@@ -104,7 +104,7 @@ func ParseGitURL(packageURL string) (*ParsedGitURL, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error parsing the URL with scheme for module '%v'", packageURLPrefixedWithHttps)
 	}
-	if parsedURL.Host != GithubDomainPrefix {
+	if strings.ToLower(parsedURL.Host) != GithubDomainPrefix {
 		return nil, stacktrace.NewError("Error parsing the URL of module. We only support modules on Github for now but got '%v'", packageURL)
 	}
 

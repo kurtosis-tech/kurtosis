@@ -1,4 +1,4 @@
-package startotis_idempotent_run_test
+package startosis_persistent_directory_test
 
 import (
 	"context"

@@ -18,8 +18,12 @@ func isLocalLocator(locator string) bool {
 	return false
 }
 
-func isSamePackageLocalAbsoluteLocator(locator string, parentPackageId string) bool {
-	return strings.HasPrefix(locator, parentPackageId)
+func shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage(relativeOrAbsoluteLocator string, sourceModuleLocator string, rootPackageId string) bool {
+
+	isSourceModuleInRootPackage := strings.HasPrefix(sourceModuleLocator, rootPackageId)
+	isAbsoluteLocatorInRootPackage := strings.HasPrefix(relativeOrAbsoluteLocator, rootPackageId)
+
+	return isSourceModuleInRootPackage && isAbsoluteLocatorInRootPackage
 }
 
 func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[string]string) string {
