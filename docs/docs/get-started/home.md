@@ -12,19 +12,25 @@ hide_table_of_contents: true
 - Learn about basic Kurtosis concepts.
 - See our most popular use cases and explore real-world examples.
 
-### Quick Example A: Simple 1-line local deploy
+### Simple 1-line local deploy
 
 ```
 kurtosis run github.com/kurtosis-tech/basic-service-package
 ```
 
-<details><summary>Example A Output</summary>
+<details><summary>**Result**</summary>
+
+*CLI Output*
 
 ![basic-service-default-output.png](/img/home/basic-service-default-output.png)
+
+*Service C UI, mapped locally*
+
+![service-c-default.png](/img/home/service-c-default.png)
  
 </details>
 
-### Quick Example B: 1-line deploy with feature flag and different numbers of each service
+### 1-line deploy with feature flag and different numbers of each service
 
 ```
 kurtosis run github.com/galenmarchetti/kurtosis-tech \
@@ -33,3 +39,15 @@ kurtosis run github.com/galenmarchetti/kurtosis-tech \
     "service_c_count": 1,
     "party_mode": true}'
 ```
+
+<details><summary>**Result**</summary>
+
+*CLI Output*
+
+![basic-service-modified-cli-output.png](/img/home/basic-service-modified-cli-output.png)
+
+*Service C UI, mapped locally*
+
+![service-c-partying.png](/img/home/service-c-partying.png)
+ 
+</details>

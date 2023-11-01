@@ -163,6 +163,7 @@ const config = {
 			prism: {
 				theme: lightCodeTheme,
 				darkTheme: darkCodeTheme,
+				additionalLanguages: ['bash'],
 			},
 			algolia: {
 				appId: 'NTSX40VZB8',
