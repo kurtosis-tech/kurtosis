@@ -12,7 +12,7 @@ hide_table_of_contents: true
 - Learn about basic Kurtosis concepts.
 - See our most popular use cases and explore real-world examples.
 
-### Simple 1-line local deploy
+### Local deploy from Github locator
 
 ```bash
 kurtosis run github.com/kurtosis-tech/basic-service-package
@@ -30,7 +30,7 @@ kurtosis run github.com/kurtosis-tech/basic-service-package
  
 </details>
 
-### 1-line deploy with feature flag and different numbers of each service
+### Local deploy with feature flag and different numbers of each service
 
 ```bash
 kurtosis run github.com/galenmarchetti/kurtosis-tech \
@@ -67,7 +67,7 @@ kurtosis run github.com/galenmarchetti/kurtosis-tech \
 
 <details><summary><b>Result</b></summary>
 
-**Note:** The experience on remote k8s is the same as local docker.
+**Note:** The experience on remote k8s is the same as local Docker.
 
 *CLI Output*
 
