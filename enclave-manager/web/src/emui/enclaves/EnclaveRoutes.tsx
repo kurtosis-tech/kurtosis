@@ -2,7 +2,7 @@ import { Params, RouteObject } from "react-router-dom";
 import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
 import { enclavesAction } from "./action";
 import { Enclave, enclaveLoader, enclaveTabLoader } from "./enclave";
-import { enclaveAction } from "./enclave/action";
+import { runStarlarkAction } from "./enclave/action";
 import { EnclaveLoaderDeferred } from "./enclave/loader";
 import { EnclaveList } from "./EnclaveList";
 import { enclavesLoader } from "./loader";
@@ -14,10 +14,14 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
     loader: enclavesLoader(kurtosisClient),
     action: enclavesAction(kurtosisClient),
     id: "enclaves",
+    element: <EnclaveList />,
+  },
+  {
+    path: "/enclave",
+    handle: { crumb: () => ({ name: "Enclaves", destination: "/" }) },
     children: [
-      { path: "", element: <EnclaveList /> },
       {
-        path: "enclave/:enclaveUUID",
+        path: "/enclave/:enclaveUUID",
         loader: enclaveLoader(kurtosisClient),
         id: "enclave",
         handle: {
@@ -39,7 +43,7 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
           {
             path: ":activeTab?",
             loader: enclaveTabLoader,
-            action: enclaveAction(kurtosisClient),
+            action: runStarlarkAction(kurtosisClient),
             element: <Enclave />,
             handle: {
               crumb: (data: Awaited<ReturnType<typeof enclaveTabLoader>>, params: Params<string>) => ({

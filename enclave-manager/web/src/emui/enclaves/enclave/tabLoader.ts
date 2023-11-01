@@ -8,6 +8,8 @@ export const enclaveTabLoader = async ({ params }: LoaderFunctionArgs): Promise<
       return { routeName: "Overview" };
     case "source":
       return { routeName: "Source" };
+    case "logs":
+      return { routeName: "Logs" };
     default:
       return { routeName: "Overview" };
   }

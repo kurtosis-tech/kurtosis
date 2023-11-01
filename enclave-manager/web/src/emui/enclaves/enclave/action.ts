@@ -5,7 +5,7 @@ import { KurtosisClient } from "../../../client/enclaveManager/KurtosisClient";
 import { ConfigureEnclaveForm } from "../../../components/enclaves/configuration/types";
 import { RemoveFunctions } from "../../../utils/types";
 
-const handleEnclaveAction = async (
+const handleRunStarlarkAction = async (
   kurtosisClient: KurtosisClient,
   { params, request }: ActionFunctionArgs,
 ): Promise<{ logs: AsyncIterable<StarlarkRunResponseLine> }> => {
@@ -19,10 +19,10 @@ const handleEnclaveAction = async (
   return { logs };
 };
 
-export const enclaveAction =
+export const runStarlarkAction =
   (kurtosisClient: KurtosisClient): ActionFunction =>
   async (args) => {
-    return handleEnclaveAction(kurtosisClient, args);
+    return handleRunStarlarkAction(kurtosisClient, args);
   };
 
-export type EnclaveActionResolvedType = Awaited<ReturnType<typeof handleEnclaveAction>>;
+export type RunStarlarkResolvedType = Awaited<ReturnType<typeof handleRunStarlarkAction>>;

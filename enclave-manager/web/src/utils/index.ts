@@ -14,6 +14,22 @@ export function assertDefined<T>(v: T | null | undefined, message: string = "Val
   }
 }
 
+export function isIterable<T>(input: Iterable<T> | any): input is Iterable<T> {
+  if (!isDefined(input)) {
+    return false;
+  }
+
+  return typeof input[Symbol.iterator] === "function";
+}
+
+export function isAsyncIterable<T>(input: Iterable<T> | any): input is AsyncIterable<T> {
+  if (!isDefined(input)) {
+    return false;
+  }
+
+  return typeof input[Symbol.asyncIterator] === "function";
+}
+
 export function range(until: number): number[];
 export function range(from: number, to: number): [];
 export function range(from: number, to: number, step: number): number[];

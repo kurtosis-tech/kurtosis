@@ -1,15 +1,15 @@
 import { Flex, Grid, GridItem } from "@chakra-ui/react";
 import { DateTime } from "luxon";
-import { EnclaveFullInfo } from "../../emui/enclaves/types";
-import { isDefined } from "../../utils";
-import { FormatDateTime } from "../FormatDateTime";
-import { KurtosisAlert } from "../KurtosisAlert";
-import { FLEX_STANDARD_GAP } from "../theme/constants";
-import { TitledCard } from "../TitledCard";
-import { ValueCard } from "../ValueCard";
-import { FilesTable } from "./tables/FilesTable";
-import { ServicesTable } from "./tables/ServicesTable";
-import { EnclaveStatus } from "./widgets/EnclaveStatus";
+import { FilesTable } from "../../../../components/enclaves/tables/FilesTable";
+import { ServicesTable } from "../../../../components/enclaves/tables/ServicesTable";
+import { EnclaveStatus } from "../../../../components/enclaves/widgets/EnclaveStatus";
+import { FormatDateTime } from "../../../../components/FormatDateTime";
+import { KurtosisAlert } from "../../../../components/KurtosisAlert";
+import { FLEX_STANDARD_GAP } from "../../../../components/theme/constants";
+import { TitledCard } from "../../../../components/TitledCard";
+import { ValueCard } from "../../../../components/ValueCard";
+import { isDefined } from "../../../../utils";
+import { EnclaveFullInfo } from "../../types";
 
 type EnclaveOverviewProps = {
   enclave: EnclaveFullInfo;
