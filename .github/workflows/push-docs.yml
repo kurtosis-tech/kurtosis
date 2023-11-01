@@ -70,7 +70,10 @@ jobs:
   reindex-website-main:
     runs-on: ubuntu-latest
     name: Update website search index via Algolia Crawler
-    if: github.ref == 'refs/heads/main'
+    if: ${{
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+      }}
     steps:
       - uses: fjogeleit/http-request-action@v1
         with:
@@ -83,7 +86,10 @@ jobs:
   check-index:
     runs-on: ubuntu-latest
     name: Checks that the latest index is still working
-    if: github.ref == 'refs/heads/main'
+    if: ${{
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+      }}
     steps:
       - uses: fjogeleit/http-request-action@v1
         id: search
