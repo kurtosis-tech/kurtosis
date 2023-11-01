@@ -26,15 +26,16 @@ const (
 	testUserService2Uuid = "test-user-service-2"
 	testUserService3Uuid = "test-user-service-3"
 
-	logLine1  = "{\"log\":\"Starting feature 'centralized logs'\"}"
-	logLine2  = "{\"log\":\"Starting feature 'runs idempotently'\"}"
-	logLine3a = "{\"log\":\"Starting feature 'apic "
-	logLine3b = "idempotently'\"}"
-	logLine4  = "{\"log\":\"Starting feature 'files storage'\"}"
-	logLine5  = "{\"log\":\"Starting feature 'files manager'\"}"
-	logLine6  = "{\"log\":\"The enclave was created\"}"
-	logLine7  = "{\"log\":\"User service started\"}"
-	logLine8  = "{\"log\":\"The data have being loaded\"}"
+	defaultUTCTimestampStr = "2023-09-06T00:35:15-04:00"
+	logLine1               = "{\"log\":\"Starting feature 'centralized logs'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine2               = "{\"log\":\"Starting feature 'runs idempotently'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine3a              = "{\"log\":\"Starting feature 'apic "
+	logLine3b              = "idempotently'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine4               = "{\"log\":\"Starting feature 'files storage'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine5               = "{\"log\":\"Starting feature 'files manager'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine6               = "{\"log\":\"The enclave was created\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine7               = "{\"log\":\"User service started\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine8               = "{\"log\":\"The data have being loaded\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
 
 	firstFilterText          = "feature"
 	secondFilterText         = "Files"
@@ -551,7 +552,6 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 	}
 }
 
-// add timestamp tests
 func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 	expectedAmountLogLines := 3
 
@@ -565,7 +565,11 @@ func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 		testUserService1Uuid: true,
 	}
 
-	timestampedLogLines := []string{logLine5, logLine6, logLine7} // TODO: adjust loglines
+	timedLogLine1 := fmt.Sprintf("{\"log\":\"Starting feature 'centralized logs'\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+	timedLogLine2 := fmt.Sprintf("{\"log\":\"Starting feature 'runs idempotently'\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+	timedLogLine3 := fmt.Sprintf("{\"log\":\"The enclave was created\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+
+	timestampedLogLines := []string{timedLogLine1, timedLogLine2, timedLogLine3}
 	timestampedLogLinesStr := strings.Join(timestampedLogLines, "\n") + "\n"
 
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
@@ -578,6 +582,9 @@ func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
+
+	expectedTime, err := time.Parse(time.RFC3339, defaultUTCTimestampStr)
+	require.NoError(t, err)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -594,12 +601,60 @@ func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
 		require.True(t, found)
 		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
-		// test something about the timestamp???? serviceLogLines[0].GetTimestamp()
+		require.Equal(t, expectedTime, serviceLogLines[0].GetTimestamp())
 	}
 }
 
 func TestStreamUserServiceLogsPerFileReturnsTimestampedLogLines(t *testing.T) {
+	expectedAmountLogLines := 3
 
+	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
+		testUserService1Uuid: expectedAmountLogLines,
+	}
+
+	var logLinesFilters []logline.LogLineFilter
+
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+	}
+
+	timedLogLine1 := fmt.Sprintf("{\"log\":\"Starting feature 'centralized logs'\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+	timedLogLine2 := fmt.Sprintf("{\"log\":\"Starting feature 'runs idempotently'\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+	timedLogLine3 := fmt.Sprintf("{\"log\":\"The enclave was created\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+
+	timestampedLogLines := []string{timedLogLine1, timedLogLine2, timedLogLine3}
+	timestampedLogLinesStr := strings.Join(timestampedLogLines, "\n") + "\n"
+
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+
+	filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file, err := underlyingFs.Create(filepath)
+	require.NoError(t, err)
+	_, err = file.WriteString(timestampedLogLinesStr)
+	require.NoError(t, err)
+
+	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
+
+	expectedTime, err := time.Parse(time.RFC3339, defaultUTCTimestampStr)
+	require.NoError(t, err)
+
+	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
+		t,
+		logLinesFilters,
+		userServiceUuids,
+		expectedServiceAmountLogLinesByServiceUuid,
+		doNotFollowLogs,
+		underlyingFs,
+		perFileStreamStrategy,
+	)
+	require.NoError(t, testEvaluationErr)
+
+	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
+		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
+		require.True(t, found)
+		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
+		require.Equal(t, expectedTime, serviceLogLines[0].GetTimestamp())
+	}
 }
 
 // ====================================================================================================

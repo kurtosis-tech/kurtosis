@@ -97,13 +97,20 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 				return
 			}
 
-			// Then we extract the actual log message using the "log" field
-			logLineStr, found := jsonLog[volume_consts.LogLabel]
+			// Then we extract the actual log message using vectors log field
+			logMsgStr, found := jsonLog[volume_consts.LogLabel]
 			if !found {
 				streamErrChan <- stacktrace.NewError("An error retrieving the log field from logs json file. This is a bug in Kurtosis.")
 				return
 			}
-			logLine := logline.NewLogLine(logLineStr)
+
+			// Extract the timestamp using vectors timestamp field
+			logTimestamp, err := parseTimestampFromJsonLogLine(jsonLog)
+			if err != nil {
+				streamErrChan <- stacktrace.Propagate(err, "An error occurred parsing timestamp from json log line.")
+				return
+			}
+			logLine := logline.NewLogLine(logMsgStr, *logTimestamp)
 
 			// Then we filter by checking if the log message is valid based on requested filters
 			shouldReturnLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
