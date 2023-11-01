@@ -92,6 +92,7 @@ const theme = extendTheme({
       variants: {
         outline: (props: StyleFunctionProps) => ({
           _hover: { bg: "initial", borderColor: `${props.colorScheme}.400` },
+          _active: { bg: "initial" },
           color: `${props.colorScheme}.400`,
           borderColor: "gray.300",
         }),

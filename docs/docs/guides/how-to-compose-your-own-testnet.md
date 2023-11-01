@@ -42,18 +42,19 @@ To begin, create and `cd` into a directory to hold your files:
 ```bash
 mkdir my-testnet && cd my-testnet 
 ```
-Next, create a file called `network_params.json` in that folder with the following contents:
-```json
-{
-  "preregistered_validator_keys_mnemonic": "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete",
-  "num_validator_keys_per_node": 64,
-  "network_id": "3151908",
-  "deposit_contract_address": "0x4242424242424242424242424242424242424242",
-  "seconds_per_slot": 12,
-  "genesis_delay": 10,
-  "capella_fork_epoch": 2,
-  "deneb_fork_epoch": 500
-}
+Next, create a file called `network_params.yaml` in that folder with the following contents:
+```yaml
+preregistered_validator_keys_mnemonic: 'giant issue aisle success illegal bike spike
+  question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy
+  very lucky have athlete'
+num_validator_keys_per_node: 64
+network_id: '3151908'
+deposit_contract_address: '0x4242424242424242424242424242424242424242'
+seconds_per_slot: 12
+genesis_delay: 10
+capella_fork_epoch: 2
+deneb_fork_epoch: 500
+
 ```
 The contents above will be used to define the specific parameters with which to start the network with.
 
@@ -66,10 +67,13 @@ Awesome. You have just created the beginnings of your first [Kurtosis package](.
 ### 2. Import dependencies
 Now that you have a local project to house your definition and some parameters to start the network with, its time to actually build the network. First, create a Starlark file called `main.star` and add the following three lines:
 ```python
+import yaml
+
 # main.star
 geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
 lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
-network_params = json.decode(read_file("./network_params.json"))
+with open("./network_params.yaml") as stream:
+    network_params = yaml.safe_load(stream)
 ```
 
 In the first two lines, you're using [Locators](../concepts-reference/locators.md) to import in `geth.star` and `lighthouse.star` files from Github, making them available to use in your testnet definition. These files themselves are environment definitions that can be used to bootstrap and start up a Geth execution layer client and a Lighthouse consensus layer client as part of your testnet - which is exactly what you will do next.
@@ -78,7 +82,7 @@ In the first two lines, you're using [Locators](../concepts-reference/locators.m
 Feel free to check out the [`geth.star`](https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star) and [`lighthouse.star`](https://github.com/kurtosis-tech/lighthouse-package/blob/main/lib/lighthouse.star) to understand how they work. At a high level, the definition instructs Kurtosis to generate genesis data, set up pre-funded accounts, and then launches the client using the client container images.
 :::
 
-Finally, we are converting the local `network_params.json` file into a format that can be used in your environment definition using [`json.decode()`](https://bazel.build/rules/lib/core/json#decode) and [`read_file()`](../starlark-reference/read-file.md).
+Finally, we are converting the local `network_params.yaml` file into a format that can be used in your environment definition using [`yaml.safe_load()`](https://pyyaml.org/wiki/PyYAMLDocumentation#Loader). This is then saved into a variable called `network_params` which you will use later on.
 
 ### 3. Define how your testnet gets built
 Now that you have all the necessary dependencies, you can start writing the function that will instantiate the network. Within your `main.star` file, add the following 3 new lines:
@@ -97,9 +101,12 @@ With some execution layer genesis data in hand, you will now bootstrap the node!
 
 ```python
 # main.star
+import yaml
+
 geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
 lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
-network_params = json.decode(read_file("./network_params.json"))
+with open("./network_params.yaml") as stream:
+    network_params = yaml.safe_load(stream)
 
 def run(plan):
     # Generate genesis, note EL and the CL needs the same timestamp to ensure that timestamp based forking works
@@ -175,7 +182,7 @@ Otherwise, we've got some neat ideas for what you can do next. If you need a han
 * Deploy your node in a Kubernetes cluster for collaborative work and scale it out to multiple nodes! Check out our docs for how to do so [here](https://docs.kurtosis.com/k8s/). 
 * Simulate MEV workflows by importing the [MEV Package](https://github.com/kurtosis-tech/mev-package) into your testnet definition. The MEV package deploys and configures the Flashbots suite of products to your local Ethereum testnet and includes: MEV-Boost, MEV-Flood, and MEV-relay, and any required dependencies (postgres & redis). Here's a full example of this set up [here](https://github.com/kurtosis-tech/geth-lighthouse-mev-package).
 * Connect other infrastructure (oracles, relayers, etc) to the network by adding more to your `main.star` file! Remember, this is an environment definition and you can import any pre-existing packages that you may find useful. Here are a [few examples](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main)
-* Deploy your dApp onto the local network! Hardhat can be used to do so by using the given RPC URL & the `network_id` defined in the `network_params.json` you wrote at the beginning. In your case, the `network_id` should be: `3151908`. A more thorough example of this workflow can also be found [here](./how-to-local-eth-testnet.md).
+* Deploy your dApp onto the local network! Hardhat can be used to do so by using the given RPC URL & the `network_id` defined in the `network_params.yaml` you wrote at the beginning. In your case, the `network_id` should be: `3151908`. A more thorough example of this workflow can also be found [here](./how-to-local-eth-testnet.md).
 
 We're currently building out more components of [`eth-kurtosis`](https://github.com/kurtosis-tech/eth-kurtosis/tree/main), which serves as an index of plug-and-play components for Ethereum private testnets. We're building support for more clients - so let us know if there's something you would love to see added to the index! 
 

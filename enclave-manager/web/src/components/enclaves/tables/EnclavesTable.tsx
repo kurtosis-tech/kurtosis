@@ -103,9 +103,12 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
       }),
       columnHelper.accessor("services", {
         cell: (servicesCell) => <EnclaveServicesSummary services={servicesCell.getValue()} />,
+        meta: { centerAligned: true },
       }),
       columnHelper.accessor("artifacts", {
+        header: "File artifacts",
         cell: (artifactsCell) => <EnclaveArtifactsSummary artifacts={artifactsCell.getValue()} />,
+        meta: { centerAligned: true },
       }),
     ],
     [],
