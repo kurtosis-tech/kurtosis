@@ -206,7 +206,7 @@ export const ConfigureEnclaveModal = ({
                 </Tooltip>
               </Flex>
               <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
-                <StringArgumentInput name={"enclaveName"} />
+                <StringArgumentInput name={"enclaveName"} disabled={isDefined(existingEnclave)} />
               </KurtosisArgumentFormControl>
               {kurtosisPackage.args.map((arg, i) => (
                 <KurtosisPackageArgumentInput key={i} argument={arg} />
