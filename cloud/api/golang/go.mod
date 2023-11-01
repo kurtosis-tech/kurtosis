@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	connectrpc.com/connect v1.11.1
-	google.golang.org/grpc v1.56.2
+	google.golang.org/grpc v1.56.3
 	google.golang.org/protobuf v1.31.0
 )
 
