@@ -52,7 +52,7 @@ kurtosis run github.com/galenmarchetti/kurtosis-tech \
  
 </details>
 
-### Deploy remotely on Kubernetes instead of locally
+### Deploy remotely on Kubernetes instead of locally on Docker
 
 ```bash
 kurtosis cluster set remote-kubernetes; kurtosis gateway > /dev/null 2>&1 &
