@@ -94,19 +94,17 @@ Or do it using PowerShell:
 
 ### 1. Downloading Kurtosis
 
-> **Note:** This step needs to be executed in an administrative PowerShell session.
-
 Download latest Kurtosis package and extract it to current directory.
 ```bash
 Invoke-WebRequest -Uri "https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases/download/REPLACE_VERSION/kurtosis-cli_REPLACE_VERSION_windows_REPLACE_ARCH.tar.gz" -OutFile kurtosis.tar.gz
 tar -xvzf kurtosis.tar.gz
 ```
 
-### 2. Adding to Environment Variables
+### 2. Updating the Path to Include Kurtosis
 
 > **Note:** This step needs to be executed in an administrative PowerShell session.
 
-Add Kurtosis to Environment Variables and mae a bat script which would take care of running kurtosis as a cmdlet.
+Add Kurtosis to the `Path` environment variable and make a bat script which would take care of running Kurtosis as a cmdlet.
 ```bash
 $currentDir = Get-Location
 $systemPath = [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::Machine)
@@ -126,7 +124,6 @@ $batchContent | Out-File "$currentDir\kurtosis.bat"
 
 > ⚠️ **Warning**: Ensure you open a new PowerShell window after completing steps 1 and 2 to reflect the updated environment variables.
 
-Usage of Kurtosis command using Path approach:
 ```bash
 kurtosis version
 ```
