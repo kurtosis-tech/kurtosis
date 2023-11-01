@@ -28,7 +28,7 @@ const (
 	containerDownloadedImagesMsgFromRemote = "remotely downloaded"
 	containerDownloadedImagesMsgLineFormat = "> %s - %s"
 
-	containerImageArchWarningHeaderFormat   = "Container images with different architecture than expected(%s):"
+	containerImageArchWarningHeaderFormat   = "WARNING: Container images with different architecture than expected(%s):"
 	containerImageArchitectureMsgLineFormat = "> %s - %s"
 
 	linebreak = "\n"
