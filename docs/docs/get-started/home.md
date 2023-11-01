@@ -14,7 +14,7 @@ hide_table_of_contents: true
 
 ### Local Docker deploy from Github locator
 
-```shell-session
+```bash
 kurtosis run github.com/kurtosis-tech/basic-service-package
 ```
 
@@ -32,7 +32,7 @@ kurtosis run github.com/kurtosis-tech/basic-service-package
 
 ### Local deploy with feature flag and different numbers of each service
 
-```shell-session
+```bash
 kurtosis run github.com/galenmarchetti/kurtosis-tech \
   '{"service_a_count": 2, 
     "service_b_count": 2, 
@@ -54,10 +54,10 @@ kurtosis run github.com/galenmarchetti/kurtosis-tech \
 
 ### Remote deploy on Kubernetes
 
-```shell-session
+```bash
 kurtosis cluster set remote-kubernetes; kurtosis gateway > /dev/null 2>&1 &
 ```
-```shell-session
+```bash
 kurtosis run github.com/galenmarchetti/kurtosis-tech \
   '{"service_a_count": 2, 
     "service_b_count": 2, 
