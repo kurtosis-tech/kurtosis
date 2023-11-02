@@ -73,10 +73,10 @@ kurtosis run github.com/kurtosis-tech/basic-service-package \
 
 *CLI Output*
 
-![basic-service-modified-cli-output.png](/img/home/basic-service-modified-cli-output.png)
+![basic-service-modified-cli-output.png](/img/home/basic-service-output-k8s.png)
 
 *Example Service C UI, mapped locally*
 
-![service-c-partying.png](/img/home/service-c-partying.png)
+![service-c-partying.png](/img/home/service-c-k8s.png)
  
 </details>
