@@ -20,6 +20,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "grpc-file-transfer/scripts/build.sh"
     "name_generator/scripts/build.sh"
     "api/scripts/build.sh"
+    "metrics-library/scripts/build.sh"
     "core/scripts/build.sh"
     "engine/scripts/build.sh"
     "cli/scripts/build.sh"
