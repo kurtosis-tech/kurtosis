@@ -27,7 +27,7 @@ kurtosis run github.com/kurtosis-tech/basic-service-package \
 Enclave
 -----------
 
-An enclave is a "walled garden" in which Kurtosis runs a containerized backend. An enclave contains all of the containers, subnets, files, and log aggregation tooling relevant for the environment. The main purposes of an enclave are resource isolation and "garbage collection". With an "enclave remove" command (`kurtosis enclave rm`), the end user can destroy all of the resources used to set up their environment and leave nothing hanging around on their machine(s).
+An enclave is a "walled garden" in which Kurtosis runs a containerized backend. Enclaves can run anywhere that you have a Docker engine or a Kubernetes cluster. The main purposes of an enclave are resource isolation and "garbage collection". With an "enclave remove" command (`kurtosis enclave rm`), you can destroy all of the resources used to set up your environment and leave nothing hanging around on your machine(s).
 
 Plan
 -----------
@@ -38,7 +38,7 @@ The "plan" is the series of instructions, encoded in a package, that runs in an 
 kurtosis run --dry-run github.com/kurtosis-tech/basic-service-package
 ```
 
-<details><summary><b>Output</b></summary>
+<details><summary><b>Rendered Plan</b></summary>
 
 ```title="Steps in the Plan"
 > render_templates
