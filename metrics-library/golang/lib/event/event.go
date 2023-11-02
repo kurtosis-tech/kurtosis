@@ -16,8 +16,9 @@ type Event struct {
 }
 
 // WARNING: It's VERY important that this doesn't return an error, else the error will propagate and
-//  lead to the event not even getting sent to Segment (which means we silently drop the event with
-//  no chance to realize what's happening!)
+//
+//	lead to the event not even getting sent to Segment (which means we silently drop the event with
+//	no chance to realize what's happening!)
 func newEvent(category string, action string, properties map[string]string) *Event {
 	categoryWithoutSpaces := strings.TrimSpace(category)
 	actionWithoutSpaces := strings.TrimSpace(action)
