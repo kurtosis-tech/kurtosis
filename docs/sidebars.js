@@ -23,7 +23,7 @@ const sidebars = {
                 'get-started/installing-the-cli',
                 'get-started/quickstart',
                 'get-started/basic-concepts',
-                'get-started/quickstart-author'
+                'get-started/write-your-first-package'
             ]
         },
         {
