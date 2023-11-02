@@ -9,6 +9,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang => ../../metrics-library/golang
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
 )
 
@@ -20,6 +21,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.4
@@ -31,7 +33,6 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/itchyny/gojq v0.12.9
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20231002150105-0a8151448796
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
