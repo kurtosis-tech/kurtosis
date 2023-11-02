@@ -1,6 +1,6 @@
 ---
-title: Introduction
-sidebar_label: Introduction
+id: get-started
+title: Get Started
 slug: '/'
 sidebar_position: 1
 hide_table_of_contents: true

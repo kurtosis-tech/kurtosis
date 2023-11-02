@@ -1,5 +1,6 @@
 ---
 title: Installing Kurtosis
+id: installing-the-cli
 sidebar_label: Installing Kurtosis
 slug: /install
 sidebar_position: 2

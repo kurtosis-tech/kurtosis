@@ -1,5 +1,6 @@
 ---
 title: Quickstart
+id: quickstart
 sidebar_label: Quickstart
 slug: /quickstart
 toc_max_heading_level: 2
