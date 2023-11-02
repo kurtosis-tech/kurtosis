@@ -23,11 +23,6 @@ const sidebars = {
             ]
         },
         {
-            "type": "link",
-            "label": "Kurtosis for Web3",
-            "href": "https://web3.kurtosis.com",
-        },
-        {
             type: 'category',
             label: 'Guides',
             collapsed: true,
@@ -80,6 +75,11 @@ const sidebars = {
             ]
         },
         'code-examples',
+        {
+            "type": "link",
+            "label": "Kurtosis for Web3",
+            "href": "https://web3.kurtosis.com",
+        },
         'faq',
         'best-practices',
         'roadmap',
