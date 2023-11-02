@@ -195,8 +195,8 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
 <!--------------------------- Guides ------------------------------------>
-[installing-kurtosis-guide]: ../guides/installing-the-cli.md
-[installing-docker-guide]: ../guides/installing-the-cli.md#i-install--start-docker
+[installing-kurtosis-guide]: ../get-started/installing-the-cli.md
+[installing-docker-guide]: ../get-started/installing-the-cli.md#i-install--start-docker
 [upgrading-kurtosis-guide]: ../guides/upgrading-the-cli.md
 [how-to-set-up-postgres-guide]: quickstart-author.md
 

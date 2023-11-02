@@ -98,5 +98,5 @@ In order to upgrade Kurtosis to another version *after you've performed a downgr
 :::
 
 <!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
-[install-kurtosis]: ./installing-the-cli.md
+[install-kurtosis]: ../get-started/installing-the-cli.md
 [release-artifacts]: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases

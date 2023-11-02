@@ -7,7 +7,7 @@ sidebar_position: 7
 
 Kurtosis Cloud is a fully managed cloud offering and accompanying self-service workflows for a stress-free, easy way to deploy test and dev environments, that live as long as you need them to, directly onto remote infrastructure. By logging into our [cloud portal](https://cloud.kurtosis.com), a cloud instance will be provisioned to run your test and dev enclaves.
 
-You can interact with your enclaves using the UI (or the [CLI](./installing-the-cli.md#ii-install-the-cli) for more advanced use cases).
+You can interact with your enclaves using the UI (or the [CLI](../get-started/installing-the-cli.md#ii-install-the-cli) for more advanced use cases).
 
 ![enclave-manager-ui](/img/guides/enclave-manager-ui.png)
 

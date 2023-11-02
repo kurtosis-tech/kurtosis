@@ -919,8 +919,8 @@ Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtos
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
 <!--------------------------- Guides ------------------------------------>
-[installing-kurtosis-guide]: ../guides/installing-the-cli.md#ii-install-the-cli
-[installing-docker-guide]: ../guides/installing-the-cli.md#i-install--start-docker
+[installing-kurtosis-guide]: ../get-started/installing-the-cli.md#ii-install-the-cli
+[installing-docker-guide]: ../get-started/installing-the-cli.md#i-install--start-docker
 [upgrading-kurtosis-guide]: ../guides/upgrading-the-cli.md
 
 <!--------------------------- Explanations ------------------------------------>

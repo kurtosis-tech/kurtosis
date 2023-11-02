@@ -33,8 +33,8 @@ This guide will walk you through how to build your very own fully functioning, p
 
 **What you will need beforehand to get started:**
 
-- Install [Docker & ensure its running](./installing-the-cli.md#i-install--start-docker)
-- Install [Kurtosis](./installing-the-cli.md) (or [upgrade to latest](./upgrading-the-cli.md) if you already have it)
+- Install [Docker & ensure its running](../get-started/installing-the-cli.md#i-install--start-docker)
+- Install [Kurtosis](../get-started/installing-the-cli.md) (or [upgrade to latest](./upgrading-the-cli.md) if you already have it)
 - A Github account to leverage the [template repository](https://github.com/kurtosis-tech/package-template-repo)
 
 ### 1. Set up an empty Kurtosis package

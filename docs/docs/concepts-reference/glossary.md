@@ -9,7 +9,7 @@ sidebar_label: Glossary
 The container that runs inside of each enclave. Receives Starlark via API and manipulates the enclave according to the instructions in Starlark.
 
 ### CLI
-A command line interface, [installed by your favorite package manager](../guides/installing-the-cli.md), which wraps the Kurosis Go [SDK][sdk-reference] to allow you to manipulate the contents of Kurtosis.
+A command line interface, [installed by your favorite package manager](../get-started/installing-the-cli.md), which wraps the Kurosis Go [SDK][sdk-reference] to allow you to manipulate the contents of Kurtosis.
 
 ### Enclave
 An environment, isolated from other enclaves, in which distributed systems are launched and manipulated.

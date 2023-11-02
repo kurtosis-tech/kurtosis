@@ -390,7 +390,7 @@ We encourage you to check out our [quickstart][quickstart] (where you’ll build
 [sdk-reference]: ../api-reference/engine-apic-reference.md
 [redis-package-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app
 [eth-package-example]: https://github.com/kurtosis-tech/eth-network-package
-[installing-the-cli]: ./installing-the-cli.md#ii-install-the-cli
-[starting-docker]: ./installing-the-cli.md#i-install--start-docker
+[installing-the-cli]: ../get-started/installing-the-cli.md#ii-install-the-cli
+[starting-docker]: ../get-started/installing-the-cli.md#i-install--start-docker
 [starlark]: ../concepts-reference/starlark.md
 [vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension

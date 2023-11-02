@@ -83,7 +83,7 @@ In order to upgrade Kurtosis to another version *after you've performed a downgr
 :::
 
 <!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
-[install-guide]: ./installing-the-cli.md
+[install-guide]: ../get-started/installing-the-cli.md
 [cli-changelog]: ../changelog.md
 [metrics-philosophy]: ../explanations/metrics-philosophy.md
 [quickstart]: ../get-started/quickstart.md

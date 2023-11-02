@@ -5,7 +5,7 @@ slug: /k8s
 sidebar_position: 6
 ---
 
-This guide assumes that you have [Kurtosis installed](./installing-the-cli.md).
+This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md).
 
 If you would like more information on Kubernetes and how to set up, run and manage a cluster check out these offical [docs](https://kubernetes.io/docs/home/). 
 
