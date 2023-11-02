@@ -199,7 +199,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [installing-kurtosis-guide]: ../get-started/installing-the-cli.md
 [installing-docker-guide]: ../get-started/installing-the-cli.md#i-install--start-docker
 [upgrading-kurtosis-guide]: ../guides/upgrading-the-cli.md
-[how-to-set-up-postgres-guide]: quickstart-author.md
+[how-to-set-up-postgres-guide]: write-your-first-package.md
 
 <!--------------------------- Advanced Concepts ------------------------------------>
 [architecture-explanation]: ../advanced-concepts/architecture.md

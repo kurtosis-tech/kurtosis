@@ -1,6 +1,6 @@
 ---
 id: get-started
-title: Get Started
+title: Kurtosis Documentation
 slug: '/'
 sidebar_position: 1
 hide_table_of_contents: true
@@ -10,7 +10,9 @@ hide_table_of_contents: true
 
 - Get started with a [quickstart](quickstart.md) to launch an environment.
 - Dive deeper with [basic Kurtosis concepts](basic-concepts.md).
-- Write your own environment definition with a guide on [writing a package](quickstart-author.md).
+- Write your own environment definition with a guide on [writing a package](write-your-first-package.md).
+
+To quickly see what Kurtosis feels like, check out the example snippets below:
 
 ### Local Docker deploy from Github locator
 

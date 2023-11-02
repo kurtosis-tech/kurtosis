@@ -17,13 +17,13 @@ const sidebars = {
         {
             "type": 'category',
             label: 'Get Started',
-            link: {type: 'doc', id: 'get-started'},
+            link: {type: 'doc', id: 'get-started/get-started'},
             collapsed: true,
             items: [
-                'installing-the-cli',
-                'quickstart',
-                'basic-concepts',
-                'quickstart-author'
+                'get-started/installing-the-cli',
+                'get-started/quickstart',
+                'get-started/basic-concepts',
+                'get-started/quickstart-author'
             ]
         },
         {
