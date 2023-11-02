@@ -227,9 +227,10 @@ message GetServiceLogsResponse {
   map<string, bool> not_found_service_uuid_set = 2;
 }
 
-// TODO add timestamp as well, for when we do timestamp-handling on the client side
 message LogLine {
   repeated string line = 1;
+
+  google.protobuf.Timestamp timestamp = 2;
 }
 
 message LogLineFilter {

@@ -216,12 +216,13 @@ pub struct GetServiceLogsResponse {
         bool,
     >,
 }
-/// TODO add timestamp as well, for when we do timestamp-handling on the client side
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct LogLine {
     #[prost(string, repeated, tag = "1")]
     pub line: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, optional, tag = "2")]
+    pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
