@@ -65,7 +65,7 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered>
+    <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={handleClose} isCentered>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Create an Enclave</ModalHeader>

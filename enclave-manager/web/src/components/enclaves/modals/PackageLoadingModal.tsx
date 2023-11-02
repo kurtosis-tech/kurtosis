@@ -9,7 +9,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Spinner,
-  Text,
+  Text
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
@@ -22,6 +22,8 @@ export type PackageLoadingModalProps = {
   onPackageLoaded: (kurtosisPackage: KurtosisPackage) => void;
 };
 
+const MinPackageIdLength = "github.com/".length;
+
 export const PackageLoadingModal = ({ packageId, onPackageLoaded }: PackageLoadingModalProps) => {
   const kurtosisIndexer = useKurtosisPackageIndexerClient();
   const [modalOpen, setModalOpen] = useState(false);
@@ -30,28 +32,30 @@ export const PackageLoadingModal = ({ packageId, onPackageLoaded }: PackageLoadi
 
   useEffect(() => {
     (async () => {
-      setModalOpen(true);
-      setIsPreloading(true);
-      setLoadError(undefined);
-      const readPackageResponse = await kurtosisIndexer.readPackage(packageId);
-      setIsPreloading(false);
+      if (packageId && packageId.length > MinPackageIdLength) {
+        setModalOpen(true);
+        setIsPreloading(true);
+        setLoadError(undefined);
+        const readPackageResponse = await kurtosisIndexer.readPackage(packageId);
+        setIsPreloading(false);
 
-      if (readPackageResponse.isErr) {
-        setLoadError(readPackageResponse.error);
-        return;
-      }
-      if (!isDefined(readPackageResponse.value.package)) {
-        setLoadError(`Could not find package ${packageId}`);
-        return;
-      }
+        if (readPackageResponse.isErr) {
+          setLoadError(readPackageResponse.error);
+          return;
+        }
+        if (!isDefined(readPackageResponse.value.package)) {
+          setLoadError(`Could not find package ${packageId}`);
+          return;
+        }
 
-      setModalOpen(false);
-      onPackageLoaded(readPackageResponse.value.package);
+        setModalOpen(false);
+        onPackageLoaded(readPackageResponse.value.package);
+      }
     })();
   }, [packageId, onPackageLoaded]);
 
   return (
-    <Modal isOpen={modalOpen} onClose={() => !isPreloading && setModalOpen(false)} isCentered>
+    <Modal closeOnOverlayClick={false} isOpen={modalOpen} onClose={() => !isPreloading && setModalOpen(false)} isCentered>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Loading</ModalHeader>

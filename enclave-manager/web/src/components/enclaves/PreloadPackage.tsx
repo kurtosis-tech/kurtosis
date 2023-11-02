@@ -1,19 +1,20 @@
 import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { isDefined } from "../../utils";
 import { PackageLoadingModal } from "./modals/PackageLoadingModal";
-import {KURTOSIS_PACKAGE_NAME_URL_ARG} from "../constants";
+import { KURTOSIS_PACKAGE_ID_URL_ARG } from "../constants";
+import { useSearchParams } from "react-router-dom";
 
 type PreloadEnclaveProps = {
   onPackageLoaded: (kurtosisPackage: KurtosisPackage) => void;
 };
 
 export const PreloadPackage = ({ onPackageLoaded }: PreloadEnclaveProps) => {
-  const searchParams = new URLSearchParams(window.location.search);
-  const preloadPackage = searchParams.get(KURTOSIS_PACKAGE_NAME_URL_ARG);
+  const [searchParams] = useSearchParams();
+  const packageId = searchParams.get(KURTOSIS_PACKAGE_ID_URL_ARG);
 
-  if (!isDefined(preloadPackage)) {
+  if (!isDefined(packageId)) {
     return null;
   }
 
-  return <PackageLoadingModal packageId={preloadPackage} onPackageLoaded={onPackageLoaded} />;
+  return <PackageLoadingModal packageId={packageId} onPackageLoaded={onPackageLoaded} />;
 };

@@ -33,7 +33,7 @@ import { KurtosisArgumentFormControl } from "../configuration/KurtosisArgumentFo
 import { KurtosisPackageArgumentInput } from "../configuration/KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../configuration/types";
 import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
-import {KURTOSIS_PACKAGE_NAME_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG} from "../../constants";
+import {KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG} from "../../constants";
 
 type ConfigureEnclaveModalProps = {
   isOpen: boolean;
@@ -126,7 +126,7 @@ export const ConfigureEnclaveModal = ({
   // TODO: Improve for cloud config
   const getLinkToCurrentConfig = () => {
       const params = new URLSearchParams({
-          [KURTOSIS_PACKAGE_NAME_URL_ARG]: kurtosisPackage.name,
+          [KURTOSIS_PACKAGE_ID_URL_ARG]: kurtosisPackage.name,
           [KURTOSIS_PACKAGE_PARAMS_URL_ARG]: btoa(JSON.stringify(formRef.current?.getValues())),
       });
 
@@ -177,7 +177,7 @@ export const ConfigureEnclaveModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered size={"5xl"}>
+    <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={handleClose} isCentered size={"5xl"}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader textAlign={"center"}>Enclave Configuration</ModalHeader>
