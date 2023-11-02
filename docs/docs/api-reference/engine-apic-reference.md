@@ -8,7 +8,11 @@ toc_max_heading_level: 2
 
 Interactions with Kurtosis happen via API. To facilitate interaction with Kurtosis, we provide [client libraries][kurtosis-client-libs] for interacting with the Kurtosis API. These can be used to, for example, write Kurtosis-based tests using your test framework of choice.
 
-This page documents the objects and functions in the client libraries.
+For language-specific guides and examples, see the READMEs for each of our client libraries:
+- (Golang guides and examples)[https://github.com/kurtosis-tech/kurtosis/tree/main/api/golang]
+- (Typescript guides and examples)[https://github.com/kurtosis-tech/kurtosis/tree/main/api/typescript]
+
+This page documents the objects and functions that are available in all client libraries.
 
 :::tip
 The sidebar on the right can be used to quickly navigate classes.
