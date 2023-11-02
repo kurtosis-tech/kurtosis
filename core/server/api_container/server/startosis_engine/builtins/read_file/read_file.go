@@ -36,6 +36,7 @@ func NewReadFileHelper(
 		},
 
 		Capabilities: &readFileCapabilities{
+			packageId:              packageId,
 			packageContentProvider: packageContentProvider,
 			packageReplaceOptions:  packageReplaceOptions,
 		},
@@ -43,6 +44,7 @@ func NewReadFileHelper(
 }
 
 type readFileCapabilities struct {
+	packageId              string
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
 }
@@ -53,7 +55,7 @@ func (builtin *readFileCapabilities) Interpret(locatorOfModuleInWhichThisBuiltIn
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for arg '%s'", srcValue)
 	}
 	fileToReadStr := srcValue.GoString()
-	fileToReadStr, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, fileToReadStr, builtin.packageReplaceOptions)
+	fileToReadStr, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocator(builtin.packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, fileToReadStr, builtin.packageReplaceOptions)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}

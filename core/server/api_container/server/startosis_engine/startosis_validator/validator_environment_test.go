@@ -1,9 +1,11 @@
 package startosis_validator
 
 import (
+	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
@@ -20,7 +22,7 @@ const (
 
 func TestMultiplePortIdsForValidation(t *testing.T) {
 	emptyInitialMapping := map[service.ServiceName][]string{}
-	validatorEnvironment := NewValidatorEnvironment(nil, nil, emptyInitialMapping, availableCpuInMilliCores, availableMemoryInBytes, isResourceInformationComplete)
+	validatorEnvironment := NewValidatorEnvironment(nil, nil, emptyInitialMapping, availableCpuInMilliCores, availableMemoryInBytes, isResourceInformationComplete, image_download_mode.ImageDownloadMode_Missing)
 	portIds := []string{
 		fooPortId,
 		fizzPortId,

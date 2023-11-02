@@ -50,6 +50,8 @@ const (
 	temporaryPythonDirectoryPrefix = "run-python-*"
 
 	successfulPipRunExitCode = 0
+
+	scriptArtifactFormat = "%v-python-script"
 )
 
 func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -149,6 +151,9 @@ type RunPythonCapabilities struct {
 }
 
 func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	randomUuid := uuid.NewRandom()
+	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
+
 	pythonScript, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RunArgName)
@@ -160,10 +165,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 		return nil, scriptCompressionInterpretationErr
 	}
 	defer compressedScript.Close()
-	uniqueFilesArtifactName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
-	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("an error occurred while generating unique artifact name for python script")
-	}
+	uniqueFilesArtifactName := fmt.Sprintf(scriptArtifactFormat, builtin.name)
 	_, err = builtin.serviceNetwork.UploadFilesArtifact(compressedScript, compressedScriptMd5, uniqueFilesArtifactName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while storing the python script to disk")
@@ -232,7 +234,10 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig = getServiceConfig(image, filesArtifactExpansion)
+	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
+	}
 
 	if arguments.IsSet(StoreFilesArgName) {
 		storeSpecList, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
@@ -255,8 +260,6 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunPythonBuiltinName)
 	}
 	builtin.resultUuid = resultUuid
-	randomUuid := uuid.NewRandom()
-	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
 	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return result, nil

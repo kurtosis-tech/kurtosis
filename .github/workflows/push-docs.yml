@@ -3,6 +3,12 @@ name: Deploy documentation
 on:
   push:
   merge_group:
+  pull_request_target:
+    # this is for forked pull requests - we can't pass down secrets; this allows us to pass down secrets
+    # to build the cloudflare pages action
+    types:
+      - opened
+      - labeled
 
 jobs:
   publish:
@@ -11,6 +17,14 @@ jobs:
       contents: read
       deployments: write
     name: Publish to Cloudflare Pages
+    if: ${{
+      github.event_name == 'push' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request_target' &&
+      github.event.action == 'labeled' &&
+      github.event.pull_request.head.repo.fork == true &&
+      contains(github.event.label.name, 'request-cf-deploy'))
+      }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -56,7 +70,10 @@ jobs:
   reindex-website-main:
     runs-on: ubuntu-latest
     name: Update website search index via Algolia Crawler
-    if: github.ref == 'refs/heads/main'
+    if: ${{
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+      }}
     steps:
       - uses: fjogeleit/http-request-action@v1
         with:
@@ -69,7 +86,10 @@ jobs:
   check-index:
     runs-on: ubuntu-latest
     name: Checks that the latest index is still working
-    if: github.ref == 'refs/heads/main'
+    if: ${{
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+      }}
     steps:
       - uses: fjogeleit/http-request-action@v1
         id: search

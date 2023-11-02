@@ -43,14 +43,14 @@ message GetEngineInfoResponse {
 // ==============================================================================================
 message CreateEnclaveArgs {
   // The name of the new Kurtosis Enclave
-  string enclave_name = 1;
+  optional string enclave_name = 1;
   // The image tag of the API container that should be used inside the enclave
   // If blank, will use the default version that the engine server uses
-  string api_container_version_tag = 2;
+  optional string api_container_version_tag = 2;
   // The API container log level
-  string api_container_log_level = 3;
+  optional string api_container_log_level = 3;
 
-  EnclaveMode mode = 4;
+  optional EnclaveMode mode = 4;
 }
 
 enum EnclaveMode {
@@ -188,7 +188,7 @@ message DestroyEnclaveArgs {
 // ==============================================================================================
 message CleanArgs {
   // If true, It will clean even the running enclaves
-  bool should_clean_all = 1;
+  optional bool should_clean_all = 1;
 }
 
 message EnclaveNameAndUuid {
@@ -210,13 +210,13 @@ message GetServiceLogsArgs {
   // "Set" of service UUIDs in the enclave
   map<string, bool> service_uuid_set = 2;
   // If true, It will follow the container logs
-  bool follow_logs = 3;
+  optional bool follow_logs = 3;
   // The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
   repeated LogLineFilter conjunctive_filters = 4;
   // If true, return all log lines
-  bool return_all_logs = 5;
+  optional bool return_all_logs = 5;
   // If [return_all_logs] is false, return [num_log_lines]
-  uint32 num_log_lines = 6;
+  optional uint32 num_log_lines = 6;
 }
 
 message GetServiceLogsResponse {
@@ -227,9 +227,10 @@ message GetServiceLogsResponse {
   map<string, bool> not_found_service_uuid_set = 2;
 }
 
-// TODO add timestamp as well, for when we do timestamp-handling on the client side
 message LogLine {
   repeated string line = 1;
+
+  google.protobuf.Timestamp timestamp = 2;
 }
 
 message LogLineFilter {

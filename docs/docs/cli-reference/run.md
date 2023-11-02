@@ -77,10 +77,10 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 
 `kurtosis run` has additional flags that can further modify its behaviour:
 
-1. The `--args-file` flag can be used to send in a JSON/YAML file, from a local file through the filepath or from remote using the URL, as an argument to the Kurtosis Package. Note that if you pass in package arguments as CLI arguments and via the flag, the CLI arguments will be the one used.
+1. The `--args-file` flag can be used to send in a YAML/JSON file, from a local file through the filepath or from remote using the URL, as an argument to the Kurtosis Package. Note that if you pass in package arguments as CLI arguments and via the flag, the CLI arguments will be the one used.
    For example:
    ```bash
-   kurtosis run github.com/kurtosis-tech/ethereum-package --args-file "devnet-5.json"
+   kurtosis run github.com/kurtosis-tech/ethereum-package --args-file "devnet-5.yaml"
    ```
    or
    ```bash
@@ -125,6 +125,8 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 1. The `--production` flag can be used to make sure services restart in case of failure (default behavior is not restart)
 
 1. The `--no-connect` flag can be used to disable user services port forwarding (default behavior is to forward the ports)
+
+1. The `--image-download` flag can be used to configure the download behavior for a given run. When set to `missing`, Kurtosis will only download the latest image tag if the image does not already exist locally (irrespective of the tag of the locally cached image). When set to `always`, Kurtosis will always check and download the latest image tag, even if the image exists locally.
 
 1. The `--experimental` flag can be used to enable experimental or incubating features. Please reach out to Kurtosis team if you wish to try any of those.
 

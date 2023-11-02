@@ -15,17 +15,19 @@ pub struct GetEngineInfoResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CreateEnclaveArgs {
     /// The name of the new Kurtosis Enclave
-    #[prost(string, tag = "1")]
-    pub enclave_name: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "1")]
+    pub enclave_name: ::core::option::Option<::prost::alloc::string::String>,
     /// The image tag of the API container that should be used inside the enclave
     /// If blank, will use the default version that the engine server uses
-    #[prost(string, tag = "2")]
-    pub api_container_version_tag: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub api_container_version_tag: ::core::option::Option<
+        ::prost::alloc::string::String,
+    >,
     /// The API container log level
-    #[prost(string, tag = "3")]
-    pub api_container_log_level: ::prost::alloc::string::String,
-    #[prost(enumeration = "EnclaveMode", tag = "4")]
-    pub mode: i32,
+    #[prost(string, optional, tag = "3")]
+    pub api_container_log_level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(enumeration = "EnclaveMode", optional, tag = "4")]
+    pub mode: ::core::option::Option<i32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -151,8 +153,8 @@ pub struct DestroyEnclaveArgs {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CleanArgs {
     /// If true, It will clean even the running enclaves
-    #[prost(bool, tag = "1")]
-    pub should_clean_all: bool,
+    #[prost(bool, optional, tag = "1")]
+    pub should_clean_all: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -185,17 +187,17 @@ pub struct GetServiceLogsArgs {
         bool,
     >,
     /// If true, It will follow the container logs
-    #[prost(bool, tag = "3")]
-    pub follow_logs: bool,
+    #[prost(bool, optional, tag = "3")]
+    pub follow_logs: ::core::option::Option<bool>,
     /// The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
     #[prost(message, repeated, tag = "4")]
     pub conjunctive_filters: ::prost::alloc::vec::Vec<LogLineFilter>,
     /// If true, return all log lines
-    #[prost(bool, tag = "5")]
-    pub return_all_logs: bool,
+    #[prost(bool, optional, tag = "5")]
+    pub return_all_logs: ::core::option::Option<bool>,
     /// If \[return_all_logs\] is false, return \[num_log_lines\]
-    #[prost(uint32, tag = "6")]
-    pub num_log_lines: u32,
+    #[prost(uint32, optional, tag = "6")]
+    pub num_log_lines: ::core::option::Option<u32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -214,12 +216,13 @@ pub struct GetServiceLogsResponse {
         bool,
     >,
 }
-/// TODO add timestamp as well, for when we do timestamp-handling on the client side
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct LogLine {
     #[prost(string, repeated, tag = "1")]
     pub line: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(message, optional, tag = "2")]
+    pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

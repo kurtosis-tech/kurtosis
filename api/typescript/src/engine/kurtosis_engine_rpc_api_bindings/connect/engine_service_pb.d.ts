@@ -153,29 +153,29 @@ export declare class CreateEnclaveArgs extends Message<CreateEnclaveArgs> {
   /**
    * The name of the new Kurtosis Enclave
    *
-   * @generated from field: string enclave_name = 1;
+   * @generated from field: optional string enclave_name = 1;
    */
-  enclaveName: string;
+  enclaveName?: string;
 
   /**
    * The image tag of the API container that should be used inside the enclave
    * If blank, will use the default version that the engine server uses
    *
-   * @generated from field: string api_container_version_tag = 2;
+   * @generated from field: optional string api_container_version_tag = 2;
    */
-  apiContainerVersionTag: string;
+  apiContainerVersionTag?: string;
 
   /**
    * The API container log level
    *
-   * @generated from field: string api_container_log_level = 3;
+   * @generated from field: optional string api_container_log_level = 3;
    */
-  apiContainerLogLevel: string;
+  apiContainerLogLevel?: string;
 
   /**
-   * @generated from field: engine_api.EnclaveMode mode = 4;
+   * @generated from field: optional engine_api.EnclaveMode mode = 4;
    */
-  mode: EnclaveMode;
+  mode?: EnclaveMode;
 
   constructor(data?: PartialMessage<CreateEnclaveArgs>);
 
@@ -545,9 +545,9 @@ export declare class CleanArgs extends Message<CleanArgs> {
   /**
    * If true, It will clean even the running enclaves
    *
-   * @generated from field: bool should_clean_all = 1;
+   * @generated from field: optional bool should_clean_all = 1;
    */
-  shouldCleanAll: boolean;
+  shouldCleanAll?: boolean;
 
   constructor(data?: PartialMessage<CleanArgs>);
 
@@ -644,9 +644,9 @@ export declare class GetServiceLogsArgs extends Message<GetServiceLogsArgs> {
   /**
    * If true, It will follow the container logs
    *
-   * @generated from field: bool follow_logs = 3;
+   * @generated from field: optional bool follow_logs = 3;
    */
-  followLogs: boolean;
+  followLogs?: boolean;
 
   /**
    * The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
@@ -658,16 +658,16 @@ export declare class GetServiceLogsArgs extends Message<GetServiceLogsArgs> {
   /**
    * If true, return all log lines
    *
-   * @generated from field: bool return_all_logs = 5;
+   * @generated from field: optional bool return_all_logs = 5;
    */
-  returnAllLogs: boolean;
+  returnAllLogs?: boolean;
 
   /**
    * If [return_all_logs] is false, return [num_log_lines]
    *
-   * @generated from field: uint32 num_log_lines = 6;
+   * @generated from field: optional uint32 num_log_lines = 6;
    */
-  numLogLines: number;
+  numLogLines?: number;
 
   constructor(data?: PartialMessage<GetServiceLogsArgs>);
 
@@ -719,8 +719,6 @@ export declare class GetServiceLogsResponse extends Message<GetServiceLogsRespon
 }
 
 /**
- * TODO add timestamp as well, for when we do timestamp-handling on the client side
- *
  * @generated from message engine_api.LogLine
  */
 export declare class LogLine extends Message<LogLine> {
@@ -728,6 +726,11 @@ export declare class LogLine extends Message<LogLine> {
    * @generated from field: repeated string line = 1;
    */
   line: string[];
+
+  /**
+   * @generated from field: google.protobuf.Timestamp timestamp = 2;
+   */
+  timestamp?: Timestamp;
 
   constructor(data?: PartialMessage<LogLine>);
 

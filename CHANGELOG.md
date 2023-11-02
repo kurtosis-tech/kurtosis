@@ -1,5 +1,68 @@
 # Changelog
 
+## [0.85.2](https://github.com/kurtosis-tech/kurtosis/compare/0.85.1...0.85.2) (2023-10-31)
+
+
+### Bug Fixes
+
+* block local absolute locators ([#1659](https://github.com/kurtosis-tech/kurtosis/issues/1659)) ([a4daeb3](https://github.com/kurtosis-tech/kurtosis/commit/a4daeb3437219245d5b04a15f28b6addae1c29b6)), closes [#1637](https://github.com/kurtosis-tech/kurtosis/issues/1637)
+* use full path for running black to allow older versions of docker ([#1666](https://github.com/kurtosis-tech/kurtosis/issues/1666)) ([fdcd3d9](https://github.com/kurtosis-tech/kurtosis/commit/fdcd3d94086365e62bab07cf34a91df2fa5bff73))
+
+## [0.85.1](https://github.com/kurtosis-tech/kurtosis/compare/0.85.0...0.85.1) (2023-10-31)
+
+
+### Features
+
+* initial new enclave manager ([#1603](https://github.com/kurtosis-tech/kurtosis/issues/1603)) ([9944658](https://github.com/kurtosis-tech/kurtosis/commit/9944658f5036d45dde64721e9a958322e17b9d5b))
+* warn users of diff architecture image running ([#1649](https://github.com/kurtosis-tech/kurtosis/issues/1649)) ([77f2f69](https://github.com/kurtosis-tech/kurtosis/commit/77f2f694210e35d98b37b31396596791a2a2d0c7))
+
+## [0.85.0](https://github.com/kurtosis-tech/kurtosis/compare/0.84.13...0.85.0) (2023-10-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* protobuf definitions for more idiomatic SDKs ([#1586](https://github.com/kurtosis-tech/kurtosis/issues/1586))
+
+### Features
+
+* Add cli argument to control image download ([#1495](https://github.com/kurtosis-tech/kurtosis/issues/1495)) ([f210a76](https://github.com/kurtosis-tech/kurtosis/commit/f210a7604a283d014d79eff109654486c0b7cc83))
+
+
+### Bug Fixes
+
+* run_sh doesn't remove new lines from input ([#1642](https://github.com/kurtosis-tech/kurtosis/issues/1642)) ([a969dff](https://github.com/kurtosis-tech/kurtosis/commit/a969dffd1902952c4500c4f329480909e3f81dfd))
+
+
+### Code Refactoring
+
+* protobuf definitions for more idiomatic SDKs ([#1586](https://github.com/kurtosis-tech/kurtosis/issues/1586)) ([e7ab58a](https://github.com/kurtosis-tech/kurtosis/commit/e7ab58a1d2a286fcfb9af35e01997c2e05f7a107)), closes [#843](https://github.com/kurtosis-tech/kurtosis/issues/843)
+
+## [0.84.13](https://github.com/kurtosis-tech/kurtosis/compare/0.84.12...0.84.13) (2023-10-25)
+
+
+### Features
+
+* user-configurable labels (in ServiceConfig type) for Docker containers and k8s pods ([#1604](https://github.com/kurtosis-tech/kurtosis/issues/1604)) ([e98cdf6](https://github.com/kurtosis-tech/kurtosis/commit/e98cdf6874b610f158a0ff798a01cf9a1b70d183))
+
+
+### Bug Fixes
+
+* name temporary python script for run_python with suitable name ([#1616](https://github.com/kurtosis-tech/kurtosis/issues/1616)) ([88edb39](https://github.com/kurtosis-tech/kurtosis/commit/88edb39c8f424d5f6b2126739948206ce5829e98))
+
+## [0.84.12](https://github.com/kurtosis-tech/kurtosis/compare/0.84.11...0.84.12) (2023-10-25)
+
+
+### Features
+
+* kurtosis run command now accepts URLs with the 'args-file' argument  ([#1607](https://github.com/kurtosis-tech/kurtosis/issues/1607)) ([ec32d0f](https://github.com/kurtosis-tech/kurtosis/commit/ec32d0f48f0a1cd76e26e4fdeecc75e7c1a31929)), closes [#1596](https://github.com/kurtosis-tech/kurtosis/issues/1596)
+* Product and subscription added to the get payment config response ([#1606](https://github.com/kurtosis-tech/kurtosis/issues/1606)) ([0d10726](https://github.com/kurtosis-tech/kurtosis/commit/0d107261422ad918b4a5dbc5dbbb35c8d555d4c5))
+
+
+### Bug Fixes
+
+* add a debug line for the exact command run by lint ([#1615](https://github.com/kurtosis-tech/kurtosis/issues/1615)) ([3fa6d2f](https://github.com/kurtosis-tech/kurtosis/commit/3fa6d2f62b301f97e7ae7ef50b9abe460e7cc283))
+* handle error and fix rendering bug ([#1617](https://github.com/kurtosis-tech/kurtosis/issues/1617)) ([825fd22](https://github.com/kurtosis-tech/kurtosis/commit/825fd2238601f7a95c97f3a695773d3a9c234c49))
+
 ## [0.84.11](https://github.com/kurtosis-tech/kurtosis/compare/0.84.10...0.84.11) (2023-10-24)
 
 

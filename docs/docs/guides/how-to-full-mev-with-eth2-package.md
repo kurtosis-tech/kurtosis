@@ -51,7 +51,7 @@ Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provi
 ## Quickstart
 Leveraging the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) is simple. In this short quickstart, you will:
 1. Install Docker & Kurtosis locally.
-2. Configure your network using a `.json` file.
+2. Configure your network using a `.yaml` file.
 3. Run a single command to launch your network with `full MEV`.
 4. Visit the website to witness payloads being delivered from the Relayer to the `mev-boost` sidecar connected to each validator (for block proposals).
 
@@ -60,41 +60,39 @@ Leveraging the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-pa
 * [Install Kurtosis](https://docs.kurtosis.com/install/#ii-install-the-cli) or [upgrade Kurtosis to the latest version](https://docs.kurtosis.com/upgrade). You can check if Kurtosis is running using the command: `kurtosis version`, which will print your current Kurtosis engine version and CLI version.
 
 #### Configure your network
-Next, create a file titled: `ethereum-package-params.json` in your working directory and populate it with:
-```json
-{
-	"participants": [{
-		"el_client_type": "geth",
-		"el_client_image": "ethereum/client-go:latest",
-		"el_client_log_level": "",
-		"el_extra_params": [],
-		"cl_client_type": "lighthouse",
-		"cl_client_image": "sigp/lighthouse:latest",
-		"cl_client_log_level": "",
-		"beacon_extra_params": [],
-		"validator_extra_params": [],
-		"builder_network_params": null
-	}],
-	"network_params": {
-		"network_id": "3151908",
-		"deposit_contract_address": "0x4242424242424242424242424242424242424242",
-		"seconds_per_slot": 12,
-		"slots_per_epoch": 32,
-		"num_validator_keys_per_node": 64,
-		"preregistered_validator_keys_mnemonic": "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete",
-		"deneb_for_epoch": 500
-	},
-	"verifications_epoch_limit": 5,
-	"global_client_log_level": "info",
-	"mev_type": "full"
-}
+Next, create a file titled: `ethereum-package-params.yaml` in your working directory and populate it with:
+```yaml
+participants:
+	- el_client_type: geth
+		el_client_image: ethereum/client-go:latest
+		el_client_log_level: ''
+		el_extra_params: []
+		cl_client_type: lighthouse
+		cl_client_image: sigp/lighthouse:latest
+		cl_client_log_level: ''
+		beacon_extra_params: []
+		validator_extra_params: []
+		builder_network_params: null
+network_params:
+  network_id: '3151908'
+  deposit_contract_address: '0x4242424242424242424242424242424242424242'
+  seconds_per_slot: 12
+  slots_per_epoch: 32
+  num_validator_keys_per_node: 64
+  preregistered_validator_keys_mnemonic: 'giant issue aisle success illegal bike spike
+    question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy
+    very lucky have athlete'
+  deneb_for_epoch: 500
+verifications_epoch_limit: 5
+global_client_log_level: info
+mev_type: full
 ```
 You will use the above file by passing it in at runtime, effectively enabling you to define the way your network should look using parameters.
 
 #### Launch the network with `full MEV`
 Great! You're now ready to bring up your own network. Simply run:
 ```bash
-kurtosis run --enclave eth-network github.com/kurtosis-tech/ethereum-package "$(cat ~/ethereum-package-params.json)"
+kurtosis run --enclave eth-network github.com/kurtosis-tech/ethereum-package "$(cat ~/ethereum-package-params.yaml)"
 ```
 Kurtosis will then begin to spin up your private Ethereum testnet with `full MEV`. You will see a stream of text get printed in your terminal as Kurtosis begins to generate genesis files, configure the Ethereum nodes, launch a Grafana and Prometheus instance, and bootstrap the network together with the full suite of MEV products from Flashbots. In ~2 minutes, you should see the following output at the end:
 ```bash
@@ -200,14 +198,14 @@ If there are other use cases you had in mind (e.g. fuzzing the network at the pr
 ## Conclusion
 This guide was meant to be quick - we hope it was. To recap, you:
 - Installed Kurtosis and Docker
-- Created a `.json` file that contains the necessary parameters for the network
+- Created a `.yaml` file that contains the necessary parameters for the network
 - Ran a single command to spin up a private Ethereum testnet with MEV infrastructure
 
 The `ethereum-package` is available for anyone to use, will work the same way on your local machine or in the cloud, and will run on Docker or Kubernetes.
 
 You saw first-hand how packages, effectively environment definitions, are written once and then can be used by anyone in a very trivial way to reproduce the environment. This accelerates developer velocity by enabling engineers to spend less time on configuring and setting up development and testing frameworks, and more time instead on building the unique features and capabilities for their projects.
 
-Additionally, we hope you also enjoyed the parameterizability aspect of Kurtosis Packages. By changing the `ethereum-package-params.json`, you can get a fine-tune your testnet however you see fit. 
+Additionally, we hope you also enjoyed the parameterizability aspect of Kurtosis Packages. By changing the `ethereum-package-params.yaml`, you can get a fine-tune your testnet however you see fit. 
 
 We hope this guide was helpful and we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using [`kurtosis feedback`](../cli-reference/feedback.md) from the CLI to file an issue in our [Github](https://github.com/kurtosis-tech/eth-kurtosis/issues) or post your question in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions).
 

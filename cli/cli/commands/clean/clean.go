@@ -85,7 +85,7 @@ func run(
 		},
 		unusedImagesPhaseTitle: func() ([]string, []error, error) {
 			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
-			return cleanUnusedImages(ctx, kurtosisBackend, shouldCleanAll)
+			return cleanUnusedImages(ctx, kurtosisBackend)
 		},
 	}
 
@@ -164,7 +164,7 @@ func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_i
 }
 
 func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient, shouldCleanAll bool) ([]string, []error, error) {
-	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{ShouldCleanAll: shouldCleanAll}
+	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{ShouldCleanAll: &shouldCleanAll}
 	cleanResp, err := engineClient.Clean(ctx, cleanArgs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while calling clean")
@@ -181,7 +181,7 @@ func formattedUuidAndName(enclaveUuidWithName *kurtosis_engine_rpc_api_bindings.
 	return fmt.Sprintf("%v%v%v", enclaveUuidWithName.Uuid, uuidAndNameDelimiter, enclaveUuidWithName.Name)
 }
 
-func cleanUnusedImages(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, shouldCleanAll bool) ([]string, []error, error) {
+func cleanUnusedImages(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend) ([]string, []error, error) {
 	cleanedImages, cleanErr := kurtosisBackend.PruneUnusedImages(ctx)
 	return cleanedImages, nil, cleanErr
 }

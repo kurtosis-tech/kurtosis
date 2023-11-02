@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
 )
 
@@ -75,21 +76,21 @@ func (service *EngineConnectServerService) GetEngineInfo(context.Context, *conne
 func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	args := connectArgs.Msg
 	logrus.Debugf("args: %+v", args)
-	apiContainerLogLevel, err := logrus.ParseLevel(args.ApiContainerLogLevel)
+	apiContainerLogLevel, err := logrus.ParseLevel(args.GetApiContainerLogLevel())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
 	}
 
 	isProduction := false
-	if args.Mode == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
+	if args.GetMode() == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
 		isProduction = true
 	}
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		service.imageVersionTag,
-		args.ApiContainerVersionTag,
+		args.GetApiContainerVersionTag(),
 		apiContainerLogLevel,
-		args.EnclaveName,
+		args.GetEnclaveName(),
 		isProduction,
 	)
 	if err != nil {
@@ -144,11 +145,11 @@ func (service *EngineConnectServerService) DestroyEnclave(ctx context.Context, c
 
 func (service *EngineConnectServerService) Clean(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error) {
 	args := connectArgs.Msg
-	removedEnclaveUuidsAndNames, err := service.enclaveManager.Clean(ctx, args.ShouldCleanAll)
+	removedEnclaveUuidsAndNames, err := service.enclaveManager.Clean(ctx, args.GetShouldCleanAll())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
 	}
-	if args.ShouldCleanAll {
+	if args.GetShouldCleanAll() {
 		if err = service.logFileManager.RemoveAllLogs(); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred removing all logs.")
 		}
@@ -172,9 +173,9 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 	}
 	serviceUuidStrSet := args.GetServiceUuidSet()
 	requestedServiceUuids := make(map[user_service.ServiceUUID]bool, len(serviceUuidStrSet))
-	shouldFollowLogs := args.FollowLogs
-	shouldReturnAllLogs := args.ReturnAllLogs
-	numLogLines := args.NumLogLines
+	shouldFollowLogs := args.GetFollowLogs()
+	shouldReturnAllLogs := args.GetReturnAllLogs()
+	numLogLines := args.GetNumLogLines()
 
 	for serviceUuidStr := range serviceUuidStrSet {
 		serviceUuid := user_service.ServiceUUID(serviceUuidStr)
@@ -321,7 +322,8 @@ func newLogsResponse(
 		// there is no new log lines but is a found UUID, so it has to be included in the service logs map
 		if !found && !isInNotFoundUuidList {
 			serviceLogLinesByUuid[serviceUuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{
-				Line: nil,
+				Line:      nil,
+				Timestamp: nil,
 			}
 		}
 		//Remove the service's UUID from the initial not found list, if it was returned from the logs database
@@ -342,14 +344,15 @@ func newLogsResponse(
 }
 
 func newRPCBindingsLogLineFromLogLines(logLines []logline.LogLine) *kurtosis_engine_rpc_api_bindings.LogLine {
-
 	logLinesStr := make([]string, len(logLines))
+	var logTimestamp *timestamppb.Timestamp
 
 	for logLineIndex, logLine := range logLines {
 		logLinesStr[logLineIndex] = logLine.GetContent()
+		logTimestamp = timestamppb.New(logLine.GetTimestamp())
 	}
 
-	rpcBindingsLogLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr}
+	rpcBindingsLogLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr, Timestamp: logTimestamp}
 
 	return rpcBindingsLogLines
 }

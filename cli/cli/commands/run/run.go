@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
-	"gopkg.in/yaml.v2"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"io"
 	"net/http"
 	"net/url"
@@ -14,6 +13,10 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
+	"gopkg.in/yaml.v2"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
@@ -29,7 +32,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
@@ -99,6 +101,9 @@ const (
 
 	runFailed    = false
 	runSucceeded = true
+
+	imageDownloadFlagKey = "image-download"
+	defaultImageDownload = "missing"
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -193,6 +198,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:    flags.FlagType_String,
 			Default: packageArgsFileDefaultValue,
 		},
+		{
+			Key:     imageDownloadFlagKey,
+			Usage:   "If unset, it defaults to `missing` which will only download the latest image tag if the image does not already exist locally (irrespective of the tag of the locally cached image). Use `always` to have Kurtosis always check and download the latest image tag, even if the image exists locally.",
+			Type:    flags.FlagType_String,
+			Default: defaultImageDownload,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -251,6 +262,11 @@ func run(
 	verbosity, err := parseVerbosityFlag(flags)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
+	}
+
+	imageDownload, err := parseImageDownloadFlag(flags)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
 	}
 
 	showFullUuids, err := flags.GetBool(fullUuidsFlagKey)
@@ -327,6 +343,7 @@ func run(
 		starlark_run_config.WithSerializedParams(packageArgs),
 		starlark_run_config.WithCloudUserId(cloudUserId),
 		starlark_run_config.WithCloudInstanceId(cloudInstanceId),
+		starlark_run_config.WithImageDownloadMode(*imageDownload),
 	)
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -604,6 +621,29 @@ func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, e
 		return 0, stacktrace.Propagate(err, "Invalid verbosity value: '%s'. Possible values are %s", verbosityStr, strings.Join(command_args_run.VerbosityStrings(), ", "))
 	}
 	return verbosity, nil
+}
+
+// Get the image download flag is present, and parse it to a valid ImageDownload value
+func parseImageDownloadFlag(flags *flags.ParsedFlags) (*kurtosis_core_rpc_api_bindings.ImageDownloadMode, error) {
+
+	imageDownloadStr, err := flags.GetString(imageDownloadFlagKey)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
+	}
+
+	imageDownloadStrNorm := strings.ToLower(imageDownloadStr)
+	keys := make([]string, 0, len(kurtosis_core_rpc_api_bindings.ImageDownloadMode_value))
+	for k := range kurtosis_core_rpc_api_bindings.ImageDownloadMode_value {
+		keys = append(keys, k)
+	}
+
+	if !slices.Contains(keys, imageDownloadStrNorm) {
+		return nil, stacktrace.NewError("Invalid image-download value: '%s'. Possible values are: '%s'", imageDownloadStr, strings.Join(keys, "', '"))
+	}
+
+	imageDownloadCode := kurtosis_core_rpc_api_bindings.ImageDownloadMode_value[imageDownloadStrNorm]
+	imageDownloadRPC := kurtosis_core_rpc_api_bindings.ImageDownloadMode(imageDownloadCode)
+	return &imageDownloadRPC, nil
 }
 
 // parseExperimentalFlag parses the sert of experimental features enabled for this run

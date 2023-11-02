@@ -300,12 +300,18 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 		return nil
 	}
 
-	// Then extract the actual log message using the "log" field
-	logLineStr, found := jsonLog[volume_consts.LogLabel]
+	// Then extract the actual log message using the vectors log field
+	logMsgStr, found := jsonLog[volume_consts.LogLabel]
 	if !found {
-		return stacktrace.NewError("An error retrieving the log field from json log string: %v\n", jsonLogLineStr)
+		return stacktrace.NewError("An error retrieving the log field '%v' from json log string: %v\n", volume_consts.LogLabel, jsonLogLineStr)
 	}
-	logLine := logline.NewLogLine(logLineStr)
+
+	// Extract the timestamp using vectors timestamp field
+	logTimestamp, err := parseTimestampFromJsonLogLine(jsonLog)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing timestamp from json log line.")
+	}
+	logLine := logline.NewLogLine(logMsgStr, *logTimestamp)
 
 	// Then filter by checking if the log message is valid based on requested filters
 	validLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
@@ -317,7 +323,7 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	}
 
 	// ensure this log line is within the retention period if it has a timestamp
-	withinRetentionPeriod, err := strategy.isWithinRetentionPeriod(jsonLog)
+	withinRetentionPeriod, err := strategy.isWithinRetentionPeriod(logLine)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 	}
@@ -335,17 +341,9 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 }
 
 // Returns true if [logLine] has no timestamp
-func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine JsonLog) (bool, error) {
+func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine *logline.LogLine) (bool, error) {
 	retentionPeriod := strategy.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks) * oneWeek)
-	timestampStr, found := logLine[volume_consts.TimestampLabel]
-	if !found {
-		return true, nil
-	}
-
-	timestamp, err := time.Parse(time.RFC3339, timestampStr)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred retrieving the timestamp field from logs json log line. This is a bug in Kurtosis.")
-	}
+	timestamp := logLine.GetTimestamp()
 	return timestamp.After(retentionPeriod), nil
 }
 
@@ -380,4 +378,17 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 		}
 	}
 	return nil
+}
+
+// Converts a string in UTC format to a time.Time, returns error if no time is found or time is incorrectly formatted
+func parseTimestampFromJsonLogLine(logLine JsonLog) (*time.Time, error) {
+	timestampStr, found := logLine[volume_consts.TimestampLabel]
+	if !found {
+		return nil, stacktrace.NewError("An error occurred retrieving the timestamp field '%v' from json: %v", volume_consts.TimestampLabel, logLine)
+	}
+	timestamp, err := time.Parse(time.RFC3339, timestampStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing the timestamp string '%v' from UTC to a time.Time object.", timestampStr)
+	}
+	return &timestamp, nil
 }

@@ -11,13 +11,13 @@ sidebar_position: 10
 This guide walks you through the process of instantiating a configurable local Ethereum testnet, deploying a smart contract to it, and using the testnet to run tests against your dApp. This guide is designed for dApp developers who want to develop and test their dApps locally against different network configurations before deploying to a live testnet or the mainnet.
 
 In this guide, you will:
-* Instantiate a local Ethereum testnet with the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) using [Kurtosis](https://www.kurtosis.com/),
+* Instantiate a local Ethereum testnet with the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) using [Kurtosis](https://github.com/kurtosis-tech/kurtosis),
 * Connect your Hardhat dApp development environment to the local testnet to compile, deploy, and test a dApp, and
 * Configure the local testnet, including parameters like number of nodes and specific EL/CL client pairings, to enable development and testing workflows against various network configurations.
 
 ### What is Kurtosis?
 
-[Kurtosis](https://www.kurtosis.com/) is a composable build system designed for configuring multi-container environments. It specifically enables developers to create reproducible environments that require dynamic setup logic, such as blockchain testnets.
+[Kurtosis](https://github.com/kurtosis-tech/kurtosis) is a composable build system designed for configuring multi-container environments. It specifically enables developers to create reproducible environments that require dynamic setup logic, such as blockchain testnets.
 
 In this guide, the Kurtosis ethereum-package spins up a local Ethereum testnet with support for the [`geth`](https://geth.ethereum.org/) Execution Layer (EL) client, as well as [`teku`](https://consensys.net/knowledge-base/ethereum-2/teku/), [`lighthouse`](https://lighthouse.sigmaprime.io/), and [`lodestar`](https://lodestar.chainsafe.io/) Consensus Layer (CL) clients. This package serves as a configurable and composable alternative to networks in frameworks like Hardhat Network, Ganache, and Anvil. Kurtosis offers developers greater control and flexibility over the testnets they use, which is a major reason why the [Ethereum Foundation used Kurtosis to test the Merge](https://www.kurtosis.com/blog/testing-the-ethereum-merge) and continues to use it for testing network upgrades.
 
@@ -181,7 +181,7 @@ Now let’s explore how you can configure the underlying network for testing our
 
 Your local Ethereum testnet can be configured to use different EL and CL client pairs, as well as a varying number of nodes, depending on the scenario and specific network configuration you want to develop or test. This means that, once set up, you can spin up a customized local testnet and use it to run the same workflows (deployment, tests, etc.) under various network configurations to ensure everything works as expected. To learn more about the other parameters you can modify, visit this link.
 
-Give it a try! You can pass various configuration options to the `ethereum-package` via a JSON file. This network params JSON file provides the specific configurations that Kurtosis will use to set up the local Ethereum network.
+Give it a try! You can pass various configuration options to the `ethereum-package` via a YAML/JSON file. This network params YAML/JSON file provides the specific configurations that Kurtosis will use to set up the local Ethereum network.
 
 Take the default configuration file and edit it to spin up two nodes with different EL/CL pairs:
 * Node 1 with `geth`/`lighthouse`
@@ -245,7 +245,7 @@ The `network_params` struct configures the network settings that are used to cre
 Save your edited params file in any directory you wish (in the example below, it is saved to the desktop) and then use it to run your Kurtosis package by running:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/kurtosis-tech/ethereum-package --args-file ~/eth-network-params.json
+kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/kurtosis-tech/ethereum-package --args-file ~/eth-network-params.yaml
 ```
 :::TIP
 Note that the `kurtosis clean -a` command is used here to instruct Kurtosis to destroy the old testnet and its contents before starting a new one up.
