@@ -29,6 +29,6 @@ Instead, do the manipulation you need at execution time, using something like [`
 [future-reference]: ./future-references.md
 [multi-phase-runs]: ./multi-phase-runs.md
 [starlark-reference]: ./starlark.md
-[plan-starlark-reference]: ../starlark-reference/plan.md
-[plan-run-sh]: ../starlark-reference/plan.md#run_sh
-[plan-run-python]: ../starlark-reference/plan.md#run_python
+[plan-starlark-reference]: ../api-reference/starlark-reference/plan.md
+[plan-run-sh]: ../api-reference/starlark-reference/plan.md#run_sh
+[plan-run-python]: ../api-reference/starlark-reference/plan.md#run_python

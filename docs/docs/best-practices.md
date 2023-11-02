@@ -50,7 +50,7 @@ Failure to adhere to the above standards will result in errors when running Kurt
 <!---------------------------------------- ONLY LINKS BELOW HERE!!! ----------------------------------->
 [package-parameterization]: ./concepts-reference/packages.md#parameterization
 
-[service-config-starlark-reference]: ./starlark-reference/service-config.md
-[port-spec-starlark-reference]: ./starlark-reference/port-spec.md
-[ready-condition-starlark-reference]: ./starlark-reference/ready-condition.md
-[plan-wait-starlark-reference]: ./starlark-reference/plan.md#wait
+[service-config-starlark-reference]: ./api-reference/starlark-reference/service-config.md
+[port-spec-starlark-reference]: ./api-reference/starlark-reference/port-spec.md
+[ready-condition-starlark-reference]: ./api-reference/starlark-reference/ready-condition.md
+[plan-wait-starlark-reference]: ./api-reference/starlark-reference/plan.md#wait

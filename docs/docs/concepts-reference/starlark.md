@@ -13,7 +13,7 @@ How is Starlark implemented at Kurtosis?
 ----------------------------------------
 Starlark itself is very basic; Google designed it to be extended to fulfill a given usecase. For example, the Bazel language is actually an extension built on top of Starlark. 
 
-We extended basic Starlark with [our own DSL](../starlark-reference/index.md) so that it could [fulfill the properties of reusable environment definitions](../explanations/reusable-environment-definitions.md). This gave us:
+We extended basic Starlark with [our own DSL](../api-reference/starlark-reference/index.md) so that it could [fulfill the properties of reusable environment definitions](../explanations/reusable-environment-definitions.md). This gave us:
 
 - A [list of Kurtosis-specific functions][starlark-reference] for working with an environment
 - The [ability to accept parameters][packages-parameterization]
@@ -29,7 +29,7 @@ We've released an [official Kurtosis Starlark VS Code extension][vscode-plugin] 
 <!--------------- ONLY LINKS BELOW HERE --------------------------->
 [enclaves-reference]: ./enclaves.md
 [why-kurtosis-starlark]: ../explanations/why-kurtosis-starlark.md
-[starlark-reference]: ../starlark-reference/index.md
+[starlark-reference]: ../api-reference/starlark-reference/index.md
 [packages-parameterization]: ./packages.md#parameterization
 [locators-reference]: ./locators.md
 [multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md

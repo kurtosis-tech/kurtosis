@@ -7,7 +7,7 @@ sidebar_label: Locators
 Locators are a part of the [Kurtosis packaging system][packages]. To read about the package system in detail, [see here][how-do-kurtosis-imports-work-explanation].
 :::
 
-A locator is how resources are identified when being imported in a Starlark script - namely by [`import_module`](../starlark-reference/import-module.md) and [`read_file`](../starlark-reference/read-file.md). There are two types of locators: absolute and relative.
+A locator is how resources are identified when being imported in a Starlark script - namely by [`import_module`](../api-reference/starlark-reference/import-module.md) and [`read_file`](../api-reference/starlark-reference/read-file.md). There are two types of locators: absolute and relative.
 
 ### Absolute Locators
 Absolute locators unambiguously identify a resource using a URL-like syntax. For example, this locator:

@@ -23,7 +23,7 @@ To read about why Kurtosis uses this multi-phase approach, [see here][multi-phas
 
 <!---------------- ONLY LINKS BELOW HERE ------------------------->
 [starlark-reference]: ./starlark.md
-[plan-starlark-reference]: ../starlark-reference/plan.md
+[plan-starlark-reference]: ../api-reference/starlark-reference/plan.md
 [packages]: ./packages.md
 [multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
 [future-references-reference]: ./future-references.md

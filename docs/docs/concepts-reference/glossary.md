@@ -35,4 +35,4 @@ A container, launched inside an enclave upon a request to the Kurtosis engine, t
 [locators]: ./locators.md
 [kurtosis-yml]: ./kurtosis-yml.md
 [packages]: ./packages.md
-[sdk-reference]: ../engine-apic-reference.md
+[sdk-reference]: ../api-reference/engine-apic-reference.md

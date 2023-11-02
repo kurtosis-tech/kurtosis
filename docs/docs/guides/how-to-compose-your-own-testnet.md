@@ -78,7 +78,7 @@ In the first two lines, you're using [Locators](../concepts-reference/locators.m
 Feel free to check out the [`geth.star`](https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star) and [`lighthouse.star`](https://github.com/kurtosis-tech/lighthouse-package/blob/main/lib/lighthouse.star) to understand how they work. At a high level, the definition instructs Kurtosis to generate genesis data, set up pre-funded accounts, and then launches the client using the client container images.
 :::
 
-Finally, we are converting the local `network_params.json` file into a format that can be used in your environment definition using [`json.decode()`](https://bazel.build/rules/lib/core/json#decode) and [`read_file()`](../starlark-reference/read-file.md).
+Finally, we are converting the local `network_params.json` file into a format that can be used in your environment definition using [`json.decode()`](https://bazel.build/rules/lib/core/json#decode) and [`read_file()`](../api-reference/starlark-reference/read-file.md).
 
 ### 3. Define how your testnet gets built
 Now that you have all the necessary dependencies, you can start writing the function that will instantiate the network. Within your `main.star` file, add the following 3 new lines:

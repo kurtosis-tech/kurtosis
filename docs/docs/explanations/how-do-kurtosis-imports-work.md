@@ -140,5 +140,5 @@ Once you push to GitHub, however, your package `name` will need to match the aut
 [kurtosis-yml-reference]: ../concepts-reference/kurtosis-yml.md
 [packages-reference]: ../concepts-reference/packages.md
 [locators-reference]: ../concepts-reference/locators.md
-[import-module-starlark-reference]: ../starlark-reference/import-module.md
-[read-file-starlark-reference]: ../starlark-reference/read-file.md
+[import-module-starlark-reference]: ../api-reference/starlark-reference/import-module.md
+[read-file-starlark-reference]: ../api-reference/starlark-reference/read-file.md

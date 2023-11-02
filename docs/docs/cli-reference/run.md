@@ -132,4 +132,4 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 
 
 <!--------------------------------------- ONLY LINKS BELOW HERE -------------------------------->
-[add-services-reference]: ../starlark-reference/plan.md#add_services
+[add-services-reference]: ../api-reference/starlark-reference/plan.md#add_services

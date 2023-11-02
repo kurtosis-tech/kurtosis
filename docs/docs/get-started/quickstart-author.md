@@ -944,8 +944,8 @@ Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtos
 [starlark-reference]: ../concepts-reference/starlark.md
 
 <!-- SL Instructions Reference-->
-[request-reference]: ../starlark-reference/plan.md#request
-[exec-reference]: ../starlark-reference/plan.md#exec
+[request-reference]: ../api-reference/starlark-reference/plan.md#request
+[exec-reference]: ../api-reference/starlark-reference/plan.md#exec
 
 <!-- Reference -->
 [multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
