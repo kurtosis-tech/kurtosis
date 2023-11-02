@@ -454,7 +454,22 @@ func TestGetJsonLogStringWithEOFAndNoValidJsonEnding(t *testing.T) {
 }
 
 func TestParseTimestampFromJsonLogLineReturnsTime(t *testing.T) {
-	timestampStr := "2023-09-06T00:35:15-04:00"
+	timestampStr := "2023-09-06T00:35:15Z" // utc timestamp
+	jsonLogLine := map[string]string{
+		"timestamp": timestampStr,
+	}
+
+	expectedTime, err := time.Parse(time.RFC3339, timestampStr)
+	require.NoError(t, err)
+
+	actualTime, err := parseTimestampFromJsonLogLine(jsonLogLine)
+
+	require.NoError(t, err)
+	require.Equal(t, expectedTime, *actualTime)
+}
+
+func TestParseTimestampFromJsonLogLineWithOffsetReturnsTime(t *testing.T) {
+	timestampStr := "2023-09-06T00:35:15-04:00" // utc timestamp with offset '-4:00'
 	jsonLogLine := map[string]string{
 		"timestamp": timestampStr,
 	}
@@ -470,6 +485,17 @@ func TestParseTimestampFromJsonLogLineReturnsTime(t *testing.T) {
 
 func TestParseTimestampFromJsonLogLineWithIncorrectlyFormattedTimeReturnsError(t *testing.T) {
 	timestampStr := "2023-09-06" // not UTC formatted timestamp str
+	jsonLogLine := map[string]string{
+		"timestamp": timestampStr,
+	}
+
+	_, err := parseTimestampFromJsonLogLine(jsonLogLine)
+
+	require.Error(t, err)
+}
+
+func TestParseTimestampFromJsonLogLineWithoutTimezoneReturnsError(t *testing.T) {
+	timestampStr := "2023-09-06T00:35:15" // no utc timezone indicator or offset to indicate timezone
 	jsonLogLine := map[string]string{
 		"timestamp": timestampStr,
 	}
