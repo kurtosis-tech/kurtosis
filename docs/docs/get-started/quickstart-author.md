@@ -910,7 +910,7 @@ And that's it - you've written your very first distributed application in Kurtos
 - Parameterized data insertion for future use by other users.
 - Made your Kurtosis package consumable by any user by publishing a Kurtosis package to Github
 
-This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
+This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-kurtosis-explanation]. 
 
 Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
 
@@ -928,7 +928,7 @@ Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtos
 [enclaves-reference]: ../advanced-concepts/enclaves.md
 [services-explanation]: ../advanced-concepts/architecture.md#services
 [reusable-environment-definitions-explanation]: ../advanced-concepts/reusable-environment-definitions.md
-[why-we-built-kurtosis-explanation]: ../advanced-concepts/why-we-built-kurtosis.md
+[why-kurtosis-explanation]: ../advanced-concepts/why-kurtosis.md
 [how-do-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md
 [why-multi-phase-runs-explanation]: ../advanced-concepts/why-multi-phase-runs.md
 

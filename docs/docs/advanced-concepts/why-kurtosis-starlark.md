@@ -49,7 +49,7 @@ Conclusion
 So far, both our users and our team have been very happy with our decision to go with Starlark. If you've never used Starlark before, [the quickstart][quickstart] will be a good introduction.
 
 <!--------------- ONLY LINKS BELOW HERE --------------------------->
-[what-we-built-kurtosis]: ./why-we-built-kurtosis.md
+[what-we-built-kurtosis]: ./why-kurtosis.md
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [starlark-differences-with-python]: https://bazel.build/rules/language#differences_with_python
 

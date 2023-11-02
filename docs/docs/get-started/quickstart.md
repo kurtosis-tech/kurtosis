@@ -13,7 +13,7 @@ Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~5 minutes and 
 
 Kurtosis is a platform for packaging and launching environments of containerized services and serve two types of users: the author of an environment definition, referred to as a [Kurtosis package][packages-reference], and the consumer or user of the environment definition. This quickstart is intended to put you in the shoes of the consumer - someone who needs a quick and easy way to get a production-like environment to develop and test changes quicker for your distributed system. A separate guide is [available here][how-to-set-up-postgres-guide] to introduce you to the world of Kurtosis package authoring and how one might define and build an environment with Kurtosis for themselves or for their team.
 
-Our mission is to make building distributed systems as easy as building a single server application. The first problem we aim to solve on our journey to achieve this mission is to bridge the author-consumer divide for environment definitions. For this reason, we built Kurtosis. Further reading about what Kurtosis is and what problems Kurtosis aims to solve, is available on our [introduction page][homepage]. To learn more about our motivations behind starting Kurtosis, go [here][why-we-built-kurtosis-explanation].
+Our mission is to make building distributed systems as easy as building a single server application. The first problem we aim to solve on our journey to achieve this mission is to bridge the author-consumer divide for environment definitions. For this reason, we built Kurtosis. Further reading about what Kurtosis is and what problems Kurtosis aims to solve, is available on our [introduction page][homepage]. To learn more about our motivations behind starting Kurtosis, go [here][why-kurtosis-explanation].
 
 This guide is in a "code along" format, which means you are expected to follow the code examples and run the Kurtosis CLI commands on your local machine. Everything you run in this guide is free, public, and does not contain any sensitive data. 
 
@@ -178,7 +178,7 @@ Let's review. In this tutorial you have:
 In this short guide, you went through the workflow that a Kurtosis package consumer would experience. It is strongly encouraged that you check out the [next guide][how-to-set-up-postgres-guide] where you will set up a Postgres database and an API server to as a package author.
 :::
    
-This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
+This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-kurtosis-explanation]. 
 
 To learn more about how Kurtosis is used, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of Kurtosis in action, including:
 - How to run a simple [Go test][go-test-example] or [Typescript test][ts-test-example] against the app we just built
@@ -205,7 +205,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [enclaves-reference]: ../advanced-concepts/enclaves.md
 [services-explanation]: ../advanced-concepts/architecture.md#services
 [reusable-environment-definitions-explanation]: ../advanced-concepts/reusable-environment-definitions.md
-[why-we-built-kurtosis-explanation]: ../advanced-concepts/why-we-built-kurtosis.md
+[why-kurtosis-explanation]: ../advanced-concepts/why-kurtosis.md
 [how-do-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md
 [why-multi-phase-runs-explanation]: ../advanced-concepts/why-multi-phase-runs.md
 
