@@ -194,7 +194,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 		{
 			Key:     packageArgsFileFlagKey,
-			Usage:   "The file (JSON/YAML) that will be used to pass in arguments to the Kurtosis package. Can be a URL or file path to a file.",
+			Usage:   "The file (JSON/YAML) that will be used to pass in arguments to the Kurtosis package. Can be a URL or file path.",
 			Type:    flags.FlagType_String,
 			Default: packageArgsFileDefaultValue,
 		},
