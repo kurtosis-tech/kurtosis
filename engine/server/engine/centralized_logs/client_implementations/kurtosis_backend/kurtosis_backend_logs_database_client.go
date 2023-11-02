@@ -14,6 +14,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -192,7 +193,7 @@ func streamServiceLogLines(
 				return
 			}
 
-			logLine := logline.NewLogLine(logLineStr)
+			logLine := logline.NewLogLine(logLineStr, time.Now())
 
 			//filtering it
 			shouldReturnLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
