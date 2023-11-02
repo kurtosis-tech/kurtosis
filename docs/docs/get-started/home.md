@@ -9,8 +9,8 @@ hide_table_of_contents: true
 [Kurtosis](https://github.com/kurtosis-tech/kurtosis) is a tool for packaging and launching environments of containerized services where you want them, the way you want them, with one liners.
 
 - Get started with a [quickstart](quickstart.md) to launch an environment.
-- Dive deeper with [basic Kurtosis concepts](basic-concepts).
-- Write your own environment definition with the [package authorship quickstart](quickstart-author.md).
+- Dive deeper with [basic Kurtosis concepts](basic-concepts.md).
+- Write your own environment definition with a guide on [writing a package](quickstart-author.md).
 
 ### Local Docker deploy from Github locator
 

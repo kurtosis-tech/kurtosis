@@ -1,6 +1,6 @@
 ---
-title: Quickstart - Run a Package
-sidebar_label: Quickstart - Run a Package
+title: Quickstart
+sidebar_label: Quickstart
 slug: /quickstart
 toc_max_heading_level: 2
 sidebar_position: 3
