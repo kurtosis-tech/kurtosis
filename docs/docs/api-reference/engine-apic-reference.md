@@ -306,7 +306,7 @@ Gets the Name and UUID of the current services in the enclave.
 * `serviceIdentifiers`: A map of objects containing a mapping of Name -> UUID for all the services inside the enclave
 
 ### `uploadFiles(String pathToUpload, String artifactName) -> FilesArtifactUUID, FilesArtifactName, Error`
-Uploads a filepath or directory path as a [files artifact](./concepts-reference/files-artifacts.md). The resulting files artifact can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md) when adding a service.
+Uploads a filepath or directory path as a [files artifact](../concepts-reference/files-artifacts.md). The resulting files artifact can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md) when adding a service.
 
 If a directory is specified, the contents of the directory will be uploaded to the archive without additional nesting. Empty directories cannot be uploaded.
 
@@ -321,7 +321,7 @@ If a directory is specified, the contents of the directory will be uploaded to t
 * `FilesArtifactName`: The name of the file-artifact, it is auto-generated if `artitfactName` is an empty string.
 
 ### `storeWebFiles(String urlToDownload, String artifactName)`
-Downloads a files-containing `.tgz` from the given URL as a [files artifact](./concepts-reference/files-artifacts.md). The resulting files artifact can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md) when adding a service.
+Downloads a files-containing `.tgz` from the given URL as a [files artifact](../concepts-reference/files-artifacts.md). The resulting files artifact can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md) when adding a service.
 
 **Args**
 
@@ -573,6 +573,6 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 [enclaveinfo]: #enclaveinfo
 [enclaves]: #enclaves
 
-[identifier]: ./concepts-reference/resource-identifier.md
+[identifier]: ../concepts-reference/resource-identifier.md
 [enclave-identifiers]: #enclaveidentifiers
 [service-identifiers]: #serviceidentifiers

@@ -8,7 +8,7 @@ hide_table_of_contents: true
 
 [Kurtosis](https://github.com/kurtosis-tech/kurtosis) is a tool for packaging and launching environments of containerized services where you want them, the way you want them, with one liners.
 
-- Get started with a quickstart to launch an environment.
+- Get started with a [quickstart](quickstart.md) to launch an environment.
 - Learn about basic Kurtosis concepts.
 - See our most popular use cases and explore real-world examples.
 
@@ -18,7 +18,7 @@ hide_table_of_contents: true
 kurtosis run github.com/kurtosis-tech/basic-service-package
 ```
 
-<details><summary><b>Result</b></summary>
+<details><summary><b>Output</b></summary>
 
 *CLI Output*
 
@@ -40,7 +40,7 @@ kurtosis run github.com/galenmarchetti/kurtosis-tech \
     "party_mode": true}'
 ```
 
-<details><summary><b>Result</b></summary>
+<details><summary><b>Output</b></summary>
 
 *CLI Output*
 
@@ -65,7 +65,7 @@ kurtosis run github.com/galenmarchetti/kurtosis-tech \
     "party_mode": true}'
 ```
 
-<details><summary><b>Result</b></summary>
+<details><summary><b>Output</b></summary>
 
 **Note:** The experience on remote k8s is the same as local Docker.
 

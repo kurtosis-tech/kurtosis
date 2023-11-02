@@ -36,5 +36,5 @@ Note that you cannot manually create a `Service` object; it is only returned by 
 [add-service-starlark-reference]: ./plan.md#add_service
 [add-services-starlark-reference]: ./plan.md#add_services
 
-[future-references-concepts-reference]: ../concepts-reference/future-references.md
-[multi-phase-runs-concepts-reference]: ../concepts-reference/multi-phase-runs.md
+[future-references-concepts-reference]: ../../concepts-reference/future-references.md
+[multi-phase-runs-concepts-reference]: ../../concepts-reference/multi-phase-runs.md
