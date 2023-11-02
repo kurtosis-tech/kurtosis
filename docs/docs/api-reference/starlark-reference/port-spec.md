@@ -38,7 +38,7 @@ The above constructor returns a `PortSpec` object that defines information about
 The `wait` field represents the timeout duration that Kurtosis will use when checking whether or not a service's declared UDP or TCP port are open and ready for traffic and connections upon startup. This is the default way to perform a readiness check using Kurtosis. However, there are other ways to perform a readiness check. Specifically, you can also use [`ServiceConfig.ReadyConditions`][ready-conditions] to check if a service is ready with a a REST call, or you can use the [Wait][wait] instruction if you need to perform a one-off readiness check after service startup.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
-[future-references-reference]: ../../concepts-reference/future-references.md
+[future-references-reference]: ../../advanced-concepts/future-references.md
 [add-service-reference]: ./plan.md#add_service
 [ready-conditions]: ./ready-condition.md
 [wait]: ./plan.md#wait

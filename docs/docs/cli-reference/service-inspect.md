@@ -10,7 +10,7 @@ To view detailed information about a given service, including its status and att
 kurtosis service inspect $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER
 ```
 
-where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../concepts-reference/resource-identifier.md) for the enclave and service, respectively.
+where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../advanced-concepts/resource-identifier.md) for the enclave and service, respectively.
 
 Running the above command will print detailed information about:
 

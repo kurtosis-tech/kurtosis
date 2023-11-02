@@ -3,7 +3,7 @@ title: read_file
 sidebar_label: read_file
 ---
 
-The `read_file` function reads the contents of a file specified by the given [locator][locators-reference] and executes [at interpretation time][multi-phase-runs-reference]. This instruction returns the content of the file in a string type. Please note that the files being read from must themselves be part of a Kurtosis package, as explained [here](../../concepts-reference/locators.md#important-package-restriction).
+The `read_file` function reads the contents of a file specified by the given [locator][locators-reference] and executes [at interpretation time][multi-phase-runs-reference]. This instruction returns the content of the file in a string type. Please note that the files being read from must themselves be part of a Kurtosis package, as explained [here](../../advanced-concepts/locators.md#important-package-restriction).
 
 ```python
 read_file(
@@ -28,6 +28,6 @@ local_contents = read_file(
 ```
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
-[locators-reference]: ../../concepts-reference/locators.md
-[multi-phase-runs-reference]: ../../concepts-reference/multi-phase-runs.md
-[packages-reference]: ../../concepts-reference/packages.md
+[locators-reference]: ../../advanced-concepts/locators.md
+[multi-phase-runs-reference]: ../../advanced-concepts/multi-phase-runs.md
+[packages-reference]: ../../advanced-concepts/packages.md

@@ -26,5 +26,5 @@ NOTE: We chose not to use the normal Starlark `load` primitive due to its lack o
 
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
-[packages-reference]: ../../concepts-reference/packages.md
-[locators-reference]: ../../concepts-reference/locators.md
+[packages-reference]: ../../advanced-concepts/packages.md
+[locators-reference]: ../../advanced-concepts/locators.md

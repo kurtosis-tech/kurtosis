@@ -130,5 +130,5 @@ which it runs (`service_2`) was left intact in the submitted plan. It will there
 ![overlapping-plans-with-updates-v2.png](/img/explanations/starlark-idempotent-run/overlapping-plans-with-updates-v2.png)
 
 <!---------------------------------- REFERENCE LINKS ---------------------------------------------------------->
-[idempotent-run-concept-reference]: ../concepts-reference/idempotent-runs.md
+[idempotent-run-concept-reference]: ../advanced-concepts/idempotent-runs.md
 

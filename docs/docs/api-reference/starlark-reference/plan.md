@@ -703,11 +703,11 @@ plan.print(recipe_result["code"])
 
 [cli-run-reference]: ../../cli-reference/run.md
 
-[files-artifacts-reference]: ../../concepts-reference/files-artifacts.md
-[future-references-reference]: ../../concepts-reference/future-references.md
-[packages-reference]: ../../concepts-reference/packages.md
-[locators-reference]: ../../concepts-reference/locators.md
-[multi-phase-runs-reference]: ../../concepts-reference/multi-phase-runs.md
+[files-artifacts-reference]: ../../advanced-concepts/files-artifacts.md
+[future-references-reference]: ../../advanced-concepts/future-references.md
+[packages-reference]: ../../advanced-concepts/packages.md
+[locators-reference]: ../../advanced-concepts/locators.md
+[multi-phase-runs-reference]: ../../advanced-concepts/multi-phase-runs.md
 [ready-condition]: ./ready-condition.md
 [service-config]: ./service-config.md
 

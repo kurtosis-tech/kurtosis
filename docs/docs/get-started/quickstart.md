@@ -147,9 +147,9 @@ e296eefa1710   cl-2-lighthouse-geth-validator             http: 5042/tcp -> 127.
 
 Thats it! You now have a full, private Ethereum blockchain on your local machine.
 
-The first section that gets printed contains some basic metadata about the enclave that was spun up. This includes the name of the enclave `eth-network`, its [Resource Idenfitier](https://docs.kurtosis.com/concepts-reference/resource-identifier/), your enclave's status, and the time it was created.
+The first section that gets printed contains some basic metadata about the enclave that was spun up. This includes the name of the enclave `eth-network`, its [Resource Idenfitier](https://docs.kurtosis.com/advanced-concepts/resource-identifier/), your enclave's status, and the time it was created.
 
-Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/), which are Kurtosis' first-class representation of data inside your enclave, stored as compressed TGZ files. You'll notice there are configuration files for the nodes, grafana, and prometheus as well as private keys for pre-funded accounts and genesis-related data. These files artifacts were generated and used by Kurtosis to start the network and abstracts away the complexities and overhead that come with generating validator keys and getting genesis and node config files produced and mounted to the right containers yourself.
+Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.com/advanced-concepts/files-artifacts/), which are Kurtosis' first-class representation of data inside your enclave, stored as compressed TGZ files. You'll notice there are configuration files for the nodes, grafana, and prometheus as well as private keys for pre-funded accounts and genesis-related data. These files artifacts were generated and used by Kurtosis to start the network and abstracts away the complexities and overhead that come with generating validator keys and getting genesis and node config files produced and mounted to the right containers yourself.
 
 Lastly, there is a section called `User Services` which display the number of services (running in Docker containers) that make up your network. You will notice that there are 2 Ethereum nodes comprised of 3 services each (an EL client, a CL beacon client, and a CL validator client) and 2 genesis data generators for each the CL and EL. Each of these services are running in Docker containers inside your local enclave & Kurtosis has automatically mapped each container port to your machine's ephemeral ports for seamless interaction with the services running in your enclave.
 
@@ -202,7 +202,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 
 <!--------------------------- Explanations ------------------------------------>
 [architecture-explanation]: ../explanations/architecture.md
-[enclaves-reference]: ../concepts-reference/enclaves.md
+[enclaves-reference]: ../advanced-concepts/enclaves.md
 [services-explanation]: ../explanations/architecture.md#services
 [reusable-environment-definitions-explanation]: ../explanations/reusable-environment-definitions.md
 [why-we-built-kurtosis-explanation]: ../explanations/why-we-built-kurtosis.md
@@ -218,21 +218,21 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [kurtosis-files-upload-reference]: ../cli-reference/files-upload.md
 [kurtosis-feedback-reference]: ../cli-reference/feedback.md
 [kurtosis-twitter]: ../cli-reference/twitter.md
-[starlark-reference]: ../concepts-reference/starlark.md
+[starlark-reference]: ../advanced-concepts/starlark.md
 
 <!-- SL Instructions Reference-->
 [request-reference]: ../api-reference/starlark-reference/plan.md#request
 [exec-reference]: ../api-reference/starlark-reference/plan.md#exec
 
 <!-- Reference -->
-[multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
-[kurtosis-yml-reference]: ../concepts-reference/kurtosis-yml.md
-[packages-reference]: ../concepts-reference/packages.md
-[runnable-packages-reference]: ../concepts-reference/packages.md#runnable-packages
-[locators-reference]: ../concepts-reference/locators.md
-[plan-reference]: ../concepts-reference/plan.md
-[future-references-reference]: ../concepts-reference/future-references.md
-[files-artifacts-reference]: ../concepts-reference/files-artifacts.md
+[multi-phase-runs-reference]: ../advanced-concepts/multi-phase-runs.md
+[kurtosis-yml-reference]: ../advanced-concepts/kurtosis-yml.md
+[packages-reference]: ../advanced-concepts/packages.md
+[runnable-packages-reference]: ../advanced-concepts/packages.md#runnable-packages
+[locators-reference]: ../advanced-concepts/locators.md
+[plan-reference]: ../advanced-concepts/plan.md
+[future-references-reference]: ../advanced-concepts/future-references.md
+[files-artifacts-reference]: ../advanced-concepts/files-artifacts.md
 
 <!--------------------------- Other ------------------------------------>
 <!-- Examples repo -->

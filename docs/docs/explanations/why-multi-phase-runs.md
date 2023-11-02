@@ -35,6 +35,6 @@ In the future, the multi-phase approach will also:
 - Permit compiling a Kurtosis plan down to an idempotent, declarative format (e.g. Helm, Terraform, or Docker Compose).
 
 <!----------------- ONLY LINKS BELOW HERE ----------------->
-[starlark-reference]: ../concepts-reference/starlark.md
-[multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
-[future-references-reference]: ../concepts-reference/future-references.md
+[starlark-reference]: ../advanced-concepts/starlark.md
+[multi-phase-runs-reference]: ../advanced-concepts/multi-phase-runs.md
+[future-references-reference]: ../advanced-concepts/future-references.md

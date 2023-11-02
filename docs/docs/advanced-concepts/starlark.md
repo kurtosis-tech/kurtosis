@@ -32,6 +32,6 @@ We've released an [official Kurtosis Starlark VS Code extension][vscode-plugin] 
 [starlark-reference]: ../api-reference/starlark-reference/index.md
 [packages-parameterization]: ./packages.md#parameterization
 [locators-reference]: ./locators.md
-[multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
+[multi-phase-runs-reference]: ../advanced-concepts/multi-phase-runs.md
 [multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
 [vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension

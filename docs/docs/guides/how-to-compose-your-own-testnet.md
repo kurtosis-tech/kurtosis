@@ -61,7 +61,7 @@ Now, create a `kurtosis.yml` file in the same folder with the following:
 ```yml
 name: github.com/foo-bar/my-testnet
 ```
-Awesome. You have just created the beginnings of your first [Kurtosis package](../concepts-reference/packages.md)! This package will form the backbone of the environment definition you will use to instantiate and deploy your private testnet. A Kurtosis package is completely reproducible, modular, and will work locally (Docker, Minikube, k3s, etc) or in the cloud, on backends like EC2 or Kubernetes. 
+Awesome. You have just created the beginnings of your first [Kurtosis package](../advanced-concepts/packages.md)! This package will form the backbone of the environment definition you will use to instantiate and deploy your private testnet. A Kurtosis package is completely reproducible, modular, and will work locally (Docker, Minikube, k3s, etc) or in the cloud, on backends like EC2 or Kubernetes. 
 
 ### 2. Import dependencies
 Now that you have a local project to house your definition and some parameters to start the network with, its time to actually build the network. First, create a Starlark file called `main.star` and add the following three lines:
@@ -72,7 +72,7 @@ lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/ligh
 network_params = json.decode(read_file("./network_params.json"))
 ```
 
-In the first two lines, you're using [Locators](../concepts-reference/locators.md) to import in `geth.star` and `lighthouse.star` files from Github, making them available to use in your testnet definition. These files themselves are environment definitions that can be used to bootstrap and start up a Geth execution layer client and a Lighthouse consensus layer client as part of your testnet - which is exactly what you will do next.
+In the first two lines, you're using [Locators](../advanced-concepts/locators.md) to import in `geth.star` and `lighthouse.star` files from Github, making them available to use in your testnet definition. These files themselves are environment definitions that can be used to bootstrap and start up a Geth execution layer client and a Lighthouse consensus layer client as part of your testnet - which is exactly what you will do next.
 
 :::note
 Feel free to check out the [`geth.star`](https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star) and [`lighthouse.star`](https://github.com/kurtosis-tech/lighthouse-package/blob/main/lib/lighthouse.star) to understand how they work. At a high level, the definition instructs Kurtosis to generate genesis data, set up pre-funded accounts, and then launches the client using the client container images.
@@ -124,7 +124,7 @@ Finally, time to give it a spin! Go back to your terminal and from within the `m
 kurtosis run .
 ```
 
-Kurtosis will interpret the environment definition you just wrote, validate that everything will work, and then execute the instructions to instantiate your Ethereum node inside an [enclave](../concepts-reference/enclaves.md), which is just a sandbox environment that will house your node. Kurtosis will handle the importing of the `lighthouse.star` and `geth.star` files from Github. The output you'll get at the end should look like this:
+Kurtosis will interpret the environment definition you just wrote, validate that everything will work, and then execute the instructions to instantiate your Ethereum node inside an [enclave](../advanced-concepts/enclaves.md), which is just a sandbox environment that will house your node. Kurtosis will handle the importing of the `lighthouse.star` and `geth.star` files from Github. The output you'll get at the end should look like this:
 
 ```bash
 Starlark code successfully run. No output was returned.
