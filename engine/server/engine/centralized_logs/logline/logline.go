@@ -3,6 +3,7 @@ package logline
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
+	"time"
 )
 
 const (
@@ -10,17 +11,22 @@ const (
 )
 
 type LogLine struct {
-	//lineTime time.Time //TODO add the time from loki logs result
 	content string
+
+	timestamp time.Time
 }
 
-func NewLogLine(content string) *LogLine {
+func NewLogLine(content string, timestamp time.Time) *LogLine {
 	contentWithoutNewLine := strings.TrimSuffix(content, newlineChar)
-	return &LogLine{content: contentWithoutNewLine}
+	return &LogLine{content: contentWithoutNewLine, timestamp: timestamp}
 }
 
 func (logLine LogLine) GetContent() string {
 	return logLine.content
+}
+
+func (logLine LogLine) GetTimestamp() time.Time {
+	return logLine.timestamp
 }
 
 func (logLine LogLine) IsValidLogLineBaseOnFilters(
