@@ -11,7 +11,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  Tooltip,
+  Tooltip
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { useMemo, useRef, useState } from "react";
@@ -25,7 +25,7 @@ import { CopyButton } from "../../CopyButton";
 import { KurtosisAlert } from "../../KurtosisAlert";
 import {
   EnclaveConfigurationForm,
-  EnclaveConfigurationFormImperativeAttributes,
+  EnclaveConfigurationFormImperativeAttributes
 } from "../configuration/EnclaveConfigurationForm";
 import { BooleanArgumentInput } from "../configuration/inputs/BooleanArgumentInput";
 import { StringArgumentInput } from "../configuration/inputs/StringArgumentInput";
@@ -33,7 +33,7 @@ import { KurtosisArgumentFormControl } from "../configuration/KurtosisArgumentFo
 import { KurtosisPackageArgumentInput } from "../configuration/KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../configuration/types";
 import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
-import {KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG} from "../../constants";
+import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../../constants";
 
 type ConfigureEnclaveModalProps = {
   isOpen: boolean;
@@ -43,11 +43,11 @@ type ConfigureEnclaveModalProps = {
 };
 
 export const ConfigureEnclaveModal = ({
-  isOpen,
-  onClose,
-  kurtosisPackage,
-  existingEnclave,
-}: ConfigureEnclaveModalProps) => {
+                                        isOpen,
+                                        onClose,
+                                        kurtosisPackage,
+                                        existingEnclave
+                                      }: ConfigureEnclaveModalProps) => {
   const kurtosisClient = useKurtosisClient();
   const navigator = useNavigate();
   const submit = useSubmit();
@@ -59,7 +59,7 @@ export const ConfigureEnclaveModal = ({
     if (isDefined(existingEnclave)) {
       if (existingEnclave.starlarkRun.isErr) {
         setError(
-          `Could not retrieve starlark run for previous configuration, got error: ${existingEnclave.starlarkRun.isErr}`,
+          `Could not retrieve starlark run for previous configuration, got error: ${existingEnclave.starlarkRun.isErr}`
         );
         return undefined;
       }
@@ -69,7 +69,7 @@ export const ConfigureEnclaveModal = ({
           argType: ArgumentValueType | undefined,
           value: any,
           innerType1?: ArgumentValueType,
-          innerType2?: ArgumentValueType,
+          innerType2?: ArgumentValueType
         ): any => {
           switch (argType) {
             case ArgumentValueType.BOOL:
@@ -100,15 +100,15 @@ export const ConfigureEnclaveModal = ({
               arg.typeV2?.topLevelType,
               parsedArgs[arg.name],
               arg.typeV2?.innerType1,
-              arg.typeV2?.innerType2,
-            ),
+              arg.typeV2?.innerType2
+            )
           }),
-          {},
+          {}
         );
         return {
           enclaveName: existingEnclave.name,
           restartServices: existingEnclave.mode === EnclaveMode.PRODUCTION,
-          args,
+          args
         } as ConfigureEnclaveForm;
       } catch (err: any) {
         setError(`Could not reuse previous configuration, got error: ${stringifyError(err)}`);
@@ -125,12 +125,12 @@ export const ConfigureEnclaveModal = ({
 
   // TODO: Improve for cloud config
   const getLinkToCurrentConfig = () => {
-      const params = new URLSearchParams({
-          [KURTOSIS_PACKAGE_ID_URL_ARG]: kurtosisPackage.name,
-          [KURTOSIS_PACKAGE_PARAMS_URL_ARG]: btoa(JSON.stringify(formRef.current?.getValues())),
-      });
+    const params = new URLSearchParams({
+      [KURTOSIS_PACKAGE_ID_URL_ARG]: kurtosisPackage.name,
+      [KURTOSIS_PACKAGE_PARAMS_URL_ARG]: btoa(JSON.stringify(formRef.current?.getValues()))
+    });
 
-      return `${window.location.href.split("?")[0]}?${params}`
+    return `${window.location.href.split("?")[0]}?${params}`;
   };
 
   const handleClose = () => {
@@ -170,8 +170,8 @@ export const ConfigureEnclaveModal = ({
       {
         method: "post",
         action: `/enclave/${enclaveUUID}`,
-        encType: "application/json",
-      },
+        encType: "application/json"
+      }
     );
     onClose();
   };
@@ -192,18 +192,18 @@ export const ConfigureEnclaveModal = ({
             <Flex fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
               <Text>Deploying</Text>
               <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
-              <Text>to</Text>
-              <Input size={"sm"} placeholder={"an unamed environment"} width={"auto"} />
             </Flex>
             {isDefined(error) && <KurtosisAlert message={error} />}
             <Flex flexDirection={"column"} gap={"24px"} p={"12px 24px"} bg={"gray.900"}>
               <Flex justifyContent={"space-between"} alignItems={"center"}>
                 <FormControl display={"flex"} alignItems={"center"} gap={"16px"}>
                   <BooleanArgumentInput inputType={"switch"} name={"restartServices"} />
-                  <Text fontSize={"xs"}>
-                    Restart services (When enabled, Kurtosis will automatically restart any services that crash inside
-                    the enclave)
-                  </Text>
+                  <Tooltip
+                    label="When enabled, Kurtosis will automatically restart any services that crash inside the enclave)">
+                    <Text fontSize={"xs"}>
+                      Restart services
+                    </Text>
+                  </Tooltip>
                 </FormControl>
                 <Tooltip shouldWrapChildren label={"Create a link that can be used to share this configuration."}>
                   <CopyButton valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
