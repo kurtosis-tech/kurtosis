@@ -1,6 +1,6 @@
 ---
-title: Why We Built Kurtosis
-sidebar_label: Why We Built Kurtosis
+title: Why Kurtosis
+sidebar_label: Why Kurtosis
 sidebar_position: 1
 ---
 
