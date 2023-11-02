@@ -20,8 +20,8 @@ require (
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // Local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.4
