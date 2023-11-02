@@ -6,11 +6,11 @@ toc_min_heading_level: 2
 toc_max_heading_level: 2
 ---
 
-Interactions with Kurtosis happen via API. To facilitate interaction with Kurtosis, we provide [client libraries][kurtosis-client-libs] for interacting with the Kurtosis API. These can be used to, for example, write Kurtosis-based tests using your test framework of choice.
+Interactions with Kurtosis happen via API. To facilitate interaction with Kurtosis, we provide [client libraries][kurtosis-client-libs] in Go and Typescript for interacting with the Kurtosis API. These can be used to, for example, write Kurtosis-based tests using your test framework of choice.
 
 For language-specific guides and examples, see the READMEs for each of our client libraries:
-- (Golang guides and examples)[https://github.com/kurtosis-tech/kurtosis/tree/main/api/golang]
-- (Typescript guides and examples)[https://github.com/kurtosis-tech/kurtosis/tree/main/api/typescript]
+- [Go guides and examples][golang-readme]
+- [Typescript guides and examples][typescript-readme]
 
 This page documents the objects and functions that are available in all client libraries.
 
@@ -549,6 +549,8 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 <!-- TODO make the reference names a) be properly-cased (e.g. "Service.isAvailable" rather than "service_isavailable") and b) have an underscore in front of them, so they're easy to find-replace without accidentally over-replacing -->
 
 [kurtosis-client-libs]: https://github.com/kurtosis-tech/kurtosis/tree/main/api
+[golang-readme]: https://github.com/kurtosis-tech/kurtosis/tree/main/api/golang
+[typescript-readme]: https://github.com/kurtosis-tech/kurtosis/tree/main/api/typescript
 
 [servicelogsstreamcontent]: #servicelogsstreamcontent
 [servicelog]: #servicelog
