@@ -105,4 +105,4 @@ lib_via_absolute_import = import_module("github.com/kurtosis-tech/package-repo/s
 
 <!------------------ ONLY LINKS BELOW HERE -------------------->
 [packages]: ./packages.md
-[how-do-kurtosis-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
+[how-do-kurtosis-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md

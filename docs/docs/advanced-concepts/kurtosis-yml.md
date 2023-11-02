@@ -166,5 +166,5 @@ In other words, replace directives are matched “longest match first”.
 
 <!----------------------- ONLY LINKS BELOW HERE ----------------------------->
 [package]: ./packages.md
-[how-do-kurtosis-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
+[how-do-kurtosis-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md
 [locators]: ./locators.md

@@ -112,7 +112,7 @@ If you're new to Kurtosis, you might like the [quickstart][quickstart] as a good
 
 <!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
 [cli-changelog]: ../changelog.md
-[metrics-philosophy]: ../explanations/metrics-philosophy.md
+[metrics-philosophy]: ../advanced-concepts/metrics-philosophy.md
 [analytics-disable]: ../cli-reference/analytics-disable.md
 [quickstart]: ../get-started/quickstart.md
 [installing-command-line-completion]: ../guides/adding-command-line-completion.md

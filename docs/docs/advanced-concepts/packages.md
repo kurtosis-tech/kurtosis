@@ -146,6 +146,6 @@ def run(plan):
 [kurtosis-yml]: ./kurtosis-yml.md
 [locators]: ./locators.md
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=package+in%3Aname&type=all&language=&sort=
-[how-do-kurtosis-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
+[how-do-kurtosis-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md
 [plan]: ./plan.md
 [kurtosis-run-arguments]: ../cli-reference/run.md#arguments

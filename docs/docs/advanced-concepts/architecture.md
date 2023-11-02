@@ -4,7 +4,7 @@ sidebar_label: Architecture
 sidebar_position: 2
 ---
 
-![Kurtosis Architecture](/img/explanations/kurtosis-architecture.png)
+![Kurtosis Architecture](/img/advanced-concepts/kurtosis-architecture.png)
 
 Kurtosis At A Macro Level
 -------------------------

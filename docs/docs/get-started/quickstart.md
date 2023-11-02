@@ -200,14 +200,14 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [upgrading-kurtosis-guide]: ../guides/upgrading-the-cli.md
 [how-to-set-up-postgres-guide]: quickstart-author.md
 
-<!--------------------------- Explanations ------------------------------------>
-[architecture-explanation]: ../explanations/architecture.md
+<!--------------------------- Advanced Concepts ------------------------------------>
+[architecture-explanation]: ../advanced-concepts/architecture.md
 [enclaves-reference]: ../advanced-concepts/enclaves.md
-[services-explanation]: ../explanations/architecture.md#services
-[reusable-environment-definitions-explanation]: ../explanations/reusable-environment-definitions.md
-[why-we-built-kurtosis-explanation]: ../explanations/why-we-built-kurtosis.md
-[how-do-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
-[why-multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
+[services-explanation]: ../advanced-concepts/architecture.md#services
+[reusable-environment-definitions-explanation]: ../advanced-concepts/reusable-environment-definitions.md
+[why-we-built-kurtosis-explanation]: ../advanced-concepts/why-we-built-kurtosis.md
+[how-do-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md
+[why-multi-phase-runs-explanation]: ../advanced-concepts/why-multi-phase-runs.md
 
 <!--------------------------- Reference ------------------------------------>
 <!-- CLI Commands Reference -->

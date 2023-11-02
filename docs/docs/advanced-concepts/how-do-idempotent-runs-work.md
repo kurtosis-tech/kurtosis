@@ -100,14 +100,14 @@ Examples
 #### Case of a _submitted plan_ being disjoint from the _enclave plan_
 No instruction get skipped, all instructions from the _submitted plan_ are executed and appended to the _enclave plan_.
 
-![disjoint-plans-v2.png](/img/explanations/starlark-idempotent-run/disjoint-plans-v2.png)
+![disjoint-plans-v2.png](/img/advanced-concepts/starlark-idempotent-run/disjoint-plans-v2.png)
 
 #### Case of a _submitted plan_ partially overlapping the _enclave plan_
 The first two `add_service` instructions from the submitted plans are __equal__ to the last two instructions of the 
 enclave plan. They are therefore skipped, and only the `exec` and `store_service_files` from the submitted plan are
 executed.
 
-![overlapping-plans-v2.png](/img/explanations/starlark-idempotent-run/overlapping-plans-v2.png)
+![overlapping-plans-v2.png](/img/advanced-concepts/starlark-idempotent-run/overlapping-plans-v2.png)
 
 #### Case of a _submitted plan_ partially overlapping the _enclave plan_ with instruction updates
 The `upload_file` instruction is equal, it will be skipped similarly to the case explained above.
@@ -127,7 +127,7 @@ re-run__.
 The `store_service_file` from the submitted plan is __equal__ to the one from the enclave plan, and the service on 
 which it runs (`service_2`) was left intact in the submitted plan. It will therefore be skipped.
 
-![overlapping-plans-with-updates-v2.png](/img/explanations/starlark-idempotent-run/overlapping-plans-with-updates-v2.png)
+![overlapping-plans-with-updates-v2.png](/img/advanced-concepts/starlark-idempotent-run/overlapping-plans-with-updates-v2.png)
 
 <!---------------------------------- REFERENCE LINKS ---------------------------------------------------------->
 [idempotent-run-concept-reference]: ../advanced-concepts/idempotent-runs.md

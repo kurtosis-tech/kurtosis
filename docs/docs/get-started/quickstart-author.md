@@ -923,14 +923,14 @@ Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtos
 [installing-docker-guide]: ../get-started/installing-the-cli.md#i-install--start-docker
 [upgrading-kurtosis-guide]: ../guides/upgrading-the-cli.md
 
-<!--------------------------- Explanations ------------------------------------>
-[architecture-explanation]: ../explanations/architecture.md
+<!--------------------------- Advanced Concepts ------------------------------------>
+[architecture-explanation]: ../advanced-concepts/architecture.md
 [enclaves-reference]: ../advanced-concepts/enclaves.md
-[services-explanation]: ../explanations/architecture.md#services
-[reusable-environment-definitions-explanation]: ../explanations/reusable-environment-definitions.md
-[why-we-built-kurtosis-explanation]: ../explanations/why-we-built-kurtosis.md
-[how-do-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
-[why-multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
+[services-explanation]: ../advanced-concepts/architecture.md#services
+[reusable-environment-definitions-explanation]: ../advanced-concepts/reusable-environment-definitions.md
+[why-we-built-kurtosis-explanation]: ../advanced-concepts/why-we-built-kurtosis.md
+[how-do-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md
+[why-multi-phase-runs-explanation]: ../advanced-concepts/why-multi-phase-runs.md
 
 <!--------------------------- Reference ------------------------------------>
 <!-- CLI Commands Reference -->
