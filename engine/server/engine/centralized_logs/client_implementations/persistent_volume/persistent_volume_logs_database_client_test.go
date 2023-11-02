@@ -26,6 +26,7 @@ const (
 	testUserService2Uuid = "test-user-service-2"
 	testUserService3Uuid = "test-user-service-3"
 
+	utcFormat              = time.RFC3339
 	defaultUTCTimestampStr = "2023-09-06T00:35:15-04:00"
 	logLine1               = "{\"log\":\"Starting feature 'centralized logs'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
 	logLine2               = "{\"log\":\"Starting feature 'runs idempotently'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
@@ -583,7 +584,7 @@ func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
-	expectedTime, err := time.Parse(time.RFC3339, defaultUTCTimestampStr)
+	expectedTime, err := time.Parse(utcFormat, defaultUTCTimestampStr)
 	require.NoError(t, err)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -601,7 +602,9 @@ func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
 		require.True(t, found)
 		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
-		require.Equal(t, expectedTime, serviceLogLines[0].GetTimestamp())
+		for _, logLine := range serviceLogLines {
+			require.Equal(t, expectedTime, logLine.GetTimestamp())
+		}
 	}
 }
 
@@ -627,7 +630,7 @@ func TestStreamUserServiceLogsPerFileReturnsTimestampedLogLines(t *testing.T) {
 
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
 
-	filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	filepath := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	file, err := underlyingFs.Create(filepath)
 	require.NoError(t, err)
 	_, err = file.WriteString(timestampedLogLinesStr)
@@ -635,7 +638,7 @@ func TestStreamUserServiceLogsPerFileReturnsTimestampedLogLines(t *testing.T) {
 
 	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
 
-	expectedTime, err := time.Parse(time.RFC3339, defaultUTCTimestampStr)
+	expectedTime, err := time.Parse(utcFormat, defaultUTCTimestampStr)
 	require.NoError(t, err)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
