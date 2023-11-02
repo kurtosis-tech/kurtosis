@@ -8,9 +8,17 @@ sidebar_position: 3
 Package
 -----------
 
-A package defines the set up logic for a containerized backend. Packages can be accessed via Github locators (example: `github.com/kurtosis-tech/basic-service-package`). 
+A package defines the set up logic for a containerized backend. Packages can be accessed via Github locators, like: `github.com/kurtosis-tech/basic-service-package`.
 
 Packages can accept a set of parameters, defined by the package author, which enable the package consumer to modify their deployed backend at a high-level without needing to know how to configure each individual service.
+
+```bash
+kurtosis run github.com/kurtosis-tech/basic-service-package \
+  '{"service_a_count": 2, 
+    "service_b_count": 2, 
+    "service_c_count": 1,
+    "party_mode": true}'
+```
 
 Enclave
 -----------
