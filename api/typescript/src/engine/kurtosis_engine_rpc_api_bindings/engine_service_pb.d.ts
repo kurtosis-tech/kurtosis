@@ -408,6 +408,11 @@ export class LogLine extends jspb.Message {
   clearLineList(): LogLine;
   addLine(value: string, index?: number): LogLine;
 
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): LogLine;
+  hasTimestamp(): boolean;
+  clearTimestamp(): LogLine;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LogLine.AsObject;
   static toObject(includeInstance: boolean, msg: LogLine): LogLine.AsObject;
@@ -419,6 +424,7 @@ export class LogLine extends jspb.Message {
 export namespace LogLine {
   export type AsObject = {
     lineList: Array<string>,
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject,
   }
 }
 
