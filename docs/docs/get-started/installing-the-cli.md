@@ -2,7 +2,7 @@
 title: Installing Kurtosis
 sidebar_label: Installing Kurtosis
 slug: /install
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 <!---------- START IMPORTS ------------>
