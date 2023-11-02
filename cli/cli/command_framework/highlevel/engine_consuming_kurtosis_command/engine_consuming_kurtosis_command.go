@@ -16,7 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

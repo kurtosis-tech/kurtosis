@@ -6,9 +6,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/analytics_logger"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
+	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
