@@ -1,6 +1,6 @@
 ---
 title: Write Your First Package
-sidebar_label: Write Your First package
+sidebar_label: Write Your First Package
 slug: /quickstart-write-a-package
 toc_max_heading_level: 2
 sidebar_position: 5
