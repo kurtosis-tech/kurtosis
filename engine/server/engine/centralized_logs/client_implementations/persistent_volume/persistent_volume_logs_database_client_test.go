@@ -26,15 +26,17 @@ const (
 	testUserService2Uuid = "test-user-service-2"
 	testUserService3Uuid = "test-user-service-3"
 
-	logLine1  = "{\"log\":\"Starting feature 'centralized logs'\"}"
-	logLine2  = "{\"log\":\"Starting feature 'runs idempotently'\"}"
-	logLine3a = "{\"log\":\"Starting feature 'apic "
-	logLine3b = "idempotently'\"}"
-	logLine4  = "{\"log\":\"Starting feature 'files storage'\"}"
-	logLine5  = "{\"log\":\"Starting feature 'files manager'\"}"
-	logLine6  = "{\"log\":\"The enclave was created\"}"
-	logLine7  = "{\"log\":\"User service started\"}"
-	logLine8  = "{\"log\":\"The data have being loaded\"}"
+	utcFormat              = time.RFC3339
+	defaultUTCTimestampStr = "2023-09-06T00:35:15-04:00"
+	logLine1               = "{\"log\":\"Starting feature 'centralized logs'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine2               = "{\"log\":\"Starting feature 'runs idempotently'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine3a              = "{\"log\":\"Starting feature 'apic "
+	logLine3b              = "idempotently'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine4               = "{\"log\":\"Starting feature 'files storage'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine5               = "{\"log\":\"Starting feature 'files manager'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine6               = "{\"log\":\"The enclave was created\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine7               = "{\"log\":\"User service started\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
+	logLine8               = "{\"log\":\"The data have being loaded\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
 
 	firstFilterText          = "feature"
 	secondFilterText         = "Files"
@@ -89,6 +91,7 @@ func TestStreamUserServiceLogs_WithFilters(t *testing.T) {
 		underlyingFs,
 		perFileStreamStrategy,
 	)
+	require.NoError(t, testEvaluationErr)
 
 	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
@@ -96,8 +99,6 @@ func TestStreamUserServiceLogs_WithFilters(t *testing.T) {
 		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
 		require.Equal(t, expectedFirstLogLine, serviceLogLines[0].GetContent())
 	}
-
-	require.NoError(t, testEvaluationErr)
 }
 
 func TestStreamUserServiceLogsPerWeek_WithFilters(t *testing.T) {
@@ -180,14 +181,13 @@ func TestStreamUserServiceLogs_NoLogsFromPersistentVolume(t *testing.T) {
 		underlyingFs,
 		perFileStreamStrategy,
 	)
+	require.NoError(t, testEvaluationErr)
 
 	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
 		require.True(t, found)
 		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
 	}
-
-	require.NoError(t, testEvaluationErr)
 }
 
 func TestStreamUserServiceLogsPerWeek_NoLogsFromPersistentVolume(t *testing.T) {
@@ -222,14 +222,13 @@ func TestStreamUserServiceLogsPerWeek_NoLogsFromPersistentVolume(t *testing.T) {
 		underlyingFs,
 		perWeekStreamStrategy,
 	)
+	require.NoError(t, testEvaluationErr)
 
 	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
 		require.True(t, found)
 		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
 	}
-
-	require.NoError(t, testEvaluationErr)
 }
 
 func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing.T) {
@@ -258,8 +257,10 @@ func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
 
 	file1PathStr := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
-	file1, _ := underlyingFs.Create(file1PathStr)
-	_, _ = file1.WriteString(logLinesStr)
+	file1, err := underlyingFs.Create(file1PathStr)
+	require.NoError(t, err)
+	_, err = file1.WriteString(logLinesStr)
+	require.NoError(t, err)
 
 	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
 
@@ -272,6 +273,7 @@ func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing
 		underlyingFs,
 		perFileStreamStrategy,
 	)
+	require.NoError(t, testEvaluationErr)
 
 	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
@@ -279,8 +281,6 @@ func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing
 		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
 		require.Equal(t, expectedFirstLogLine, serviceLogLines[0].GetContent())
 	}
-
-	require.NoError(t, testEvaluationErr)
 }
 
 func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *testing.T) {
@@ -308,8 +308,10 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
 	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
-	file1, _ := underlyingFs.Create(file1PathStr)
-	_, _ = file1.WriteString(logLinesStr)
+	file1, err := underlyingFs.Create(file1PathStr)
+	require.NoError(t, err)
+	_, err = file1.WriteString(logLinesStr)
+	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
@@ -323,6 +325,7 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 		underlyingFs,
 		perWeekStreamStrategy,
 	)
+	require.NoError(t, testEvaluationErr)
 
 	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
@@ -330,8 +333,6 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
 		require.Equal(t, expectedFirstLogLine, serviceLogLines[0].GetContent())
 	}
-
-	require.NoError(t, testEvaluationErr)
 }
 
 func TestStreamUserServiceLogs_EmptyLogLines(t *testing.T) {
@@ -351,8 +352,10 @@ func TestStreamUserServiceLogs_EmptyLogLines(t *testing.T) {
 
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
 	file1PathStr := fmt.Sprintf("%s%s/%s%s", volume_consts.LogsStorageDirpath, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
-	file1, _ := underlyingFs.Create(file1PathStr)
-	_, _ = file1.WriteString(logLinesStr)
+	file1, err := underlyingFs.Create(file1PathStr)
+	require.NoError(t, err)
+	_, err = file1.WriteString(logLinesStr)
+	require.NoError(t, err)
 
 	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
 
@@ -365,14 +368,13 @@ func TestStreamUserServiceLogs_EmptyLogLines(t *testing.T) {
 		underlyingFs,
 		perFileStreamStrategy,
 	)
+	require.NoError(t, testEvaluationErr)
 
 	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
 		require.True(t, found)
 		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
 	}
-
-	require.NoError(t, testEvaluationErr)
 }
 
 func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
@@ -392,8 +394,10 @@ func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
 
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
 	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
-	file1, _ := underlyingFs.Create(file1PathStr)
-	_, _ = file1.WriteString(logLinesStr)
+	file1, err := underlyingFs.Create(file1PathStr)
+	require.NoError(t, err)
+	_, err = file1.WriteString(logLinesStr)
+	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
@@ -407,14 +411,13 @@ func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
 		underlyingFs,
 		perWeekStreamStrategy,
 	)
+	require.NoError(t, testEvaluationErr)
 
 	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
 		require.True(t, found)
 		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
 	}
-
-	require.NoError(t, testEvaluationErr)
 }
 
 func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
@@ -450,12 +453,16 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 	week4logLinesStr := strings.Join(week4logLines, "\n")
 
 	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(4), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	week4, _ := underlyingFs.Create(week4filepath)
-	_, _ = week4.WriteString(week4logLinesStr)
+	week4, err := underlyingFs.Create(week4filepath)
+	require.NoError(t, err)
+	_, err = week4.WriteString(week4logLinesStr)
+	require.NoError(t, err)
 
 	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(3), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	week3, _ := underlyingFs.Create(week3filepath)
-	_, _ = week3.WriteString(week3logLinesStr)
+	week3, err := underlyingFs.Create(week3filepath)
+	require.NoError(t, err)
+	_, err = week3.WriteString(week3logLinesStr)
+	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
@@ -469,6 +476,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 		underlyingFs,
 		perWeekStreamStrategy,
 	)
+	require.NoError(t, testEvaluationErr)
 
 	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
@@ -477,7 +485,6 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 		require.Equal(t, expectedFirstLogLine, serviceLogLines[0].GetContent())
 	}
 
-	require.NoError(t, testEvaluationErr)
 }
 
 func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
@@ -513,12 +520,16 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 	week4logLinesStr := strings.Join(week4logLines, "\n") + "\n"
 
 	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(4), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	week4, _ := underlyingFs.Create(week4filepath)
-	_, _ = week4.WriteString(week4logLinesStr)
+	week4, err := underlyingFs.Create(week4filepath)
+	require.NoError(t, err)
+	_, err = week4.WriteString(week4logLinesStr)
+	require.NoError(t, err)
 
 	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(3), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	week3, _ := underlyingFs.Create(week3filepath)
-	_, _ = week3.WriteString(week3logLinesStr)
+	week3, err := underlyingFs.Create(week3filepath)
+	require.NoError(t, err)
+	_, err = week3.WriteString(week3logLinesStr)
+	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
@@ -532,6 +543,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 		underlyingFs,
 		perWeekStreamStrategy,
 	)
+	require.NoError(t, testEvaluationErr)
 
 	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
@@ -539,8 +551,113 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
 		require.Equal(t, expectedFirstLogLine, serviceLogLines[0].GetContent())
 	}
+}
 
+func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
+	expectedAmountLogLines := 3
+
+	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
+		testUserService1Uuid: expectedAmountLogLines,
+	}
+
+	var logLinesFilters []logline.LogLineFilter
+
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+	}
+
+	timedLogLine1 := fmt.Sprintf("{\"log\":\"Starting feature 'centralized logs'\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+	timedLogLine2 := fmt.Sprintf("{\"log\":\"Starting feature 'runs idempotently'\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+	timedLogLine3 := fmt.Sprintf("{\"log\":\"The enclave was created\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+
+	timestampedLogLines := []string{timedLogLine1, timedLogLine2, timedLogLine3}
+	timestampedLogLinesStr := strings.Join(timestampedLogLines, "\n") + "\n"
+
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+
+	filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file, err := underlyingFs.Create(filepath)
+	require.NoError(t, err)
+	_, err = file.WriteString(timestampedLogLinesStr)
+	require.NoError(t, err)
+
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
+
+	expectedTime, err := time.Parse(utcFormat, defaultUTCTimestampStr)
+	require.NoError(t, err)
+
+	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
+		t,
+		logLinesFilters,
+		userServiceUuids,
+		expectedServiceAmountLogLinesByServiceUuid,
+		doNotFollowLogs,
+		underlyingFs,
+		perWeekStreamStrategy,
+	)
 	require.NoError(t, testEvaluationErr)
+
+	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
+		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
+		require.True(t, found)
+		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
+		for _, logLine := range serviceLogLines {
+			require.Equal(t, expectedTime, logLine.GetTimestamp())
+		}
+	}
+}
+
+func TestStreamUserServiceLogsPerFileReturnsTimestampedLogLines(t *testing.T) {
+	expectedAmountLogLines := 3
+
+	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
+		testUserService1Uuid: expectedAmountLogLines,
+	}
+
+	var logLinesFilters []logline.LogLineFilter
+
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+	}
+
+	timedLogLine1 := fmt.Sprintf("{\"log\":\"Starting feature 'centralized logs'\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+	timedLogLine2 := fmt.Sprintf("{\"log\":\"Starting feature 'runs idempotently'\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+	timedLogLine3 := fmt.Sprintf("{\"log\":\"The enclave was created\", \"timestamp\":\"%v\"}", defaultUTCTimestampStr)
+
+	timestampedLogLines := []string{timedLogLine1, timedLogLine2, timedLogLine3}
+	timestampedLogLinesStr := strings.Join(timestampedLogLines, "\n") + "\n"
+
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+
+	filepath := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file, err := underlyingFs.Create(filepath)
+	require.NoError(t, err)
+	_, err = file.WriteString(timestampedLogLinesStr)
+	require.NoError(t, err)
+
+	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
+
+	expectedTime, err := time.Parse(utcFormat, defaultUTCTimestampStr)
+	require.NoError(t, err)
+
+	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
+		t,
+		logLinesFilters,
+		userServiceUuids,
+		expectedServiceAmountLogLinesByServiceUuid,
+		doNotFollowLogs,
+		underlyingFs,
+		perFileStreamStrategy,
+	)
+	require.NoError(t, testEvaluationErr)
+
+	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
+		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
+		require.True(t, found)
+		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
+		require.Equal(t, expectedTime, serviceLogLines[0].GetTimestamp())
+	}
 }
 
 // ====================================================================================================

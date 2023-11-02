@@ -34,7 +34,7 @@ export const CreateEnclaveButton = () => {
     <>
       <Menu matchWidth>
         <MenuButton as={Button} colorScheme={"kurtosisGreen"} leftIcon={<FiPlus />} size={"md"}>
-          Create Enclave
+          New Enclave
         </MenuButton>
         <MenuList>
           <MenuItem onClick={handleManualCreateEnclaveClick} icon={<FiSettings />}>

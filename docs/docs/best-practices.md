@@ -12,11 +12,14 @@ Passing [package parameters][package-parameterization] via the CLI can get hairy
    ```bash
    kurtosis run github.com/user/repo '{"some_param":5,"some_other_param":"My value"}'
    ```
-1. **When you have a large number of arguments:** put them in a `.json` file and use `--args-file` to slot them into the `kurtosis run` command. E.g.:
+1. **When you have a large number of arguments:** put them in a `.yaml` or `.json` file and use `--args-file` to slot them into the `kurtosis run` command. E.g.:
+   ```bash
+   kurtosis run github.com/user/repo --args-file my-params.yaml
+   ```
+   or if you prefer JSON:
    ```bash
    kurtosis run github.com/user/repo --args-file my-params.json
    ```
-
 Choosing the right wait
 -----------------------
 Kurtosis has three different types of waits. Described here are the three, with tips on when to use each:

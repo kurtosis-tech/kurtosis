@@ -77,10 +77,10 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 
 `kurtosis run` has additional flags that can further modify its behaviour:
 
-1. The `--args-file` flag can be used to send in a JSON/YAML file, from a local file through the filepath or from remote using the URL, as an argument to the Kurtosis Package. Note that if you pass in package arguments as CLI arguments and via the flag, the CLI arguments will be the one used.
+1. The `--args-file` flag can be used to send in a YAML/JSON file, from a local file through the filepath or from remote using the URL, as an argument to the Kurtosis Package. Note that if you pass in package arguments as CLI arguments and via the flag, the CLI arguments will be the one used.
    For example:
    ```bash
-   kurtosis run github.com/kurtosis-tech/ethereum-package --args-file "devnet-5.json"
+   kurtosis run github.com/kurtosis-tech/ethereum-package --args-file "devnet-5.yaml"
    ```
    or
    ```bash

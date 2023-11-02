@@ -181,7 +181,7 @@ Now let’s explore how you can configure the underlying network for testing our
 
 Your local Ethereum testnet can be configured to use different EL and CL client pairs, as well as a varying number of nodes, depending on the scenario and specific network configuration you want to develop or test. This means that, once set up, you can spin up a customized local testnet and use it to run the same workflows (deployment, tests, etc.) under various network configurations to ensure everything works as expected. To learn more about the other parameters you can modify, visit this link.
 
-Give it a try! You can pass various configuration options to the `ethereum-package` via a JSON file. This network params JSON file provides the specific configurations that Kurtosis will use to set up the local Ethereum network.
+Give it a try! You can pass various configuration options to the `ethereum-package` via a YAML/JSON file. This network params YAML/JSON file provides the specific configurations that Kurtosis will use to set up the local Ethereum network.
 
 Take the default configuration file and edit it to spin up two nodes with different EL/CL pairs:
 * Node 1 with `geth`/`lighthouse`
@@ -245,7 +245,7 @@ The `network_params` struct configures the network settings that are used to cre
 Save your edited params file in any directory you wish (in the example below, it is saved to the desktop) and then use it to run your Kurtosis package by running:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/kurtosis-tech/ethereum-package --args-file ~/eth-network-params.json
+kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/kurtosis-tech/ethereum-package --args-file ~/eth-network-params.yaml
 ```
 :::TIP
 Note that the `kurtosis clean -a` command is used here to instruct Kurtosis to destroy the old testnet and its contents before starting a new one up.

@@ -49,37 +49,34 @@ Kurtosis environment definitions, referred to here on as [Kurtosis packages][pac
 
 You're now going to create a file to house the parameters that you will pass in at runtime when your system starts up. Check out the README for the [ethereum-package][ethereum-package] to see the full list of configuration options and flags available for use.
 
-Create a file titled: `network_params.json` in your home directory, populate it with the below contents, and save your file:
-```json
-{
-	"participants": [{
-		"el_client_type": "geth",
-		"el_client_image": "ethereum/client-go:latest",
-		"el_client_log_level": "",
-		"el_extra_params": [],
-		"cl_client_type": "lighthouse",
-		"cl_client_image": "sigp/lighthouse:latest",
-		"cl_client_log_level": "",
-		"beacon_extra_params": [],
-		"validator_extra_params": [],
-		"builder_network_params": null,
-        "count": 2
-	}],
-	"network_params": {
-		"network_id": "3151908",
-		"deposit_contract_address": "0x4242424242424242424242424242424242424242",
-		"seconds_per_slot": 12,
-		"slots_per_epoch": 32,
-		"num_validator_keys_per_node": 64,
-		"preregistered_validator_keys_mnemonic": "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete",
-		"deneb_for_epoch": 500
-	},
-	"verifications_epoch_limit": 5,
-	"global_client_log_level": "info",
-	"mev_type": "none",
-    // The default value bootstraps a bunch of services like grafana, prometheus, el/cl forkmons, explorers
-    "additional_services": [],
-}
+Create a file titled: `network_params.yaml` in your home directory, populate it with the below contents, and save your file:
+```yaml
+participants:
+	- el_client_type: geth
+		el_client_image: ethereum/client-go:latest
+		el_client_log_level: ''
+		el_extra_params: []
+		cl_client_type: lighthouse
+		cl_client_image: sigp/lighthouse:latest
+		cl_client_log_level: ''
+		beacon_extra_params: []
+		validator_extra_params: []
+		builder_network_params:
+		count: 2
+network_params:
+  network_id: '3151908'
+  deposit_contract_address: '0x4242424242424242424242424242424242424242'
+  seconds_per_slot: 12
+  slots_per_epoch: 32
+  num_validator_keys_per_node: 64
+  preregistered_validator_keys_mnemonic: 'giant issue aisle success illegal bike spike
+    question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy
+    very lucky have athlete'
+  deneb_for_epoch: 500
+verifications_epoch_limit: 5
+global_client_log_level: info
+additional_services: []
+
 ```
 The arrays in the `participant` object enables you to define the specific Ethereum client types and respective image tags you want to use in your network, alongside any extra parameters for the validator, beacon, or builder as well as some useful flags for the verbosity of log lines. In this example you'll be using the `latest` image tags for the Geth and Lighthouse clients and have specified `2` nodes to be spun up.
 
@@ -91,7 +88,7 @@ Spin up your system!
 --------------------
 Great! You're now ready to bring up your own network. Simply run:
 ```console
-kurtosis run github.com/kurtosis-tech/ethereum-package --args-file ~/network_params.json --enclave eth-network
+kurtosis run github.com/kurtosis-tech/ethereum-package --args-file ~/network_params.yaml --enclave eth-network
 ```
 
 Kurtosis will then begin to spin up your private Ethereum testnet by interpreting the instructions in the Kurtosis package, validating the plan to ensure there are no conflicts or obvious errors, and then finally executes the plan (read more about multi-phase runs [here][multi-phase-runs-reference]). Kurtosis first spins up an isolated, ephemeral environment on your machine called an [enclave][enclaves-reference] where all the services and [files artifacts][files-artifacts-reference] for your system will reside in. Then, those services will be bootstrapped and required files generated to start up the system.
@@ -159,7 +156,7 @@ Why Kurtosis packages - from a consumer's perspective
 Kurtosis was built to make building distributed systems as easy as building a single server app. Kurtosis aims to achieve this by bridging the environment definition author-consumer divide. Tactically, this means making it dead simple for a consumer (like yourself) to pick up an environment definition, spin it up, and deploy it the way you want, where you want - all without needing to know specialized knowledge about how the system works or how to use Kubernetes or Docker. 
 
 Specifically, this guide showed you:
-- ***The power of parameterizability***: as a consumer of the environment definition, having both the knowledge and means to configure the system to spin up the way you need it is incredibly valuable - a big reason why Kurtosis packages are meant to be parameterized. In this guide, you created the `network_params.json` file which contained your preferences for how the network should look and passed them in to Kurtosis with relative ease. The author of the package need only define the arguments and flags available for a consumer, and Kurtosis handles the rest once those are passed in at runtime.
+- ***The power of parameterizability***: as a consumer of the environment definition, having both the knowledge and means to configure the system to spin up the way you need it is incredibly valuable - a big reason why Kurtosis packages are meant to be parameterized. In this guide, you created the `network_params.yaml` file which contained your preferences for how the network should look and passed them in to Kurtosis with relative ease. The author of the package need only define the arguments and flags available for a consumer, and Kurtosis handles the rest once those are passed in at runtime.
 - ***Portable and easy to wield***: a major contributor to the author-consumer divide comes from the knowledge gap between the author and consumer regarding the infrastruture and tools needed to instantiate a system. Understanding how Kubernetes works, what Bash script to use at which step, and working with Docker primitivies are all pain points we believe Kurtosis alleviates. In this guide, you installed Kurtosis and ran a single command to get your system up and running. This same command will work anywhere, over Docker or on Kubernetes, locally or on remote infrastructure. We believe this portability and ease of use are requirements for bridging the author-consumer divide.
 
 There are many other reasons why we believe Kurtosis is the right tool for bridging the author-consumer divide. Check out the [next guide][how-to-set-up-postgres-guide] to experience the workflow for a package author and how Kurtosis improves the developer experience for an environment definition author.
