@@ -33,7 +33,7 @@ kurtosis run github.com/kurtosis-tech/basic-service-package
 ### Local deploy with feature flag and different numbers of each service
 
 ```bash
-kurtosis run github.com/galenmarchetti/kurtosis-tech \
+kurtosis run github.com/kurtosis-tech/basic-service-package \
   '{"service_a_count": 2, 
     "service_b_count": 2, 
     "service_c_count": 1,
@@ -58,7 +58,7 @@ kurtosis run github.com/galenmarchetti/kurtosis-tech \
 kurtosis cluster set remote-kubernetes; kurtosis gateway > /dev/null 2>&1 &
 ```
 ```bash
-kurtosis run github.com/galenmarchetti/kurtosis-tech \
+kurtosis run github.com/kurtosis-tech/basic-service-package \
   '{"service_a_count": 2, 
     "service_b_count": 2, 
     "service_c_count": 1,
