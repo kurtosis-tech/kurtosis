@@ -193,7 +193,6 @@ func streamServiceLogLines(
 				return
 			}
 
-			// TODO: Parse out the timestamp from docker container logs string instead of time.Now
 			logLine := logline.NewLogLine(logLineStr, time.Now())
 
 			//filtering it
