@@ -46,6 +46,7 @@ type segmentClient struct {
 // application when messages sends to the backend API succeeded or failed.
 func newSegmentClient(source metrics_source.Source, sourceVersion string, userId string, backendType string, shouldFlushQueueOnEachEvent bool, callbackObject analytics.Callback, logger analytics.Logger) (*segmentClient, error) {
 
+	// nolint: exhaustruct
 	config := analytics.Config{
 		//The flushing interval of the client
 		Interval: segmentClientFlushInterval,
@@ -76,6 +77,7 @@ func newSegmentClient(source metrics_source.Source, sourceVersion string, userId
 	//We could activate this functionality if we want to track an event to identify the user
 	//every time the client is created
 	if shouldTrackIdentifyUserEventWhenClientIsCreated {
+		// nolint: exhaustruct
 		if err := client.Enqueue(analytics.Identify{
 			UserId:  userId,
 			Context: analyticsContext,
@@ -180,6 +182,7 @@ func (segment *segmentClient) track(event *event.Event) error {
 	propertiesToTrack.Set(archKey, runtime.GOARCH)
 	propertiesToTrack.Set(backendKey, segment.backendType)
 
+	// nolint: exhaustruct
 	if err := segment.client.Enqueue(analytics.Track{
 		Event:      event.GetName(),
 		UserId:     segment.userID,
@@ -192,11 +195,13 @@ func (segment *segmentClient) track(event *event.Event) error {
 }
 
 func newAnalyticsContext(source metrics_source.Source, sourceVersion string) *analytics.Context {
+	// nolint: exhaustruct
 	appInfo := analytics.AppInfo{
 		Name:    source.GetKey(),
 		Version: sourceVersion,
 	}
 
+	// nolint: exhaustruct
 	analyticsContext := &analytics.Context{App: appInfo}
 
 	return analyticsContext
