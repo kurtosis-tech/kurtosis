@@ -10,6 +10,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/kurtosis-tech/kurtosis/metrics-libarry/golang => ../../metrics-library/golang
 )
 
 require (
