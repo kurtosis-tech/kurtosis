@@ -115,9 +115,9 @@ If you're new to Kurtosis, you might like the [quickstart][quickstart] as a good
 [metrics-philosophy]: ../explanations/metrics-philosophy.md
 [analytics-disable]: ../cli-reference/analytics-disable.md
 [quickstart]: ../get-started/quickstart.md
-[installing-command-line-completion]: ./adding-command-line-completion.md
-[install-historical-guide]: ./installing-historical-versions.md
-[upgrade-guide]: ./upgrading-the-cli.md
+[installing-command-line-completion]: ../guides/adding-command-line-completion.md
+[install-historical-guide]: ../guides/installing-historical-versions.md
+[upgrade-guide]: ../guides/upgrading-the-cli.md
 
 [release-artifacts]: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases
 [windows-susbsystem-for-linux]: https://learn.microsoft.com/en-us/windows/wsl/
