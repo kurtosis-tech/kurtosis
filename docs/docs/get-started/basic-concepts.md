@@ -8,7 +8,11 @@ sidebar_position: 3
 Package
 -----------
 
-A package defines the set up logic for a containerized backend. Packages can be accessed via Github locators, like: `github.com/kurtosis-tech/basic-service-package`.
+A package defines the set up logic for a containerized backend. Packages can be accessed via Github locators.
+
+```bash 
+kurtosis run github.com/kurtosis-tech/basic-service-package
+```
 
 Packages can accept a set of parameters, defined by the package author, which enable the package consumer to modify their deployed backend at a high-level without needing to know how to configure each individual service.
 
@@ -36,7 +40,7 @@ kurtosis run --dry-run github.com/kurtosis-tech/basic-service-package
 
 <details><summary><b>Output</b></summary>
 
-```
+```title="Steps in the Plan"
 > render_templates
 
 > add_services configs={"service-a-1": ServiceConfig(image="h4ck3rk3y/service-a", ports={"frontend": PortSpec(number=8501, application_protocol="http")}, files={"/app/config": "slender-boulder"})}
