@@ -247,7 +247,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [ethereum-package]: https://github.com/kurtosis-tech/ethereum-package/
 
 <!-- Misc -->
-[homepage]: home.md
+[homepage]: get-started.md
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
 [bazel-github]: https://github.com/bazelbuild/bazel/

@@ -970,7 +970,7 @@ Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtos
 [quickstart-consumers]: quickstart.md
 
 <!-- Misc -->
-[homepage]: home.md
+[homepage]: get-started.md
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
 [bazel-github]: https://github.com/bazelbuild/bazel/
