@@ -14,4 +14,4 @@ You will get the container logs & configuration in the output directory for furt
 If you don't specify the `$OUTPUT_DIRECTORY` Kurtosis will dump it to a directory with a name following the schema `kurtosis-dump--TIMESTAMP`.
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
-[packages-reference]: ../concepts-reference/packages.md
+[packages-reference]: ../advanced-concepts/packages.md

@@ -1,9 +1,10 @@
 ---
-title: Quickstart - Run a Package
-sidebar_label: Quickstart - Run a Package
+title: Quickstart
+id: quickstart
+sidebar_label: Quickstart
 slug: /quickstart
 toc_max_heading_level: 2
-sidebar_position: 1
+sidebar_position: 3
 ---
 
 Introduction
@@ -11,9 +12,9 @@ Introduction
 
 Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~5 minutes and will walk you through how to use a Kurtosis package to spin up a distributed system over Docker. Specifically, you will use the [ethereum-package][ethereum-package] to bootstrap and start-up a private Ethereum testnet. 
 
-Kurtosis is a platform for packaging and launching environments of containerized services and serve two types of users: the author of an environment definition, referred to as a [Kurtosis package][packages-reference], and the consumer or user of the environment definition. This quickstart is intended to put you in the shoes of the consumer - someone who needs a quick and easy way to get a production-like environment to develop and test changes quicker for your distributed system. A separate guide is [available here][how-to-set-up-postgres-guide] to introduce you to the world of Kurtosis package authoring and how one might define and build an environment with Kurtosis for themselves or for their team.
+Kurtosis is a platform for packaging and launching environments of containerized services and serve two types of users: the author of an environment definition, referred to as a [Kurtosis package][packages-reference], and the consumer or user of the environment definition. This quickstart is intended to put you in the shoes of the consumer - someone who needs a quick and easy way to get a production-like environment to develop and test changes against for your distributed system. A separate guide is [available here][how-to-set-up-postgres-guide] to introduce you to the world of Kurtosis package authoring and how one might define and build an environment with Kurtosis for themselves or for their team.
 
-Our mission is to make building distributed systems as easy as building a single server application. The first problem we aim to solve on our journey to achieve this mission is to bridge the author-consumer divide for environment definitions. For this reason, we built Kurtosis. Further reading about what Kurtosis is and what problems Kurtosis aims to solve, is available on our [introduction page][homepage]. To learn more about our motivations behind starting Kurtosis, go [here][why-we-built-kurtosis-explanation].
+Further reading about what Kurtosis is and what problems Kurtosis aims to solve, is available on our [introduction page][homepage]. To learn more about our motivations behind starting Kurtosis, go [here][why-kurtosis-explanation].
 
 This guide is in a "code along" format, which means you are expected to follow the code examples and run the Kurtosis CLI commands on your local machine. Everything you run in this guide is free, public, and does not contain any sensitive data. 
 
@@ -33,7 +34,11 @@ Click on the "New Workspace" button! You don't have to worry about the Context U
  
 </details>
 
+<<<<<<< HEAD
 If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, feel free to post your question in our [Github Discussions Forum][github-discussions] or ask us in our [Discord server](https://discord.gg/jJFG7XBqcY).
+=======
+If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us in our [Discord server](https://discord.gg/6Jjp9c89z9) or on [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)!
+>>>>>>> main
 
 Install dependencies
 --------------------
@@ -144,9 +149,9 @@ e296eefa1710   cl-2-lighthouse-geth-validator             http: 5042/tcp -> 127.
 
 Thats it! You now have a full, private Ethereum blockchain on your local machine.
 
-The first section that gets printed contains some basic metadata about the enclave that was spun up. This includes the name of the enclave `eth-network`, its [Resource Idenfitier](https://docs.kurtosis.com/concepts-reference/resource-identifier/), your enclave's status, and the time it was created.
+The first section that gets printed contains some basic metadata about the enclave that was spun up. This includes the name of the enclave `eth-network`, its [Resource Idenfitier](https://docs.kurtosis.com/advanced-concepts/resource-identifier/), your enclave's status, and the time it was created.
 
-Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/), which are Kurtosis' first-class representation of data inside your enclave, stored as compressed TGZ files. You'll notice there are configuration files for the nodes, grafana, and prometheus as well as private keys for pre-funded accounts and genesis-related data. These files artifacts were generated and used by Kurtosis to start the network and abstracts away the complexities and overhead that come with generating validator keys and getting genesis and node config files produced and mounted to the right containers yourself.
+Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.com/advanced-concepts/files-artifacts/), which are Kurtosis' first-class representation of data inside your enclave, stored as compressed TGZ files. You'll notice there are configuration files for the nodes, grafana, and prometheus as well as private keys for pre-funded accounts and genesis-related data. These files artifacts were generated and used by Kurtosis to start the network and abstracts away the complexities and overhead that come with generating validator keys and getting genesis and node config files produced and mounted to the right containers yourself.
 
 Lastly, there is a section called `User Services` which display the number of services (running in Docker containers) that make up your network. You will notice that there are 2 Ethereum nodes comprised of 3 services each (an EL client, a CL beacon client, and a CL validator client) and 2 genesis data generators for each the CL and EL. Each of these services are running in Docker containers inside your local enclave & Kurtosis has automatically mapped each container port to your machine's ephemeral ports for seamless interaction with the services running in your enclave.
 
@@ -175,7 +180,7 @@ Let's review. In this tutorial you have:
 In this short guide, you went through the workflow that a Kurtosis package consumer would experience. It is strongly encouraged that you check out the [next guide][how-to-set-up-postgres-guide] where you will set up a Postgres database and an API server to as a package author.
 :::
    
-This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
+This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-kurtosis-explanation]. 
 
 To learn more about how Kurtosis is used, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of Kurtosis in action, including:
 - How to run a simple [Go test][go-test-example] or [Typescript test][ts-test-example] against the app we just built
@@ -185,26 +190,26 @@ To learn more about how Kurtosis is used, we encourage you to check out our [`aw
 
 Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
 
-Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), post your questions on our [Github Discussions Forum][github-discussions], [join the community in our Discord](https://discord.com/channels/783719264308953108/783719264308953111), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
+Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), post your questions on our [Github Discussions Forum][github-discussions], [join the community in our Discord](https://discord.gg/6Jjp9c89z9), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
 
 Thank you for trying our quickstart. We hope you enjoyed it. 
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
 <!--------------------------- Guides ------------------------------------>
-[installing-kurtosis-guide]: ../guides/installing-the-cli.md
-[installing-docker-guide]: ../guides/installing-the-cli.md#i-install--start-docker
+[installing-kurtosis-guide]: ../get-started/installing-the-cli.md
+[installing-docker-guide]: ../get-started/installing-the-cli.md#i-install--start-docker
 [upgrading-kurtosis-guide]: ../guides/upgrading-the-cli.md
-[how-to-set-up-postgres-guide]: quickstart-author.md
+[how-to-set-up-postgres-guide]: write-your-first-package.md
 
-<!--------------------------- Explanations ------------------------------------>
-[architecture-explanation]: ../explanations/architecture.md
-[enclaves-reference]: ../concepts-reference/enclaves.md
-[services-explanation]: ../explanations/architecture.md#services
-[reusable-environment-definitions-explanation]: ../explanations/reusable-environment-definitions.md
-[why-we-built-kurtosis-explanation]: ../explanations/why-we-built-kurtosis.md
-[how-do-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
-[why-multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
+<!--------------------------- Advanced Concepts ------------------------------------>
+[architecture-explanation]: ../advanced-concepts/architecture.md
+[enclaves-reference]: ../advanced-concepts/enclaves.md
+[services-explanation]: ../advanced-concepts/architecture.md#services
+[reusable-environment-definitions-explanation]: ../advanced-concepts/reusable-environment-definitions.md
+[why-kurtosis-explanation]: ../advanced-concepts/why-kurtosis.md
+[how-do-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md
+[why-multi-phase-runs-explanation]: ../advanced-concepts/why-multi-phase-runs.md
 
 <!--------------------------- Reference ------------------------------------>
 <!-- CLI Commands Reference -->
@@ -215,21 +220,21 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [kurtosis-files-upload-reference]: ../cli-reference/files-upload.md
 [kurtosis-feedback-reference]: ../cli-reference/feedback.md
 [kurtosis-twitter]: ../cli-reference/twitter.md
-[starlark-reference]: ../concepts-reference/starlark.md
+[starlark-reference]: ../advanced-concepts/starlark.md
 
 <!-- SL Instructions Reference-->
-[request-reference]: ../starlark-reference/plan.md#request
-[exec-reference]: ../starlark-reference/plan.md#exec
+[request-reference]: ../api-reference/starlark-reference/plan.md#request
+[exec-reference]: ../api-reference/starlark-reference/plan.md#exec
 
 <!-- Reference -->
-[multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
-[kurtosis-yml-reference]: ../concepts-reference/kurtosis-yml.md
-[packages-reference]: ../concepts-reference/packages.md
-[runnable-packages-reference]: ../concepts-reference/packages.md#runnable-packages
-[locators-reference]: ../concepts-reference/locators.md
-[plan-reference]: ../concepts-reference/plan.md
-[future-references-reference]: ../concepts-reference/future-references.md
-[files-artifacts-reference]: ../concepts-reference/files-artifacts.md
+[multi-phase-runs-reference]: ../advanced-concepts/multi-phase-runs.md
+[kurtosis-yml-reference]: ../advanced-concepts/kurtosis-yml.md
+[packages-reference]: ../advanced-concepts/packages.md
+[runnable-packages-reference]: ../advanced-concepts/packages.md#runnable-packages
+[locators-reference]: ../advanced-concepts/locators.md
+[plan-reference]: ../advanced-concepts/plan.md
+[future-references-reference]: ../advanced-concepts/future-references.md
+[files-artifacts-reference]: ../advanced-concepts/files-artifacts.md
 
 <!--------------------------- Other ------------------------------------>
 <!-- Examples repo -->
@@ -243,7 +248,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [ethereum-package]: https://github.com/kurtosis-tech/ethereum-package/
 
 <!-- Misc -->
-[homepage]: home.md
+[homepage]: get-started.md
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
 [bazel-github]: https://github.com/bazelbuild/bazel/

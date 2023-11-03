@@ -324,7 +324,7 @@ kurtosis enclave add
 [enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis#readme
 [quickstart-reference]: https://docs.kurtosis.com/quickstart
-[discord]: https://discord.gg/Es7QHbY4
+[discord]: https://discord.gg/6Jjp9c89z9
 [kurtosis-tech]: https://github.com/kurtosis-tech
 [docs]: https://docs.kurtosis.com
 [twitter]: https://twitter.com/KurtosisTech
