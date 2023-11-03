@@ -55,6 +55,7 @@ func NewImportModule(
 		},
 
 		Capabilities: &importModuleCapabilities{
+			packageId:              packageId,
 			packageContentProvider: packageContentProvider,
 			recursiveInterpret:     recursiveInterpret,
 			moduleGlobalCache:      moduleGlobalCache,
@@ -64,6 +65,7 @@ func NewImportModule(
 }
 
 type importModuleCapabilities struct {
+	packageId              string
 	packageContentProvider startosis_packages.PackageContentProvider
 	recursiveInterpret     func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError)
 	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
@@ -76,7 +78,7 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 		return nil, explicitInterpretationError(err)
 	}
 	relativeOrAbsoluteModuleLocator := moduleLocatorArgValue.GoString()
-	absoluteModuleLocator, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteModuleLocator, builtin.packageReplaceOptions)
+	absoluteModuleLocator, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocator(builtin.packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteModuleLocator, builtin.packageReplaceOptions)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}

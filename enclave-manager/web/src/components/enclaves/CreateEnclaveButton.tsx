@@ -9,7 +9,7 @@ export const CreateEnclaveButton = () => {
     <>
       <Menu matchWidth>
         <MenuButton as={Button} colorScheme={"kurtosisGreen"} leftIcon={<FiPlus />} size={"md"}>
-          Create Enclave
+          New Enclave
         </MenuButton>
         <MenuList>
           <MenuItem onClick={() => navigate(`#${KURTOSIS_CREATE_ENCLAVE_URL_ARG}`)} icon={<FiSettings />}>

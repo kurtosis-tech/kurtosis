@@ -194,21 +194,21 @@ export const ConfigureEnclaveModal = ({
             {isDefined(error) && <KurtosisAlert message={error} />}
             <Flex flexDirection={"column"} gap={"24px"} p={"12px 24px"} bg={"gray.900"}>
               <Flex justifyContent={"space-between"} alignItems={"center"}>
-                <FormControl display={"flex"} alignItems={"center"} gap={"16px"}>
-                  <BooleanArgumentInput inputType={"switch"} name={"restartServices"} />
-                  <Tooltip
-                    label="When enabled, Kurtosis will automatically restart any services that crash inside the enclave)">
-                    <Text fontSize={"xs"}>
-                      Restart services
-                    </Text>
-                  </Tooltip>
-                </FormControl>
+                <Tooltip
+                  shouldWrapChildren
+                  label={"When enabled, Kurtosis will automatically restart any services that crash inside the enclave"}
+                >
+                  <FormControl display={"flex"} alignItems={"center"} gap={"16px"}>
+                    <BooleanArgumentInput inputType={"switch"} name={"restartServices"} />
+                    <Text fontSize={"xs"}>Restart services</Text>
+                  </FormControl>
+                </Tooltip>
                 <Tooltip shouldWrapChildren label={"Create a link that can be used to share this configuration."}>
                   <CopyButton valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
                 </Tooltip>
               </Flex>
               <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
-                <StringArgumentInput name={"enclaveName"} />
+                <StringArgumentInput name={"enclaveName"} disabled={isDefined(existingEnclave)} />
               </KurtosisArgumentFormControl>
               {kurtosisPackage.args.map((arg, i) => (
                 <KurtosisPackageArgumentInput key={i} argument={arg} />

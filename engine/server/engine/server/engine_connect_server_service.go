@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
 )
 
@@ -321,7 +322,8 @@ func newLogsResponse(
 		// there is no new log lines but is a found UUID, so it has to be included in the service logs map
 		if !found && !isInNotFoundUuidList {
 			serviceLogLinesByUuid[serviceUuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{
-				Line: nil,
+				Line:      nil,
+				Timestamp: nil,
 			}
 		}
 		//Remove the service's UUID from the initial not found list, if it was returned from the logs database
@@ -342,14 +344,15 @@ func newLogsResponse(
 }
 
 func newRPCBindingsLogLineFromLogLines(logLines []logline.LogLine) *kurtosis_engine_rpc_api_bindings.LogLine {
-
 	logLinesStr := make([]string, len(logLines))
+	var logTimestamp *timestamppb.Timestamp
 
 	for logLineIndex, logLine := range logLines {
 		logLinesStr[logLineIndex] = logLine.GetContent()
+		logTimestamp = timestamppb.New(logLine.GetTimestamp())
 	}
 
-	rpcBindingsLogLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr}
+	rpcBindingsLogLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr, Timestamp: logTimestamp}
 
 	return rpcBindingsLogLines
 }

@@ -719,8 +719,6 @@ export declare class GetServiceLogsResponse extends Message<GetServiceLogsRespon
 }
 
 /**
- * TODO add timestamp as well, for when we do timestamp-handling on the client side
- *
  * @generated from message engine_api.LogLine
  */
 export declare class LogLine extends Message<LogLine> {
@@ -728,6 +726,11 @@ export declare class LogLine extends Message<LogLine> {
    * @generated from field: repeated string line = 1;
    */
   line: string[];
+
+  /**
+   * @generated from field: google.protobuf.Timestamp timestamp = 2;
+   */
+  timestamp?: Timestamp;
 
   constructor(data?: PartialMessage<LogLine>);
 

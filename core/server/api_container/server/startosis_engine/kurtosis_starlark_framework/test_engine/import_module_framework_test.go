@@ -39,7 +39,7 @@ func (suite *KurtosisHelperTestSuite) TestImportFile() {
 	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
 
 	suite.packageContentProvider.EXPECT().GetModuleContents(testModuleFileName).Return("Hello World!", nil)
-	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(startosis_constants.PackageIdPlaceholderForStandaloneScript, testModuleRelativeLocator, testNoPackageReplaceOptions).Return(testModuleFileName, nil)
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(testModulePackageId, startosis_constants.PackageIdPlaceholderForStandaloneScript, testModuleRelativeLocator, testNoPackageReplaceOptions).Return(testModuleFileName, nil)
 
 	suite.run(&importModuleTestCase{
 		T:                      suite.T(),

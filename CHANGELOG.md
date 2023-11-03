@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.85.3](https://github.com/kurtosis-tech/kurtosis/compare/0.85.2...0.85.3) (2023-11-03)
+
+
+### Features
+
+* add timestamps to log lines ([#1675](https://github.com/kurtosis-tech/kurtosis/issues/1675)) ([2eeb643](https://github.com/kurtosis-tech/kurtosis/commit/2eeb643fb0512fc4b9b8ea45506dc6964da2064c))
+* new emui design tweaks ([#1670](https://github.com/kurtosis-tech/kurtosis/issues/1670)) ([f172cd7](https://github.com/kurtosis-tech/kurtosis/commit/f172cd78e81dc02cb9a2a25561244f3c24eedebe))
+* rename all JSON to YAML ([#1650](https://github.com/kurtosis-tech/kurtosis/issues/1650)) ([219ac7a](https://github.com/kurtosis-tech/kurtosis/commit/219ac7ad275ac49c63a750cb7333033e076a7848))
+
+
+### Bug Fixes
+
+* actually create production enclaves ([#1682](https://github.com/kurtosis-tech/kurtosis/issues/1682)) ([8987212](https://github.com/kurtosis-tech/kurtosis/commit/8987212ffd7a1caba7cf25403a219870073d9306))
+* Improve description of the image-download flag ([#1660](https://github.com/kurtosis-tech/kurtosis/issues/1660)) ([230b4d0](https://github.com/kurtosis-tech/kurtosis/commit/230b4d095e905c624664c23b1e44aecab7b969ab))
+* mention URL JSON path in kurtosis run -h ([#1676](https://github.com/kurtosis-tech/kurtosis/issues/1676)) ([c8c0ec8](https://github.com/kurtosis-tech/kurtosis/commit/c8c0ec8f7a238bbcd7fc2e7f9977e5917cfc95d6))
+* prefix warning to the image validation ([#1673](https://github.com/kurtosis-tech/kurtosis/issues/1673)) ([88147fb](https://github.com/kurtosis-tech/kurtosis/commit/88147fbb7b3110d87bff90aea5c81ef5ec2245c2))
+
+## [0.85.2](https://github.com/kurtosis-tech/kurtosis/compare/0.85.1...0.85.2) (2023-10-31)
+
+
+### Bug Fixes
+
+* block local absolute locators ([#1659](https://github.com/kurtosis-tech/kurtosis/issues/1659)) ([a4daeb3](https://github.com/kurtosis-tech/kurtosis/commit/a4daeb3437219245d5b04a15f28b6addae1c29b6)), closes [#1637](https://github.com/kurtosis-tech/kurtosis/issues/1637)
+* use full path for running black to allow older versions of docker ([#1666](https://github.com/kurtosis-tech/kurtosis/issues/1666)) ([fdcd3d9](https://github.com/kurtosis-tech/kurtosis/commit/fdcd3d94086365e62bab07cf34a91df2fa5bff73))
+
 ## [0.85.1](https://github.com/kurtosis-tech/kurtosis/compare/0.85.0...0.85.1) (2023-10-31)
 
 

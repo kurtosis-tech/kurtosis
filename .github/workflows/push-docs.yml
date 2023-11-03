@@ -45,12 +45,6 @@ jobs:
       - name: Append changelog
         run: cat CHANGELOG.md >> docs/docs/changelog.md
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
-      - name: Append Go README
-        run: cat api/golang/README.md >> docs/docs/sdk-examples/go-sdk-example.md
-        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
-      - name: Append TS README
-        run: cat api/typescript/README.md >> docs/docs/sdk-examples/ts-sdk-example.md
-        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Yarn Install
         run: yarn --cwd ./docs --frozen-lockfile install
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
@@ -70,7 +64,10 @@ jobs:
   reindex-website-main:
     runs-on: ubuntu-latest
     name: Update website search index via Algolia Crawler
-    if: github.ref == 'refs/heads/main'
+    if: ${{
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+      }}
     steps:
       - uses: fjogeleit/http-request-action@v1
         with:
@@ -83,7 +80,10 @@ jobs:
   check-index:
     runs-on: ubuntu-latest
     name: Checks that the latest index is still working
-    if: github.ref == 'refs/heads/main'
+    if: ${{
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+      }}
     steps:
       - uses: fjogeleit/http-request-action@v1
         id: search

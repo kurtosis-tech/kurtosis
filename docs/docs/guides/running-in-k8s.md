@@ -5,11 +5,11 @@ slug: /k8s
 sidebar_position: 6
 ---
 
-This guide assumes that you have [Kurtosis installed](./installing-the-cli.md).
+This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md).
 
 If you would like more information on Kubernetes and how to set up, run and manage a cluster check out these offical [docs](https://kubernetes.io/docs/home/). 
 
-Please note that in order to ensure Kurtosis works the same way over Kubernetes as it does over Docker locally, service names must be a valid [RFC-1035 Label Name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#rfc-1035-label-names). This means service names must contain: at most 63 characters, only lowercase alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character. 
+Please note that in order to ensure Kurtosis works the same way over Kubernetes as it does over Docker locally, service names must be a valid [RFC-1035 Label Name](https://kubernetes.io/docs/advanced-concepts/overview/working-with-objects/names/#rfc-1035-label-names). This means service names must contain: at most 63 characters, only lowercase alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character. 
 
 I. Create a Kubernetes Cluster
 -----------------
