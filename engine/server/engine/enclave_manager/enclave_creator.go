@@ -37,6 +37,8 @@ func (creator *EnclaveCreator) CreateEnclave(
 	enclaveName string,
 	enclaveEnvVars string,
 	isProduction bool,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
 	uuid, err := uuid_generator.GenerateUUIDString()
@@ -76,6 +78,8 @@ func (creator *EnclaveCreator) CreateEnclave(
 		apiContainerListenGrpcPortNumInsideNetwork,
 		enclaveEnvVars,
 		isProduction,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
 	)
 
 	if err != nil {
@@ -120,6 +124,12 @@ func (creator *EnclaveCreator) CreateEnclave(
 	if apiContainer.GetBridgeNetworkIPAddress() != nil {
 		bridgeIpAddr = apiContainer.GetBridgeNetworkIPAddress().String()
 	}
+
+	mode := kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
+	if newEnclave.IsProductionEnclave() {
+		mode = kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
+	}
+
 	newEnclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:        newEnclaveUuidStr,
 		Name:               newEnclave.GetName(),
@@ -134,6 +144,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 		CreationTime:                creationTimestamp,
+		Mode:                        mode,
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
@@ -150,6 +161,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 	grpcListenPort uint16,
 	enclaveEnvVars string,
 	isProduction bool,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -167,6 +180,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 			creator.apiContainerKurtosisBackendConfigSupplier,
 			enclaveEnvVars,
 			isProduction,
+			metricsUserID,
+			didUserAcceptSendingMetrics,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveUuid, apiContainerImageVersionTag)
@@ -181,6 +196,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 		creator.apiContainerKurtosisBackendConfigSupplier,
 		enclaveEnvVars,
 		isProduction,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveUuid)

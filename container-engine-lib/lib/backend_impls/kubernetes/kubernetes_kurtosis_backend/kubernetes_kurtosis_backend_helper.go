@@ -3,7 +3,7 @@ package kubernetes_kurtosis_backend
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/metrics_reporting"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -89,11 +89,11 @@ func GetApiContainerBackend(
 		}
 
 		namespaceLabels := namespace.GetLabels()
-		enclaveIdStr, found := namespaceLabels[label_key_consts.IDKubernetesLabelKey.GetString()]
+		enclaveIdStr, found := namespaceLabels[kubernetes_label_key.IDKubernetesLabelKey.GetString()]
 		if !found {
 			return nil, stacktrace.NewError(
 				"Expected to find enclave ID label '%v' on namespace '%v' but none was found",
-				label_key_consts.IDKubernetesLabelKey.GetString(),
+				kubernetes_label_key.IDKubernetesLabelKey.GetString(),
 				namespaceName,
 			)
 		}

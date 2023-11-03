@@ -3,9 +3,9 @@ package storeservice
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -52,13 +52,6 @@ def run(plan, args):
 		service_name = args["service_name"],
 	)
 `
-	noParallelism = 1
-
-	useDefaultMainFile = ""
-)
-
-var (
-	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
 )
 
 var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -162,7 +155,7 @@ func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.E
 		template = starlarkTemplateWithoutArtifactName
 	}
 	params := fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s"}`, serviceName, filePath, artifactName)
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, params, false, noParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, template, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(params)))
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

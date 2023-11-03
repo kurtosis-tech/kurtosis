@@ -25,7 +25,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
 	_import "github.com/kurtosis-tech/kurtosis/cli/cli/commands/import"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lint"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lsp"
+	_package "github.com/kurtosis-tech/kurtosis/cli/cli/commands/package"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/port"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/portal"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
@@ -37,7 +39,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -120,6 +122,7 @@ func init() {
 	RootCmd.AddCommand(files.FilesCmd)
 	RootCmd.AddCommand(gateway.GatewayCmd)
 	RootCmd.AddCommand(lsp.NewLspCommand())
+	RootCmd.AddCommand(lint.LintCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(port.PortCmd)
 	RootCmd.AddCommand(portal.PortalCmd)
 	RootCmd.AddCommand(run.StarlarkRunCmd.MustGetCobraCommand())
@@ -128,6 +131,7 @@ func init() {
 	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(web.WebCmd.MustGetCobraCommand())
+	RootCmd.AddCommand(_package.PackageCmd)
 }
 
 // ====================================================================================================

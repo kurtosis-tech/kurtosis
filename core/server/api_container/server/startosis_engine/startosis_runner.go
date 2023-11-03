@@ -2,15 +2,17 @@ package startosis_engine
 
 import (
 	"context"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/sirupsen/logrus"
-	"strings"
-	"sync"
 )
 
 type StartosisRunner struct {
@@ -48,10 +50,12 @@ func (runner *StartosisRunner) Run(
 	dryRun bool,
 	parallelism int,
 	packageId string,
+	packageReplaceOptions map[string]string,
 	mainFunctionName string,
 	relativePathToMainFile string,
 	serializedStartosis string,
 	serializedParams string,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	runner.mutex.Lock()
@@ -101,6 +105,7 @@ func (runner *StartosisRunner) Run(
 				ctx,
 				packageId,
 				mainFunctionName,
+				packageReplaceOptions,
 				relativePathToMainFile,
 				serializedStartosis,
 				serializedParams,
@@ -111,6 +116,7 @@ func (runner *StartosisRunner) Run(
 			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.InterpretAndOptimizePlan(
 				ctx,
 				packageId,
+				packageReplaceOptions,
 				mainFunctionName,
 				relativePathToMainFile,
 				serializedStartosis,
@@ -140,7 +146,7 @@ func (runner *StartosisRunner) Run(
 			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
-		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence)
+		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence, imageDownloadMode)
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, starlarkRunResponseLines); isRunFinished {
 			if !isRunSuccessful {
 				logrus.Warnf("An error occurred validating the sequence of Kurtosis instructions. See logs above for more details")

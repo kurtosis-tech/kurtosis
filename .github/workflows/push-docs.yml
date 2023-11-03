@@ -1,6 +1,14 @@
 name: Deploy documentation
 
-on: push
+on:
+  push:
+  merge_group:
+  pull_request_target:
+    # this is for forked pull requests - we can't pass down secrets; this allows us to pass down secrets
+    # to build the cloudflare pages action
+    types:
+      - opened
+      - labeled
 
 jobs:
   publish:
@@ -9,6 +17,14 @@ jobs:
       contents: read
       deployments: write
     name: Publish to Cloudflare Pages
+    if: ${{
+      github.event_name == 'push' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request_target' &&
+      github.event.action == 'labeled' &&
+      github.event.pull_request.head.repo.fork == true &&
+      contains(github.event.label.name, 'request-cf-deploy'))
+      }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -45,3 +61,46 @@ jobs:
           directory: docs/build/
           # as we publish on tag we want to tell CF that the branch is still main so that it can deploy to production
           branch: ${GITHUB_REF##*/}
+  reindex-website-main:
+    runs-on: ubuntu-latest
+    name: Update website search index via Algolia Crawler
+    if: ${{
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+      }}
+    steps:
+      - uses: fjogeleit/http-request-action@v1
+        with:
+          url: 'https://crawler.algolia.com/api/1/crawlers/${{ secrets.ALGOLIA_CRAWLER_ID }}/reindex'
+          method: 'POST'
+          username: ${{ secrets.ALGOLIA_CRAWLER_USER_ID }}
+          password: ${{ secrets.ALGOLIA_CRAWLER_API_KEY }}
+          customHeaders: '{"Content-Type": "application/json"}'
+    needs: publish
+  check-index:
+    runs-on: ubuntu-latest
+    name: Checks that the latest index is still working
+    if: ${{
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+      }}
+    steps:
+      - uses: fjogeleit/http-request-action@v1
+        id: search
+        with:
+          url: "https://NTSX40VZB8-dsn.algolia.net/1/indexes/kurtosis/query"
+          method: 'POST'
+          customHeaders: '{"X-Algolia-API-Key": "4269c726c2fea4e6cddfeb9a21cd3d4e", "X-Algolia-Application-Id": "NTSX40VZB8"}'
+          data: '{ "params": "query=add_service&hitsPerPage=2&getRankingInfo=1" }'
+      - name: Show Response
+        run: |
+          #!/bin/bash
+          set -eou pipefail
+
+          if (( ${{ fromJson(steps.search.outputs.response).nbHits }} > 100 )); then
+            echo "Results are greater than 100"
+          else
+            echo "Results are not greater than 100"
+            exit 1
+          fi
+    needs: reindex-website-main

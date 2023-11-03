@@ -4,14 +4,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_object_name"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 // Labels that get attached to EVERY Kurtosis object
 var globalLabels = map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-	label_key_consts.AppIDDockerLabelKey: label_value_consts.AppIDDockerLabelValue,
+	docker_label_key.AppIDDockerLabelKey: label_value_consts.AppIDDockerLabelValue,
 	// TODO container engine lib version??
 }
 

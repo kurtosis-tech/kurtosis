@@ -3,14 +3,14 @@ title: How to set up an n-node Cassandra environment
 sidebar_label: Setting up an n-node Cassandra cluster
 slug: /how-to-parameterize-cassandra
 toc_max_heading_level: 2
-sidebar_position: 5
+sidebar_position: 9
 ---
 
 Introduction
 ------------
 In this guide, you will set up a 3-node Cassandra cluster in Docker and parameterize the environment definition so it can easily be modified for use in different tests that require an _n_-node Cassandra cluster. Then we will show you how to run remotely hosted packages authored by others, and go through how to package and publish our work to Github for others to use as well.
 
-Specifically, you're going to configure your test environments with a way that allows you to both:
+Specifically, you're going to configure your environments with a way that allows you to both:
 1. Parameterize the environment so another developer using the environment can specify how many nodes they’d like for their system to have, and 
 2. Make the environment definition composable so that your environments can be included in tests with other services for different scenarios & use cases.
 
@@ -368,7 +368,7 @@ And that’s it! To recap this short guide, you:
 2. Added a few lines of code to our `main.star` file to parametrize your environment definition to increase the flexibility and use cases with which it can be used, and,
 3. Executed a remotely-hosted Starlark file that was part of what's called a [Kurtosis Package][packages] to demonstrate how your environment definition can be shared with other developers.
 
-We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via Github (`kurtosis feedback`) or in our [Discord server](https://discord.com/channels/783719264308953108/783719264308953111).
+We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via Github (`kurtosis feedback`) or in our [Discord server](https://discord.gg/6Jjp9c89z9).
 
 ### Other exercises you can do with your Cassandra cluster
 With your parameterized, reusable environment definition for a multi-node Cassandra cluster, feel free to:
@@ -379,18 +379,18 @@ With your parameterized, reusable environment definition for a multi-node Cassan
 We encourage you to check out our [quickstart][quickstart] (where you’ll build a postgres database and API on top) and our other examples in our [awesome-kurtosis repository][awesome-kurtosis] where you will find other Kurtosis packages for you to check out as well, including a package that spins up a local [Ethereum testnet][eth-package-example] or one that sets up a [voting app using a Redis cluster][redis-package-example]. 
 
 <!---- REFERENCE LINKS BELOW ONLY ---->
-[quickstart]: ../quickstart.md
+[quickstart]: ../get-started/quickstart.md
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis
-[multi-phase-runs]: ../concepts-reference/multi-phase-runs.md
+[multi-phase-runs]: ../advanced-concepts/multi-phase-runs.md
 [github-cass-package]: https://github.com/kurtosis-tech/cassandra-package/blob/main/main.star
-[runnable-packages]: ../concepts-reference/packages.md#runnable-packages
-[kurtosis-yml]: ../concepts-reference/kurtosis-yml.md
-[locator]: ../concepts-reference/locators.md
-[packages]: ../concepts-reference/packages.md
-[sdk-reference]: ../sdk.md
+[runnable-packages]: ../advanced-concepts/packages.md#runnable-packages
+[kurtosis-yml]: ../advanced-concepts/kurtosis-yml.md
+[locator]: ../advanced-concepts/locators.md
+[packages]: ../advanced-concepts/packages.md
+[sdk-reference]: ../api-reference/engine-apic-reference.md
 [redis-package-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app
 [eth-package-example]: https://github.com/kurtosis-tech/eth-network-package
-[installing-the-cli]: ./installing-the-cli.md#ii-install-the-cli
-[starting-docker]: ./installing-the-cli.md#i-install--start-docker
-[starlark]: ../concepts-reference/starlark.md
+[installing-the-cli]: ../get-started/installing-the-cli.md#ii-install-the-cli
+[starting-docker]: ../get-started/installing-the-cli.md#i-install--start-docker
+[starlark]: ../advanced-concepts/starlark.md
 [vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension

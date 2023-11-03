@@ -3,9 +3,13 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"runtime"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
@@ -18,6 +22,16 @@ import (
 
 const (
 	validationInProgressMsg = "Validating Starlark code and downloading container images - execution will begin shortly"
+
+	containerDownloadedImagesMsgHeader     = "Container images used in this run:"
+	containerDownloadedImagesMsgFromLocal  = "locally cached"
+	containerDownloadedImagesMsgFromRemote = "remotely downloaded"
+	containerDownloadedImagesMsgLineFormat = "> %s - %s"
+
+	containerImageArchWarningHeaderFormat   = "WARNING: Container images with different architecture than expected(%s):"
+	containerImageArchitectureMsgLineFormat = "> %s - %s"
+
+	linebreak = "\n"
 )
 
 type StartosisValidator struct {
@@ -39,7 +53,7 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, s
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, instructionsSequence []*instructions_plan.ScheduledInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (validator *StartosisValidator) Validate(ctx context.Context, instructionsSequence []*instructions_plan.ScheduledInstruction, imageDownloadMode image_download_mode.ImageDownloadMode) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
 		defer close(starlarkRunResponseLineStream)
@@ -78,7 +92,8 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 			serviceNamePortIdMapping,
 			availableCpuInMilliCores,
 			availableMemoryInMegaBytes,
-			isResourceInformationComplete)
+			isResourceInformationComplete,
+			imageDownloadMode)
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateAndUpdateEnvironment(instructionsSequence, environment, starlarkRunResponseLineStream)
@@ -123,7 +138,7 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 
 	errors := make(chan error)
 	imageValidationStarted := make(chan string)
-	imageValidationFinished := make(chan string)
+	imageValidationFinished := make(chan *startosis_validator.ValidatedImage)
 	go validator.dockerImagesValidator.Validate(ctx, environment, imageValidationStarted, imageValidationFinished, errors)
 
 	numberOfImageValidated := uint32(0)
@@ -134,6 +149,7 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 
 	go func() {
 		var imageCurrentlyBeingValidated []string
+		imageSuccessfullyValidated := map[string]*startosis_validator.ValidatedImage{}
 		// we read the three channels to update imageCurrentlyBeingValidated and return progress info back to the CLI
 		// it returns when the error channel is closed. The error channel is the reference here as we don't want to
 		// hide an error from the user. I.e. we don't want this function to return before the error channel is closed
@@ -147,17 +163,24 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 				logrus.Debugf("Received image validation started event: '%s'", image)
 				imageCurrentlyBeingValidated = append(imageCurrentlyBeingValidated, image)
 				updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated, numberOfImageValidated, totalImageNumberToValidate)
-			case image, isChanOpen := <-imageValidationFinished:
+			case validatedImage, isChanOpen := <-imageValidationFinished:
 				if !isChanOpen {
 					// the subroutine returns when the error channel is closed
 					continue
 				}
 				numberOfImageValidated++
-				logrus.Debugf("Received image validation finished event: '%s'", image)
-				imageCurrentlyBeingValidated = removeIfPresent(imageCurrentlyBeingValidated, image)
+
+				imageName := validatedImage.GetName()
+				logrus.Debugf("Received image validation finished event: '%s'", imageName)
+
+				imageCurrentlyBeingValidated = removeIfPresent(imageCurrentlyBeingValidated, imageName)
+
+				imageSuccessfullyValidated[imageName] = validatedImage
+
 				updateProgressWithDownloadInfo(starlarkRunResponseLineStream, imageCurrentlyBeingValidated, numberOfImageValidated, totalImageNumberToValidate)
 			case err, isChanOpen := <-errors:
 				if !isChanOpen {
+					sendContainerImageSummaryInfoMsg(imageSuccessfullyValidated, starlarkRunResponseLineStream)
 					// the error channel is the important. If it's closed, then all errors have been forwarded to
 					// starlarkRunResponseLineStream and this method can return
 					waitForErrorChannelToBeClosed <- true
@@ -169,6 +192,7 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
 			}
 		}
+
 	}()
 
 	logrus.Debug("Waiting for all images to be downloaded and validated")
@@ -178,6 +202,50 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 	<-waitForErrorChannelToBeClosed
 
 	return isValidationFailure
+}
+
+func sendContainerImageSummaryInfoMsg(
+	imageSuccessfullyValidated map[string]*startosis_validator.ValidatedImage,
+	starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine,
+) {
+	if len(imageSuccessfullyValidated) == 0 {
+		return
+	}
+
+	imageLines := []string{}
+	imagesWithIncorrectArchLines := []string{}
+
+	for image, validatedImage := range imageSuccessfullyValidated {
+		pulledFromStr := containerDownloadedImagesMsgFromLocal
+		if validatedImage.GetPulledFromRemote() {
+			pulledFromStr = containerDownloadedImagesMsgFromRemote
+		}
+
+		architecture := validatedImage.GetArchitecture()
+
+		if architecture != runtime.GOARCH {
+			imageWithIncorrectArchLine := fmt.Sprintf(containerImageArchitectureMsgLineFormat, image, architecture)
+			imagesWithIncorrectArchLines = append(imagesWithIncorrectArchLines, imageWithIncorrectArchLine)
+		}
+
+		imageLine := fmt.Sprintf(containerDownloadedImagesMsgLineFormat, image, pulledFromStr)
+		imageLines = append(imageLines, imageLine)
+	}
+
+	msgLines := []string{containerDownloadedImagesMsgHeader}
+	msgLines = append(msgLines, imageLines...)
+
+	msg := strings.Join(msgLines, linebreak)
+
+	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg(msg)
+
+	if len(imagesWithIncorrectArchLines) > 0 {
+		imageWarningHeader := fmt.Sprintf(containerImageArchWarningHeaderFormat, runtime.GOARCH)
+		imagesWithArchMsgLines := []string{imageWarningHeader}
+		imagesWithArchMsgLines = append(imagesWithArchMsgLines, imagesWithIncorrectArchLines...)
+		imagesWithDiffArchWarningMessage := strings.Join(imagesWithArchMsgLines, linebreak)
+		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromWarning(imagesWithDiffArchWarningMessage)
+	}
 }
 
 func updateProgressWithDownloadInfo(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, imageCurrentlyInProgress []string, numberOfImageValidated uint32, totalNumberOfImagesToValidate uint32) {

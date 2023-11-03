@@ -8,7 +8,7 @@ import {
     ServiceContext,
     ServiceUUID,
     ServiceName,
-    ServiceLog,
+    ServiceLog, StarlarkRunConfig,
 } from "kurtosis-sdk";
 import * as datastoreApi from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
@@ -24,7 +24,6 @@ import {GetArgs, GetResponse, UpsertArgs} from "example-datastore-server-api-lib
 import {StarlarkRunResult} from "kurtosis-sdk/build/core/lib/enclaves/starlark_run_blocking";
 import {Readable} from "stream";
 import {receiveExpectedLogLinesFromServiceLogsReadable, ReceivedStreamContent} from "./received_stream_content";
-import {KurtosisFeatureFlag} from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 const CONFIG_FILENAME = "config.json"
 const CONFIG_MOUNTPATH_ON_API_CONTAINER = "/config"
@@ -41,11 +40,6 @@ const DATASTORE_WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000;
 const API_WAIT_FOR_STARTUP_MAX_POLLS = 10;
 const API_WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000;
 
-const DEFAULT_RUN_FUNCTION_NAME = "run"
-const STARLARK_SCRIPT_NO_PARAM = "{}"
-const STARLARK_NO_DRY_RUN = false
-const NO_EXPERIMENTAL_FEATURE: Array<KurtosisFeatureFlag> = []
-
 const DATASTORE_PORT_NUMBER = datastoreApi.LISTEN_PORT
 const DATASTORE_PORT_PROTOCOL = "TCP"
 
@@ -61,6 +55,9 @@ const WAIT_FOR_FILE_SERVER_TIMEOUT_MILLISECONDS = 45000
 const WAIT_FOR_FILE_SERVER_INTERVAL_MILLISECONDS = 100
 
 const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT = "/static"
+
+const DEFAULT_SHOULD_RETURN_ALL_LOGS = true
+const DEFAULT_NUM_LOG_LINES = 0 // this value doesn't matetr since default is to return all logs
 
 // for validating data store is healthy
 /*
@@ -241,7 +238,10 @@ export async function waitForHealthy(
 
 export async function waitForGetAvailabilityStarlarkScript(enclaveContext: EnclaveContext, serviceName: string, portId: string, endpoint: string, interval: number, timeout: number) : Promise<Result<StarlarkRunResult, Error>> {
     const params = `{ "service_name": "${serviceName}", "port_id": "${portId}", "endpoint": "/${endpoint}", "interval": "${interval}ms", "timeout": "${timeout}ms"}`
-    return enclaveContext.runStarlarkScriptBlocking(DEFAULT_RUN_FUNCTION_NAME, WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, params, false, NO_EXPERIMENTAL_FEATURE)
+    const starlarkRunConfig = new StarlarkRunConfig(
+        StarlarkRunConfig.WithSerializedParams(params)
+    )
+    return enclaveContext.runStarlarkScriptBlocking(WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, starlarkRunConfig)
 }
 
 export async function startFileServer(fileServerServiceName: ServiceName, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext): Promise<Result<StartFileServerResponse, Error>> {
@@ -307,11 +307,8 @@ export async function addServiceViaStarlark(enclaveContext: EnclaveContext, serv
 `
 
     const starlarkScriptRunResultPromise = enclaveContext.runStarlarkScriptBlocking(
-        DEFAULT_RUN_FUNCTION_NAME,
         addServiceScript,
-        STARLARK_SCRIPT_NO_PARAM,
-        STARLARK_NO_DRY_RUN,
-        NO_EXPERIMENTAL_FEATURE,
+        new StarlarkRunConfig(),
     )
     const starlarkScriptRunResult = await starlarkScriptRunResultPromise
 
@@ -550,7 +547,7 @@ export async function getLogsResponseAndEvaluateResponse(
     let receivedLogLinesByService: Map<ServiceUUID, Array<ServiceLog>> = new Map<ServiceUUID, Array<ServiceLog>>();
     let receivedNotFoundServiceUuids: Set<ServiceUUID> = new Set<ServiceUUID>();
 
-    const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveUuid, serviceUuids, shouldFollowLogs, logLineFilter);
+    const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveUuid, serviceUuids, shouldFollowLogs, DEFAULT_SHOULD_RETURN_ALL_LOGS, DEFAULT_NUM_LOG_LINES, logLineFilter);
 
     if (streamUserServiceLogsPromise.isErr()) {
         return err(streamUserServiceLogsPromise.error);

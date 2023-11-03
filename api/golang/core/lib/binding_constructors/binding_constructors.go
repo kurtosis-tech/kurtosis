@@ -39,16 +39,28 @@ func NewRunStarlarkScriptArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	cloudInstanceId string,
+	cloudUserId string,
+	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
+	cloudInstanceIdCopy := new(string)
+	*cloudInstanceIdCopy = cloudInstanceId
+	cloudUserIdCopy := new(string)
+	*cloudUserIdCopy = cloudUserId
+	imageDownloadModeCopy := new(kurtosis_core_rpc_api_bindings.ImageDownloadMode)
+	*imageDownloadModeCopy = imageDownloadMode
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
 		SerializedScript:     serializedString,
-		SerializedParams:     serializedParams,
+		SerializedParams:     &serializedParams,
 		DryRun:               &dryRun,
 		Parallelism:          parallelismCopy,
-		MainFunctionName:     mainFunctionName,
+		MainFunctionName:     &mainFunctionName,
 		ExperimentalFeatures: experimentalFeatures,
+		CloudInstanceId:      cloudInstanceIdCopy,
+		CloudUserId:          cloudUserIdCopy,
+		ImageDownloadMode:    imageDownloadModeCopy,
 	}
 }
 
@@ -60,20 +72,32 @@ func NewRunStarlarkPackageArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	cloudInstanceId string,
+	cloudUserId string,
+	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
+	cloudInstanceIdCopy := new(string)
+	*cloudInstanceIdCopy = cloudInstanceId
+	cloudUserIdCopy := new(string)
+	*cloudUserIdCopy = cloudUserId
+	imageDownloadModeCopy := new(kurtosis_core_rpc_api_bindings.ImageDownloadMode)
+	*imageDownloadModeCopy = imageDownloadMode
 	clonePackage := false
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
 		ClonePackage:           &clonePackage,
 		StarlarkPackageContent: nil,
-		SerializedParams:       serializedParams,
+		SerializedParams:       &serializedParams,
 		DryRun:                 &dryRun,
 		Parallelism:            parallelismCopy,
-		RelativePathToMainFile: relativePathToMainFile,
-		MainFunctionName:       mainFunctionName,
+		RelativePathToMainFile: &relativePathToMainFile,
+		MainFunctionName:       &mainFunctionName,
 		ExperimentalFeatures:   experimentalFeatures,
+		CloudInstanceId:        cloudInstanceIdCopy,
+		CloudUserId:            cloudUserIdCopy,
+		ImageDownloadMode:      imageDownloadModeCopy,
 	}
 }
 
@@ -85,20 +109,32 @@ func NewRunStarlarkRemotePackageArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	cloudInstanceId string,
+	cloudUserId string,
+	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
+	cloudInstanceIdCopy := new(string)
+	*cloudInstanceIdCopy = cloudInstanceId
+	cloudUserIdCopy := new(string)
+	*cloudUserIdCopy = cloudUserId
+	imageDownloadModeCopy := new(kurtosis_core_rpc_api_bindings.ImageDownloadMode)
+	*imageDownloadModeCopy = imageDownloadMode
 	clonePackage := true
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
 		ClonePackage:           &clonePackage,
 		StarlarkPackageContent: nil,
-		SerializedParams:       serializedParams,
+		SerializedParams:       &serializedParams,
 		DryRun:                 &dryRun,
 		Parallelism:            parallelismCopy,
-		RelativePathToMainFile: relativePathToMainFile,
-		MainFunctionName:       mainFunctionName,
+		RelativePathToMainFile: &relativePathToMainFile,
+		MainFunctionName:       &mainFunctionName,
 		ExperimentalFeatures:   experimentalFeatures,
+		CloudInstanceId:        cloudInstanceIdCopy,
+		CloudUserId:            cloudUserIdCopy,
+		ImageDownloadMode:      imageDownloadModeCopy,
 	}
 }
 
@@ -111,6 +147,16 @@ func NewStarlarkRunResponseLineFromInstruction(instruction *kurtosis_core_rpc_ap
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Instruction{
 			Instruction: instruction,
+		},
+	}
+}
+
+func NewStarlarkRunResponseLineFromInfoMsg(infoMessage string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Info{
+			Info: &kurtosis_core_rpc_api_bindings.StarlarkInfo{
+				InfoMessage: infoMessage,
+			},
 		},
 	}
 }
@@ -298,6 +344,7 @@ func NewServiceInfo(
 	maybePublicIpAddr string,
 	maybePublicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	serviceStatus kurtosis_core_rpc_api_bindings.ServiceStatus,
+	container *kurtosis_core_rpc_api_bindings.Container,
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
 		ServiceUuid:       uuid,
@@ -308,6 +355,7 @@ func NewServiceInfo(
 		MaybePublicIpAddr: maybePublicIpAddr,
 		MaybePublicPorts:  maybePublicPorts,
 		ServiceStatus:     serviceStatus,
+		Container:         container,
 	}
 }
 

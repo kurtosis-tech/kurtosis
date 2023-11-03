@@ -18,6 +18,17 @@ export const ServiceStatus = proto3.makeEnum(
 );
 
 /**
+ * @generated from enum api_container_api.ImageDownloadMode
+ */
+export const ImageDownloadMode = proto3.makeEnum(
+  "api_container_api.ImageDownloadMode",
+  [
+    {no: 0, name: "always"},
+    {no: 1, name: "missing"},
+  ],
+);
+
+/**
  * User services port forwarding
  *
  * @generated from enum api_container_api.Connect
@@ -37,6 +48,17 @@ export const KurtosisFeatureFlag = proto3.makeEnum(
   "api_container_api.KurtosisFeatureFlag",
   [
     {no: 0, name: "NO_INSTRUCTIONS_CACHING"},
+  ],
+);
+
+/**
+ * @generated from enum api_container_api.RestartPolicy
+ */
+export const RestartPolicy = proto3.makeEnum(
+  "api_container_api.RestartPolicy",
+  [
+    {no: 0, name: "NEVER"},
+    {no: 1, name: "ALWAYS"},
   ],
 );
 
@@ -70,6 +92,32 @@ export const Port_TransportProtocol = proto3.makeEnum(
 );
 
 /**
+ * @generated from message api_container_api.Container
+ */
+export const Container = proto3.makeMessageType(
+  "api_container_api.Container",
+  () => [
+    { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(Container_Status) },
+    { no: 2, name: "image_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "entrypoint_args", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 4, name: "cmd_args", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 5, name: "env_vars", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
+  ],
+);
+
+/**
+ * @generated from enum api_container_api.Container.Status
+ */
+export const Container_Status = proto3.makeEnum(
+  "api_container_api.Container.Status",
+  [
+    {no: 0, name: "STOPPED"},
+    {no: 1, name: "RUNNING"},
+    {no: 2, name: "UNKNOWN"},
+  ],
+);
+
+/**
  * @generated from message api_container_api.ServiceInfo
  */
 export const ServiceInfo = proto3.makeMessageType(
@@ -83,6 +131,7 @@ export const ServiceInfo = proto3.makeMessageType(
     { no: 6, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 7, name: "shortened_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 8, name: "service_status", kind: "enum", T: proto3.getEnumType(ServiceStatus) },
+    { no: 9, name: "container", kind: "message", T: Container },
   ],
 );
 
@@ -93,11 +142,14 @@ export const RunStarlarkScriptArgs = proto3.makeMessageType(
   "api_container_api.RunStarlarkScriptArgs",
   () => [
     { no: 1, name: "serialized_script", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 3, name: "dry_run", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
     { no: 4, name: "parallelism", kind: "scalar", T: 5 /* ScalarType.INT32 */, opt: true },
-    { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 6, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
+    { no: 7, name: "cloud_instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 8, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 9, name: "image_download_mode", kind: "enum", T: proto3.getEnumType(ImageDownloadMode), opt: true },
   ],
 );
 
@@ -110,13 +162,16 @@ export const RunStarlarkPackageArgs = proto3.makeMessageType(
     { no: 1, name: "package_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "local", kind: "scalar", T: 12 /* ScalarType.BYTES */, oneof: "starlark_package_content" },
     { no: 4, name: "remote", kind: "scalar", T: 8 /* ScalarType.BOOL */, oneof: "starlark_package_content" },
-    { no: 5, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 6, name: "dry_run", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
     { no: 7, name: "parallelism", kind: "scalar", T: 5 /* ScalarType.INT32 */, opt: true },
     { no: 8, name: "clone_package", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
-    { no: 9, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 10, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 9, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 10, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 11, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
+    { no: 12, name: "cloud_instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 13, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 14, name: "image_download_mode", kind: "enum", T: proto3.getEnumType(ImageDownloadMode), opt: true },
   ],
 );
 
@@ -136,6 +191,17 @@ export const StarlarkRunResponseLine = proto3.makeMessageType(
     { no: 4, name: "instruction_result", kind: "message", T: StarlarkInstructionResult, oneof: "run_response_line" },
     { no: 5, name: "run_finished_event", kind: "message", T: StarlarkRunFinishedEvent, oneof: "run_response_line" },
     { no: 6, name: "warning", kind: "message", T: StarlarkWarning, oneof: "run_response_line" },
+    { no: 7, name: "info", kind: "message", T: StarlarkInfo, oneof: "run_response_line" },
+  ],
+);
+
+/**
+ * @generated from message api_container_api.StarlarkInfo
+ */
+export const StarlarkInfo = proto3.makeMessageType(
+  "api_container_api.StarlarkInfo",
+  () => [
+    { no: 1, name: "info_message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ],
 );
 
@@ -348,11 +414,11 @@ export const WaitForHttpGetEndpointAvailabilityArgs = proto3.makeMessageType(
   () => [
     { no: 1, name: "service_identifier", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "port", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 3, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "initial_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 5, name: "retries", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 6, name: "retries_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 7, name: "body_text", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 4, name: "initial_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 5, name: "retries", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 6, name: "retries_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 7, name: "body_text", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 
@@ -368,12 +434,12 @@ export const WaitForHttpPostEndpointAvailabilityArgs = proto3.makeMessageType(
   () => [
     { no: 1, name: "service_identifier", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "port", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 3, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "request_body", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 5, name: "initial_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 6, name: "retries", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 7, name: "retries_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 8, name: "body_text", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 4, name: "request_body", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 5, name: "initial_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 6, name: "retries", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 7, name: "retries_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 8, name: "body_text", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 
@@ -548,5 +614,22 @@ export const ConnectServicesArgs = proto3.makeMessageType(
 export const ConnectServicesResponse = proto3.makeMessageType(
   "api_container_api.ConnectServicesResponse",
   [],
+);
+
+/**
+ * @generated from message api_container_api.GetStarlarkRunResponse
+ */
+export const GetStarlarkRunResponse = proto3.makeMessageType(
+  "api_container_api.GetStarlarkRunResponse",
+  () => [
+    { no: 1, name: "package_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "serialized_script", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "parallelism", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 5, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 7, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
+    { no: 8, name: "restart_policy", kind: "enum", T: proto3.getEnumType(RestartPolicy) },
+  ],
 );
 

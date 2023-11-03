@@ -10,6 +10,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math"
+	"net"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -19,19 +27,15 @@ import (
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
+	kurtosis_sdk_version "github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
-	"math"
-	"net"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -131,6 +135,8 @@ const (
 	coresToMilliCores      = 1000
 	bytesInMegaBytes       = 1000000
 	dontStreamStats        = false
+
+	kurtosisTagPrefix = "kurtosistech/"
 )
 
 type RestartPolicy string
@@ -252,6 +258,61 @@ func (manager *DockerManager) ListNetworks(ctx context.Context) ([]types.Network
 	// If we ever need that field, we have to call an InspectNetwork, and even then it seems to have some amount of
 	// nondeterminism (i.e. brand-new containers won't show up)
 	return networks, nil
+}
+
+func (manager *DockerManager) PruneUnusedImages(ctx context.Context) ([]types.ImageSummary, error) {
+	unusedImages, err := manager.ListUnusedImages(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list unused images")
+	}
+	logrus.Debugf("List of unused images to be pruned '%v'", unusedImages)
+	successfulPrunedImages := []types.ImageSummary{}
+	for _, image := range unusedImages {
+		imagePruneResponse, err := manager.dockerClient.ImageRemove(ctx, image.ID, types.ImageRemoveOptions{}) //nolint:exhaustruct
+		if err != nil {
+			return successfulPrunedImages, stacktrace.Propagate(err, "Failed to remove image '%v'", image.ID)
+		}
+		logrus.Debugf("Pruned image '%v' with response '%v'", image, imagePruneResponse)
+		successfulPrunedImages = append(successfulPrunedImages, image)
+	}
+	return successfulPrunedImages, nil
+}
+
+func containsSemVer(s string) bool {
+	// Matches patterns like X.Y.Z
+	semVerRegex := `\b(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\b`
+	matched, _ := regexp.MatchString(semVerRegex, s)
+	return matched
+}
+
+func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]types.ImageSummary, error) {
+	images, err := manager.dockerClient.ImageList(ctx, types.ImageListOptions{}) //nolint:exhaustruct
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
+	}
+	containers, err := manager.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: true}) //nolint:exhaustruct
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
+	}
+
+	usedImages := make(map[string]bool)
+	for _, cont := range containers {
+		usedImages[cont.ImageID] = true
+	}
+
+	unusedImages := []types.ImageSummary{}
+	for _, image := range images {
+		if _, used := usedImages[image.ID]; used {
+			logrus.Debugf("Skipping image '%v' since its in use", image.ID)
+			continue
+		}
+		for _, tag := range image.RepoTags {
+			if strings.Contains(tag, kurtosisTagPrefix) && containsSemVer(tag) && !strings.Contains(tag, kurtosis_sdk_version.KurtosisVersion) {
+				unusedImages = append(unusedImages, image)
+			}
+		}
+	}
+	return unusedImages, nil
 }
 
 /*
@@ -463,7 +524,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	err := manager.FetchImage(ctx, dockerImage)
+	_, _, err := manager.FetchImage(ctx, dockerImage, args.imageDownloadMode)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
@@ -1121,10 +1182,39 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	return result, nil
 }
 
-// [FetchImage] always attempts to retrieve the latest [dockerImage].
+// [FetchImageIfMissing] uses the local [dockerImage] if it's available.
+// If unavailable, will attempt to fetch the latest image.
+// Returns error if local [dockerImage] is unavailable and pulling image fails.
+func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerImage string) (bool, error) {
+	// if the image name doesn't have version information we concatenate `:latest`
+	// this behavior is similar to CreateAndStartContainer above
+	// this allows us to be deterministic in our behaviour
+	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
+		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
+	}
+	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
+	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
+	}
+	logrus.Tracef("Is image available locally?: %v", doesImageExistLocally)
+
+	if !doesImageExistLocally {
+		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
+		err = manager.pullImage(ctx, dockerImage)
+		if err != nil {
+			return false, stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
+		}
+		logrus.Tracef("Image successfully pulled from remote to local")
+	}
+
+	return !doesImageExistLocally, nil
+}
+
+// [FetchLatestImage] always attempts to retrieve the latest [dockerImage].
 // If retrieving the latest [dockerImage] fails, the local image will be used.
 // Returns error, if no local image is available after retrieving latest fails.
-func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string) error {
+func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage string) error {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
 	// this allows us to be deterministic in our behaviour
@@ -1157,33 +1247,30 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 	return nil
 }
 
-// [FetchLocalImage] uses the local [dockerImage] if it's available.
-// If unavailable, will attempt to fetch the latest image.
-// Returns error if local [dockerImage] is unavailable and pulling image fails.
-func (manager *DockerManager) FetchLocalImage(ctx context.Context, dockerImage string) error {
-	// if the image name doesn't have version information we concatenate `:latest`
-	// this behavior is similar to CreateAndStartContainer above
-	// this allows us to be deterministic in our behaviour
-	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
-		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
+func (manager *DockerManager) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+	var err error
+	var pulledFromRemote bool = true
+	logrus.Infof("Fetching image '%s' is running in '%s' mode", image, downloadMode)
+
+	switch image_fetching := downloadMode; image_fetching {
+	case image_download_mode.ImageDownloadMode_Always:
+		err = manager.FetchLatestImage(ctx, image)
+	case image_download_mode.ImageDownloadMode_Missing:
+		pulledFromRemote, err = manager.FetchImageIfMissing(ctx, image)
+	default:
+		return false, "", stacktrace.NewError("Undefined image pulling mode: '%v'", image_fetching)
 	}
-	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
-	}
-	logrus.Tracef("Is image available locally?: %v", doesImageExistLocally)
-
-	if !doesImageExistLocally {
-		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
-		err = manager.pullImage(ctx, dockerImage)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
-		}
-		logrus.Tracef("Image successfully pulled from remote to local")
+		return false, "", stacktrace.Propagate(err, "An error occurred fetching image '%v'", image)
 	}
 
-	return nil
+	imageArchitecture, err := manager.getImagePlatform(ctx, image)
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred while fetching the architecture of the image")
+	}
+
+	return pulledFromRemote, imageArchitecture, nil
 }
 
 func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
@@ -1320,6 +1407,15 @@ func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args 
 		return nil, stacktrace.Propagate(err, "Failed to list networks while doing a filter search using args '%+v'", args)
 	}
 	return networks, nil
+}
+
+func (manager *DockerManager) getImagePlatform(ctx context.Context, imageName string) (string, error) {
+	imageInspect, _, err := manager.dockerClient.ImageInspectWithRaw(ctx, imageName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "an error occurred while running image inspect on image '%v'", imageName)
+	}
+
+	return imageInspect.Architecture, nil
 }
 
 /*
@@ -1670,11 +1766,18 @@ func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, fil
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the docker containers with filter args '%+v'", filterArgs)
 	}
-	containers, err := newContainersListFromDockerContainersList(dockerContainers)
+	dockerContainersDetails := []types.ContainerJSON{}
+	for _, dockerContainer := range dockerContainers {
+		dockerContainerDetails, err := manager.InspectContainer(ctx, dockerContainer.ID)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred inspecting the docker container with ID '%s'", dockerContainer.ID)
+		}
+		dockerContainersDetails = append(dockerContainersDetails, dockerContainerDetails)
+	}
+	containers, err := newContainersListFromDockerContainersList(dockerContainersDetails)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new containers list from Docker containers list")
 	}
-
 	return containers, nil
 }
 
@@ -1716,7 +1819,7 @@ func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context,
 	return true, nil
 }
 
-func newContainersListFromDockerContainersList(dockerContainers []types.Container) ([]*docker_manager_types.Container, error) {
+func newContainersListFromDockerContainersList(dockerContainers []types.ContainerJSON) ([]*docker_manager_types.Container, error) {
 	containers := make([]*docker_manager_types.Container, 0, len(dockerContainers))
 	for _, dockerContainer := range dockerContainers {
 		container, err := newContainerFromDockerContainer(dockerContainer)
@@ -1728,46 +1831,28 @@ func newContainersListFromDockerContainersList(dockerContainers []types.Containe
 	return containers, nil
 }
 
-func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_manager_types.Container, error) {
-	containerStatus, err := getContainerStatusByDockerContainerState(dockerContainer.State)
+func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*docker_manager_types.Container, error) {
+	containerStatus, err := getContainerStatusByDockerContainerState(dockerContainer.State.Status)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", dockerContainer.State)
+		return nil, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", dockerContainer.State.Status)
 	}
-	containerName, err := getContainerNameByDockerContainerNames(dockerContainer.Names)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting container name from Docker container names '%+v'", dockerContainer.Names)
+	containerHostPortBindings := getHostPortBindingsOnExpectedInterface(dockerContainer.NetworkSettings.Ports)
+	containerEnvArgs := map[string]string{}
+	for _, env := range dockerContainer.Config.Env {
+		envSlice := strings.Split(env, "=")
+		containerEnvArgs[envSlice[0]] = envSlice[1]
 	}
-
-	// Frustratingly, Docker's ContainerList returns ports in a completely different format than ContainerInspect, so we need
-	// to process the ports into the same format as ContainerInspect so we can call getHostPortBindingsOnExpectedInterface
-	portMap := nat.PortMap{}
-	for _, port := range dockerContainer.Ports {
-		// It's kinda bad that we use "forbidden knowledge" about how nat.Port represents its internals to create one, but
-		// the nat.Port API is so infuriatingly awful to use (how do you even create one??)
-		privatePortStr := fmt.Sprintf("%v/%v", port.PrivatePort, port.Type)
-		privatePort := nat.Port(privatePortStr)
-
-		bindingsForPort, found := portMap[privatePort]
-		if !found {
-			bindingsForPort = []nat.PortBinding{}
-		}
-
-		hostBinding := nat.PortBinding{
-			HostIP:   port.IP,
-			HostPort: fmt.Sprintf("%v", port.PublicPort),
-		}
-
-		bindingsForPort = append(bindingsForPort, hostBinding)
-		portMap[privatePort] = bindingsForPort
-	}
-	containerHostPortBindings := getHostPortBindingsOnExpectedInterface(portMap)
 
 	newContainer := docker_manager_types.NewContainer(
 		dockerContainer.ID,
-		containerName,
-		dockerContainer.Labels,
+		dockerContainer.Name,
+		dockerContainer.Config.Labels,
 		containerStatus,
 		containerHostPortBindings,
+		dockerContainer.Config.Image,
+		dockerContainer.Config.Entrypoint,
+		dockerContainer.Config.Cmd,
+		containerEnvArgs,
 	)
 
 	return newContainer, nil
@@ -1780,15 +1865,6 @@ func getContainerStatusByDockerContainerState(dockerContainerState string) (dock
 	}
 
 	return containerStatus, nil
-}
-
-func getContainerNameByDockerContainerNames(dockerContainerNames []string) (string, error) {
-	if len(dockerContainerNames) > 0 {
-		containerName := dockerContainerNames[0]               //We do this because Docker Container Names is a []strings and the first value is the "actual" container's name. You can check this here: https://github.com/moby/moby/blob/master/integration-cli/docker_api_containers_test.go#L52
-		containerName = strings.TrimPrefix(containerName, "/") //Docker container's names contains "/" prefix
-		return containerName, nil
-	}
-	return "", stacktrace.NewError("There is not any Docker container name to get")
 }
 
 func getLabelsFilterArgs(searchFilterKey string, labels map[string]string) filters.Args {

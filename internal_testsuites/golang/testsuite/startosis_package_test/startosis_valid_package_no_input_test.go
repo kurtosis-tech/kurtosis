@@ -16,6 +16,7 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_ValidPackageNoInput
 	t := suite.T()
 	require.Nil(t, err, "Unexpected error executing Starlark package")
 
+	require.NotNil(t, runResult)
 	require.Nil(t, runResult.InterpretationError)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)

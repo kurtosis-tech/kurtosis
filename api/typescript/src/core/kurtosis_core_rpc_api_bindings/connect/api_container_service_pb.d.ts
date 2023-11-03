@@ -27,6 +27,21 @@ export declare enum ServiceStatus {
 }
 
 /**
+ * @generated from enum api_container_api.ImageDownloadMode
+ */
+export declare enum ImageDownloadMode {
+  /**
+   * @generated from enum value: always = 0;
+   */
+  always = 0,
+
+  /**
+   * @generated from enum value: missing = 1;
+   */
+  missing = 1,
+}
+
+/**
  * User services port forwarding
  *
  * @generated from enum api_container_api.Connect
@@ -58,6 +73,21 @@ export declare enum KurtosisFeatureFlag {
    * @generated from enum value: NO_INSTRUCTIONS_CACHING = 0;
    */
   NO_INSTRUCTIONS_CACHING = 0,
+}
+
+/**
+ * @generated from enum api_container_api.RestartPolicy
+ */
+export declare enum RestartPolicy {
+  /**
+   * @generated from enum value: NEVER = 0;
+   */
+  NEVER = 0,
+
+  /**
+   * @generated from enum value: ALWAYS = 1;
+   */
+  ALWAYS = 1,
 }
 
 /**
@@ -128,6 +158,70 @@ export declare enum Port_TransportProtocol {
 }
 
 /**
+ * @generated from message api_container_api.Container
+ */
+export declare class Container extends Message<Container> {
+  /**
+   * @generated from field: api_container_api.Container.Status status = 1;
+   */
+  status: Container_Status;
+
+  /**
+   * @generated from field: string image_name = 2;
+   */
+  imageName: string;
+
+  /**
+   * @generated from field: repeated string entrypoint_args = 3;
+   */
+  entrypointArgs: string[];
+
+  /**
+   * @generated from field: repeated string cmd_args = 4;
+   */
+  cmdArgs: string[];
+
+  /**
+   * @generated from field: map<string, string> env_vars = 5;
+   */
+  envVars: { [key: string]: string };
+
+  constructor(data?: PartialMessage<Container>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.Container";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Container;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Container;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Container;
+
+  static equals(a: Container | PlainMessage<Container> | undefined, b: Container | PlainMessage<Container> | undefined): boolean;
+}
+
+/**
+ * @generated from enum api_container_api.Container.Status
+ */
+export declare enum Container_Status {
+  /**
+   * @generated from enum value: STOPPED = 0;
+   */
+  STOPPED = 0,
+
+  /**
+   * @generated from enum value: RUNNING = 1;
+   */
+  RUNNING = 1,
+
+  /**
+   * @generated from enum value: UNKNOWN = 2;
+   */
+  UNKNOWN = 2,
+}
+
+/**
  * @generated from message api_container_api.ServiceInfo
  */
 export declare class ServiceInfo extends Message<ServiceInfo> {
@@ -191,6 +285,13 @@ export declare class ServiceInfo extends Message<ServiceInfo> {
    */
   serviceStatus: ServiceStatus;
 
+  /**
+   * Docker container or Kubernetes pod container
+   *
+   * @generated from field: api_container_api.Container container = 9;
+   */
+  container?: Container;
+
   constructor(data?: PartialMessage<ServiceInfo>);
 
   static readonly runtime: typeof proto3;
@@ -216,9 +317,9 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
   serializedScript: string;
 
   /**
-   * @generated from field: string serialized_params = 2;
+   * @generated from field: optional string serialized_params = 2;
    */
-  serializedParams: string;
+  serializedParams?: string;
 
   /**
    * Defaults to false
@@ -237,14 +338,35 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
   /**
    * The name of the main function, the default value is "run"
    *
-   * @generated from field: string main_function_name = 5;
+   * @generated from field: optional string main_function_name = 5;
    */
-  mainFunctionName: string;
+  mainFunctionName?: string;
 
   /**
    * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 6;
    */
   experimentalFeatures: KurtosisFeatureFlag[];
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_instance_id = 7;
+   */
+  cloudInstanceId?: string;
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_user_id = 8;
+   */
+  cloudUserId?: string;
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional api_container_api.ImageDownloadMode image_download_mode = 9;
+   */
+  imageDownloadMode?: ImageDownloadMode;
 
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
@@ -299,9 +421,9 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * Serialized parameters data for the Starlark package main function
    * This should be a valid JSON string
    *
-   * @generated from field: string serialized_params = 5;
+   * @generated from field: optional string serialized_params = 5;
    */
-  serializedParams: string;
+  serializedParams?: string;
 
   /**
    * Defaults to false
@@ -330,21 +452,42 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
   /**
    * The relative main file filepath, the default value is the "main.star" file in the root of a package
    *
-   * @generated from field: string relative_path_to_main_file = 9;
+   * @generated from field: optional string relative_path_to_main_file = 9;
    */
-  relativePathToMainFile: string;
+  relativePathToMainFile?: string;
 
   /**
    * The name of the main function, the default value is "run"
    *
-   * @generated from field: string main_function_name = 10;
+   * @generated from field: optional string main_function_name = 10;
    */
-  mainFunctionName: string;
+  mainFunctionName?: string;
 
   /**
    * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 11;
    */
   experimentalFeatures: KurtosisFeatureFlag[];
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_instance_id = 12;
+   */
+  cloudInstanceId?: string;
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_user_id = 13;
+   */
+  cloudUserId?: string;
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional api_container_api.ImageDownloadMode image_download_mode = 14;
+   */
+  imageDownloadMode?: ImageDownloadMode;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
@@ -408,6 +551,12 @@ export declare class StarlarkRunResponseLine extends Message<StarlarkRunResponse
      */
     value: StarlarkWarning;
     case: "warning";
+  } | {
+    /**
+     * @generated from field: api_container_api.StarlarkInfo info = 7;
+     */
+    value: StarlarkInfo;
+    case: "info";
   } | { case: undefined; value?: undefined };
 
   constructor(data?: PartialMessage<StarlarkRunResponseLine>);
@@ -423,6 +572,30 @@ export declare class StarlarkRunResponseLine extends Message<StarlarkRunResponse
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StarlarkRunResponseLine;
 
   static equals(a: StarlarkRunResponseLine | PlainMessage<StarlarkRunResponseLine> | undefined, b: StarlarkRunResponseLine | PlainMessage<StarlarkRunResponseLine> | undefined): boolean;
+}
+
+/**
+ * @generated from message api_container_api.StarlarkInfo
+ */
+export declare class StarlarkInfo extends Message<StarlarkInfo> {
+  /**
+   * @generated from field: string info_message = 1;
+   */
+  infoMessage: string;
+
+  constructor(data?: PartialMessage<StarlarkInfo>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.StarlarkInfo";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StarlarkInfo;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StarlarkInfo;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StarlarkInfo;
+
+  static equals(a: StarlarkInfo | PlainMessage<StarlarkInfo> | undefined, b: StarlarkInfo | PlainMessage<StarlarkInfo> | undefined): boolean;
 }
 
 /**
@@ -976,37 +1149,37 @@ export declare class WaitForHttpGetEndpointAvailabilityArgs extends Message<Wait
   /**
    * The path of the service to check. It mustn't start with the first slash. For instance `service/health`
    *
-   * @generated from field: string path = 3;
+   * @generated from field: optional string path = 3;
    */
-  path: string;
+  path?: string;
 
   /**
    * The number of milliseconds to wait until executing the first HTTP call
    *
-   * @generated from field: uint32 initial_delay_milliseconds = 4;
+   * @generated from field: optional uint32 initial_delay_milliseconds = 4;
    */
-  initialDelayMilliseconds: number;
+  initialDelayMilliseconds?: number;
 
   /**
    * Max number of HTTP call attempts that this will execute until giving up and returning an error
    *
-   * @generated from field: uint32 retries = 5;
+   * @generated from field: optional uint32 retries = 5;
    */
-  retries: number;
+  retries?: number;
 
   /**
    * Number of milliseconds to wait between retries
    *
-   * @generated from field: uint32 retries_delay_milliseconds = 6;
+   * @generated from field: optional uint32 retries_delay_milliseconds = 6;
    */
-  retriesDelayMilliseconds: number;
+  retriesDelayMilliseconds?: number;
 
   /**
    * If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
    *
-   * @generated from field: string body_text = 7;
+   * @generated from field: optional string body_text = 7;
    */
-  bodyText: string;
+  bodyText?: string;
 
   constructor(data?: PartialMessage<WaitForHttpGetEndpointAvailabilityArgs>);
 
@@ -1048,44 +1221,44 @@ export declare class WaitForHttpPostEndpointAvailabilityArgs extends Message<Wai
   /**
    * The path of the service to check. It mustn't start with the first slash. For instance `service/health`
    *
-   * @generated from field: string path = 3;
+   * @generated from field: optional string path = 3;
    */
-  path: string;
+  path?: string;
 
   /**
    * The content of the request body.
    *
-   * @generated from field: string request_body = 4;
+   * @generated from field: optional string request_body = 4;
    */
-  requestBody: string;
+  requestBody?: string;
 
   /**
    * The number of milliseconds to wait until executing the first HTTP call
    *
-   * @generated from field: uint32 initial_delay_milliseconds = 5;
+   * @generated from field: optional uint32 initial_delay_milliseconds = 5;
    */
-  initialDelayMilliseconds: number;
+  initialDelayMilliseconds?: number;
 
   /**
    * Max number of HTTP call attempts that this will execute until giving up and returning an error
    *
-   * @generated from field: uint32 retries = 6;
+   * @generated from field: optional uint32 retries = 6;
    */
-  retries: number;
+  retries?: number;
 
   /**
    * Number of milliseconds to wait between retries
    *
-   * @generated from field: uint32 retries_delay_milliseconds = 7;
+   * @generated from field: optional uint32 retries_delay_milliseconds = 7;
    */
-  retriesDelayMilliseconds: number;
+  retriesDelayMilliseconds?: number;
 
   /**
    * If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
    *
-   * @generated from field: string body_text = 8;
+   * @generated from field: optional string body_text = 8;
    */
-  bodyText: string;
+  bodyText?: string;
 
   constructor(data?: PartialMessage<WaitForHttpPostEndpointAvailabilityArgs>);
 
@@ -1554,5 +1727,64 @@ export declare class ConnectServicesResponse extends Message<ConnectServicesResp
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ConnectServicesResponse;
 
   static equals(a: ConnectServicesResponse | PlainMessage<ConnectServicesResponse> | undefined, b: ConnectServicesResponse | PlainMessage<ConnectServicesResponse> | undefined): boolean;
+}
+
+/**
+ * @generated from message api_container_api.GetStarlarkRunResponse
+ */
+export declare class GetStarlarkRunResponse extends Message<GetStarlarkRunResponse> {
+  /**
+   * @generated from field: string package_id = 1;
+   */
+  packageId: string;
+
+  /**
+   * @generated from field: string serialized_script = 2;
+   */
+  serializedScript: string;
+
+  /**
+   * @generated from field: string serialized_params = 3;
+   */
+  serializedParams: string;
+
+  /**
+   * @generated from field: int32 parallelism = 4;
+   */
+  parallelism: number;
+
+  /**
+   * @generated from field: string relative_path_to_main_file = 5;
+   */
+  relativePathToMainFile: string;
+
+  /**
+   * @generated from field: string main_function_name = 6;
+   */
+  mainFunctionName: string;
+
+  /**
+   * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 7;
+   */
+  experimentalFeatures: KurtosisFeatureFlag[];
+
+  /**
+   * @generated from field: api_container_api.RestartPolicy restart_policy = 8;
+   */
+  restartPolicy: RestartPolicy;
+
+  constructor(data?: PartialMessage<GetStarlarkRunResponse>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.GetStarlarkRunResponse";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetStarlarkRunResponse;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetStarlarkRunResponse;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetStarlarkRunResponse;
+
+  static equals(a: GetStarlarkRunResponse | PlainMessage<GetStarlarkRunResponse> | undefined, b: GetStarlarkRunResponse | PlainMessage<GetStarlarkRunResponse> | undefined): boolean;
 }
 

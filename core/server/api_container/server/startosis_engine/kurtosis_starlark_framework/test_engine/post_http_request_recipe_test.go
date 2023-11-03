@@ -28,8 +28,8 @@ type postHttpRequestRecipeTestCase struct {
 func (suite *KurtosisTypeConstructorTestSuite) TestPostHttpRequestRecipe() {
 	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(TestServiceName),
-		TestPrivatePortId,
+		string(testServiceName),
+		testPrivatePortId,
 		"POST",
 		"application/json",
 		"/test",
@@ -63,14 +63,14 @@ func (suite *KurtosisTypeConstructorTestSuite) TestPostHttpRequestRecipe() {
 
 func (t *postHttpRequestRecipeTestCase) GetStarlarkCode() string {
 	extractors := `{"result": ".value"}`
-	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q, %s=%s)", recipe.PostHttpRecipeTypeName, recipe.PortIdAttr, TestPrivatePortId, recipe.EndpointAttr, "/test", recipe.RequestBodyAttr, "{}", recipe.ContentTypeAttr, "application/json", recipe.ExtractAttr, extractors)
+	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q, %s=%s)", recipe.PostHttpRecipeTypeName, recipe.PortIdAttr, testPrivatePortId, recipe.EndpointAttr, "/test", recipe.RequestBodyAttr, "{}", recipe.ContentTypeAttr, "application/json", recipe.ExtractAttr, extractors)
 }
 
 func (t *postHttpRequestRecipeTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	postHttpRequestRecipe, ok := typeValue.(*recipe.PostHttpRequestRecipe)
 	require.True(t, ok)
 
-	_, err := postHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, TestServiceName)
+	_, err := postHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, testServiceName)
 	require.NoError(t, err)
 
 	returnValue, interpretationErr := postHttpRequestRecipe.CreateStarlarkReturnValue("result-fake-uuid")

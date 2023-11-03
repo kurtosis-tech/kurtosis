@@ -6,8 +6,8 @@ import (
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/joho/godotenv"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -22,8 +22,8 @@ import (
 	_run "github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/kurtosis/name_generator"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -42,8 +42,6 @@ const (
 	defaultPathArg            = ""
 	defaultDotEnvPathFlag     = ".env"
 	emptyPrivateIpPlaceholder = ""
-	defaultMainFunction       = ""
-	noStarlarkParams          = "{}"
 	cpuToMilliCpuConstant     = 1024
 	bytesToMegabytes          = 1024 * 1024
 	float64BitWidth           = 64
@@ -297,7 +295,7 @@ func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisCo
 
 // TODO(victor.colombo): This should be part of the SDK, since we implement this over and over again
 func runStarlark(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, starlarkScript string) error {
-	responseLineChan, cancelFunc, err := enclaveCtx.RunStarlarkScript(ctx, defaultMainFunction, starlarkScript, noStarlarkParams, doNotDryRun, noParallelism, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{})
+	responseLineChan, cancelFunc, err := enclaveCtx.RunStarlarkScript(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithParallelism(noParallelism)))
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}

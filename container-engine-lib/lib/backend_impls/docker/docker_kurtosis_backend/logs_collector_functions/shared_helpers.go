@@ -2,19 +2,20 @@ package logs_collector_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"net"
+
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
-	"net"
 )
 
 const (
@@ -23,9 +24,9 @@ const (
 
 func getLogsCollectorPrivatePorts(containerLabels map[string]string) (*port_spec.PortSpec, *port_spec.PortSpec, error) {
 
-	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
+	serializedPortSpecs, found := containerLabels[docker_label_key.PortSpecsDockerLabelKey.GetString()]
 	if !found {
-		return nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
+		return nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", docker_label_key.PortSpecsDockerLabelKey.GetString())
 	}
 
 	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
@@ -56,7 +57,7 @@ func getLogsCollectorObjectFromContainerInfo(
 ) (*logs_collector.LogsCollector, error) {
 
 	var (
-		logsCollectorStatus     container_status.ContainerStatus
+		logsCollectorStatus     container.ContainerStatus
 		privateIpAddr           net.IP
 		bridgeNetworkIpAddr     net.IP
 		enclaveNetworkIpAddress string
@@ -76,7 +77,7 @@ func getLogsCollectorObjectFromContainerInfo(
 	}
 
 	if isContainerRunning {
-		logsCollectorStatus = container_status.ContainerStatus_Running
+		logsCollectorStatus = container.ContainerStatus_Running
 
 		enclaveNetworkIpAddress, err = dockerManager.GetContainerIP(ctx, enclaveNetworkId.GetName(), containerId)
 		if err != nil {
@@ -96,7 +97,7 @@ func getLogsCollectorObjectFromContainerInfo(
 			return nil, stacktrace.Propagate(err, "Couldn't parse '%v' network ip address string '%v' to ip", consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, bridgeNetworkIpAddress)
 		}
 	} else {
-		logsCollectorStatus = container_status.ContainerStatus_Stopped
+		logsCollectorStatus = container.ContainerStatus_Stopped
 	}
 
 	logsCollectorObj := logs_collector.NewLogsCollector(
@@ -112,9 +113,9 @@ func getLogsCollectorObjectFromContainerInfo(
 
 func getLogsCollectorForTheGivenEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
 	logsCollectorContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString():   string(enclaveUuid),
+		docker_label_key.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsCollectorTypeDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString():   string(enclaveUuid),
 	}
 
 	matchingLogsCollectorContainers, err := dockerManager.GetContainersByLabels(ctx, logsCollectorContainerSearchLabels, shouldShowStoppedLogsCollectorContainers)
@@ -172,9 +173,9 @@ func getEnclaveLogsCollectorVolumeName(
 	var volumes []*volume.Volume
 
 	searchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.VolumeTypeDockerLabelKey.GetString():  label_value_consts.LogsCollectorVolumeTypeDockerLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
+		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.VolumeTypeDockerLabelKey.GetString():  label_value_consts.LogsCollectorVolumeTypeDockerLabelValue.GetString(),
+		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
 	}
 
 	volumes, err := dockerManager.GetVolumesByLabels(ctx, searchLabels)

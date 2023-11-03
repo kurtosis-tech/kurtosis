@@ -24,13 +24,13 @@ func (t *portSpecFullTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%d, %s=%q, %s=%q, %s=%q)",
 		port_spec.PortSpecTypeName,
 		port_spec.PortNumberAttr,
-		TestPrivatePortNumber,
+		testPrivatePortNumber,
 		port_spec.TransportProtocolAttr,
-		TestPrivatePortProtocolStr,
+		testPrivatePortProtocolStr,
 		port_spec.PortApplicationProtocolAttr,
-		TestPrivateApplicationProtocol,
+		testPrivateApplicationProtocol,
 		port_spec.WaitAttr,
-		TestWaitConfiguration,
+		testWaitConfiguration,
 	)
 }
 
@@ -40,9 +40,9 @@ func (t *portSpecFullTestCase) Assert(typeValue builtin_argument.KurtosisValueTy
 	portSpec, err := portSpecStarlark.ToKurtosisType()
 	require.Nil(t, err)
 
-	waitDuration, errParsingDuration := time.ParseDuration(TestWaitConfiguration)
+	waitDuration, errParsingDuration := time.ParseDuration(testWaitConfiguration)
 	require.NoError(t, errParsingDuration)
-	expectedPortSpec, errPortCreation := port_spec2.NewPortSpec(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol, port_spec2.NewWait(waitDuration))
+	expectedPortSpec, errPortCreation := port_spec2.NewPortSpec(testPrivatePortNumber, testPrivatePortProtocol, testPrivateApplicationProtocol, port_spec2.NewWait(waitDuration))
 	require.NoError(t, errPortCreation)
 	require.Equal(t, expectedPortSpec, portSpec)
 

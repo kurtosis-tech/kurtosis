@@ -48,7 +48,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestRenderMultipleTemplates() {
 		nil,
 	)
 
-	suite.serviceNetwork.EXPECT().RenderTemplates(templatesAndData, mockedFileArtifactName).Times(1).Return(TestArtifactUuid, nil)
+	suite.serviceNetwork.EXPECT().RenderTemplates(templatesAndData, mockedFileArtifactName).Times(1).Return(testArtifactUuid, nil)
 
 	suite.run(&renderMultipleTemplatesTestCase{
 		T:                 suite.T(),
@@ -73,7 +73,7 @@ func (t *renderMultipleTemplatesTestCase) GetStarlarkCodeForAssertion() string {
 func (t *renderMultipleTemplatesTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(mockedFileArtifactName), interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Templates artifact name '%v' rendered with artifact UUID '%s'", mockedFileArtifactName, TestArtifactUuid)
+	expectedExecutionResult := fmt.Sprintf("Templates artifact name '%v' rendered with artifact UUID '%s'", mockedFileArtifactName, testArtifactUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 
 	// no need to check for the mocked method as we set `.Times(1)` when we declared it

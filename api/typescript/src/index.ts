@@ -10,6 +10,7 @@ export { PortSpec, TransportProtocol } from "./core/lib/services/port_spec"
 export { EnclaveContext } from "./core/lib/enclaves/enclave_context";
 export type { EnclaveUUID } from "./core/lib/enclaves/enclave_context";
 export type { FilesArtifactUUID } from "./core/lib/enclaves/files_artifact";
+export {StarlarkRunConfig} from "./core/lib/enclaves/starlark_run_config"
 
 // Constructor Calls
 export { newExecCommandArgs, newGetServicesArgs, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs } from "./core/lib/constructor_calls";

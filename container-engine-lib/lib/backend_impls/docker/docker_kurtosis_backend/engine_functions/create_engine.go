@@ -15,9 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_remover"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -104,24 +101,9 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err,
 			"An error occurred attempting to create logging components for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
 	}
-
-	// schedule log removal for log retention
-	go func() {
-		osFs := volume_filesystem.NewOsVolumeFilesystem()
-		realTime := logs_clock.NewRealClock()
-		logRemover := log_remover.NewLogRemover(osFs, realTime)
-		// do a first removal
-		logRemover.Run()
-
-		logRemovalTicker := time.NewTicker(removeLogsWaitHours)
-		for range logRemovalTicker.C {
-			logRemover.Run()
-		}
-	}()
-
-	shouldRemoveCentralizedLogComponents := true
+	shouldRemoveLogsAggregator := true
 	defer func() {
-		if shouldRemoveCentralizedLogComponents {
+		if shouldRemoveLogsAggregator {
 			removeLogsAggregatorFunc()
 		}
 	}()
@@ -265,7 +247,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-	shouldRemoveCentralizedLogComponents = false
+	shouldRemoveLogsAggregator = false
 	shouldKillEngineContainer = false
 	return result, nil
 }

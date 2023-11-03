@@ -7,7 +7,9 @@ const PACKAGES_URL = "https://docs.kurtosis.com/concepts-reference/packages";
 
 export class KurtosisYaml {
     constructor(
-        public readonly  name: string,
+        public readonly name: string,
+        public readonly description: string,
+        public readonly packageReplaceOptions: Map<string, string>,
     ){}
 }
 

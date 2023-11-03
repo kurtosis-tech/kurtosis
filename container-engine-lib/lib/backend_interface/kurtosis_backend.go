@@ -2,16 +2,18 @@ package backend_interface
 
 import (
 	"context"
+	"io"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"io"
-	"time"
 )
 
 // TODO This mega-backend should really have its individual functionalities split up into
@@ -24,8 +26,15 @@ import (
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
 // the underlying container engine?"
+// mockery -r --name=KurtosisBackend --filename=mock_kurtosis_backend.go --structname=MockKurtosisBackend --with-expecter --inpackage
 type KurtosisBackend interface {
-	FetchImage(ctx context.Context, image string) error
+	// FetchImage always attempts to retrieve the latest image.
+	// If retrieving the latest [dockerImage] fails, the local image will be used.
+	// Returns True is it was retrieved from cloud or False if it's a local image
+	// Returns a string that represents the architecture of the image
+	FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error)
+
+	PruneUnusedImages(ctx context.Context) ([]string, error)
 
 	// Creates an engine with the given parameters
 	CreateEngine(

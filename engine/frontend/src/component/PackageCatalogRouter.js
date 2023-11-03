@@ -1,37 +1,52 @@
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import {Route, Routes, useNavigate} from 'react-router-dom';
 import PackageCatalogForm from './PackageCatalogForm';
 import PackageCatalog from './PackageCatalog';
 import PackageCatalogProgress from "./PackageCatalogProgress";
-import { useEffect } from 'react';
+import {useEffect, useState} from 'react';
 import {getKurtosisPackages} from "../api/packageCatalog";
 import {createEnclave} from "../api/enclave";
-import {useState} from "react";
 import {useAppContext} from "../context/AppState";
-
 
 const PackageCatalogRouter = ({addEnclave}) => {
     const navigate = useNavigate()
     const {appData} = useAppContext()
     const [kurtosisPackages, setKurtosisPackages] = useState([])
 
-    useEffect(()=> {
+    useEffect(() => {
         const fetchPackages = async () => {
             const resp = await getKurtosisPackages()
             setKurtosisPackages(resp)
         }
         fetchPackages();
-    },[])
+    }, [])
 
-    const createNewEnclave = (runArgs, enclaveName, productionMode) => {
+    const createNewEnclave = async (runArgs, enclaveName, productionMode, mode, existingEnclave) => {
         const request = async () => {
-            const enclave = await createEnclave(appData.jwtToken, appData.apiHost, enclaveName, productionMode);
-            addEnclave(enclave)
-            navigate("/catalog/progress", {state: {
-                enclave,
-                runArgs,
-            }})
+            try {
+                if (mode === "create") {
+                    const enclave = await createEnclave(appData.jwtToken, appData.apiHost, enclaveName, productionMode);
+                    addEnclave(enclave)
+                    navigate("/catalog/progress", {
+                        state: {
+                            enclave,
+                            runArgs,
+                        }
+                    })
+                } else {
+                    // Navigating to the progress component and includes running the Starlark package itself
+                    navigate("/catalog/progress", {
+                        state: {
+                            enclave: existingEnclave,
+                            runArgs,
+                        }
+                    })
+                }
+            } catch (ex) {
+                console.error(ex)
+                alert(`Error occurred while creating enclave for package. An error message should be printed in console, please share it with us to help debug this problem`)
+            }
         }
-        request()
+        await request()
     }
 
     return (
@@ -39,13 +54,16 @@ const PackageCatalogRouter = ({addEnclave}) => {
             <Routes>
                 <Route path="/progress" element={
                     <PackageCatalogProgress appData={appData}/>
-                } />
-                <Route path="/form" element={
-                    <PackageCatalogForm handleCreateNewEnclave={createNewEnclave}/>
-                } />
+                }/>
+                <Route path="/create" element={
+                    <PackageCatalogForm createEnclave={createNewEnclave} mode={"create"}/>
+                }/>
+                <Route path="/edit/" element={
+                    <PackageCatalogForm createEnclave={createNewEnclave} mode={"edit"}/>
+                }/>
                 <Route path="/" element={
                     <PackageCatalog kurtosisPackages={kurtosisPackages}
-                />}/>
+                    />}/>
             </Routes>
         </div>
     )

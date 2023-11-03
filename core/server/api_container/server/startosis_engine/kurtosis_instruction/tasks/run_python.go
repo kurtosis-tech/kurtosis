@@ -7,7 +7,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -48,6 +50,8 @@ const (
 	temporaryPythonDirectoryPrefix = "run-python-*"
 
 	successfulPipRunExitCode = 0
+
+	scriptArtifactFormat = "%v-python-script"
 )
 
 func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -105,17 +109,16 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &RunPythonCapabilities{
-				serviceNetwork:      serviceNetwork,
-				runtimeValueStore:   runtimeValueStore,
-				pythonArguments:     nil,
-				packages:            nil,
-				name:                "",
-				serviceConfig:       nil, // populated at interpretation time
-				run:                 "",  // populated at interpretation time
-				resultUuid:          "",  // populated at interpretation time
-				fileArtifactNames:   nil,
-				pathToFileArtifacts: nil,
-				wait:                DefaultWaitTimeoutDurationStr,
+				serviceNetwork:    serviceNetwork,
+				runtimeValueStore: runtimeValueStore,
+				pythonArguments:   nil,
+				packages:          nil,
+				name:              "",
+				serviceConfig:     nil, // populated at interpretation time
+				run:               "",  // populated at interpretation time
+				resultUuid:        "",  // populated at interpretation time
+				storeSpecList:     nil,
+				wait:              DefaultWaitTimeoutDurationStr,
 			}
 		},
 
@@ -142,13 +145,15 @@ type RunPythonCapabilities struct {
 	pythonArguments []string
 	packages        []string
 
-	serviceConfig       *service.ServiceConfig
-	fileArtifactNames   []string
-	pathToFileArtifacts []string
-	wait                string
+	serviceConfig *service.ServiceConfig
+	storeSpecList []*store_spec.StoreSpec
+	wait          string
 }
 
 func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	randomUuid := uuid.NewRandom()
+	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
+
 	pythonScript, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RunArgName)
@@ -160,10 +165,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 		return nil, scriptCompressionInterpretationErr
 	}
 	defer compressedScript.Close()
-	uniqueFilesArtifactName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
-	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("an error occurred while generating unique artifact name for python script")
-	}
+	uniqueFilesArtifactName := fmt.Sprintf(scriptArtifactFormat, builtin.name)
 	_, err = builtin.serviceNetwork.UploadFilesArtifact(compressedScript, compressedScriptMd5, uniqueFilesArtifactName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while storing the python script to disk")
@@ -232,15 +234,17 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig = getServiceConfig(image, filesArtifactExpansion)
+	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
+	}
 
 	if arguments.IsSet(StoreFilesArgName) {
-		pathToFileArtifacts, fileArtifactNames, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
+		storeSpecList, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
-		builtin.pathToFileArtifacts = pathToFileArtifacts
-		builtin.fileArtifactNames = fileArtifactNames
+		builtin.storeSpecList = storeSpecList
 	}
 
 	if arguments.IsSet(WaitArgName) {
@@ -256,10 +260,8 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunPythonBuiltinName)
 	}
 	builtin.resultUuid = resultUuid
-	randomUuid := uuid.NewRandom()
-	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
-	result := createInterpretationResult(resultUuid, builtin.fileArtifactNames)
+	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return result, nil
 }
 
@@ -269,7 +271,7 @@ func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValue
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		serviceDirpathsToArtifactIdentifiers = builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers
 	}
-	return validateTasksCommon(validatorEnvironment, builtin.fileArtifactNames, builtin.pathToFileArtifacts, serviceDirpathsToArtifactIdentifiers, builtin.serviceConfig.GetContainerImageName())
+	return validateTasksCommon(validatorEnvironment, builtin.storeSpecList, serviceDirpathsToArtifactIdentifiers, builtin.serviceConfig.GetContainerImageName())
 }
 
 // Execute This is just v0 for run_python task - we can later improve on it.
@@ -281,7 +283,7 @@ func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValue
 func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
+		return "", stacktrace.Propagate(err, "error occurred while creating a run_python task with image: %v", builtin.serviceConfig.GetContainerImageName())
 	}
 
 	pipInstallationResult, err := setupRequiredPackages(ctx, builtin)
@@ -321,8 +323,8 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 		return "", stacktrace.NewError(formatErrorMessage(errorMessage, runPythonExecutionResult.GetOutput()))
 	}
 
-	if builtin.fileArtifactNames != nil && builtin.pathToFileArtifacts != nil {
-		err = copyFilesFromTask(ctx, builtin.serviceNetwork, builtin.name, builtin.fileArtifactNames, builtin.pathToFileArtifacts)
+	if builtin.storeSpecList != nil {
+		err = copyFilesFromTask(ctx, builtin.serviceNetwork, builtin.name, builtin.storeSpecList)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "error occurred while copying files from  a task")
 		}
@@ -330,11 +332,15 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	return instructionResult, err
 }
 
-func (builtin *RunPythonCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *RunPythonCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual {
 		return enclave_structure.InstructionIsEqual
 	}
 	return enclave_structure.InstructionIsUnknown
+}
+
+func (builtin *RunPythonCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(RunPythonBuiltinName)
 }
 
 func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {

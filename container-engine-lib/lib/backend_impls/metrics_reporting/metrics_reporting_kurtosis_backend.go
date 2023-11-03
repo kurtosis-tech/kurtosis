@@ -2,18 +2,20 @@ package metrics_reporting
 
 import (
 	"context"
+	"io"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
-	"io"
-	"time"
 )
 
 // TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
@@ -25,11 +27,20 @@ func NewMetricsReportingKurtosisBackend(underlying backend_interface.KurtosisBac
 	return &MetricsReportingKurtosisBackend{underlying: underlying}
 }
 
-func (backend *MetricsReportingKurtosisBackend) FetchImage(ctx context.Context, image string) error {
-	if err := backend.underlying.FetchImage(ctx, image); err != nil {
-		return stacktrace.Propagate(err, "An error occurred pulling image '%v'", image)
+func (backend *MetricsReportingKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+	pulledFromRemote, architecture, err := backend.underlying.FetchImage(ctx, image, downloadMode)
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred pulling image '%v'", image)
 	}
-	return nil
+	return pulledFromRemote, architecture, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
+	prunedImages, err := backend.underlying.PruneUnusedImages(ctx)
+	if err != nil {
+		return prunedImages, stacktrace.Propagate(err, "An error occurred pruning unused images")
+	}
+	return prunedImages, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) CreateEngine(

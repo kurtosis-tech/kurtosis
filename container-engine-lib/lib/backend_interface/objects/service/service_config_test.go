@@ -51,10 +51,11 @@ func TestServiceConfigMarshallers(t *testing.T) {
 	require.Equal(t, originalServiceConfig.GetPrivateIPAddrPlaceholder(), newServiceConfig.GetPrivateIPAddrPlaceholder())
 	require.Equal(t, originalServiceConfig.GetMinCPUAllocationMillicpus(), newServiceConfig.GetMinCPUAllocationMillicpus())
 	require.Equal(t, originalServiceConfig.GetMinMemoryAllocationMegabytes(), newServiceConfig.GetMinMemoryAllocationMegabytes())
+	require.Equal(t, originalServiceConfig.GetLabels(), newServiceConfig.GetLabels())
 }
 
 func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
-	return NewServiceConfig(
+	serviceConfig, err := CreateServiceConfig(
 		imageName,
 		testPrivatePorts(t),
 		testPublicPorts(t),
@@ -68,7 +69,13 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 		"IP-ADDRESS",
 		100,
 		512,
+		map[string]string{
+			"test-label-key":        "test-label-value",
+			"test-second-label-key": "test-second-label-value",
+		},
 	)
+	require.NoError(t, err)
+	return serviceConfig
 }
 
 func testPersistentDirectory() *service_directory.PersistentDirectories {

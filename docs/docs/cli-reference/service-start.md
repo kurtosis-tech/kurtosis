@@ -10,4 +10,4 @@ Temporarily stopped services in an enclave can be restarted like so:
 kurtosis service start $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER
 ```
 
-where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../concepts-reference/resource-identifier.md) for the enclave and service, respectively.
+where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../advanced-concepts/resource-identifier.md) for the enclave and service, respectively.

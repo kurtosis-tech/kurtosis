@@ -8,13 +8,17 @@ import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import LoadingOverlay from "./LoadingOverflow";
 import {useAppContext} from "../context/AppState";
+import {CodeEditor} from "./CodeEditor";
+import {Box, Code} from "@chakra-ui/react";
 
-const BreadCumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
+const BreadCrumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
     const total = currentPath.length;
 
-    const BreadCumb = ({text, last, color = "text-slate-800", index, handleOnClick}) => {
+    const BreadCrumb = ({text, last, color = "text-white", index, handleOnClick}) => {
         return (
-            <div className={`${color} cursor-default font-bold`} onClick={() => handleOnClick(index)}>
+            <div className={`${color} cursor-default font-bold`}
+                 onClick={() => handleOnClick(index)}
+            >
                 {text} {last ? "" : "/"}
             </div>)
     }
@@ -23,16 +27,16 @@ const BreadCumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
         <div className="flex flex-row py-2 px-5 flex-wrap">
             {
                 currentPath.map((path, index) => (
-                    <BreadCumb key={index} text={path} last={total - 1 === index} index={index}
-                               handleOnClick={handleOnClick}/>
+                    <BreadCrumb key={index} text={path} last={total - 1 === index} index={index}
+                                handleOnClick={handleOnClick}/>
                 ))
             }
             {
                 currentPath.length > 0 ?
                     <div className="mx-3" onClick={handleCleanButton}>
-                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                              stroke="currentColor" aria-hidden="true">
-                            <path color="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            <path color="gray" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                                   d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </div> : null
@@ -42,9 +46,11 @@ const BreadCumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
 }
 
 const renderFileArtfiacts = (fileArtifacts, handleClick) => {
-    return fileArtifacts.map(fileArtifact => {
+    return fileArtifacts.map((fileArtifact, index) => {
+        const key = `${fileArtifact.name}-${index}`
         return (
-            <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={fileArtifact.name}
+            <div key={key}
+                className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`}
                  onClick={() => handleClick(fileArtifact.name)}>
                 <div className='cursor-default text-lg text-white'> {fileArtifact.name} </div>
             </div>
@@ -63,10 +69,13 @@ const renderFiles = (files, handleFileClick) => {
         )
     }
 
-    return Object.keys(files).map((key) => {
+    return Object.keys(files).map((key, index) => {
+        const objKey = `${key}-${index}`
         return (
-            <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
-                 onClick={() => handleFileClick(key, files[key])}>
+            <div key={objKey}
+                className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
+                 onClick={() => handleFileClick(key, files[key])}
+            >
                 <div> {key} </div>
             </div>
         )
@@ -113,7 +122,17 @@ const FileArtifactInfo = ({enclaves}) => {
         setCurrentFiles(files)
     }
 
+    const getExtension = (filename) => {
+        if (!filename) return undefined
+        return filename.split('.').pop();
+    }
+
     const handleFileClick = (key, file) => {
+        const extension = getExtension(file.path)
+        file = {
+            ...file,
+            extension: extension,
+        }
         if (file.path) {
             setDetailInfo(file)
             let current = files
@@ -133,7 +152,7 @@ const FileArtifactInfo = ({enclaves}) => {
     }
 
     const handleBreadCrumbClick = (index) => {
-        if (index == currentPath.length - 1) {
+        if (index === currentPath.length - 1) {
             // do nothing
         } else {
             const newCurrentPath = currentPath.slice(0, index + 1)
@@ -151,25 +170,44 @@ const FileArtifactInfo = ({enclaves}) => {
         navigate(`/enclaves/${enclaveName}/files/${fileArtifactName}`, {replace: true, state: {fileArtifacts}})
     }
 
-    const FileInfoComponent = ({files, handleFileClick, detailInfo}) => (
-        <div className='flex flex-col h-[90%] space-y-1 overflow-auto'>
-            {
-                (Object.keys(detailInfo).length !== 0) ?
-                    <div className="flex h-3/4 flex-col text-black">
-                        <p className="text-lg font-bold text-right"> Size: {detailInfo.size}B </p>
-                        <p className="break-all overflow-y-auto"> {detailInfo.textPreview.length > 0 ? detailInfo.textPreview :
-                            <h2 className="text-2xl text-center mt-20 text-red-800 font-bold">No Preview
-                                Available</h2>} </p>
-                    </div> :
-                    <div className="flex flex-col h-[85%] min-h-[85%] border-8">
-                        <Heading content={"Files"} size={"text-xl"}/>
-                        <div className="overflow-auto space-y-2">
-                            {renderFiles(files, handleFileClick, detailInfo)}
+    const FileInfoComponent = ({files, handleFileClick, detailInfo, enclaveName}) => {
+        const uniqueEditorFileId = `${enclaveName}-${detailInfo.path}`
+        return (
+            <div className='flex flex-col h-full space-y-1 overflow-auto'>
+                {
+                    (Object.keys(detailInfo).length !== 0) ?
+                        <div className="flex h-3/4 flex-col text-white">
+                            <p className="text-sm font-bold text-left"> Size: {detailInfo.size?.toString()} B </p>
+                            <p className="text-sm font-bold text-left"> Type: {detailInfo.extension} </p>
+                            {detailInfo.textPreview.length > 0 ?
+                                <Box>
+                                    <CodeEditor
+                                        uniqueId={uniqueEditorFileId}
+                                        readOnly={true}
+                                        languages={[detailInfo.extension]}
+                                        defaultState={detailInfo.textPreview}
+                                        lineNumbers={false}
+                                        autoFormat={true}
+                                    />
+                                </Box>
+                                :
+                                <p className="break-all overflow-y-auto">
+                                    <h2 className="text-2xl text-center mt-20 text-red-800 font-bold">
+                                        No Preview Available
+                                    </h2>
+                                </p>
+                            }
+                        </div> :
+                        <div className="flex flex-col h-[85%] min-h-[85%] border-2">
+                            <Heading color="text-white" content={"Files"} size={"text-xl"}/>
+                            <div className="overflow-auto space-y-2">
+                                {renderFiles(files, handleFileClick)}
+                            </div>
                         </div>
-                    </div>
-            }
-        </div>
-    )
+                }
+            </div>
+        )
+    }
 
     return (
         <div className="flex h-full">
@@ -179,11 +217,11 @@ const FileArtifactInfo = ({enclaves}) => {
                 renderList={() => renderFileArtfiacts(fileArtifacts, handleLeftPanelClick)}
             />
 
-            <div className="flex bg-white w-[calc(100vw-39rem)] flex-col space-y-5">
+            <div className="flex bg-[#171923] w-[calc(100vw-39rem)] flex-col space-y-5">
                 <div className="h-[3rem] flex items-center justify-center m-2">
-                    <Heading content={`${enclaveName}::${fileArtifactName}`}/>
+                    <Heading color="text-white" content={`${enclaveName} - ${fileArtifactName}`}/>
                 </div>
-                <BreadCumbs
+                <BreadCrumbs
                     currentPath={currentPath}
                     handleOnClick={handleBreadCrumbClick}
                     handleCleanButton={handleCleanButton}
@@ -194,6 +232,7 @@ const FileArtifactInfo = ({enclaves}) => {
                         files={currentFiles}
                         handleFileClick={handleFileClick}
                         detailInfo={detailInfo}
+                        enclaveName={enclaveName}
                     />
                 }
             </div>

@@ -1,7 +1,7 @@
 package logs_aggregator
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"net"
 )
 
@@ -9,7 +9,7 @@ import (
 // 1. aggregating logs from all enclaves (by listening for logs from each enclaves logs collector)
 // 2. persisting logs to persistent storage so they can be retrieved, filtered, etc.
 type LogsAggregator struct {
-	status container_status.ContainerStatus
+	status container.ContainerStatus
 
 	// This will be nil if the container is not running
 	maybePrivateIpAddr net.IP
@@ -19,7 +19,7 @@ type LogsAggregator struct {
 }
 
 func NewLogsAggregator(
-	status container_status.ContainerStatus,
+	status container.ContainerStatus,
 	maybePrivateIpAddr net.IP,
 	logsListeningPortNum uint16) *LogsAggregator {
 	return &LogsAggregator{
@@ -28,7 +28,7 @@ func NewLogsAggregator(
 		logsListeningPortNum: logsListeningPortNum}
 }
 
-func (logsAggregator *LogsAggregator) GetStatus() container_status.ContainerStatus {
+func (logsAggregator *LogsAggregator) GetStatus() container.ContainerStatus {
 	return logsAggregator.status
 }
 

@@ -21,7 +21,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestPortSpecMinimal() {
 }
 
 func (t *portSpecMinimalTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%d)", port_spec_starlark.PortSpecTypeName, port_spec_starlark.PortNumberAttr, TestPrivatePortNumber)
+	return fmt.Sprintf("%s(%s=%d)", port_spec_starlark.PortSpecTypeName, port_spec_starlark.PortNumberAttr, testPrivatePortNumber)
 }
 
 func (t *portSpecMinimalTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
@@ -30,9 +30,9 @@ func (t *portSpecMinimalTestCase) Assert(typeValue builtin_argument.KurtosisValu
 	portSpec, err := portSpecStarlark.ToKurtosisType()
 	require.Nil(t, err)
 
-	waitDuration, errParsingDuration := time.ParseDuration(TestWaitDefaultValue)
+	waitDuration, errParsingDuration := time.ParseDuration(testWaitDefaultValue)
 	require.NoError(t, errParsingDuration)
-	expectedPortSpec, errPortCreation := port_spec.NewPortSpec(TestPrivatePortNumber, port_spec.TransportProtocol_TCP, "", port_spec.NewWait(waitDuration))
+	expectedPortSpec, errPortCreation := port_spec.NewPortSpec(testPrivatePortNumber, port_spec.TransportProtocol_TCP, "", port_spec.NewWait(waitDuration))
 	require.NoError(t, errPortCreation)
 	require.Equal(t, expectedPortSpec, portSpec)
 

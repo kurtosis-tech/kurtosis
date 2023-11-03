@@ -9,85 +9,100 @@ import (
 
 // nolint: gomnd
 var (
-	TestEnclaveUuid = enclave.EnclaveUUID("test-enclave-uuid")
+	testEnclaveUuid = enclave.EnclaveUUID("test-enclave-uuid")
 
-	TestServiceName  = service.ServiceName("test-service-name")
-	TestServiceUuid  = service.ServiceUUID("test-service-uuid")
-	TestServiceName2 = service.ServiceName("test-service-name-2")
-	TestServiceUuid2 = service.ServiceUUID("test-service-uuid-2")
+	testServiceName  = service.ServiceName("test-service-name")
+	testServiceUuid  = service.ServiceUUID("test-service-uuid")
+	testServiceName2 = service.ServiceName("test-service-name-2")
+	testServiceUuid2 = service.ServiceUUID("test-service-uuid-2")
 
-	TestArtifactName = "artifact-name"
-	TestArtifactUuid = enclave_data_directory.FilesArtifactUUID("file-artifact-uuid")
+	testArtifactName = "artifact-name"
+	testArtifactUuid = enclave_data_directory.FilesArtifactUUID("file-artifact-uuid")
 
-	TestSrcPath = "/path/to/file.txt"
+	testSrcPath = "/path/to/file.txt"
 
-	TestModuleFileName = "github.com/kurtosistech/test-package/helpers.star"
+	testModulePackageId       = "github.com/kurtosistech/test-package"
+	testModuleMainFileLocator = "github.com/kurtosistech/test-package/main.star"
+	testModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
+	testModuleRelativeLocator = "./helpers.star"
 
-	TestContainerImageName = "kurtosistech/example-datastore-server"
+	testContainerImageName = "kurtosistech/example-datastore-server"
 
-	TestPrivatePortId              = "grpc"
-	TestPrivatePortNumber          = uint16(1323)
-	TestPrivatePortProtocolStr     = "TCP"
-	TestPrivatePortProtocol        = port_spec.TransportProtocol_TCP
-	TestPrivateApplicationProtocol = "https"
-	TestWaitConfiguration          = "2s"
-	TestWaitDefaultValue           = "2m"
+	testPrivatePortId              = "grpc"
+	testPrivatePortNumber          = uint16(1323)
+	testPrivatePortProtocolStr     = "TCP"
+	testPrivatePortProtocol        = port_spec.TransportProtocol_TCP
+	testPrivateApplicationProtocol = "https"
+	testWaitConfiguration          = "2s"
+	testWaitDefaultValue           = "2m"
 
-	TestPublicPortId              = "endpoints"
-	TestPublicPortNumber          = uint16(80)
-	TestPublicPortProtocolStr     = "TCP"
-	TestPublicPortProtocol        = port_spec.TransportProtocol_TCP
-	TestPublicApplicationProtocol = "https"
+	testPublicPortId              = "endpoints"
+	testPublicPortNumber          = uint16(80)
+	testPublicPortProtocolStr     = "TCP"
+	testPublicPortProtocol        = port_spec.TransportProtocol_TCP
+	testPublicApplicationProtocol = "https"
 
-	TestFilesArtifactPath1      = "path/to/file/1"
-	TestFilesArtifactName1      = "file_1"
-	TestFilesArtifactPath2      = "path/to/file/2"
-	TestFilesArtifactName2      = "file_2"
-	TestPersistentDirectoryPath = "path/to/persistent/dir"
-	TestPersistentDirectoryKey  = "persistent-dir-test"
+	testFilesArtifactPath1      = "path/to/file/1"
+	testFilesArtifactName1      = "file_1"
+	testFilesArtifactPath2      = "path/to/file/2"
+	testFilesArtifactName2      = "file_2"
+	testPersistentDirectoryPath = "path/to/persistent/dir"
+	testPersistentDirectoryKey  = "persistent-dir-test"
 
-	TestEntryPointSlice = []string{
+	testEntryPointSlice = []string{
 		"127.0.0.0",
 		"1234",
 	}
 
-	TestCmdSlice = []string{
+	testCmdSlice = []string{
 		"bash",
 		"-c",
 		"/apps/main.py",
 	}
 
-	TestEnvVarName1  = "VAR_1"
-	TestEnvVarValue1 = "VALUE_1"
-	TestEnvVarName2  = "VAR_2"
-	TestEnvVarValue2 = "VALUE_2"
+	testEnvVarName1  = "VAR_1"
+	testEnvVarValue1 = "VALUE_1"
+	testEnvVarName2  = "VAR_2"
+	testEnvVarValue2 = "VALUE_2"
 
-	TestPrivateIPAddressPlaceholder = "<IP_ADDRESS>"
+	testPrivateIPAddressPlaceholder = "<IP_ADDRESS>"
 
-	TestCpuAllocation    = uint64(2000)
-	TestMemoryAllocation = uint64(1024)
+	testCpuAllocation    = uint64(2000)
+	testMemoryAllocation = uint64(1024)
 
-	TestMinCpuMilliCores   = uint64(1000)
-	TestMinMemoryMegabytes = uint64(512)
+	testMinCpuMilliCores   = uint64(1000)
+	testMinMemoryMegabytes = uint64(512)
 
-	TestReadyConditionsRecipePortId   = "http"
-	TestReadyConditionsRecipeEndpoint = "/endpoint?input=data"
-	TestReadyConditionsRecipeCommand  = []string{"tool", "arg"}
-	TestReadyConditionsRecipeExtract  = "{}"
-	TestReadyConditionsField          = "code"
-	TestReadyConditionsAssertion      = "=="
-	TestReadyConditionsTarget         = "200"
-	TestReadyConditionsInterval       = "1s"
-	TestReadyConditionsTimeout        = "100ms"
+	testReadyConditionsRecipePortId   = "http"
+	testReadyConditionsRecipeEndpoint = "/endpoint?input=data"
+	testReadyConditionsRecipeCommand  = []string{"tool", "arg"}
+	testReadyConditionsRecipeExtract  = "{}"
+	testReadyConditionsField          = "code"
+	testReadyConditionsAssertion      = "=="
+	testReadyConditionsTarget         = "200"
+	testReadyConditionsInterval       = "1s"
+	testReadyConditionsTimeout        = "100ms"
 
-	TestReadyConditions2RecipePortId   = "https"
-	TestReadyConditions2RecipeEndpoint = "/user-access"
-	TestReadyConditions2RecipeExtract  = "{}"
-	TestReadyConditions2Field          = "code"
-	TestReadyConditions2Assertion      = "=="
-	TestReadyConditions2Target         = "201"
-	TestReadyConditions2Interval       = "500ms"
-	TestReadyConditions2Timeout        = "2s"
+	testReadyConditions2RecipePortId   = "https"
+	testReadyConditions2RecipeEndpoint = "/user-access"
+	testReadyConditions2RecipeExtract  = "{}"
+	testReadyConditions2Field          = "code"
+	testReadyConditions2Assertion      = "=="
+	testReadyConditions2Target         = "201"
+	testReadyConditions2Interval       = "500ms"
+	testReadyConditions2Timeout        = "2s"
 
-	TestGetRequestMethod = "GET"
+	testGetRequestMethod = "GET"
+
+	testNoPackageReplaceOptions = map[string]string{}
+
+	testServiceConfigLabelsKey1   = "app-version"
+	testServiceConfigLabelsValue1 = "2.4"
+	testServiceConfigLabelsKey2   = "environment"
+	testServiceConfigLabelsValue2 = "production"
+
+	testServiceConfigLabels = map[string]string{
+		testServiceConfigLabelsKey1: testServiceConfigLabelsValue1,
+		testServiceConfigLabelsKey2: testServiceConfigLabelsValue2,
+	}
 )

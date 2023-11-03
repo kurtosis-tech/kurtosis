@@ -41,9 +41,11 @@ type privateServiceConfig struct {
 	MinCpuAllocationMilliCpus uint64
 
 	MinMemoryAllocationMegabytes uint64
+
+	Labels map[string]string
 }
 
-func NewServiceConfig(
+func CreateServiceConfig(
 	containerImageName string,
 	privatePorts map[string]*port_spec.PortSpec,
 	publicPorts map[string]*port_spec.PortSpec,
@@ -57,7 +59,13 @@ func NewServiceConfig(
 	privateIPAddrPlaceholder string,
 	minCpuMilliCores uint64,
 	minMemoryMegaBytes uint64,
-) *ServiceConfig {
+	labels map[string]string,
+) (*ServiceConfig, error) {
+
+	if err := ValidateServiceConfigLabels(labels); err != nil {
+		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
+	}
+
 	internalServiceConfig := &privateServiceConfig{
 		ContainerImageName:        containerImageName,
 		PrivatePorts:              privatePorts,
@@ -73,8 +81,9 @@ func NewServiceConfig(
 		// The minimum resources specification is only available for kubernetes
 		MinCpuAllocationMilliCpus:    minCpuMilliCores,
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
+		Labels:                       labels,
 	}
-	return &ServiceConfig{internalServiceConfig}
+	return &ServiceConfig{internalServiceConfig}, nil
 }
 
 func (serviceConfig *ServiceConfig) GetContainerImageName() string {
@@ -129,6 +138,10 @@ func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
 // only available for Kubernetes
 func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.privateServiceConfig.MinMemoryAllocationMegabytes
+}
+
+func (serviceConfig *ServiceConfig) GetLabels() map[string]string {
+	return serviceConfig.privateServiceConfig.Labels
 }
 
 func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {

@@ -1,10 +1,12 @@
 package kurtosis_plan_instruction
 
 import (
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -29,14 +31,17 @@ type KurtosisPlanInstructionWrapper struct {
 
 	// TODO: This can be changed to KurtosisPlanInstructionInternal when we get rid of KurtosisInstruction
 	instructionsPlan *instructions_plan.InstructionsPlan
+
+	starlarkValueSerde *kurtosis_types.StarlarkValueSerde
 }
 
-func NewKurtosisPlanInstructionWrapper(instruction *KurtosisPlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents, instructionPlanMask *resolver.InstructionsPlanMask, instructionsPlan *instructions_plan.InstructionsPlan) *KurtosisPlanInstructionWrapper {
+func NewKurtosisPlanInstructionWrapper(instruction *KurtosisPlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, instructionPlanMask *resolver.InstructionsPlanMask, instructionsPlan *instructions_plan.InstructionsPlan) *KurtosisPlanInstructionWrapper {
 	return &KurtosisPlanInstructionWrapper{
 		KurtosisPlanInstruction: instruction,
 		enclaveComponents:       enclaveComponents,
 		instructionPlanMask:     instructionPlanMask,
 		instructionsPlan:        instructionsPlan,
+		starlarkValueSerde:      starlarkValueSerde,
 	}
 }
 
@@ -48,18 +53,18 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 		}
 
 		instructionWrapper := newKurtosisPlanInstructionInternal(wrappedBuiltin, builtin.Capabilities(), builtin.DefaultDisplayArguments)
-		locatorOfModuleInWhichInstructionIsBeingInterpreted := thread.Name
-		returnedFutureValue, interpretationErr := instructionWrapper.interpret(locatorOfModuleInWhichInstructionIsBeingInterpreted)
+
+		returnedFutureValue, interpretationErr := instructionWrapper.interpret()
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
 
-		var scheduledInstructionPulledFromMaskMaybe *instructions_plan.ScheduledInstruction
+		var enclavePlanInstructionPulledFromMaskMaybe *enclave_plan_persistence.EnclavePlanInstruction
 		var instructionResolutionStatus enclave_structure.InstructionResolutionStatus
 		if builtin.instructionPlanMask.HasNext() {
-			_, scheduledInstructionPulledFromMaskMaybe = builtin.instructionPlanMask.Next()
-			if scheduledInstructionPulledFromMaskMaybe != nil {
-				instructionResolutionStatus = instructionWrapper.TryResolveWith(scheduledInstructionPulledFromMaskMaybe.GetInstruction(), builtin.enclaveComponents)
+			_, enclavePlanInstructionPulledFromMaskMaybe = builtin.instructionPlanMask.Next()
+			if enclavePlanInstructionPulledFromMaskMaybe != nil {
+				instructionResolutionStatus = instructionWrapper.TryResolveWith(enclavePlanInstructionPulledFromMaskMaybe, builtin.enclaveComponents)
 			} else {
 				instructionResolutionStatus = instructionWrapper.TryResolveWith(nil, builtin.enclaveComponents)
 			}
@@ -69,9 +74,27 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 
 		switch instructionResolutionStatus {
 		case enclave_structure.InstructionIsEqual:
-			// add instruction from the mask and mark it as executed but not imported from the current enclave plan
-			builtin.instructionsPlan.AddScheduledInstruction(scheduledInstructionPulledFromMaskMaybe).Executed(true)
-			return scheduledInstructionPulledFromMaskMaybe.GetReturnedValue(), nil
+			// Build a scheduled instruction from a mix of the instruction and the EnclavePlanInstruction from the mask
+			// The important thing is to keep the returnedValue from the enclavePlan instruction such that runtime values
+			// IDs are kept. We also re-use the same UUID to make sure it's stable, but right now enclave plan instruction
+			// UUIDs are not used so it's not critical here
+			// Lastly, this scheduled instruction is marked as "EXECUTED" such that it will later be skipped by the
+			// executor
+			returnedValue, err := builtin.starlarkValueSerde.Deserialize(enclavePlanInstructionPulledFromMaskMaybe.ReturnedValue)
+			if err != nil {
+				return nil, startosis_errors.WrapWithInterpretationError(err, "The instruction was resolved with "+
+					"an instruction from the enclave plan, but the result of this instruction could not be"+
+					"deserialized. The instruction was: '%s' and its result was: '%s'",
+					enclavePlanInstructionPulledFromMaskMaybe.StarlarkCode,
+					enclavePlanInstructionPulledFromMaskMaybe.ReturnedValue)
+			}
+			scheduledInstruction := instructions_plan.NewScheduledInstruction(
+				instructions_plan.ScheduledInstructionUuid(enclavePlanInstructionPulledFromMaskMaybe.Uuid),
+				instructionWrapper,
+				returnedValue,
+			).Executed(true)
+			builtin.instructionsPlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
+			return returnedValue, nil
 		case enclave_structure.InstructionIsUpdate:
 			// otherwise add the instruction as a new one to the plan and return its own returned value
 			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
@@ -87,10 +110,10 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 					instructionWrapper.String(),
 					instructionWrapper.GetPositionInOriginalScript().String())
 			}
-			if scheduledInstructionPulledFromMaskMaybe != nil {
+			if enclavePlanInstructionPulledFromMaskMaybe != nil {
 				builtin.instructionPlanMask.MarkAsInvalid()
 				logrus.Debugf("Marking the plan as invalid as instruction '%s' differs from '%s'",
-					instructionWrapper.String(), scheduledInstructionPulledFromMaskMaybe.GetInstruction().String())
+					instructionWrapper.String(), enclavePlanInstructionPulledFromMaskMaybe.StarlarkCode)
 			}
 			return returnedFutureValue, nil
 		case enclave_structure.InstructionIsNotResolvableAbort:

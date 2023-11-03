@@ -3,11 +3,16 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
+	"sort"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
@@ -16,9 +21,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"sort"
-	"strings"
-	"sync"
 )
 
 const (
@@ -59,9 +61,13 @@ type EnclaveManager struct {
 	// this is an append only list
 	allExistingAndHistoricalIdentifiers []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers
 
-	enclaveCreator *EnclaveCreator
-	enclavePool    *EnclavePool
-	enclaveEnvVars string
+	enclaveCreator        *EnclaveCreator
+	enclavePool           *EnclavePool
+	enclaveEnvVars        string
+	enclaveLogFileManager *log_file_manager.LogFileManager
+
+	metricsUserID               string
+	didUserAcceptSendingMetrics bool
 }
 
 func CreateEnclaveManager(
@@ -71,6 +77,9 @@ func CreateEnclaveManager(
 	engineVersion string,
 	poolSize uint8,
 	enclaveEnvVars string,
+	enclaveLogFileManager *log_file_manager.LogFileManager,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (*EnclaveManager, error) {
 	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
@@ -81,7 +90,7 @@ func CreateEnclaveManager(
 
 	// The enclave pool feature is only available for Kubernetes so far
 	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
-		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars)
+		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars, metricsUserID, didUserAcceptSendingMetrics)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
 		}
@@ -95,6 +104,9 @@ func CreateEnclaveManager(
 		enclaveCreator:                            enclaveCreator,
 		enclavePool:                               enclavePool,
 		enclaveEnvVars:                            enclaveEnvVars,
+		enclaveLogFileManager:                     enclaveLogFileManager,
+		metricsUserID:                             metricsUserID,
+		didUserAcceptSendingMetrics:               didUserAcceptSendingMetrics,
 	}
 
 	return enclaveManager, nil
@@ -162,6 +174,8 @@ func (manager *EnclaveManager) CreateEnclave(
 			enclaveName,
 			manager.enclaveEnvVars,
 			isProduction,
+			manager.metricsUserID,
+			manager.didUserAcceptSendingMetrics,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(
@@ -243,6 +257,9 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdenti
 		return stacktrace.Propagate(err, "An error occurred destroying the enclave")
 	}
 	if _, found := successfullyDestroyedEnclaves[enclaveUuid]; found {
+		if err = manager.enclaveLogFileManager.RemoveEnclaveLogs(string(enclaveUuid)); err != nil {
+			return stacktrace.Propagate(err, "An error occurred attempting to remove enclave '%v' logs after it was destroyed.", enclaveIdentifier)
+		}
 		return nil
 	}
 	destructionErr, found := erroredEnclaves[enclaveUuid]
@@ -469,14 +486,19 @@ func (manager *EnclaveManager) cleanEnclaves(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves during cleaning")
 	}
 
-	successfullyDestroyedEnclaveIdStrs := []string{}
-	for enclaveId := range successfullyDestroyedEnclaves {
-		successfullyDestroyedEnclaveIdStrs = append(successfullyDestroyedEnclaveIdStrs, string(enclaveId))
-	}
-
 	enclaveDestructionErrors := []error{}
 	for _, destructionError := range erroredEnclaves {
 		enclaveDestructionErrors = append(enclaveDestructionErrors, destructionError)
+	}
+
+	successfullyDestroyedEnclaveIdStrs := []string{}
+	for enclaveId := range successfullyDestroyedEnclaves {
+		successfullyDestroyedEnclaveIdStrs = append(successfullyDestroyedEnclaveIdStrs, string(enclaveId))
+
+		if err := manager.enclaveLogFileManager.RemoveEnclaveLogs(string(enclaveId)); err != nil {
+			logRemovalErr := stacktrace.Propagate(err, "An error occurred removing enclave '%v' logs.", enclaveId)
+			enclaveDestructionErrors = append(enclaveDestructionErrors, logRemovalErr)
+		}
 	}
 
 	return successfullyDestroyedEnclaveIdStrs, enclaveDestructionErrors, nil
@@ -559,6 +581,11 @@ func getEnclaveInfoForEnclave(ctx context.Context, kurtosisBackend backend_inter
 
 	enclaveName := enclave.GetName()
 
+	mode := kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
+	if enclave.IsProductionEnclave() {
+		mode = kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
+	}
+
 	return &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:                 enclaveUuidStr,
 		ShortenedUuid:               uuid_generator.ShortenedUUIDString(enclaveUuidStr),
@@ -568,6 +595,7 @@ func getEnclaveInfoForEnclave(ctx context.Context, kurtosisBackend backend_inter
 		ApiContainerInfo:            apiContainerInfo,
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 		CreationTime:                creationTimestamp,
+		Mode:                        mode,
 	}, nil
 }
 
@@ -633,11 +661,11 @@ func getEnclaveContainersStatusFromEnclaveStatus(status enclave.EnclaveStatus) (
 	}
 }
 
-func getApiContainerStatusFromContainerStatus(status container_status.ContainerStatus) (kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus, error) {
+func getApiContainerStatusFromContainerStatus(status container.ContainerStatus) (kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus, error) {
 	switch status {
-	case container_status.ContainerStatus_Running:
+	case container.ContainerStatus_Running:
 		return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING, nil
-	case container_status.ContainerStatus_Stopped:
+	case container.ContainerStatus_Stopped:
 		return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_STOPPED, nil
 	default:
 		// EnclaveAPIContainerStatus is of type int32, cannot convert nil to int32 returning -1

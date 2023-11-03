@@ -11,7 +11,7 @@ import {createBrowserRouter, Route, RouterProvider} from 'react-router-dom';
 import {useAppContext} from "../context/AppState";
 import LoadingOverlay from "./LoadingOverflow";
 import CreateEnclave from "./CreateEnclave";
-import {createRoutesFromElements} from "react-router";
+import {createRoutesFromElements, Outlet} from "react-router";
 
 const queryParamToBool = (value) => {
     return ((value + '').toLowerCase() === 'true')
@@ -33,6 +33,18 @@ const makeUrl = () => {
     if (path.charAt(0) !== "/") path = path + "/"
     return path;
 }
+
+const Layout = () => {
+    return (
+        <>
+            <TitleBar/>
+            <div className="flex h-[calc(100vh-4rem)]">
+                <Outlet/>
+            </div>
+        </>
+    )
+}
+
 const Home = () => {
     const [enclaves, setEnclaves] = useState([])
     const [enclaveLoading, setEnclaveLoading] = useState(false)
@@ -45,7 +57,7 @@ const Home = () => {
                 await removeEnclave(appData.jwtToken, appData.apiHost, enclaveName)
                 setEnclaves(filteredEnclaves)
             } catch (ex) {
-                console.log(ex)
+                console.error(ex)
                 alert(`Sorry, unexpected error occurred while removing enclave with name: ${enclaveName}`)
             }
         }
@@ -78,9 +90,7 @@ const Home = () => {
         switch (message) {
             case 'jwtToken':
                 const value = event.data.value
-                console.log("got event: jwtToken")
                 if (value !== null && value !== undefined) {
-                    // console.log("got token:", value)
                     setAppData({
                         ...appData,
                         jwtToken: value,
@@ -95,13 +105,12 @@ const Home = () => {
     const searchParams = new URLSearchParams(window.location.search);
     const requireAuth = queryParamToBool(searchParams.get("require_authentication"))
     const requestedApiHost = searchParams.get("api_host")
+    const preloadedPackage = searchParams.get("package")
 
     useEffect(() => {
         // At this time requireAuth=true means we are running remote which means connection is going through a TLS protected LB
         const requireProxy = requireAuth;
         const apiHost = createApiUrl(requestedApiHost, requireProxy)
-        console.log(`requireProxy=${requireProxy}`)
-        console.log(`apiHost=${apiHost}`)
         if (apiHost && apiHost.length > 0) {
             setAppData({
                 ...appData,
@@ -114,21 +123,16 @@ const Home = () => {
     const validApiHost = () => appData.apiHost && appData.apiHost.length > 0
 
     const fetch = async () => {
-        console.log("submitting request for enclaves")
         const response = await getEnclavesFromKurtosis(appData.jwtToken, appData.apiHost);
-        console.log("Got response for enclaves", response)
-        setEnclaves(response)
+        const filteredResponse = response.filter((e) => {
+            return e.name
+        });
+        setEnclaves(filteredResponse)
         setEnclaveLoading(false)
-        console.log("finished fetch")
     }
 
     useEffect(() => {
-        if (requireAuth && !validJwtToken()) {
-            console.log("Requires Auth and jwt token: waiting for jwt token")
-        }
         if (requireAuth && validJwtToken() && validApiHost()) {
-            console.log("Requires Auth, jwt token and api host: Got them all")
-            console.log("starting load for authenticated access")
             setEnclaveLoading(true)
             fetch()
         }
@@ -137,8 +141,6 @@ const Home = () => {
 
     useEffect(() => {
         if (!requireAuth && validApiHost()) {
-            console.log("Does not require auth. Got Api host:", appData.apiHost)
-            console.log("starting load for non authenticated access")
             fetch()
         }
     }, [appData.apiHost])
@@ -163,39 +165,41 @@ const Home = () => {
 
     const routes = (
         <>
-            <Route exact
-                   path="/enclaves"
-                   element={checkAuth(<Enclaves enclaves={enclaves}
-                                                isLoading={enclaveLoading}
-                                                handleDeleteClick={handleDeleteClick}
-                       />
-                   )}
-            />
-            <Route exact
-                   path="/enclave/*"
-                   element={checkAuth(<CreateEnclave addEnclave={addEnclave}/>)}
-            />
-            <Route path="/enclaves/:name"
-                   element={checkAuth(<EnclaveInfo enclaves={enclaves}/>)}
-            />
-            <Route path="/enclaves/:name/services/:uuid"
-                   element={checkAuth(<ServiceInfo/>)}
-            />
-            <Route path="/enclaves/:name/files/:fileArtifactName"
-                   element={checkAuth(<FileArtifactInfo enclaves={enclaves}/>)}
-            />
-            <Route exact
-                path="/catalog/*" 
-                element={checkAuth(<PackageCatalogRouter addEnclave={addEnclave}/>)} 
-            />
-            <Route
-                path="/"
-                element={checkAuth(<Main totalEnclaves={enclaves.length}/>)}
-            />
+            <Route path="/" element={checkAuth(<Layout/>)}>
+                <Route
+                    path="/enclaves"
+                    element={<Enclaves
+                        enclaves={enclaves}
+                        isLoading={enclaveLoading}
+                        handleDeleteClick={handleDeleteClick}
+                    />
+                    }
+                />
+                <Route
+                    path="/enclave/*"
+                    element={<CreateEnclave addEnclave={addEnclave}/>}
+                />
+                <Route path="/enclaves/:name"
+                       element={<EnclaveInfo enclaves={enclaves}/>}
+                />
+                <Route path="/enclaves/:name/services/:uuid/*"
+                       element={<ServiceInfo/>}
+                />
+                <Route path="/enclaves/:name/files/:fileArtifactName"
+                       element={<FileArtifactInfo enclaves={enclaves}/>}
+                />
+                <Route
+                    path="/catalog/*"
+                    element={<PackageCatalogRouter addEnclave={addEnclave}/>}
+                />
+                <Route exact
+                       path="/"
+                       element={<Main totalEnclaves={enclaves.length} preloadedPackage={preloadedPackage}/>}
+                />
+            </Route>
         </>
     )
 
-    console.log("urlPath", urlPath)
     const router = createBrowserRouter(
         createRoutesFromElements(routes),
         {
@@ -203,13 +207,9 @@ const Home = () => {
         }
     );
 
-
     return (
         <div className="h-screen flex flex-col bg-[#171923]">
-            <TitleBar/>
-            <div className="flex h-[calc(100vh-4rem)]">
-                <RouterProvider router={router}/>
-            </div>
+            <RouterProvider router={router}/>
         </div>
     );
 }

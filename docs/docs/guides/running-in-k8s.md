@@ -2,13 +2,14 @@
 title: Running Kurtosis in Kubernetes
 sidebar_label: Running in Kubernetes
 slug: /k8s
+sidebar_position: 6
 ---
 
-This guide assumes that you have [Kurtosis installed](./installing-the-cli.md).
+This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md).
 
 If you would like more information on Kubernetes and how to set up, run and manage a cluster check out these offical [docs](https://kubernetes.io/docs/home/). 
 
-Please note that in order to ensure Kurtosis works the same way over Kubernetes as it does over Docker locally, service names must be a valid [RFC-1035 Label Name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#rfc-1035-label-names). This means service names must contain: at most 63 characters, only lowercase alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character. 
+Please note that in order to ensure Kurtosis works the same way over Kubernetes as it does over Docker locally, service names must be a valid [RFC-1035 Label Name](https://kubernetes.io/docs/advanced-concepts/overview/working-with-objects/names/#rfc-1035-label-names). This means service names must contain: at most 63 characters, only lowercase alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character. 
 
 I. Create a Kubernetes Cluster
 -----------------
@@ -64,8 +65,8 @@ kurtosis-clusters:
 IV. Configure Kurtosis
 --------------------------------
 
-1. Run `kurtosis cluster set cloud`.  This will start the engine remotely. 
-1. *In another terminal*, run `kurtosis gateway`. This will act as a middle man between your computer's ports and your services deployed on Kubernetes ports and has to stay running as a separate proccess.
+1. Run `kurtosis cluster set cloud`.  This will start the engine remotely. See the CLI reference for more information about `kurtosis cluster` commands [here](../cli-reference/cluster-set.md).
+1. *In another terminal*, run [`kurtosis gateway`](../cli-reference/gateway.md). This will act as a middle man between your computer's ports and your services deployed on Kubernetes ports and has to stay running as a separate proccess.
 
 Done! Now you can run any Kurtosis command or package just like if you were doing it locally.
 

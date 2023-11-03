@@ -23,6 +23,7 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   listFilesArtifactNamesAndUuids: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>;
   inspectFilesArtifactContents: grpc.MethodDefinition<api_container_service_pb.InspectFilesArtifactContentsRequest, api_container_service_pb.InspectFilesArtifactContentsResponse>;
   connectServices: grpc.MethodDefinition<api_container_service_pb.ConnectServicesArgs, api_container_service_pb.ConnectServicesResponse>;
+  getStarlarkRun: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.GetStarlarkRunResponse>;
 }
 
 export const ApiContainerServiceService: IApiContainerServiceService;
@@ -43,6 +44,7 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   listFilesArtifactNamesAndUuids: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>;
   inspectFilesArtifactContents: grpc.handleUnaryCall<api_container_service_pb.InspectFilesArtifactContentsRequest, api_container_service_pb.InspectFilesArtifactContentsResponse>;
   connectServices: grpc.handleUnaryCall<api_container_service_pb.ConnectServicesArgs, api_container_service_pb.ConnectServicesResponse>;
+  getStarlarkRun: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.GetStarlarkRunResponse>;
 }
 
 export class ApiContainerServiceClient extends grpc.Client {
@@ -89,4 +91,7 @@ export class ApiContainerServiceClient extends grpc.Client {
   connectServices(argument: api_container_service_pb.ConnectServicesArgs, callback: grpc.requestCallback<api_container_service_pb.ConnectServicesResponse>): grpc.ClientUnaryCall;
   connectServices(argument: api_container_service_pb.ConnectServicesArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ConnectServicesResponse>): grpc.ClientUnaryCall;
   connectServices(argument: api_container_service_pb.ConnectServicesArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ConnectServicesResponse>): grpc.ClientUnaryCall;
+  getStarlarkRun(argument: google_protobuf_empty_pb.Empty, callback: grpc.requestCallback<api_container_service_pb.GetStarlarkRunResponse>): grpc.ClientUnaryCall;
+  getStarlarkRun(argument: google_protobuf_empty_pb.Empty, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetStarlarkRunResponse>): grpc.ClientUnaryCall;
+  getStarlarkRun(argument: google_protobuf_empty_pb.Empty, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetStarlarkRunResponse>): grpc.ClientUnaryCall;
 }

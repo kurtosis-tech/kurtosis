@@ -18,4 +18,5 @@ use (
 	./kurtosis_version
 	./name_generator
 	connect-server
+	./metrics-library/golang
 )

@@ -18,9 +18,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
+	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -38,6 +38,8 @@ const (
 	isServiceIdentifierArgGreedy   = false
 
 	shouldFollowLogsFlagKey  = "follow"
+	returnNumLogsFlagKey     = "num"
+	returnAllLogsFlagKey     = "all"
 	matchTextFilterFlagKey   = "match"
 	matchRegexFilterFlagKey  = "regex-match"
 	invertMatchFilterFlagKey = "invert-match"
@@ -49,6 +51,7 @@ const (
 
 	interruptChanBufferSize = 5
 
+	defaultNumLogLines            = 200
 	commonInstructionInMatchFlags = "Important: " + matchTextFilterFlagKey + " and " + matchRegexFilterFlagKey + " flags cannot be used at the same time. You should either use one or the other."
 )
 
@@ -56,6 +59,9 @@ var doNotFilterLogLines *kurtosis_context.LogLineFilter = nil
 
 var defaultShouldFollowLogs = strconv.FormatBool(false)
 var defaultInvertMatchFilterFlagValue = strconv.FormatBool(false)
+
+var defaultShouldReturnAllLogs = strconv.FormatBool(false)
+var defaultNumLogLinesFlagValue = strconv.Itoa(defaultNumLogLines)
 
 var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.ServiceLogsCmdStr,
@@ -70,6 +76,20 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Shorthand: "f",
 			Type:      flags.FlagType_Bool,
 			Default:   defaultShouldFollowLogs,
+		},
+		{
+			Key:       returnAllLogsFlagKey,
+			Usage:     "Gets all logs.",
+			Shorthand: "a",
+			Type:      flags.FlagType_Bool,
+			Default:   defaultShouldReturnAllLogs,
+		},
+		{
+			Key:       returnNumLogsFlagKey,
+			Usage:     "Get the last X log lines.",
+			Shorthand: "n",
+			Type:      flags.FlagType_Uint32,
+			Default:   defaultNumLogLinesFlagValue,
 		},
 		{
 			Key: matchTextFilterFlagKey,
@@ -141,6 +161,16 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the should-follow-logs flag using key '%v'", shouldFollowLogsFlagKey)
 	}
 
+	shouldReturnAllLogs, err := flags.GetBool(returnAllLogsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the 'all' flag using key '%v'", returnAllLogsFlagKey)
+	}
+
+	numLogLines, err := flags.GetUint32(returnNumLogsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the 'num' flag using key '%v'", returnNumLogsFlagKey)
+	}
+
 	matchTextStr, err := flags.GetString(matchTextFilterFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the match flag using key '%v'", matchTextFilterFlagKey)
@@ -172,7 +202,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the log line filter using these filter flag values '%s=%s', '%s=%s', '%s=%v'", matchTextFilterFlagKey, matchTextStr, matchRegexFilterFlagKey, matchRegexStr, invertMatchFilterFlagKey, invertMatch)
 	}
 
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, userServiceUuids, shouldFollowLogs, logLineFilter)
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, userServiceUuids, shouldFollowLogs, shouldReturnAllLogs, numLogLines, logLineFilter)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with UUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceUuids, enclaveIdentifier, shouldFollowLogs)
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -29,7 +30,12 @@ const (
 	readOnlyFilePerm        = 0400
 )
 
-func NewUploadFiles(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewUploadFiles(
+	packageId string,
+	serviceNetwork service_network.ServiceNetwork,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string,
+) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: UploadFilesBuiltinName,
@@ -39,7 +45,9 @@ func NewUploadFiles(serviceNetwork service_network.ServiceNetwork, packageConten
 					Name:              SrcArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator:         nil,
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, SrcArgName)
+					},
 				},
 				{
 					Name:              ArtifactNameArgName,
@@ -55,10 +63,12 @@ func NewUploadFiles(serviceNetwork service_network.ServiceNetwork, packageConten
 				serviceNetwork:         serviceNetwork,
 				packageContentProvider: packageContentProvider,
 
-				src:               "",  // populated at interpretation time
-				artifactName:      "",  // populated at interpretation time
-				archivePathOnDisk: "",  // populated at interpretation time
-				filesArtifactMd5:  nil, // populated at interpretation time
+				src:                   "",  // populated at interpretation time
+				artifactName:          "",  // populated at interpretation time
+				archivePathOnDisk:     "",  // populated at interpretation time
+				filesArtifactMd5:      nil, // populated at interpretation time
+				packageReplaceOptions: packageReplaceOptions,
+				packageId:             packageId,
 			}
 		},
 
@@ -73,10 +83,12 @@ type UploadFilesCapabilities struct {
 	serviceNetwork         service_network.ServiceNetwork
 	packageContentProvider startosis_packages.PackageContentProvider
 
-	src               string
-	artifactName      string
-	archivePathOnDisk string
-	filesArtifactMd5  []byte
+	src                   string
+	artifactName          string
+	archivePathOnDisk     string
+	filesArtifactMd5      []byte
+	packageReplaceOptions map[string]string
+	packageId             string
 }
 
 func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -99,7 +111,7 @@ func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SrcArgName)
 	}
 
-	absoluteLocator, interpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, src.GoString())
+	absoluteLocator, interpretationErr := builtin.packageContentProvider.GetAbsoluteLocator(builtin.packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, src.GoString(), builtin.packageReplaceOptions)
 	if interpretationErr != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert locator '%v' into absolute locator but failed", src.GoString())
 	}
@@ -160,20 +172,20 @@ func (builtin *UploadFilesCapabilities) Execute(_ context.Context, _ *builtin_ar
 	return instructionResult, nil
 }
 
-func (builtin *UploadFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *UploadFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	// if other instruction is nil or other instruction is not an add_service instruction, status is unknown
 	if other == nil {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
-	otherUploadFilesCapabilities, ok := other.(*UploadFilesCapabilities)
-	if !ok {
+
+	if other.Type != UploadFilesBuiltinName {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
 
 	// if artifact names don't match, status is unknown, instructions can't be resolved together
-	if otherUploadFilesCapabilities.artifactName != builtin.artifactName {
+	if !other.HasOnlyFilesArtifactName(builtin.artifactName) {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
@@ -186,10 +198,18 @@ func (builtin *UploadFilesCapabilities) TryResolveWith(instructionsAreEqual bool
 
 	// From here the instructions are equal
 	// If the hash of the files don't match, the instruction needs to be re-run
-	if !bytes.Equal(otherUploadFilesCapabilities.filesArtifactMd5, builtin.filesArtifactMd5) {
+	if !other.HasOnlyFilesArtifactMd5(builtin.filesArtifactMd5) {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsUpdated)
 		return enclave_structure.InstructionIsUpdate
 	}
 	enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentWasLeftIntact)
 	return enclave_structure.InstructionIsEqual
+}
+
+func (builtin *UploadFilesCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(
+		UploadFilesBuiltinName,
+	).AddFilesArtifact(
+		builtin.artifactName, builtin.filesArtifactMd5,
+	)
 }

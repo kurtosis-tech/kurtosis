@@ -14,7 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -135,10 +135,10 @@ func run(
 	}
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveName:            enclaveName,
-		ApiContainerVersionTag: apiContainerVersion,
-		ApiContainerLogLevel:   kurtosisLogLevelStr,
-		Mode:                   mode,
+		EnclaveName:            &enclaveName,
+		ApiContainerVersionTag: &apiContainerVersion,
+		ApiContainerLogLevel:   &kurtosisLogLevelStr,
+		Mode:                   &mode,
 	}
 	createdEnclaveResponse, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {

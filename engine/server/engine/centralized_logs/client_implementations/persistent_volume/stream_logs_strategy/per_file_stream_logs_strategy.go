@@ -36,6 +36,8 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 	shouldFollowLogs bool,
+	shouldReturnAllLogs bool,
+	numLogLines uint32,
 ) {
 	// logs are stored per enclave id, per service uuid, eg. <base path>/123440231421/54325342w2341.json
 	logsFilepath := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, string(enclaveUuid), string(serviceUuid), volume_consts.Filetype)
@@ -62,7 +64,7 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 				// check if it's an uncompleted Json line
 				if jsonLogNewStr != "" && len(jsonLogNewStr) > 2 {
 					jsonLogNewStrLastChars := jsonLogNewStr[len(jsonLogNewStr)-2:]
-					if jsonLogNewStrLastChars != volume_consts.EndOfJsonLine {
+					if jsonLogNewStrLastChars != volume_consts.EndOfJsonLine+"\n" {
 						// removes the newline char from the previous part of the json line
 						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(volume_consts.NewLineRune))
 						continue
@@ -95,13 +97,20 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 				return
 			}
 
-			// Then we extract the actual log message using the "log" field
-			logLineStr, found := jsonLog[volume_consts.LogLabel]
+			// Then we extract the actual log message using vectors log field
+			logMsgStr, found := jsonLog[volume_consts.LogLabel]
 			if !found {
 				streamErrChan <- stacktrace.NewError("An error retrieving the log field from logs json file. This is a bug in Kurtosis.")
 				return
 			}
-			logLine := logline.NewLogLine(logLineStr)
+
+			// Extract the timestamp using vectors timestamp field
+			logTimestamp, err := parseTimestampFromJsonLogLine(jsonLog)
+			if err != nil {
+				streamErrChan <- stacktrace.Propagate(err, "An error occurred parsing timestamp from json log line.")
+				return
+			}
+			logLine := logline.NewLogLine(logMsgStr, *logTimestamp)
 
 			// Then we filter by checking if the log message is valid based on requested filters
 			shouldReturnLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)

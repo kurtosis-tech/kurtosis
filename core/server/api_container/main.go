@@ -8,6 +8,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
+	"os"
+	"path"
+	"runtime"
+	"strings"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
@@ -20,20 +27,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
+	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"google.golang.org/grpc"
-	"net"
-	"os"
-	"path"
-	"runtime"
-	"strings"
-	"time"
 )
 
 const (
@@ -48,7 +53,14 @@ const (
 	logMethodAlongWithLogLine = true
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
+
+	shouldFlushMetricsClientQueueOnEachEvent = false
 )
+
+type doNothingMetricsClientCallback struct{}
+
+func (d doNothingMetricsClientCallback) Success()          {}
+func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func main() {
 	// This allows the filename & function to be reported
@@ -113,14 +125,14 @@ func runMain() error {
 		return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
 	}
 
-	gitPackageContentProvider, err := enclaveDataDir.GetGitPackageContentProvider()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating the Git module content provider")
-	}
-
 	enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the enclave db")
+	}
+
+	gitPackageContentProvider, err := enclaveDataDir.GetGitPackageContentProvider(enclaveDb)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating the Git module content provider")
 	}
 
 	// TODO Extract into own function
@@ -164,24 +176,56 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
 
+	logger := logrus.StandardLogger()
+	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
+		source.KurtosisCoreSource,
+		serverArgs.Version,
+		serverArgs.MetricsUserID,
+		serverArgs.KurtosisBackendType.String(),
+		serverArgs.DidUserAcceptSendingMetrics,
+		shouldFlushMetricsClientQueueOnEachEvent,
+		doNothingMetricsClientCallback{},
+		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
+	}
+	defer func() {
+		if err := closeClientFunc(); err != nil {
+			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
+		}
+	}()
+
 	starlarkValueSerde := createStarlarkValueSerde()
 	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(starlarkValueSerde, enclaveDb)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the runtime value store")
 	}
 
+	// Load the current enclave plan, in case the enclave is being restarted
+	enclavePlan, err := enclave_plan_persistence.Load(enclaveDb)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred loading stored enclave plan")
+	}
+
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisRunner := startosis_engine.NewStartosisRunner(
-		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, serverArgs.EnclaveEnvVars),
+		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, starlarkValueSerde, serverArgs.EnclaveEnvVars),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
-		startosis_engine.NewStartosisExecutor(runtimeValueStore))
+		startosis_engine.NewStartosisExecutor(starlarkValueSerde, runtimeValueStore, enclavePlan, enclaveDb))
 
 	//Creation of ApiContainerService
+	restartPolicy := kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER
+	if serverArgs.IsProductionEnclave {
+		restartPolicy = kurtosis_core_rpc_api_bindings.RestartPolicy_ALWAYS
+	}
 	apiContainerService, err := server.NewApiContainerService(
 		filesArtifactStore,
 		serviceNetwork,
 		startosisRunner,
 		gitPackageContentProvider,
+		restartPolicy,
+		metricsClient,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")

@@ -2,6 +2,10 @@ package docker_kurtosis_backend
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"net"
+	"time"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
@@ -9,17 +13,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/network_helpers"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
-	"time"
 )
 
 const (
@@ -166,7 +167,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
 
-	if err = backend.dockerManager.FetchImage(ctx, image); err != nil {
+	if _, err = backend.dockerManager.FetchImageIfMissing(ctx, image); err != nil {
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
 	}
 
@@ -336,8 +337,8 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
 
 	apiContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString(),
+		docker_label_key.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.ContainerTypeDockerLabelKey.GetString(): label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString(),
 		// NOTE: we do NOT use the enclave UUID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
 	allApiContainers, err := backend.dockerManager.GetContainersByLabels(ctx, apiContainerSearchLabels, consts.ShouldFetchAllContainersWhenRetrievingContainers)
@@ -391,16 +392,16 @@ func getApiContainerObjectFromContainerInfo(
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
 	bridgeNetworkIpAddress string,
 ) (*api_container.APIContainer, error) {
-	enclaveId, found := labels[label_key_consts.EnclaveUUIDDockerLabelKey.GetString()]
+	enclaveId, found := labels[docker_label_key.EnclaveUUIDDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected the API container's enclave UUID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveUUIDDockerLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected the API container's enclave UUID to be found under label '%v' but the label wasn't present", docker_label_key.EnclaveUUIDDockerLabelKey.GetString())
 	}
 
-	privateIpAddrStr, found := labels[label_key_consts.PrivateIPDockerLabelKey.GetString()]
+	privateIpAddrStr, found := labels[docker_label_key.PrivateIPDockerLabelKey.GetString()]
 	if !found {
 		return nil, stacktrace.NewError(
 			"Couldn't find the API container's private IP using label '%v'",
-			label_key_consts.PrivateIPDockerLabelKey.GetString(),
+			docker_label_key.PrivateIPDockerLabelKey.GetString(),
 		)
 	}
 	privateIpAddr := net.ParseIP(privateIpAddrStr)
@@ -423,16 +424,16 @@ func getApiContainerObjectFromContainerInfo(
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for API container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
 	}
-	var apiContainerStatus container_status.ContainerStatus
+	var apiContainerStatus container.ContainerStatus
 	if isContainerRunning {
-		apiContainerStatus = container_status.ContainerStatus_Running
+		apiContainerStatus = container.ContainerStatus_Running
 	} else {
-		apiContainerStatus = container_status.ContainerStatus_Stopped
+		apiContainerStatus = container.ContainerStatus_Stopped
 	}
 
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec.PortSpec
-	if apiContainerStatus == container_status.ContainerStatus_Running {
+	if apiContainerStatus == container.ContainerStatus_Running {
 		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
@@ -458,9 +459,9 @@ func getPrivateApiContainerPorts(containerLabels map[string]string) (
 	resultGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
-	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
+	serializedPortSpecs, found := containerLabels[docker_label_key.PortSpecsDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", docker_label_key.PortSpecsDockerLabelKey.GetString())
 	}
 
 	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)

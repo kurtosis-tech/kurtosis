@@ -672,29 +672,29 @@ proto.engine_api.CreateEnclaveArgs.prototype.serializeBinary = function() {
  */
 proto.engine_api.CreateEnclaveArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getEnclaveName();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 1));
+  if (f != null) {
     writer.writeString(
       1,
       f
     );
   }
-  f = message.getApiContainerVersionTag();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 2));
+  if (f != null) {
     writer.writeString(
       2,
       f
     );
   }
-  f = message.getApiContainerLogLevel();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
     writer.writeString(
       3,
       f
     );
   }
-  f = message.getMode();
-  if (f !== 0.0) {
+  f = /** @type {!proto.engine_api.EnclaveMode} */ (jspb.Message.getField(message, 4));
+  if (f != null) {
     writer.writeEnum(
       4,
       f
@@ -717,7 +717,25 @@ proto.engine_api.CreateEnclaveArgs.prototype.getEnclaveName = function() {
  * @return {!proto.engine_api.CreateEnclaveArgs} returns this
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setEnclaveName = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
+  return jspb.Message.setField(this, 1, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.clearEnclaveName = function() {
+  return jspb.Message.setField(this, 1, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.hasEnclaveName = function() {
+  return jspb.Message.getField(this, 1) != null;
 };
 
 
@@ -735,7 +753,25 @@ proto.engine_api.CreateEnclaveArgs.prototype.getApiContainerVersionTag = functio
  * @return {!proto.engine_api.CreateEnclaveArgs} returns this
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setApiContainerVersionTag = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
+  return jspb.Message.setField(this, 2, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.clearApiContainerVersionTag = function() {
+  return jspb.Message.setField(this, 2, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.hasApiContainerVersionTag = function() {
+  return jspb.Message.getField(this, 2) != null;
 };
 
 
@@ -753,7 +789,25 @@ proto.engine_api.CreateEnclaveArgs.prototype.getApiContainerLogLevel = function(
  * @return {!proto.engine_api.CreateEnclaveArgs} returns this
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setApiContainerLogLevel = function(value) {
-  return jspb.Message.setProto3StringField(this, 3, value);
+  return jspb.Message.setField(this, 3, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.clearApiContainerLogLevel = function() {
+  return jspb.Message.setField(this, 3, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.hasApiContainerLogLevel = function() {
+  return jspb.Message.getField(this, 3) != null;
 };
 
 
@@ -771,7 +825,25 @@ proto.engine_api.CreateEnclaveArgs.prototype.getMode = function() {
  * @return {!proto.engine_api.CreateEnclaveArgs} returns this
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setMode = function(value) {
-  return jspb.Message.setProto3EnumField(this, 4, value);
+  return jspb.Message.setField(this, 4, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.clearMode = function() {
+  return jspb.Message.setField(this, 4, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.hasMode = function() {
+  return jspb.Message.getField(this, 4) != null;
 };
 
 
@@ -1345,7 +1417,8 @@ proto.engine_api.EnclaveInfo.toObject = function(includeInstance, msg) {
     apiContainerStatus: jspb.Message.getFieldWithDefault(msg, 5, 0),
     apiContainerInfo: (f = msg.getApiContainerInfo()) && proto.engine_api.EnclaveAPIContainerInfo.toObject(includeInstance, f),
     apiContainerHostMachineInfo: (f = msg.getApiContainerHostMachineInfo()) && proto.engine_api.EnclaveAPIContainerHostMachineInfo.toObject(includeInstance, f),
-    creationTime: (f = msg.getCreationTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    creationTime: (f = msg.getCreationTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    mode: jspb.Message.getFieldWithDefault(msg, 9, 0)
   };
 
   if (includeInstance) {
@@ -1416,6 +1489,10 @@ proto.engine_api.EnclaveInfo.deserializeBinaryFromReader = function(msg, reader)
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setCreationTime(value);
+      break;
+    case 9:
+      var value = /** @type {!proto.engine_api.EnclaveMode} */ (reader.readEnum());
+      msg.setMode(value);
       break;
     default:
       reader.skipField();
@@ -1503,6 +1580,13 @@ proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer)
       8,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
+  f = message.getMode();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      9,
+      f
     );
   }
 };
@@ -1706,6 +1790,24 @@ proto.engine_api.EnclaveInfo.prototype.clearCreationTime = function() {
  */
 proto.engine_api.EnclaveInfo.prototype.hasCreationTime = function() {
   return jspb.Message.getField(this, 8) != null;
+};
+
+
+/**
+ * optional EnclaveMode mode = 9;
+ * @return {!proto.engine_api.EnclaveMode}
+ */
+proto.engine_api.EnclaveInfo.prototype.getMode = function() {
+  return /** @type {!proto.engine_api.EnclaveMode} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+};
+
+
+/**
+ * @param {!proto.engine_api.EnclaveMode} value
+ * @return {!proto.engine_api.EnclaveInfo} returns this
+ */
+proto.engine_api.EnclaveInfo.prototype.setMode = function(value) {
+  return jspb.Message.setProto3EnumField(this, 9, value);
 };
 
 
@@ -2554,8 +2656,8 @@ proto.engine_api.CleanArgs.prototype.serializeBinary = function() {
  */
 proto.engine_api.CleanArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getShouldCleanAll();
-  if (f) {
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 1));
+  if (f != null) {
     writer.writeBool(
       1,
       f
@@ -2578,7 +2680,25 @@ proto.engine_api.CleanArgs.prototype.getShouldCleanAll = function() {
  * @return {!proto.engine_api.CleanArgs} returns this
  */
 proto.engine_api.CleanArgs.prototype.setShouldCleanAll = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 1, value);
+  return jspb.Message.setField(this, 1, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CleanArgs} returns this
+ */
+proto.engine_api.CleanArgs.prototype.clearShouldCleanAll = function() {
+  return jspb.Message.setField(this, 1, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CleanArgs.prototype.hasShouldCleanAll = function() {
+  return jspb.Message.getField(this, 1) != null;
 };
 
 
@@ -2945,7 +3065,9 @@ proto.engine_api.GetServiceLogsArgs.toObject = function(includeInstance, msg) {
     serviceUuidSetMap: (f = msg.getServiceUuidSetMap()) ? f.toObject(includeInstance, undefined) : [],
     followLogs: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
     conjunctiveFiltersList: jspb.Message.toObjectList(msg.getConjunctiveFiltersList(),
-    proto.engine_api.LogLineFilter.toObject, includeInstance)
+    proto.engine_api.LogLineFilter.toObject, includeInstance),
+    returnAllLogs: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
+    numLogLines: jspb.Message.getFieldWithDefault(msg, 6, 0)
   };
 
   if (includeInstance) {
@@ -3001,6 +3123,14 @@ proto.engine_api.GetServiceLogsArgs.deserializeBinaryFromReader = function(msg, 
       reader.readMessage(value,proto.engine_api.LogLineFilter.deserializeBinaryFromReader);
       msg.addConjunctiveFilters(value);
       break;
+    case 5:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setReturnAllLogs(value);
+      break;
+    case 6:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setNumLogLines(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -3041,8 +3171,8 @@ proto.engine_api.GetServiceLogsArgs.serializeBinaryToWriter = function(message, 
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
   }
-  f = message.getFollowLogs();
-  if (f) {
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
     writer.writeBool(
       3,
       f
@@ -3054,6 +3184,20 @@ proto.engine_api.GetServiceLogsArgs.serializeBinaryToWriter = function(message, 
       4,
       f,
       proto.engine_api.LogLineFilter.serializeBinaryToWriter
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 5));
+  if (f != null) {
+    writer.writeBool(
+      5,
+      f
+    );
+  }
+  f = /** @type {number} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
+    writer.writeUint32(
+      6,
+      f
     );
   }
 };
@@ -3113,7 +3257,25 @@ proto.engine_api.GetServiceLogsArgs.prototype.getFollowLogs = function() {
  * @return {!proto.engine_api.GetServiceLogsArgs} returns this
  */
 proto.engine_api.GetServiceLogsArgs.prototype.setFollowLogs = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 3, value);
+  return jspb.Message.setField(this, 3, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.clearFollowLogs = function() {
+  return jspb.Message.setField(this, 3, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.hasFollowLogs = function() {
+  return jspb.Message.getField(this, 3) != null;
 };
 
 
@@ -3152,6 +3314,78 @@ proto.engine_api.GetServiceLogsArgs.prototype.addConjunctiveFilters = function(o
  */
 proto.engine_api.GetServiceLogsArgs.prototype.clearConjunctiveFiltersList = function() {
   return this.setConjunctiveFiltersList([]);
+};
+
+
+/**
+ * optional bool return_all_logs = 5;
+ * @return {boolean}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.getReturnAllLogs = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 5, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.setReturnAllLogs = function(value) {
+  return jspb.Message.setField(this, 5, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.clearReturnAllLogs = function() {
+  return jspb.Message.setField(this, 5, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.hasReturnAllLogs = function() {
+  return jspb.Message.getField(this, 5) != null;
+};
+
+
+/**
+ * optional uint32 num_log_lines = 6;
+ * @return {number}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.getNumLogLines = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.setNumLogLines = function(value) {
+  return jspb.Message.setField(this, 6, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.clearNumLogLines = function() {
+  return jspb.Message.setField(this, 6, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.hasNumLogLines = function() {
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
@@ -3360,7 +3594,8 @@ proto.engine_api.LogLine.prototype.toObject = function(opt_includeInstance) {
  */
 proto.engine_api.LogLine.toObject = function(includeInstance, msg) {
   var f, obj = {
-    lineList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f
+    lineList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
+    timestamp: (f = msg.getTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -3401,6 +3636,11 @@ proto.engine_api.LogLine.deserializeBinaryFromReader = function(msg, reader) {
       var value = /** @type {string} */ (reader.readString());
       msg.addLine(value);
       break;
+    case 2:
+      var value = new google_protobuf_timestamp_pb.Timestamp;
+      reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
+      msg.setTimestamp(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -3435,6 +3675,14 @@ proto.engine_api.LogLine.serializeBinaryToWriter = function(message, writer) {
     writer.writeRepeatedString(
       1,
       f
+    );
+  }
+  f = message.getTimestamp();
+  if (f != null) {
+    writer.writeMessage(
+      2,
+      f,
+      google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
     );
   }
 };
@@ -3474,6 +3722,43 @@ proto.engine_api.LogLine.prototype.addLine = function(value, opt_index) {
  */
 proto.engine_api.LogLine.prototype.clearLineList = function() {
   return this.setLineList([]);
+};
+
+
+/**
+ * optional google.protobuf.Timestamp timestamp = 2;
+ * @return {?proto.google.protobuf.Timestamp}
+ */
+proto.engine_api.LogLine.prototype.getTimestamp = function() {
+  return /** @type{?proto.google.protobuf.Timestamp} */ (
+    jspb.Message.getWrapperField(this, google_protobuf_timestamp_pb.Timestamp, 2));
+};
+
+
+/**
+ * @param {?proto.google.protobuf.Timestamp|undefined} value
+ * @return {!proto.engine_api.LogLine} returns this
+*/
+proto.engine_api.LogLine.prototype.setTimestamp = function(value) {
+  return jspb.Message.setWrapperField(this, 2, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.engine_api.LogLine} returns this
+ */
+proto.engine_api.LogLine.prototype.clearTimestamp = function() {
+  return this.setTimestamp(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.LogLine.prototype.hasTimestamp = function() {
+  return jspb.Message.getField(this, 2) != null;
 };
 
 

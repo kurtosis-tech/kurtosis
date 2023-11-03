@@ -47,9 +47,12 @@ service ApiContainerService {
   rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (ListFilesArtifactNamesAndUuidsResponse) {}
 
   rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (InspectFilesArtifactContentsResponse) {}
-  
+
   // User services port forwarding
   rpc ConnectServices(ConnectServicesArgs) returns (ConnectServicesResponse) {};
+  
+  // Get last Starlark run
+  rpc GetStarlarkRun(google.protobuf.Empty) returns (GetStarlarkRunResponse) {};
 }
 
 // ==============================================================================================
@@ -71,10 +74,29 @@ message Port {
   string maybe_wait_timeout = 4;
 }
 
+message Container {
+  enum Status {
+    STOPPED = 0;
+    RUNNING = 1;
+    UNKNOWN = 2;
+  }
+
+  Status status = 1;
+  string image_name = 2;
+  repeated string entrypoint_args = 3;
+  repeated string cmd_args = 4;
+  map<string, string> env_vars = 5;
+}
+
 enum ServiceStatus {
   STOPPED = 0;
   RUNNING = 1;
   UNKNOWN = 2;
+}
+
+enum ImageDownloadMode {
+	always  = 0;
+	missing = 1;
 }
 
 message ServiceInfo {
@@ -105,6 +127,9 @@ message ServiceInfo {
 
   // Service status: stopped, running.
   ServiceStatus service_status = 8;
+
+  // Docker container or Kubernetes pod container
+  Container container = 9;
 }
 
 // ==============================================================================================
@@ -124,7 +149,7 @@ enum Connect {
 message RunStarlarkScriptArgs {
   string serialized_script = 1;
 
-  string serialized_params = 2;
+  optional string serialized_params = 2;
 
   // Defaults to false
   optional bool dry_run = 3;
@@ -133,9 +158,18 @@ message RunStarlarkScriptArgs {
   optional int32 parallelism = 4;
 
   // The name of the main function, the default value is "run"
-  string main_function_name = 5;
+  optional string main_function_name = 5;
 
   repeated KurtosisFeatureFlag experimental_features = 6;
+
+  // Defaults to empty
+  optional string cloud_instance_id = 7;
+
+  // Defaults to empty
+  optional string cloud_user_id = 8;
+
+  // Defaults to empty
+  optional ImageDownloadMode image_download_mode = 9;
 }
 
 message RunStarlarkPackageArgs {
@@ -151,7 +185,7 @@ message RunStarlarkPackageArgs {
 
   // Serialized parameters data for the Starlark package main function
   // This should be a valid JSON string
-  string serialized_params = 5;
+  optional string serialized_params = 5;
 
   // Defaults to false
   optional bool dry_run = 6;
@@ -166,12 +200,21 @@ message RunStarlarkPackageArgs {
   optional bool clone_package = 8;
 
   // The relative main file filepath, the default value is the "main.star" file in the root of a package
-  string relative_path_to_main_file = 9;
+  optional string relative_path_to_main_file = 9;
 
   // The name of the main function, the default value is "run"
-  string main_function_name = 10;
+  optional string main_function_name = 10;
 
   repeated KurtosisFeatureFlag experimental_features = 11;
+
+  // Defaults to empty
+  optional string cloud_instance_id = 12;
+
+  // Defaults to empty
+  optional string cloud_user_id = 13;
+
+  // Defaults to empty
+  optional ImageDownloadMode image_download_mode = 14;
 }
 
 enum KurtosisFeatureFlag {
@@ -189,7 +232,12 @@ message StarlarkRunResponseLine {
     StarlarkInstructionResult instruction_result = 4;
     StarlarkRunFinishedEvent run_finished_event = 5;
     StarlarkWarning warning = 6;
+    StarlarkInfo info = 7;
   }
+}
+
+message StarlarkInfo {
+  string info_message = 1;
 }
 
 message StarlarkWarning {
@@ -322,15 +370,15 @@ message WaitForHttpGetEndpointAvailabilityArgs {
   //The port of the service to check. For instance 8080
   uint32 port = 2;
   //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-  string path = 3;
+  optional string path = 3;
   //The number of milliseconds to wait until executing the first HTTP call
-  uint32 initial_delay_milliseconds = 4;
+  optional uint32 initial_delay_milliseconds = 4;
   //Max number of HTTP call attempts that this will execute until giving up and returning an error
-  uint32 retries = 5;
+  optional uint32 retries = 5;
   //Number of milliseconds to wait between retries
-  uint32 retries_delay_milliseconds = 6;
+  optional uint32 retries_delay_milliseconds = 6;
   //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-  string body_text = 7;
+  optional string body_text = 7;
 }
 
 // ==============================================================================================
@@ -342,17 +390,17 @@ message WaitForHttpPostEndpointAvailabilityArgs {
   //The port of the service to check. For instance 8080
   uint32 port = 2;
   //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-  string path = 3;
+  optional string path = 3;
   //The content of the request body.
-  string request_body = 4;
+  optional string request_body = 4;
   //The number of milliseconds to wait until executing the first HTTP call
-  uint32 initial_delay_milliseconds = 5;
+  optional uint32 initial_delay_milliseconds = 5;
   //Max number of HTTP call attempts that this will execute until giving up and returning an error
-  uint32 retries = 6;
+  optional uint32 retries = 6;
   //Number of milliseconds to wait between retries
-  uint32 retries_delay_milliseconds = 7;
+  optional uint32 retries_delay_milliseconds = 7;
   //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-  string body_text = 8;
+  optional string body_text = 8;
 }
 
 // ==============================================================================================
@@ -478,4 +526,31 @@ message ConnectServicesArgs {
 }
 
 message ConnectServicesResponse {
+}
+
+// ==============================================================================================
+//                               Get Run Starlark
+// ==============================================================================================
+
+enum RestartPolicy {
+  NEVER = 0;
+  ALWAYS = 1;
+}
+
+message GetStarlarkRunResponse {
+  string package_id = 1;
+
+  string serialized_script = 2;
+
+  string serialized_params = 3;
+
+  int32 parallelism = 4;
+
+  string relative_path_to_main_file = 5;
+
+  string main_function_name = 6;
+
+  repeated KurtosisFeatureFlag experimental_features = 7;
+
+  RestartPolicy restart_policy = 8;
 }

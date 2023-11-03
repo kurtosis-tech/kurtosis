@@ -59,6 +59,65 @@ pub mod port {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Container {
+    #[prost(enumeration = "container::Status", tag = "1")]
+    pub status: i32,
+    #[prost(string, tag = "2")]
+    pub image_name: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "3")]
+    pub entrypoint_args: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "4")]
+    pub cmd_args: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(map = "string, string", tag = "5")]
+    pub env_vars: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+}
+/// Nested message and enum types in `Container`.
+pub mod container {
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration
+    )]
+    #[repr(i32)]
+    pub enum Status {
+        Stopped = 0,
+        Running = 1,
+        Unknown = 2,
+    }
+    impl Status {
+        /// String value of the enum field names used in the ProtoBuf definition.
+        ///
+        /// The values are not transformed in any way and thus are considered stable
+        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                Status::Stopped => "STOPPED",
+                Status::Running => "RUNNING",
+                Status::Unknown => "UNKNOWN",
+            }
+        }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "STOPPED" => Some(Self::Stopped),
+                "RUNNING" => Some(Self::Running),
+                "UNKNOWN" => Some(Self::Unknown),
+                _ => None,
+            }
+        }
+    }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ServiceInfo {
     /// UUID of the service
     #[prost(string, tag = "1")]
@@ -91,14 +150,17 @@ pub struct ServiceInfo {
     /// Service status: stopped, running.
     #[prost(enumeration = "ServiceStatus", tag = "8")]
     pub service_status: i32,
+    /// Docker container or Kubernetes pod container
+    #[prost(message, optional, tag = "9")]
+    pub container: ::core::option::Option<Container>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RunStarlarkScriptArgs {
     #[prost(string, tag = "1")]
     pub serialized_script: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub serialized_params: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
     /// Defaults to false
     #[prost(bool, optional, tag = "3")]
     pub dry_run: ::core::option::Option<bool>,
@@ -106,10 +168,19 @@ pub struct RunStarlarkScriptArgs {
     #[prost(int32, optional, tag = "4")]
     pub parallelism: ::core::option::Option<i32>,
     /// The name of the main function, the default value is "run"
-    #[prost(string, tag = "5")]
-    pub main_function_name: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "5")]
+    pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "6")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "7")]
+    pub cloud_instance_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "8")]
+    pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Defaults to empty
+    #[prost(enumeration = "ImageDownloadMode", optional, tag = "9")]
+    pub image_download_mode: ::core::option::Option<i32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -118,8 +189,8 @@ pub struct RunStarlarkPackageArgs {
     pub package_id: ::prost::alloc::string::String,
     /// Serialized parameters data for the Starlark package main function
     /// This should be a valid JSON string
-    #[prost(string, tag = "5")]
-    pub serialized_params: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "5")]
+    pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
     /// Defaults to false
     #[prost(bool, optional, tag = "6")]
     pub dry_run: ::core::option::Option<bool>,
@@ -133,13 +204,24 @@ pub struct RunStarlarkPackageArgs {
     #[prost(bool, optional, tag = "8")]
     pub clone_package: ::core::option::Option<bool>,
     /// The relative main file filepath, the default value is the "main.star" file in the root of a package
-    #[prost(string, tag = "9")]
-    pub relative_path_to_main_file: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "9")]
+    pub relative_path_to_main_file: ::core::option::Option<
+        ::prost::alloc::string::String,
+    >,
     /// The name of the main function, the default value is "run"
-    #[prost(string, tag = "10")]
-    pub main_function_name: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "10")]
+    pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "11")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "12")]
+    pub cloud_instance_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "13")]
+    pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Defaults to empty
+    #[prost(enumeration = "ImageDownloadMode", optional, tag = "14")]
+    pub image_download_mode: ::core::option::Option<i32>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -172,7 +254,7 @@ pub mod run_starlark_package_args {
 pub struct StarlarkRunResponseLine {
     #[prost(
         oneof = "starlark_run_response_line::RunResponseLine",
-        tags = "1, 2, 3, 4, 5, 6"
+        tags = "1, 2, 3, 4, 5, 6, 7"
     )]
     pub run_response_line: ::core::option::Option<
         starlark_run_response_line::RunResponseLine,
@@ -195,7 +277,15 @@ pub mod starlark_run_response_line {
         RunFinishedEvent(super::StarlarkRunFinishedEvent),
         #[prost(message, tag = "6")]
         Warning(super::StarlarkWarning),
+        #[prost(message, tag = "7")]
+        Info(super::StarlarkInfo),
     }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StarlarkInfo {
+    #[prost(string, tag = "1")]
+    pub info_message: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -376,20 +466,20 @@ pub struct WaitForHttpGetEndpointAvailabilityArgs {
     #[prost(uint32, tag = "2")]
     pub port: u32,
     /// The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-    #[prost(string, tag = "3")]
-    pub path: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "3")]
+    pub path: ::core::option::Option<::prost::alloc::string::String>,
     /// The number of milliseconds to wait until executing the first HTTP call
-    #[prost(uint32, tag = "4")]
-    pub initial_delay_milliseconds: u32,
+    #[prost(uint32, optional, tag = "4")]
+    pub initial_delay_milliseconds: ::core::option::Option<u32>,
     /// Max number of HTTP call attempts that this will execute until giving up and returning an error
-    #[prost(uint32, tag = "5")]
-    pub retries: u32,
+    #[prost(uint32, optional, tag = "5")]
+    pub retries: ::core::option::Option<u32>,
     /// Number of milliseconds to wait between retries
-    #[prost(uint32, tag = "6")]
-    pub retries_delay_milliseconds: u32,
+    #[prost(uint32, optional, tag = "6")]
+    pub retries_delay_milliseconds: ::core::option::Option<u32>,
     /// If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-    #[prost(string, tag = "7")]
-    pub body_text: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "7")]
+    pub body_text: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ==============================================================================================
 ///                            Wait For HTTP Post Endpoint Availability
@@ -404,23 +494,23 @@ pub struct WaitForHttpPostEndpointAvailabilityArgs {
     #[prost(uint32, tag = "2")]
     pub port: u32,
     /// The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-    #[prost(string, tag = "3")]
-    pub path: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "3")]
+    pub path: ::core::option::Option<::prost::alloc::string::String>,
     /// The content of the request body.
-    #[prost(string, tag = "4")]
-    pub request_body: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "4")]
+    pub request_body: ::core::option::Option<::prost::alloc::string::String>,
     /// The number of milliseconds to wait until executing the first HTTP call
-    #[prost(uint32, tag = "5")]
-    pub initial_delay_milliseconds: u32,
+    #[prost(uint32, optional, tag = "5")]
+    pub initial_delay_milliseconds: ::core::option::Option<u32>,
     /// Max number of HTTP call attempts that this will execute until giving up and returning an error
-    #[prost(uint32, tag = "6")]
-    pub retries: u32,
+    #[prost(uint32, optional, tag = "6")]
+    pub retries: ::core::option::Option<u32>,
     /// Number of milliseconds to wait between retries
-    #[prost(uint32, tag = "7")]
-    pub retries_delay_milliseconds: u32,
+    #[prost(uint32, optional, tag = "7")]
+    pub retries_delay_milliseconds: ::core::option::Option<u32>,
     /// If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-    #[prost(string, tag = "8")]
-    pub body_text: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "8")]
+    pub body_text: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ==============================================================================================
 ///                                           Streamed Data Chunk
@@ -559,6 +649,26 @@ pub struct ConnectServicesArgs {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ConnectServicesResponse {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetStarlarkRunResponse {
+    #[prost(string, tag = "1")]
+    pub package_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub serialized_script: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub serialized_params: ::prost::alloc::string::String,
+    #[prost(int32, tag = "4")]
+    pub parallelism: i32,
+    #[prost(string, tag = "5")]
+    pub relative_path_to_main_file: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub main_function_name: ::prost::alloc::string::String,
+    #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "7")]
+    pub experimental_features: ::prost::alloc::vec::Vec<i32>,
+    #[prost(enumeration = "RestartPolicy", tag = "8")]
+    pub restart_policy: i32,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ServiceStatus {
@@ -584,6 +694,32 @@ impl ServiceStatus {
             "STOPPED" => Some(Self::Stopped),
             "RUNNING" => Some(Self::Running),
             "UNKNOWN" => Some(Self::Unknown),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ImageDownloadMode {
+    Always = 0,
+    Missing = 1,
+}
+impl ImageDownloadMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            ImageDownloadMode::Always => "always",
+            ImageDownloadMode::Missing => "missing",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "always" => Some(Self::Always),
+            "missing" => Some(Self::Missing),
             _ => None,
         }
     }
@@ -639,6 +775,32 @@ impl KurtosisFeatureFlag {
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
             "NO_INSTRUCTIONS_CACHING" => Some(Self::NoInstructionsCaching),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum RestartPolicy {
+    Never = 0,
+    Always = 1,
+}
+impl RestartPolicy {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            RestartPolicy::Never => "NEVER",
+            RestartPolicy::Always => "ALWAYS",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "NEVER" => Some(Self::Never),
+            "ALWAYS" => Some(Self::Always),
             _ => None,
         }
     }
@@ -1186,6 +1348,37 @@ pub mod api_container_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        /// Get last Starlark run
+        pub async fn get_starlark_run(
+            &mut self,
+            request: impl tonic::IntoRequest<()>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetStarlarkRunResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/api_container_api.ApiContainerService/GetStarlarkRun",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "api_container_api.ApiContainerService",
+                        "GetStarlarkRun",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -1320,6 +1513,14 @@ pub mod api_container_service_server {
             request: tonic::Request<super::ConnectServicesArgs>,
         ) -> std::result::Result<
             tonic::Response<super::ConnectServicesResponse>,
+            tonic::Status,
+        >;
+        /// Get last Starlark run
+        async fn get_starlark_run(
+            &self,
+            request: tonic::Request<()>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetStarlarkRunResponse>,
             tonic::Status,
         >;
     }
@@ -2112,6 +2313,47 @@ pub mod api_container_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = ConnectServicesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/api_container_api.ApiContainerService/GetStarlarkRun" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetStarlarkRunSvc<T: ApiContainerService>(pub Arc<T>);
+                    impl<T: ApiContainerService> tonic::server::UnaryService<()>
+                    for GetStarlarkRunSvc<T> {
+                        type Response = super::GetStarlarkRunResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(&mut self, request: tonic::Request<()>) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).get_starlark_run(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetStarlarkRunSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

@@ -3,17 +3,15 @@ package startosis_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 const (
-	testName           = "module"
-	defaultDryRun      = false
-	defaultParallelism = 4
-	greetingsArg       = `{"greeting": "World!"}`
+	testName     = "module"
+	greetingsArg = `{"greeting": "World!"}`
 
 	serviceName                   = "example-datastore-server-1"
 	serviceIdForDependentService  = "example-datastore-server-2"
@@ -38,7 +36,7 @@ FILE_TO_BE_CREATED = "` + fileToBeCreated + `"
 SERVICE_DEPENDENT_ON_DATASTORE_SERVICE = "` + serviceIdForDependentService + `"
 PATH_TO_MOUNT_ON_DEPENDENT_SERVICE =  "` + pathToCheckOnDependentService + `"
 
-TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/eth2-package/static_files/prometheus-config/prometheus.yml.tmpl"
+TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/ethereum-package/static_files/prometheus-config/prometheus.yml.tmpl"
 PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
@@ -74,7 +72,7 @@ def run(plan, args):
 	template_str = read_file(TEMPLATE_FILE_TO_RENDER)
 
 	template_data = {
-		"CLNodesMetricsInfo" : [{"name" : "foo", "path": "/foo/path", "url": "foobar.com"}]
+		"MetricsJobs" : [{"Name" : "foo", "MetricsPath": "/foo/path", "Endpoint": "foobar.com", "Labels": {"test": "pass"}}]
 	}
 
 	template_data_by_path = {
@@ -101,11 +99,6 @@ def run(plan, args):
 	plan.print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 	return {"ip-address": deployed_service.ip_address}
 `
-	useDefaultMainFile = ""
-)
-
-var (
-	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
 )
 
 func TestStartosis(t *testing.T) {
@@ -123,7 +116,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, startosisScript, greetingsArg, defaultDryRun, defaultParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, startosisScript, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(greetingsArg)))
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
@@ -183,21 +176,14 @@ Deployed example-datastore-server-2 successfully
 
 	// Check that the file got rendered on the second service
 	expectedConfigFile := `global:
-  scrape_interval:     15s # By default, scrape targets every 15 seconds.
-
-# A scrape configuration containing exactly one endpoint to scrape:
-# Here it's Prometheus itself.
+  scrape_interval: 15s
 scrape_configs:
-   
-   - job_name: 'foo'
-     metrics_path: /foo/path
-     static_configs:
-       - targets: ['foobar.com']
-   
-   - job_name: 'beacon-metrics-gazer'
-     metrics_path: '/metrics'
-     static_configs:
-      - targets: ['beacon-metrics-gazer:8080']
+  - job_name: "foo"
+    metrics_path: "/foo/path"
+    static_configs:
+      - targets: ['foobar.com']
+        labels:
+          test: "pass"
 `
 	logrus.Infof("Checking that the file got mounted on " + serviceIdForDependentService)
 	serviceCtx, err = enclaveCtx.GetServiceContext(serviceIdForDependentService)

@@ -11,9 +11,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"sort"
@@ -28,6 +28,7 @@ const (
 	// Should be lowercased as they'll go into a string like "Cleaning XXXXX...."
 	oldEngineCleaningPhaseTitle = "old Kurtosis engine containers"
 	enclavesCleaningPhaseTitle  = "enclaves"
+	unusedImagesPhaseTitle      = "unused images"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -82,6 +83,10 @@ func run(
 			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
 			return cleanEnclaves(ctx, engineClient, shouldCleanAll)
 		},
+		unusedImagesPhaseTitle: func() ([]string, []error, error) {
+			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
+			return cleanUnusedImages(ctx, kurtosisBackend)
+		},
 	}
 
 	phasesWithErrors := []string{}
@@ -126,12 +131,13 @@ func run(
 //	Private Helper Functions
 //
 // ====================================================================================================
+
 func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend) ([]string, []error, error) {
 
 	engineFilters := &engine.EngineFilters{
 		GUIDs: nil,
-		Statuses: map[container_status.ContainerStatus]bool{
-			container_status.ContainerStatus_Stopped: true,
+		Statuses: map[container.ContainerStatus]bool{
+			container.ContainerStatus_Stopped: true,
 		},
 	}
 
@@ -158,7 +164,7 @@ func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_i
 }
 
 func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient, shouldCleanAll bool) ([]string, []error, error) {
-	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{ShouldCleanAll: shouldCleanAll}
+	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{ShouldCleanAll: &shouldCleanAll}
 	cleanResp, err := engineClient.Clean(ctx, cleanArgs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while calling clean")
@@ -173,4 +179,9 @@ func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bin
 
 func formattedUuidAndName(enclaveUuidWithName *kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid) string {
 	return fmt.Sprintf("%v%v%v", enclaveUuidWithName.Uuid, uuidAndNameDelimiter, enclaveUuidWithName.Name)
+}
+
+func cleanUnusedImages(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend) ([]string, []error, error) {
+	cleanedImages, cleanErr := kurtosisBackend.PruneUnusedImages(ctx)
+	return cleanedImages, nil, cleanErr
 }

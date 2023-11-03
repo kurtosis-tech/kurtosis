@@ -2,21 +2,22 @@ package engine_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"net"
+	"strconv"
+	"strings"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
-	"net"
-	"strconv"
-	"strings"
 )
 
 const emptyApplicationProtocol = ""
@@ -24,8 +25,8 @@ const emptyApplicationProtocol = ""
 // Gets engines matching the search filters, indexed by their container ID
 func getMatchingEngines(ctx context.Context, filters *engine.EngineFilters, dockerManager *docker_manager.DockerManager) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
-		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.EngineContainerTypeDockerLabelValue.GetString(),
+		docker_label_key.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		docker_label_key.ContainerTypeDockerLabelKey.GetString(): label_value_consts.EngineContainerTypeDockerLabelValue.GetString(),
 		// NOTE: we do NOT use the engine GUID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
 	allEngineContainers, err := dockerManager.GetContainersByLabels(ctx, engineContainerSearchLabels, consts.ShouldFetchAllContainersWhenRetrievingContainers)
@@ -72,11 +73,11 @@ func getEngineObjectFromContainerInfo(
 	containerStatus types.ContainerStatus,
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
 ) (*engine.Engine, error) {
-	engineGuidStr, found := labels[label_key_consts.GUIDDockerLabelKey.GetString()]
+	engineGuidStr, found := labels[docker_label_key.GUIDDockerLabelKey.GetString()]
 	if !found {
 		return nil, stacktrace.NewError(
 			"Expected a '%v' label on engine container with GUID '%v', but none was found",
-			label_key_consts.GUIDDockerLabelKey.GetString(),
+			docker_label_key.GUIDDockerLabelKey.GetString(),
 			containerId,
 		)
 	}
@@ -92,16 +93,16 @@ func getEngineObjectFromContainerInfo(
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for engine container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
 	}
-	var engineStatus container_status.ContainerStatus
+	var engineStatus container.ContainerStatus
 	if isContainerRunning {
-		engineStatus = container_status.ContainerStatus_Running
+		engineStatus = container.ContainerStatus_Running
 	} else {
-		engineStatus = container_status.ContainerStatus_Stopped
+		engineStatus = container.ContainerStatus_Stopped
 	}
 
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec.PortSpec
-	if engineStatus == container_status.ContainerStatus_Running {
+	if engineStatus == container.ContainerStatus_Running {
 		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
@@ -125,9 +126,9 @@ func getEnginePrivatePorts(containerLabels map[string]string) (
 	resultErr error,
 ) {
 
-	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
+	serializedPortSpecs, found := containerLabels[docker_label_key.PortSpecsDockerLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", docker_label_key.PortSpecsDockerLabelKey.GetString())
 	}
 
 	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)

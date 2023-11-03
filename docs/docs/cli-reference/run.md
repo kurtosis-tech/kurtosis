@@ -4,7 +4,7 @@ sidebar_label: run
 slug: /run
 ---
 
-Kurtosis can be used to run a Starlark script or a [runnable package](../concepts-reference/packages.md) inside an enclave. 
+Kurtosis can be used to run a Starlark script or a [runnable package](../advanced-concepts/packages.md) in an enclave.
 
 A single Starlark script can be ran with:
 
@@ -12,13 +12,15 @@ A single Starlark script can be ran with:
 kurtosis run script.star
 ```
 
-A [Kurtosis package](../concepts-reference/packages.md) on your local machine can be run with:
+Adding the `--dry-run` flag will print the changes without executing them.
+
+A [Kurtosis package](../advanced-concepts/packages.md) on your local machine can be run with:
 
 ```bash
 kurtosis run /path/to/package/on/your/machine
 ```
 
-A [Kurtosis package](../concepts-reference/packages.md) published to GitHub can be run like so:
+A [Kurtosis package](../advanced-concepts/packages.md) published to GitHub can be run like so:
 
 ```bash
 kurtosis run github.com/package-author/package-repo
@@ -31,7 +33,7 @@ If you want to run a non-main branch, tag or commit use the following syntax
 
 ### Arguments
 
-Package behaviour can be customized by passing in JSON-serialized arguments when calling `kurtosis run`.
+Package behaviour can be customized by passing in JSON/YAML-serialized arguments when calling `kurtosis run`.
 
 For example, if your package's `run` function looks like this...
 
@@ -84,11 +86,21 @@ To learn more about what idempotent runs are, go [here](../concepts-reference/id
 
 `kurtosis run` has additional flags that can further modify its behaviour:
 
+1. The `--args-file` flag can be used to send in a YAML/JSON file, from a local file through the filepath or from remote using the URL, as an argument to the Kurtosis Package. Note that if you pass in package arguments as CLI arguments and via the flag, the CLI arguments will be the one used.
+   For example:
+   ```bash
+   kurtosis run github.com/kurtosis-tech/ethereum-package --args-file "devnet-5.yaml"
+   ```
+   or
+   ```bash
+   kurtosis run github.com/kurtosis-tech/ethereum-package --args-file "https://www.myhost.com/devnet-5.json"
+   ```
+
 1. The `--dry-run` flag can be used to print the changes proposed by the script without executing them
 1. The `--parallelism` flag can be used to specify to what degree of parallelism certain commands can be run. For example: if the script contains an [`add_services`][add-services-reference] instruction and is run with `--parallelism 100`, up to 100 services will be run at one time.
-1. The `--enclave` flag can be used to instruct Kurtosis to run the script inside the specified enclave or create a new enclave (with the given enclave [identifier](../concepts-reference/resource-identifier.md)) if one does not exist. If this flag is not used, Kurtosis will create a new enclave with an auto-generated name, and run the script or package inside it.
+1. The `--enclave` flag can be used to instruct Kurtosis to run the script inside the specified enclave or create a new enclave (with the given enclave [identifier](../advanced-concepts/resource-identifier.md)) if one does not exist. If this flag is not used, Kurtosis will create a new enclave with an auto-generated name, and run the script or package inside it.
 1. The `--verbosity` flag can be used to set the verbosity of the command output. The options include `BRIEF`, `DETAILED`, or `EXECUTABLE`. If unset, this flag defaults to `BRIEF` for a concise and explicit output. Use `DETAILED` to display the exhaustive list of arguments for each command. Meanwhile, `EXECUTABLE` will generate executable Starlark instructions.
-1. The `--main-function-name` flag can be used to set the name of Starlark function inside the package that `kurtosis run` will call. The default value is `run`, meaning Starlark will look for a function called `run` in the file defined by the `--main-file` flag (which defaults to `main.star`). Regardless of the function, Kurtosis expects the main function to have a parameter called `plan` into which Kurtosis will inject [the Kurtosis plan](../concepts-reference/plan.md).
+1. The `--main-function-name` flag can be used to set the name of Starlark function inside the package that `kurtosis run` will call. The default value is `run`, meaning Starlark will look for a function called `run` in the file defined by the `--main-file` flag (which defaults to `main.star`). Regardless of the function, Kurtosis expects the main function to have a parameter called `plan` into which Kurtosis will inject [the Kurtosis plan](../advanced-concepts/plan.md).
 
    For example:
 
@@ -123,8 +135,10 @@ To learn more about what idempotent runs are, go [here](../concepts-reference/id
 
 1. The `--no-connect` flag can be used to disable user services port forwarding (default behavior is to forward the ports)
 
+1. The `--image-download` flag can be used to configure the download behavior for a given run. When set to `missing`, Kurtosis will only download the latest image tag if the image does not already exist locally (irrespective of the tag of the locally cached image). When set to `always`, Kurtosis will always check and download the latest image tag, even if the image exists locally.
+
 1. The `--experimental` flag can be used to enable experimental or incubating features. Please reach out to Kurtosis team if you wish to try any of those.
 
 
 <!--------------------------------------- ONLY LINKS BELOW HERE -------------------------------->
-[add-services-reference]: ../starlark-reference/plan.md#add_services
+[add-services-reference]: ../api-reference/starlark-reference/plan.md#add_services

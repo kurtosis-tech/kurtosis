@@ -2,25 +2,35 @@ package startosis_engine
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"net"
 	"testing"
 )
 
 const (
+	starlarkValueSerdeThreadName = "test-serde-thread"
+
 	enclaveUuid = enclave.EnclaveUUID("enclave-uuid")
 
 	noInputParams = "{}"
 )
+
+var noPackageReplaceOptions = map[string]string{}
 
 type StartosisInterpreterIdempotentTestSuite struct {
 	suite.Suite
@@ -32,9 +42,22 @@ func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
 	enclaveDb := getEnclaveDBForTest(suite.T())
 
-	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
+	thread := &starlark.Thread{
+		Name:       starlarkValueSerdeThreadName,
+		Print:      nil,
+		Load:       nil,
+		OnMaxSteps: nil,
+		Steps:      0,
+	}
+	starlarkEnv := starlark.StringDict{
+		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make),
 
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
+		kurtosis_types.ServiceTypeName: starlark.NewBuiltin(kurtosis_types.ServiceTypeName, kurtosis_types.NewServiceType().CreateBuiltin()),
+		port_spec.PortSpecTypeName:     starlark.NewBuiltin(port_spec.PortSpecTypeName, port_spec.NewPortSpecType().CreateBuiltin()),
+	}
+	starlarkValueSerde := kurtosis_types.NewStarlarkValueSerde(thread, starlarkEnv)
+
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(starlarkValueSerde, enclaveDb)
 	require.NoError(suite.T(), err)
 
 	serviceNetwork := service_network.NewMockServiceNetwork(suite.T())
@@ -42,7 +65,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), uint16(1234), "0.0.0"),
 	)
 	serviceNetwork.EXPECT().GetEnclaveUuid().Maybe().Return(enclaveUuid)
-	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, "")
+	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, starlarkValueSerde, "")
 }
 
 func TestRunStartosisInterpreterIdempotentTestSuite(t *testing.T) {
@@ -68,6 +91,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		script,
 		noInputParams,
@@ -75,16 +99,18 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	// Interpret the updated script against the current enclave plan
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		noPackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		script,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -120,6 +146,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
@@ -127,6 +154,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	updatedScript := `def run(plan, args):
 	plan.print("instruction1")
@@ -137,11 +165,12 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		noPackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -178,6 +207,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
@@ -185,6 +215,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	updatedScript := `def run(plan, args):
 	plan.print("instruction3")
@@ -193,11 +224,12 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		noPackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -228,6 +260,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
@@ -235,6 +268,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	updatedScript := `def run(plan, args):
 	plan.print(msg="instruction1")
@@ -245,11 +279,12 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		noPackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -279,13 +314,14 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3"))
 	plan.print("Service 1 - IP: {} - Hostname: {}".format(service_1.ip_address, service_1.hostname))
 	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))
-	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip")
+	plan.verify(value=service_1.ip_address, assertion="==", target_value="fake_ip")
 `
 	// Interpretation of the initial script to generate the current enclave plan
 	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
@@ -293,22 +329,24 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 4, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	updatedScript := `def run(plan):
 	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.5.0")) # <-- version updated
 	plan.print("Service 1 - IP: {} - Hostname: {}".format(service_1.ip_address, service_1.hostname)) # <-- identical
 	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"])) # <-- identical but should be rerun b/c service_1 updated
-	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip") # <-- identical b/c we don't track runtime value provenance yet
+	plan.verify(value=service_1.ip_address, assertion="==", target_value="fake_ip") # <-- identical b/c we don't track runtime value provenance yet
 `
 	// Interpret the updated script against the current enclave plan
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		noPackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -330,7 +368,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 	require.False(suite.T(), scheduledInstruction3.IsExecuted())
 
 	scheduledInstruction4 := instructionSequence[3]
-	require.Regexp(suite.T(), `assert\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
+	require.Regexp(suite.T(), `verify\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
 	require.True(suite.T(), scheduledInstruction4.IsExecuted())
 }
 
@@ -347,13 +385,14 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
     )
 	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3", files={"/path/": files_artifact}))
 	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))
-	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip")
+	plan.verify(value=service_1.ip_address, assertion="==", target_value="fake_ip")
 `
 	// Interpretation of the initial script to generate the current enclave plan
 	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
@@ -361,6 +400,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 4, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	updatedScript := `def run(plan):
 	files_artifact = plan.render_templates(
@@ -371,17 +411,18 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
     )
 	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3", files={"/path/": files_artifact}))
 	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))
-	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip")
+	plan.verify(value=service_1.ip_address, assertion="==", target_value="fake_ip")
 `
 	// Interpret the updated script against the current enclave plan
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		noPackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -403,6 +444,22 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 	require.False(suite.T(), scheduledInstruction3.IsExecuted()) // since the service has been updated, the exec will be re-run
 
 	scheduledInstruction4 := instructionSequence[3]
-	require.Regexp(suite.T(), `assert\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
+	require.Regexp(suite.T(), `verify\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
 	require.True(suite.T(), scheduledInstruction4.IsExecuted()) // this instruction is not affected, i.e. it won't be re-run
+}
+
+func (suite *StartosisInterpreterIdempotentTestSuite) convertInstructionPlanToEnclavePlan(instructionPlan *instructions_plan.InstructionsPlan) *enclave_plan_persistence.EnclavePlan {
+	enclavePlan := enclave_plan_persistence.NewEnclavePlan()
+	instructionPlanSequence, interpretationErr := instructionPlan.GeneratePlan()
+	suite.Require().Nil(interpretationErr)
+	for _, instruction := range instructionPlanSequence {
+		enclavePlanInstruction, err := instruction.GetInstruction().GetPersistableAttributes().SetUuid(
+			uuid.New().String(),
+		).SetReturnedValue(
+			"None", // the returnedValue does not matter for those tests as we're testing only the interpretation phase
+		).Build()
+		suite.Require().NoError(err)
+		enclavePlan.AppendInstruction(enclavePlanInstruction)
+	}
+	return enclavePlan
 }

@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/verify"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -65,7 +66,7 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 					Name:              AssertionArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator:         assert.ValidateAssertionToken,
+					Validator:         verify.ValidateVerificationToken,
 				},
 				{
 					Name:              TargetArgName,
@@ -205,7 +206,7 @@ func (builtin *WaitCapabilities) Interpret(_ string, arguments *builtin_argument
 		return nil, startosis_errors.NewInterpretationError("An error occurred while creating return value for %v instruction", WaitBuiltinName)
 	}
 
-	if _, ok := builtin.target.(starlark.Iterable); (builtin.assertion == assert.InCollectionAssertionToken || builtin.assertion == assert.NotInCollectionAssertionToken) && !ok {
+	if _, ok := builtin.target.(starlark.Iterable); (builtin.assertion == verify.InCollectionAssertionToken || builtin.assertion == verify.NotInCollectionAssertionToken) && !ok {
 		return nil, startosis_errors.NewInterpretationError("'%v' assertion requires an iterable for target values, got '%v'", builtin.assertion, builtin.target.Type())
 	}
 
@@ -275,11 +276,15 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 	return instructionResult, nil
 }
 
-func (builtin *WaitCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *WaitCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual && enclaveComponents.HasServiceBeenUpdated(builtin.serviceName) {
 		return enclave_structure.InstructionIsUpdate
 	} else if instructionsAreEqual {
 		return enclave_structure.InstructionIsEqual
 	}
 	return enclave_structure.InstructionIsUnknown
+}
+
+func (builtin *WaitCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(WaitBuiltinName)
 }
