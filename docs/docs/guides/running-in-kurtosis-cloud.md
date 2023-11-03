@@ -37,5 +37,5 @@ name, as well as the specific user folder the AWS user is authorized to access.
 
 :::tip AWS user permissions
 The AWS user created has a very restricted set of permissions by default. It can only read and write to its user folder
-inside the S3 bucket. But it is possible to request more access, reach out to us via Discord or by email.
+inside the S3 bucket. But it is possible to request more access, reach out to us via [Discord](https://discord.gg/6Jjp9c89z9).
 :::
