@@ -66,19 +66,26 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
   useEffect(() => {
     (async () => {
       const searchParams = new URLSearchParams(window.location.search);
-      const requireAuth = isStringTrue(searchParams.get("require_authentication"));
-      const requestedApiHost = searchParams.get("api_host");
+      const requireAuth = isStringTrue(searchParams.get("require-authentication"));
+
       try {
         setError(undefined);
         let newClient: KurtosisClient | null = null;
+
         if (requireAuth) {
+          const requestedApiHost = searchParams.get("api-host");
           assertDefined(requestedApiHost, `The parameter 'requestedApiHost' is not defined`);
+          let parentLocationPath = searchParams.get("parent-location-path");
+          parentLocationPath = parentLocationPath ? atob(parentLocationPath) :window.location.href;
+          assertDefined(parentLocationPath, `The parameter 'parentLocationPath' is not defined`);
+          console.log(parentLocationPath)
           if (isDefined(jwtToken)) {
-            newClient = new AuthenticatedKurtosisClient(requestedApiHost, jwtToken);
+            newClient = new AuthenticatedKurtosisClient(requestedApiHost, jwtToken, parentLocationPath);
           }
         } else {
           newClient = new LocalKurtosisClient();
         }
+
         if (isDefined(newClient)) {
           const checkResp = await newClient.checkHealth();
           if (checkResp.isErr) {

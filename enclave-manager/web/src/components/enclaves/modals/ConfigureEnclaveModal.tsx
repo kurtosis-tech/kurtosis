@@ -123,18 +123,16 @@ export const ConfigureEnclaveModal = ({
     return JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
   }, [window.location.search, existingEnclave]);
 
-  // TODO: Improve for cloud config
   const getLinkToCurrentConfig = () => {
     const params = new URLSearchParams({
       [KURTOSIS_PACKAGE_ID_URL_ARG]: kurtosisPackage.name,
       [KURTOSIS_PACKAGE_PARAMS_URL_ARG]: btoa(JSON.stringify(formRef.current?.getValues()))
     });
 
-    return `${window.location.href.split("?")[0]}?${params}`;
+    return `${kurtosisClient.getBrowserBasePathUrl()}?${params}`;
   };
 
   const handleClose = () => {
-    // TODO: verify how this effects cloud
     navigator("#", { replace: true });
     onClose();
   };

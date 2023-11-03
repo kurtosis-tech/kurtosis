@@ -33,7 +33,7 @@ export const CreateEnclave = () => {
 
   const handleCloseManualCreateEnclave = () => {
     setManualCreateEnclaveOpen(false);
-    if (location.hash) {
+    if (isDefined(location.hash)) {
       navigate(`${location.pathname}${location.search}`);
     }
   };
