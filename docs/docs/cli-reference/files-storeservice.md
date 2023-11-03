@@ -10,4 +10,4 @@ To instruct Kurtosis to copy a file or folder from a given absolute filepath in 
 kurtosis files storeservice $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER $ABSOLUTE_SOURCE_FILEPATH
 ```
 
-where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../concepts-reference/resource-identifier.md) for the enclave and service, respectively. 
+where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../advanced-concepts/resource-identifier.md) for the enclave and service, respectively. 

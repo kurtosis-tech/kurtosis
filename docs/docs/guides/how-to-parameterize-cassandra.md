@@ -381,16 +381,16 @@ We encourage you to check out our [quickstart][quickstart] (where you’ll build
 <!---- REFERENCE LINKS BELOW ONLY ---->
 [quickstart]: ../get-started/quickstart.md
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis
-[multi-phase-runs]: ../concepts-reference/multi-phase-runs.md
+[multi-phase-runs]: ../advanced-concepts/multi-phase-runs.md
 [github-cass-package]: https://github.com/kurtosis-tech/cassandra-package/blob/main/main.star
-[runnable-packages]: ../concepts-reference/packages.md#runnable-packages
-[kurtosis-yml]: ../concepts-reference/kurtosis-yml.md
-[locator]: ../concepts-reference/locators.md
-[packages]: ../concepts-reference/packages.md
-[sdk-reference]: ../engine-apic-reference.md
+[runnable-packages]: ../advanced-concepts/packages.md#runnable-packages
+[kurtosis-yml]: ../advanced-concepts/kurtosis-yml.md
+[locator]: ../advanced-concepts/locators.md
+[packages]: ../advanced-concepts/packages.md
+[sdk-reference]: ../api-reference/engine-apic-reference.md
 [redis-package-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app
 [eth-package-example]: https://github.com/kurtosis-tech/eth-network-package
-[installing-the-cli]: ./installing-the-cli.md#ii-install-the-cli
-[starting-docker]: ./installing-the-cli.md#i-install--start-docker
-[starlark]: ../concepts-reference/starlark.md
+[installing-the-cli]: ../get-started/installing-the-cli.md#ii-install-the-cli
+[starting-docker]: ../get-started/installing-the-cli.md#i-install--start-docker
+[starlark]: ../advanced-concepts/starlark.md
 [vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
