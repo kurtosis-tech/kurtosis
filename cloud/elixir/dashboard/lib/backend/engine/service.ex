@@ -1,7 +1,7 @@
 defmodule Backend.Engine.Service do
   def list_services() do
     # Add a second arg to log all communication "interceptors: [GRPC.Client.Interceptors.Logger]"
-    {:ok, channel} = GRPC.Stub.connect("localhost:55611")
+    {:ok, channel} = GRPC.Stub.connect("localhost:54221")
 
     req = %ApiContainerApi.GetServicesArgs{service_identifiers: %{}}
 
@@ -13,17 +13,27 @@ defmodule Backend.Engine.Service do
   end
 
 
-  def get_log_stream(enclave_id) do
+  def get_log_stream(enclave_id, services, follow = true) do
     # Add a second arg to log all communication "interceptors: [GRPC.Client.Interceptors.Logger]"
     {:ok, channel} = GRPC.Stub.connect("localhost:9710")
 
-    services = %EngineApi.GetServiceLogsArgs.ServiceUuidSetEntry{}
-    req = %EngineApi.GetServiceLogsArgs{enclave_identifier: enclave_id, service_uuid_set: %{}}
+    # services = %EngineApi.GetServiceLogsArgs.ServiceUuidSetEntry{key: "4aa37eb8b57a4f3e870366be64090fc9", value: false}
+    # services = %{"81d8f204ee474521a8c0f0829868be36" => false, "63005b464b0140b9a8fffa89581e7e9f" => false}
+    services = Enum.reduce(services, %{}, fn service, map -> Map.put(map, service, true) end)
+    req = %EngineApi.GetServiceLogsArgs{
+      enclave_identifier: enclave_id,
+      service_uuid_set: services,
+      num_log_lines: 5,
+      follow_logs: true
+    }
+    # IO.inspect(Protobuf.encode(req))
 
-    foo = channel
-    |> EngineApi.EngineService.Stub.get_service_logs(req)
-    |> (fn {:ok, reply} -> reply end).()
-    # |> (fn %ApiContainerApi.GetServicesResponse{service_info: encs} -> encs end).()
-    foo.("", fn x -> {x, ""} end)
+    channel
+      |> EngineApi.EngineService.Stub.get_service_logs(req)
+      |> (fn {:ok, reply} -> reply end).()
+      # |> (fn %ApiContainerApi.GetServicesResponse{service_info: encs} -> encs end).()
+      # |> Enum.to_list()
+      |> Enum.map(fn(reply) -> IO.inspect(reply) end)
+    :ok
   end
 end
