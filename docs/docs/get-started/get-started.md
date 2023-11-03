@@ -14,7 +14,7 @@ hide_table_of_contents: true
 
 To quickly see what Kurtosis feels like, check out the example snippets below:
 
-### Local Docker deploy from Github locator
+### Local Deploy on Docker
 
 ```bash
 kurtosis run github.com/kurtosis-tech/basic-service-package
