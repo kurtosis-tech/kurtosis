@@ -1,16 +1,16 @@
 <div>
   <ul>
     <%= for item <- @items do %>
-      <li id={"item-#{item.enclave_uuid}"} class="btn-color mb-4 p-2">
+      <li id={"item-#{item.service_uuid}"} class="btn-color mb-4 p-2">
         <div class="flex justify-between  space-x-4">
           <p>
             <%= item.name %>
           </p>
           <p>
-            <%= item.containers_status %>
+            <%= item.service_status %>
           </p>
           <p>
-            <%= Calendar.strftime(item.creation_time, "%y-%m-%d %I:%M:%S %p") %>
+            <%= item.container.image_name %>
           </p>
           <%!-- <p>
             <%= DateTime.diff(DateTime.utc_now, item.creation_time, :minute) %>
@@ -18,18 +18,18 @@
           <div class="flex-row">
             <button
               class="btn-primary"
-              id={"inspect-enclave-#{item.enclave_uuid}"}
+              id={"inspect-enclave-#{item.service_uuid}"}
               phx-click="inspect_enclave"
-              phx-value-id={item.enclave_uuid}
+              phx-value-id={item.service_uuid}
               phx-target={@myself}
             >
             Inspect
             </button>
             <button
               class="btn-primary"
-              id={"stop-enclave-#{item.enclave_uuid}"}
+              id={"stop-enclave-#{item.service_uuid}"}
               phx-click="stop_enclave"
-              phx-value-id={item.enclave_uuid}
+              phx-value-id={item.service_uuid}
               phx-target={@myself}
             >
               <svg
@@ -56,9 +56,9 @@
 
             <button
               class="btn-primary"
-              id={"destroy-enclave-#{item.enclave_uuid}"}
+              id={"destroy-enclave-#{item.service_uuid}"}
               phx-click="destory_enclave"
-              phx-value-id={item.enclave_uuid}
+              phx-value-id={item.service_uuid}
               phx-target={@myself}
             >
               <svg

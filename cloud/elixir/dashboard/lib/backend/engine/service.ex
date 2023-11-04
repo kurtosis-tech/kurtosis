@@ -1,7 +1,7 @@
 defmodule Backend.Engine.Service do
-  def list_services() do
+  def list_services(%Backend.Engine.Enclave{api_container_host_machine_info: {host_ip, port}}) do
     # Add a second arg to log all communication "interceptors: [GRPC.Client.Interceptors.Logger]"
-    {:ok, channel} = GRPC.Stub.connect("localhost:54221")
+    {:ok, channel} = GRPC.Stub.connect("#{host_ip}:#{port}")
 
     req = %ApiContainerApi.GetServicesArgs{service_identifiers: %{}}
 
