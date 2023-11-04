@@ -1,0 +1,23 @@
+<div>
+  <ul>
+      <li id={"service-#{@service.service_uuid}"} class="btn-color mb-4 p-2">
+        <div class="flex justify-between space-x-4">
+          <p>
+            <%= @service.name %>
+          </p>
+          <p>
+            <%= @service.service_status %>
+          </p>
+          <p>
+            <%= @service.container.image_name %>
+          </p>
+          <p>
+            <%= @service.private_ip_addr %>
+          </p>
+          <%!-- <p>
+            <%= DateTime.diff(DateTime.utc_now, service.creation_time, :minute) %>
+          </p> --%>
+        </div>
+      </li>
+  </ul>
+</div>

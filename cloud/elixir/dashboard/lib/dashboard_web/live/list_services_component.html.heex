@@ -18,8 +18,8 @@
           <div class="flex-row">
             <button
               class="btn-primary"
-              id={"inspect-enclave-#{item.service_uuid}"}
-              phx-click="inspect_enclave"
+              id={"inspect-service-#{item.service_uuid}"}
+              phx-click="inspect_service"
               phx-value-id={item.service_uuid}
               phx-target={@myself}
             >
@@ -27,8 +27,8 @@
             </button>
             <button
               class="btn-primary"
-              id={"stop-enclave-#{item.service_uuid}"}
-              phx-click="stop_enclave"
+              id={"stop-service-#{item.service_uuid}"}
+              phx-click="stop_service"
               phx-value-id={item.service_uuid}
               phx-target={@myself}
             >
@@ -56,8 +56,8 @@
 
             <button
               class="btn-primary"
-              id={"destroy-enclave-#{item.service_uuid}"}
-              phx-click="destory_enclave"
+              id={"destroy-service-#{item.service_uuid}"}
+              phx-click="destory_service"
               phx-value-id={item.service_uuid}
               phx-target={@myself}
             >

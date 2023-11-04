@@ -1,15 +1,30 @@
 <div>
   <h1>Enclaves</h1>
-  <.live_component
-    module={DashboardWeb.ListEnclavesComponent}
-    items={@enclaves}
-    id="enclaves_list"
-    parent={@parent}
-  />
-  <.live_component
-    module={DashboardWeb.ListServicesComponent}
-    items={@services}
-    id="service_list"
-    parent={@parent}
-  />
+
+  <%= if @enclaves do %>
+    <.live_component
+      module={DashboardWeb.ListEnclavesComponent}
+      items={@enclaves}
+      id="enclaves_list"
+      parent={@parent}
+    />
+  <% end %>
+
+  <%= if @services do %>
+    <.live_component
+      module={DashboardWeb.ListServicesComponent}
+      items={@services}
+      id="service_list"
+      parent={@parent}
+    />
+  <% end %>
+
+  <%= if @service_info do %>
+      <.live_component
+        module={DashboardWeb.ServiceInfoComponent}
+        service={@service_info}
+        id="service_info"
+        parent={@parent}
+      />
+  <% end %>
 </div>
