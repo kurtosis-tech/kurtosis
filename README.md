@@ -322,7 +322,7 @@ kurtosis enclave add
 </details>
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
-[enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
+[enclave]: https://docs.kurtosis.com/advanced-concepts/enclaves
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis#readme
 [quickstart-reference]: https://docs.kurtosis.com/quickstart
 [discord]: https://discord.gg/6Jjp9c89z9
