@@ -738,7 +738,7 @@ func getArgsFromFilepathOrURL(packageArgsFile string) (string, error) {
 
 	packageArgsFileStr := string(packageArgsFileBytes)
 	if packageArgParsingErr := validateSerializedArgs(packageArgsFileStr); packageArgParsingErr != nil {
-		return "", stacktrace.Propagate(err, "attempted to validate '%v' but failed", packageArgsFileFlagKey)
+		return "", stacktrace.Propagate(packageArgParsingErr, "attempted to validate '%v' but failed", packageArgsFileFlagKey)
 	}
 
 	return packageArgsFileStr, nil

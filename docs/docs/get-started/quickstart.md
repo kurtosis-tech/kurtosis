@@ -34,7 +34,11 @@ Click on the "New Workspace" button! You don't have to worry about the Context U
  
 </details>
 
+<<<<<<< HEAD
+If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, feel free to post your question in our [Github Discussions Forum][github-discussions] or ask us in our [Discord server](https://discord.gg/jJFG7XBqcY).
+=======
 If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us in our [Discord server](https://discord.gg/6Jjp9c89z9) or on [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)!
+>>>>>>> main
 
 Install dependencies
 --------------------
@@ -82,7 +86,7 @@ The arrays in the `participant` object enables you to define the specific Ethere
 
 Meanwhile, the `network_params` object defines the specific parameters for the network, including traits like the `network_id`, `seconds_per_slot`, and `slots_per_epoch`. 
 
-Lastly, there are a few fields that let you, as a consumer, define the log verbosity level and whether or not you'd like additional services and infrastructure to be spun up with your distributed system. In this example, you will not spin up extra monitoring tools (via the `launch_additional_service` field) or Proposer-Builder Seperation (PBS) infrastructure (via the `mev_type` field).
+Lastly, there are a few fields that let you, as a consumer, define the log verbosity level and whether or not you'd like additional services and infrastructure to be spun up with your distributed system. In this example, you will not spin up extra monitoring tools (via the `launch_additional_service` field) or Proposer-Builder Separation (PBS) infrastructure (via the `mev_type` field).
 
 Spin up your system!
 --------------------
@@ -186,7 +190,7 @@ To learn more about how Kurtosis is used, we encourage you to check out our [`aw
 
 Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
 
-Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), [join the community in our Discord](https://discord.gg/6Jjp9c89z9), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
+Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), post your questions on our [Github Discussions Forum][github-discussions], [join the community in our Discord](https://discord.gg/6Jjp9c89z9), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
 
 Thank you for trying our quickstart. We hope you enjoyed it. 
 
@@ -254,3 +258,4 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [near-package]: https://github.com/kurtosis-tech/near-package
 [iterm]: https://iterm2.com/
 [vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
+[github-discussions]: https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a

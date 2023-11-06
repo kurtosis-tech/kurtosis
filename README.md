@@ -46,9 +46,8 @@ kurtosis run github.com/kurtosis-tech/awesome-kurtosis/redis-voting-app
 Finally, open the `http` link printed in the last line in your browser.
 
 If you have an issue or feature request, we'd love to hear about it through one of the following:
-
+- Post your question on our [Github Discussions Forum](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a)
 - [Asking for help on our Discord server][discord]
-- Submitting a discussion point on our [forum](https://github.com/kurtosis-tech/kurtosis/discussions)
 - Filing an issue on our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) (which can also be done via `kurtosis feedback --bug` or `kurtosis feedback --feature`)
 - [Messaging us on Twitter][twitter]
 
@@ -56,7 +55,7 @@ If you have an issue or feature request, we'd love to hear about it through one 
 
 To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis] or one of these packages:
 
-- [Ethereum](https://github.com/kurtosis-tech/eth2-package): fully functional private Ethereum network in Kurtosis with Flashbots MEV-boost, any EL and CL client combination, and a collection of network monitoring tools.
+- [Ethereum](https://github.com/kurtosis-tech/ethereum-package): fully functional private Ethereum network in Kurtosis with Flashbots MEV-boost, any EL and CL client combination, and a collection of network monitoring tools.
 - [DIVE](https://github.com/HugoByte/DIVE): A CLI + Kurtosis package by [Hugobyte](https://hugobyte.com) for the ICON ecosystem that can spin up EVM, Cosmos, or JVM networks with a bridge between them.
 - [NEAR](https://github.com/kurtosis-tech/near-package): A private NEAR network in Kurtosis.
 
@@ -322,7 +321,7 @@ kurtosis enclave add
 </details>
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
-[enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
+[enclave]: https://docs.kurtosis.com/advanced-concepts/enclaves
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis#readme
 [quickstart-reference]: https://docs.kurtosis.com/quickstart
 [discord]: https://discord.gg/6Jjp9c89z9
