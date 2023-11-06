@@ -79,7 +79,7 @@ func (provider *GitPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOn
 	pathToKurtosisYaml := path.Join(packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName)
 	if _, err := os.Stat(pathToKurtosisYaml); err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
-			startosis_constants.KurtosisYamlName, packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName, user_support_constants.PackageDocLink)
+			startosis_constants.KurtosisYamlName, packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName, user_support_constants.StarlarkPackagesReferenceURL)
 	}
 
 	kurtosisYaml, interpretationError := validateAndGetKurtosisYaml(pathToKurtosisYaml, provider.packagesDir)

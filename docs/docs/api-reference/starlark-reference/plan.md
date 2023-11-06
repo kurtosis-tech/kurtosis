@@ -454,7 +454,7 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
 
-The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the Python script, alongside with future-reference to the file artifact names that were generated.
+The instruction returns a `struct` with [future references][future-references-reference] to the output and exit code of the Python script, alongside with future-reference to the file artifact names that were generated.
 * `result.output` is a future reference to the output of the command
 * `result.code` is a future reference to the exit code
 * `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
@@ -522,7 +522,7 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
 
-The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
+The instruction returns a `struct` with [future references][future-references-reference] to the output and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
    * `result.output` is a future reference to the output of the command
    * `result.code` is a future reference to the exit code
    * `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
@@ -543,7 +543,7 @@ The instruction returns a `struct` with [future references][future-references-re
     plan.print(result.files_artifacts) # prints ["blue_moon", "green_planet"]
     
     # blue_moon is name of the file artifact that contains task directory
-    # green_planet is the name of the file artifact that conatins test.txt file
+    # green_planet is the name of the file artifact that contains test.txt file
 
     service_one = plan.add_service(
         ..., 
