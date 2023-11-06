@@ -54,14 +54,16 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 		logger := logrus.StandardLogger()
 		// This is a special metrics client that, will record their decision about whether to send metrics or not
 		metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
-			source.KurtosisCLISource,
-			kurtosis_version.KurtosisVersion,
-			metricsUserId,
-			clusterType,
-			didUserAcceptSendingMetricsValueForMetricsClientCreation,
-			shouldFlushMetricsClientQueueOnEachEvent,
-			metricsClientCallback,
-			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			metrics_client.NewMetricsClientCreatorOption(
+				source.KurtosisCLISource,
+				kurtosis_version.KurtosisVersion,
+				metricsUserId,
+				clusterType,
+				didUserAcceptSendingMetricsValueForMetricsClientCreation,
+				shouldFlushMetricsClientQueueOnEachEvent,
+				metricsClientCallback,
+				analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			),
 		)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating the metrics client for recording send-metrics election")

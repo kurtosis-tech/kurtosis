@@ -44,14 +44,15 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 
 	logger := logrus.StandardLogger()
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCLISource,
-		kurtosis_version.KurtosisVersion,
-		metricsUserId,
-		clusterType,
-		sendUserMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		metrics_client.NewMetricsClientCreatorOption(
+			source.KurtosisCLISource,
+			kurtosis_version.KurtosisVersion,
+			metricsUserId,
+			clusterType,
+			sendUserMetrics,
+			shouldFlushMetricsClientQueueOnEachEvent,
+			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger)),
 	)
 
 	if err != nil {
@@ -72,14 +73,14 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 
 	logger := logrus.StandardLogger()
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCLISource,
-		kurtosis_version.KurtosisVersion,
-		metricsUserId,
-		clusterType,
-		sendUserMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		metrics_client.NewMetricsClientCreatorOption(source.KurtosisCLISource,
+			kurtosis_version.KurtosisVersion,
+			metricsUserId,
+			clusterType,
+			sendUserMetrics,
+			shouldFlushMetricsClientQueueOnEachEvent,
+			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger)),
 	)
 
 	if err != nil {

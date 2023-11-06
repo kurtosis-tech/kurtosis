@@ -178,14 +178,15 @@ func runMain() error {
 
 	logger := logrus.StandardLogger()
 	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCoreSource,
-		serverArgs.Version,
-		serverArgs.MetricsUserID,
-		serverArgs.KurtosisBackendType.String(),
-		serverArgs.DidUserAcceptSendingMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		doNothingMetricsClientCallback{},
-		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		metrics_client.NewMetricsClientCreatorOption(
+			source.KurtosisCoreSource,
+			serverArgs.Version,
+			serverArgs.MetricsUserID,
+			serverArgs.KurtosisBackendType.String(),
+			serverArgs.DidUserAcceptSendingMetrics,
+			shouldFlushMetricsClientQueueOnEachEvent,
+			doNothingMetricsClientCallback{},
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger)),
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
