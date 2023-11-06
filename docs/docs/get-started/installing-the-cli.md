@@ -89,7 +89,7 @@ Download the appropriate artifact from [the release artifacts page][release-arti
 <TabItem value="windows" label="Windows">
 
 Windows users are encouraged to use [Windows Subsystem for Linux (WSL)][windows-susbsystem-for-linux] to use Kurtosis.
-If you want to run a native executable, you can download the latest build for your architechture [here](https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/tags).
+If you want to run a native executable, you can download the latest build for your architecture [here](https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/tags).
 
 Or do it using PowerShell:
 
