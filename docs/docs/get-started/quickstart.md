@@ -82,7 +82,7 @@ The arrays in the `participant` object enables you to define the specific Ethere
 
 Meanwhile, the `network_params` object defines the specific parameters for the network, including traits like the `network_id`, `seconds_per_slot`, and `slots_per_epoch`. 
 
-Lastly, there are a few fields that let you, as a consumer, define the log verbosity level and whether or not you'd like additional services and infrastructure to be spun up with your distributed system. In this example, you will not spin up extra monitoring tools (via the `launch_additional_service` field) or Proposer-Builder Seperation (PBS) infrastructure (via the `mev_type` field).
+Lastly, there are a few fields that let you, as a consumer, define the log verbosity level and whether or not you'd like additional services and infrastructure to be spun up with your distributed system. In this example, you will not spin up extra monitoring tools (via the `launch_additional_service` field) or Proposer-Builder Separation (PBS) infrastructure (via the `mev_type` field).
 
 Spin up your system!
 --------------------

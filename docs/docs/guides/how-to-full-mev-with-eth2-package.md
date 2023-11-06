@@ -1,5 +1,5 @@
 ---
-title: How to launch a private Ethereum testnet with Flashbot's MEV Boost implementation of Proposer Builder Seperation (PBS)
+title: How to launch a private Ethereum testnet with Flashbot's MEV Boost implementation of Proposer Builder Separation (PBS)
 sidebar_label: Launch a testnet with MEV infra
 slug: /how-to-full-mev-with-ethereum-package
 toc_max_heading_level: 2
@@ -189,7 +189,7 @@ The screenshot above is what the website looks like after the 4th epoch. You can
 And there you have it! You've now spun up a private Ethereum testnet over Docker with the Flashbot's implementation of PBS! 
 
 ## Roadmap
-The inclusion of a Proposer Builder Seperation (PBS) implemention was in support of the Ethereum Foundation's efforts to validate functionality and behavior in end-to-end testing (between in-protocol and out-of-protocol infrastructure), as well as the functionality of the beacon chain for in-protocol code paths (e.g. can clients: call for payloads reject invalid payloads, and trigger the circuit breaker when necessary).
+The inclusion of a Proposer Builder Separation (PBS) implemention was in support of the Ethereum Foundation's efforts to validate functionality and behavior in end-to-end testing (between in-protocol and out-of-protocol infrastructure), as well as the functionality of the beacon chain for in-protocol code paths (e.g. can clients: call for payloads reject invalid payloads, and trigger the circuit breaker when necessary).
 
 The next immediate thing we hope to do is to *decompose* the environment definition into smaller pieces, enabling developers to build-their-own MEV-enabled systems by simply importing only the parts of the MEV infrastructure that they need. We've begun working on this already with [eth-kurtosis](https://github.com/kurtosis-tech/eth-kurtosis), which contains an index of composable building blocks to define your own testnet.
 
