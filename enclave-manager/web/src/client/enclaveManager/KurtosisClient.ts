@@ -1,4 +1,4 @@
-import { Code, ConnectError, PromiseClient } from "@connectrpc/connect";
+import { PromiseClient } from "@connectrpc/connect";
 import { RunStarlarkPackageArgs } from "enclave-manager-sdk/build/api_container_service_pb";
 import {
   CreateEnclaveArgs,
@@ -115,14 +115,6 @@ export abstract class KurtosisClient {
         serializedParams: JSON.stringify(args),
       }),
     });
-    try {
-      return this.client.runStarlarkPackage(request, { ...this.getHeaderOptions(), timeoutMs: 15 * 60 * 1000 });
-    } catch (err) {
-      console.error(err);
-      if (err instanceof ConnectError && err.code === Code.DeadlineExceeded) {
-        console.error("runStarlarkPackage exceeded its deadline");
-      }
-      throw err;
-    }
+    return this.client.runStarlarkPackage(request, this.getHeaderOptions());
   }
 }
