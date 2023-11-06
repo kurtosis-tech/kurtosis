@@ -1,7 +1,8 @@
 <div>
-  <h1>Enclaves</h1>
-
   <%= if @enclaves do %>
+    <div class="flex flex-row space-x-2">
+      <h1>Enclaves ></h1>
+    </div>
     <.live_component
       module={DashboardWeb.ListEnclavesComponent}
       items={@enclaves}
@@ -11,6 +12,12 @@
   <% end %>
 
   <%= if @services do %>
+    <div class="flex flex-row space-x-2">
+      <button class="" id="refresh-enclaves" phx-click="list_enclaves">
+        <h1>Enclaves ></h1>
+      </button>
+      <h1>Services ></h1>
+    </div>
     <.live_component
       module={DashboardWeb.ListServicesComponent}
       items={@services}
@@ -20,6 +27,20 @@
   <% end %>
 
   <%= if @service_info do %>
+    <div class="flex flex-row space-x-2">
+      <button class="" id="refresh-enclaves-2" phx-click="list_enclaves">
+        <h1>Enclaves ></h1>
+      </button>
+      <button
+        class=""
+        id="list_services"
+        phx-click="list_services"
+        phx-value-enclave_uuid={@select_enclave.enclave_uuid}
+      >
+        <h1>Services ></h1>
+      </button>
+      <h1>Service Info ></h1>
+    </div>
     <.live_component
       module={DashboardWeb.ServiceInfoComponent}
       service={@service_info}

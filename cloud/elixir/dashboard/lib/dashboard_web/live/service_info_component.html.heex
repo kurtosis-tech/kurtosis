@@ -17,8 +17,6 @@
         <%!-- <p>
             <%= DateTime.diff(DateTime.utc_now, service.creation_time, :minute) %>
           </p> --%>
-      </div>
-      <div class="flex-row">
         <button
           class="btn-primary"
           id={"show-logs-#{@service.service_uuid}"}
@@ -31,11 +29,15 @@
       </div>
     </li>
   </ul>
-  <table>
-    <tbody id="log_stream" phx-update="stream">
-      <tr :for={{id, log_line} <- @streams.logs} id={id}>
-        <td><%= log_line.line %></td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="w-full">
+    <div class="coding inverse-toggle px-5 pt-4 shadow-lg text-gray-100 text-sm font-mono subpixel-antialiased 
+              bg-gray-800  pb-6 pt-4 rounded-lg leading-normal overflow-hidden">
+      <div class="mt-4 flex-row" id="log_stream" phx-update="stream">
+        <%!-- <span class="text-green-400">computer:~$</span> --%>
+        <p :for={{id, log_line} <- @streams.logs} id={id} class="flex-1 typing items-center pl-2">
+          <%= log_line.line %>
+        </p>
+      </div>
+    </div>
+  </div>
 </div>
