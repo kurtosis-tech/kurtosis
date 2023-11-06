@@ -32,7 +32,7 @@ var LsCmd = &lowlevel.LowlevelKurtosisCommand{
 }
 
 func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	clusterList, err := getClusterList()
+	clusterList, err := GetClusterList()
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get Kurtosis cluster list")
 	}
