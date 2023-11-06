@@ -11,13 +11,14 @@ function constructGatewayURL(remoteHost: string): string {
 export class AuthenticatedKurtosisClient extends KurtosisClient {
   private readonly token: string;
 
-  constructor(gatewayHost: string, token: string, browserBasePathUrl: string) {
+  constructor(gatewayHost: string, token: string, parentUrl: URL, childUrl: URL) {
     super(
       createPromiseClient(
         KurtosisEnclaveManagerServer,
         createConnectTransport({ baseUrl: constructGatewayURL(gatewayHost) }),
       ),
-      browserBasePathUrl,
+      parentUrl,
+      childUrl,
     );
     this.token = token;
   }

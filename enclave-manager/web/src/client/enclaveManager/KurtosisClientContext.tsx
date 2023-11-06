@@ -75,12 +75,19 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
         if (requireAuth) {
           const requestedApiHost = searchParams.get("api-host");
           assertDefined(requestedApiHost, `The parameter 'requestedApiHost' is not defined`);
-          let parentLocationPath = searchParams.get("parent-location-path");
-          parentLocationPath = parentLocationPath ? atob(parentLocationPath) : window.location.href;
-          assertDefined(parentLocationPath, `The parameter 'parentLocationPath' is not defined`);
-          console.log(parentLocationPath);
+
+          // Get the parent location and path:
+          let parentLocationPath = paramToUrl(searchParams, "parent-location-path") || new URL(window.location.href);
+          // Get the child location and path:
+          let childLocationPath = paramToUrl(searchParams, "child-location-path") || new URL(window.location.href);
+
           if (isDefined(jwtToken)) {
-            newClient = new AuthenticatedKurtosisClient(requestedApiHost, jwtToken, parentLocationPath);
+            newClient = new AuthenticatedKurtosisClient(
+              requestedApiHost,
+              jwtToken,
+              parentLocationPath,
+              childLocationPath,
+            );
           }
         } else {
           newClient = new LocalKurtosisClient();
@@ -130,4 +137,13 @@ export const useKurtosisClient = (): KurtosisClient => {
   assertDefined(client, `useKurtosisClient used incorrectly - KurtosisClient is not currently available.`);
 
   return client;
+};
+
+const paramToUrl = (searchParams: URLSearchParams, param: string) => {
+  let paramString = searchParams.get(param);
+  if (paramString === null) return null;
+  paramString = atob(paramString);
+  assertDefined(paramString, `The parameter ${param}' is not defined`);
+  const locationPath: URL = new URL(paramString);
+  return locationPath;
 };

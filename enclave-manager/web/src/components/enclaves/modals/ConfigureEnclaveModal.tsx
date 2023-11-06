@@ -128,7 +128,7 @@ export const ConfigureEnclaveModal = ({
       [KURTOSIS_PACKAGE_PARAMS_URL_ARG]: btoa(JSON.stringify(formRef.current?.getValues())),
     });
 
-    return `${kurtosisClient.getBrowserBasePathUrl()}?${params}`;
+    return `${kurtosisClient.getParentBasePathUrl()}?${params}`;
   };
 
   const handleClose = () => {
