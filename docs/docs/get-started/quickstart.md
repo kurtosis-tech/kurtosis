@@ -34,7 +34,11 @@ Click on the "New Workspace" button! You don't have to worry about the Context U
  
 </details>
 
+<<<<<<< HEAD
+If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, feel free to post your question in our [Github Discussions Forum][github-discussions] or ask us in our [Discord server](https://discord.gg/jJFG7XBqcY).
+=======
 If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us in our [Discord server](https://discord.gg/6Jjp9c89z9) or on [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)!
+>>>>>>> main
 
 Install dependencies
 --------------------
@@ -186,7 +190,7 @@ To learn more about how Kurtosis is used, we encourage you to check out our [`aw
 
 Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
 
-Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), [join the community in our Discord](https://discord.gg/6Jjp9c89z9), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
+Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), post your questions on our [Github Discussions Forum][github-discussions], [join the community in our Discord](https://discord.gg/6Jjp9c89z9), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
 
 Thank you for trying our quickstart. We hope you enjoyed it. 
 
@@ -254,3 +258,4 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [near-package]: https://github.com/kurtosis-tech/near-package
 [iterm]: https://iterm2.com/
 [vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
+[github-discussions]: https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a
