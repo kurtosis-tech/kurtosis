@@ -96,7 +96,7 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
         if (isDefined(newClient)) {
           const checkResp = await newClient.checkHealth();
           if (checkResp.isErr) {
-            setError("Cannot reach the enclave manager backend - is your enclave manager definitely running?");
+            setError("Cannot reach the enclave manager backend - is the Enclave Manager API running and accessible?");
             return;
           }
           setClient(newClient);

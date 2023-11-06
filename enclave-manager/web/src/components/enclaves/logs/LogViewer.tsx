@@ -93,7 +93,7 @@ export const LogViewer = ({
           </FormLabel>
         </FormControl>
         <ButtonGroup isAttached>
-          <CopyButton valueToCopy={getLogsValue} size={"md"} isDisabled={logLines.length === 0} />
+          <CopyButton contentName={"logs"} valueToCopy={getLogsValue} size={"md"} isDisabled={logLines.length === 0} />
           <DownloadButton
             valueToDownload={getLogsValue}
             size={"md"}
