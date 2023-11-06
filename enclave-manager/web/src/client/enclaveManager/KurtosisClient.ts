@@ -5,14 +5,14 @@ import {
   DestroyEnclaveArgs,
   EnclaveAPIContainerInfo,
   EnclaveInfo,
-  EnclaveMode
+  EnclaveMode,
 } from "enclave-manager-sdk/build/engine_service_pb";
 import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {
   GetListFilesArtifactNamesAndUuidsRequest,
   GetServicesRequest,
   GetStarlarkRunRequest,
-  RunStarlarkPackageRequest
+  RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import { assertDefined, asyncResult } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
@@ -43,7 +43,7 @@ export abstract class KurtosisClient {
   async destroy(enclaveUUID: string) {
     return asyncResult(
       this.client.destroyEnclave(new DestroyEnclaveArgs({ enclaveIdentifier: enclaveUUID }), this.getHeaderOptions()),
-      `KurtosisClient could not destroy enclave ${enclaveUUID}`
+      `KurtosisClient could not destroy enclave ${enclaveUUID}`,
     );
   }
 
@@ -53,7 +53,7 @@ export abstract class KurtosisClient {
       assertDefined(apicInfo, `Cannot getServices because the passed enclave '${enclave.name}' does not have apicInfo`);
       const request = new GetServicesRequest({
         apicIpAddress: apicInfo.bridgeIpAddress,
-        apicPort: apicInfo.grpcPortInsideEnclave
+        apicPort: apicInfo.grpcPortInsideEnclave,
       });
       return this.client.getServices(request, this.getHeaderOptions());
     }, "KurtosisClient could not getServices");
@@ -64,11 +64,11 @@ export abstract class KurtosisClient {
       const apicInfo = enclave.apiContainerInfo;
       assertDefined(
         apicInfo,
-        `Cannot getStarlarkRun because the passed enclave '${enclave.name}' does not have apicInfo`
+        `Cannot getStarlarkRun because the passed enclave '${enclave.name}' does not have apicInfo`,
       );
       const request = new GetStarlarkRunRequest({
         apicIpAddress: apicInfo.bridgeIpAddress,
-        apicPort: apicInfo.grpcPortInsideEnclave
+        apicPort: apicInfo.grpcPortInsideEnclave,
       });
       return this.client.getStarlarkRun(request, this.getHeaderOptions());
     }, "KurtosisClient could not getStarlarkRun");
@@ -79,11 +79,11 @@ export abstract class KurtosisClient {
       const apicInfo = enclave.apiContainerInfo;
       assertDefined(
         apicInfo,
-        `Cannot listFilesArtifactNamesAndUuids because the passed enclave '${enclave.name}' does not have apicInfo`
+        `Cannot listFilesArtifactNamesAndUuids because the passed enclave '${enclave.name}' does not have apicInfo`,
       );
       const request = new GetListFilesArtifactNamesAndUuidsRequest({
         apicIpAddress: apicInfo.bridgeIpAddress,
-        apicPort: apicInfo.grpcPortInsideEnclave
+        apicPort: apicInfo.grpcPortInsideEnclave,
       });
       return this.client.listFilesArtifactNamesAndUuids(request, this.getHeaderOptions());
     }, "KurtosisClient could not listFilesArtifactNamesAndUuids");
@@ -93,14 +93,14 @@ export abstract class KurtosisClient {
     enclaveName: string,
     apiContainerLogLevel: string,
     productionMode?: boolean,
-    apiContainerVersionTag?: string
+    apiContainerVersionTag?: string,
   ) {
     return asyncResult(() => {
       const request = new CreateEnclaveArgs({
         enclaveName,
         apiContainerLogLevel,
         mode: productionMode ? EnclaveMode.PRODUCTION : EnclaveMode.TEST,
-        apiContainerVersionTag: apiContainerVersionTag || ""
+        apiContainerVersionTag: apiContainerVersionTag || "",
       });
       return this.client.createEnclave(request, this.getHeaderOptions());
     });
@@ -109,7 +109,7 @@ export abstract class KurtosisClient {
   async runStarlarkPackage(
     apicInfo: RemoveFunctions<EnclaveAPIContainerInfo>,
     packageId: string,
-    args: Record<string, any>
+    args: Record<string, any>,
   ) {
     // Not currently using asyncResult as the return type here is an asyncIterable
     const request = new RunStarlarkPackageRequest({
@@ -118,8 +118,8 @@ export abstract class KurtosisClient {
       RunStarlarkPackageArgs: new RunStarlarkPackageArgs({
         dryRun: false,
         packageId: packageId,
-        serializedParams: JSON.stringify(args)
-      })
+        serializedParams: JSON.stringify(args),
+      }),
     });
     return this.client.runStarlarkPackage(request, this.getHeaderOptions());
   }

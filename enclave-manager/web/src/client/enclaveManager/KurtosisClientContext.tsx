@@ -76,9 +76,9 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
           const requestedApiHost = searchParams.get("api-host");
           assertDefined(requestedApiHost, `The parameter 'requestedApiHost' is not defined`);
           let parentLocationPath = searchParams.get("parent-location-path");
-          parentLocationPath = parentLocationPath ? atob(parentLocationPath) :window.location.href;
+          parentLocationPath = parentLocationPath ? atob(parentLocationPath) : window.location.href;
           assertDefined(parentLocationPath, `The parameter 'parentLocationPath' is not defined`);
-          console.log(parentLocationPath)
+          console.log(parentLocationPath);
           if (isDefined(jwtToken)) {
             newClient = new AuthenticatedKurtosisClient(requestedApiHost, jwtToken, parentLocationPath);
           }

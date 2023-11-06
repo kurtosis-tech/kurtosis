@@ -3,14 +3,14 @@ import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import { KurtosisClientProvider, useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
 import {
   KurtosisPackageIndexerProvider,
-  useKurtosisPackageIndexerClient
+  useKurtosisPackageIndexerClient,
 } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { AppLayout } from "../components/AppLayout";
+import { CreateEnclave } from "../components/enclaves/CreateEnclave";
 import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
 import { catalogRoutes } from "./catalog/CatalogRoutes";
 import { enclaveRoutes } from "./enclaves/EnclaveRoutes";
 import { Navbar } from "./Navbar";
-import { CreateEnclave } from "../components/enclaves/CreateEnclave";
 
 export const EmuiApp = () => {
   return (
@@ -40,11 +40,11 @@ const KurtosisRouter = () => {
           ),
           children: [
             { path: "/", children: enclaveRoutes(kurtosisClient) },
-            { path: "/catalog", children: catalogRoutes(kurtosisIndexerClient) }
-          ]
-        }
+            { path: "/catalog", children: catalogRoutes(kurtosisIndexerClient) },
+          ],
+        },
       ]),
-    [kurtosisClient]
+    [kurtosisClient],
   );
 
   return <RouterProvider router={router} />;

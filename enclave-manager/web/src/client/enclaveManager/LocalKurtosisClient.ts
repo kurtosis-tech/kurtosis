@@ -7,7 +7,10 @@ import { KurtosisClient } from "./KurtosisClient";
 export class LocalKurtosisClient extends KurtosisClient {
   constructor() {
     super(
-      createPromiseClient(KurtosisEnclaveManagerServer, createConnectTransport({ baseUrl: KURTOSIS_EM_API_DEFAULT_URL })),
+      createPromiseClient(
+        KurtosisEnclaveManagerServer,
+        createConnectTransport({ baseUrl: KURTOSIS_EM_API_DEFAULT_URL }),
+      ),
       window.location.pathname,
     );
   }

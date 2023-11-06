@@ -9,7 +9,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Spinner,
-  Text
+  Text,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
@@ -55,7 +55,12 @@ export const PackageLoadingModal = ({ packageId, onPackageLoaded }: PackageLoadi
   }, [packageId, onPackageLoaded]);
 
   return (
-    <Modal closeOnOverlayClick={false} isOpen={modalOpen} onClose={() => !isPreloading && setModalOpen(false)} isCentered>
+    <Modal
+      closeOnOverlayClick={false}
+      isOpen={modalOpen}
+      onClose={() => !isPreloading && setModalOpen(false)}
+      isCentered
+    >
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Loading</ModalHeader>

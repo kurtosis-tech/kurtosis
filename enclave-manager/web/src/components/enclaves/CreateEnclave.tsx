@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { PreloadPackage } from "./PreloadPackage";
-import { ManualCreateEnclaveModal } from "./modals/ManualCreateEnclaveModal";
-import { isDefined } from "../../utils";
-import { ConfigureEnclaveModal } from "./modals/ConfigureEnclaveModal";
-import { KURTOSIS_CREATE_ENCLAVE_URL_ARG } from "../constants";
 import { useLocation, useNavigate } from "react-router-dom";
+import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
+import { isDefined } from "../../utils";
+import { KURTOSIS_CREATE_ENCLAVE_URL_ARG } from "../constants";
+import { ConfigureEnclaveModal } from "./modals/ConfigureEnclaveModal";
+import { ManualCreateEnclaveModal } from "./modals/ManualCreateEnclaveModal";
+import { PreloadPackage } from "./PreloadPackage";
 
 export const CreateEnclave = () => {
   const navigate = useNavigate();
@@ -25,11 +25,10 @@ export const CreateEnclave = () => {
     setConfigureEnclaveOpen(true);
   };
 
-  const handleOnPackageLoaded = useCallback(
-    (kurtosisPackage: KurtosisPackage) => {
-      setKurtosisPackage(kurtosisPackage);
-      setConfigureEnclaveOpen(true);
-    }, []);
+  const handleOnPackageLoaded = useCallback((kurtosisPackage: KurtosisPackage) => {
+    setKurtosisPackage(kurtosisPackage);
+    setConfigureEnclaveOpen(true);
+  }, []);
 
   const handleCloseManualCreateEnclave = () => {
     setManualCreateEnclaveOpen(false);

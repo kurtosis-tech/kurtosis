@@ -9,7 +9,10 @@ export class KurtosisPackageIndexerClient {
   private client: PromiseClient<typeof KurtosisPackageIndexer>;
 
   constructor() {
-    this.client = createPromiseClient(KurtosisPackageIndexer, createConnectTransport({ baseUrl: KURTOSIS_PACKAGE_INDEXER_URL }));
+    this.client = createPromiseClient(
+      KurtosisPackageIndexer,
+      createConnectTransport({ baseUrl: KURTOSIS_PACKAGE_INDEXER_URL }),
+    );
   }
 
   getPackages = async () => {

@@ -2,7 +2,6 @@ import {
   Button,
   Flex,
   FormControl,
-  Input,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -11,7 +10,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  Tooltip
+  Tooltip,
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { useMemo, useRef, useState } from "react";
@@ -21,11 +20,12 @@ import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClient
 import { ArgumentValueType, KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { assertDefined, isDefined, stringifyError } from "../../../utils";
+import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../../constants";
 import { CopyButton } from "../../CopyButton";
 import { KurtosisAlert } from "../../KurtosisAlert";
 import {
   EnclaveConfigurationForm,
-  EnclaveConfigurationFormImperativeAttributes
+  EnclaveConfigurationFormImperativeAttributes,
 } from "../configuration/EnclaveConfigurationForm";
 import { BooleanArgumentInput } from "../configuration/inputs/BooleanArgumentInput";
 import { StringArgumentInput } from "../configuration/inputs/StringArgumentInput";
@@ -33,7 +33,6 @@ import { KurtosisArgumentFormControl } from "../configuration/KurtosisArgumentFo
 import { KurtosisPackageArgumentInput } from "../configuration/KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../configuration/types";
 import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
-import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../../constants";
 
 type ConfigureEnclaveModalProps = {
   isOpen: boolean;
@@ -43,11 +42,11 @@ type ConfigureEnclaveModalProps = {
 };
 
 export const ConfigureEnclaveModal = ({
-                                        isOpen,
-                                        onClose,
-                                        kurtosisPackage,
-                                        existingEnclave
-                                      }: ConfigureEnclaveModalProps) => {
+  isOpen,
+  onClose,
+  kurtosisPackage,
+  existingEnclave,
+}: ConfigureEnclaveModalProps) => {
   const kurtosisClient = useKurtosisClient();
   const navigator = useNavigate();
   const submit = useSubmit();
@@ -59,7 +58,7 @@ export const ConfigureEnclaveModal = ({
     if (isDefined(existingEnclave)) {
       if (existingEnclave.starlarkRun.isErr) {
         setError(
-          `Could not retrieve starlark run for previous configuration, got error: ${existingEnclave.starlarkRun.isErr}`
+          `Could not retrieve starlark run for previous configuration, got error: ${existingEnclave.starlarkRun.isErr}`,
         );
         return undefined;
       }
@@ -69,7 +68,7 @@ export const ConfigureEnclaveModal = ({
           argType: ArgumentValueType | undefined,
           value: any,
           innerType1?: ArgumentValueType,
-          innerType2?: ArgumentValueType
+          innerType2?: ArgumentValueType,
         ): any => {
           switch (argType) {
             case ArgumentValueType.BOOL:
@@ -100,15 +99,15 @@ export const ConfigureEnclaveModal = ({
               arg.typeV2?.topLevelType,
               parsedArgs[arg.name],
               arg.typeV2?.innerType1,
-              arg.typeV2?.innerType2
-            )
+              arg.typeV2?.innerType2,
+            ),
           }),
-          {}
+          {},
         );
         return {
           enclaveName: existingEnclave.name,
           restartServices: existingEnclave.mode === EnclaveMode.PRODUCTION,
-          args
+          args,
         } as ConfigureEnclaveForm;
       } catch (err: any) {
         setError(`Could not reuse previous configuration, got error: ${stringifyError(err)}`);
@@ -126,7 +125,7 @@ export const ConfigureEnclaveModal = ({
   const getLinkToCurrentConfig = () => {
     const params = new URLSearchParams({
       [KURTOSIS_PACKAGE_ID_URL_ARG]: kurtosisPackage.name,
-      [KURTOSIS_PACKAGE_PARAMS_URL_ARG]: btoa(JSON.stringify(formRef.current?.getValues()))
+      [KURTOSIS_PACKAGE_PARAMS_URL_ARG]: btoa(JSON.stringify(formRef.current?.getValues())),
     });
 
     return `${kurtosisClient.getBrowserBasePathUrl()}?${params}`;
@@ -168,8 +167,8 @@ export const ConfigureEnclaveModal = ({
       {
         method: "post",
         action: `/enclave/${enclaveUUID}`,
-        encType: "application/json"
-      }
+        encType: "application/json",
+      },
     );
     onClose();
   };
