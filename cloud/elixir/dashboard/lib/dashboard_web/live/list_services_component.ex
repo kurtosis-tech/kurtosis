@@ -20,8 +20,6 @@ defmodule DashboardWeb.ListServicesComponent do
         end
       end)
 
-    # services = Backend.Engine.Service.list_services(enclave)
-    IO.inspect(service)
     send(socket.assigns.parent, {:service_info, service})
     {:noreply, socket}
   end

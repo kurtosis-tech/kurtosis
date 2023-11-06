@@ -26,11 +26,9 @@ defmodule Backend.Engine.Service do
       num_log_lines: 5,
       follow_logs: follow
     }
-    # IO.inspect(Protobuf.encode(req))
 
-    channel
-      |> EngineApi.EngineService.Stub.get_service_logs(req)
-      |> (fn {:ok, reply} -> reply end).()
+    {:ok, stream} = EngineApi.EngineService.Stub.get_service_logs(channel, req)
+    stream
       |> Stream.flat_map(fn({:ok, reply}) -> Map.values(reply.service_logs_by_service_uuid) end)
       |> Stream.map(&(&1.line))
   end

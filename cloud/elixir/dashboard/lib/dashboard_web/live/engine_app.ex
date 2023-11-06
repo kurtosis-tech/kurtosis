@@ -18,12 +18,10 @@ defmodule DashboardWeb.DashboardWeb.EngineApp do
   end
 
   def handle_info({:inspect_services, {enclave, services}}, socket) do
-    IO.inspect(services)
     {:noreply, assign(socket, %{services: services, select_enclave: enclave})}
   end
 
   def handle_info({:service_info, service}, socket) do
-    IO.inspect(service)
     {:noreply, assign(socket, %{service_info: service})}
   end
 

@@ -18,29 +18,32 @@ defmodule DashboardWeb.ServiceInfoComponent do
   end
 
   def handle_event("show_logs", %{"id" => service_uuid}, socket) do
-    logs =
-      Backend.Engine.Service.get_log_stream(
-        socket.assigns.enclave.enclave_uuid,
-        [socket.assigns.service.service_uuid],
-        false
-      )
+    pid = self()
+    Task.async(fn ->
+      logs =
+        Backend.Engine.Service.get_log_stream(
+          socket.assigns.enclave.enclave_uuid,
+          [socket.assigns.service.service_uuid],
+          true
+        )
 
-    logs
-    |> Stream.with_index()
-    |> Stream.each(fn {x, id} ->
-      send_update(DashboardWeb.ServiceInfoComponent,
-        id: "service_info",
-        push_log: %{:id => id, :line => x}
-      )
+      logs
+      |> Stream.with_index()
+      |> Stream.each(fn {x, id} ->
+        send_update(pid, DashboardWeb.ServiceInfoComponent,
+          id: "service_info",
+          push_log: %{:id => id, :line => x}
+        )
+      end)
+      |> Enum.to_list() # This forces the eval of the lazy stream
+
     end)
-    |> Enum.to_list() # This forces the eval of the lazy stream
 
     {:noreply, socket}
   end
 
   @impl true
   def update(%{push_log: log}, socket) do
-    IO.inspect(log)
     {:ok, socket |> stream_insert(:logs, log)}
   end
 
