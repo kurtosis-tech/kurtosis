@@ -58,5 +58,4 @@ var urlsToValidateInTest = []string{
 	HowImportWorksLink,
 	KurtosisTechTwitterProfileLink,
 	KurtosisCloudLink,
-	PackageDocLink,
 }
