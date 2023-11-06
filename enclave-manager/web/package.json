@@ -13,6 +13,7 @@
     "@tanstack/react-table": "^8.10.7",
     "enclave-manager-sdk": "file:../api/typescript",
     "framer-motion": "^10.16.4",
+    "lodash": "^4.17.21",
     "luxon": "^3.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -21,6 +22,7 @@
     "react-markdown": "^9.0.0",
     "react-router-dom": "^6.17.0",
     "react-scripts": "5.0.1",
+    "react-virtuoso": "^4.6.2",
     "true-myth": "^7.1.0"
   },
   "devDependencies": {

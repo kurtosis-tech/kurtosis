@@ -12,7 +12,6 @@ export const BooleanArgumentInput = ({ inputType, ...props }: BooleanArgumentInp
   if (inputType === "switch") {
     return (
       <Switch
-        colorScheme={"green"}
         {...register(props.name, {
           disabled: props.disabled,
           required: props.isRequired,

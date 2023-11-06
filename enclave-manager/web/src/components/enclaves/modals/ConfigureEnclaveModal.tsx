@@ -86,7 +86,7 @@ export const ConfigureEnclaveModal = ({
               assertDefined(innerType2, `Cannot parse a dict argument type without knowing innterType2`);
               return isDefined(value)
                 ? Object.entries(value).map(([k, v]) => ({ key: k, value: convertArgValue(innerType2, v) }), {})
-                : {};
+                : [];
             default:
               return value;
           }
@@ -166,7 +166,7 @@ export const ConfigureEnclaveModal = ({
       { config: formData, packageId: kurtosisPackage.name, apicInfo: apicInfo.toJson() },
       {
         method: "post",
-        action: `/enclave/${enclaveUUID}`,
+        action: `/enclave/${enclaveUUID}/logs`,
         encType: "application/json",
       },
     );
