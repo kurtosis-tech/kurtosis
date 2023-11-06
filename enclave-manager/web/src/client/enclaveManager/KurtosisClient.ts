@@ -6,6 +6,7 @@ import {
   EnclaveAPIContainerInfo,
   EnclaveInfo,
   EnclaveMode,
+  GetServiceLogsArgs,
 } from "enclave-manager-sdk/build/engine_service_pb";
 import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {
@@ -16,6 +17,7 @@ import {
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import { assertDefined, asyncResult } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
+import { EnclaveFullInfo } from "../../emui/enclaves/types";
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
@@ -77,6 +79,24 @@ export abstract class KurtosisClient {
       });
       return this.client.getServices(request, this.getHeaderOptions());
     }, "KurtosisClient could not getServices");
+  }
+
+  async getServiceLogs(
+    enclave: RemoveFunctions<EnclaveFullInfo>
+    packageId: string,
+    args: Record<string, any>,
+  ) {
+    // Not currently using asyncResult as the return type here is an asyncIterable
+    const request = new GetServiceLogsArgs({
+      apicIpAddress: apicInfo.bridgeIpAddress,
+      apicPort: apicInfo.grpcPortInsideEnclave,
+      RunStarlarkPackageArgs: new RunStarlarkPackageArgs({
+        dryRun: false,
+        packageId: packageId,
+        serializedParams: JSON.stringify(args),
+      }),
+    });
+    return this.client.getServiceLogs(request, this.getHeaderOptions());
   }
 
   async getStarlarkRun(enclave: RemoveFunctions<EnclaveInfo>) {

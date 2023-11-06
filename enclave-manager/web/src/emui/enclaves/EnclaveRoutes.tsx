@@ -4,6 +4,7 @@ import { enclavesAction } from "./action";
 import { Enclave, enclaveLoader, enclaveTabLoader } from "./enclave";
 import { runStarlarkAction } from "./enclave/action";
 import { EnclaveLoaderDeferred } from "./enclave/loader";
+import { Service } from "./enclave/service/Service";
 import { EnclaveList } from "./EnclaveList";
 import { enclavesLoader } from "./loader";
 
@@ -35,7 +36,8 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
         },
         children: [
           {
-            path: "service/:serviceUUID",
+            path: "service/:serviceUUID/:activeTab?",
+            element: <Service />,
           },
           {
             path: "file/:fileUUID",
