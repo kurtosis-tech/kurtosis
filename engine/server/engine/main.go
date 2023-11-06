@@ -151,7 +151,7 @@ func runMain() error {
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
 	logFileManager.StartLogFileManagement(ctx)
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
+	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, serverArgs.IsCI)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -229,6 +229,7 @@ func getEnclaveManager(
 	enclaveLogFileManager *log_file_manager.LogFileManager,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	isCI bool,
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
@@ -250,6 +251,7 @@ func getEnclaveManager(
 		enclaveLogFileManager,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		isCI,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave manager for backend type '%+v' using pool-size '%v' and engine version '%v'", kurtosisBackendType, poolSize, engineVersion)

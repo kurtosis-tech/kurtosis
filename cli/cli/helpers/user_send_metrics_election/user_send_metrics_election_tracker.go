@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
-	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -54,14 +54,17 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 		logger := logrus.StandardLogger()
 		// This is a special metrics client that, will record their decision about whether to send metrics or not
 		metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
-			source.KurtosisCLISource,
-			kurtosis_version.KurtosisVersion,
-			metricsUserId,
-			clusterType,
-			didUserAcceptSendingMetricsValueForMetricsClientCreation,
-			shouldFlushMetricsClientQueueOnEachEvent,
-			metricsClientCallback,
-			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			metrics_client.NewMetricsClientCreatorOption(
+				source.KurtosisCLISource,
+				kurtosis_version.KurtosisVersion,
+				metricsUserId,
+				clusterType,
+				didUserAcceptSendingMetricsValueForMetricsClientCreation,
+				shouldFlushMetricsClientQueueOnEachEvent,
+				metricsClientCallback,
+				analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+				metrics_client.IsCI(),
+			),
 		)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating the metrics client for recording send-metrics election")

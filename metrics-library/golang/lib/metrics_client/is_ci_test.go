@@ -1,4 +1,4 @@
-package client
+package metrics_client
 
 import (
 	"github.com/stretchr/testify/require"
@@ -13,6 +13,6 @@ func TestISCIWhenEnvironmentVariableIsSetSucceeds(t *testing.T) {
 		err := os.Setenv(envVar, envVarValueForTesting)
 		defer os.Unsetenv(envVar)
 		require.Nil(t, err)
-		require.Equal(t, trueStr, isCI())
+		require.True(t, IsCI())
 	}
 }

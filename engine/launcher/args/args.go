@@ -47,6 +47,9 @@ type EngineServerArgs struct {
 	// Environment variable to pass to all the enclaves the engine is going to create. Those environment variable will
 	// then be accessible in Starlark scripts in the `kurtosis` module
 	EnclaveEnvVars string `json:"enclaveEnvVars"`
+
+	// Whether the Engine is running in a CI  environment
+	IsCI bool `json:"is_ci"`
 }
 
 func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
@@ -93,6 +96,7 @@ func NewEngineServerArgs(
 	onBastionHost bool,
 	poolSize uint8,
 	enclaveEnvVars string,
+	isCI bool,
 ) (*EngineServerArgs, error) {
 	if enclaveEnvVars == "" {
 		enclaveEnvVars = emptyJsonField
@@ -108,6 +112,7 @@ func NewEngineServerArgs(
 		OnBastionHost:               onBastionHost,
 		PoolSize:                    poolSize,
 		EnclaveEnvVars:              enclaveEnvVars,
+		IsCI:                        isCI,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

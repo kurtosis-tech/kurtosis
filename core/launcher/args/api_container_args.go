@@ -44,6 +44,9 @@ type APIContainerArgs struct {
 
 	//User consent to send metrics
 	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
+
+	//If its running in a CI environment
+	IsCI bool `json:"is_ci"`
 }
 
 func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
@@ -92,6 +95,7 @@ func NewAPIContainerArgs(
 	isProductionEnclave bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	isCI bool,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		Version:                     version,
@@ -105,6 +109,7 @@ func NewAPIContainerArgs(
 		IsProductionEnclave:         isProductionEnclave,
 		MetricsUserID:               metricsUserID,
 		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
+		IsCI:                        isCI,
 	}
 
 	if err := result.validate(); err != nil {
