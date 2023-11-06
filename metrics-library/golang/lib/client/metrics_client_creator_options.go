@@ -14,6 +14,7 @@ type CreateMetricsClientOption struct {
 	shouldFlushQueueOnEachEvent bool
 	callbackObject              Callback
 	logger                      analytics.Logger
+	isCI                        bool
 }
 
 func NewMetricsClientCreatorOption(source source.Source,
@@ -23,7 +24,8 @@ func NewMetricsClientCreatorOption(source source.Source,
 	didUserAcceptSendingMetrics bool,
 	shouldFlushQueueOnEachEvent bool,
 	callbackObject Callback,
-	logger analytics.Logger) *CreateMetricsClientOption {
+	logger analytics.Logger,
+	isCI bool) *CreateMetricsClientOption {
 	return &CreateMetricsClientOption{
 		source:                      source,
 		sourceVersion:               sourceVersion,
@@ -33,5 +35,6 @@ func NewMetricsClientCreatorOption(source source.Source,
 		shouldFlushQueueOnEachEvent: shouldFlushQueueOnEachEvent,
 		callbackObject:              callbackObject,
 		logger:                      logger,
+		isCI:                        isCI,
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/segmentio/backo-go"
 	"gopkg.in/segmentio/analytics-go.v3"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -44,7 +45,7 @@ type segmentClient struct {
 // the event is enqueued but the queue is flushed suddenly so is pretty close to event traked in sync
 // The argument callbackObject is an object that will be used by the client to notify the
 // application when messages sends to the backend API succeeded or failed.
-func newSegmentClient(source metrics_source.Source, sourceVersion string, userId string, backendType string, shouldFlushQueueOnEachEvent bool, callbackObject analytics.Callback, logger analytics.Logger) (*segmentClient, error) {
+func newSegmentClient(source metrics_source.Source, sourceVersion string, userId string, backendType string, shouldFlushQueueOnEachEvent bool, callbackObject analytics.Callback, logger analytics.Logger, isCI bool) (*segmentClient, error) {
 
 	// nolint: exhaustruct
 	config := analytics.Config{
@@ -86,7 +87,7 @@ func newSegmentClient(source metrics_source.Source, sourceVersion string, userId
 		}
 	}
 
-	return &segmentClient{client: client, analyticsContext: analyticsContext, userID: userId, isCI: isCI(), backendType: backendType}, nil
+	return &segmentClient{client: client, analyticsContext: analyticsContext, userID: userId, isCI: strconv.FormatBool(isCI), backendType: backendType}, nil
 }
 
 func (segment *segmentClient) TrackShouldSendMetricsUserElection(didUserAcceptSendingMetrics bool) error {

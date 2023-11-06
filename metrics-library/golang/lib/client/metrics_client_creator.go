@@ -23,7 +23,7 @@ func CreateMetricsClient(options *CreateMetricsClientOption) (MetricsClient, fun
 	switch metricsClientType {
 	case Segment:
 		segmentCallback := newSegmentCallback(options.callbackObject.Success, options.callbackObject.Failure)
-		metricsClient, err := newSegmentClient(options.source, options.sourceVersion, options.userId, options.backendType, options.shouldFlushQueueOnEachEvent, segmentCallback, options.logger)
+		metricsClient, err := newSegmentClient(options.source, options.sourceVersion, options.userId, options.backendType, options.shouldFlushQueueOnEachEvent, segmentCallback, options.logger, options.isCI)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred creating Segment metrics client")
 		}

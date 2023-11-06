@@ -52,7 +52,8 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 			sendUserMetrics,
 			shouldFlushMetricsClientQueueOnEachEvent,
 			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger)),
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			metrics_client.IsCI()),
 	)
 
 	if err != nil {
@@ -80,7 +81,8 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 			sendUserMetrics,
 			shouldFlushMetricsClientQueueOnEachEvent,
 			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger)),
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			metrics_client.IsCI()),
 	)
 
 	if err != nil {

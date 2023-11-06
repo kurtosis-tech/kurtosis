@@ -63,6 +63,7 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 				shouldFlushMetricsClientQueueOnEachEvent,
 				metricsClientCallback,
 				analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+				metrics_client.IsCI(),
 			),
 		)
 		if err != nil {

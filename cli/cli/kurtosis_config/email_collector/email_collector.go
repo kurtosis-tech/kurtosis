@@ -52,7 +52,8 @@ func logUserEmailAddressAsMetric(userEmail string) {
 			sendUserMetrics,
 			flushQueueOnEachEvent,
 			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger)),
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			metrics_client.IsCI()),
 	)
 	if err != nil {
 		logrus.Debugf("tried creating a metrics client but failed with error:\n%v", err)

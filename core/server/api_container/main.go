@@ -186,7 +186,9 @@ func runMain() error {
 			serverArgs.DidUserAcceptSendingMetrics,
 			shouldFlushMetricsClientQueueOnEachEvent,
 			doNothingMetricsClientCallback{},
-			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger)),
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			serverArgs.IsCI,
+		),
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the metrics client")

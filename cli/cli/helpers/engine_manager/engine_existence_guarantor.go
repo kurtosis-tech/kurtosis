@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -158,6 +159,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.onBastionHost,
 			guarantor.poolSize,
 			guarantor.enclaveEnvVars,
+			client.IsCI(),
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -171,6 +173,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.onBastionHost,
 			guarantor.poolSize,
 			guarantor.enclaveEnvVars,
+			client.IsCI(),
 		)
 	}
 	if engineLaunchErr != nil {
