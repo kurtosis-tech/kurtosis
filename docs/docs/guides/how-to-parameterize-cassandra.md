@@ -368,7 +368,7 @@ And that’s it! To recap this short guide, you:
 2. Added a few lines of code to our `main.star` file to parametrize your environment definition to increase the flexibility and use cases with which it can be used, and,
 3. Executed a remotely-hosted Starlark file that was part of what's called a [Kurtosis Package][packages] to demonstrate how your environment definition can be shared with other developers.
 
-We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via Github (`kurtosis feedback`) or in our [Discord server](https://discord.gg/6Jjp9c89z9).
+We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to ask a question on our [discussions forum on Github][github-discussions] or in our [Discord server](https://discord.gg/6Jjp9c89z9).
 
 ### Other exercises you can do with your Cassandra cluster
 With your parameterized, reusable environment definition for a multi-node Cassandra cluster, feel free to:
@@ -394,3 +394,4 @@ We encourage you to check out our [quickstart][quickstart] (where you’ll build
 [starting-docker]: ../get-started/installing-the-cli.md#i-install--start-docker
 [starlark]: ../advanced-concepts/starlark.md
 [vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
+[github-discussions]: https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a
