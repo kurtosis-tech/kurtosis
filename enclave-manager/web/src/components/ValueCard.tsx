@@ -1,4 +1,4 @@
-import { Card, Flex, Text, useToast } from "@chakra-ui/react";
+import { Card, Flex, Text } from "@chakra-ui/react";
 import { ReactElement } from "react";
 import { isDefined } from "../utils";
 import { CopyButton } from "./CopyButton";
@@ -11,8 +11,6 @@ type ValueCardProps = {
 };
 
 export const ValueCard = ({ title, value, copyEnabled, copyValue }: ValueCardProps) => {
-  const toast = useToast();
-
   return (
     <Card height={"100%"} display={"flex"} flexDirection={"column"} justifyContent={"space-between"} gap={"16px"}>
       <Flex flexDirection={"row"} justifyContent={"space-between"} alignItems={"center"} width={"100%"}>

@@ -203,7 +203,7 @@ export const ConfigureEnclaveModal = ({
                   </FormControl>
                 </Tooltip>
                 <Tooltip shouldWrapChildren label={"Create a link that can be used to share this configuration."}>
-                  <CopyButton valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
+                  <CopyButton contentName={"url"} valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
                 </Tooltip>
               </Flex>
               <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
