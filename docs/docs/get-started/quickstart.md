@@ -34,11 +34,7 @@ Click on the "New Workspace" button! You don't have to worry about the Context U
  
 </details>
 
-<<<<<<< HEAD
 If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, feel free to post your question in our [Github Discussions Forum][github-discussions] or ask us in our [Discord server](https://discord.gg/jJFG7XBqcY).
-=======
-If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us in our [Discord server](https://discord.gg/6Jjp9c89z9) or on [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)!
->>>>>>> main
 
 Install dependencies
 --------------------
