@@ -20,7 +20,10 @@ export const ValueCard = ({ title, value, copyEnabled, copyValue }: ValueCardPro
           {title}
         </Text>
         {copyEnabled && (
-          <CopyButton valueToCopy={isDefined(copyValue) ? copyValue : typeof value === "string" ? value : null} />
+          <CopyButton
+            valueToCopy={isDefined(copyValue) ? copyValue : typeof value === "string" ? value : null}
+            contentName={"url"}
+          />
         )}
       </Flex>
       <Text fontSize={"xl"}>{value}</Text>
