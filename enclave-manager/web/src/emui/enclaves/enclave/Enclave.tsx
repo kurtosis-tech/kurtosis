@@ -36,12 +36,12 @@ export const Enclave = () => {
   );
 };
 
-type EnclaveImplProps = {
+type MaybeEnclaveImplProps = {
   enclave: EnclaveLoaderResolved["data"]["enclave"];
 };
 
-const MaybeEnclaveImpl = ({ enclave: enclaveResult }: EnclaveImplProps) => {
-  const { enclaveUUID, activeTab } = useParams();
+const MaybeEnclaveImpl = ({ enclave: enclaveResult }: MaybeEnclaveImplProps) => {
+  const { enclaveUUID } = useParams();
 
   if (!isDefined(enclaveResult)) {
     return <KurtosisAlert message={`Could not find enclave ${enclaveUUID}`} />;
@@ -54,11 +54,11 @@ const MaybeEnclaveImpl = ({ enclave: enclaveResult }: EnclaveImplProps) => {
   return <EnclaveImpl enclave={enclaveResult.value} />;
 };
 
-type EnclaveImpl = {
+type EnclaveImplProps = {
   enclave: EnclaveFullInfo;
 };
 
-const EnclaveImpl = ({ enclave }: EnclaveImpl) => {
+const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   const navigator = useNavigate();
   const params = useParams();
   const actionData = useActionData() as undefined | RunStarlarkResolvedType;
@@ -94,7 +94,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImpl) => {
     if (isDefined(actionData)) {
       navigator(`/enclave/${enclave.shortenedUuid}/logs`, { state: actionData });
     }
-  }, [actionData, activeIndex]);
+  }, [navigator, actionData, activeIndex, enclave.shortenedUuid]);
 
   return (
     <Flex direction="column" width={"100%"}>

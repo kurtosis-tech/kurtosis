@@ -3,7 +3,7 @@ import { Box } from "@chakra-ui/react";
 export type LogStatus = "info" | "error";
 
 export type LogLineProps = {
-  message: string;
+  message?: string;
   status?: LogStatus;
 };
 
@@ -15,9 +15,24 @@ export const LogLine = ({ message, status }: LogLineProps) => {
       case "info":
         return "gray.100";
       default:
-        return "gray.100";
+        return "white";
     }
   };
 
-  return <Box color={statusToColor(status)}>{message || <i>No message</i>}</Box>;
+  return (
+    <Box
+      as={"pre"}
+      whiteSpace={"pre-wrap"}
+      borderBottom={"1px solid #444444"}
+      p={"14px 0"}
+      m={"0 16px"}
+      fontSize={"xs"}
+      lineHeight="2"
+      fontWeight={400}
+      fontFamily="Ubuntu Mono"
+      color={statusToColor(status)}
+    >
+      {message || <i>No message</i>}
+    </Box>
+  );
 };

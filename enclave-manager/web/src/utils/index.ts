@@ -30,6 +30,20 @@ export function isAsyncIterable<T>(input: Iterable<T> | any): input is AsyncIter
   return typeof input[Symbol.asyncIterator] === "function";
 }
 
+export function stripAnsi(input: string): string {
+  if (typeof input !== "string") {
+    throw new TypeError(`Expected a \`string\`, got \`${typeof input}\``);
+  }
+  const pattern = [
+    "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
+    "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))",
+  ].join("|");
+
+  const re = new RegExp(pattern, "g");
+
+  return input.replace(re, "");
+}
+
 export function range(until: number): number[];
 export function range(from: number, to: number): [];
 export function range(from: number, to: number, step: number): number[];
