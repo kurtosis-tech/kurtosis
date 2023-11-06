@@ -442,6 +442,51 @@ func (network *DefaultServiceNetwork) StartService(
 	return nil
 }
 
+func (network *DefaultServiceNetwork) StartAllServices(
+	ctx context.Context,
+) error {
+
+	//TODO add mutex
+
+	allServicesFilters := &service.ServiceFilters{
+		Names:    nil,
+		UUIDs:    nil,
+		Statuses: nil,
+	}
+
+	allServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveUuid, allServicesFilters)
+	if err != nil {
+		return stacktrace.Propagate(err, "an error occurred while fetching all services from the backend")
+	}
+	// TODO check if all services are stopped
+
+	// TODO get all services from the repository
+	// TODO compare both lists to check if there are any missing service
+
+	allServicesUUIDStrs := []string{}
+
+	for serviceUuid, _ := range allServices {
+		// TODO print a message if there is at least one service running and do nothing
+
+		// TODO if we remove the start and stop services we should start all the stopped services found
+		// TODO I'll do a diagram or table to explain this and how to operate in the different states
+		// TODO for when the APIC runs for the first time, or runs after a reboot or run from enclave start
+		// TODO and the stated of the services in Kurtosis and in Docker and K8s
+		allServicesUUIDStrs = append(allServicesUUIDStrs, string(serviceUuid))
+	}
+
+	_, failedServices, err := network.StartServices(ctx, allServicesUUIDStrs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred starting all services on this API container")
+	}
+	if len(failedServices) > 0 {
+		// TODO we could improve this err message by adding more info from the failedServices map
+		return stacktrace.Propagate(err, "An error occurred starting all services because one or more services failed to start '%+v'", failedServices)
+	}
+
+	return nil
+}
+
 func (network *DefaultServiceNetwork) StartServices(
 	ctx context.Context,
 	serviceIdentifiers []string,
@@ -453,6 +498,7 @@ func (network *DefaultServiceNetwork) StartServices(
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
+	// TODO move the following logic to an unsafe thread private method for sharing it with the StartAllServices method
 	successfulUuids := map[service.ServiceUUID]bool{}
 	erroredUuids := map[service.ServiceUUID]error{}
 	serviceConfigs := map[service.ServiceUUID]*service.ServiceConfig{}

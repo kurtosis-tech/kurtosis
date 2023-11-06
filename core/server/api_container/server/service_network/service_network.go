@@ -57,6 +57,9 @@ type ServiceNetwork interface {
 
 	RemoveService(ctx context.Context, serviceIdentifier string) (service.ServiceUUID, error)
 
+	//StartAllServices will start all services managed by the APIC
+	StartAllServices(ctx context.Context) error
+
 	StartService(ctx context.Context, serviceIdentifier string) error
 
 	StartServices(

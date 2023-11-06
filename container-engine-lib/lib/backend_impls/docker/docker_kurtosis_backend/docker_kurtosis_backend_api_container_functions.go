@@ -241,6 +241,53 @@ func (backend *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filt
 	return matchingApiContainersByEnclaveID, nil
 }
 
+func (backend *DockerKurtosisBackend) StartAPIContainers(
+	ctx context.Context,
+	filters *api_container.APIContainerFilters,
+) (
+	resultSuccessfulEnclaveIds map[enclave.EnclaveUUID]bool,
+	resultErroredEnclaveIds map[enclave.EnclaveUUID]error,
+	resultErr error,
+) {
+	matchingApiContainersByContainerId, err := backend.getMatchingApiContainers(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching filters '%+v'", filters)
+	}
+
+	var startApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.StartContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred starting API container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		matchingApiContainersByContainerId,
+		backend.dockerManager,
+		extractEnclaveIdApiContainer,
+		startApiContainerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting API containers matching filters '%+v'", filters)
+	}
+
+	successfulEnclaveIds := map[enclave.EnclaveUUID]bool{}
+	for enclaveIdStr := range successfulEnclaveIdStrs {
+		successfulEnclaveIds[enclave.EnclaveUUID(enclaveIdStr)] = true
+	}
+	erroredEnclaveIds := map[enclave.EnclaveUUID]error{}
+	for enclaveIdStr, killErr := range erroredEnclaveIdStrs {
+		erroredEnclaveIds[enclave.EnclaveUUID(enclaveIdStr)] = killErr
+	}
+
+	return successfulEnclaveIds, erroredEnclaveIds, nil
+}
+
 func (backend *DockerKurtosisBackend) StopAPIContainers(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,

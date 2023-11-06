@@ -228,6 +228,14 @@ func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Con
 	return results, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) StartAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveUUID]bool, erroredApiContainerIds map[enclave.EnclaveUUID]error, resultErr error) {
+	successes, failures, err := backend.underlying.StartAPIContainers(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting API containers using filters: %+v", filters)
+	}
+	return successes, failures, nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveUUID]bool, erroredApiContainerIds map[enclave.EnclaveUUID]error, resultErr error) {
 	successes, failures, err := backend.underlying.StopAPIContainers(ctx, filters)
 	if err != nil {

@@ -176,6 +176,10 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
 
+	if err = serviceNetwork.StartAllServices(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stating all services")
+	}
+
 	logger := logrus.StandardLogger()
 	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
 		source.KurtosisCoreSource,

@@ -497,6 +497,18 @@ func (backend *KubernetesKurtosisBackend) GetAPIContainers(
 	return matchingApiContainers, nil
 }
 
+func (backend *KubernetesKurtosisBackend) StartAPIContainers(
+	ctx context.Context,
+	filters *api_container.APIContainerFilters,
+) (
+	map[enclave.EnclaveUUID]bool,
+	map[enclave.EnclaveUUID]error,
+	error,
+) {
+	err := stacktrace.NewError("StartAPI Containers isn't implemented for Kubernetes yet")
+	return nil, nil, err
+}
+
 func (backend *KubernetesKurtosisBackend) StopAPIContainers(
 	ctx context.Context,
 	filters *api_container.APIContainerFilters,

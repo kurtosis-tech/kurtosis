@@ -150,6 +150,17 @@ type KurtosisBackend interface {
 		error,
 	)
 
+	// Starts API containers matching the given filters
+	StartAPIContainers(
+		ctx context.Context,
+		filters *api_container.APIContainerFilters,
+	) (
+		// Successful & errored API containers are keyed by their enclave ID
+		successfulApiContainerIds map[enclave.EnclaveUUID]bool,
+		erroredApiContainerIds map[enclave.EnclaveUUID]error,
+		resultErr error,
+	)
+
 	// Stops API containers matching the given filters
 	StopAPIContainers(
 		ctx context.Context,
