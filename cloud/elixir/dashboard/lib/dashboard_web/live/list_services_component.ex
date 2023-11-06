@@ -11,11 +11,18 @@ defmodule DashboardWeb.ListServicesComponent do
 
   def handle_event("inspect_service", %{"id" => service_uuid}, socket) do
     {:noreply, socket}
-    service = socket.assigns.items |> Enum.find(fn x -> if x.service_uuid == service_uuid do; x; end; end)
+
+    service =
+      socket.assigns.items
+      |> Enum.find(fn x ->
+        if x.service_uuid == service_uuid do
+          x
+        end
+      end)
+
     # services = Backend.Engine.Service.list_services(enclave)
     IO.inspect(service)
     send(socket.assigns.parent, {:service_info, service})
     {:noreply, socket}
   end
-
 end

@@ -13,7 +13,7 @@ defmodule Backend.Engine.Service do
   end
 
 
-  def get_log_stream(enclave_id, services, follow = true) do
+  def get_log_stream(enclave_id, services, follow) do
     # Add a second arg to log all communication "interceptors: [GRPC.Client.Interceptors.Logger]"
     {:ok, channel} = GRPC.Stub.connect("localhost:9710")
 
@@ -24,16 +24,14 @@ defmodule Backend.Engine.Service do
       enclave_identifier: enclave_id,
       service_uuid_set: services,
       num_log_lines: 5,
-      follow_logs: true
+      follow_logs: follow
     }
     # IO.inspect(Protobuf.encode(req))
 
     channel
       |> EngineApi.EngineService.Stub.get_service_logs(req)
       |> (fn {:ok, reply} -> reply end).()
-      # |> (fn %ApiContainerApi.GetServicesResponse{service_info: encs} -> encs end).()
-      # |> Enum.to_list()
-      |> Enum.map(fn(reply) -> IO.inspect(reply) end)
-    :ok
+      |> Stream.flat_map(fn({:ok, reply}) -> Map.values(reply.service_logs_by_service_uuid) end)
+      |> Stream.map(&(&1.line))
   end
 end

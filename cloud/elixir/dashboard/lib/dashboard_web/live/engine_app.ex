@@ -17,9 +17,9 @@ defmodule DashboardWeb.DashboardWeb.EngineApp do
     {:noreply, assign(socket, %{enclaves: enclaves})}
   end
 
-  def handle_info({:inspect_services, services}, socket) do
+  def handle_info({:inspect_services, {enclave, services}}, socket) do
     IO.inspect(services)
-    {:noreply, assign(socket, %{services: services})}
+    {:noreply, assign(socket, %{services: services, select_enclave: enclave})}
   end
 
   def handle_info({:service_info, service}, socket) do

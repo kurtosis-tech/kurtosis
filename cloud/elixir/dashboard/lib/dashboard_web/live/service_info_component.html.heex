@@ -1,23 +1,41 @@
 <div>
   <ul>
-      <li id={"service-#{@service.service_uuid}"} class="btn-color mb-4 p-2">
-        <div class="flex justify-between space-x-4">
-          <p>
-            <%= @service.name %>
-          </p>
-          <p>
-            <%= @service.service_status %>
-          </p>
-          <p>
-            <%= @service.container.image_name %>
-          </p>
-          <p>
-            <%= @service.private_ip_addr %>
-          </p>
-          <%!-- <p>
+    <li id={"service-#{@service.service_uuid}"} class="btn-color mb-4 p-2">
+      <div class="flex justify-between space-x-4">
+        <p>
+          <%= @service.name %>
+        </p>
+        <p>
+          <%= @service.service_status %>
+        </p>
+        <p>
+          <%= @service.container.image_name %>
+        </p>
+        <p>
+          <%= @service.private_ip_addr %>
+        </p>
+        <%!-- <p>
             <%= DateTime.diff(DateTime.utc_now, service.creation_time, :minute) %>
           </p> --%>
-        </div>
-      </li>
+      </div>
+      <div class="flex-row">
+        <button
+          class="btn-primary"
+          id={"show-logs-#{@service.service_uuid}"}
+          phx-click="show_logs"
+          phx-value-id={@service.service_uuid}
+          phx-target={@myself}
+        >
+          Show Logs
+        </button>
+      </div>
+    </li>
   </ul>
+  <table>
+    <tbody id="log_stream" phx-update="stream">
+      <tr :for={{id, log_line} <- @streams.logs} id={id}>
+        <td><%= log_line.line %></td>
+      </tr>
+    </tbody>
+  </table>
 </div>

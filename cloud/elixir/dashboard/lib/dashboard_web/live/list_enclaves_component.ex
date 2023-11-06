@@ -14,11 +14,17 @@ defmodule DashboardWeb.ListEnclavesComponent do
   end
 
   def handle_event("inspect_enclave", %{"id" => enclave_uuid}, socket) do
-    enclave = socket.assigns.items |> Enum.find(fn x -> if x.enclave_uuid == enclave_uuid do; x; end; end)
+    enclave =
+      socket.assigns.items
+      |> Enum.find(fn x ->
+        if x.enclave_uuid == enclave_uuid do
+          x
+        end
+      end)
+
     services = Backend.Engine.Service.list_services(enclave)
     IO.inspect(services)
-    send(socket.assigns.parent, {:inspect_services, services})
+    send(socket.assigns.parent, {:inspect_services, {enclave, services}})
     {:noreply, socket}
   end
-
 end

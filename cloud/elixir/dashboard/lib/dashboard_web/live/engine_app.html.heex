@@ -20,11 +20,12 @@
   <% end %>
 
   <%= if @service_info do %>
-      <.live_component
-        module={DashboardWeb.ServiceInfoComponent}
-        service={@service_info}
-        id="service_info"
-        parent={@parent}
-      />
+    <.live_component
+      module={DashboardWeb.ServiceInfoComponent}
+      service={@service_info}
+      enclave={@select_enclave}
+      id="service_info"
+      parent={@parent}
+    />
   <% end %>
 </div>
