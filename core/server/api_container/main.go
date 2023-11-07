@@ -176,10 +176,6 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
 
-	if err = serviceNetwork.StartAllServices(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stating all services")
-	}
-
 	logger := logrus.StandardLogger()
 	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
 		source.KurtosisCoreSource,
@@ -245,6 +241,14 @@ func runMain() error {
 			apiContainerServiceRegistrationFunc,
 		},
 	)
+
+	go func() {
+		time.Sleep(time.Second * 15)
+		// TODO refactor this
+		if err := serviceNetwork.StartAllServices(ctx); err != nil {
+			logrus.Errorf("Start all services failed")
+		}
+	}()
 
 	logrus.Info("Running server...")
 	if err := apiContainerServer.RunUntilInterrupted(); err != nil {
