@@ -69,7 +69,6 @@ type ServiceImplProps = {
 const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
   const navigator = useNavigate();
   const params = useParams();
-  console.log(params);
   const activeTab = params.activeTab || "overview";
   const activeIndex = tabs.findIndex((tab) => tab.path === activeTab);
 

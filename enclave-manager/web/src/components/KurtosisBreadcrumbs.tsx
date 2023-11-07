@@ -12,18 +12,27 @@ export type KurtosisBreadcrumb = {
 export const KurtosisBreadcrumbs = () => {
   const matches = useMatches() as UIMatch<
     object,
-    { crumb?: (data: object, params: Params<string>) => KurtosisBreadcrumb | Promise<KurtosisBreadcrumb> }
+    {
+      crumb?: (
+        data: Record<string, object>,
+        params: Params<string>,
+      ) => KurtosisBreadcrumb | Promise<KurtosisBreadcrumb>;
+    }
   >[];
 
   const [matchCrumbs, setMatchCrumbs] = useState<KurtosisBreadcrumb[]>([]);
 
   useEffect(() => {
     (async () => {
+      const allLoaderData = matches
+        .filter((match) => isDefined(match.data))
+        .reduce((acc, match) => ({ ...acc, [match.id]: match.data }), {});
+
       setMatchCrumbs(
         await Promise.all(
           matches
             .map((match) =>
-              isDefined(match.handle?.crumb) ? Promise.resolve(match.handle.crumb(match.data, match.params)) : null,
+              isDefined(match.handle?.crumb) ? Promise.resolve(match.handle.crumb(allLoaderData, match.params)) : null,
             )
             .filter(isDefined),
         ),

@@ -7,6 +7,7 @@ import { EnclaveLoaderDeferred } from "./enclave/loader";
 import { Service } from "./enclave/service/Service";
 import { EnclaveList } from "./EnclaveList";
 import { enclavesLoader } from "./loader";
+import { serviceTabLoader } from "./enclave/service/tabLoader";
 
 export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => [
   {
@@ -26,8 +27,8 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
         loader: enclaveLoader(kurtosisClient),
         id: "enclave",
         handle: {
-          crumb: async (data: EnclaveLoaderDeferred, params: Params) => {
-            const resolvedData = await data.data;
+          crumb: async (data: Record<string, object>, params: Params) => {
+            const resolvedData = await (data["enclave"] as EnclaveLoaderDeferred).data;
             return {
               name: resolvedData.routeName,
               destination: `/enclave/${params.enclaveUUID}`,
@@ -36,8 +37,47 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
         },
         children: [
           {
-            path: "service/:serviceUUID/:activeTab?",
-            element: <Service />,
+            path: "service/:serviceUUID",
+            handle: {
+              crumb: async (data: Record<string, object>, params: Params) => {
+                const resolvedData = await (data["enclave"] as EnclaveLoaderDeferred).data;
+                let serviceName = "Unknown";
+                if (
+                  resolvedData.enclave &&
+                  resolvedData.enclave.isOk &&
+                  resolvedData.enclave.value.services.isOk &&
+                  params.serviceUUID
+                ) {
+                  const service = Object.values(resolvedData.enclave.value.services.value.serviceInfo).find(
+                    (service) => service.shortenedUuid === params.serviceUUID,
+                  );
+                  if (service) {
+                    serviceName = service.name;
+                  }
+                }
+
+                return {
+                  name: serviceName,
+                  destination: `/enclave/${params.enclaveUUID}/service/${params.serviceUUID}`,
+                };
+              },
+            },
+            children: [
+              {
+                path: ":activeTab?",
+                loader: serviceTabLoader,
+                id: "serviceActiveTab",
+                element: <Service />,
+                handle: {
+                  crumb: (data: Record<string, object>, params: Params<string>) => ({
+                    name: (data["serviceActiveTab"] as Awaited<ReturnType<typeof serviceTabLoader>>).routeName,
+                    destination: `/enclave/${params.enclaveUUID}/service/${params.serviceUUID}/${
+                      params.activeTab || "overview"
+                    }`,
+                  }),
+                },
+              },
+            ],
           },
           {
             path: "file/:fileUUID",
@@ -46,10 +86,11 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
             path: ":activeTab?",
             loader: enclaveTabLoader,
             action: runStarlarkAction(kurtosisClient),
+            id: "enclaveActiveTab",
             element: <Enclave />,
             handle: {
-              crumb: (data: Awaited<ReturnType<typeof enclaveTabLoader>>, params: Params<string>) => ({
-                name: data.routeName,
+              crumb: (data: Record<string, object>, params: Params<string>) => ({
+                name: (data["enclaveActiveTab"] as Awaited<ReturnType<typeof enclaveTabLoader>>).routeName,
                 destination: `/enclave/${params.enclaveUUID}/${params.activeTab || "overview"}`,
               }),
             },
