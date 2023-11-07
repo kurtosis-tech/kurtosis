@@ -27,10 +27,13 @@ const (
 
 	batchSizeValueForFlushAfterEveryEvent = 1
 
-	isCIKey    = "is_ci"
-	osKey      = "os"
-	archKey    = "arch"
-	backendKey = "backend"
+	isCIKey            = "is_ci"
+	osKey              = "os"
+	archKey            = "arch"
+	backendKey         = "backend"
+	cloudUserIdKey     = "cloud_user_id"
+	cloudInstanceIdKey = "cloud_instance_id"
+	isCloudKey         = "is_cloud"
 )
 
 type segmentClient struct {
@@ -39,13 +42,15 @@ type segmentClient struct {
 	userID           string
 	isCI             string
 	backendType      string
+	cloudUserId      CloudUserID
+	cloudInstanceId  CloudInstanceID
 }
 
 // The argument shouldFlushQueueOnEachEvent is used to imitate a sync request, it is not exactly the same because
 // the event is enqueued but the queue is flushed suddenly so is pretty close to event traked in sync
 // The argument callbackObject is an object that will be used by the client to notify the
 // application when messages sends to the backend API succeeded or failed.
-func newSegmentClient(source metrics_source.Source, sourceVersion string, userId string, backendType string, shouldFlushQueueOnEachEvent bool, callbackObject analytics.Callback, logger analytics.Logger, isCI bool) (*segmentClient, error) {
+func newSegmentClient(source metrics_source.Source, sourceVersion string, userId string, backendType string, shouldFlushQueueOnEachEvent bool, callbackObject analytics.Callback, logger analytics.Logger, isCI bool, cloudUserId CloudUserID, cloudInstanceId CloudInstanceID) (*segmentClient, error) {
 
 	// nolint: exhaustruct
 	config := analytics.Config{
@@ -87,7 +92,7 @@ func newSegmentClient(source metrics_source.Source, sourceVersion string, userId
 		}
 	}
 
-	return &segmentClient{client: client, analyticsContext: analyticsContext, userID: userId, isCI: strconv.FormatBool(isCI), backendType: backendType}, nil
+	return &segmentClient{client: client, analyticsContext: analyticsContext, userID: userId, isCI: strconv.FormatBool(isCI), backendType: backendType, cloudUserId: cloudUserId, cloudInstanceId: cloudInstanceId}, nil
 }
 
 func (segment *segmentClient) TrackShouldSendMetricsUserElection(didUserAcceptSendingMetrics bool) error {
@@ -132,16 +137,16 @@ func (segment *segmentClient) TrackDestroyEnclave(enclaveId string) error {
 	return nil
 }
 
-func (segment *segmentClient) TrackKurtosisRun(packageId string, isRemote bool, isDryRun bool, isScript bool, cloudInstanceId string, cloudUserId string) error {
-	newEvent := event.NewKurtosisRunEvent(packageId, isRemote, isDryRun, isScript, cloudInstanceId, cloudUserId)
+func (segment *segmentClient) TrackKurtosisRun(packageId string, isRemote bool, isDryRun bool, isScript bool) error {
+	newEvent := event.NewKurtosisRunEvent(packageId, isRemote, isDryRun, isScript)
 	if err := segment.track(newEvent); err != nil {
 		return stacktrace.Propagate(err, "An error occurred tracking run kurtosis event")
 	}
 	return nil
 }
 
-func (segment *segmentClient) TrackKurtosisRunFinishedEvent(packageId string, numberOfServices int, isSuccess bool, cloudInstanceId string, cloudUserId string) error {
-	newEvent := event.NewKurtosisRunFinishedEvent(packageId, numberOfServices, isSuccess, cloudInstanceId, cloudUserId)
+func (segment *segmentClient) TrackKurtosisRunFinishedEvent(packageId string, numberOfServices int, isSuccess bool) error {
+	newEvent := event.NewKurtosisRunFinishedEvent(packageId, numberOfServices, isSuccess)
 	if err := segment.track(newEvent); err != nil {
 		return stacktrace.Propagate(err, "An error occurred tracking kurtosis run finished event")
 	}
@@ -182,6 +187,9 @@ func (segment *segmentClient) track(event *event.Event) error {
 	propertiesToTrack.Set(osKey, runtime.GOOS)
 	propertiesToTrack.Set(archKey, runtime.GOARCH)
 	propertiesToTrack.Set(backendKey, segment.backendType)
+	propertiesToTrack.Set(cloudUserIdKey, segment.cloudUserId)
+	propertiesToTrack.Set(cloudInstanceIdKey, segment.cloudInstanceId)
+	propertiesToTrack.Set(isCloudKey, segment.cloudInstanceId != "" || segment.cloudUserId != "")
 
 	// nolint: exhaustruct
 	if err := segment.client.Enqueue(analytics.Track{

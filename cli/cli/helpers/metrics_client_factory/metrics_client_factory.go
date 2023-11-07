@@ -3,6 +3,7 @@ package metrics_client_factory
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/do_nothing_metrics_client_callback"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_cloud_user_instance_id_helper"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
@@ -31,6 +32,8 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 		return nil, nil, stacktrace.NewError("An error occurred while determining whether configuration already exists")
 	}
 
+	maybeCloudUserId, maybeCloudInstanceId := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
+
 	var sendUserMetrics bool
 	if hasConfig {
 		kurtosisConfig, err := kurtosisConfigStore.GetConfig()
@@ -53,7 +56,7 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 			shouldFlushMetricsClientQueueOnEachEvent,
 			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
 			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
-			metrics_client.IsCI()),
+			metrics_client.IsCI(), maybeCloudUserId, maybeCloudInstanceId),
 	)
 
 	if err != nil {
@@ -72,6 +75,8 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 	// this is force set to true in order to get the segment client
 	sendUserMetrics := true
 
+	maybeCloudUserId, maybeCloudInstanceId := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
+
 	logger := logrus.StandardLogger()
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 		metrics_client.NewMetricsClientCreatorOption(source.KurtosisCLISource,
@@ -82,7 +87,7 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 			shouldFlushMetricsClientQueueOnEachEvent,
 			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
 			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
-			metrics_client.IsCI()),
+			metrics_client.IsCI(), maybeCloudUserId, maybeCloudInstanceId),
 	)
 
 	if err != nil {

@@ -24,7 +24,9 @@ export const ValueCard = ({ title, value, copyEnabled, copyValue }: ValueCardPro
           />
         )}
       </Flex>
-      <Text fontSize={"xl"}>{value}</Text>
+      <Text as={"div"} fontSize={"xl"}>
+        {value}
+      </Text>
     </Card>
   );
 };

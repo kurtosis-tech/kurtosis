@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -33,6 +34,8 @@ type EnclavePool struct {
 	metricsUserID               string
 	didUserAcceptSendingMetrics bool
 	isCI                        bool
+	cloudUserID                 metrics_client.CloudUserID
+	cloudInstanceID             metrics_client.CloudInstanceID
 }
 
 // CreateEnclavePool will do the following:
@@ -49,6 +52,8 @@ func CreateEnclavePool(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
 
 ) (*EnclavePool, error) {
 
@@ -95,6 +100,8 @@ func CreateEnclavePool(
 		metricsUserID:               metricsUserID,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		isCI:                        isCI,
+		cloudUserID:                 cloudUserID,
+		cloudInstanceID:             cloudInstanceID,
 	}
 
 	go enclavePool.run(ctxWithCancel)
@@ -280,6 +287,8 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_en
 		pool.metricsUserID,
 		pool.didUserAcceptSendingMetrics,
 		pool.isCI,
+		pool.cloudUserID,
+		pool.cloudInstanceID,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
