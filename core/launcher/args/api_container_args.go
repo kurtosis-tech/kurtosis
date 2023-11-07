@@ -56,7 +56,10 @@ type APIContainerArgs struct {
 	CloudInstanceID metrics_client.CloudInstanceID `json:"cloud_instance_id"`
 }
 
-var skipValidation = []string{"cloud_user_id", "cloud_instance_id"}
+var skipValidation = map[string]bool{
+	"cloud_instance_id": true,
+	"cloud_user_id":     true,
+}
 
 func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
 	// create a mirror type to avoid unmarshalling infinitely https://stackoverflow.com/questions/52433467/how-to-call-json-unmarshal-inside-unmarshaljson-without-causing-stack-overflow
@@ -140,7 +143,7 @@ func (args APIContainerArgs) validate() error {
 		field := reflectValType.Field(i)
 		jsonFieldName := field.Tag.Get(jsonFieldTag)
 
-		if contains(skipValidation, jsonFieldName) {
+		if _, found := skipValidation[jsonFieldName]; found {
 			continue
 		}
 
@@ -151,13 +154,4 @@ func (args APIContainerArgs) validate() error {
 		}
 	}
 	return nil
-}
-
-func contains(slice []string, value string) bool {
-	for _, item := range slice {
-		if item == value {
-			return true
-		}
-	}
-	return false
 }
