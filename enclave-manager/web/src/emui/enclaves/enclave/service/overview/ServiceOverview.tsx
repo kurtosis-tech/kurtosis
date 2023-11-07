@@ -12,6 +12,7 @@ import { useMemo } from "react";
 import { CodeEditor } from "../../../../../components/CodeEditor";
 import { FileDisplay } from "../../../../../components/FileDisplay";
 import { PortsTable } from "../../../../../components/enclaves/tables/PortsTable";
+import { TitledCard } from "../../../../../components/TitledCard";
 
 type ServiceOverviewProps = {
   service: ServiceInfo;
@@ -42,9 +43,12 @@ export const ServiceOverview = ({ service }: ServiceOverviewProps) => {
           />
         </GridItem>
       </Grid>
-      <Card>
-        <PortsTable ports={Object.values(service.maybePublicPorts)} ip={service.maybePublicIpAddr} />
-      </Card>
+      <TitledCard title={"Public Ports"}>
+        <PortsTable ports={Object.values(service.maybePublicPorts)} ip={service.maybePublicIpAddr} isPublic />
+      </TitledCard>
+      <TitledCard title={"Private Ports"}>
+        <PortsTable ports={Object.values(service.privatePorts)} ip={service.privateIpAddr} />
+      </TitledCard>
       {isDefined(service.container) && <ContainerOverview container={service.container} />}
       {!isDefined(service.container) && (
         <KurtosisAlert message={"No container details are available for this service."} />

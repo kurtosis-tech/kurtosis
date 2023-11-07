@@ -5,15 +5,17 @@ import { useMemo } from "react";
 import { DataTable } from "../../DataTable";
 import { transportProtocolToString } from "../utils";
 import { CopyButton } from "../../CopyButton";
+import { ExternalLinkIcon } from "@chakra-ui/icons";
 
 const columnHelper = createColumnHelper<Port>();
 
 type PortsTableProps = {
   ports: Port[];
   ip: string;
+  isPublic?: boolean;
 };
 
-export const PortsTable = ({ ports, ip }: PortsTableProps) => {
+export const PortsTable = ({ ports, ip, isPublic }: PortsTableProps) => {
   const columns = useMemo<ColumnDef<Port, any>[]>(
     () => [
       columnHelper.accessor("number", {
@@ -32,14 +34,17 @@ export const PortsTable = ({ ports, ip }: PortsTableProps) => {
         minSize: 800,
         cell: ({ row }) => (
           <Text width={"100%"}>
-            <Link
-              href={`${row.original.maybeApplicationProtocol}://${ip}:${row.original.number}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              isExternal
-            >
-              {row.original.maybeApplicationProtocol}://{ip}:{row.original.number}
-            </Link>
+            {isPublic && (
+              <Link
+                href={`${row.original.maybeApplicationProtocol}://${ip}:${row.original.number}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                isExternal
+              >
+                {row.original.maybeApplicationProtocol}://{ip}:{row.original.number} <ExternalLinkIcon mx="2px" />
+              </Link>
+            )}
+            {!isPublic && `${row.original.maybeApplicationProtocol}://${ip}:${row.original.number}`}
           </Text>
         ),
       }),
