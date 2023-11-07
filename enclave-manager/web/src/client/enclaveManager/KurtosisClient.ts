@@ -26,15 +26,15 @@ export abstract class KurtosisClient {
    *
    * This URL is primarily used to generate links to the EM UI (where the hostname is included).
    * */
-  protected readonly parentUrl?: URL;
+  protected readonly parentUrl: URL;
 
   /* Full URL of the EM UI, covering two use cases:
    * In local-mode this is the same as the `parentUrl`
    * In authenticated mode : https://cloud.kurtosis.com/enclave-manager/gateway/ips/1-2-3-4/ports/1234/?searchparams... (this data/url is provided as a search param when the code loads)
    *
-   * This URL is primarily used to set the react router basename so that the router is able to ignore any leading subdirectories.
+   * This URL is primarily used to set the React router basename so that the router is able to ignore any leading subdirectories.
    * */
-  protected readonly childUrl?: URL;
+  protected readonly childUrl: URL;
 
   constructor(client: PromiseClient<typeof KurtosisEnclaveManagerServer>, parentUrl: URL, childUrl: URL) {
     this.client = client;
@@ -45,11 +45,15 @@ export abstract class KurtosisClient {
   abstract getHeaderOptions(): { headers?: Headers };
 
   getParentBasePathUrl() {
-    return `${this.parentUrl?.origin}${this.parentUrl?.pathname}`;
+    return `${this.parentUrl.origin}${this.parentUrl.pathname}`;
   }
 
   getChildPath() {
-    return this.childUrl?.pathname;
+    return this.childUrl.pathname;
+  }
+
+  getChildUrl() {
+    return this.childUrl;
   }
 
   async checkHealth() {
