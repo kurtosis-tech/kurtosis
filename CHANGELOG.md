@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.85.4](https://github.com/kurtosis-tech/kurtosis/compare/0.85.3...0.85.4) (2023-11-07)
+
+
+### Features
+
+* add autocomplete for cluster set command ([#1695](https://github.com/kurtosis-tech/kurtosis/issues/1695)) ([d36164d](https://github.com/kurtosis-tech/kurtosis/commit/d36164d2dd5738abe2ade548346ec7aa4d8353a3))
+* manage parameters and URL ([#1689](https://github.com/kurtosis-tech/kurtosis/issues/1689)) ([eafc056](https://github.com/kurtosis-tech/kurtosis/commit/eafc056e04643e289998a18d560d5d998c0cdffa))
+* new em ui enclave logs ([#1696](https://github.com/kurtosis-tech/kurtosis/issues/1696)) ([788c7bc](https://github.com/kurtosis-tech/kurtosis/commit/788c7bc8948f750afcdf9452e9c9f010ddd4bc9f))
+* print Made with Kurtosis at the end of a run ([#1687](https://github.com/kurtosis-tech/kurtosis/issues/1687)) ([a08b0b1](https://github.com/kurtosis-tech/kurtosis/commit/a08b0b1e77abbec4fcdff0ff47a9f9f3c1c47c80))
+
+
+### Bug Fixes
+
+* correct is_ci value in metrics from APIC ([#1697](https://github.com/kurtosis-tech/kurtosis/issues/1697)) ([9df62dd](https://github.com/kurtosis-tech/kurtosis/commit/9df62dd9eac2fa8aed456da27c06e63267c54618))
+* kurtosis run considers every nonexistent path to be a URL and fails with a suspicious error ([#1706](https://github.com/kurtosis-tech/kurtosis/issues/1706)) ([0f7809e](https://github.com/kurtosis-tech/kurtosis/commit/0f7809e0a846e77ee26e7f5f92a1a4bfa1622d2f)), closes [#1705](https://github.com/kurtosis-tech/kurtosis/issues/1705)
+* return the correct yaml parsing error ([#1691](https://github.com/kurtosis-tech/kurtosis/issues/1691)) ([c6170ec](https://github.com/kurtosis-tech/kurtosis/commit/c6170eccae1f9b346fc45b1a8289363b82667582))
+* user/instance id values were flipped ([#1698](https://github.com/kurtosis-tech/kurtosis/issues/1698)) ([901069c](https://github.com/kurtosis-tech/kurtosis/commit/901069c1d3bee4e8408848f4bc3cee63fb1be00c))
+
 ## [0.85.3](https://github.com/kurtosis-tech/kurtosis/compare/0.85.2...0.85.3) (2023-11-03)
 
 
