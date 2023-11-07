@@ -141,7 +141,9 @@ export const useKurtosisClient = (): KurtosisClient => {
 
 const paramToUrl = (searchParams: URLSearchParams, param: string) => {
   let paramString = searchParams.get(param);
-  if (paramString === null) return null;
+  if (paramString === null) {
+    return null;
+  }
   paramString = atob(paramString);
   assertDefined(paramString, `The parameter ${param}' is not defined`);
   const locationPath: URL = new URL(paramString);

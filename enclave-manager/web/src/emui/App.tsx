@@ -3,7 +3,7 @@ import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import { KurtosisClientProvider, useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
 import {
   KurtosisPackageIndexerProvider,
-  useKurtosisPackageIndexerClient
+  useKurtosisPackageIndexerClient,
 } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { AppLayout } from "../components/AppLayout";
 import { CreateEnclave } from "../components/enclaves/CreateEnclave";

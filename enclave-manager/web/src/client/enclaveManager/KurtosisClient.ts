@@ -5,14 +5,14 @@ import {
   DestroyEnclaveArgs,
   EnclaveAPIContainerInfo,
   EnclaveInfo,
-  EnclaveMode
+  EnclaveMode,
 } from "enclave-manager-sdk/build/engine_service_pb";
 import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {
   GetListFilesArtifactNamesAndUuidsRequest,
   GetServicesRequest,
   GetStarlarkRunRequest,
-  RunStarlarkPackageRequest
+  RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import { assertDefined, asyncResult } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
