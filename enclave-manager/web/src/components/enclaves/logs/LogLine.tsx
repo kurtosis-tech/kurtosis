@@ -10,6 +10,8 @@ export type LogLineProps = {
   status?: LogStatus;
 };
 
+const logFontFamily = "Menlo, Monaco, Inconsolata, Consolas, Courier, monospace"
+
 export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
   const statusToColor = (status?: LogStatus) => {
     switch (status) {
@@ -30,11 +32,11 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
           whiteSpace={"pre-wrap"}
           fontSize={"xs"}
           lineHeight="2"
-          fontWeight={700}
-          fontFamily="Ubuntu Mono"
-          color={"white"}
+          fontWeight={600}
+          fontFamily={logFontFamily}
+          color={"grey"}
         >
-          {timestamp.toLocal().toFormat("yyyy-MM-dd hh:mm:ss.SSS ZZZZ")}
+          {timestamp.toLocal().toFormat("yyyy-MM-dd HH:MM:ss.SSS ZZZZ")} |
         </Box>
       )}
       <Box
@@ -43,7 +45,7 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
         fontSize={"xs"}
         lineHeight="2"
         fontWeight={400}
-        fontFamily="Ubuntu Mono"
+        fontFamily={logFontFamily}
         color={statusToColor(status)}
       >
         {message || <i>No message</i>}
