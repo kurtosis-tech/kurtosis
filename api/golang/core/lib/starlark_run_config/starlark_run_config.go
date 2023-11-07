@@ -22,11 +22,9 @@ type StarlarkRunConfig struct {
 	DryRun                   bool
 	Parallelism              int32
 	ExperimentalFeatureFlags []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
-	// Deprecated: This field isn't used anymore
-	CloudInstanceId string
-	// Deprecated: This field isn't used anymore
-	CloudUserId   string
-	ImageDownload kurtosis_core_rpc_api_bindings.ImageDownloadMode
+	CloudInstanceId          string
+	CloudUserId              string
+	ImageDownload            kurtosis_core_rpc_api_bindings.ImageDownloadMode
 }
 
 type starlarkRunConfigOption func(*StarlarkRunConfig)

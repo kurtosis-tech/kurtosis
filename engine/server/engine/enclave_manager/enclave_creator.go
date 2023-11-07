@@ -85,6 +85,8 @@ func (creator *EnclaveCreator) CreateEnclave(
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		isCI,
+		cloudUserID,
+		cloudInstanceID,
 	)
 
 	if err != nil {
@@ -169,6 +171,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -189,6 +193,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 			metricsUserID,
 			didUserAcceptSendingMetrics,
 			isCI,
+			cloudUserID,
+			cloudInstanceID,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveUuid, apiContainerImageVersionTag)
@@ -206,6 +212,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		isCI,
+		cloudUserID,
+		cloudInstanceID,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveUuid)

@@ -2,6 +2,7 @@ package email_collector
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/do_nothing_metrics_client_callback"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_cloud_user_instance_id_helper"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
@@ -41,6 +42,8 @@ func logUserEmailAddressAsMetric(userEmail string) {
 	}
 	logger := logrus.StandardLogger()
 
+	maybeCloudUserID, maybeCloudInstanceID := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
+
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 		metrics_client.NewMetricsClientCreatorOption(
 			source.KurtosisCLISource,
@@ -53,7 +56,9 @@ func logUserEmailAddressAsMetric(userEmail string) {
 			flushQueueOnEachEvent,
 			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
 			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
-			metrics_client.IsCI()),
+			metrics_client.IsCI(),
+			maybeCloudUserID,
+			maybeCloudInstanceID),
 	)
 	if err != nil {
 		logrus.Debugf("tried creating a metrics client but failed with error:\n%v", err)

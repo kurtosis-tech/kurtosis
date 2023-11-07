@@ -52,6 +52,8 @@ func CreateEnclavePool(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
 
 ) (*EnclavePool, error) {
 
@@ -98,6 +100,8 @@ func CreateEnclavePool(
 		metricsUserID:               metricsUserID,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		isCI:                        isCI,
+		cloudUserID:                 cloudUserID,
+		cloudInstanceID:             cloudInstanceID,
 	}
 
 	go enclavePool.run(ctxWithCancel)

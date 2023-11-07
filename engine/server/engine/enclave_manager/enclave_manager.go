@@ -97,7 +97,7 @@ func CreateEnclaveManager(
 
 	// The enclave pool feature is only available for Kubernetes so far
 	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
-		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars, metricsUserID, didUserAcceptSendingMetrics, isCI)
+		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars, metricsUserID, didUserAcceptSendingMetrics, isCI, cloudUserID, cloudInstanceID)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
 		}

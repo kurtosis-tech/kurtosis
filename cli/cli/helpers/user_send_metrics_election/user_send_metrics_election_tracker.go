@@ -1,6 +1,7 @@
 package user_send_metrics_election
 
 import (
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_cloud_user_instance_id_helper"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
@@ -41,6 +42,8 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 		}
 	}
 
+	maybeCloudUserID, maybeCloudInstanceID := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
+
 	if hasBackloggedEvent {
 		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 
@@ -64,6 +67,8 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 				metricsClientCallback,
 				analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
 				metrics_client.IsCI(),
+				maybeCloudUserID,
+				maybeCloudInstanceID,
 			),
 		)
 		if err != nil {
