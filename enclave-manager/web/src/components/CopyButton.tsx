@@ -5,9 +5,10 @@ import { isDefined } from "../utils";
 type CopyButtonProps = ButtonProps & {
   valueToCopy?: (() => string) | string | null;
   text?: string;
+  contentName: string;
 };
 
-export const CopyButton = ({ valueToCopy, text, ...buttonProps }: CopyButtonProps) => {
+export const CopyButton = ({ valueToCopy, text, contentName, ...buttonProps }: CopyButtonProps) => {
   const toast = useToast();
 
   const handleCopyClick = () => {
@@ -15,7 +16,7 @@ export const CopyButton = ({ valueToCopy, text, ...buttonProps }: CopyButtonProp
       const v = typeof valueToCopy === "string" ? valueToCopy : valueToCopy();
       navigator.clipboard.writeText(v);
       toast({
-        title: `Copied '${v}' to the clipboard`,
+        title: `Copied ${contentName} to the clipboard`,
         status: `success`,
       });
     }
