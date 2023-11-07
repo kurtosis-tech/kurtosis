@@ -10,7 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/stop"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/shared_starlark_calls"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
@@ -69,25 +69,8 @@ func run(
 			logrus.Warnf("An error occurred while logging the stop enclave event for enclave '%v'", enclaveIdentifier)
 		}
 
-		kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
-		}
-
-		enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
-		}
-
-		allEnclaveServices, err := enclaveCtx.GetServices()
-		if err != nil {
-			return stacktrace.Propagate(err, "TO COMPLETE") //TODO complete
-		}
-
-		for serviceName := range allEnclaveServices {
-			if err := stop.StopServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
-				return stacktrace.Propagate(err, "TO COMPLETE") //TODO complete
-			}
+		if err = stopAllEnclaveServices(ctx, enclaveIdentifier); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping all enclave services")
 		}
 
 		if _, err := engineClient.StopEnclave(ctx, stopArgs); err != nil {
@@ -110,5 +93,29 @@ func run(
 
 	logrus.Info("Enclaves stopped successfully")
 
+	return nil
+}
+
+func stopAllEnclaveServices(ctx context.Context, enclaveIdentifier string) error {
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
+	}
+
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
+	}
+
+	allEnclaveServices, err := enclaveCtx.GetServices()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting all enclave services")
+	}
+
+	for serviceName := range allEnclaveServices {
+		if err := shared_starlark_calls.StopServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping service '%s'", serviceName)
+		}
+	}
 	return nil
 }
