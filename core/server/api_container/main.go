@@ -245,16 +245,23 @@ func runMain() error {
 		},
 	)
 
-	go func() {
-		time.Sleep(time.Second * 15)
-		// TODO refactor this
-		if err = serviceNetwork.StartAllServices(ctx); err != nil {
-			logrus.Errorf("Start all services failed. Error:\n%s", err)
-		}
-	}()
-
+	logrus.Info("[LEO-DEBUG] before calling run until interrupted") //TODO remove
+	serverIsInterruptedChan, errChan := apiContainerServer.RunUntilInterruptedAsync()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred running the API container server")
+	}
 	logrus.Info("Running server...")
-	if err := apiContainerServer.RunUntilInterrupted(); err != nil {
+	logrus.Info("[LEO-DEBUG] using ASYNC...") //TODO remove
+
+	// TODO we should add something to identify that we shouldn't execute this method if it is run by the launcher
+	if err = serviceNetwork.StartAllServices(ctx); err != nil {
+		logrus.Errorf("Start all services failed. Error:\n%s", err)
+	}
+
+	// Block until the server is interrupted
+	<-serverIsInterruptedChan
+
+	if err = <-errChan; err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the API container server")
 	}
 

@@ -446,6 +446,8 @@ func (network *DefaultServiceNetwork) StartAllServices(
 	ctx context.Context,
 ) error {
 
+	logrus.Info("[LEO-DEBUG] starting all services") //TODO remove
+
 	//TODO add mutex
 
 	allServicesFilters := &service.ServiceFilters{
