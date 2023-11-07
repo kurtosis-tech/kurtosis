@@ -22,9 +22,11 @@ type StarlarkRunConfig struct {
 	DryRun                   bool
 	Parallelism              int32
 	ExperimentalFeatureFlags []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
-	CloudInstanceId          string
-	CloudUserId              string
-	ImageDownload            kurtosis_core_rpc_api_bindings.ImageDownloadMode
+	// Deprecated: This field isn't used anymore
+	CloudInstanceId string
+	// Deprecated: This field isn't used anymore
+	CloudUserId   string
+	ImageDownload kurtosis_core_rpc_api_bindings.ImageDownloadMode
 }
 
 type starlarkRunConfigOption func(*StarlarkRunConfig)
@@ -85,12 +87,14 @@ func WithExperimentalFeatureFlags(experimentalFeatureFlags []kurtosis_core_rpc_a
 	}
 }
 
+// Deprecated: This isn't used anymore and the value passed will not be read anywhere
 func WithCloudInstanceId(cloudInstanceId string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.CloudInstanceId = cloudInstanceId
 	}
 }
 
+// Deprecated: This isn't used anymore and the value passed will not be read anywhere
 func WithCloudUserId(cloudUserId string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.CloudUserId = cloudUserId
