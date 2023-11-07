@@ -25,7 +25,7 @@ type ServicesTableRow = {
 
 const serviceToRow = (service: ServiceInfo): ServicesTableRow => {
   return {
-    serviceUUID: service.serviceUuid,
+    serviceUUID: service.shortenedUuid,
     name: service.name,
     status: service.serviceStatus,
     image: service.container?.imageName,
@@ -38,12 +38,12 @@ const serviceToRow = (service: ServiceInfo): ServicesTableRow => {
 
 const columnHelper = createColumnHelper<ServicesTableRow>();
 
-type EnclavesTableProps = {
+type ServicesTableProps = {
   enclaveShortUUID: string;
   servicesResponse: RemoveFunctions<GetServicesResponse>;
 };
 
-export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: EnclavesTableProps) => {
+export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: ServicesTableProps) => {
   const services = Object.values(servicesResponse.serviceInfo).map(serviceToRow);
 
   const columns = useMemo<ColumnDef<ServicesTableRow, any>[]>(

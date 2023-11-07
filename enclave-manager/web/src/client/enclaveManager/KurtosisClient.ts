@@ -1,11 +1,13 @@
 import { PromiseClient } from "@connectrpc/connect";
-import { RunStarlarkPackageArgs } from "enclave-manager-sdk/build/api_container_service_pb";
+import { RunStarlarkPackageArgs, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import {
   CreateEnclaveArgs,
   DestroyEnclaveArgs,
   EnclaveAPIContainerInfo,
   EnclaveInfo,
   EnclaveMode,
+  GetServiceLogsArgs,
+  LogLineFilter,
 } from "enclave-manager-sdk/build/engine_service_pb";
 import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {
@@ -14,17 +16,48 @@ import {
   GetStarlarkRunRequest,
   RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
-import { assertDefined, asyncResult } from "../../utils";
+import { assertDefined, asyncResult, isDefined } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
+import { EnclaveFullInfo } from "../../emui/enclaves/types";
 
 export abstract class KurtosisClient {
-  protected client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
+  protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
 
-  constructor(client: PromiseClient<typeof KurtosisEnclaveManagerServer>) {
+  /* Full URL of the browser containing the EM UI covering two use cases:
+   * In local-mode this is: http://localhost:9711, http://localhost:3000 (with `yarn start` / dev mode)
+   * In authenticated mode this is: https://cloud.kurtosis.com/enclave-manager (this data/url is provided as a search param when the code loads)
+   *
+   * This URL is primarily used to generate links to the EM UI (where the hostname is included).
+   * */
+  protected readonly parentUrl: URL;
+
+  /* Full URL of the EM UI, covering two use cases:
+   * In local-mode this is the same as the `parentUrl`
+   * In authenticated mode : https://cloud.kurtosis.com/enclave-manager/gateway/ips/1-2-3-4/ports/1234/?searchparams... (this data/url is provided as a search param when the code loads)
+   *
+   * This URL is primarily used to set the React router basename so that the router is able to ignore any leading subdirectories.
+   * */
+  protected readonly childUrl: URL;
+
+  constructor(client: PromiseClient<typeof KurtosisEnclaveManagerServer>, parentUrl: URL, childUrl: URL) {
     this.client = client;
+    this.parentUrl = parentUrl;
+    this.childUrl = childUrl;
   }
 
   abstract getHeaderOptions(): { headers?: Headers };
+
+  getParentBasePathUrl() {
+    return `${this.parentUrl.origin}${this.parentUrl.pathname}`;
+  }
+
+  getChildPath() {
+    return this.childUrl.pathname;
+  }
+
+  getChildUrl() {
+    return this.childUrl;
+  }
 
   async checkHealth() {
     return asyncResult(this.client.check({}, this.getHeaderOptions()));
@@ -50,7 +83,28 @@ export abstract class KurtosisClient {
         apicPort: apicInfo.grpcPortInsideEnclave,
       });
       return this.client.getServices(request, this.getHeaderOptions());
-    }, "KurtosisClient could not getServices");
+    }, `KurtosisClient could not getServices for ${enclave.name}`);
+  }
+
+  async getServiceLogs(
+    abortController: AbortController,
+    enclave: RemoveFunctions<EnclaveFullInfo>,
+    services: ServiceInfo[],
+    followLogs?: boolean,
+    numLogLines?: number,
+    returnAllLogs?: boolean,
+    conjunctiveFilters: LogLineFilter[] = [],
+  ) {
+    // Not currently using asyncResult as the return type here is an asyncIterable
+    const request = new GetServiceLogsArgs({
+      enclaveIdentifier: enclave.name,
+      serviceUuidSet: services.reduce((acc, service) => ({ ...acc, [service.serviceUuid]: true }), {}),
+      followLogs: isDefined(followLogs) ? followLogs : true,
+      conjunctiveFilters: conjunctiveFilters,
+      numLogLines: isDefined(numLogLines) ? numLogLines : 1500,
+      returnAllLogs: !!returnAllLogs,
+    });
+    return this.client.getServiceLogs(request, { ...this.getHeaderOptions(), signal: abortController.signal });
   }
 
   async getStarlarkRun(enclave: RemoveFunctions<EnclaveInfo>) {
@@ -65,7 +119,7 @@ export abstract class KurtosisClient {
         apicPort: apicInfo.grpcPortInsideEnclave,
       });
       return this.client.getStarlarkRun(request, this.getHeaderOptions());
-    }, "KurtosisClient could not getStarlarkRun");
+    }, `KurtosisClient could not getStarlarkRun for ${enclave.name}`);
   }
 
   async listFilesArtifactNamesAndUuids(enclave: RemoveFunctions<EnclaveInfo>) {
@@ -80,7 +134,7 @@ export abstract class KurtosisClient {
         apicPort: apicInfo.grpcPortInsideEnclave,
       });
       return this.client.listFilesArtifactNamesAndUuids(request, this.getHeaderOptions());
-    }, "KurtosisClient could not listFilesArtifactNamesAndUuids");
+    }, `KurtosisClient could not listFilesArtifactNamesAndUuids for ${enclave.name}`);
   }
 
   async createEnclave(

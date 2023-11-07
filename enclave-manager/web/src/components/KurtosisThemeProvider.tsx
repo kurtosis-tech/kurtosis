@@ -204,6 +204,9 @@ const theme = extendTheme({
       },
     },
     Switch: {
+      defaultProps: {
+        colorScheme: "green",
+      },
       baseStyle: defineStyle((props) => ({
         track: {
           _checked: {

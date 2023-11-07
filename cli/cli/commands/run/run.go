@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
@@ -34,7 +35,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
-	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -104,6 +105,8 @@ const (
 
 	imageDownloadFlagKey = "image-download"
 	defaultImageDownload = "missing"
+
+	httpProtocolRegexStr = "^(http|https)://"
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -319,21 +322,6 @@ func run(
 		logrus.Debugf("'%v' arg is not empty; ignoring value of '%v' flag as '%v' arg takes precedence", inputArgsArgKey, packageArgsFileFlagKey, inputArgsArgKey)
 	}
 
-	cloudUserId := ""
-	cloudInstanceId := ""
-	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
-	if err != nil {
-		logrus.Warnf("Could not retrieve the current context. Kurtosis will assume context is local (no cloud user & instance id) and not" +
-			"map the enclave service ports. If you're running on a remote context and are seeing this error, then" +
-			"the enclave services will be unreachable locally. Turn on debug logging to see the actual error.")
-		logrus.Debugf("Error was: %v", err.Error())
-	} else {
-		if store.IsRemote(currentContext) {
-			cloudUserId = currentContext.GetRemoteContextV0().GetCloudUserId()
-			cloudInstanceId = currentContext.GetRemoteContextV0().GetCloudInstanceId()
-		}
-	}
-
 	starlarkRunConfig := starlark_run_config.NewRunStarlarkConfig(
 		starlark_run_config.WithDryRun(dryRun),
 		starlark_run_config.WithParallelism(castedParallelism),
@@ -341,8 +329,6 @@ func run(
 		starlark_run_config.WithMainFunctionName(mainFunctionName),
 		starlark_run_config.WithRelativePathToMainFile(relativePathToTheMainFile),
 		starlark_run_config.WithSerializedParams(packageArgs),
-		starlark_run_config.WithCloudUserId(cloudUserId),
-		starlark_run_config.WithCloudInstanceId(cloudInstanceId),
 		starlark_run_config.WithImageDownloadMode(*imageDownload),
 	)
 
@@ -425,7 +411,7 @@ func run(
 		logrus.Warn("Tried getting number of services in the enclave to log metrics but failed")
 	} else {
 		// TODO(gyani-cloud-metrics) move this to APIC
-		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics, cloudInstanceId, cloudUserId); err != nil {
+		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics); err != nil {
 			logrus.Warn("An error occurred tracking kurtosis run finished event")
 		}
 	}
@@ -440,7 +426,12 @@ func run(
 		return nil
 	}
 
-	if currentContext == nil {
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err != nil {
+		logrus.Warnf("Could not retrieve the current context. Kurtosis will assume context is local (no cloud user & instance id) and not" +
+			"map the enclave service ports. If you're running on a remote context and are seeing this error, then" +
+			"the enclave services will be unreachable locally. Turn on debug logging to see the actual error.")
+		logrus.Debugf("Error was: %v", err.Error())
 		return nil
 	}
 
@@ -706,20 +697,8 @@ func validateSerializedArgs(serializedArgs string) error {
 
 func getArgsFromFilepathOrURL(packageArgsFile string) (string, error) {
 	var packageArgsFileBytes []byte
-	isFileURL := true
-	_, err := os.Stat(packageArgsFile)
-	if err == nil {
-		isFileURL = false
-		packageArgsFileBytes, err = os.ReadFile(packageArgsFile)
-		if err != nil {
-			return "", stacktrace.Propagate(err, "attempted to read file provided by flag '%v' with path '%v' but failed", packageArgsFileFlagKey, packageArgsFile)
-		}
-	}
-	if err != nil && !os.IsNotExist(err) {
-		return "", stacktrace.Propagate(err, "An error occurred checking for argument's file existence on '%s'", packageArgsFile)
-	}
 
-	if isFileURL {
+	if isHttpUrl(packageArgsFile) {
 		argsFileURL, parseErr := url.Parse(packageArgsFile)
 		if parseErr != nil {
 			return "", stacktrace.Propagate(parseErr, "An error occurred while parsing file args URL '%s'", argsFileURL)
@@ -734,6 +713,16 @@ func getArgsFromFilepathOrURL(packageArgsFile string) (string, error) {
 			return "", stacktrace.Propagate(readAllErr, "An error occurred reading the args file content")
 		}
 		packageArgsFileBytes = responseBodyBytes
+	} else {
+		_, err := os.Stat(packageArgsFile)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred checking for argument's file existence on '%s'", packageArgsFile)
+		}
+
+		packageArgsFileBytes, err = os.ReadFile(packageArgsFile)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "attempted to read file provided by flag '%v' with path '%v' but failed", packageArgsFileFlagKey, packageArgsFile)
+		}
 	}
 
 	packageArgsFileStr := string(packageArgsFileBytes)
@@ -742,4 +731,10 @@ func getArgsFromFilepathOrURL(packageArgsFile string) (string, error) {
 	}
 
 	return packageArgsFileStr, nil
+
+}
+
+func isHttpUrl(maybeHttpUrl string) bool {
+	httpProtocolRegex := regexp.MustCompile(httpProtocolRegexStr)
+	return httpProtocolRegex.MatchString(maybeHttpUrl)
 }

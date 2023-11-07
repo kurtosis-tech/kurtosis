@@ -22,6 +22,7 @@ export const tabsTheme = defineMultiStyleConfig({
           color: `${props.colorScheme}.400`,
           bg: `gray.800`,
         },
+        textTransform: "capitalize",
       },
       tabpanel: {
         padding: "32px 0px",
