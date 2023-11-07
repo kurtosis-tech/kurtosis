@@ -143,9 +143,9 @@ const paramToUrl = (searchParams: URLSearchParams, param: string) => {
   let paramString = searchParams.get(param);
   if (paramString === null) {
     return null;
+  } else {
+    paramString = atob(paramString);
+    assertDefined(paramString, `The parameter ${param}' is not defined`);
+    return new URL(paramString);
   }
-  paramString = atob(paramString);
-  assertDefined(paramString, `The parameter ${param}' is not defined`);
-  const locationPath: URL = new URL(paramString);
-  return locationPath;
 };
