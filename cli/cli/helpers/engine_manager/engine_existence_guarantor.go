@@ -6,6 +6,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -147,6 +148,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
 	}
 
+	maybeCloudUserId, maybeCloudInstanceId := metrics_client_factory.GetMaybeCloudUserAndInstanceID()
+
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
@@ -160,6 +163,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.poolSize,
 			guarantor.enclaveEnvVars,
 			metrics_client.IsCI(),
+			maybeCloudUserId,
+			maybeCloudInstanceId,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -174,6 +179,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.poolSize,
 			guarantor.enclaveEnvVars,
 			metrics_client.IsCI(),
+			maybeCloudUserId,
+			maybeCloudInstanceId,
 		)
 	}
 	if engineLaunchErr != nil {

@@ -15,8 +15,8 @@ type CreateMetricsClientOption struct {
 	callbackObject              Callback
 	logger                      analytics.Logger
 	isCI                        bool
-	cloudUserId                 string
-	cloudInstanceId             string
+	cloudUserId                 CloudUserID
+	cloudInstanceId             CloudInstanceID
 }
 
 func NewMetricsClientCreatorOption(source source.Source,
@@ -28,8 +28,8 @@ func NewMetricsClientCreatorOption(source source.Source,
 	callbackObject Callback,
 	logger analytics.Logger,
 	isCI bool,
-	cloudUserId string,
-	cloudInstanceId string) *CreateMetricsClientOption {
+	cloudUserId CloudUserID,
+	cloudInstanceId CloudInstanceID) *CreateMetricsClientOption {
 	return &CreateMetricsClientOption{
 		source:                      source,
 		sourceVersion:               sourceVersion,

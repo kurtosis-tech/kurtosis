@@ -42,15 +42,15 @@ type segmentClient struct {
 	userID           string
 	isCI             string
 	backendType      string
-	cloudUserId      string
-	cloudInstanceId  string
+	cloudUserId      CloudUserID
+	cloudInstanceId  CloudInstanceID
 }
 
 // The argument shouldFlushQueueOnEachEvent is used to imitate a sync request, it is not exactly the same because
 // the event is enqueued but the queue is flushed suddenly so is pretty close to event traked in sync
 // The argument callbackObject is an object that will be used by the client to notify the
 // application when messages sends to the backend API succeeded or failed.
-func newSegmentClient(source metrics_source.Source, sourceVersion string, userId string, backendType string, shouldFlushQueueOnEachEvent bool, callbackObject analytics.Callback, logger analytics.Logger, isCI bool, cloudUserId string, cloudInstanceId string) (*segmentClient, error) {
+func newSegmentClient(source metrics_source.Source, sourceVersion string, userId string, backendType string, shouldFlushQueueOnEachEvent bool, callbackObject analytics.Callback, logger analytics.Logger, isCI bool, cloudUserId CloudUserID, cloudInstanceId CloudInstanceID) (*segmentClient, error) {
 
 	// nolint: exhaustruct
 	config := analytics.Config{

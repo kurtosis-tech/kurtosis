@@ -3,6 +3,7 @@ package args
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"reflect"
 	"strings"
 
@@ -47,6 +48,12 @@ type APIContainerArgs struct {
 
 	//If its running in a CI environment
 	IsCI bool `json:"is_ci"`
+
+	// The Cloud User ID of the current user if available
+	CloudUserID metrics_client.CloudUserID `json:"cloud_user_id"`
+
+	// The Cloud Instance ID of the current user if available
+	CloudInstanceID metrics_client.CloudInstanceID `json:"cloud_instance_id"`
 }
 
 func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
@@ -96,6 +103,8 @@ func NewAPIContainerArgs(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		Version:                     version,
@@ -110,6 +119,8 @@ func NewAPIContainerArgs(
 		MetricsUserID:               metricsUserID,
 		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		IsCI:                        isCI,
+		CloudUserID:                 cloudUserID,
+		CloudInstanceID:             cloudInstanceID,
 	}
 
 	if err := result.validate(); err != nil {

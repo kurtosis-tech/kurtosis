@@ -7,3 +7,6 @@ const (
 )
 
 type MetricsClientType string
+
+type CloudUserID string
+type CloudInstanceID string

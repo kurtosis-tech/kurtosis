@@ -2,6 +2,7 @@ package args
 
 import (
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"reflect"
 	"strings"
 
@@ -50,6 +51,12 @@ type EngineServerArgs struct {
 
 	// Whether the Engine is running in a CI  environment
 	IsCI bool `json:"is_ci"`
+
+	// The Cloud User ID of the current user if available
+	CloudUserID metrics_client.CloudUserID `json:"cloud_user_id"`
+
+	// The Cloud Instance ID of the current user if available
+	CloudInstanceID metrics_client.CloudInstanceID `json:"cloud_instance_id"`
 }
 
 func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
@@ -97,6 +104,8 @@ func NewEngineServerArgs(
 	poolSize uint8,
 	enclaveEnvVars string,
 	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
 ) (*EngineServerArgs, error) {
 	if enclaveEnvVars == "" {
 		enclaveEnvVars = emptyJsonField
@@ -113,6 +122,8 @@ func NewEngineServerArgs(
 		PoolSize:                    poolSize,
 		EnclaveEnvVars:              enclaveEnvVars,
 		IsCI:                        isCI,
+		CloudUserID:                 cloudUserID,
+		CloudInstanceID:             cloudInstanceID,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

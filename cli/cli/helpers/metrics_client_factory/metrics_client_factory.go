@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
@@ -31,6 +32,8 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 		return nil, nil, stacktrace.NewError("An error occurred while determining whether configuration already exists")
 	}
 
+	maybeCloudUserId, maybeCloudInstanceId := GetMaybeCloudUserAndInstanceID()
+
 	var sendUserMetrics bool
 	if hasConfig {
 		kurtosisConfig, err := kurtosisConfigStore.GetConfig()
@@ -53,7 +56,7 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 			shouldFlushMetricsClientQueueOnEachEvent,
 			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
 			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
-			metrics_client.IsCI()),
+			metrics_client.IsCI(), maybeCloudUserId, maybeCloudInstanceId),
 	)
 
 	if err != nil {
@@ -72,6 +75,8 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 	// this is force set to true in order to get the segment client
 	sendUserMetrics := true
 
+	maybeCloudUserId, maybeCloudInstanceId := GetMaybeCloudUserAndInstanceID()
+
 	logger := logrus.StandardLogger()
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 		metrics_client.NewMetricsClientCreatorOption(source.KurtosisCLISource,
@@ -82,7 +87,7 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 			shouldFlushMetricsClientQueueOnEachEvent,
 			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
 			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
-			metrics_client.IsCI()),
+			metrics_client.IsCI(), maybeCloudUserId, maybeCloudInstanceId),
 	)
 
 	if err != nil {
@@ -90,6 +95,22 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 	}
 
 	return metricsClient, metricsClientCloseFunc, nil
+}
+
+func GetMaybeCloudUserAndInstanceID() (metrics_client.CloudUserID, metrics_client.CloudInstanceID) {
+	cloudUserId := ""
+	cloudInstanceId := ""
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err != nil {
+		logrus.Debugf("Could not retrieve the current context. Kurtosis will assume context is local and not pass empty values to the metrics client")
+		logrus.Debugf("Error was: %v", err.Error())
+	} else {
+		if store.IsRemote(currentContext) {
+			cloudUserId = currentContext.GetRemoteContextV0().GetCloudUserId()
+			cloudInstanceId = currentContext.GetRemoteContextV0().GetCloudInstanceId()
+		}
+	}
+	return metrics_client.CloudUserID(cloudUserId), metrics_client.CloudInstanceID(cloudInstanceId)
 }
 
 func getMetricsUserIdAndClusterType() (string, string, error) {
