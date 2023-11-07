@@ -26,6 +26,9 @@ type LogsCollector struct {
 	// bridge network ip address
 	maybeEnclaveNetworkIpAddress net.IP
 	maybeBridgeNetworkIpAddress  net.IP
+
+	// Docker container
+	container *container.Container
 }
 
 func NewLogsCollector(
@@ -52,8 +55,8 @@ func (logsCollector *LogsCollector) GetEnclaveNetworkIpAddress() net.IP {
 	return logsCollector.maybeEnclaveNetworkIpAddress
 }
 
-func (LogsCollector *LogsCollector) GetBridgeNetworkIpAddress() net.IP {
-	return LogsCollector.maybeBridgeNetworkIpAddress
+func (logsCollector *LogsCollector) GetBridgeNetworkIpAddress() net.IP {
+	return logsCollector.maybeBridgeNetworkIpAddress
 }
 
 func (logsCollector *LogsCollector) GetPrivateTcpPort() *port_spec.PortSpec {
@@ -77,4 +80,8 @@ func (logsCollector *LogsCollector) GetEnclaveNetworkAddressString() (string, er
 
 	logsCollectorAddressStr := fmt.Sprintf("%v%v%v", logsCollector.maybeEnclaveNetworkIpAddress, ipAndPortSeparator, logsCollector.privateTcpPort.GetNumber())
 	return logsCollectorAddressStr, nil
+}
+
+func (logsCollector *LogsCollector) GetContainer() *container.Container {
+	return logsCollector.container
 }

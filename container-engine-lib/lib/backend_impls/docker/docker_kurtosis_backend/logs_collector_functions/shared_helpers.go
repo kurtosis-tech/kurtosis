@@ -2,6 +2,7 @@ package logs_collector_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"net"
 
@@ -129,9 +130,14 @@ func getLogsCollectorForTheGivenEnclave(ctx context.Context, enclaveUuid enclave
 func getLogsCollectorObjectAndContainerId(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	enclaveNetworkId *types.Network,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_collector.LogsCollector, string, error) {
+
+	enclaveNetworkId, err := shared_helpers.GetEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid, dockerManager)
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "An error occurred while retrieving the network id for the enclave")
+	}
+
 	allLogsCollectorContainers, err := getLogsCollectorForTheGivenEnclave(ctx, enclaveUuid, dockerManager)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs collector containers")

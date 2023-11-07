@@ -471,6 +471,14 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 	return nil
 }
 
+func (backend *DockerKurtosisBackend) StartLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
+	if err := logs_collector_functions.StartLogsCollectorForEnclave(ctx, enclaveUuid, backend.dockerManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred starting the logs collector")
+	}
+
+	return nil
+}
+
 func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {

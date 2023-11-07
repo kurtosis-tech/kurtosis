@@ -418,7 +418,6 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsAggregator(ctx contex
 }
 
 func (backend *MetricsReportingKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
-
 	logsCollector, err := backend.underlying.CreateLogsCollectorForEnclave(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", logsCollectorTcpPortNumber, logsCollectorHttpPortNumber)
@@ -438,9 +437,16 @@ func (backend *MetricsReportingKurtosisBackend) GetLogsCollectorForEnclave(ctx c
 }
 
 func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
-
 	if err := backend.underlying.DestroyLogsCollectorForEnclave(ctx, enclaveUuid); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
+	}
+
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) StartLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
+	if err := backend.underlying.StartLogsCollectorForEnclave(ctx, enclaveUuid); err != nil {
+		return stacktrace.Propagate(err, "An error occurred starting the logs collector")
 	}
 
 	return nil

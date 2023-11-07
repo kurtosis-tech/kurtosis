@@ -459,6 +459,11 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx con
 	return stacktrace.NewError("Destroy the logs collector for enclave isn't yet implemented on Kubernetes")
 }
 
+func (backend *KubernetesKurtosisBackend) StartLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
+	// TODO IMPLEMENT
+	return stacktrace.NewError("Start the logs collector for enclave isn't yet implemented on Kubernetes")
+}
+
 // ====================================================================================================
 //
 //	Private Helper Functions

@@ -463,6 +463,12 @@ func (network *DefaultServiceNetwork) StartAllServices(
 	// TODO get all services from the repository
 	// TODO compare both lists to check if there are any missing service
 
+	// Start the logs collector first
+	if err := network.kurtosisBackend.StartLogsCollectorForEnclave(ctx, network.enclaveUuid); err != nil {
+		return stacktrace.Propagate(err, "An error occurred starting the logs collector")
+	}
+
+	// Now start all the services
 	allServicesUUIDStrs := []string{}
 
 	for serviceUuid, _ := range allServices {
@@ -475,7 +481,7 @@ func (network *DefaultServiceNetwork) StartAllServices(
 		allServicesUUIDStrs = append(allServicesUUIDStrs, string(serviceUuid))
 	}
 
-	_, failedServices, err := network.StartServices2(ctx, allServicesUUIDStrs)
+	_, failedServices, err := network.StartServices(ctx, allServicesUUIDStrs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting all services on this API container")
 	}
@@ -485,61 +491,6 @@ func (network *DefaultServiceNetwork) StartAllServices(
 	}
 
 	return nil
-}
-
-// TODO delete this
-func (network *DefaultServiceNetwork) StartServices2(
-	ctx context.Context,
-	serviceIdentifiers []string,
-) (
-	map[service.ServiceUUID]bool,
-	map[service.ServiceUUID]error,
-	error,
-) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	// TODO move the following logic to an unsafe thread private method for sharing it with the StartAllServices method
-	successfulUuids := map[service.ServiceUUID]bool{}
-	erroredUuids := map[service.ServiceUUID]error{}
-	serviceConfigs := map[service.ServiceUUID]*service.ServiceConfig{}
-	serviceRegistrations := map[service.ServiceUUID]*service.ServiceRegistration{}
-
-	for _, serviceIdentifier := range serviceIdentifiers {
-		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
-		}
-		/*if serviceRegistration.GetStatus() == service.ServiceStatus_Started {
-			return nil, nil, stacktrace.NewError("Service '%v' is already started", serviceRegistration.GetName())
-		}*/
-		serviceRegistrations[serviceRegistration.GetUUID()] = serviceRegistration
-	}
-
-	for serviceUuid, serviceRegistration := range serviceRegistrations {
-		serviceConfigs[serviceUuid] = serviceRegistration.GetConfig()
-	}
-
-	successfulServices, failedServices, err := network.kurtosisBackend.StartRegisteredUserServices(ctx, network.enclaveUuid, serviceConfigs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	for successfulUuid, successfulService := range successfulServices {
-		serviceName := successfulService.GetRegistration().GetName()
-		serviceStatus := service.ServiceStatus_Started
-		if err := network.serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
-			failedServices[successfulUuid] = stacktrace.Propagate(err, "An error occurred while updating status to '%v' for service '%v' after it was successfully started", serviceStatus, serviceName)
-			continue
-		}
-		successfulUuids[successfulUuid] = true
-	}
-
-	for erroredUuid, err := range failedServices {
-		erroredUuids[erroredUuid] = err
-	}
-
-	return successfulUuids, erroredUuids, nil
 }
 
 func (network *DefaultServiceNetwork) StartServices(
