@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
-	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -44,14 +44,16 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 
 	logger := logrus.StandardLogger()
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCLISource,
-		kurtosis_version.KurtosisVersion,
-		metricsUserId,
-		clusterType,
-		sendUserMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		metrics_client.NewMetricsClientCreatorOption(
+			source.KurtosisCLISource,
+			kurtosis_version.KurtosisVersion,
+			metricsUserId,
+			clusterType,
+			sendUserMetrics,
+			shouldFlushMetricsClientQueueOnEachEvent,
+			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			metrics_client.IsCI()),
 	)
 
 	if err != nil {
@@ -72,14 +74,15 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 
 	logger := logrus.StandardLogger()
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCLISource,
-		kurtosis_version.KurtosisVersion,
-		metricsUserId,
-		clusterType,
-		sendUserMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		metrics_client.NewMetricsClientCreatorOption(source.KurtosisCLISource,
+			kurtosis_version.KurtosisVersion,
+			metricsUserId,
+			clusterType,
+			sendUserMetrics,
+			shouldFlushMetricsClientQueueOnEachEvent,
+			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			metrics_client.IsCI()),
 	)
 
 	if err != nil {

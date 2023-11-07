@@ -25,7 +25,7 @@ type ServicesTableRow = {
 
 const serviceToRow = (service: ServiceInfo): ServicesTableRow => {
   return {
-    serviceUUID: service.serviceUuid,
+    serviceUUID: service.shortenedUuid,
     name: service.name,
     status: service.serviceStatus,
     image: service.container?.imageName,

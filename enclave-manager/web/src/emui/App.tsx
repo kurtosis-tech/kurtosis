@@ -6,6 +6,7 @@ import {
   useKurtosisPackageIndexerClient,
 } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { AppLayout } from "../components/AppLayout";
+import { CreateEnclave } from "../components/enclaves/CreateEnclave";
 import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
 import { catalogRoutes } from "./catalog/CatalogRoutes";
 import { enclaveRoutes } from "./enclaves/EnclaveRoutes";
@@ -26,21 +27,28 @@ export const EmuiApp = () => {
 const KurtosisRouter = () => {
   const kurtosisClient = useKurtosisClient();
   const kurtosisIndexerClient = useKurtosisPackageIndexerClient();
+
   const router = useMemo(
     () =>
-      createBrowserRouter([
+      createBrowserRouter(
+        [
+          {
+            element: (
+              <AppLayout Nav={<Navbar />}>
+                <Outlet />
+                <CreateEnclave />
+              </AppLayout>
+            ),
+            children: [
+              { path: "/", children: enclaveRoutes(kurtosisClient) },
+              { path: "/catalog", children: catalogRoutes(kurtosisIndexerClient) },
+            ],
+          },
+        ],
         {
-          element: (
-            <AppLayout Nav={<Navbar />}>
-              <Outlet />
-            </AppLayout>
-          ),
-          children: [
-            { path: "/", children: enclaveRoutes(kurtosisClient) },
-            { path: "/catalog", children: catalogRoutes(kurtosisIndexerClient) },
-          ],
+          basename: kurtosisClient.getChildPath(),
         },
-      ]),
+      ),
     [kurtosisClient],
   );
 

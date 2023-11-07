@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
@@ -34,7 +35,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
-	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -104,6 +105,8 @@ const (
 
 	imageDownloadFlagKey = "image-download"
 	defaultImageDownload = "missing"
+
+	httpProtocolRegexStr = "^(http|https)://"
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -706,20 +709,8 @@ func validateSerializedArgs(serializedArgs string) error {
 
 func getArgsFromFilepathOrURL(packageArgsFile string) (string, error) {
 	var packageArgsFileBytes []byte
-	isFileURL := true
-	_, err := os.Stat(packageArgsFile)
-	if err == nil {
-		isFileURL = false
-		packageArgsFileBytes, err = os.ReadFile(packageArgsFile)
-		if err != nil {
-			return "", stacktrace.Propagate(err, "attempted to read file provided by flag '%v' with path '%v' but failed", packageArgsFileFlagKey, packageArgsFile)
-		}
-	}
-	if err != nil && !os.IsNotExist(err) {
-		return "", stacktrace.Propagate(err, "An error occurred checking for argument's file existence on '%s'", packageArgsFile)
-	}
 
-	if isFileURL {
+	if isHttpUrl(packageArgsFile) {
 		argsFileURL, parseErr := url.Parse(packageArgsFile)
 		if parseErr != nil {
 			return "", stacktrace.Propagate(parseErr, "An error occurred while parsing file args URL '%s'", argsFileURL)
@@ -734,6 +725,16 @@ func getArgsFromFilepathOrURL(packageArgsFile string) (string, error) {
 			return "", stacktrace.Propagate(readAllErr, "An error occurred reading the args file content")
 		}
 		packageArgsFileBytes = responseBodyBytes
+	} else {
+		_, err := os.Stat(packageArgsFile)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred checking for argument's file existence on '%s'", packageArgsFile)
+		}
+
+		packageArgsFileBytes, err = os.ReadFile(packageArgsFile)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "attempted to read file provided by flag '%v' with path '%v' but failed", packageArgsFileFlagKey, packageArgsFile)
+		}
 	}
 
 	packageArgsFileStr := string(packageArgsFileBytes)
@@ -742,4 +743,10 @@ func getArgsFromFilepathOrURL(packageArgsFile string) (string, error) {
 	}
 
 	return packageArgsFileStr, nil
+
+}
+
+func isHttpUrl(maybeHttpUrl string) bool {
+	httpProtocolRegex := regexp.MustCompile(httpProtocolRegexStr)
+	return httpProtocolRegex.MatchString(maybeHttpUrl)
 }
