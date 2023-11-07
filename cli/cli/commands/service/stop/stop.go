@@ -99,14 +99,14 @@ func run(
 
 		serviceName := serviceContext.GetServiceName()
 
-		if err := stopServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
+		if err := StopServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping service '%v' from enclave '%v'", serviceIdentifier, enclaveIdentifier)
 		}
 	}
 	return nil
 }
 
-func stopServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
+func StopServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
 	params := fmt.Sprintf(`{"service_name": "%s"}`, serviceName)
 	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(params)))
 	if err != nil {
