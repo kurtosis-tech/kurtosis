@@ -2,11 +2,15 @@ import { FiHome, FiPackage } from "react-icons/fi";
 import { Link, useLocation } from "react-router-dom";
 import { NavButton, Navigation } from "../components/Navigation";
 
-export const Navbar = () => {
+export type NavbarProps ={
+  baseApplicationUrl: URL
+}
+
+export const Navbar = ({ baseApplicationUrl}: NavbarProps) => {
   const location = useLocation();
 
   return (
-    <Navigation>
+    <Navigation baseApplicationUrl={baseApplicationUrl}>
       <Link to={"/"}>
         <NavButton
           label={"View enclaves"}

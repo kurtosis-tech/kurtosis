@@ -34,7 +34,7 @@ const KurtosisRouter = () => {
         [
           {
             element: (
-              <AppLayout Nav={<Navbar />}>
+              <AppLayout Nav={<Navbar baseApplicationUrl={kurtosisClient.getBaseApplicationUrl()}/>}>
                 <Outlet />
                 <CreateEnclave />
               </AppLayout>
@@ -46,7 +46,7 @@ const KurtosisRouter = () => {
           },
         ],
         {
-          basename: kurtosisClient.getChildPath(),
+          basename: kurtosisClient.getBaseApplicationUrl().pathname,
         },
       ),
     [kurtosisClient],

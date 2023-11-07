@@ -1,7 +1,8 @@
 import { Flex, IconButton, IconButtonProps, Image, Tooltip } from "@chakra-ui/react";
 import { PropsWithChildren } from "react";
+import { NavbarProps } from "../emui/Navbar";
 
-export const Navigation = ({ children }: PropsWithChildren) => {
+export const Navigation = ({ baseApplicationUrl, children }: PropsWithChildren & NavbarProps) => {
   return (
     <Flex
       as={"nav"}
@@ -15,7 +16,7 @@ export const Navigation = ({ children }: PropsWithChildren) => {
       p={"20px 16px"}
     >
       <Flex width={"40px"} height={"40px"} alignItems={"center"}>
-        <Image src={"/logo.png"} />
+        <Image src={baseApplicationUrl+"/logo.png"} />
       </Flex>
       <Flex flexDirection={"column"} gap={"16px"}>
         {children}
