@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.85.5](https://github.com/kurtosis-tech/kurtosis/compare/0.85.4...0.85.5) (2023-11-07)
+
+
+### Features
+
+* emui service overview ([#1708](https://github.com/kurtosis-tech/kurtosis/issues/1708)) ([e4c0226](https://github.com/kurtosis-tech/kurtosis/commit/e4c02266df1c5773fdb462aa50de8838818ced77))
+
+
+### Bug Fixes
+
+* pass cloud user id and cloud instance id while creating metrics client ([#1703](https://github.com/kurtosis-tech/kurtosis/issues/1703)) ([166da06](https://github.com/kurtosis-tech/kurtosis/commit/166da0660912447f87ba0bf9fa8b633ebea8ddfe))
+
 ## [0.85.4](https://github.com/kurtosis-tech/kurtosis/compare/0.85.3...0.85.4) (2023-11-07)
 
 
