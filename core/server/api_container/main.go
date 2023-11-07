@@ -245,8 +245,8 @@ func runMain() error {
 	go func() {
 		time.Sleep(time.Second * 15)
 		// TODO refactor this
-		if err := serviceNetwork.StartAllServices(ctx); err != nil {
-			logrus.Errorf("Start all services failed")
+		if err = serviceNetwork.StartAllServices(ctx); err != nil {
+			logrus.Errorf("Start all services failed. Error:\n%s", err)
 		}
 	}()
 
