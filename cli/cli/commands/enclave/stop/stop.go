@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/stop"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
@@ -66,6 +68,28 @@ func run(
 		if err = metricsClient.TrackStopEnclave(enclaveIdentifier); err != nil {
 			logrus.Warnf("An error occurred while logging the stop enclave event for enclave '%v'", enclaveIdentifier)
 		}
+
+		kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
+		}
+
+		enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
+		}
+
+		allEnclaveServices, err := enclaveCtx.GetServices()
+		if err != nil {
+			return stacktrace.Propagate(err, "TO COMPLETE") //TODO complete
+		}
+
+		for serviceName := range allEnclaveServices {
+			if err := stop.StopServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
+				return stacktrace.Propagate(err, "TO COMPLETE") //TODO complete
+			}
+		}
+
 		if _, err := engineClient.StopEnclave(ctx, stopArgs); err != nil {
 			wrappedErr := stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
 			stopEnclaveErrorStrs = append(stopEnclaveErrorStrs, wrappedErr.Error())
