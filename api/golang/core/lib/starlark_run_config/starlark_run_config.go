@@ -85,12 +85,14 @@ func WithExperimentalFeatureFlags(experimentalFeatureFlags []kurtosis_core_rpc_a
 	}
 }
 
+// Deprecated: This isn't used anymore and the value passed will not be read anywhere
 func WithCloudInstanceId(cloudInstanceId string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.CloudInstanceId = cloudInstanceId
 	}
 }
 
+// Deprecated: This isn't used anymore and the value passed will not be read anywhere
 func WithCloudUserId(cloudUserId string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.CloudUserId = cloudUserId

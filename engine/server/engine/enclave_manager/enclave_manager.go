@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"sort"
 	"strings"
 	"sync"
@@ -69,6 +70,8 @@ type EnclaveManager struct {
 	metricsUserID               string
 	didUserAcceptSendingMetrics bool
 	isCI                        bool
+	cloudUserID                 metrics_client.CloudUserID
+	cloudInstanceID             metrics_client.CloudInstanceID
 }
 
 func CreateEnclaveManager(
@@ -82,6 +85,8 @@ func CreateEnclaveManager(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
 ) (*EnclaveManager, error) {
 	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
@@ -92,7 +97,7 @@ func CreateEnclaveManager(
 
 	// The enclave pool feature is only available for Kubernetes so far
 	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
-		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars, metricsUserID, didUserAcceptSendingMetrics, isCI)
+		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars, metricsUserID, didUserAcceptSendingMetrics, isCI, cloudUserID, cloudInstanceID)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
 		}
@@ -110,6 +115,8 @@ func CreateEnclaveManager(
 		metricsUserID:                             metricsUserID,
 		didUserAcceptSendingMetrics:               didUserAcceptSendingMetrics,
 		isCI:                                      isCI,
+		cloudUserID:                               cloudUserID,
+		cloudInstanceID:                           cloudInstanceID,
 	}
 
 	return enclaveManager, nil
@@ -180,6 +187,8 @@ func (manager *EnclaveManager) CreateEnclave(
 			manager.metricsUserID,
 			manager.didUserAcceptSendingMetrics,
 			manager.isCI,
+			manager.cloudUserID,
+			manager.cloudInstanceID,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(

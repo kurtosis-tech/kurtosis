@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -40,6 +41,8 @@ func (creator *EnclaveCreator) CreateEnclave(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
 	uuid, err := uuid_generator.GenerateUUIDString()
@@ -82,6 +85,8 @@ func (creator *EnclaveCreator) CreateEnclave(
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		isCI,
+		cloudUserID,
+		cloudInstanceID,
 	)
 
 	if err != nil {
@@ -166,6 +171,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -186,6 +193,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 			metricsUserID,
 			didUserAcceptSendingMetrics,
 			isCI,
+			cloudUserID,
+			cloudInstanceID,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveUuid, apiContainerImageVersionTag)
@@ -203,6 +212,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		isCI,
+		cloudUserID,
+		cloudInstanceID,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveUuid)

@@ -188,6 +188,8 @@ func runMain() error {
 			doNothingMetricsClientCallback{},
 			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
 			serverArgs.IsCI,
+			serverArgs.CloudUserID,
+			serverArgs.CloudInstanceID,
 		),
 	)
 	if err != nil {

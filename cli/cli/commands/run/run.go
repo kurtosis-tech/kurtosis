@@ -322,21 +322,6 @@ func run(
 		logrus.Debugf("'%v' arg is not empty; ignoring value of '%v' flag as '%v' arg takes precedence", inputArgsArgKey, packageArgsFileFlagKey, inputArgsArgKey)
 	}
 
-	cloudUserId := ""
-	cloudInstanceId := ""
-	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
-	if err != nil {
-		logrus.Warnf("Could not retrieve the current context. Kurtosis will assume context is local (no cloud user & instance id) and not" +
-			"map the enclave service ports. If you're running on a remote context and are seeing this error, then" +
-			"the enclave services will be unreachable locally. Turn on debug logging to see the actual error.")
-		logrus.Debugf("Error was: %v", err.Error())
-	} else {
-		if store.IsRemote(currentContext) {
-			cloudUserId = currentContext.GetRemoteContextV0().GetCloudUserId()
-			cloudInstanceId = currentContext.GetRemoteContextV0().GetCloudInstanceId()
-		}
-	}
-
 	starlarkRunConfig := starlark_run_config.NewRunStarlarkConfig(
 		starlark_run_config.WithDryRun(dryRun),
 		starlark_run_config.WithParallelism(castedParallelism),
@@ -344,8 +329,6 @@ func run(
 		starlark_run_config.WithMainFunctionName(mainFunctionName),
 		starlark_run_config.WithRelativePathToMainFile(relativePathToTheMainFile),
 		starlark_run_config.WithSerializedParams(packageArgs),
-		starlark_run_config.WithCloudUserId(cloudUserId),
-		starlark_run_config.WithCloudInstanceId(cloudInstanceId),
 		starlark_run_config.WithImageDownloadMode(*imageDownload),
 	)
 
@@ -428,7 +411,7 @@ func run(
 		logrus.Warn("Tried getting number of services in the enclave to log metrics but failed")
 	} else {
 		// TODO(gyani-cloud-metrics) move this to APIC
-		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics, cloudInstanceId, cloudUserId); err != nil {
+		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics); err != nil {
 			logrus.Warn("An error occurred tracking kurtosis run finished event")
 		}
 	}
@@ -443,7 +426,12 @@ func run(
 		return nil
 	}
 
-	if currentContext == nil {
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err != nil {
+		logrus.Warnf("Could not retrieve the current context. Kurtosis will assume context is local (no cloud user & instance id) and not" +
+			"map the enclave service ports. If you're running on a remote context and are seeing this error, then" +
+			"the enclave services will be unreachable locally. Turn on debug logging to see the actual error.")
+		logrus.Debugf("Error was: %v", err.Error())
 		return nil
 	}
 
