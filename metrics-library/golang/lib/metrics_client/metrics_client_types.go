@@ -1,4 +1,4 @@
-package client
+package metrics_client
 
 const (
 	Segment MetricsClientType = "segment"

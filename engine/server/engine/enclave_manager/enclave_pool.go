@@ -32,6 +32,7 @@ type EnclavePool struct {
 	enclaveEnvVars              string
 	metricsUserID               string
 	didUserAcceptSendingMetrics bool
+	isCI                        bool
 }
 
 // CreateEnclavePool will do the following:
@@ -47,6 +48,7 @@ func CreateEnclavePool(
 	enclaveEnvVars string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	isCI bool,
 
 ) (*EnclavePool, error) {
 
@@ -92,6 +94,7 @@ func CreateEnclavePool(
 		enclaveEnvVars:              enclaveEnvVars,
 		metricsUserID:               metricsUserID,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
+		isCI:                        isCI,
 	}
 
 	go enclavePool.run(ctxWithCancel)
@@ -276,6 +279,7 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_en
 		createTestEnclave,
 		pool.metricsUserID,
 		pool.didUserAcceptSendingMetrics,
+		pool.isCI,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(

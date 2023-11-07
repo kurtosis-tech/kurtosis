@@ -1,4 +1,4 @@
-package client
+package metrics_client
 
 // Callback methods must return quickly and not cause long blocking operations
 // to avoid interfering with the client's internal work flow.

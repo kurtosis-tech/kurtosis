@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
-	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/sirupsen/logrus"
 )
@@ -42,16 +42,18 @@ func logUserEmailAddressAsMetric(userEmail string) {
 	logger := logrus.StandardLogger()
 
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCLISource,
-		kurtosis_version.KurtosisVersion,
-		metricsUserId,
-		// TODO this isn't relevant for the metric also this only runs at first install;
-		// The user hasn't ever used Kurtosis yet so it has to be the default cluster
-		resolved_config.DefaultDockerClusterName,
-		sendUserMetrics,
-		flushQueueOnEachEvent,
-		do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		metrics_client.NewMetricsClientCreatorOption(
+			source.KurtosisCLISource,
+			kurtosis_version.KurtosisVersion,
+			metricsUserId,
+			// TODO this isn't relevant for the metric also this only runs at first install;
+			// The user hasn't ever used Kurtosis yet so it has to be the default cluster
+			resolved_config.DefaultDockerClusterName,
+			sendUserMetrics,
+			flushQueueOnEachEvent,
+			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			metrics_client.IsCI()),
 	)
 	if err != nil {
 		logrus.Debugf("tried creating a metrics client but failed with error:\n%v", err)

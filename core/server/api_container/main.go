@@ -32,7 +32,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
-	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
@@ -178,14 +178,17 @@ func runMain() error {
 
 	logger := logrus.StandardLogger()
 	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCoreSource,
-		serverArgs.Version,
-		serverArgs.MetricsUserID,
-		serverArgs.KurtosisBackendType.String(),
-		serverArgs.DidUserAcceptSendingMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		doNothingMetricsClientCallback{},
-		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		metrics_client.NewMetricsClientCreatorOption(
+			source.KurtosisCoreSource,
+			serverArgs.Version,
+			serverArgs.MetricsUserID,
+			serverArgs.KurtosisBackendType.String(),
+			serverArgs.DidUserAcceptSendingMetrics,
+			shouldFlushMetricsClientQueueOnEachEvent,
+			doNothingMetricsClientCallback{},
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			serverArgs.IsCI,
+		),
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the metrics client")

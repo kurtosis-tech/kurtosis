@@ -1,4 +1,4 @@
-package client
+package metrics_client
 
 type MetricsClient interface {
 	TrackShouldSendMetricsUserElection(didUserAcceptSendingMetrics bool) error

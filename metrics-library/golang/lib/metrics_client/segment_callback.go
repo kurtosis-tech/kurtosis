@@ -1,4 +1,4 @@
-package client
+package metrics_client
 
 import (
 	"github.com/sirupsen/logrus"
