@@ -6,7 +6,7 @@ import { KurtosisClient } from "./KurtosisClient";
 
 export class LocalKurtosisClient extends KurtosisClient {
   constructor() {
-    const defaultUrl = new URL(window.location.href);
+    const defaultUrl = new URL(`${window.location.protocol}//${window.location.host}`);
     super(
       createPromiseClient(
         KurtosisEnclaveManagerServer,

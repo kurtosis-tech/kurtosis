@@ -1,11 +1,13 @@
 import { PromiseClient } from "@connectrpc/connect";
-import { RunStarlarkPackageArgs } from "enclave-manager-sdk/build/api_container_service_pb";
+import { RunStarlarkPackageArgs, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import {
   CreateEnclaveArgs,
   DestroyEnclaveArgs,
   EnclaveAPIContainerInfo,
   EnclaveInfo,
   EnclaveMode,
+  GetServiceLogsArgs,
+  LogLineFilter,
 } from "enclave-manager-sdk/build/engine_service_pb";
 import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {
@@ -14,8 +16,9 @@ import {
   GetStarlarkRunRequest,
   RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
-import { assertDefined, asyncResult } from "../../utils";
+import { assertDefined, asyncResult, isDefined } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
+import { EnclaveFullInfo } from "../../emui/enclaves/types";
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
@@ -80,7 +83,28 @@ export abstract class KurtosisClient {
         apicPort: apicInfo.grpcPortInsideEnclave,
       });
       return this.client.getServices(request, this.getHeaderOptions());
-    }, "KurtosisClient could not getServices");
+    }, `KurtosisClient could not getServices for ${enclave.name}`);
+  }
+
+  async getServiceLogs(
+    abortController: AbortController,
+    enclave: RemoveFunctions<EnclaveFullInfo>,
+    services: ServiceInfo[],
+    followLogs?: boolean,
+    numLogLines?: number,
+    returnAllLogs?: boolean,
+    conjunctiveFilters: LogLineFilter[] = [],
+  ) {
+    // Not currently using asyncResult as the return type here is an asyncIterable
+    const request = new GetServiceLogsArgs({
+      enclaveIdentifier: enclave.name,
+      serviceUuidSet: services.reduce((acc, service) => ({ ...acc, [service.serviceUuid]: true }), {}),
+      followLogs: isDefined(followLogs) ? followLogs : true,
+      conjunctiveFilters: conjunctiveFilters,
+      numLogLines: isDefined(numLogLines) ? numLogLines : 1500,
+      returnAllLogs: !!returnAllLogs,
+    });
+    return this.client.getServiceLogs(request, { ...this.getHeaderOptions(), signal: abortController.signal });
   }
 
   async getStarlarkRun(enclave: RemoveFunctions<EnclaveInfo>) {
@@ -95,7 +119,7 @@ export abstract class KurtosisClient {
         apicPort: apicInfo.grpcPortInsideEnclave,
       });
       return this.client.getStarlarkRun(request, this.getHeaderOptions());
-    }, "KurtosisClient could not getStarlarkRun");
+    }, `KurtosisClient could not getStarlarkRun for ${enclave.name}`);
   }
 
   async listFilesArtifactNamesAndUuids(enclave: RemoveFunctions<EnclaveInfo>) {
@@ -110,7 +134,7 @@ export abstract class KurtosisClient {
         apicPort: apicInfo.grpcPortInsideEnclave,
       });
       return this.client.listFilesArtifactNamesAndUuids(request, this.getHeaderOptions());
-    }, "KurtosisClient could not listFilesArtifactNamesAndUuids");
+    }, `KurtosisClient could not listFilesArtifactNamesAndUuids for ${enclave.name}`);
   }
 
   async createEnclave(

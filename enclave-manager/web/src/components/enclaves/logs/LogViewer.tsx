@@ -22,6 +22,7 @@ export const LogViewer = ({
 }: LogViewerProps) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [logLines, setLogLines] = useState(propsLogLines);
+  const [userIsScrolling, setUserIsScrolling] = useState(false);
   const [automaticScroll, setAutomaticScroll] = useState(true);
 
   const throttledSetLogLines = useMemo(() => throttle(setLogLines, 500), []);
@@ -34,6 +35,14 @@ export const LogViewer = ({
     setAutomaticScroll(e.target.checked);
     if (virtuosoRef.current && e.target.checked) {
       virtuosoRef.current.scrollToIndex({ index: "LAST" });
+    }
+  };
+
+  const handleBottomStateChange = (atBottom: boolean) => {
+    if (userIsScrolling) {
+      setAutomaticScroll(atBottom);
+    } else if (automaticScroll && !atBottom) {
+      virtuosoRef.current?.scrollToIndex({ index: "LAST" });
     }
   };
 
@@ -71,7 +80,8 @@ export const LogViewer = ({
         <Virtuoso
           ref={virtuosoRef}
           followOutput={automaticScroll}
-          atBottomStateChange={(atBottom) => setAutomaticScroll(atBottom)}
+          atBottomStateChange={handleBottomStateChange}
+          isScrolling={setUserIsScrolling}
           style={{ height: "660px" }}
           data={logLines.filter(({ message }) => isDefined(message))}
           itemContent={(index, line) => <LogLine {...line} />}
