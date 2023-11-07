@@ -11,19 +11,9 @@ import {
   Thead,
   Tr,
 } from "@chakra-ui/react";
-import { Port, Port_TransportProtocol } from "enclave-manager-sdk/build/api_container_service_pb";
+import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
 import { TitledCard } from "../../TitledCard";
-
-function transportProtocolToString(protocol: Port_TransportProtocol) {
-  switch (protocol) {
-    case Port_TransportProtocol.TCP:
-      return "TCP";
-    case Port_TransportProtocol.SCTP:
-      return "SCTP";
-    case Port_TransportProtocol.UDP:
-      return "UDP";
-  }
-}
+import { transportProtocolToString } from "../utils";
 
 type PortsSummaryProps = {
   privatePorts: Port[];

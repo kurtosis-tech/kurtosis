@@ -100,7 +100,12 @@ export function DataTable<Data extends object>({
             {row.getVisibleCells().map((cell) => {
               const meta = cell.column.columnDef.meta;
               return (
-                <Td key={cell.id} isNumeric={meta?.isNumeric} textAlign={!!meta?.centerAligned ? "center" : undefined}>
+                <Td
+                  key={cell.id}
+                  isNumeric={meta?.isNumeric}
+                  textAlign={!!meta?.centerAligned ? "center" : undefined}
+                  width={cell.column.getSize()}
+                >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </Td>
               );
