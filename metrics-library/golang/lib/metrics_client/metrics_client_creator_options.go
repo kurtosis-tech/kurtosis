@@ -15,6 +15,8 @@ type CreateMetricsClientOption struct {
 	callbackObject              Callback
 	logger                      analytics.Logger
 	isCI                        bool
+	cloudUserId                 string
+	cloudInstanceId             string
 }
 
 func NewMetricsClientCreatorOption(source source.Source,
@@ -25,7 +27,9 @@ func NewMetricsClientCreatorOption(source source.Source,
 	shouldFlushQueueOnEachEvent bool,
 	callbackObject Callback,
 	logger analytics.Logger,
-	isCI bool) *CreateMetricsClientOption {
+	isCI bool,
+	cloudUserId string,
+	cloudInstanceId string) *CreateMetricsClientOption {
 	return &CreateMetricsClientOption{
 		source:                      source,
 		sourceVersion:               sourceVersion,
@@ -36,5 +40,7 @@ func NewMetricsClientCreatorOption(source source.Source,
 		callbackObject:              callbackObject,
 		logger:                      logger,
 		isCI:                        isCI,
+		cloudUserId:                 cloudUserId,
+		cloudInstanceId:             cloudInstanceId,
 	}
 }
