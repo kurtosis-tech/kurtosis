@@ -14,9 +14,9 @@ export const Navbar = () => {
           isActive={location.pathname === "/" || location.pathname.startsWith("/enclave")}
         />
       </Link>
-      <Link to={"/catalog"}>
-        <NavButton label={"View catalog"} Icon={<FiPackage />} isActive={location.pathname.startsWith("/catalog")} />
-      </Link>
+      {/*<Link to={"/catalog"}>*/}
+      {/*  <NavButton label={"View catalog"} Icon={<FiPackage />} isActive={location.pathname.startsWith("/catalog")} />*/}
+      {/*</Link>*/}
     </Navigation>
   );
 };
