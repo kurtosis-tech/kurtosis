@@ -2,8 +2,6 @@ import { Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-
 import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { FunctionComponent, Suspense } from "react";
 import { Await, useNavigate, useParams, useRouteLoaderData } from "react-router-dom";
-import { EditEnclaveButton } from "../../../../components/enclaves/EditEnclaveButton";
-import { DeleteEnclavesButton } from "../../../../components/enclaves/widgets/DeleteEnclavesButton";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
 import { isDefined } from "../../../../utils";
 import { EnclaveFullInfo } from "../../types";
@@ -81,17 +79,11 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
     <Flex direction="column" width={"100%"}>
       <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
         <TabList>
-          <Flex justifyContent={"space-between"} width={"100%"}>
-            <TabList>
-              {tabs.map((tab) => (
-                <Tab key={tab.path}>{tab.path}</Tab>
-              ))}
-            </TabList>
-            <Flex gap={"8px"} alignItems={"center"}>
-              <DeleteEnclavesButton enclaves={[enclave]} />
-              <EditEnclaveButton enclave={enclave} />
-            </Flex>
-          </Flex>
+          <TabList>
+            {tabs.map((tab) => (
+              <Tab key={tab.path}>{tab.path}</Tab>
+            ))}
+          </TabList>
         </TabList>
         <TabPanels>
           {tabs.map((tab) => (

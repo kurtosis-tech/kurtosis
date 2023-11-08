@@ -12,11 +12,9 @@ import { RunStarlarkResolvedType } from "./action";
 import { EnclaveLoaderResolved } from "./loader";
 import { EnclaveLogs } from "./logs/EnclaveLogs";
 import { EnclaveOverview } from "./overview/EnclaveOverview";
-import { EnclaveSource } from "./source/EnclaveSource";
 
 const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInfo }> }[] = [
   { path: "overview", element: EnclaveOverview },
-  { path: "source", element: EnclaveSource },
   { path: "logs", element: EnclaveLogs },
 ];
 
@@ -66,7 +64,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   const activeIndex = tabs.findIndex((tab) => tab.path === activeTab);
 
   const [unavailableModalState, setUnavailableModalState] = useState<
-    { isOpen: false } | { isOpen: true; featureName: string; message?: string }
+    { isOpen: false } | { isOpen: true; featureName: string; message?: string; issueUrl: string }
   >({ isOpen: false });
 
   const handleTabChange = (newTabIndex: number) => {
@@ -75,15 +73,9 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
       setUnavailableModalState({
         isOpen: true,
         featureName: "Enclave Logs",
+        issueUrl: "https://github.com/kurtosis-tech/kurtosis/issues/1721",
         message:
           "Enclave logs are currently only viewable during configuration. Please open a feature request if you’d like these logs to be persisted.",
-      });
-      return;
-    }
-    if (tab.path === "source") {
-      setUnavailableModalState({
-        isOpen: true,
-        featureName: "Source",
       });
       return;
     }
@@ -124,6 +116,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
         featureName={unavailableModalState.isOpen ? unavailableModalState.featureName : ""}
         message={unavailableModalState.isOpen ? unavailableModalState.message : ""}
         isOpen={unavailableModalState.isOpen}
+        issueUrl={unavailableModalState.isOpen ? unavailableModalState.issueUrl : ""}
         onClose={() => setUnavailableModalState({ isOpen: false })}
       />
     </Flex>
