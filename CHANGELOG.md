@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.85.8](https://github.com/kurtosis-tech/kurtosis/compare/0.85.7...0.85.8) (2023-11-08)
+
+
+### Features
+
+* support downloading artifacts in the new emui ([#1720](https://github.com/kurtosis-tech/kurtosis/issues/1720)) ([fbfeaa3](https://github.com/kurtosis-tech/kurtosis/commit/fbfeaa36310dee15be0b259a687ae656a18e470e))
+
+
+### Bug Fixes
+
+* stop all services first to update the service status in the service registration during a `kurtosis enclave stop` execution ([#1712](https://github.com/kurtosis-tech/kurtosis/issues/1712)) ([3d1e142](https://github.com/kurtosis-tech/kurtosis/commit/3d1e14230cb96bd4aeb7613d45cc1fba95b5c2fd)), closes [#1711](https://github.com/kurtosis-tech/kurtosis/issues/1711)
+
 ## [0.85.7](https://github.com/kurtosis-tech/kurtosis/compare/0.85.6...0.85.7) (2023-11-08)
 
 
