@@ -31,7 +31,7 @@ export const KurtosisPackageArgumentInput = ({ argument, disabled }: KurtosisPac
       helperText={argument.description}
     >
       <KurtosisArgumentTypeInput
-        type={argument.typeV2?.topLevelType || ArgumentValueType.JSON}
+        type={argument.typeV2?.topLevelType}
         subType1={argument.typeV2?.innerType1}
         subType2={argument.typeV2?.innerType2}
         name={fieldName}
