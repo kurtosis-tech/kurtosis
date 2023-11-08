@@ -35,9 +35,6 @@ const theme = extendTheme({
     body: `'Inter', sans-serif`,
   },
   colors: {
-    kurtosisSelected: {
-      100: "#292929",
-    },
     kurtosisGreen: {
       100: "#005e11",
       200: "#008c19",
@@ -100,8 +97,7 @@ const theme = extendTheme({
       },
       variants: {
         outline: (props: StyleFunctionProps) => ({
-          _hover: { bg: "initial", borderColor: `${props.colorScheme}.400` },
-          _active: { bg: "initial" },
+          _hover: { borderColor: `${props.colorScheme}.400` },
           color: `${props.colorScheme}.400`,
           borderColor: "gray.300",
         }),
@@ -133,6 +129,14 @@ const theme = extendTheme({
         ghost: defineStyle((props) => ({
           _hover: { bg: "gray.650" },
         })),
+        sortableHeader: (props: StyleFunctionProps) => {
+          const ghost = theme.components.Button.variants!.ghost(props);
+          return {
+            ...ghost,
+            color: "gray.100",
+            textTransform: "uppercase",
+          };
+        },
         nav: {
           _active: {
             bg: "gray.600",

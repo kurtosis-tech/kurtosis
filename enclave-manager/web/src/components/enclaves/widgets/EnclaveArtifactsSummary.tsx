@@ -1,4 +1,4 @@
-import { Button, Tag } from "@chakra-ui/react";
+import { Tag, Text } from "@chakra-ui/react";
 import { FilesArtifactNameAndUuid } from "enclave-manager-sdk/build/api_container_service_pb";
 import { isDefined } from "../../../utils";
 
@@ -12,8 +12,8 @@ export const EnclaveArtifactsSummary = ({ artifacts }: EnclaveArtifactsSummaryPr
   }
 
   return (
-    <Button variant={"ghost"} size={"xs"}>
+    <Text fontWeight={"semibold"} fontSize={"xs"}>
       {artifacts.length}
-    </Button>
+    </Text>
   );
 };

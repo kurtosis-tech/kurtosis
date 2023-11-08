@@ -1,14 +1,21 @@
-import { Button, ButtonProps, useToast } from "@chakra-ui/react";
+import { Button, ButtonProps, IconButton, IconButtonProps, useToast } from "@chakra-ui/react";
 import { FiCopy } from "react-icons/fi";
 import { isDefined } from "../utils";
 
-type CopyButtonProps = ButtonProps & {
+type CopyButtonProps<IsIconButton extends boolean> = (IsIconButton extends true ? IconButtonProps : ButtonProps) & {
   valueToCopy?: (() => string) | string | null;
-  text?: string;
+  text?: IsIconButton extends true ? string : never;
+  isIconButton?: IsIconButton;
   contentName: string;
 };
 
-export const CopyButton = ({ valueToCopy, text, contentName, ...buttonProps }: CopyButtonProps) => {
+export const CopyButton = <IsIconButton extends boolean>({
+  valueToCopy,
+  text,
+  contentName,
+  isIconButton,
+  ...buttonProps
+}: CopyButtonProps<IsIconButton>) => {
   const toast = useToast();
 
   const handleCopyClick = () => {
@@ -22,13 +29,28 @@ export const CopyButton = ({ valueToCopy, text, contentName, ...buttonProps }: C
     }
   };
 
-  if (!isDefined(valueToCopy)) {
+  if (!isDefined(valueToCopy) && !isDefined(buttonProps.onClick)) {
     return null;
   }
 
-  return (
-    <Button leftIcon={<FiCopy />} size={"xs"} colorScheme={"darkBlue"} onClick={handleCopyClick} {...buttonProps}>
-      {text || "Copy"}
-    </Button>
-  );
+  if (isIconButton) {
+    return (
+      <IconButton
+        icon={<FiCopy />}
+        size={"xs"}
+        variant={"ghost"}
+        colorScheme={"darkBlue"}
+        onClick={handleCopyClick}
+        {...(buttonProps as IconButtonProps)}
+      >
+        {text || "Copy"}
+      </IconButton>
+    );
+  } else {
+    return (
+      <Button leftIcon={<FiCopy />} size={"xs"} colorScheme={"darkBlue"} onClick={handleCopyClick} {...buttonProps}>
+        {text || "Copy"}
+      </Button>
+    );
+  }
 };
