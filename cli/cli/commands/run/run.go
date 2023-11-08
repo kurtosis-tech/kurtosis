@@ -100,9 +100,6 @@ const (
 	packageArgsFileFlagKey      = "args-file"
 	packageArgsFileDefaultValue = ""
 
-	runFailed    = false
-	runSucceeded = true
-
 	imageDownloadFlagKey = "image-download"
 	defaultImageDownload = "missing"
 
@@ -231,7 +228,7 @@ func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	metricsClient metrics_client.MetricsClient,
+	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -395,12 +392,6 @@ func run(
 	}
 
 	errRunningKurtosis = ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
-	var runStatusForMetrics bool
-	if errRunningKurtosis != nil {
-		runStatusForMetrics = runFailed
-	} else {
-		runStatusForMetrics = runSucceeded
-	}
 
 	if err = enclaveCtx.ConnectServices(ctx, connect); err != nil {
 		logrus.Warnf("An error occurred configuring the user services port forwarding\nError was: %v", err)
@@ -409,11 +400,6 @@ func run(
 	servicesInEnclavePostRun, servicesInEnclaveError := enclaveCtx.GetServices()
 	if servicesInEnclaveError != nil {
 		logrus.Warn("Tried getting number of services in the enclave to log metrics but failed")
-	} else {
-		// TODO(gyani-cloud-metrics) move this to APIC
-		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics); err != nil {
-			logrus.Warn("An error occurred tracking kurtosis run finished event")
-		}
 	}
 
 	if errRunningKurtosis != nil {
