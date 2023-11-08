@@ -11,9 +11,8 @@ root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Constants
 # ==================================================================================================
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
-    "../enclave-manager/scripts/build.sh"
-    "launcher/scripts/build.sh"
-    "server/scripts/build.sh"
+    "api/scripts/build.sh"
+    "web/scripts/build.sh"
 )
 
 
