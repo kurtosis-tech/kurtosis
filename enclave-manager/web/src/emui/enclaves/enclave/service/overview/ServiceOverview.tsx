@@ -40,11 +40,8 @@ export const ServiceOverview = ({ service }: ServiceOverviewProps) => {
           />
         </GridItem>
       </Grid>
-      <TitledCard title={"Public Ports"}>
-        <PortsTable ports={Object.values(service.maybePublicPorts)} ip={service.maybePublicIpAddr} isPublic />
-      </TitledCard>
-      <TitledCard title={"Private Ports"}>
-        <PortsTable ports={Object.values(service.privatePorts)} ip={service.privateIpAddr} />
+      <TitledCard title={"Ports"}>
+        <PortsTable privatePorts={service.privatePorts} publicPorts={service.maybePublicPorts} />
       </TitledCard>
       {isDefined(service.container) && <ContainerOverview container={service.container} />}
       {!isDefined(service.container) && (

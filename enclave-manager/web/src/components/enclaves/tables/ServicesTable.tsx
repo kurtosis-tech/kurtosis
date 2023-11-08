@@ -20,7 +20,7 @@ type ServicesTableRow = {
   status: ServiceStatus;
   // started: DateTime | null; TODO: The api needs to support this field
   image?: string;
-  ports: { privatePorts: Port[]; publicPorts: Port[] };
+  ports: { privatePorts: Record<string, Port>; publicPorts: Record<string, Port> };
 };
 
 const serviceToRow = (service: ServiceInfo): ServicesTableRow => {
@@ -30,8 +30,8 @@ const serviceToRow = (service: ServiceInfo): ServicesTableRow => {
     status: service.serviceStatus,
     image: service.container?.imageName,
     ports: {
-      privatePorts: Object.values(service.privatePorts),
-      publicPorts: Object.values(service.maybePublicPorts),
+      privatePorts: service.privatePorts,
+      publicPorts: service.maybePublicPorts,
     },
   };
 };
@@ -75,10 +75,7 @@ export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: ServicesTa
           />
         ),
         sortingFn: (a, b) =>
-          a.original.ports.publicPorts.length +
-          a.original.ports.privatePorts.length -
-          b.original.ports.publicPorts.length -
-          b.original.ports.privatePorts.length,
+          Object.keys(a.original.ports.publicPorts).length - Object.keys(b.original.ports.publicPorts).length,
       }),
       columnHelper.accessor("serviceUUID", {
         header: "Logs",
