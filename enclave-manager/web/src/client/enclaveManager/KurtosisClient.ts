@@ -43,8 +43,6 @@ export abstract class KurtosisClient {
     this.client = client;
     this.cloudUrl = parentUrl;
     this.baseApplicationUrl = childUrl;
-    console.log("cloudUrl", this.cloudUrl)
-    console.log("baseApplicationUrl", this.baseApplicationUrl)
   }
 
   abstract getHeaderOptions(): { headers?: Headers };

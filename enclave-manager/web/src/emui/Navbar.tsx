@@ -2,11 +2,11 @@ import { FiHome, FiPackage } from "react-icons/fi";
 import { Link, useLocation } from "react-router-dom";
 import { NavButton, Navigation } from "../components/Navigation";
 
-export type NavbarProps ={
-  baseApplicationUrl: URL
-}
+export type NavbarProps = {
+  baseApplicationUrl: URL;
+};
 
-export const Navbar = ({ baseApplicationUrl}: NavbarProps) => {
+export const Navbar = ({ baseApplicationUrl }: NavbarProps) => {
   const location = useLocation();
 
   return (

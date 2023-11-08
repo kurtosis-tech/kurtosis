@@ -16,7 +16,7 @@ export const Navigation = ({ baseApplicationUrl, children }: PropsWithChildren &
       p={"20px 16px"}
     >
       <Flex width={"40px"} height={"40px"} alignItems={"center"}>
-        <Image src={baseApplicationUrl+"/logo.png"} />
+        <Image src={baseApplicationUrl + "/logo.png"} />
       </Flex>
       <Flex flexDirection={"column"} gap={"16px"}>
         {children}
