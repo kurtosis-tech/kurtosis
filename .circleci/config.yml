@@ -428,6 +428,7 @@ jobs:
             - << pipeline.parameters.engine-server-build-cache-key-prefix>>-{{ checksum "engine/server/go.sum" }}
 
       - run: |
+          enclave-manager/scripts/build.sh
           engine/server/scripts/build.sh
           source engine/server/scripts/_constants.env
           version_to_publish="$(./scripts/get-docker-tag.sh)"
