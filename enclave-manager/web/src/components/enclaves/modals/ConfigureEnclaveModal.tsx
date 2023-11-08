@@ -120,7 +120,7 @@ export const ConfigureEnclaveModal = ({
       return undefined;
     }
     return JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
-  }, [window.location.search, existingEnclave]);
+  }, [existingEnclave, kurtosisPackage.args]);
 
   const getLinkToCurrentConfig = () => {
     const params = new URLSearchParams({

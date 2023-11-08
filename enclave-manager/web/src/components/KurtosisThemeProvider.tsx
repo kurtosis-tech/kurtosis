@@ -1,6 +1,5 @@
 import {
   ChakraProvider,
-  DarkMode,
   defineStyle,
   extendTheme,
   StyleFunctionProps,
@@ -71,7 +70,7 @@ const theme = extendTheme({
     md: "16px",
     lg: "18px",
     xl: "20px",
-    ["2xl"]: "22px",
+    "2xl": "22px",
   },
   styles: {
     global: (props: StyleFunctionProps) => ({
@@ -302,7 +301,7 @@ const ColorModeFixer = () => {
     if (colorMode === "light") {
       toggleColorMode();
     }
-  }, [colorMode]);
+  }, [colorMode, toggleColorMode]);
 
   return null;
 };

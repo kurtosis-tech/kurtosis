@@ -1,4 +1,4 @@
-import { FiHome, FiPackage } from "react-icons/fi";
+import { FiHome } from "react-icons/fi";
 import { Link, useLocation } from "react-router-dom";
 import { NavButton, Navigation } from "../components/Navigation";
 

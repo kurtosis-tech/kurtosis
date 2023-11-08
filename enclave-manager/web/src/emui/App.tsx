@@ -49,7 +49,7 @@ const KurtosisRouter = () => {
           basename: kurtosisClient.getBaseApplicationUrl().pathname,
         },
       ),
-    [kurtosisClient],
+    [kurtosisClient, kurtosisIndexerClient],
   );
 
   return <RouterProvider router={router} />;
