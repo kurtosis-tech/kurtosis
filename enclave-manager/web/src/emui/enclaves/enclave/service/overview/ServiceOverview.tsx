@@ -10,12 +10,14 @@ import { FLEX_STANDARD_GAP } from "../../../../../components/theme/constants";
 import { TitledCard } from "../../../../../components/TitledCard";
 import { ValueCard } from "../../../../../components/ValueCard";
 import { isDefined } from "../../../../../utils";
+import { EnclaveFullInfo } from "../../../types";
 
 type ServiceOverviewProps = {
+  enclave: EnclaveFullInfo;
   service: ServiceInfo;
 };
 
-export const ServiceOverview = ({ service }: ServiceOverviewProps) => {
+export const ServiceOverview = ({ service, enclave }: ServiceOverviewProps) => {
   return (
     <Flex flexDirection={"column"} gap={FLEX_STANDARD_GAP}>
       <Grid templateColumns={"repeat(4, 1fr)"} gap={FLEX_STANDARD_GAP}>
@@ -43,7 +45,9 @@ export const ServiceOverview = ({ service }: ServiceOverviewProps) => {
       <TitledCard title={"Ports"}>
         <PortsTable privatePorts={service.privatePorts} publicPorts={service.maybePublicPorts} />
       </TitledCard>
-      {isDefined(service.container) && <ContainerOverview container={service.container} />}
+      {isDefined(service.container) && (
+        <ContainerOverview serviceName={service.name} enclaveName={enclave.name} container={service.container} />
+      )}
       {!isDefined(service.container) && (
         <KurtosisAlert message={"No container details are available for this service."} />
       )}
@@ -52,15 +56,15 @@ export const ServiceOverview = ({ service }: ServiceOverviewProps) => {
 };
 
 type ContainerOverviewProps = {
+  enclaveName: string;
+  serviceName: string;
   container: Container;
 };
 
-const ContainerOverview = ({ container }: ContainerOverviewProps) => {
+const ContainerOverview = ({ enclaveName, container, serviceName }: ContainerOverviewProps) => {
   const environmentJson = useMemo(() => JSON.stringify(container.envVars, undefined, 4), [container]);
   const cmdJson = useMemo(() => JSON.stringify(container.cmdArgs, undefined, 4), [container]);
   const entrypointJson = useMemo(() => JSON.stringify(container.entrypointArgs, undefined, 4), [container]);
-
-  const filePrefix = container.imageName.replaceAll(/:/g, "_");
 
   return (
     <Flex flexDirection={"column"} gap={"32px"}>
@@ -69,11 +73,19 @@ const ContainerOverview = ({ container }: ContainerOverviewProps) => {
       </Text>
       <Grid gridColumnGap={"32px"} gridTemplateColumns={"1fr 1fr"}>
         <GridItem display={"flex"} flexDirection={"column"} gap={"16px"}>
-          <FileDisplay value={entrypointJson} title={"Entrypoint"} filename={`${filePrefix}-entrypoint.json`} />
-          <FileDisplay value={cmdJson} title={"CMD"} filename={`${filePrefix}-cmd.json`} />
+          <FileDisplay
+            value={entrypointJson}
+            title={"Entrypoint"}
+            filename={`${enclaveName}-${serviceName}-entrypoint.json`}
+          />
+          <FileDisplay value={cmdJson} title={"CMD"} filename={`${enclaveName}-${serviceName}-cmd.json`} />
         </GridItem>
         <GridItem>
-          <FileDisplay value={environmentJson} title={"Environment"} filename={`${filePrefix}-env.json`} />
+          <FileDisplay
+            value={environmentJson}
+            title={"Environment"}
+            filename={`${enclaveName}-${serviceName}-env.json`}
+          />
         </GridItem>
       </Grid>
     </Flex>
