@@ -102,7 +102,7 @@ export function DataTable<Data extends object>({
       </Thead>
       <Tbody>
         {table.getRowModel().rows.map((row) => (
-          <Tr key={row.id} bg={row.getIsSelected() ? "kurtosisSelected.100" : ""}>
+          <Tr key={row.id} bg={row.getIsSelected() ? "gray.700" : ""}>
             {row.getVisibleCells().map((cell) => {
               const meta = cell.column.columnDef.meta;
               return (
