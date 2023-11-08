@@ -23,20 +23,13 @@ export function starlarkResponseLineToLogLineProps(l: StarlarkRunResponseLine): 
     case "instruction":
       return { message: l.runResponseLine.value.executableInstruction };
     case "progressInfo":
-      return {
-        message: l.runResponseLine.value.currentStepInfo[l.runResponseLine.value.currentStepNumber],
-      };
+      return { message: l.runResponseLine.value.currentStepInfo[l.runResponseLine.value.currentStepNumber] };
     case "instructionResult":
       return { message: l.runResponseLine.value.serializedInstructionResult };
     case "error":
-      return {
-        message: l.runResponseLine.value.error.value?.errorMessage || "Unknown error",
-        status: "error",
-      };
+      return { message: l.runResponseLine.value.error.value?.errorMessage || "Unknown error", status: "error" };
     case "runFinishedEvent":
-      return {
-        message: l.runResponseLine.value.isRunSuccessful ? "Script completed" : "Script failed",
-      };
+      return { message: l.runResponseLine.value.isRunSuccessful ? "Script completed" : "Script failed" };
     case "info":
       return { message: l.runResponseLine.value.infoMessage };
     default:
@@ -52,9 +45,7 @@ export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
   const navigator = useNavigate();
   const revalidator = useRevalidator();
   const location = useLocation() as Location<RunStarlarkResolvedType | undefined>;
-  const [progress, setProgress] = useState<EnclaveLogStage>({
-    stage: "waiting",
-  });
+  const [progress, setProgress] = useState<EnclaveLogStage>({ stage: "waiting" });
   const [logLines, setLogLines] = useState<LogLineProps[]>([]);
 
   useEffect(() => {
@@ -88,10 +79,7 @@ export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
               if (line.runResponseLine.case === "runFinishedEvent") {
                 revalidator.revalidate();
                 return line.runResponseLine.value.isRunSuccessful
-                  ? {
-                      stage: "done",
-                      totalSteps: oldProgress.stage === "executing" ? oldProgress.totalSteps : null,
-                    }
+                  ? { stage: "done", totalSteps: oldProgress.stage === "executing" ? oldProgress.totalSteps : null }
                   : { stage: "failed" };
               }
               return oldProgress;

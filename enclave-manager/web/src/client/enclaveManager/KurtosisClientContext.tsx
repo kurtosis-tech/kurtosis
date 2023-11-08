@@ -10,9 +10,7 @@ type KurtosisClientContextState = {
   client: KurtosisClient | null;
 };
 
-const KurtosisClientContext = createContext<KurtosisClientContextState>({
-  client: null,
-});
+const KurtosisClientContext = createContext<KurtosisClientContextState>({ client: null });
 
 export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
   const [client, setClient] = useState<KurtosisClient>();

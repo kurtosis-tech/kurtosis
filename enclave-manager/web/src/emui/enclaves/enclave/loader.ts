@@ -8,10 +8,7 @@ import { EnclaveFullInfo } from "../types";
 export const loadEnclave = async (
   kurtosisClient: KurtosisClient,
   uuid?: string,
-): Promise<{
-  routeName: string;
-  enclave?: Result<EnclaveFullInfo, string>;
-}> => {
+): Promise<{ routeName: string; enclave?: Result<EnclaveFullInfo, string> }> => {
   if (!isDefined(uuid)) {
     return {
       routeName: "Missing uuid",
@@ -56,6 +53,4 @@ export const enclaveLoader =
   };
 
 export type EnclaveLoaderDeferred = { data: ReturnType<typeof loadEnclave> };
-export type EnclaveLoaderResolved = {
-  data: Awaited<ReturnType<typeof loadEnclave>>;
-};
+export type EnclaveLoaderResolved = { data: Awaited<ReturnType<typeof loadEnclave>> };
