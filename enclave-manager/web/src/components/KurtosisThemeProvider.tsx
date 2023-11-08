@@ -133,6 +133,14 @@ const theme = extendTheme({
         ghost: defineStyle((props) => ({
           _hover: { bg: "gray.650" },
         })),
+        sortableHeader: (props: StyleFunctionProps) => {
+          const ghost = theme.components.Button.variants!.ghost(props);
+          return {
+            ...ghost,
+            color: "gray.100",
+            textTransform: "uppercase",
+          };
+        },
         nav: {
           _active: {
             bg: "gray.600",

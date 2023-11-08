@@ -1,5 +1,5 @@
 import { TriangleDownIcon, TriangleUpIcon } from "@chakra-ui/icons";
-import { chakra, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
+import { Button, chakra, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
 import {
   ColumnDef,
   flexRender,
@@ -79,13 +79,18 @@ export function DataTable<Data extends object>({
                   isNumeric={meta?.isNumeric}
                   textAlign={!!meta?.centerAligned ? "center" : undefined}
                 >
-                  {flexRender(header.column.columnDef.header, header.getContext())}
+                  {header.column.getCanSort() && (
+                    <Button variant={"sortableHeader"} size={"xs"}>
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </Button>
+                  )}
+                  {!header.column.getCanSort() && flexRender(header.column.columnDef.header, header.getContext())}
                   {header.column.getIsSorted() && (
                     <chakra.span pl="4">
                       {header.column.getIsSorted() === "desc" ? (
-                        <TriangleDownIcon aria-label="sorted descending" />
+                        <TriangleDownIcon aria-label="sorted descending" color={"gray.400"} />
                       ) : (
-                        <TriangleUpIcon aria-label="sorted ascending" />
+                        <TriangleUpIcon aria-label="sorted ascending" color={"gray.400"} />
                       )}
                     </chakra.span>
                   )}
@@ -101,12 +106,7 @@ export function DataTable<Data extends object>({
             {row.getVisibleCells().map((cell) => {
               const meta = cell.column.columnDef.meta;
               return (
-                <Td
-                  key={cell.id}
-                  isNumeric={meta?.isNumeric}
-                  textAlign={!!meta?.centerAligned ? "center" : undefined}
-                  width={cell.column.getSize()}
-                >
+                <Td key={cell.id} isNumeric={meta?.isNumeric} textAlign={!!meta?.centerAligned ? "center" : undefined}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </Td>
               );

@@ -60,7 +60,7 @@ export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: ServicesTa
       }),
       columnHelper.accessor("status", {
         header: "Status",
-        cell: (statusCell) => <ServiceStatusTag status={statusCell.getValue()} />,
+        cell: (statusCell) => <ServiceStatusTag status={statusCell.getValue()} variant={"square"} />,
       }),
       columnHelper.accessor("image", {
         header: "Image",
