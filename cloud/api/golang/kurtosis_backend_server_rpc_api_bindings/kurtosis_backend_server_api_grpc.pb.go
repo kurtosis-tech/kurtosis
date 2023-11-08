@@ -27,6 +27,7 @@ const (
 	KurtosisCloudBackendServer_GetOrCreateInstance_FullMethodName         = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateInstance"
 	KurtosisCloudBackendServer_GetOrCreatePaymentConfig_FullMethodName    = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreatePaymentConfig"
 	KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_FullMethodName = "/kurtosis_cloud.KurtosisCloudBackendServer/RefreshDefaultPaymentMethod"
+	KurtosisCloudBackendServer_CancelPaymentSubscription_FullMethodName   = "/kurtosis_cloud.KurtosisCloudBackendServer/CancelPaymentSubscription"
 )
 
 // KurtosisCloudBackendServerClient is the client API for KurtosisCloudBackendServer service.
@@ -40,6 +41,7 @@ type KurtosisCloudBackendServerClient interface {
 	GetOrCreateInstance(ctx context.Context, in *GetOrCreateInstanceRequest, opts ...grpc.CallOption) (*GetOrCreateInstanceResponse, error)
 	GetOrCreatePaymentConfig(ctx context.Context, in *GetOrCreatePaymentConfigArgs, opts ...grpc.CallOption) (*GetOrCreatePaymentConfigResponse, error)
 	RefreshDefaultPaymentMethod(ctx context.Context, in *RefreshDefaultPaymentMethodArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CancelPaymentSubscription(ctx context.Context, in *CancelPaymentSubscriptionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type kurtosisCloudBackendServerClient struct {
@@ -113,6 +115,15 @@ func (c *kurtosisCloudBackendServerClient) RefreshDefaultPaymentMethod(ctx conte
 	return out, nil
 }
 
+func (c *kurtosisCloudBackendServerClient) CancelPaymentSubscription(ctx context.Context, in *CancelPaymentSubscriptionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_CancelPaymentSubscription_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KurtosisCloudBackendServerServer is the server API for KurtosisCloudBackendServer service.
 // All implementations should embed UnimplementedKurtosisCloudBackendServerServer
 // for forward compatibility
@@ -124,6 +135,7 @@ type KurtosisCloudBackendServerServer interface {
 	GetOrCreateInstance(context.Context, *GetOrCreateInstanceRequest) (*GetOrCreateInstanceResponse, error)
 	GetOrCreatePaymentConfig(context.Context, *GetOrCreatePaymentConfigArgs) (*GetOrCreatePaymentConfigResponse, error)
 	RefreshDefaultPaymentMethod(context.Context, *RefreshDefaultPaymentMethodArgs) (*emptypb.Empty, error)
+	CancelPaymentSubscription(context.Context, *CancelPaymentSubscriptionArgs) (*emptypb.Empty, error)
 }
 
 // UnimplementedKurtosisCloudBackendServerServer should be embedded to have forward compatible implementations.
@@ -150,6 +162,9 @@ func (UnimplementedKurtosisCloudBackendServerServer) GetOrCreatePaymentConfig(co
 }
 func (UnimplementedKurtosisCloudBackendServerServer) RefreshDefaultPaymentMethod(context.Context, *RefreshDefaultPaymentMethodArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshDefaultPaymentMethod not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) CancelPaymentSubscription(context.Context, *CancelPaymentSubscriptionArgs) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelPaymentSubscription not implemented")
 }
 
 // UnsafeKurtosisCloudBackendServerServer may be embedded to opt out of forward compatibility for this service.
@@ -289,6 +304,24 @@ func _KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_Handler(srv interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisCloudBackendServer_CancelPaymentSubscription_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelPaymentSubscriptionArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).CancelPaymentSubscription(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_CancelPaymentSubscription_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).CancelPaymentSubscription(ctx, req.(*CancelPaymentSubscriptionArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KurtosisCloudBackendServer_ServiceDesc is the grpc.ServiceDesc for KurtosisCloudBackendServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -323,6 +356,10 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshDefaultPaymentMethod",
 			Handler:    _KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_Handler,
+		},
+		{
+			MethodName: "CancelPaymentSubscription",
+			Handler:    _KurtosisCloudBackendServer_CancelPaymentSubscription_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
