@@ -1,5 +1,9 @@
 import { PromiseClient } from "@connectrpc/connect";
-import { RunStarlarkPackageArgs, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
+import {
+  FilesArtifactNameAndUuid,
+  RunStarlarkPackageArgs,
+  ServiceInfo,
+} from "enclave-manager-sdk/build/api_container_service_pb";
 import {
   CreateEnclaveArgs,
   DestroyEnclaveArgs,
@@ -14,6 +18,7 @@ import {
   GetListFilesArtifactNamesAndUuidsRequest,
   GetServicesRequest,
   GetStarlarkRunRequest,
+  InspectFilesArtifactContentsRequest,
   RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
@@ -133,6 +138,22 @@ export abstract class KurtosisClient {
       });
       return this.client.listFilesArtifactNamesAndUuids(request, this.getHeaderOptions());
     }, `KurtosisClient could not listFilesArtifactNamesAndUuids for ${enclave.name}`);
+  }
+
+  async inspectFilesArtifactContents(enclave: RemoveFunctions<EnclaveInfo>, file: FilesArtifactNameAndUuid) {
+    return await asyncResult(() => {
+      const apicInfo = enclave.apiContainerInfo;
+      assertDefined(
+        apicInfo,
+        `Cannot listFilesArtifactNamesAndUuids because the passed enclave '${enclave.name}' does not have apicInfo`,
+      );
+      const request = new InspectFilesArtifactContentsRequest({
+        apicIpAddress: apicInfo.bridgeIpAddress,
+        apicPort: apicInfo.grpcPortInsideEnclave,
+        fileNamesAndUuid: file,
+      });
+      return this.client.inspectFilesArtifactContents(request, this.getHeaderOptions());
+    }, `KurtosisClient could not inspectFilesArtifactContents for ${enclave.name}`);
   }
 
   async createEnclave(

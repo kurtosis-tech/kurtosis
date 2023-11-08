@@ -177,7 +177,7 @@ export const ConfigureEnclaveModal = ({
     <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={handleClose} isCentered size={"5xl"}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader textAlign={"center"}>Enclave Configuration</ModalHeader>
+        <ModalHeader textAlign={"center"}>{!isDefined(existingEnclave) && "New "}Enclave Configuration</ModalHeader>
         <ModalCloseButton />
         <EnclaveConfigurationForm
           ref={formRef}
@@ -187,7 +187,7 @@ export const ConfigureEnclaveModal = ({
         >
           <ModalBody p={"0px"}>
             <Flex fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
-              <Text>Deploying</Text>
+              <Text>Configuring</Text>
               <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
             </Flex>
             {isDefined(error) && <KurtosisAlert message={error} />}
@@ -220,7 +220,7 @@ export const ConfigureEnclaveModal = ({
                 Cancel
               </Button>
               <Button type={"submit"} isLoading={isLoading} colorScheme={"kurtosisGreen"}>
-                Run
+                {existingEnclave ? "Update" : "Run"}
               </Button>
             </Flex>
           </ModalFooter>

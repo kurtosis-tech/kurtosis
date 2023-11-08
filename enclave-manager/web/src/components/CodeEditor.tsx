@@ -53,6 +53,9 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
           selectionHighlight: !isReadOnly,
           occurrencesHighlight: !isReadOnly,
           overviewRulerLanes: isReadOnly ? 0 : 3,
+          scrollbar: {
+            alwaysConsumeMouseWheel: false,
+          },
         }}
         defaultLanguage={"json"}
         theme={"vs-dark"}

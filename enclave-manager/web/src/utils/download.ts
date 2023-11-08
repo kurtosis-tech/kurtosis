@@ -1,13 +1,13 @@
 const DEFAULT_FILE_TYPE = "text/plain";
 
 export const saveTextAsFile = (
-  text: string,
+  text: string | Blob,
   fileName: string,
   options: { elementName?: string; fileType?: string } = {},
 ) => {
   const fileType = options.fileType || DEFAULT_FILE_TYPE;
 
-  const blob = new Blob([text], { type: fileType });
+  const blob = typeof text === "string" ? new Blob([text], { type: fileType }) : text;
 
   const a = document.createElement("a");
 
