@@ -43,7 +43,7 @@ export const FilesTable = ({ filesAndArtifacts, enclave }: FilesTableProps) => {
     <DataTable
       columns={columns}
       data={filesAndArtifacts.fileNamesAndUuids}
-      defaultSorting={[{ id: "name", desc: true }]}
+      defaultSorting={[{ id: "fileName", desc: true }]}
     />
   );
 };
