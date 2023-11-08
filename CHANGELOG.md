@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.85.7](https://github.com/kurtosis-tech/kurtosis/compare/0.85.6...0.85.7) (2023-11-08)
+
+
+### Features
+
+* Cancel payment subscription protobuf ([#1669](https://github.com/kurtosis-tech/kurtosis/issues/1669)) ([d2b7ab8](https://github.com/kurtosis-tech/kurtosis/commit/d2b7ab8173f0fed523c2f852d23847321dbf4e00))
+
+
+### Bug Fixes
+
+* emui colormodefixer ([#1716](https://github.com/kurtosis-tech/kurtosis/issues/1716)) ([b6a0b02](https://github.com/kurtosis-tech/kurtosis/commit/b6a0b027d3602cec7561a724ea45350899cb099f))
+
 ## [0.85.6](https://github.com/kurtosis-tech/kurtosis/compare/0.85.5...0.85.6) (2023-11-07)
 
 
