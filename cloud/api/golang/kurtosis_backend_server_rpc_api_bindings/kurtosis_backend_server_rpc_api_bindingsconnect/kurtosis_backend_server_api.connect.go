@@ -56,6 +56,9 @@ const (
 	// KurtosisCloudBackendServerRefreshDefaultPaymentMethodProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's RefreshDefaultPaymentMethod RPC.
 	KurtosisCloudBackendServerRefreshDefaultPaymentMethodProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/RefreshDefaultPaymentMethod"
+	// KurtosisCloudBackendServerCancelPaymentSubscriptionProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's CancelPaymentSubscription RPC.
+	KurtosisCloudBackendServerCancelPaymentSubscriptionProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/CancelPaymentSubscription"
 )
 
 // KurtosisCloudBackendServerClient is a client for the kurtosis_cloud.KurtosisCloudBackendServer
@@ -68,6 +71,7 @@ type KurtosisCloudBackendServerClient interface {
 	GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error)
 	GetOrCreatePaymentConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error)
 	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
+	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -115,6 +119,11 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerRefreshDefaultPaymentMethodProcedure,
 			opts...,
 		),
+		cancelPaymentSubscription: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerCancelPaymentSubscriptionProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -127,6 +136,7 @@ type kurtosisCloudBackendServerClient struct {
 	getOrCreateInstance         *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse]
 	getOrCreatePaymentConfig    *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse]
 	refreshDefaultPaymentMethod *connect.Client[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs, emptypb.Empty]
+	cancelPaymentSubscription   *connect.Client[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs, emptypb.Empty]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -166,6 +176,12 @@ func (c *kurtosisCloudBackendServerClient) RefreshDefaultPaymentMethod(ctx conte
 	return c.refreshDefaultPaymentMethod.CallUnary(ctx, req)
 }
 
+// CancelPaymentSubscription calls
+// kurtosis_cloud.KurtosisCloudBackendServer.CancelPaymentSubscription.
+func (c *kurtosisCloudBackendServerClient) CancelPaymentSubscription(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error) {
+	return c.cancelPaymentSubscription.CallUnary(ctx, req)
+}
+
 // KurtosisCloudBackendServerHandler is an implementation of the
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
@@ -176,6 +192,7 @@ type KurtosisCloudBackendServerHandler interface {
 	GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error)
 	GetOrCreatePaymentConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error)
 	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
+	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -219,6 +236,11 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.RefreshDefaultPaymentMethod,
 		opts...,
 	)
+	kurtosisCloudBackendServerCancelPaymentSubscriptionHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerCancelPaymentSubscriptionProcedure,
+		svc.CancelPaymentSubscription,
+		opts...,
+	)
 	return "/kurtosis_cloud.KurtosisCloudBackendServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
@@ -235,6 +257,8 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerGetOrCreatePaymentConfigHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerRefreshDefaultPaymentMethodProcedure:
 			kurtosisCloudBackendServerRefreshDefaultPaymentMethodHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerCancelPaymentSubscriptionProcedure:
+			kurtosisCloudBackendServerCancelPaymentSubscriptionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -270,4 +294,8 @@ func (UnimplementedKurtosisCloudBackendServerHandler) GetOrCreatePaymentConfig(c
 
 func (UnimplementedKurtosisCloudBackendServerHandler) RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.RefreshDefaultPaymentMethod is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.CancelPaymentSubscription is not implemented"))
 }

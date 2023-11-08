@@ -15,7 +15,7 @@ export function argTypeToString(argType?: ArgumentValueType) {
     case ArgumentValueType.STRING:
       return "string";
     default:
-      return "unknown";
+      return "json";
   }
 }
 
@@ -31,6 +31,6 @@ export function argToTypeString(arg: PackageArg) {
     case ArgumentValueType.LIST:
       return `${argTypeToString(arg.typeV2.innerType1)}[]`;
     default:
-      return "unknown";
+      return "json";
   }
 }

@@ -16,9 +16,9 @@ import {
   GetStarlarkRunRequest,
   RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
+import { EnclaveFullInfo } from "../../emui/enclaves/types";
 import { assertDefined, asyncResult, isDefined } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
-import { EnclaveFullInfo } from "../../emui/enclaves/types";
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
@@ -29,7 +29,7 @@ export abstract class KurtosisClient {
    *
    * This URL is primarily used to generate links to the EM UI (where the hostname is included).
    * */
-  protected readonly parentUrl: URL;
+  protected readonly cloudUrl: URL;
 
   /* Full URL of the EM UI, covering two use cases:
    * In local-mode this is the same as the `parentUrl`
@@ -37,26 +37,24 @@ export abstract class KurtosisClient {
    *
    * This URL is primarily used to set the React router basename so that the router is able to ignore any leading subdirectories.
    * */
-  protected readonly childUrl: URL;
+  protected readonly baseApplicationUrl: URL;
 
   constructor(client: PromiseClient<typeof KurtosisEnclaveManagerServer>, parentUrl: URL, childUrl: URL) {
     this.client = client;
-    this.parentUrl = parentUrl;
-    this.childUrl = childUrl;
+    this.cloudUrl = parentUrl;
+    this.baseApplicationUrl = childUrl;
+    console.log("cloudUrl", this.cloudUrl);
+    console.log("baseApplicationUrl", this.baseApplicationUrl);
   }
 
   abstract getHeaderOptions(): { headers?: Headers };
 
-  getParentBasePathUrl() {
-    return `${this.parentUrl.origin}${this.parentUrl.pathname}`;
+  getCloudBasePathUrl() {
+    return `${this.cloudUrl.origin}${this.cloudUrl.pathname}`;
   }
 
-  getChildPath() {
-    return this.childUrl.pathname;
-  }
-
-  getChildUrl() {
-    return this.childUrl;
+  getBaseApplicationUrl() {
+    return this.baseApplicationUrl;
   }
 
   async checkHealth() {

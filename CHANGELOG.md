@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.6](https://github.com/kurtosis-tech/kurtosis/compare/0.85.5...0.85.6) (2023-11-07)
+
+
+### Features
+
+* improve logs, links and fonts ([#1713](https://github.com/kurtosis-tech/kurtosis/issues/1713)) ([7dc1078](https://github.com/kurtosis-tech/kurtosis/commit/7dc1078e613921a0f3282a13cdeac645e7780ac2))
+
 ## [0.85.5](https://github.com/kurtosis-tech/kurtosis/compare/0.85.4...0.85.5) (2023-11-07)
 
 

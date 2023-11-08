@@ -1,7 +1,15 @@
-import { ChakraProvider, defineStyle, extendTheme, StyleFunctionProps, ThemeConfig, Tooltip } from "@chakra-ui/react";
+import {
+  ChakraProvider,
+  defineStyle,
+  extendTheme,
+  StyleFunctionProps,
+  ThemeConfig,
+  Tooltip,
+  useColorMode,
+} from "@chakra-ui/react";
 import type { ChakraProviderProps } from "@chakra-ui/react/dist/chakra-provider";
 import { mode } from "@chakra-ui/theme-tools";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import Fonts from "./theme/Fonts";
 import { formsTheme } from "./theme/formsTheme";
 import { tabsTheme } from "./theme/tabsTheme";
@@ -62,7 +70,7 @@ const theme = extendTheme({
     md: "16px",
     lg: "18px",
     xl: "20px",
-    ["2xl"]: "22px",
+    "2xl": "22px",
   },
   styles: {
     global: (props: StyleFunctionProps) => ({
@@ -276,8 +284,24 @@ export const KurtosisThemeProvider = ({
 }: PropsWithChildren<Omit<ChakraProviderProps, "theme">>) => {
   return (
     <ChakraProvider theme={theme} toastOptions={{ defaultOptions: { position: "top" } }} {...chakraProps}>
+      <ColorModeFixer />
       <Fonts />
       {children}
     </ChakraProvider>
   );
+};
+
+// This component handles legacy local storage settings on browsers that used the old
+// emui, where the color mode may be set to 'light'.
+const ColorModeFixer = () => {
+  const { colorMode, toggleColorMode } = useColorMode();
+
+  useEffect(() => {
+    // Currently only Dark Mode is supported.
+    if (colorMode === "light") {
+      toggleColorMode();
+    }
+  }, [colorMode, toggleColorMode]);
+
+  return null;
 };

@@ -120,7 +120,7 @@ export const ConfigureEnclaveModal = ({
       return undefined;
     }
     return JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
-  }, [window.location.search, existingEnclave]);
+  }, [existingEnclave, kurtosisPackage.args]);
 
   const getLinkToCurrentConfig = () => {
     const params = new URLSearchParams({
@@ -128,7 +128,7 @@ export const ConfigureEnclaveModal = ({
       [KURTOSIS_PACKAGE_PARAMS_URL_ARG]: btoa(JSON.stringify(formRef.current?.getValues())),
     });
 
-    return `${kurtosisClient.getParentBasePathUrl()}?${params}`;
+    return `${kurtosisClient.getCloudBasePathUrl()}?${params}`;
   };
 
   const handleClose = () => {
