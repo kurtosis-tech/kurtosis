@@ -42,7 +42,10 @@ func RunEngineGatewayUntilInterrupted(kurtosisBackend backend_interface.Kurtosis
 		},
 	)
 
-	if err := engineGatewayGrpcServer.RunUntilInterrupted(); err != nil {
+	// Channel for receiving a signal when the server started
+	gatewayStartedChannel := make(chan struct{}, 1)
+
+	if err := engineGatewayGrpcServer.RunUntilInterrupted(gatewayStartedChannel); err != nil {
 		return stacktrace.Propagate(err, "Expected to run Engine gateway server until interrupted, but the server exited with a non-nil error")
 	}
 

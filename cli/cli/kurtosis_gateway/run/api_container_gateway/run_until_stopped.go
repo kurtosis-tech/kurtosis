@@ -15,7 +15,7 @@ const (
 	grpcServerStopGracePeriod = 5 * time.Second
 )
 
-func RunApiContainerGatewayUntilStopped(connectionProvider *connection.GatewayConnectionProvider, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, gatewayPort uint16, gatewayStopChannel chan struct{}) error {
+func RunApiContainerGatewayUntilStopped(connectionProvider *connection.GatewayConnectionProvider, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, gatewayPort uint16, gatewayStopChannel chan struct{}, gatewayStartedChannel chan struct{}) error {
 	apiContainerConnection, err := connectionProvider.ForEnclaveApiContainer(enclaveInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to start forwarding ports to an enclave API container, instead a non nil error was returned")
@@ -44,7 +44,7 @@ func RunApiContainerGatewayUntilStopped(connectionProvider *connection.GatewayCo
 		},
 	)
 
-	if err := apiContainerGatewayGrpcServer.RunUntilStopped(gatewayStopChannel); err != nil {
+	if err := apiContainerGatewayGrpcServer.RunUntilStopped(gatewayStopChannel, gatewayStartedChannel); err != nil {
 		return stacktrace.Propagate(err, "Expected to run API container gateway server until stopped, but the server exited with a non-nil error")
 	}
 

@@ -246,18 +246,29 @@ func runMain() error {
 	)
 
 	logrus.Info("[LEO-DEBUG] before calling run until interrupted") //TODO remove
-	serverIsInterruptedChan, errChan := apiContainerServer.RunUntilInterruptedAsync()
+	serverStartedChan, serverIsInterruptedChan, errChan := apiContainerServer.RunUntilInterruptedAsync()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the API container server")
 	}
 	logrus.Info("Running server...")
 	logrus.Info("[LEO-DEBUG] using ASYNC...") //TODO remove
 
+	// Block until the server has started
+	<-serverStartedChan
+	logrus.Info("[LEO-DEBUG] server started signal received") //TODO remove
+
+	// TODO remove this argument when logs collector is implemented for K8s
+	shouldStartLogsCollector := true
+	if serverArgs.KurtosisBackendType == args.KurtosisBackendType_Kubernetes {
+		shouldStartLogsCollector = false
+	}
+
 	// TODO we should add something to identify that we shouldn't execute this method if it is run by the launcher
-	if err = serviceNetwork.StartAllServices(ctx); err != nil {
+	if err = serviceNetwork.StartAllServices(ctx, shouldStartLogsCollector); err != nil {
 		logrus.Errorf("Start all services failed. Error:\n%s", err)
 	}
 
+	logrus.Info("[LEO-DEBUG] blocking until the server is interrupted") //TODO remove
 	// Block until the server is interrupted
 	<-serverIsInterruptedChan
 

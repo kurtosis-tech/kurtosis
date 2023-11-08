@@ -444,9 +444,8 @@ func (network *DefaultServiceNetwork) StartService(
 
 func (network *DefaultServiceNetwork) StartAllServices(
 	ctx context.Context,
+	shouldStartLogsCollector bool,
 ) error {
-
-	logrus.Info("[LEO-DEBUG] starting all services") //TODO remove
 
 	//TODO add mutex
 
@@ -462,12 +461,17 @@ func (network *DefaultServiceNetwork) StartAllServices(
 	}
 	// TODO check if all services are stopped
 
+	logrus.Infof("[LEO-DEBUG] services to start '%+v'", allServices) //TODO remove
+
 	// TODO get all services from the repository
 	// TODO compare both lists to check if there are any missing service
 
-	// Start the logs collector first
-	if err := network.kurtosisBackend.StartLogsCollectorForEnclave(ctx, network.enclaveUuid); err != nil {
-		return stacktrace.Propagate(err, "An error occurred starting the logs collector")
+	// TODO remove this condition when logs collector is implemented on K8s
+	if shouldStartLogsCollector {
+		// Start the logs collector first
+		if err := network.kurtosisBackend.StartLogsCollectorForEnclave(ctx, network.enclaveUuid); err != nil {
+			return stacktrace.Propagate(err, "An error occurred starting the logs collector")
+		}
 	}
 
 	// Now start all the services

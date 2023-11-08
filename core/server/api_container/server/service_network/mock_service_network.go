@@ -968,13 +968,13 @@ func (_c *MockServiceNetwork_RunExecs_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
-// StartAllServices provides a mock function with given fields: ctx
-func (_m *MockServiceNetwork) StartAllServices(ctx context.Context) error {
-	ret := _m.Called(ctx)
+// StartAllServices provides a mock function with given fields: ctx, shouldStartLogsCollector
+func (_m *MockServiceNetwork) StartAllServices(ctx context.Context, shouldStartLogsCollector bool) error {
+	ret := _m.Called(ctx, shouldStartLogsCollector)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) error); ok {
+		r0 = rf(ctx, shouldStartLogsCollector)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -989,13 +989,14 @@ type MockServiceNetwork_StartAllServices_Call struct {
 
 // StartAllServices is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockServiceNetwork_Expecter) StartAllServices(ctx interface{}) *MockServiceNetwork_StartAllServices_Call {
-	return &MockServiceNetwork_StartAllServices_Call{Call: _e.mock.On("StartAllServices", ctx)}
+//   - shouldStartLogsCollector bool
+func (_e *MockServiceNetwork_Expecter) StartAllServices(ctx interface{}, shouldStartLogsCollector interface{}) *MockServiceNetwork_StartAllServices_Call {
+	return &MockServiceNetwork_StartAllServices_Call{Call: _e.mock.On("StartAllServices", ctx, shouldStartLogsCollector)}
 }
 
-func (_c *MockServiceNetwork_StartAllServices_Call) Run(run func(ctx context.Context)) *MockServiceNetwork_StartAllServices_Call {
+func (_c *MockServiceNetwork_StartAllServices_Call) Run(run func(ctx context.Context, shouldStartLogsCollector bool)) *MockServiceNetwork_StartAllServices_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(bool))
 	})
 	return _c
 }
@@ -1005,7 +1006,7 @@ func (_c *MockServiceNetwork_StartAllServices_Call) Return(_a0 error) *MockServi
 	return _c
 }
 
-func (_c *MockServiceNetwork_StartAllServices_Call) RunAndReturn(run func(context.Context) error) *MockServiceNetwork_StartAllServices_Call {
+func (_c *MockServiceNetwork_StartAllServices_Call) RunAndReturn(run func(context.Context, bool) error) *MockServiceNetwork_StartAllServices_Call {
 	_c.Call.Return(run)
 	return _c
 }

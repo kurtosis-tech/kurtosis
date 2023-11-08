@@ -11,6 +11,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/metrics-library/golang => ../../metrics-library/golang
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
+	github.com/kurtosis-tech/minimal-grpc-server/golang => /Users/lporoli/Kurtosis/minimal-grpc-server/golang //TODO remove this line or activate it if you want to test it with your local version
 )
 
 require (

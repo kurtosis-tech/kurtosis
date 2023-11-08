@@ -252,6 +252,9 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	// Channel for messages to stop the running server
 	gatewayStopChannel := make(chan struct{}, 1)
 
+	// Channel for receiving a signal when the server started
+	gatewayStartedChannel := make(chan struct{}, 1)
+
 	// Info for how to connect to the api container through the gateway running on host machine
 	apiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
 		IpOnHostMachine:       localHostIpStr,
@@ -268,7 +271,7 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	// TODO: Modify MinimalGrpcServer.RunUntilStopped to take in a `ReadyChannel` to communicate when a GRPC server is ready to serve
 	// Currently, we have to make a health check request to verify that the API container gateway is ready
 	go func() {
-		if err := api_container_gateway.RunApiContainerGatewayUntilStopped(service.connectionProvider, enclaveInfo, gatewayPortSpec.GetNumber(), gatewayStopChannel); err != nil {
+		if err := api_container_gateway.RunApiContainerGatewayUntilStopped(service.connectionProvider, enclaveInfo, gatewayPortSpec.GetNumber(), gatewayStopChannel, gatewayStartedChannel); err != nil {
 			logrus.Warnf("Expected to run api container gateway until stopped, but the server exited prematurely with a non-nil error: '%v'", err)
 		}
 	}()

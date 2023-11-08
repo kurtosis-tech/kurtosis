@@ -58,7 +58,8 @@ type ServiceNetwork interface {
 	RemoveService(ctx context.Context, serviceIdentifier string) (service.ServiceUUID, error)
 
 	//StartAllServices will start all services managed by the APIC
-	StartAllServices(ctx context.Context) error
+	// TODO the shouldStartLogsCollector is a temporary argument until the logs collector is implemented for K8s
+	StartAllServices(ctx context.Context, shouldStartLogsCollector bool) error
 
 	StartService(ctx context.Context, serviceIdentifier string) error
 
