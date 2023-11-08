@@ -11,7 +11,13 @@ import { EnclaveLoaderResolved } from "../loader";
 import { ServiceLogs } from "./logs/ServiceLogs";
 import { ServiceOverview } from "./overview/ServiceOverview";
 
-const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInfo; service: ServiceInfo }> }[] = [
+const tabs: {
+  path: string;
+  element: FunctionComponent<{
+    enclave: EnclaveFullInfo;
+    service: ServiceInfo;
+  }>;
+}[] = [
   { path: "overview", element: ServiceOverview },
   { path: "logs", element: ServiceLogs },
 ];

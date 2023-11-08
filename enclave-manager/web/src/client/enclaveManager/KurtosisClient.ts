@@ -102,7 +102,10 @@ export abstract class KurtosisClient {
       numLogLines: isDefined(numLogLines) ? numLogLines : 1500,
       returnAllLogs: !!returnAllLogs,
     });
-    return this.client.getServiceLogs(request, { ...this.getHeaderOptions(), signal: abortController.signal });
+    return this.client.getServiceLogs(request, {
+      ...this.getHeaderOptions(),
+      signal: abortController.signal,
+    });
   }
 
   async getStarlarkRun(enclave: RemoveFunctions<EnclaveInfo>) {

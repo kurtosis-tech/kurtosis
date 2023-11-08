@@ -98,7 +98,12 @@ export const EnclaveConfigurationForm = forwardRef<
         {},
       );
 
-    onSubmit({ enclaveName: "", restartServices: false, ...data, args: newArgs });
+    onSubmit({
+      enclaveName: "",
+      restartServices: false,
+      ...data,
+      args: newArgs,
+    });
   };
 
   return (

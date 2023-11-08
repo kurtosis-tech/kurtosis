@@ -51,8 +51,8 @@ Runs `prettier --check` to check that the code matches the formatting that [`pre
 Applies any formatting changes prettier wants to apply to this application. For ease of use you can use IDE integrations
 to auto apply prettier changes on file save, see instructions:
 
-* [Here](https://plugins.jetbrains.com/plugin/10456-prettier) for Intellij
-* [Here](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for vscode
+- [Here](https://plugins.jetbrains.com/plugin/10456-prettier) for Intellij
+- [Here](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for vscode
 
 ### `yarn eject`
 

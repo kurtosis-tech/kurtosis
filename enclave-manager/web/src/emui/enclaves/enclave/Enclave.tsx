@@ -14,7 +14,10 @@ import { EnclaveLogs } from "./logs/EnclaveLogs";
 import { EnclaveOverview } from "./overview/EnclaveOverview";
 import { EnclaveSource } from "./source/EnclaveSource";
 
-const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInfo }> }[] = [
+const tabs: {
+  path: string;
+  element: FunctionComponent<{ enclave: EnclaveFullInfo }>;
+}[] = [
   { path: "overview", element: EnclaveOverview },
   { path: "source", element: EnclaveSource },
   { path: "logs", element: EnclaveLogs },
@@ -92,7 +95,9 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
 
   useEffect(() => {
     if (isDefined(actionData)) {
-      navigator(`/enclave/${enclave.shortenedUuid}/logs`, { state: actionData });
+      navigator(`/enclave/${enclave.shortenedUuid}/logs`, {
+        state: actionData,
+      });
     }
   }, [navigator, actionData, activeIndex, enclave.shortenedUuid]);
 

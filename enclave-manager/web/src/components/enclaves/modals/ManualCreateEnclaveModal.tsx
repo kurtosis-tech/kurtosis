@@ -53,7 +53,9 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
     const packageResponse = await kurtosisIndexerClient.readPackage(form.url);
     setIsLoading(false);
     if (packageResponse.isErr) {
-      setError("url", { message: `Could not load '${form.url}', got error ${packageResponse.error}` });
+      setError("url", {
+        message: `Could not load '${form.url}', got error ${packageResponse.error}`,
+      });
       return;
     }
     if (!isDefined(packageResponse.value.package)) {

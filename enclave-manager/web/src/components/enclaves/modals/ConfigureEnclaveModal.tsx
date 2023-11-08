@@ -85,7 +85,13 @@ export const ConfigureEnclaveModal = ({
             case ArgumentValueType.DICT:
               assertDefined(innerType2, `Cannot parse a dict argument type without knowing innterType2`);
               return isDefined(value)
-                ? Object.entries(value).map(([k, v]) => ({ key: k, value: convertArgValue(innerType2, v) }), {})
+                ? Object.entries(value).map(
+                    ([k, v]) => ({
+                      key: k,
+                      value: convertArgValue(innerType2, v),
+                    }),
+                    {},
+                  )
                 : [];
             default:
               return value;
@@ -163,7 +169,11 @@ export const ConfigureEnclaveModal = ({
       return;
     }
     submit(
-      { config: formData, packageId: kurtosisPackage.name, apicInfo: apicInfo.toJson() },
+      {
+        config: formData,
+        packageId: kurtosisPackage.name,
+        apicInfo: apicInfo.toJson(),
+      },
       {
         method: "post",
         action: `/enclave/${enclaveUUID}/logs`,

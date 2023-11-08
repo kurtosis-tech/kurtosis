@@ -41,7 +41,10 @@ const KurtosisRouter = () => {
             ),
             children: [
               { path: "/", children: enclaveRoutes(kurtosisClient) },
-              { path: "/catalog", children: catalogRoutes(kurtosisIndexerClient) },
+              {
+                path: "/catalog",
+                children: catalogRoutes(kurtosisIndexerClient),
+              },
             ],
           },
         ],
