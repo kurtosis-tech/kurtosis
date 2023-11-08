@@ -52,7 +52,7 @@ export const PackageLoadingModal = ({ packageId, onPackageLoaded }: PackageLoadi
         onPackageLoaded(readPackageResponse.value.package);
       }
     })();
-  }, [packageId, onPackageLoaded]);
+  }, [packageId, onPackageLoaded, kurtosisIndexer]);
 
   return (
     <Modal

@@ -1,8 +1,8 @@
-import { Editor, OnChange, OnMount, useMonaco } from "@monaco-editor/react";
-import { isDefined } from "../utils";
-import { useMemo, useRef, useState } from "react";
-import { editor } from "monaco-editor";
 import { Box } from "@chakra-ui/react";
+import { Editor, OnChange, OnMount } from "@monaco-editor/react";
+import { editor } from "monaco-editor";
+import { useState } from "react";
+import { isDefined } from "../utils";
 
 type CodeEditorProps = {
   text: string;

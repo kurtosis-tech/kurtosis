@@ -92,7 +92,7 @@ export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: ServicesTa
         enableSorting: false,
       }),
     ],
-    [],
+    [enclaveShortUUID],
   );
 
   return <DataTable columns={columns} data={services} defaultSorting={[{ id: "name", desc: true }]} />;

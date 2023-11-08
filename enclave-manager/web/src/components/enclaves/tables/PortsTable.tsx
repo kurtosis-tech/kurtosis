@@ -1,11 +1,11 @@
-import { Link, Flex, Text } from "@chakra-ui/react";
+import { ExternalLinkIcon } from "@chakra-ui/icons";
+import { Flex, Link, Text } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useMemo } from "react";
+import { CopyButton } from "../../CopyButton";
 import { DataTable } from "../../DataTable";
 import { transportProtocolToString } from "../utils";
-import { CopyButton } from "../../CopyButton";
-import { ExternalLinkIcon } from "@chakra-ui/icons";
 
 const columnHelper = createColumnHelper<Port>();
 
@@ -60,7 +60,7 @@ export const PortsTable = ({ ports, ip, isPublic }: PortsTableProps) => {
         ),
       }),
     ],
-    [],
+    [ip, isPublic],
   );
 
   return <DataTable columns={columns} data={ports} defaultSorting={[{ id: "number", desc: true }]} />;

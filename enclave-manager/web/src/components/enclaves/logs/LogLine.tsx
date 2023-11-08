@@ -10,7 +10,7 @@ export type LogLineProps = {
   status?: LogStatus;
 };
 
-const logFontFamily = "Menlo, Monaco, Inconsolata, Consolas, Courier, monospace"
+const logFontFamily = "Menlo, Monaco, Inconsolata, Consolas, Courier, monospace";
 
 export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
   const statusToColor = (status?: LogStatus) => {

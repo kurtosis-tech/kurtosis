@@ -1,8 +1,8 @@
 import { Global } from "@emotion/react";
 
 /*
-* Source: https://fonts.googleapis.com/css2?family=Inter:wght@500&display=swap
-* */
+ * Source: https://fonts.googleapis.com/css2?family=Inter:wght@500&display=swap
+ * */
 const Fonts = () => (
   <Global
     styles={`
@@ -20,5 +20,3 @@ const Fonts = () => (
 );
 
 export default Fonts;
-
-

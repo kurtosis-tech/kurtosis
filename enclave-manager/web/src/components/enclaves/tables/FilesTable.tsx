@@ -46,7 +46,7 @@ export const FilesTable = ({ filesAndArtifacts, enclaveShortUUID }: FilesTablePr
         ),
       }),
     ],
-    [],
+    [enclaveShortUUID],
   );
 
   return <DataTable columns={columns} data={services} defaultSorting={[{ id: "name", desc: true }]} />;

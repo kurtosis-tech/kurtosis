@@ -10,7 +10,7 @@ import { ListArgumentInput } from "./ListArgumentInput";
 import { StringArgumentInput } from "./StringArgumentInput";
 
 export type KurtosisArgumentTypeInputProps = {
-  type: ArgumentValueType;
+  type?: ArgumentValueType;
   subType1?: ArgumentValueType;
   subType2?: ArgumentValueType;
   name: FieldPath<ConfigureEnclaveForm>;

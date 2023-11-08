@@ -1,12 +1,12 @@
-import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
-import { EnclaveFullInfo } from "../../../types";
-import { useEffect, useState } from "react";
-import { LogLineProps } from "../../../../../components/enclaves/logs/LogLine";
-import { isDefined, stringifyError } from "../../../../../utils";
-import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
 import { Timestamp } from "@bufbuild/protobuf";
-import { LogViewer } from "../../../../../components/enclaves/logs/LogViewer";
+import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DateTime } from "luxon";
+import { useEffect, useState } from "react";
+import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
+import { LogLineProps } from "../../../../../components/enclaves/logs/LogLine";
+import { LogViewer } from "../../../../../components/enclaves/logs/LogViewer";
+import { isDefined, stringifyError } from "../../../../../utils";
+import { EnclaveFullInfo } from "../../../types";
 
 const serviceLogLineToLogLineProps = (lines: string[], timestamp?: Timestamp): LogLineProps[] => {
   return lines.map((line) => ({
@@ -52,7 +52,7 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
       cancelled = true;
       abortController.abort();
     };
-  }, [enclave, service]);
+  }, [enclave, service, kurtosisClient]);
 
   return <LogViewer logLines={logLines} />;
 };

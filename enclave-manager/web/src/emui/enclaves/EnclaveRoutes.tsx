@@ -5,9 +5,9 @@ import { Enclave, enclaveLoader, enclaveTabLoader } from "./enclave";
 import { runStarlarkAction } from "./enclave/action";
 import { EnclaveLoaderDeferred } from "./enclave/loader";
 import { Service } from "./enclave/service/Service";
+import { serviceTabLoader } from "./enclave/service/tabLoader";
 import { EnclaveList } from "./EnclaveList";
 import { enclavesLoader } from "./loader";
-import { serviceTabLoader } from "./enclave/service/tabLoader";
 
 export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => [
   {

@@ -15,19 +15,24 @@ export const DeleteEnclavesButton = ({ enclaves }: DeleteEnclavesButtonProps) =>
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const enclaveUUIDsKey = enclaves.map(({ enclaveUuid }) => enclaveUuid).join(",");
+
   useEffect(
     () => {
       setIsLoading(false);
       setShowModal(false);
     },
     // These deps are defined this way to detect whether or not the enclaves in props are actually different
-    [enclaves.map(({ enclaveUuid }) => enclaveUuid).join(",")],
+    [enclaveUUIDsKey],
   );
 
   const handleDelete = async () => {
     setIsLoading(true);
     fetcher.submit(
-      { intent: "delete", enclaveUUIDs: enclaves.map(({ enclaveUuid }) => enclaveUuid) },
+      {
+        intent: "delete",
+        enclaveUUIDs: enclaves.map(({ enclaveUuid }) => enclaveUuid),
+      },
       { method: "post", action: "/enclaves", encType: "application/json" },
     );
   };

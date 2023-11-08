@@ -16,9 +16,9 @@ import {
   GetStarlarkRunRequest,
   RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
+import { EnclaveFullInfo } from "../../emui/enclaves/types";
 import { assertDefined, asyncResult, isDefined } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
-import { EnclaveFullInfo } from "../../emui/enclaves/types";
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
@@ -43,8 +43,8 @@ export abstract class KurtosisClient {
     this.client = client;
     this.cloudUrl = parentUrl;
     this.baseApplicationUrl = childUrl;
-    console.log("cloudUrl", this.cloudUrl)
-    console.log("baseApplicationUrl", this.baseApplicationUrl)
+    console.log("cloudUrl", this.cloudUrl);
+    console.log("baseApplicationUrl", this.baseApplicationUrl);
   }
 
   abstract getHeaderOptions(): { headers?: Headers };

@@ -1,7 +1,7 @@
 import { ButtonGroup, Card, Flex, Text } from "@chakra-ui/react";
+import { CodeEditor } from "./CodeEditor";
 import { CopyButton } from "./CopyButton";
 import { DownloadButton } from "./DownloadButton";
-import { CodeEditor } from "./CodeEditor";
 
 type FileDisplayProps = {
   title: string;
