@@ -10,11 +10,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
+)
+
+const (
+	subnetworkDisableBecauseItIsDeprecated = false
 )
 
 var (
@@ -43,6 +48,8 @@ type EngineConnectServerService struct {
 	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient
 
 	logFileManager *log_file_manager.LogFileManager
+
+	metricsClient metrics_client.MetricsClient
 }
 
 func NewEngineConnectServerService(
@@ -53,6 +60,7 @@ func NewEngineConnectServerService(
 	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient,
 	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient,
 	logFileManager *log_file_manager.LogFileManager,
+	metricsClient metrics_client.MetricsClient,
 ) *EngineConnectServerService {
 	service := &EngineConnectServerService{
 		imageVersionTag:             imageVersionTag,
@@ -62,6 +70,7 @@ func NewEngineConnectServerService(
 		perWeekLogsDatabaseClient:   perWeekLogsDatabaseClient,
 		perFileLogsDatabaseClient:   perFileLogsDatabaseClient,
 		logFileManager:              logFileManager,
+		metricsClient:               metricsClient,
 	}
 	return service
 }
@@ -75,6 +84,11 @@ func (service *EngineConnectServerService) GetEngineInfo(context.Context, *conne
 
 func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	args := connectArgs.Msg
+
+	if err := service.metricsClient.TrackCreateEnclave(args.GetEnclaveName(), subnetworkDisableBecauseItIsDeprecated); err != nil {
+		logrus.Warn("An error occurred while logging the create enclave event")
+	}
+
 	logrus.Debugf("args: %+v", args)
 	apiContainerLogLevel, err := logrus.ParseLevel(args.GetApiContainerLogLevel())
 	if err != nil {
@@ -85,6 +99,7 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 	if args.GetMode() == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
 		isProduction = true
 	}
+
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		service.imageVersionTag,
@@ -126,6 +141,10 @@ func (service *EngineConnectServerService) StopEnclave(ctx context.Context, conn
 	args := connectArgs.Msg
 	enclaveIdentifier := args.EnclaveIdentifier
 
+	if err := service.metricsClient.TrackStopEnclave(enclaveIdentifier); err != nil {
+		logrus.Warnf("An error occurred while logging the stop enclave event for enclave '%v'", enclaveIdentifier)
+	}
+
 	if err := service.enclaveManager.StopEnclave(ctx, enclaveIdentifier); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
 	}
@@ -136,6 +155,10 @@ func (service *EngineConnectServerService) StopEnclave(ctx context.Context, conn
 func (service *EngineConnectServerService) DestroyEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
 	args := connectArgs.Msg
 	enclaveIdentifier := args.EnclaveIdentifier
+
+	if err := service.metricsClient.TrackDestroyEnclave(enclaveIdentifier); err != nil {
+		logrus.Warnf("An error occurred while logging the destroy enclave event for enclave '%v'", enclaveIdentifier)
+	}
 
 	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with identifier '%v':", args.EnclaveIdentifier)

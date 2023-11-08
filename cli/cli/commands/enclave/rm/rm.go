@@ -61,7 +61,7 @@ func run(
 	ctx context.Context,
 	_ backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	metricsClient metrics_client.MetricsClient,
+	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -91,9 +91,6 @@ func run(
 
 	enclaveDestructionErrorStrs := []string{}
 	for _, enclaveId := range enclaveIdsToDestroy {
-		if err = metricsClient.TrackDestroyEnclave(enclaveId); err != nil {
-			logrus.Warnf("An error occurred while logging the destroy enclave event for enclave '%v'", enclaveId)
-		}
 		if err := destroyEnclave(ctx, kurtosisCtx, enclaveId, shouldForceRemove); err != nil {
 			enclaveDestructionErrorStrs = append(
 				enclaveDestructionErrorStrs,

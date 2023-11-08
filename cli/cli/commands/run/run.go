@@ -337,7 +337,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, metricsClient, isProduction)
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isProduction)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
@@ -559,7 +559,6 @@ func getOrCreateEnclaveContext(
 	ctx context.Context,
 	enclaveIdentifierOrName string,
 	kurtosisContext *kurtosis_context.KurtosisContext,
-	metricsClient metrics_client.MetricsClient,
 	isProduction bool,
 ) (*enclaves.EnclaveContext, bool, error) {
 
@@ -583,10 +582,6 @@ func getOrCreateEnclaveContext(
 	}
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
-	}
-	subnetworkDisableBecauseItIsDeprecated := false
-	if err = metricsClient.TrackCreateEnclave(enclaveIdentifierOrName, subnetworkDisableBecauseItIsDeprecated); err != nil {
-		logrus.Error("An error occurred while logging the create enclave event")
 	}
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil
