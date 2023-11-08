@@ -807,8 +807,6 @@ func (apicService *ApiContainerService) runStarlark(
 				} else {
 					numberOfServicesAfterRunFinished = len(serviceNames)
 				}
-				// TODO remove after testing
-				logrus.Errorf("Status %v Services %v", isSuccessful, numberOfServicesAfterRunFinished)
 				if err := apicService.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numberOfServicesAfterRunFinished, isSuccessful); err != nil {
 					logrus.Warn("An error occurred tracking the run-finished event")
 				}
