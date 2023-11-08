@@ -55,7 +55,7 @@ export const EnclaveOverview = ({ enclave }: EnclaveOverviewProps) => {
       </TitledCard>
       <TitledCard title={"Files"}>
         {enclave.filesAndArtifacts.isOk && (
-          <FilesTable filesAndArtifacts={enclave.filesAndArtifacts.value} enclaveShortUUID={enclave.shortenedUuid} />
+          <FilesTable filesAndArtifacts={enclave.filesAndArtifacts.value} enclave={enclave} />
         )}
         {enclave.filesAndArtifacts.isErr && <KurtosisAlert message={enclave.filesAndArtifacts.error} />}
       </TitledCard>

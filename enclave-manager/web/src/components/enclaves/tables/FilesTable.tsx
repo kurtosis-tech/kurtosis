@@ -6,48 +6,44 @@ import {
 } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { RemoveFunctions } from "../../../utils/types";
 import { DataTable } from "../../DataTable";
+import { DownloadFileButton } from "../widgets/DownloadFileButton";
 
-type FilesTableRow = {
-  name: string;
-  //size: string; TODO: Add size to FilesArtifactNameAndUuid
-  //description: string; TODO: Add description to FilesArtifactNameAndUuid
-  uuid: string;
-};
-
-const fileToRow = (file: FilesArtifactNameAndUuid): FilesTableRow => {
-  return {
-    name: file.fileName,
-    uuid: file.fileUuid,
-  };
-};
-
-const columnHelper = createColumnHelper<FilesTableRow>();
+const columnHelper = createColumnHelper<FilesArtifactNameAndUuid>();
 
 type FilesTableProps = {
-  enclaveShortUUID: string;
+  enclave: EnclaveFullInfo;
   filesAndArtifacts: RemoveFunctions<ListFilesArtifactNamesAndUuidsResponse>;
 };
 
-export const FilesTable = ({ filesAndArtifacts, enclaveShortUUID }: FilesTableProps) => {
-  const services = filesAndArtifacts.fileNamesAndUuids.map(fileToRow);
-
-  const columns = useMemo<ColumnDef<FilesTableRow, any>[]>(
+export const FilesTable = ({ filesAndArtifacts, enclave }: FilesTableProps) => {
+  const columns = useMemo<ColumnDef<FilesArtifactNameAndUuid, any>[]>(
     () => [
-      columnHelper.accessor("name", {
+      columnHelper.accessor("fileName", {
         header: "Name",
         cell: ({ row, getValue }) => (
-          <Link to={`/enclave/${enclaveShortUUID}/file/${row.original.uuid}`}>
+          <Link to={`/enclave/${enclave.shortenedUuid}/file/${row.original.fileUuid}`}>
             <Button size={"sm"} variant={"ghost"}>
               {getValue()}
             </Button>
           </Link>
         ),
       }),
+      columnHelper.display({
+        id: "download",
+        cell: ({ row }) => <DownloadFileButton file={row.original} enclave={enclave} />,
+      }),
     ],
-    [enclaveShortUUID],
+    [enclave],
   );
 
-  return <DataTable columns={columns} data={services} defaultSorting={[{ id: "name", desc: true }]} />;
+  return (
+    <DataTable
+      columns={columns}
+      data={filesAndArtifacts.fileNamesAndUuids}
+      defaultSorting={[{ id: "name", desc: true }]}
+    />
+  );
 };

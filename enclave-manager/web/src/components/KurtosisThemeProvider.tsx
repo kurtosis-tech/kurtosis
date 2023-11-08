@@ -48,6 +48,7 @@ const theme = extendTheme({
       700: "#99f7aa",
     },
     darkBlue: {
+      200: "#516A77",
       400: "#516A77",
     },
     gray: {
@@ -131,7 +132,6 @@ const theme = extendTheme({
         })),
         ghost: defineStyle((props) => ({
           _hover: { bg: "gray.650" },
-          color: `gray.100`,
         })),
         nav: {
           _active: {
