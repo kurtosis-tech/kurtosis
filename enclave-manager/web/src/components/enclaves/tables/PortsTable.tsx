@@ -54,6 +54,8 @@ export const PortsTable = ({ ports, ip, isPublic }: PortsTableProps) => {
           <Flex justifyContent={"flex-end"}>
             <CopyButton
               contentName={"link"}
+              isIconButton
+              aria-label={"Copy this port"}
               valueToCopy={`${row.original.maybeApplicationProtocol}://${ip}:${row.original.number}`}
             />
           </Flex>
