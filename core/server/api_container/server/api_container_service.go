@@ -803,9 +803,9 @@ func (apicService *ApiContainerService) runStarlark(
 				isSuccessful := runFinishedEvent.GetIsRunSuccessful()
 				numberOfServicesAfterRunFinished := 0
 				if serviceNames, err := apicService.serviceNetwork.GetServiceNames(); err != nil {
-					numberOfServicesAfterRunFinished = len(serviceNames)
-				} else {
 					logrus.Warn("Couldn't figure out the number of services after run finished, will be logging 0 in the metrics")
+				} else {
+					numberOfServicesAfterRunFinished = len(serviceNames)
 				}
 				// TODO remove after testing
 				logrus.Errorf("Status %v Services %v", isSuccessful, numberOfServicesAfterRunFinished)
