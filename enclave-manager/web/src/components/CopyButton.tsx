@@ -1,6 +1,7 @@
 import { Button, ButtonProps, IconButton, IconButtonProps, useToast } from "@chakra-ui/react";
 import { FiCopy } from "react-icons/fi";
 import { isDefined } from "../utils";
+import { SuccessToast } from "./Toasts";
 
 type CopyButtonProps<IsIconButton extends boolean> = (IsIconButton extends true ? IconButtonProps : ButtonProps) & {
   valueToCopy?: (() => string) | string | null;
@@ -23,8 +24,8 @@ export const CopyButton = <IsIconButton extends boolean>({
       const v = typeof valueToCopy === "string" ? valueToCopy : valueToCopy();
       navigator.clipboard.writeText(v);
       toast({
-        title: `Copied ${contentName} to the clipboard`,
-        status: `success`,
+        position: "bottom",
+        render: () => <SuccessToast message={`Copied ${contentName} to the clipboard`} />,
       });
     }
   };
