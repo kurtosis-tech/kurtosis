@@ -55,5 +55,6 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
     };
   }, [enclave, service, kurtosisClient]);
 
-  return <LogViewer logLines={logLines} />;
+  const logsFileName = `${enclave.name}--${service.name}-logs.txt`
+  return <LogViewer logLines={logLines} logsFileName={logsFileName}/>;
 };
