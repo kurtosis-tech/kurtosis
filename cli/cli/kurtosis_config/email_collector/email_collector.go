@@ -1,7 +1,6 @@
 package email_collector
 
 import (
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/do_nothing_metrics_client_callback"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_cloud_user_instance_id_helper"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/prompt_displayer"
@@ -54,7 +53,7 @@ func logUserEmailAddressAsMetric(userEmail string) {
 			resolved_config.DefaultDockerClusterName,
 			sendUserMetrics,
 			flushQueueOnEachEvent,
-			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
+			metrics_client.DoNothingMetricsClientCallback{},
 			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
 			metrics_client.IsCI(),
 			maybeCloudUserID,

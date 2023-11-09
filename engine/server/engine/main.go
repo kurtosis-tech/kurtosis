@@ -67,11 +67,6 @@ const (
 //	because this isn't the API container
 var apiContainerModeArgsForKurtosisBackend *backend_creator.APIContainerModeArgs = nil
 
-type doNothingMetricsClientCallback struct{}
-
-func (d doNothingMetricsClientCallback) Success()          {}
-func (d doNothingMetricsClientCallback) Failure(err error) {}
-
 func main() {
 	// This allows the filename & function to be reported
 	logrus.SetReportCaller(logMethodAlongWithLogLine)
@@ -216,7 +211,7 @@ func runMain() error {
 			serverArgs.KurtosisBackendType.String(),
 			serverArgs.DidUserAcceptSendingMetrics,
 			shouldFlushMetricsClientQueueOnEachEvent,
-			doNothingMetricsClientCallback{},
+			metrics_client.DoNothingMetricsClientCallback{},
 			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
 			serverArgs.IsCI,
 			serverArgs.CloudUserID,
