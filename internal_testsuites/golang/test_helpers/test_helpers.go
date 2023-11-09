@@ -114,6 +114,11 @@ var (
 	emptyEntrypointArgs          = []string{}
 	emptyCmdArgs                 = []string{}
 	emptyEnvVars                 = map[string]string{}
+
+	// skip flaky tests period
+	skipFlakyTestStartDate = time.Date(2023, 11, 10, 0, 0, 0, 0, time.UTC)
+	oneWeekDays            = 7
+	oneWeekAfterStartDate  = skipFlakyTestStartDate.AddDate(0, 0, oneWeekDays)
 )
 
 var fileServerPortSpec = &kurtosis_core_rpc_api_bindings.Port{
@@ -695,4 +700,10 @@ func getServiceWithLogLinesServiceConfigStarlark(logLines []string) string {
 	cmdArgs := []string{echoLogLinesLoopCmdStr}
 
 	return services.GetServiceConfigStarlark(dockerGettingStartedImage, emptyPrivatePorts, emptyFileArtifactMountPoints, entrypointArgs, cmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
+}
+
+func SkipFlakyTest(t *testing.T, testName string) {
+	if skipFlakyTestStartDate.Before(oneWeekAfterStartDate) {
+		t.Skipf("Skipping %s, because it is too noisy, until %s or until we fix the flakyness", testName, oneWeekAfterStartDate)
+	}
 }

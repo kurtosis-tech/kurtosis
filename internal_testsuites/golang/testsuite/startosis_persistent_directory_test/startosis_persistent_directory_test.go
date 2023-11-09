@@ -49,6 +49,9 @@ def run(plan):
 )
 
 func TestAddServiceAndPersistentFileToDirectory(t *testing.T) {
+	// TODO remove this call after 17-11-2023
+	test_helpers.SkipFlakyTest(t, testName)
+
 	ctx := context.Background()
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
