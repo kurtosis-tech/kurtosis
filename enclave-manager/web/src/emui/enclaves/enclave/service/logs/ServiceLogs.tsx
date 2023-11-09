@@ -45,7 +45,8 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
         if (cancelled) {
           return;
         }
-        setLogLines((logLines) => [...logLines, { message: `Error: ${stringifyError(error)}`, status: "error" }]);
+        // TODO: We need a way to show this error
+        alert (`Error: ${stringifyError(error)}`)
       }
     })();
     return () => {
@@ -54,5 +55,6 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
     };
   }, [enclave, service, kurtosisClient]);
 
-  return <LogViewer logLines={logLines} />;
+  const logsFileName = `${enclave.name}--${service.name}-logs.txt`
+  return <LogViewer logLines={logLines} logsFileName={logsFileName}/>;
 };
