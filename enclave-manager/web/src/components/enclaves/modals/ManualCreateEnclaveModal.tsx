@@ -83,6 +83,7 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
                     disabled: isLoading,
                     required: true,
                   })}
+                  autoFocus={true}
                 />
               </InputGroup>
               <FormErrorMessage>{errors.url?.message}</FormErrorMessage>
