@@ -210,11 +210,11 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
-	serviceRequest := &connect.Request[kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs]{
+	runStarlarkRequest := &connect.Request[kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs]{
 		Msg: req.Msg.RunStarlarkPackageArgs,
 	}
 
-	starlarkLogsStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
+	starlarkLogsStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, runStarlarkRequest)
 
 	for starlarkLogsStream.Receive() {
 		resp := starlarkLogsStream.Msg()
@@ -296,34 +296,42 @@ func (c *WebServer) InspectFilesArtifactContents(ctx context.Context, req *conne
 	return resp, nil
 }
 
-func (c *WebServer) DownloadFilesArtifact(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
+func (c *WebServer) DownloadFilesArtifact(
+	ctx context.Context,
+	req *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest],
+	str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk],
+) error {
 	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+		return stacktrace.Propagate(err, "Authentication attempt failed")
 	}
 	if !auth {
-		return nil, stacktrace.Propagate(err, "User not authorized")
+		return stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
+		return stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
 
-	request := &connect.Request[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest]{
-		Msg: &kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest{
-			FileNamesAndUuid: req.Msg.FileNamesAndUuid,
+	filesArtifactIdentifier := req.Msg.FileUuid.Identifier
+	downloadFilesArtifactRequest := &connect.Request[kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs]{
+		Msg: &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
+			Identifier: filesArtifactIdentifier,
 		},
 	}
-	result, err := (*apiContainerServiceClient).InspectFilesArtifactContents(ctx, request)
-	if err != nil {
-		return nil, err
+
+	filesArtifactStream, err := (*apiContainerServiceClient).DownloadFilesArtifact(ctx, downloadFilesArtifactRequest)
+	for filesArtifactStream.Receive() {
+		resp := filesArtifactStream.Msg()
+		err = str.Send(resp)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to send streamed data chunks for files artifact with identifier: %v.", filesArtifactIdentifier)
+		}
 	}
-	resp := &connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse]{
-		Msg: &kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse{
-			FileDescriptions: result.Msg.FileDescriptions,
-		},
+	if err = filesArtifactStream.Err(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to receive streamed data chunks for files artifact with identifier %v.", filesArtifactIdentifier)
 	}
-	return resp, nil
+	return nil
 }
 
 func (c *WebServer) GetStarlarkRun(
