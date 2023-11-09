@@ -296,6 +296,36 @@ func (c *WebServer) InspectFilesArtifactContents(ctx context.Context, req *conne
 	return resp, nil
 }
 
+func (c *WebServer) DownloadFilesArtifact(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
+	}
+
+	request := &connect.Request[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest]{
+		Msg: &kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest{
+			FileNamesAndUuid: req.Msg.FileNamesAndUuid,
+		},
+	}
+	result, err := (*apiContainerServiceClient).InspectFilesArtifactContents(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	resp := &connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse]{
+		Msg: &kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse{
+			FileDescriptions: result.Msg.FileDescriptions,
+		},
+	}
+	return resp, nil
+}
+
 func (c *WebServer) GetStarlarkRun(
 	ctx context.Context,
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest],
