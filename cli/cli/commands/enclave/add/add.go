@@ -83,7 +83,7 @@ func run(
 	ctx context.Context,
 	_ backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	metricsClient metrics_client.MetricsClient,
+	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	_ *args.ParsedArgs,
 ) error {
@@ -118,11 +118,6 @@ func run(
 	}()
 
 	logrus.Info("Creating new enclave...")
-
-	subnetworkDisableBecauseItIsDeprecated := false
-	if err = metricsClient.TrackCreateEnclave(enclaveName, subnetworkDisableBecauseItIsDeprecated); err != nil {
-		logrus.Warn("An error occurred while logging the create enclave event")
-	}
 
 	isProduction, err := flags.GetBool(enclaveProductionModeFlagKey)
 	if err != nil {

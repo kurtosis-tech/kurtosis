@@ -798,6 +798,19 @@ func (apicService *ApiContainerService) runStarlark(
 				logrus.Info("Startosis script execution returned, no more output to stream.")
 				return
 			}
+
+			if runFinishedEvent := responseLine.GetRunFinishedEvent(); runFinishedEvent != nil {
+				isSuccessful := runFinishedEvent.GetIsRunSuccessful()
+				numberOfServicesAfterRunFinished := 0
+				if serviceNames, err := apicService.serviceNetwork.GetServiceNames(); err != nil {
+					logrus.Warn("Couldn't figure out the number of services after run finished, will be logging 0 in the metrics")
+				} else {
+					numberOfServicesAfterRunFinished = len(serviceNames)
+				}
+				if err := apicService.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numberOfServicesAfterRunFinished, isSuccessful); err != nil {
+					logrus.Warn("An error occurred tracking the run-finished event")
+				}
+			}
 			// in addition to send the msg to the RPC stream, we also print the lines to the APIC logs at debug level
 			logrus.Debugf("Received response line from Starlark runner: '%v'", responseLine)
 			if err := stream.SendMsg(responseLine); err != nil {
