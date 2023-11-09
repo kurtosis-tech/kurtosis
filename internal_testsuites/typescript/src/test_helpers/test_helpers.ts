@@ -60,7 +60,6 @@ const DEFAULT_SHOULD_RETURN_ALL_LOGS = true
 const DEFAULT_NUM_LOG_LINES = 0 // this value doesn't matter since default is to return all logs
 
 // skip flaky tests period
-
 const SKIP_FLAKY_TEST_END_DATE = new Date('2023-11-17');
 
 
