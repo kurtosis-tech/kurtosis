@@ -61,7 +61,7 @@ message InspectFilesArtifactContentsRequest {
 message DownloadFilesArtifactRequest {
   string apic_ip_address = 1;
   int32 apic_port = 2;
-  api_container_api.DownloadFilesArtifactArgs file_uuid = 3;
+  api_container_api.DownloadFilesArtifactArgs download_files_artifacts_args = 3;
 }
 
 message GetStarlarkRunRequest{

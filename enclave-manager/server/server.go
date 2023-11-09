@@ -313,7 +313,7 @@ func (c *WebServer) DownloadFilesArtifact(
 		return stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
 
-	filesArtifactIdentifier := req.Msg.FileUuid.Identifier
+	filesArtifactIdentifier := req.Msg.DownloadFilesArtifactsArgs.Identifier
 	downloadFilesArtifactRequest := &connect.Request[kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs]{
 		Msg: &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
 			Identifier: filesArtifactIdentifier,
@@ -325,11 +325,11 @@ func (c *WebServer) DownloadFilesArtifact(
 		resp := filesArtifactStream.Msg()
 		err = str.Send(resp)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to send streamed data chunks for files artifact with identifier: %v.", filesArtifactIdentifier)
+			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to send streamed data chunks for files artifact with identifier: %v", filesArtifactIdentifier)
 		}
 	}
 	if err = filesArtifactStream.Err(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to receive streamed data chunks for files artifact with identifier %v.", filesArtifactIdentifier)
+		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to receive streamed data chunks for files artifact with identifier %v", filesArtifactIdentifier)
 	}
 	return nil
 }
