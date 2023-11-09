@@ -52,7 +52,7 @@ func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	metricsClient metrics_client.MetricsClient,
+	_ metrics_client.MetricsClient,
 	_ *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -65,14 +65,9 @@ func run(
 	stopEnclaveErrorStrs := []string{}
 	for _, enclaveIdentifier := range enclaveIdentifiers {
 		stopArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{EnclaveIdentifier: enclaveIdentifier}
-		if err = metricsClient.TrackStopEnclave(enclaveIdentifier); err != nil {
-			logrus.Warnf("An error occurred while logging the stop enclave event for enclave '%v'", enclaveIdentifier)
-		}
-
 		if err = stopAllEnclaveServices(ctx, enclaveIdentifier); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping all enclave services")
 		}
-
 		if _, err := engineClient.StopEnclave(ctx, stopArgs); err != nil {
 			wrappedErr := stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
 			stopEnclaveErrorStrs = append(stopEnclaveErrorStrs, wrappedErr.Error())

@@ -2,7 +2,6 @@ package metrics_client_factory
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/do_nothing_metrics_client_callback"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_cloud_user_instance_id_helper"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
@@ -54,7 +53,7 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 			clusterType,
 			sendUserMetrics,
 			shouldFlushMetricsClientQueueOnEachEvent,
-			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
+			metrics_client.DoNothingMetricsClientCallback{},
 			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
 			metrics_client.IsCI(), maybeCloudUserId, maybeCloudInstanceId),
 	)
@@ -85,7 +84,7 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 			clusterType,
 			sendUserMetrics,
 			shouldFlushMetricsClientQueueOnEachEvent,
-			do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
+			metrics_client.DoNothingMetricsClientCallback{},
 			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
 			metrics_client.IsCI(), maybeCloudUserId, maybeCloudInstanceId),
 	)
