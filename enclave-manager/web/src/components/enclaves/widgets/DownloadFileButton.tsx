@@ -19,7 +19,7 @@ export const DownloadFileButton = ({ file, enclave }: DownloadFileButtonProps) =
   const handleDownloadClick = async () => {
     setIsLoading(true);
     // todo: get tgz download instead
-    const maybeFile = await kurtosisClient.downloadFilesArtifact(enclave, file);
+    const maybeFile = await kurtosisClient.inspectFilesArtifactContents(enclave, file);
     if (maybeFile.isErr) {
       toast({
         title: `Could not inspect ${file.fileName}: ${maybeFile.error}`,
