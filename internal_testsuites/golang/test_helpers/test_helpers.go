@@ -117,7 +117,8 @@ var (
 
 	// skip flaky tests period
 	skipFlakyTestStartDate = time.Date(2023, 11, 10, 0, 0, 0, 0, time.UTC)
-	oneWeekAfterStartDate  = skipFlakyTestStartDate.AddDate(0, 0, 7*1)
+	oneWeekDays            = 7
+	oneWeekAfterStartDate  = skipFlakyTestStartDate.AddDate(0, 0, oneWeekDays)
 )
 
 var fileServerPortSpec = &kurtosis_core_rpc_api_bindings.Port{
