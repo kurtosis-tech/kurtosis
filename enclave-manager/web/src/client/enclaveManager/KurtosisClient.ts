@@ -1,5 +1,6 @@
 import { PromiseClient } from "@connectrpc/connect";
 import {
+  DownloadFilesArtifactArgs,
   FilesArtifactNameAndUuid,
   RunStarlarkPackageArgs,
   ServiceInfo,
@@ -15,6 +16,7 @@ import {
 } from "enclave-manager-sdk/build/engine_service_pb";
 import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {
+  DownloadFilesArtifactRequest,
   GetListFilesArtifactNamesAndUuidsRequest,
   GetServicesRequest,
   GetStarlarkRunRequest,
@@ -150,7 +152,7 @@ export abstract class KurtosisClient {
       const apicInfo = enclave.apiContainerInfo;
       assertDefined(
         apicInfo,
-        `Cannot listFilesArtifactNamesAndUuids because the passed enclave '${enclave.name}' does not have apicInfo`,
+        `Cannot inspect files artifact contents because the passed enclave '${enclave.name}' does not have apicInfo`,
       );
       const request = new InspectFilesArtifactContentsRequest({
         apicIpAddress: apicInfo.bridgeIpAddress,
@@ -159,6 +161,21 @@ export abstract class KurtosisClient {
       });
       return this.client.inspectFilesArtifactContents(request, this.getHeaderOptions());
     }, `KurtosisClient could not inspectFilesArtifactContents for ${enclave.name}`);
+  }
+
+  async downloadFilesArtifact(enclave: RemoveFunctions<EnclaveInfo>, file: FilesArtifactNameAndUuid) {
+    const apicInfo = enclave.apiContainerInfo;
+    assertDefined(
+        apicInfo,
+        `Cannot download files artifact because the passed enclave '${enclave.name}' does not have apicInfo`,
+    );
+    // Not currently using asyncResult as the return type here is an asyncIterable
+    const request = new DownloadFilesArtifactRequest({
+      apicIpAddress: apicInfo.bridgeIpAddress,
+      apicPort: apicInfo.grpcPortInsideEnclave,
+      downloadFilesArtifactsArgs: new DownloadFilesArtifactArgs({ identifier: file.fileUuid})
+    });
+    return this.client.downloadFilesArtifact(request, this.getHeaderOptions());
   }
 
   async createEnclave(
