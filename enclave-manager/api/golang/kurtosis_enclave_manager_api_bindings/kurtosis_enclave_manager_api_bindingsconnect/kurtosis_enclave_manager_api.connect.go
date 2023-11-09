@@ -58,12 +58,12 @@ const (
 	// KurtosisEnclaveManagerServerCreateEnclaveProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's CreateEnclave RPC.
 	KurtosisEnclaveManagerServerCreateEnclaveProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/CreateEnclave"
-	// KurtosisEnclaveManagerServerDownloadFilesArtifactProcedure is the fully-qualified name of the
-	// KurtosisEnclaveManagerServer's DownloadFilesArtifact RPC.
-	KurtosisEnclaveManagerServerDownloadFilesArtifactProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/DownloadFilesArtifact"
 	// KurtosisEnclaveManagerServerInspectFilesArtifactContentsProcedure is the fully-qualified name of
 	// the KurtosisEnclaveManagerServer's InspectFilesArtifactContents RPC.
 	KurtosisEnclaveManagerServerInspectFilesArtifactContentsProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/InspectFilesArtifactContents"
+	// KurtosisEnclaveManagerServerDownloadFilesArtifactProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's DownloadFilesArtifact RPC.
+	KurtosisEnclaveManagerServerDownloadFilesArtifactProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/DownloadFilesArtifact"
 	// KurtosisEnclaveManagerServerDestroyEnclaveProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's DestroyEnclave RPC.
 	KurtosisEnclaveManagerServerDestroyEnclaveProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/DestroyEnclave"
@@ -82,8 +82,8 @@ type KurtosisEnclaveManagerServerClient interface {
 	ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error)
 	RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine], error)
 	CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
-	DownloadFilesArtifact(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StreamedDataChunk], error)
 	InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error)
+	DownloadFilesArtifact(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StreamedDataChunk], error)
 	DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error)
 	GetStarlarkRun(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error)
 }
@@ -134,14 +134,14 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerCreateEnclaveProcedure,
 			opts...,
 		),
-		downloadFilesArtifact: connect.NewClient[kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, kurtosis_core_rpc_api_bindings.StreamedDataChunk](
-			httpClient,
-			baseURL+KurtosisEnclaveManagerServerDownloadFilesArtifactProcedure,
-			opts...,
-		),
 		inspectFilesArtifactContents: connect.NewClient[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest, kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse](
 			httpClient,
 			baseURL+KurtosisEnclaveManagerServerInspectFilesArtifactContentsProcedure,
+			opts...,
+		),
+		downloadFilesArtifact: connect.NewClient[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest, kurtosis_core_rpc_api_bindings.StreamedDataChunk](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerDownloadFilesArtifactProcedure,
 			opts...,
 		),
 		destroyEnclave: connect.NewClient[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty](
@@ -166,8 +166,8 @@ type kurtosisEnclaveManagerServerClient struct {
 	listFilesArtifactNamesAndUuids *connect.Client[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest, kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse]
 	runStarlarkPackage             *connect.Client[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest, kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]
 	createEnclave                  *connect.Client[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs, kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse]
-	downloadFilesArtifact          *connect.Client[kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, kurtosis_core_rpc_api_bindings.StreamedDataChunk]
 	inspectFilesArtifactContents   *connect.Client[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest, kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse]
+	downloadFilesArtifact          *connect.Client[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest, kurtosis_core_rpc_api_bindings.StreamedDataChunk]
 	destroyEnclave                 *connect.Client[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty]
 	getStarlarkRun                 *connect.Client[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest, kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse]
 }
@@ -209,16 +209,16 @@ func (c *kurtosisEnclaveManagerServerClient) CreateEnclave(ctx context.Context, 
 	return c.createEnclave.CallUnary(ctx, req)
 }
 
-// DownloadFilesArtifact calls
-// kurtosis_enclave_manager.KurtosisEnclaveManagerServer.DownloadFilesArtifact.
-func (c *kurtosisEnclaveManagerServerClient) DownloadFilesArtifact(ctx context.Context, req *connect.Request[kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StreamedDataChunk], error) {
-	return c.downloadFilesArtifact.CallServerStream(ctx, req)
-}
-
 // InspectFilesArtifactContents calls
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer.InspectFilesArtifactContents.
 func (c *kurtosisEnclaveManagerServerClient) InspectFilesArtifactContents(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
 	return c.inspectFilesArtifactContents.CallUnary(ctx, req)
+}
+
+// DownloadFilesArtifact calls
+// kurtosis_enclave_manager.KurtosisEnclaveManagerServer.DownloadFilesArtifact.
+func (c *kurtosisEnclaveManagerServerClient) DownloadFilesArtifact(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StreamedDataChunk], error) {
+	return c.downloadFilesArtifact.CallServerStream(ctx, req)
 }
 
 // DestroyEnclave calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.DestroyEnclave.
@@ -241,8 +241,8 @@ type KurtosisEnclaveManagerServerHandler interface {
 	ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error)
 	RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error
 	CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
-	DownloadFilesArtifact(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk]) error
 	InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error)
+	DownloadFilesArtifact(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk]) error
 	DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error)
 	GetStarlarkRun(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error)
 }
@@ -288,14 +288,14 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		svc.CreateEnclave,
 		opts...,
 	)
-	kurtosisEnclaveManagerServerDownloadFilesArtifactHandler := connect.NewServerStreamHandler(
-		KurtosisEnclaveManagerServerDownloadFilesArtifactProcedure,
-		svc.DownloadFilesArtifact,
-		opts...,
-	)
 	kurtosisEnclaveManagerServerInspectFilesArtifactContentsHandler := connect.NewUnaryHandler(
 		KurtosisEnclaveManagerServerInspectFilesArtifactContentsProcedure,
 		svc.InspectFilesArtifactContents,
+		opts...,
+	)
+	kurtosisEnclaveManagerServerDownloadFilesArtifactHandler := connect.NewServerStreamHandler(
+		KurtosisEnclaveManagerServerDownloadFilesArtifactProcedure,
+		svc.DownloadFilesArtifact,
 		opts...,
 	)
 	kurtosisEnclaveManagerServerDestroyEnclaveHandler := connect.NewUnaryHandler(
@@ -324,10 +324,10 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 			kurtosisEnclaveManagerServerRunStarlarkPackageHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerCreateEnclaveProcedure:
 			kurtosisEnclaveManagerServerCreateEnclaveHandler.ServeHTTP(w, r)
-		case KurtosisEnclaveManagerServerDownloadFilesArtifactProcedure:
-			kurtosisEnclaveManagerServerDownloadFilesArtifactHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerInspectFilesArtifactContentsProcedure:
 			kurtosisEnclaveManagerServerInspectFilesArtifactContentsHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerDownloadFilesArtifactProcedure:
+			kurtosisEnclaveManagerServerDownloadFilesArtifactHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerDestroyEnclaveProcedure:
 			kurtosisEnclaveManagerServerDestroyEnclaveHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetStarlarkRunProcedure:
@@ -369,12 +369,12 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) CreateEnclave(context.Co
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.CreateEnclave is not implemented"))
 }
 
-func (UnimplementedKurtosisEnclaveManagerServerHandler) DownloadFilesArtifact(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.DownloadFilesArtifact is not implemented"))
-}
-
 func (UnimplementedKurtosisEnclaveManagerServerHandler) InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.InspectFilesArtifactContents is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) DownloadFilesArtifact(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.DownloadFilesArtifact is not implemented"))
 }
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {

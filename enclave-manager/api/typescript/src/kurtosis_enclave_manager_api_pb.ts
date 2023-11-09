@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { FilesArtifactNameAndUuid, RunStarlarkPackageArgs } from "./api_container_service_pb.js";
+import { DownloadFilesArtifactArgs, FilesArtifactNameAndUuid, RunStarlarkPackageArgs } from "./api_container_service_pb.js";
 
 /**
  * @generated from message kurtosis_enclave_manager.HealthCheckRequest
@@ -296,6 +296,55 @@ export class InspectFilesArtifactContentsRequest extends Message<InspectFilesArt
 
   static equals(a: InspectFilesArtifactContentsRequest | PlainMessage<InspectFilesArtifactContentsRequest> | undefined, b: InspectFilesArtifactContentsRequest | PlainMessage<InspectFilesArtifactContentsRequest> | undefined): boolean {
     return proto3.util.equals(InspectFilesArtifactContentsRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message kurtosis_enclave_manager.DownloadFilesArtifactRequest
+ */
+export class DownloadFilesArtifactRequest extends Message<DownloadFilesArtifactRequest> {
+  /**
+   * @generated from field: string apic_ip_address = 1;
+   */
+  apicIpAddress = "";
+
+  /**
+   * @generated from field: int32 apic_port = 2;
+   */
+  apicPort = 0;
+
+  /**
+   * @generated from field: api_container_api.DownloadFilesArtifactArgs file_uuid = 3;
+   */
+  fileUuid?: DownloadFilesArtifactArgs;
+
+  constructor(data?: PartialMessage<DownloadFilesArtifactRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_enclave_manager.DownloadFilesArtifactRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "apic_ip_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "apic_port", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 3, name: "file_uuid", kind: "message", T: DownloadFilesArtifactArgs },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DownloadFilesArtifactRequest {
+    return new DownloadFilesArtifactRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DownloadFilesArtifactRequest {
+    return new DownloadFilesArtifactRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DownloadFilesArtifactRequest {
+    return new DownloadFilesArtifactRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: DownloadFilesArtifactRequest | PlainMessage<DownloadFilesArtifactRequest> | undefined, b: DownloadFilesArtifactRequest | PlainMessage<DownloadFilesArtifactRequest> | undefined): boolean {
+    return proto3.util.equals(DownloadFilesArtifactRequest, a, b);
   }
 }
 

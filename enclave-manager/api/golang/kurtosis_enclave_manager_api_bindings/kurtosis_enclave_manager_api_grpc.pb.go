@@ -29,8 +29,8 @@ const (
 	KurtosisEnclaveManagerServer_ListFilesArtifactNamesAndUuids_FullMethodName = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/ListFilesArtifactNamesAndUuids"
 	KurtosisEnclaveManagerServer_RunStarlarkPackage_FullMethodName             = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/RunStarlarkPackage"
 	KurtosisEnclaveManagerServer_CreateEnclave_FullMethodName                  = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/CreateEnclave"
-	KurtosisEnclaveManagerServer_DownloadFilesArtifact_FullMethodName          = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/DownloadFilesArtifact"
 	KurtosisEnclaveManagerServer_InspectFilesArtifactContents_FullMethodName   = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/InspectFilesArtifactContents"
+	KurtosisEnclaveManagerServer_DownloadFilesArtifact_FullMethodName          = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/DownloadFilesArtifact"
 	KurtosisEnclaveManagerServer_DestroyEnclave_FullMethodName                 = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/DestroyEnclave"
 	KurtosisEnclaveManagerServer_GetStarlarkRun_FullMethodName                 = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetStarlarkRun"
 )
@@ -46,8 +46,8 @@ type KurtosisEnclaveManagerServerClient interface {
 	ListFilesArtifactNamesAndUuids(ctx context.Context, in *GetListFilesArtifactNamesAndUuidsRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse, error)
 	RunStarlarkPackage(ctx context.Context, in *RunStarlarkPackageRequest, opts ...grpc.CallOption) (KurtosisEnclaveManagerServer_RunStarlarkPackageClient, error)
 	CreateEnclave(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error)
-	DownloadFilesArtifact(ctx context.Context, in *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, opts ...grpc.CallOption) (KurtosisEnclaveManagerServer_DownloadFilesArtifactClient, error)
 	InspectFilesArtifactContents(ctx context.Context, in *InspectFilesArtifactContentsRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error)
+	DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactRequest, opts ...grpc.CallOption) (KurtosisEnclaveManagerServer_DownloadFilesArtifactClient, error)
 	DestroyEnclave(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetStarlarkRun(ctx context.Context, in *GetStarlarkRunRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error)
 }
@@ -169,7 +169,16 @@ func (c *kurtosisEnclaveManagerServerClient) CreateEnclave(ctx context.Context, 
 	return out, nil
 }
 
-func (c *kurtosisEnclaveManagerServerClient) DownloadFilesArtifact(ctx context.Context, in *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, opts ...grpc.CallOption) (KurtosisEnclaveManagerServer_DownloadFilesArtifactClient, error) {
+func (c *kurtosisEnclaveManagerServerClient) InspectFilesArtifactContents(ctx context.Context, in *InspectFilesArtifactContentsRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
+	out := new(kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse)
+	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_InspectFilesArtifactContents_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisEnclaveManagerServerClient) DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactRequest, opts ...grpc.CallOption) (KurtosisEnclaveManagerServer_DownloadFilesArtifactClient, error) {
 	stream, err := c.cc.NewStream(ctx, &KurtosisEnclaveManagerServer_ServiceDesc.Streams[2], KurtosisEnclaveManagerServer_DownloadFilesArtifact_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
@@ -201,15 +210,6 @@ func (x *kurtosisEnclaveManagerServerDownloadFilesArtifactClient) Recv() (*kurto
 	return m, nil
 }
 
-func (c *kurtosisEnclaveManagerServerClient) InspectFilesArtifactContents(ctx context.Context, in *InspectFilesArtifactContentsRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
-	out := new(kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse)
-	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_InspectFilesArtifactContents_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *kurtosisEnclaveManagerServerClient) DestroyEnclave(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_DestroyEnclave_FullMethodName, in, out, opts...)
@@ -239,8 +239,8 @@ type KurtosisEnclaveManagerServerServer interface {
 	ListFilesArtifactNamesAndUuids(context.Context, *GetListFilesArtifactNamesAndUuidsRequest) (*kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse, error)
 	RunStarlarkPackage(*RunStarlarkPackageRequest, KurtosisEnclaveManagerServer_RunStarlarkPackageServer) error
 	CreateEnclave(context.Context, *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error)
-	DownloadFilesArtifact(*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, KurtosisEnclaveManagerServer_DownloadFilesArtifactServer) error
 	InspectFilesArtifactContents(context.Context, *InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error)
+	DownloadFilesArtifact(*DownloadFilesArtifactRequest, KurtosisEnclaveManagerServer_DownloadFilesArtifactServer) error
 	DestroyEnclave(context.Context, *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error)
 	GetStarlarkRun(context.Context, *GetStarlarkRunRequest) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error)
 }
@@ -270,11 +270,11 @@ func (UnimplementedKurtosisEnclaveManagerServerServer) RunStarlarkPackage(*RunSt
 func (UnimplementedKurtosisEnclaveManagerServerServer) CreateEnclave(context.Context, *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEnclave not implemented")
 }
-func (UnimplementedKurtosisEnclaveManagerServerServer) DownloadFilesArtifact(*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, KurtosisEnclaveManagerServer_DownloadFilesArtifactServer) error {
-	return status.Errorf(codes.Unimplemented, "method DownloadFilesArtifact not implemented")
-}
 func (UnimplementedKurtosisEnclaveManagerServerServer) InspectFilesArtifactContents(context.Context, *InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InspectFilesArtifactContents not implemented")
+}
+func (UnimplementedKurtosisEnclaveManagerServerServer) DownloadFilesArtifact(*DownloadFilesArtifactRequest, KurtosisEnclaveManagerServer_DownloadFilesArtifactServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadFilesArtifact not implemented")
 }
 func (UnimplementedKurtosisEnclaveManagerServerServer) DestroyEnclave(context.Context, *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DestroyEnclave not implemented")
@@ -426,8 +426,26 @@ func _KurtosisEnclaveManagerServer_CreateEnclave_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisEnclaveManagerServer_InspectFilesArtifactContents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InspectFilesArtifactContentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisEnclaveManagerServerServer).InspectFilesArtifactContents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisEnclaveManagerServer_InspectFilesArtifactContents_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisEnclaveManagerServerServer).InspectFilesArtifactContents(ctx, req.(*InspectFilesArtifactContentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _KurtosisEnclaveManagerServer_DownloadFilesArtifact_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs)
+	m := new(DownloadFilesArtifactRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -445,24 +463,6 @@ type kurtosisEnclaveManagerServerDownloadFilesArtifactServer struct {
 
 func (x *kurtosisEnclaveManagerServerDownloadFilesArtifactServer) Send(m *kurtosis_core_rpc_api_bindings.StreamedDataChunk) error {
 	return x.ServerStream.SendMsg(m)
-}
-
-func _KurtosisEnclaveManagerServer_InspectFilesArtifactContents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InspectFilesArtifactContentsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(KurtosisEnclaveManagerServerServer).InspectFilesArtifactContents(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: KurtosisEnclaveManagerServer_InspectFilesArtifactContents_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisEnclaveManagerServerServer).InspectFilesArtifactContents(ctx, req.(*InspectFilesArtifactContentsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _KurtosisEnclaveManagerServer_DestroyEnclave_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
