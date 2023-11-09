@@ -1,5 +1,5 @@
 import { FiHome } from "react-icons/fi";
-import { BsGear } from "react-icons/bs";
+import { PiLinkSimpleBold } from "react-icons/pi";
 import { Link, useLocation } from "react-router-dom";
 import { NavButton, Navigation } from "../components/Navigation";
 import { KURTOSIS_CLOUD_CONNECT_URL } from "../client/constants";
@@ -25,7 +25,7 @@ export const Navbar = ({ isRunningInCloud, baseApplicationUrl }: NavbarProps) =>
         <Link to={KURTOSIS_CLOUD_CONNECT_URL}>
           <NavButton
             label={"Link your CLI"}
-            Icon={<BsGear />}
+            Icon={<PiLinkSimpleBold />}
             isActive={true}
           />
         </Link>
