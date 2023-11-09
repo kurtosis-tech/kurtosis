@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.9](https://github.com/kurtosis-tech/kurtosis/compare/0.85.8...0.85.9) (2023-11-09)
+
+
+### Bug Fixes
+
+* using the CLI+KurtosisCloud should not rely on the local Docker engine running ([#1726](https://github.com/kurtosis-tech/kurtosis/issues/1726)) ([b447196](https://github.com/kurtosis-tech/kurtosis/commit/b447196b3534fce13db09d0c85a6aa2837b02c99)), closes [#1719](https://github.com/kurtosis-tech/kurtosis/issues/1719)
+
 ## [0.85.8](https://github.com/kurtosis-tech/kurtosis/compare/0.85.7...0.85.8) (2023-11-08)
 
 
