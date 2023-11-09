@@ -1,5 +1,4 @@
-import { TriangleDownIcon, TriangleUpIcon } from "@chakra-ui/icons";
-import { Button, chakra, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
+import { Button, Icon, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
 import {
   ColumnDef,
   flexRender,
@@ -13,6 +12,7 @@ import {
 import { type RowSelectionState } from "@tanstack/table-core/src/features/RowSelection";
 import { type OnChangeFn } from "@tanstack/table-core/src/types";
 import { useState } from "react";
+import { BiDownArrowAlt, BiUpArrowAlt } from "react-icons/bi";
 import { assertDefined, isDefined } from "../utils";
 
 declare module "@tanstack/table-core" {
@@ -80,20 +80,21 @@ export function DataTable<Data extends object>({
                   textAlign={!!meta?.centerAligned ? "center" : undefined}
                 >
                   {header.column.getCanSort() && (
-                    <Button variant={"sortableHeader"} size={"xs"}>
+                    <Button
+                      variant={"sortableHeader"}
+                      size={"xs"}
+                      rightIcon={
+                        header.column.getIsSorted() === "desc" ? (
+                          <Icon as={BiDownArrowAlt} color={"gray.400"} />
+                        ) : header.column.getIsSorted() === "asc" ? (
+                          <Icon as={BiUpArrowAlt} color={"gray.400"} />
+                        ) : undefined
+                      }
+                    >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </Button>
                   )}
                   {!header.column.getCanSort() && flexRender(header.column.columnDef.header, header.getContext())}
-                  {header.column.getIsSorted() && (
-                    <chakra.span pl="4">
-                      {header.column.getIsSorted() === "desc" ? (
-                        <TriangleDownIcon aria-label="sorted descending" color={"gray.400"} />
-                      ) : (
-                        <TriangleUpIcon aria-label="sorted ascending" color={"gray.400"} />
-                      )}
-                    </chakra.span>
-                  )}
                 </Th>
               );
             })}
