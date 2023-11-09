@@ -703,7 +703,8 @@ func getServiceWithLogLinesServiceConfigStarlark(logLines []string) string {
 }
 
 func SkipFlakyTest(t *testing.T, testName string) {
-	if skipFlakyTestStartDate.Before(oneWeekAfterStartDate) {
+	now := time.Now()
+	if now.Before(oneWeekAfterStartDate) {
 		t.Skipf("Skipping %s, because it is too noisy, until %s or until we fix the flakyness", testName, oneWeekAfterStartDate)
 	}
 }
