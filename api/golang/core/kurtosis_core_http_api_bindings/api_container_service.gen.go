@@ -16,70 +16,77 @@ import (
 	"path"
 	"strings"
 
+	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
 )
 
-// Defines values for ApiContainerApiConnect.
+// Defines values for Connect.
 const (
-	CONNECT   ApiContainerApiConnect = "CONNECT"
-	NOCONNECT ApiContainerApiConnect = "NO_CONNECT"
+	CONNECT   Connect = "CONNECT"
+	NOCONNECT Connect = "NO_CONNECT"
 )
 
-// Defines values for ApiContainerApiContainerStatus.
+// Defines values for ContainerStatus.
 const (
-	ApiContainerApiContainerStatusRUNNING ApiContainerApiContainerStatus = "RUNNING"
-	ApiContainerApiContainerStatusSTOPPED ApiContainerApiContainerStatus = "STOPPED"
-	ApiContainerApiContainerStatusUNKNOWN ApiContainerApiContainerStatus = "UNKNOWN"
+	ContainerStatusRUNNING ContainerStatus = "RUNNING"
+	ContainerStatusSTOPPED ContainerStatus = "STOPPED"
+	ContainerStatusUNKNOWN ContainerStatus = "UNKNOWN"
 )
 
-// Defines values for ApiContainerApiImageDownloadMode.
+// Defines values for ImageDownloadMode.
 const (
-	Always  ApiContainerApiImageDownloadMode = "always"
-	Missing ApiContainerApiImageDownloadMode = "missing"
+	Always  ImageDownloadMode = "always"
+	Missing ImageDownloadMode = "missing"
 )
 
-// Defines values for ApiContainerApiKurtosisFeatureFlag.
+// Defines values for KurtosisFeatureFlag.
 const (
-	NOINSTRUCTIONSCACHING ApiContainerApiKurtosisFeatureFlag = "NO_INSTRUCTIONS_CACHING"
+	NOINSTRUCTIONSCACHING KurtosisFeatureFlag = "NO_INSTRUCTIONS_CACHING"
 )
 
-// Defines values for ApiContainerApiPortTransportProtocol.
+// Defines values for PortTransportProtocol.
 const (
-	SCTP ApiContainerApiPortTransportProtocol = "SCTP"
-	TCP  ApiContainerApiPortTransportProtocol = "TCP"
-	UDP  ApiContainerApiPortTransportProtocol = "UDP"
+	SCTP PortTransportProtocol = "SCTP"
+	TCP  PortTransportProtocol = "TCP"
+	UDP  PortTransportProtocol = "UDP"
 )
 
-// Defines values for ApiContainerApiRestartPolicy.
+// Defines values for RestartPolicy.
 const (
-	ALWAYS ApiContainerApiRestartPolicy = "ALWAYS"
-	NEVER  ApiContainerApiRestartPolicy = "NEVER"
+	ALWAYS RestartPolicy = "ALWAYS"
+	NEVER  RestartPolicy = "NEVER"
 )
 
-// Defines values for ApiContainerApiServiceStatus.
+// Defines values for ServiceStatus.
 const (
-	ApiContainerApiServiceStatusRUNNING ApiContainerApiServiceStatus = "RUNNING"
-	ApiContainerApiServiceStatusSTOPPED ApiContainerApiServiceStatus = "STOPPED"
-	ApiContainerApiServiceStatusUNKNOWN ApiContainerApiServiceStatus = "UNKNOWN"
+	ServiceStatusRUNNING ServiceStatus = "RUNNING"
+	ServiceStatusSTOPPED ServiceStatus = "STOPPED"
+	ServiceStatusUNKNOWN ServiceStatus = "UNKNOWN"
 )
 
-// ApiContainerApiConnect 0 - CONNECT // Best effort port forwarding
+// Defines values for WaitForEndpointAvailabilityArgsHttpMethod.
+const (
+	GET  WaitForEndpointAvailabilityArgsHttpMethod = "GET"
+	POST WaitForEndpointAvailabilityArgsHttpMethod = "POST"
+)
+
+// Connect 0 - CONNECT // Best effort port forwarding
 // 1 - NO_CONNECT // Port forwarding disabled
-type ApiContainerApiConnect string
+type Connect string
 
-// ApiContainerApiConnectServicesArgs defines model for api_container_api.ConnectServicesArgs.
-type ApiContainerApiConnectServicesArgs struct {
+// ConnectServicesArgs defines model for ConnectServicesArgs.
+type ConnectServicesArgs struct {
 	// Connect 0 - CONNECT // Best effort port forwarding
 	// 1 - NO_CONNECT // Port forwarding disabled
-	Connect *ApiContainerApiConnect `json:"connect,omitempty"`
+	Connect *Connect `json:"connect,omitempty"`
 }
 
-// ApiContainerApiConnectServicesResponse defines model for api_container_api.ConnectServicesResponse.
-type ApiContainerApiConnectServicesResponse = map[string]interface{}
+// ConnectServicesResponse defines model for ConnectServicesResponse.
+type ConnectServicesResponse = map[string]interface{}
 
-// ApiContainerApiContainer defines model for api_container_api.Container.
-type ApiContainerApiContainer struct {
+// Container defines model for Container.
+type Container struct {
 	CmdArgs        *[]string          `json:"cmd_args,omitempty"`
 	EntrypointArgs *[]string          `json:"entrypoint_args,omitempty"`
 	EnvVars        *map[string]string `json:"env_vars,omitempty"`
@@ -88,47 +95,36 @@ type ApiContainerApiContainer struct {
 	// Status 0 - STOPPED
 	// 1 - RUNNING
 	// 2 - UNKNOWN
-	Status *ApiContainerApiContainerStatus `json:"status,omitempty"`
+	Status *ContainerStatus `json:"status,omitempty"`
 }
 
-// ApiContainerApiContainerStatus 0 - STOPPED
+// ContainerStatus 0 - STOPPED
 // 1 - RUNNING
 // 2 - UNKNOWN
-type ApiContainerApiContainerStatus string
+type ContainerStatus string
 
-// ApiContainerApiDataChunkMetadata defines model for api_container_api.DataChunkMetadata.
-type ApiContainerApiDataChunkMetadata struct {
+// DataChunkMetadata defines model for DataChunkMetadata.
+type DataChunkMetadata struct {
 	Name *string `json:"name,omitempty"`
 }
 
-// ApiContainerApiDownloadFilesArtifactArgs ==============================================================================================
-// Download Files Artifact
-// ==============================================================================================
-type ApiContainerApiDownloadFilesArtifactArgs struct {
-	// Identifier Files identifier to get bytes for
-	Identifier *string `json:"identifier,omitempty"`
-}
-
-// ApiContainerApiExecCommandArgs ==============================================================================================
+// ExecCommandArgs ==============================================================================================
 // Exec Command
 // ==============================================================================================
-type ApiContainerApiExecCommandArgs struct {
+type ExecCommandArgs struct {
 	CommandArgs *[]string `json:"command_args,omitempty"`
-
-	// ServiceIdentifier The service identifier of the container that the command should be executed in
-	ServiceIdentifier *string `json:"service_identifier,omitempty"`
 }
 
-// ApiContainerApiExecCommandResponse defines model for api_container_api.ExecCommandResponse.
-type ApiContainerApiExecCommandResponse struct {
+// ExecCommandResponse defines model for ExecCommandResponse.
+type ExecCommandResponse struct {
 	ExitCode *int32 `json:"exit_code,omitempty"`
 
 	// LogOutput Assumes UTF-8 encoding
 	LogOutput *string `json:"log_output,omitempty"`
 }
 
-// ApiContainerApiFileArtifactContentsFileDescription defines model for api_container_api.FileArtifactContentsFileDescription.
-type ApiContainerApiFileArtifactContentsFileDescription struct {
+// FileArtifactContentsFileDescription defines model for FileArtifactContentsFileDescription.
+type FileArtifactContentsFileDescription struct {
 	// Path Path relative to the file artifact
 	Path *string `json:"path,omitempty"`
 
@@ -139,8 +135,8 @@ type ApiContainerApiFileArtifactContentsFileDescription struct {
 	TextPreview *string `json:"text_preview,omitempty"`
 }
 
-// ApiContainerApiFilesArtifactNameAndUuid defines model for api_container_api.FilesArtifactNameAndUuid.
-type ApiContainerApiFilesArtifactNameAndUuid struct {
+// FilesArtifactNameAndUuid defines model for FilesArtifactNameAndUuid.
+type FilesArtifactNameAndUuid struct {
 	// FileName A string representing the name of the file
 	FileName *string `json:"fileName,omitempty"`
 
@@ -148,66 +144,50 @@ type ApiContainerApiFilesArtifactNameAndUuid struct {
 	FileUuid *string `json:"fileUuid,omitempty"`
 }
 
-// ApiContainerApiGetExistingAndHistoricalServiceIdentifiersResponse defines model for api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse.
-type ApiContainerApiGetExistingAndHistoricalServiceIdentifiersResponse struct {
-	AllIdentifiers *[]ApiContainerApiServiceIdentifiers `json:"allIdentifiers,omitempty"`
+// GetExistingAndHistoricalServiceIdentifiersResponse defines model for GetExistingAndHistoricalServiceIdentifiersResponse.
+type GetExistingAndHistoricalServiceIdentifiersResponse struct {
+	AllIdentifiers *[]ServiceIdentifiers `json:"allIdentifiers,omitempty"`
 }
 
-// ApiContainerApiGetServicesArgs ==============================================================================================
-// Get Services
-// ==============================================================================================
-type ApiContainerApiGetServicesArgs struct {
-	// ServiceIdentifiers "Set" of identifiers to fetch info for
-	// If empty, will fetch info for all services
-	ServiceIdentifiers *map[string]string `json:"service_identifiers,omitempty"`
+// GetServicesResponse defines model for GetServicesResponse.
+type GetServicesResponse struct {
+	ServiceInfo *ServiceInfo `json:"service_info,omitempty"`
 }
 
-// ApiContainerApiGetServicesResponse defines model for api_container_api.GetServicesResponse.
-type ApiContainerApiGetServicesResponse struct {
-	ServiceInfo *ApiContainerApiServiceInfo `json:"service_info,omitempty"`
-}
-
-// ApiContainerApiGetStarlarkRunResponse defines model for api_container_api.GetStarlarkRunResponse.
-type ApiContainerApiGetStarlarkRunResponse struct {
-	ExperimentalFeatures   *[]ApiContainerApiKurtosisFeatureFlag `json:"experimental_features,omitempty"`
-	MainFunctionName       *string                               `json:"main_function_name,omitempty"`
-	PackageId              *string                               `json:"package_id,omitempty"`
-	Parallelism            *int32                                `json:"parallelism,omitempty"`
-	RelativePathToMainFile *string                               `json:"relative_path_to_main_file,omitempty"`
+// GetStarlarkRunResponse defines model for GetStarlarkRunResponse.
+type GetStarlarkRunResponse struct {
+	ExperimentalFeatures   *[]KurtosisFeatureFlag `json:"experimental_features,omitempty"`
+	MainFunctionName       *string                `json:"main_function_name,omitempty"`
+	PackageId              *string                `json:"package_id,omitempty"`
+	Parallelism            *int32                 `json:"parallelism,omitempty"`
+	RelativePathToMainFile *string                `json:"relative_path_to_main_file,omitempty"`
 
 	// RestartPolicy 0 - NEVER
 	// 1 - ALWAYS
-	RestartPolicy    *ApiContainerApiRestartPolicy `json:"restart_policy,omitempty"`
-	SerializedParams *string                       `json:"serialized_params,omitempty"`
-	SerializedScript *string                       `json:"serialized_script,omitempty"`
+	RestartPolicy    *RestartPolicy `json:"restart_policy,omitempty"`
+	SerializedParams *string        `json:"serialized_params,omitempty"`
+	SerializedScript *string        `json:"serialized_script,omitempty"`
 }
 
-// ApiContainerApiImageDownloadMode 0 - always
+// ImageDownloadMode 0 - always
 // 1 - missing
-type ApiContainerApiImageDownloadMode string
+type ImageDownloadMode string
 
-// ApiContainerApiInspectFilesArtifactContentsRequest defines model for api_container_api.InspectFilesArtifactContentsRequest.
-type ApiContainerApiInspectFilesArtifactContentsRequest struct {
-	FileNamesAndUuid *ApiContainerApiFilesArtifactNameAndUuid `json:"file_names_and_uuid,omitempty"`
+// InspectFilesArtifactContentsResponse defines model for InspectFilesArtifactContentsResponse.
+type InspectFilesArtifactContentsResponse struct {
+	FileDescriptions *[]FileArtifactContentsFileDescription `json:"file_descriptions,omitempty"`
 }
 
-// ApiContainerApiInspectFilesArtifactContentsResponse defines model for api_container_api.InspectFilesArtifactContentsResponse.
-type ApiContainerApiInspectFilesArtifactContentsResponse struct {
-	FileDescriptions *[]ApiContainerApiFileArtifactContentsFileDescription `json:"file_descriptions,omitempty"`
+// KurtosisFeatureFlag 0 - NO_INSTRUCTIONS_CACHING
+type KurtosisFeatureFlag string
+
+// ListFilesArtifactNamesAndUuidsResponse defines model for ListFilesArtifactNamesAndUuidsResponse.
+type ListFilesArtifactNamesAndUuidsResponse struct {
+	FileNamesAndUuids *[]FilesArtifactNameAndUuid `json:"file_names_and_uuids,omitempty"`
 }
 
-// ApiContainerApiKurtosisFeatureFlag 0 - NO_INSTRUCTIONS_CACHING
-type ApiContainerApiKurtosisFeatureFlag string
-
-// ApiContainerApiListFilesArtifactNamesAndUuidsResponse defines model for api_container_api.ListFilesArtifactNamesAndUuidsResponse.
-type ApiContainerApiListFilesArtifactNamesAndUuidsResponse struct {
-	FileNamesAndUuids *[]ApiContainerApiFilesArtifactNameAndUuid `json:"file_names_and_uuids,omitempty"`
-}
-
-// ApiContainerApiPort ==============================================================================================
-// Shared Objects (Used By Multiple Endpoints)
-// ==============================================================================================
-type ApiContainerApiPort struct {
+// Port Shared Objects (Used By Multiple Endpoints)
+type Port struct {
 	MaybeApplicationProtocol *string `json:"maybe_application_protocol,omitempty"`
 
 	// MaybeWaitTimeout The wait timeout duration in string
@@ -217,20 +197,20 @@ type ApiContainerApiPort struct {
 	// TransportProtocol 0 - TCP
 	// 1 - SCTP
 	// 2 - UDP
-	TransportProtocol *ApiContainerApiPortTransportProtocol `json:"transport_protocol,omitempty"`
+	TransportProtocol *PortTransportProtocol `json:"transport_protocol,omitempty"`
 }
 
-// ApiContainerApiPortTransportProtocol 0 - TCP
+// PortTransportProtocol 0 - TCP
 // 1 - SCTP
 // 2 - UDP
-type ApiContainerApiPortTransportProtocol string
+type PortTransportProtocol string
 
-// ApiContainerApiRestartPolicy 0 - NEVER
+// RestartPolicy 0 - NEVER
 // 1 - ALWAYS
-type ApiContainerApiRestartPolicy string
+type RestartPolicy string
 
-// ApiContainerApiRunStarlarkPackageArgs defines model for api_container_api.RunStarlarkPackageArgs.
-type ApiContainerApiRunStarlarkPackageArgs struct {
+// RunStarlarkPackageArgs defines model for RunStarlarkPackageArgs.
+type RunStarlarkPackageArgs struct {
 	// ClonePackage Whether the package should be cloned or not.
 	// If false, then the package will be pulled from the APIC local package store. If it's a local package then is must
 	// have been uploaded using UploadStarlarkPackage prior to calling RunStarlarkPackage.
@@ -244,12 +224,12 @@ type ApiContainerApiRunStarlarkPackageArgs struct {
 	CloudUserId *string `json:"cloud_user_id,omitempty"`
 
 	// DryRun Defaults to false
-	DryRun               *bool                                 `json:"dry_run,omitempty"`
-	ExperimentalFeatures *[]ApiContainerApiKurtosisFeatureFlag `json:"experimental_features,omitempty"`
+	DryRun               *bool                  `json:"dry_run,omitempty"`
+	ExperimentalFeatures *[]KurtosisFeatureFlag `json:"experimental_features,omitempty"`
 
 	// ImageDownloadMode 0 - always
 	// 1 - missing
-	ImageDownloadMode *ApiContainerApiImageDownloadMode `json:"image_download_mode,omitempty"`
+	ImageDownloadMode *ImageDownloadMode `json:"image_download_mode,omitempty"`
 
 	// Local the payload of the local module
 	Local *[]byte `json:"local,omitempty"`
@@ -272,8 +252,8 @@ type ApiContainerApiRunStarlarkPackageArgs struct {
 	SerializedParams *string `json:"serialized_params,omitempty"`
 }
 
-// ApiContainerApiRunStarlarkScriptArgs defines model for api_container_api.RunStarlarkScriptArgs.
-type ApiContainerApiRunStarlarkScriptArgs struct {
+// RunStarlarkScriptArgs defines model for RunStarlarkScriptArgs.
+type RunStarlarkScriptArgs struct {
 	// CloudInstanceId Defaults to empty
 	CloudInstanceId *string `json:"cloud_instance_id,omitempty"`
 
@@ -281,12 +261,12 @@ type ApiContainerApiRunStarlarkScriptArgs struct {
 	CloudUserId *string `json:"cloud_user_id,omitempty"`
 
 	// DryRun Defaults to false
-	DryRun               *bool                                 `json:"dry_run,omitempty"`
-	ExperimentalFeatures *[]ApiContainerApiKurtosisFeatureFlag `json:"experimental_features,omitempty"`
+	DryRun               *bool                  `json:"dry_run,omitempty"`
+	ExperimentalFeatures *[]KurtosisFeatureFlag `json:"experimental_features,omitempty"`
 
 	// ImageDownloadMode 0 - always
 	// 1 - missing
-	ImageDownloadMode *ApiContainerApiImageDownloadMode `json:"image_download_mode,omitempty"`
+	ImageDownloadMode *ImageDownloadMode `json:"image_download_mode,omitempty"`
 
 	// MainFunctionName The name of the main function, the default value is "run"
 	MainFunctionName *string `json:"main_function_name,omitempty"`
@@ -297,8 +277,8 @@ type ApiContainerApiRunStarlarkScriptArgs struct {
 	SerializedScript *string `json:"serialized_script,omitempty"`
 }
 
-// ApiContainerApiServiceIdentifiers An service identifier is a collection of uuid, name and shortened uuid
-type ApiContainerApiServiceIdentifiers struct {
+// ServiceIdentifiers An service identifier is a collection of uuid, name and shortened uuid
+type ServiceIdentifiers struct {
 	// Name Name of the service
 	Name *string `json:"name,omitempty"`
 
@@ -309,18 +289,16 @@ type ApiContainerApiServiceIdentifiers struct {
 	ShortenedUuid *string `json:"shortened_uuid,omitempty"`
 }
 
-// ApiContainerApiServiceInfo defines model for api_container_api.ServiceInfo.
-type ApiContainerApiServiceInfo struct {
-	Container *ApiContainerApiContainer `json:"container,omitempty"`
+// ServiceInfo defines model for ServiceInfo.
+type ServiceInfo struct {
+	Container *Container `json:"container,omitempty"`
 
 	// MaybePublicIpAddr Public IP address *outside* the enclave where the service is reachable
 	// NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
 	MaybePublicIpAddr *string `json:"maybe_public_ip_addr,omitempty"`
 
-	// MaybePublicPorts ==============================================================================================
-	// Shared Objects (Used By Multiple Endpoints)
-	// ==============================================================================================
-	MaybePublicPorts *ApiContainerApiPort `json:"maybe_public_ports,omitempty"`
+	// MaybePublicPorts Shared Objects (Used By Multiple Endpoints)
+	MaybePublicPorts *Port `json:"maybe_public_ports,omitempty"`
 
 	// Name Name of the service
 	Name *string `json:"name,omitempty"`
@@ -328,15 +306,13 @@ type ApiContainerApiServiceInfo struct {
 	// PrivateIpAddr The IP address of the service inside the enclave
 	PrivateIpAddr *string `json:"private_ip_addr,omitempty"`
 
-	// PrivatePorts ==============================================================================================
-	// Shared Objects (Used By Multiple Endpoints)
-	// ==============================================================================================
-	PrivatePorts *ApiContainerApiPort `json:"private_ports,omitempty"`
+	// PrivatePorts Shared Objects (Used By Multiple Endpoints)
+	PrivatePorts *Port `json:"private_ports,omitempty"`
 
 	// ServiceStatus 0 - STOPPED
 	// 1 - RUNNING
 	// 2 - UNKNOWN
-	ServiceStatus *ApiContainerApiServiceStatus `json:"service_status,omitempty"`
+	ServiceStatus *ServiceStatus `json:"service_status,omitempty"`
 
 	// ServiceUuid UUID of the service
 	ServiceUuid *string `json:"service_uuid,omitempty"`
@@ -345,119 +321,116 @@ type ApiContainerApiServiceInfo struct {
 	ShortenedUuid *string `json:"shortened_uuid,omitempty"`
 }
 
-// ApiContainerApiServiceStatus 0 - STOPPED
+// ServiceStatus 0 - STOPPED
 // 1 - RUNNING
 // 2 - UNKNOWN
-type ApiContainerApiServiceStatus string
+type ServiceStatus string
 
-// ApiContainerApiStarlarkError defines model for api_container_api.StarlarkError.
-type ApiContainerApiStarlarkError struct {
-	ExecutionError      *ApiContainerApiStarlarkExecutionError      `json:"execution_error,omitempty"`
-	InterpretationError *ApiContainerApiStarlarkInterpretationError `json:"interpretation_error,omitempty"`
-	ValidationError     *ApiContainerApiStarlarkValidationError     `json:"validation_error,omitempty"`
+// StarlarkError defines model for StarlarkError.
+type StarlarkError struct {
+	ExecutionError      *StarlarkExecutionError      `json:"execution_error,omitempty"`
+	InterpretationError *StarlarkInterpretationError `json:"interpretation_error,omitempty"`
+	ValidationError     *StarlarkValidationError     `json:"validation_error,omitempty"`
 }
 
-// ApiContainerApiStarlarkExecutionError defines model for api_container_api.StarlarkExecutionError.
-type ApiContainerApiStarlarkExecutionError struct {
+// StarlarkExecutionError defines model for StarlarkExecutionError.
+type StarlarkExecutionError struct {
 	ErrorMessage *string `json:"error_message,omitempty"`
 }
 
-// ApiContainerApiStarlarkInfo defines model for api_container_api.StarlarkInfo.
-type ApiContainerApiStarlarkInfo struct {
+// StarlarkInfo defines model for StarlarkInfo.
+type StarlarkInfo struct {
 	InfoMessage *string `json:"info_message,omitempty"`
 }
 
-// ApiContainerApiStarlarkInstruction defines model for api_container_api.StarlarkInstruction.
-type ApiContainerApiStarlarkInstruction struct {
-	Arguments             *[]ApiContainerApiStarlarkInstructionArg    `json:"arguments,omitempty"`
-	ExecutableInstruction *string                                     `json:"executable_instruction,omitempty"`
-	InstructionName       *string                                     `json:"instruction_name,omitempty"`
-	IsSkipped             *bool                                       `json:"is_skipped,omitempty"`
-	Position              *ApiContainerApiStarlarkInstructionPosition `json:"position,omitempty"`
+// StarlarkInstruction defines model for StarlarkInstruction.
+type StarlarkInstruction struct {
+	Arguments             *[]StarlarkInstructionArg    `json:"arguments,omitempty"`
+	ExecutableInstruction *string                      `json:"executable_instruction,omitempty"`
+	InstructionName       *string                      `json:"instruction_name,omitempty"`
+	IsSkipped             *bool                        `json:"is_skipped,omitempty"`
+	Position              *StarlarkInstructionPosition `json:"position,omitempty"`
 }
 
-// ApiContainerApiStarlarkInstructionArg defines model for api_container_api.StarlarkInstructionArg.
-type ApiContainerApiStarlarkInstructionArg struct {
+// StarlarkInstructionArg defines model for StarlarkInstructionArg.
+type StarlarkInstructionArg struct {
 	ArgName            *string `json:"arg_name,omitempty"`
 	IsRepresentative   *bool   `json:"is_representative,omitempty"`
 	SerializedArgValue *string `json:"serialized_arg_value,omitempty"`
 }
 
-// ApiContainerApiStarlarkInstructionPosition defines model for api_container_api.StarlarkInstructionPosition.
-type ApiContainerApiStarlarkInstructionPosition struct {
+// StarlarkInstructionPosition defines model for StarlarkInstructionPosition.
+type StarlarkInstructionPosition struct {
 	Column   *int32  `json:"column,omitempty"`
 	Filename *string `json:"filename,omitempty"`
 	Line     *int32  `json:"line,omitempty"`
 }
 
-// ApiContainerApiStarlarkInstructionResult defines model for api_container_api.StarlarkInstructionResult.
-type ApiContainerApiStarlarkInstructionResult struct {
+// StarlarkInstructionResult defines model for StarlarkInstructionResult.
+type StarlarkInstructionResult struct {
 	SerializedInstructionResult *string `json:"serialized_instruction_result,omitempty"`
 }
 
-// ApiContainerApiStarlarkInterpretationError defines model for api_container_api.StarlarkInterpretationError.
-type ApiContainerApiStarlarkInterpretationError struct {
+// StarlarkInterpretationError defines model for StarlarkInterpretationError.
+type StarlarkInterpretationError struct {
 	ErrorMessage *string `json:"error_message,omitempty"`
 }
 
-// ApiContainerApiStarlarkRunFinishedEvent defines model for api_container_api.StarlarkRunFinishedEvent.
-type ApiContainerApiStarlarkRunFinishedEvent struct {
+// StarlarkRunFinishedEvent defines model for StarlarkRunFinishedEvent.
+type StarlarkRunFinishedEvent struct {
 	IsRunSuccessful  *bool   `json:"is_run_successful,omitempty"`
 	SerializedOutput *string `json:"serialized_output,omitempty"`
 }
 
-// ApiContainerApiStarlarkRunProgress defines model for api_container_api.StarlarkRunProgress.
-type ApiContainerApiStarlarkRunProgress struct {
+// StarlarkRunProgress defines model for StarlarkRunProgress.
+type StarlarkRunProgress struct {
 	CurrentStepInfo   *[]string `json:"current_step_info,omitempty"`
 	CurrentStepNumber *int32    `json:"current_step_number,omitempty"`
 	TotalSteps        *int32    `json:"total_steps,omitempty"`
 }
 
-// ApiContainerApiStarlarkRunResponseLine ==============================================================================================
+// StarlarkRunResponseLine ==============================================================================================
 // Starlark Execution Response
 // ==============================================================================================
-type ApiContainerApiStarlarkRunResponseLine struct {
-	Error             *ApiContainerApiStarlarkError             `json:"error,omitempty"`
-	Info              *ApiContainerApiStarlarkInfo              `json:"info,omitempty"`
-	Instruction       *ApiContainerApiStarlarkInstruction       `json:"instruction,omitempty"`
-	InstructionResult *ApiContainerApiStarlarkInstructionResult `json:"instruction_result,omitempty"`
-	ProgressInfo      *ApiContainerApiStarlarkRunProgress       `json:"progress_info,omitempty"`
-	RunFinishedEvent  *ApiContainerApiStarlarkRunFinishedEvent  `json:"run_finished_event,omitempty"`
-	Warning           *ApiContainerApiStarlarkWarning           `json:"warning,omitempty"`
+type StarlarkRunResponseLine struct {
+	Error             *StarlarkError             `json:"error,omitempty"`
+	Info              *StarlarkInfo              `json:"info,omitempty"`
+	Instruction       *StarlarkInstruction       `json:"instruction,omitempty"`
+	InstructionResult *StarlarkInstructionResult `json:"instruction_result,omitempty"`
+	ProgressInfo      *StarlarkRunProgress       `json:"progress_info,omitempty"`
+	RunFinishedEvent  *StarlarkRunFinishedEvent  `json:"run_finished_event,omitempty"`
+	Warning           *StarlarkWarning           `json:"warning,omitempty"`
 }
 
-// ApiContainerApiStarlarkValidationError defines model for api_container_api.StarlarkValidationError.
-type ApiContainerApiStarlarkValidationError struct {
+// StarlarkValidationError defines model for StarlarkValidationError.
+type StarlarkValidationError struct {
 	ErrorMessage *string `json:"error_message,omitempty"`
 }
 
-// ApiContainerApiStarlarkWarning defines model for api_container_api.StarlarkWarning.
-type ApiContainerApiStarlarkWarning struct {
+// StarlarkWarning defines model for StarlarkWarning.
+type StarlarkWarning struct {
 	WarningMessage *string `json:"warning_message,omitempty"`
 }
 
-// ApiContainerApiStoreFilesArtifactFromServiceArgs defines model for api_container_api.StoreFilesArtifactFromServiceArgs.
-type ApiContainerApiStoreFilesArtifactFromServiceArgs struct {
+// StoreFilesArtifactFromServiceArgs defines model for StoreFilesArtifactFromServiceArgs.
+type StoreFilesArtifactFromServiceArgs struct {
 	// Name The name of the files artifact
 	Name *string `json:"name,omitempty"`
-
-	// ServiceIdentifier Identifier that will be used to identify the service where the source files will be copied from
-	ServiceIdentifier *string `json:"service_identifier,omitempty"`
 
 	// SourcePath The absolute source path where the source files will be copied from
 	SourcePath *string `json:"source_path,omitempty"`
 }
 
-// ApiContainerApiStoreFilesArtifactFromServiceResponse defines model for api_container_api.StoreFilesArtifactFromServiceResponse.
-type ApiContainerApiStoreFilesArtifactFromServiceResponse struct {
+// StoreFilesArtifactFromServiceResponse defines model for StoreFilesArtifactFromServiceResponse.
+type StoreFilesArtifactFromServiceResponse struct {
 	// Uuid UUID of the files artifact, for use when referencing it in the future
 	Uuid *string `json:"uuid,omitempty"`
 }
 
-// ApiContainerApiStoreWebFilesArtifactArgs ==============================================================================================
+// StoreWebFilesArtifactArgs ==============================================================================================
 // Store Web Files Artifact
 // ==============================================================================================
-type ApiContainerApiStoreWebFilesArtifactArgs struct {
+type StoreWebFilesArtifactArgs struct {
 	// Name The name of the files artifact
 	Name *string `json:"name,omitempty"`
 
@@ -465,19 +438,19 @@ type ApiContainerApiStoreWebFilesArtifactArgs struct {
 	Url *string `json:"url,omitempty"`
 }
 
-// ApiContainerApiStoreWebFilesArtifactResponse defines model for api_container_api.StoreWebFilesArtifactResponse.
-type ApiContainerApiStoreWebFilesArtifactResponse struct {
+// StoreWebFilesArtifactResponse defines model for StoreWebFilesArtifactResponse.
+type StoreWebFilesArtifactResponse struct {
 	// Uuid UUID of the files artifact, for use when referencing it in the future
 	Uuid *string `json:"uuid,omitempty"`
 }
 
-// ApiContainerApiStreamedDataChunk ==============================================================================================
+// StreamedDataChunk ==============================================================================================
 // Streamed Data Chunk
 // ==============================================================================================
-type ApiContainerApiStreamedDataChunk struct {
+type StreamedDataChunk struct {
 	// Data Chunk of the overall files artifact bytes
-	Data     *[]byte                           `json:"data,omitempty"`
-	Metadata *ApiContainerApiDataChunkMetadata `json:"metadata,omitempty"`
+	Data     *[]byte            `json:"data,omitempty"`
+	Metadata *DataChunkMetadata `json:"metadata,omitempty"`
 
 	// PreviousChunkHash Hash of the PREVIOUS chunk, or empty string is this is the first chunk
 	// Referencing the previous chunk via its hash allows Kurtosis to validate
@@ -485,10 +458,10 @@ type ApiContainerApiStreamedDataChunk struct {
 	PreviousChunkHash *string `json:"previous_chunk_hash,omitempty"`
 }
 
-// ApiContainerApiUploadFilesArtifactResponse ==============================================================================================
+// UploadFilesArtifactResponse ==============================================================================================
 // Upload Files Artifact
 // ==============================================================================================
-type ApiContainerApiUploadFilesArtifactResponse struct {
+type UploadFilesArtifactResponse struct {
 	// Name UUID of the files artifact, for use when referencing it in the future
 	Name *string `json:"name,omitempty"`
 
@@ -496,12 +469,11 @@ type ApiContainerApiUploadFilesArtifactResponse struct {
 	Uuid *string `json:"uuid,omitempty"`
 }
 
-// ApiContainerApiWaitForHttpGetEndpointAvailabilityArgs ==============================================================================================
-// Wait For HTTP Get Endpoint Availability
-// ==============================================================================================
-type ApiContainerApiWaitForHttpGetEndpointAvailabilityArgs struct {
+// WaitForEndpointAvailabilityArgs Wait For HTTP Endpoint Availability
+type WaitForEndpointAvailabilityArgs struct {
 	// BodyText If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-	BodyText *string `json:"body_text,omitempty"`
+	BodyText   *string                                    `json:"body_text,omitempty"`
+	HttpMethod *WaitForEndpointAvailabilityArgsHttpMethod `json:"http_method,omitempty"`
 
 	// InitialDelayMilliseconds The number of milliseconds to wait until executing the first HTTP call
 	InitialDelayMilliseconds *int32 `json:"initial_delay_milliseconds,omitempty"`
@@ -509,98 +481,56 @@ type ApiContainerApiWaitForHttpGetEndpointAvailabilityArgs struct {
 	// Path The path of the service to check. It mustn't start with the first slash. For instance `service/health`
 	Path *string `json:"path,omitempty"`
 
-	// Port The port of the service to check. For instance 8080
-	Port *int32 `json:"port,omitempty"`
-
 	// Retries Max number of HTTP call attempts that this will execute until giving up and returning an error
 	Retries *int32 `json:"retries,omitempty"`
 
 	// RetriesDelayMilliseconds Number of milliseconds to wait between retries
 	RetriesDelayMilliseconds *int32 `json:"retries_delay_milliseconds,omitempty"`
-
-	// ServiceIdentifier The identifier of the service to check.
-	ServiceIdentifier *string `json:"service_identifier,omitempty"`
 }
 
-// ApiContainerApiWaitForHttpPostEndpointAvailabilityArgs ==============================================================================================
-// Wait For HTTP Post Endpoint Availability
-// ==============================================================================================
-type ApiContainerApiWaitForHttpPostEndpointAvailabilityArgs struct {
-	// BodyText If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-	BodyText *string `json:"body_text,omitempty"`
-
-	// InitialDelayMilliseconds The number of milliseconds to wait until executing the first HTTP call
-	InitialDelayMilliseconds *int32 `json:"initial_delay_milliseconds,omitempty"`
-
-	// Path The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-	Path *string `json:"path,omitempty"`
-
-	// Port The port of the service to check. For instance 8080
-	Port *int32 `json:"port,omitempty"`
-
-	// RequestBody The content of the request body.
-	RequestBody *string `json:"request_body,omitempty"`
-
-	// Retries Max number of HTTP call attempts that this will execute until giving up and returning an error
-	Retries *int32 `json:"retries,omitempty"`
-
-	// RetriesDelayMilliseconds Number of milliseconds to wait between retries
-	RetriesDelayMilliseconds *int32 `json:"retries_delay_milliseconds,omitempty"`
-
-	// ServiceIdentifier The identifier of the service to check.
-	ServiceIdentifier *string `json:"service_identifier,omitempty"`
-}
+// WaitForEndpointAvailabilityArgsHttpMethod defines model for WaitForEndpointAvailabilityArgs.HttpMethod.
+type WaitForEndpointAvailabilityArgsHttpMethod string
 
 // GoogleProtobufEmpty defines model for google.protobuf.Empty.
 type GoogleProtobufEmpty = map[string]interface{}
 
-// ApiContainerApiApiContainerServiceConnectServicesJSONRequestBody defines body for ApiContainerApiApiContainerServiceConnectServices for application/json ContentType.
-type ApiContainerApiApiContainerServiceConnectServicesJSONRequestBody = ApiContainerApiConnectServicesArgs
+// StreamedDataBody ==============================================================================================
+// Streamed Data Chunk
+// ==============================================================================================
+type StreamedDataBody = StreamedDataChunk
 
-// ApiContainerApiApiContainerServiceDownloadFilesArtifactJSONRequestBody defines body for ApiContainerApiApiContainerServiceDownloadFilesArtifact for application/json ContentType.
-type ApiContainerApiApiContainerServiceDownloadFilesArtifactJSONRequestBody = ApiContainerApiDownloadFilesArtifactArgs
+// GetServiceServiceIdentifierParams defines parameters for GetServiceServiceIdentifier.
+type GetServiceServiceIdentifierParams struct {
+	// AdditionalProperties Additional properties
+	AdditionalProperties *string `form:"additional-properties,omitempty" json:"additional-properties,omitempty"`
+}
 
-// ApiContainerApiApiContainerServiceExecCommandJSONRequestBody defines body for ApiContainerApiApiContainerServiceExecCommand for application/json ContentType.
-type ApiContainerApiApiContainerServiceExecCommandJSONRequestBody = ApiContainerApiExecCommandArgs
+// PutArtifactLocalFileJSONRequestBody defines body for PutArtifactLocalFile for application/json ContentType.
+type PutArtifactLocalFileJSONRequestBody = StreamedDataChunk
 
-// ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersJSONRequestBody defines body for ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers for application/json ContentType.
-type ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersJSONRequestBody = GoogleProtobufEmpty
+// PutArtifactRemoteFileJSONRequestBody defines body for PutArtifactRemoteFile for application/json ContentType.
+type PutArtifactRemoteFileJSONRequestBody = StoreWebFilesArtifactArgs
 
-// ApiContainerApiApiContainerServiceGetServicesJSONRequestBody defines body for ApiContainerApiApiContainerServiceGetServices for application/json ContentType.
-type ApiContainerApiApiContainerServiceGetServicesJSONRequestBody = ApiContainerApiGetServicesArgs
+// PutArtifactServiceServiceIdentifierJSONRequestBody defines body for PutArtifactServiceServiceIdentifier for application/json ContentType.
+type PutArtifactServiceServiceIdentifierJSONRequestBody = StoreFilesArtifactFromServiceArgs
 
-// ApiContainerApiApiContainerServiceGetStarlarkRunJSONRequestBody defines body for ApiContainerApiApiContainerServiceGetStarlarkRun for application/json ContentType.
-type ApiContainerApiApiContainerServiceGetStarlarkRunJSONRequestBody = GoogleProtobufEmpty
+// PostServiceConnectionJSONRequestBody defines body for PostServiceConnection for application/json ContentType.
+type PostServiceConnectionJSONRequestBody = ConnectServicesArgs
 
-// ApiContainerApiApiContainerServiceInspectFilesArtifactContentsJSONRequestBody defines body for ApiContainerApiApiContainerServiceInspectFilesArtifactContents for application/json ContentType.
-type ApiContainerApiApiContainerServiceInspectFilesArtifactContentsJSONRequestBody = ApiContainerApiInspectFilesArtifactContentsRequest
+// PostServiceServiceIdentifierCommandJSONRequestBody defines body for PostServiceServiceIdentifierCommand for application/json ContentType.
+type PostServiceServiceIdentifierCommandJSONRequestBody = ExecCommandArgs
 
-// ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsJSONRequestBody defines body for ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids for application/json ContentType.
-type ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsJSONRequestBody = GoogleProtobufEmpty
+// PostServiceServiceIdentifierEndpointPortNumberAvailabilityJSONRequestBody defines body for PostServiceServiceIdentifierEndpointPortNumberAvailability for application/json ContentType.
+type PostServiceServiceIdentifierEndpointPortNumberAvailabilityJSONRequestBody = WaitForEndpointAvailabilityArgs
 
-// ApiContainerApiApiContainerServiceRunStarlarkPackageJSONRequestBody defines body for ApiContainerApiApiContainerServiceRunStarlarkPackage for application/json ContentType.
-type ApiContainerApiApiContainerServiceRunStarlarkPackageJSONRequestBody = ApiContainerApiRunStarlarkPackageArgs
+// PutStarlarkPackageJSONRequestBody defines body for PutStarlarkPackage for application/json ContentType.
+type PutStarlarkPackageJSONRequestBody = StreamedDataChunk
 
-// ApiContainerApiApiContainerServiceRunStarlarkScriptJSONRequestBody defines body for ApiContainerApiApiContainerServiceRunStarlarkScript for application/json ContentType.
-type ApiContainerApiApiContainerServiceRunStarlarkScriptJSONRequestBody = ApiContainerApiRunStarlarkScriptArgs
+// PostStarlarkPackagePackageIdJSONRequestBody defines body for PostStarlarkPackagePackageId for application/json ContentType.
+type PostStarlarkPackagePackageIdJSONRequestBody = RunStarlarkPackageArgs
 
-// ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceJSONRequestBody defines body for ApiContainerApiApiContainerServiceStoreFilesArtifactFromService for application/json ContentType.
-type ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceJSONRequestBody = ApiContainerApiStoreFilesArtifactFromServiceArgs
-
-// ApiContainerApiApiContainerServiceStoreWebFilesArtifactJSONRequestBody defines body for ApiContainerApiApiContainerServiceStoreWebFilesArtifact for application/json ContentType.
-type ApiContainerApiApiContainerServiceStoreWebFilesArtifactJSONRequestBody = ApiContainerApiStoreWebFilesArtifactArgs
-
-// ApiContainerApiApiContainerServiceUploadFilesArtifactJSONRequestBody defines body for ApiContainerApiApiContainerServiceUploadFilesArtifact for application/json ContentType.
-type ApiContainerApiApiContainerServiceUploadFilesArtifactJSONRequestBody = ApiContainerApiStreamedDataChunk
-
-// ApiContainerApiApiContainerServiceUploadStarlarkPackageJSONRequestBody defines body for ApiContainerApiApiContainerServiceUploadStarlarkPackage for application/json ContentType.
-type ApiContainerApiApiContainerServiceUploadStarlarkPackageJSONRequestBody = ApiContainerApiStreamedDataChunk
-
-// ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityJSONRequestBody defines body for ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability for application/json ContentType.
-type ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityJSONRequestBody = ApiContainerApiWaitForHttpGetEndpointAvailabilityArgs
-
-// ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityJSONRequestBody defines body for ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability for application/json ContentType.
-type ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityJSONRequestBody = ApiContainerApiWaitForHttpPostEndpointAvailabilityArgs
+// PostStarlarkScriptJSONRequestBody defines body for PostStarlarkScript for application/json ContentType.
+type PostStarlarkScriptJSONRequestBody = RunStarlarkScriptArgs
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -675,89 +605,72 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// ApiContainerApiApiContainerServiceConnectServicesWithBody request with any body
-	ApiContainerApiApiContainerServiceConnectServicesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetArtifact request
+	GetArtifact(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceConnectServices(ctx context.Context, body ApiContainerApiApiContainerServiceConnectServicesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PutArtifactLocalFile request with any body
+	PutArtifactLocalFileWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceDownloadFilesArtifactWithBody request with any body
-	ApiContainerApiApiContainerServiceDownloadFilesArtifactWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PutArtifactLocalFile(ctx context.Context, body PutArtifactLocalFileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceDownloadFilesArtifact(ctx context.Context, body ApiContainerApiApiContainerServiceDownloadFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PutArtifactRemoteFile request with any body
+	PutArtifactRemoteFileWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceExecCommandWithBody request with any body
-	ApiContainerApiApiContainerServiceExecCommandWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PutArtifactRemoteFile(ctx context.Context, body PutArtifactRemoteFileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceExecCommand(ctx context.Context, body ApiContainerApiApiContainerServiceExecCommandJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PutArtifactServiceServiceIdentifier request with any body
+	PutArtifactServiceServiceIdentifierWithBody(ctx context.Context, serviceIdentifier string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithBody request with any body
-	ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PutArtifactServiceServiceIdentifier(ctx context.Context, serviceIdentifier string, body PutArtifactServiceServiceIdentifierJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers(ctx context.Context, body ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetArtifactArtifactIdentifier request
+	GetArtifactArtifactIdentifier(ctx context.Context, artifactIdentifier string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceGetServicesWithBody request with any body
-	ApiContainerApiApiContainerServiceGetServicesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetArtifactArtifactIdentifierDownload request
+	GetArtifactArtifactIdentifierDownload(ctx context.Context, artifactIdentifier string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceGetServices(ctx context.Context, body ApiContainerApiApiContainerServiceGetServicesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetService request
+	GetService(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceGetStarlarkRunWithBody request with any body
-	ApiContainerApiApiContainerServiceGetStarlarkRunWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostServiceConnection request with any body
+	PostServiceConnectionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceGetStarlarkRun(ctx context.Context, body ApiContainerApiApiContainerServiceGetStarlarkRunJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PostServiceConnection(ctx context.Context, body PostServiceConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithBody request with any body
-	ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetServiceServiceIdentifier request
+	GetServiceServiceIdentifier(ctx context.Context, serviceIdentifier string, params *GetServiceServiceIdentifierParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceInspectFilesArtifactContents(ctx context.Context, body ApiContainerApiApiContainerServiceInspectFilesArtifactContentsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostServiceServiceIdentifierCommand request with any body
+	PostServiceServiceIdentifierCommandWithBody(ctx context.Context, serviceIdentifier string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithBody request with any body
-	ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PostServiceServiceIdentifierCommand(ctx context.Context, serviceIdentifier string, body PostServiceServiceIdentifierCommandJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids(ctx context.Context, body ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostServiceServiceIdentifierEndpointPortNumberAvailability request with any body
+	PostServiceServiceIdentifierEndpointPortNumberAvailabilityWithBody(ctx context.Context, serviceIdentifier string, portNumber int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceRunStarlarkPackageWithBody request with any body
-	ApiContainerApiApiContainerServiceRunStarlarkPackageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PostServiceServiceIdentifierEndpointPortNumberAvailability(ctx context.Context, serviceIdentifier string, portNumber int, body PostServiceServiceIdentifierEndpointPortNumberAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceRunStarlarkPackage(ctx context.Context, body ApiContainerApiApiContainerServiceRunStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetStarlark request
+	GetStarlark(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceRunStarlarkScriptWithBody request with any body
-	ApiContainerApiApiContainerServiceRunStarlarkScriptWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PutStarlarkPackage request with any body
+	PutStarlarkPackageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceRunStarlarkScript(ctx context.Context, body ApiContainerApiApiContainerServiceRunStarlarkScriptJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PutStarlarkPackage(ctx context.Context, body PutStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithBody request with any body
-	ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostStarlarkPackagePackageId request with any body
+	PostStarlarkPackagePackageIdWithBody(ctx context.Context, packageId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceStoreFilesArtifactFromService(ctx context.Context, body ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PostStarlarkPackagePackageId(ctx context.Context, packageId string, body PostStarlarkPackagePackageIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithBody request with any body
-	ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostStarlarkScript request with any body
+	PostStarlarkScriptWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	ApiContainerApiApiContainerServiceStoreWebFilesArtifact(ctx context.Context, body ApiContainerApiApiContainerServiceStoreWebFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ApiContainerApiApiContainerServiceUploadFilesArtifactWithBody request with any body
-	ApiContainerApiApiContainerServiceUploadFilesArtifactWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	ApiContainerApiApiContainerServiceUploadFilesArtifact(ctx context.Context, body ApiContainerApiApiContainerServiceUploadFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ApiContainerApiApiContainerServiceUploadStarlarkPackageWithBody request with any body
-	ApiContainerApiApiContainerServiceUploadStarlarkPackageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	ApiContainerApiApiContainerServiceUploadStarlarkPackage(ctx context.Context, body ApiContainerApiApiContainerServiceUploadStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithBody request with any body
-	ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability(ctx context.Context, body ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithBody request with any body
-	ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability(ctx context.Context, body ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PostStarlarkScript(ctx context.Context, body PostStarlarkScriptJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceConnectServicesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceConnectServicesRequestWithBody(c.Server, contentType, body)
+func (c *Client) GetArtifact(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetArtifactRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -768,8 +681,8 @@ func (c *Client) ApiContainerApiApiContainerServiceConnectServicesWithBody(ctx c
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceConnectServices(ctx context.Context, body ApiContainerApiApiContainerServiceConnectServicesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceConnectServicesRequest(c.Server, body)
+func (c *Client) PutArtifactLocalFileWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutArtifactLocalFileRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -780,8 +693,8 @@ func (c *Client) ApiContainerApiApiContainerServiceConnectServices(ctx context.C
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceDownloadFilesArtifactWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceDownloadFilesArtifactRequestWithBody(c.Server, contentType, body)
+func (c *Client) PutArtifactLocalFile(ctx context.Context, body PutArtifactLocalFileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutArtifactLocalFileRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -792,8 +705,8 @@ func (c *Client) ApiContainerApiApiContainerServiceDownloadFilesArtifactWithBody
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceDownloadFilesArtifact(ctx context.Context, body ApiContainerApiApiContainerServiceDownloadFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceDownloadFilesArtifactRequest(c.Server, body)
+func (c *Client) PutArtifactRemoteFileWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutArtifactRemoteFileRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -804,8 +717,8 @@ func (c *Client) ApiContainerApiApiContainerServiceDownloadFilesArtifact(ctx con
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceExecCommandWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceExecCommandRequestWithBody(c.Server, contentType, body)
+func (c *Client) PutArtifactRemoteFile(ctx context.Context, body PutArtifactRemoteFileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutArtifactRemoteFileRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -816,8 +729,8 @@ func (c *Client) ApiContainerApiApiContainerServiceExecCommandWithBody(ctx conte
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceExecCommand(ctx context.Context, body ApiContainerApiApiContainerServiceExecCommandJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceExecCommandRequest(c.Server, body)
+func (c *Client) PutArtifactServiceServiceIdentifierWithBody(ctx context.Context, serviceIdentifier string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutArtifactServiceServiceIdentifierRequestWithBody(c.Server, serviceIdentifier, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -828,8 +741,8 @@ func (c *Client) ApiContainerApiApiContainerServiceExecCommand(ctx context.Conte
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersRequestWithBody(c.Server, contentType, body)
+func (c *Client) PutArtifactServiceServiceIdentifier(ctx context.Context, serviceIdentifier string, body PutArtifactServiceServiceIdentifierJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutArtifactServiceServiceIdentifierRequest(c.Server, serviceIdentifier, body)
 	if err != nil {
 		return nil, err
 	}
@@ -840,8 +753,8 @@ func (c *Client) ApiContainerApiApiContainerServiceGetExistingAndHistoricalServi
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers(ctx context.Context, body ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersRequest(c.Server, body)
+func (c *Client) GetArtifactArtifactIdentifier(ctx context.Context, artifactIdentifier string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetArtifactArtifactIdentifierRequest(c.Server, artifactIdentifier)
 	if err != nil {
 		return nil, err
 	}
@@ -852,8 +765,8 @@ func (c *Client) ApiContainerApiApiContainerServiceGetExistingAndHistoricalServi
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceGetServicesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceGetServicesRequestWithBody(c.Server, contentType, body)
+func (c *Client) GetArtifactArtifactIdentifierDownload(ctx context.Context, artifactIdentifier string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetArtifactArtifactIdentifierDownloadRequest(c.Server, artifactIdentifier)
 	if err != nil {
 		return nil, err
 	}
@@ -864,8 +777,8 @@ func (c *Client) ApiContainerApiApiContainerServiceGetServicesWithBody(ctx conte
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceGetServices(ctx context.Context, body ApiContainerApiApiContainerServiceGetServicesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceGetServicesRequest(c.Server, body)
+func (c *Client) GetService(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServiceRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -876,8 +789,8 @@ func (c *Client) ApiContainerApiApiContainerServiceGetServices(ctx context.Conte
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceGetStarlarkRunWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceGetStarlarkRunRequestWithBody(c.Server, contentType, body)
+func (c *Client) PostServiceConnectionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostServiceConnectionRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -888,8 +801,8 @@ func (c *Client) ApiContainerApiApiContainerServiceGetStarlarkRunWithBody(ctx co
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceGetStarlarkRun(ctx context.Context, body ApiContainerApiApiContainerServiceGetStarlarkRunJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceGetStarlarkRunRequest(c.Server, body)
+func (c *Client) PostServiceConnection(ctx context.Context, body PostServiceConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostServiceConnectionRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -900,8 +813,8 @@ func (c *Client) ApiContainerApiApiContainerServiceGetStarlarkRun(ctx context.Co
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceInspectFilesArtifactContentsRequestWithBody(c.Server, contentType, body)
+func (c *Client) GetServiceServiceIdentifier(ctx context.Context, serviceIdentifier string, params *GetServiceServiceIdentifierParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServiceServiceIdentifierRequest(c.Server, serviceIdentifier, params)
 	if err != nil {
 		return nil, err
 	}
@@ -912,8 +825,8 @@ func (c *Client) ApiContainerApiApiContainerServiceInspectFilesArtifactContentsW
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceInspectFilesArtifactContents(ctx context.Context, body ApiContainerApiApiContainerServiceInspectFilesArtifactContentsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceInspectFilesArtifactContentsRequest(c.Server, body)
+func (c *Client) PostServiceServiceIdentifierCommandWithBody(ctx context.Context, serviceIdentifier string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostServiceServiceIdentifierCommandRequestWithBody(c.Server, serviceIdentifier, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -924,8 +837,8 @@ func (c *Client) ApiContainerApiApiContainerServiceInspectFilesArtifactContents(
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsRequestWithBody(c.Server, contentType, body)
+func (c *Client) PostServiceServiceIdentifierCommand(ctx context.Context, serviceIdentifier string, body PostServiceServiceIdentifierCommandJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostServiceServiceIdentifierCommandRequest(c.Server, serviceIdentifier, body)
 	if err != nil {
 		return nil, err
 	}
@@ -936,8 +849,8 @@ func (c *Client) ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuid
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids(ctx context.Context, body ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsRequest(c.Server, body)
+func (c *Client) PostServiceServiceIdentifierEndpointPortNumberAvailabilityWithBody(ctx context.Context, serviceIdentifier string, portNumber int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostServiceServiceIdentifierEndpointPortNumberAvailabilityRequestWithBody(c.Server, serviceIdentifier, portNumber, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -948,8 +861,8 @@ func (c *Client) ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuid
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceRunStarlarkPackageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceRunStarlarkPackageRequestWithBody(c.Server, contentType, body)
+func (c *Client) PostServiceServiceIdentifierEndpointPortNumberAvailability(ctx context.Context, serviceIdentifier string, portNumber int, body PostServiceServiceIdentifierEndpointPortNumberAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostServiceServiceIdentifierEndpointPortNumberAvailabilityRequest(c.Server, serviceIdentifier, portNumber, body)
 	if err != nil {
 		return nil, err
 	}
@@ -960,8 +873,8 @@ func (c *Client) ApiContainerApiApiContainerServiceRunStarlarkPackageWithBody(ct
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceRunStarlarkPackage(ctx context.Context, body ApiContainerApiApiContainerServiceRunStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceRunStarlarkPackageRequest(c.Server, body)
+func (c *Client) GetStarlark(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetStarlarkRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -972,8 +885,8 @@ func (c *Client) ApiContainerApiApiContainerServiceRunStarlarkPackage(ctx contex
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceRunStarlarkScriptWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceRunStarlarkScriptRequestWithBody(c.Server, contentType, body)
+func (c *Client) PutStarlarkPackageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutStarlarkPackageRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -984,8 +897,8 @@ func (c *Client) ApiContainerApiApiContainerServiceRunStarlarkScriptWithBody(ctx
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceRunStarlarkScript(ctx context.Context, body ApiContainerApiApiContainerServiceRunStarlarkScriptJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceRunStarlarkScriptRequest(c.Server, body)
+func (c *Client) PutStarlarkPackage(ctx context.Context, body PutStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutStarlarkPackageRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -996,8 +909,8 @@ func (c *Client) ApiContainerApiApiContainerServiceRunStarlarkScript(ctx context
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceRequestWithBody(c.Server, contentType, body)
+func (c *Client) PostStarlarkPackagePackageIdWithBody(ctx context.Context, packageId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostStarlarkPackagePackageIdRequestWithBody(c.Server, packageId, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1008,8 +921,8 @@ func (c *Client) ApiContainerApiApiContainerServiceStoreFilesArtifactFromService
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceStoreFilesArtifactFromService(ctx context.Context, body ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceRequest(c.Server, body)
+func (c *Client) PostStarlarkPackagePackageId(ctx context.Context, packageId string, body PostStarlarkPackagePackageIdJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostStarlarkPackagePackageIdRequest(c.Server, packageId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1020,8 +933,8 @@ func (c *Client) ApiContainerApiApiContainerServiceStoreFilesArtifactFromService
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceStoreWebFilesArtifactRequestWithBody(c.Server, contentType, body)
+func (c *Client) PostStarlarkScriptWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostStarlarkScriptRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1032,8 +945,8 @@ func (c *Client) ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithBody
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceStoreWebFilesArtifact(ctx context.Context, body ApiContainerApiApiContainerServiceStoreWebFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceStoreWebFilesArtifactRequest(c.Server, body)
+func (c *Client) PostStarlarkScript(ctx context.Context, body PostStarlarkScriptJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostStarlarkScriptRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1044,115 +957,8 @@ func (c *Client) ApiContainerApiApiContainerServiceStoreWebFilesArtifact(ctx con
 	return c.Client.Do(req)
 }
 
-func (c *Client) ApiContainerApiApiContainerServiceUploadFilesArtifactWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceUploadFilesArtifactRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ApiContainerApiApiContainerServiceUploadFilesArtifact(ctx context.Context, body ApiContainerApiApiContainerServiceUploadFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceUploadFilesArtifactRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ApiContainerApiApiContainerServiceUploadStarlarkPackageWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceUploadStarlarkPackageRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ApiContainerApiApiContainerServiceUploadStarlarkPackage(ctx context.Context, body ApiContainerApiApiContainerServiceUploadStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceUploadStarlarkPackageRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability(ctx context.Context, body ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability(ctx context.Context, body ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// NewApiContainerApiApiContainerServiceConnectServicesRequest calls the generic ApiContainerApiApiContainerServiceConnectServices builder with application/json body
-func NewApiContainerApiApiContainerServiceConnectServicesRequest(server string, body ApiContainerApiApiContainerServiceConnectServicesJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceConnectServicesRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceConnectServicesRequestWithBody generates requests for ApiContainerApiApiContainerServiceConnectServices with any type of body
-func NewApiContainerApiApiContainerServiceConnectServicesRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewGetArtifactRequest generates requests for GetArtifact
+func NewGetArtifactRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -1160,7 +966,267 @@ func NewApiContainerApiApiContainerServiceConnectServicesRequestWithBody(server 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/ConnectServices")
+	operationPath := fmt.Sprintf("/artifact")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutArtifactLocalFileRequest calls the generic PutArtifactLocalFile builder with application/json body
+func NewPutArtifactLocalFileRequest(server string, body PutArtifactLocalFileJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutArtifactLocalFileRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPutArtifactLocalFileRequestWithBody generates requests for PutArtifactLocalFile with any type of body
+func NewPutArtifactLocalFileRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/artifact/local-file")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPutArtifactRemoteFileRequest calls the generic PutArtifactRemoteFile builder with application/json body
+func NewPutArtifactRemoteFileRequest(server string, body PutArtifactRemoteFileJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutArtifactRemoteFileRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPutArtifactRemoteFileRequestWithBody generates requests for PutArtifactRemoteFile with any type of body
+func NewPutArtifactRemoteFileRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/artifact/remote-file")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPutArtifactServiceServiceIdentifierRequest calls the generic PutArtifactServiceServiceIdentifier builder with application/json body
+func NewPutArtifactServiceServiceIdentifierRequest(server string, serviceIdentifier string, body PutArtifactServiceServiceIdentifierJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutArtifactServiceServiceIdentifierRequestWithBody(server, serviceIdentifier, "application/json", bodyReader)
+}
+
+// NewPutArtifactServiceServiceIdentifierRequestWithBody generates requests for PutArtifactServiceServiceIdentifier with any type of body
+func NewPutArtifactServiceServiceIdentifierRequestWithBody(server string, serviceIdentifier string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, serviceIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/artifact/service/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetArtifactArtifactIdentifierRequest generates requests for GetArtifactArtifactIdentifier
+func NewGetArtifactArtifactIdentifierRequest(server string, artifactIdentifier string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "artifact_identifier", runtime.ParamLocationPath, artifactIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/artifact/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetArtifactArtifactIdentifierDownloadRequest generates requests for GetArtifactArtifactIdentifierDownload
+func NewGetArtifactArtifactIdentifierDownloadRequest(server string, artifactIdentifier string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "artifact_identifier", runtime.ParamLocationPath, artifactIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/artifact/%s/download", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetServiceRequest generates requests for GetService
+func NewGetServiceRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/service")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostServiceConnectionRequest calls the generic PostServiceConnection builder with application/json body
+func NewPostServiceConnectionRequest(server string, body PostServiceConnectionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostServiceConnectionRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostServiceConnectionRequestWithBody generates requests for PostServiceConnection with any type of body
+func NewPostServiceConnectionRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/service/connection")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1180,27 +1246,88 @@ func NewApiContainerApiApiContainerServiceConnectServicesRequestWithBody(server 
 	return req, nil
 }
 
-// NewApiContainerApiApiContainerServiceDownloadFilesArtifactRequest calls the generic ApiContainerApiApiContainerServiceDownloadFilesArtifact builder with application/json body
-func NewApiContainerApiApiContainerServiceDownloadFilesArtifactRequest(server string, body ApiContainerApiApiContainerServiceDownloadFilesArtifactJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
+// NewGetServiceServiceIdentifierRequest generates requests for GetServiceServiceIdentifier
+func NewGetServiceServiceIdentifierRequest(server string, serviceIdentifier string, params *GetServiceServiceIdentifierParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, serviceIdentifier)
 	if err != nil {
 		return nil, err
 	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceDownloadFilesArtifactRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceDownloadFilesArtifactRequestWithBody generates requests for ApiContainerApiApiContainerServiceDownloadFilesArtifact with any type of body
-func NewApiContainerApiApiContainerServiceDownloadFilesArtifactRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/DownloadFilesArtifact")
+	operationPath := fmt.Sprintf("/service/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	queryValues := queryURL.Query()
+
+	if params.AdditionalProperties != nil {
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "additional-properties", runtime.ParamLocationQuery, *params.AdditionalProperties); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+	}
+
+	queryURL.RawQuery = queryValues.Encode()
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostServiceServiceIdentifierCommandRequest calls the generic PostServiceServiceIdentifierCommand builder with application/json body
+func NewPostServiceServiceIdentifierCommandRequest(server string, serviceIdentifier string, body PostServiceServiceIdentifierCommandJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostServiceServiceIdentifierCommandRequestWithBody(server, serviceIdentifier, "application/json", bodyReader)
+}
+
+// NewPostServiceServiceIdentifierCommandRequestWithBody generates requests for PostServiceServiceIdentifierCommand with any type of body
+func NewPostServiceServiceIdentifierCommandRequestWithBody(server string, serviceIdentifier string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, serviceIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/service/%s/command", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1220,27 +1347,41 @@ func NewApiContainerApiApiContainerServiceDownloadFilesArtifactRequestWithBody(s
 	return req, nil
 }
 
-// NewApiContainerApiApiContainerServiceExecCommandRequest calls the generic ApiContainerApiApiContainerServiceExecCommand builder with application/json body
-func NewApiContainerApiApiContainerServiceExecCommandRequest(server string, body ApiContainerApiApiContainerServiceExecCommandJSONRequestBody) (*http.Request, error) {
+// NewPostServiceServiceIdentifierEndpointPortNumberAvailabilityRequest calls the generic PostServiceServiceIdentifierEndpointPortNumberAvailability builder with application/json body
+func NewPostServiceServiceIdentifierEndpointPortNumberAvailabilityRequest(server string, serviceIdentifier string, portNumber int, body PostServiceServiceIdentifierEndpointPortNumberAvailabilityJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceExecCommandRequestWithBody(server, "application/json", bodyReader)
+	return NewPostServiceServiceIdentifierEndpointPortNumberAvailabilityRequestWithBody(server, serviceIdentifier, portNumber, "application/json", bodyReader)
 }
 
-// NewApiContainerApiApiContainerServiceExecCommandRequestWithBody generates requests for ApiContainerApiApiContainerServiceExecCommand with any type of body
-func NewApiContainerApiApiContainerServiceExecCommandRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostServiceServiceIdentifierEndpointPortNumberAvailabilityRequestWithBody generates requests for PostServiceServiceIdentifierEndpointPortNumberAvailability with any type of body
+func NewPostServiceServiceIdentifierEndpointPortNumberAvailabilityRequestWithBody(server string, serviceIdentifier string, portNumber int, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, serviceIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "port_number", runtime.ParamLocationPath, portNumber)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/ExecCommand")
+	operationPath := fmt.Sprintf("/service/%s/endpoint/%s/availability", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1260,19 +1401,8 @@ func NewApiContainerApiApiContainerServiceExecCommandRequestWithBody(server stri
 	return req, nil
 }
 
-// NewApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersRequest calls the generic ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers builder with application/json body
-func NewApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersRequest(server string, body ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersRequestWithBody generates requests for ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers with any type of body
-func NewApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewGetStarlarkRequest generates requests for GetStarlark
+func NewGetStarlarkRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -1280,7 +1410,92 @@ func NewApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentif
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/GetExistingAndHistoricalServiceIdentifiers")
+	operationPath := fmt.Sprintf("/starlark")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutStarlarkPackageRequest calls the generic PutStarlarkPackage builder with application/json body
+func NewPutStarlarkPackageRequest(server string, body PutStarlarkPackageJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutStarlarkPackageRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPutStarlarkPackageRequestWithBody generates requests for PutStarlarkPackage with any type of body
+func NewPutStarlarkPackageRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/starlark/package")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostStarlarkPackagePackageIdRequest calls the generic PostStarlarkPackagePackageId builder with application/json body
+func NewPostStarlarkPackagePackageIdRequest(server string, packageId string, body PostStarlarkPackagePackageIdJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostStarlarkPackagePackageIdRequestWithBody(server, packageId, "application/json", bodyReader)
+}
+
+// NewPostStarlarkPackagePackageIdRequestWithBody generates requests for PostStarlarkPackagePackageId with any type of body
+func NewPostStarlarkPackagePackageIdRequestWithBody(server string, packageId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "package_id", runtime.ParamLocationPath, packageId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/starlark/package/%s", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1300,19 +1515,19 @@ func NewApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentif
 	return req, nil
 }
 
-// NewApiContainerApiApiContainerServiceGetServicesRequest calls the generic ApiContainerApiApiContainerServiceGetServices builder with application/json body
-func NewApiContainerApiApiContainerServiceGetServicesRequest(server string, body ApiContainerApiApiContainerServiceGetServicesJSONRequestBody) (*http.Request, error) {
+// NewPostStarlarkScriptRequest calls the generic PostStarlarkScript builder with application/json body
+func NewPostStarlarkScriptRequest(server string, body PostStarlarkScriptJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceGetServicesRequestWithBody(server, "application/json", bodyReader)
+	return NewPostStarlarkScriptRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewApiContainerApiApiContainerServiceGetServicesRequestWithBody generates requests for ApiContainerApiApiContainerServiceGetServices with any type of body
-func NewApiContainerApiApiContainerServiceGetServicesRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostStarlarkScriptRequestWithBody generates requests for PostStarlarkScript with any type of body
+func NewPostStarlarkScriptRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -1320,447 +1535,7 @@ func NewApiContainerApiApiContainerServiceGetServicesRequestWithBody(server stri
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/GetServices")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceGetStarlarkRunRequest calls the generic ApiContainerApiApiContainerServiceGetStarlarkRun builder with application/json body
-func NewApiContainerApiApiContainerServiceGetStarlarkRunRequest(server string, body ApiContainerApiApiContainerServiceGetStarlarkRunJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceGetStarlarkRunRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceGetStarlarkRunRequestWithBody generates requests for ApiContainerApiApiContainerServiceGetStarlarkRun with any type of body
-func NewApiContainerApiApiContainerServiceGetStarlarkRunRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/GetStarlarkRun")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceInspectFilesArtifactContentsRequest calls the generic ApiContainerApiApiContainerServiceInspectFilesArtifactContents builder with application/json body
-func NewApiContainerApiApiContainerServiceInspectFilesArtifactContentsRequest(server string, body ApiContainerApiApiContainerServiceInspectFilesArtifactContentsJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceInspectFilesArtifactContentsRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceInspectFilesArtifactContentsRequestWithBody generates requests for ApiContainerApiApiContainerServiceInspectFilesArtifactContents with any type of body
-func NewApiContainerApiApiContainerServiceInspectFilesArtifactContentsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/InspectFilesArtifactContents")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsRequest calls the generic ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids builder with application/json body
-func NewApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsRequest(server string, body ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsRequestWithBody generates requests for ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids with any type of body
-func NewApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/ListFilesArtifactNamesAndUuids")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceRunStarlarkPackageRequest calls the generic ApiContainerApiApiContainerServiceRunStarlarkPackage builder with application/json body
-func NewApiContainerApiApiContainerServiceRunStarlarkPackageRequest(server string, body ApiContainerApiApiContainerServiceRunStarlarkPackageJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceRunStarlarkPackageRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceRunStarlarkPackageRequestWithBody generates requests for ApiContainerApiApiContainerServiceRunStarlarkPackage with any type of body
-func NewApiContainerApiApiContainerServiceRunStarlarkPackageRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/RunStarlarkPackage")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceRunStarlarkScriptRequest calls the generic ApiContainerApiApiContainerServiceRunStarlarkScript builder with application/json body
-func NewApiContainerApiApiContainerServiceRunStarlarkScriptRequest(server string, body ApiContainerApiApiContainerServiceRunStarlarkScriptJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceRunStarlarkScriptRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceRunStarlarkScriptRequestWithBody generates requests for ApiContainerApiApiContainerServiceRunStarlarkScript with any type of body
-func NewApiContainerApiApiContainerServiceRunStarlarkScriptRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/RunStarlarkScript")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceRequest calls the generic ApiContainerApiApiContainerServiceStoreFilesArtifactFromService builder with application/json body
-func NewApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceRequest(server string, body ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceRequestWithBody generates requests for ApiContainerApiApiContainerServiceStoreFilesArtifactFromService with any type of body
-func NewApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/StoreFilesArtifactFromService")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceStoreWebFilesArtifactRequest calls the generic ApiContainerApiApiContainerServiceStoreWebFilesArtifact builder with application/json body
-func NewApiContainerApiApiContainerServiceStoreWebFilesArtifactRequest(server string, body ApiContainerApiApiContainerServiceStoreWebFilesArtifactJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceStoreWebFilesArtifactRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceStoreWebFilesArtifactRequestWithBody generates requests for ApiContainerApiApiContainerServiceStoreWebFilesArtifact with any type of body
-func NewApiContainerApiApiContainerServiceStoreWebFilesArtifactRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/StoreWebFilesArtifact")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceUploadFilesArtifactRequest calls the generic ApiContainerApiApiContainerServiceUploadFilesArtifact builder with application/json body
-func NewApiContainerApiApiContainerServiceUploadFilesArtifactRequest(server string, body ApiContainerApiApiContainerServiceUploadFilesArtifactJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceUploadFilesArtifactRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceUploadFilesArtifactRequestWithBody generates requests for ApiContainerApiApiContainerServiceUploadFilesArtifact with any type of body
-func NewApiContainerApiApiContainerServiceUploadFilesArtifactRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/UploadFilesArtifact")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceUploadStarlarkPackageRequest calls the generic ApiContainerApiApiContainerServiceUploadStarlarkPackage builder with application/json body
-func NewApiContainerApiApiContainerServiceUploadStarlarkPackageRequest(server string, body ApiContainerApiApiContainerServiceUploadStarlarkPackageJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceUploadStarlarkPackageRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceUploadStarlarkPackageRequestWithBody generates requests for ApiContainerApiApiContainerServiceUploadStarlarkPackage with any type of body
-func NewApiContainerApiApiContainerServiceUploadStarlarkPackageRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/UploadStarlarkPackage")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityRequest calls the generic ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability builder with application/json body
-func NewApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityRequest(server string, body ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityRequestWithBody generates requests for ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability with any type of body
-func NewApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/WaitForHttpGetEndpointAvailability")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityRequest calls the generic ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability builder with application/json body
-func NewApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityRequest(server string, body ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityRequestWithBody generates requests for ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability with any type of body
-func NewApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api_container_api.ApiContainerService/WaitForHttpPostEndpointAvailability")
+	operationPath := fmt.Sprintf("/starlark/script")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1823,94 +1598,77 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// ApiContainerApiApiContainerServiceConnectServicesWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceConnectServicesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceConnectServicesResponse, error)
+	// GetArtifact request
+	GetArtifactWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetArtifactResponse, error)
 
-	ApiContainerApiApiContainerServiceConnectServicesWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceConnectServicesJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceConnectServicesResponse, error)
+	// PutArtifactLocalFile request with any body
+	PutArtifactLocalFileWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutArtifactLocalFileResponse, error)
 
-	// ApiContainerApiApiContainerServiceDownloadFilesArtifactWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceDownloadFilesArtifactWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse, error)
+	PutArtifactLocalFileWithResponse(ctx context.Context, body PutArtifactLocalFileJSONRequestBody, reqEditors ...RequestEditorFn) (*PutArtifactLocalFileResponse, error)
 
-	ApiContainerApiApiContainerServiceDownloadFilesArtifactWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceDownloadFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse, error)
+	// PutArtifactRemoteFile request with any body
+	PutArtifactRemoteFileWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutArtifactRemoteFileResponse, error)
 
-	// ApiContainerApiApiContainerServiceExecCommandWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceExecCommandWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceExecCommandResponse, error)
+	PutArtifactRemoteFileWithResponse(ctx context.Context, body PutArtifactRemoteFileJSONRequestBody, reqEditors ...RequestEditorFn) (*PutArtifactRemoteFileResponse, error)
 
-	ApiContainerApiApiContainerServiceExecCommandWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceExecCommandJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceExecCommandResponse, error)
+	// PutArtifactServiceServiceIdentifier request with any body
+	PutArtifactServiceServiceIdentifierWithBodyWithResponse(ctx context.Context, serviceIdentifier string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutArtifactServiceServiceIdentifierResponse, error)
 
-	// ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse, error)
+	PutArtifactServiceServiceIdentifierWithResponse(ctx context.Context, serviceIdentifier string, body PutArtifactServiceServiceIdentifierJSONRequestBody, reqEditors ...RequestEditorFn) (*PutArtifactServiceServiceIdentifierResponse, error)
 
-	ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse, error)
+	// GetArtifactArtifactIdentifier request
+	GetArtifactArtifactIdentifierWithResponse(ctx context.Context, artifactIdentifier string, reqEditors ...RequestEditorFn) (*GetArtifactArtifactIdentifierResponse, error)
 
-	// ApiContainerApiApiContainerServiceGetServicesWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceGetServicesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetServicesResponse, error)
+	// GetArtifactArtifactIdentifierDownload request
+	GetArtifactArtifactIdentifierDownloadWithResponse(ctx context.Context, artifactIdentifier string, reqEditors ...RequestEditorFn) (*GetArtifactArtifactIdentifierDownloadResponse, error)
 
-	ApiContainerApiApiContainerServiceGetServicesWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceGetServicesJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetServicesResponse, error)
+	// GetService request
+	GetServiceWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetServiceResponse, error)
 
-	// ApiContainerApiApiContainerServiceGetStarlarkRunWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceGetStarlarkRunWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetStarlarkRunResponse, error)
+	// PostServiceConnection request with any body
+	PostServiceConnectionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostServiceConnectionResponse, error)
 
-	ApiContainerApiApiContainerServiceGetStarlarkRunWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceGetStarlarkRunJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetStarlarkRunResponse, error)
+	PostServiceConnectionWithResponse(ctx context.Context, body PostServiceConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*PostServiceConnectionResponse, error)
 
-	// ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse, error)
+	// GetServiceServiceIdentifier request
+	GetServiceServiceIdentifierWithResponse(ctx context.Context, serviceIdentifier string, params *GetServiceServiceIdentifierParams, reqEditors ...RequestEditorFn) (*GetServiceServiceIdentifierResponse, error)
 
-	ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceInspectFilesArtifactContentsJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse, error)
+	// PostServiceServiceIdentifierCommand request with any body
+	PostServiceServiceIdentifierCommandWithBodyWithResponse(ctx context.Context, serviceIdentifier string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostServiceServiceIdentifierCommandResponse, error)
 
-	// ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse, error)
+	PostServiceServiceIdentifierCommandWithResponse(ctx context.Context, serviceIdentifier string, body PostServiceServiceIdentifierCommandJSONRequestBody, reqEditors ...RequestEditorFn) (*PostServiceServiceIdentifierCommandResponse, error)
 
-	ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse, error)
+	// PostServiceServiceIdentifierEndpointPortNumberAvailability request with any body
+	PostServiceServiceIdentifierEndpointPortNumberAvailabilityWithBodyWithResponse(ctx context.Context, serviceIdentifier string, portNumber int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse, error)
 
-	// ApiContainerApiApiContainerServiceRunStarlarkPackageWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceRunStarlarkPackageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceRunStarlarkPackageResponse, error)
+	PostServiceServiceIdentifierEndpointPortNumberAvailabilityWithResponse(ctx context.Context, serviceIdentifier string, portNumber int, body PostServiceServiceIdentifierEndpointPortNumberAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*PostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse, error)
 
-	ApiContainerApiApiContainerServiceRunStarlarkPackageWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceRunStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceRunStarlarkPackageResponse, error)
+	// GetStarlark request
+	GetStarlarkWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetStarlarkResponse, error)
 
-	// ApiContainerApiApiContainerServiceRunStarlarkScriptWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceRunStarlarkScriptWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceRunStarlarkScriptResponse, error)
+	// PutStarlarkPackage request with any body
+	PutStarlarkPackageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutStarlarkPackageResponse, error)
 
-	ApiContainerApiApiContainerServiceRunStarlarkScriptWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceRunStarlarkScriptJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceRunStarlarkScriptResponse, error)
+	PutStarlarkPackageWithResponse(ctx context.Context, body PutStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*PutStarlarkPackageResponse, error)
 
-	// ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse, error)
+	// PostStarlarkPackagePackageId request with any body
+	PostStarlarkPackagePackageIdWithBodyWithResponse(ctx context.Context, packageId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostStarlarkPackagePackageIdResponse, error)
 
-	ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse, error)
+	PostStarlarkPackagePackageIdWithResponse(ctx context.Context, packageId string, body PostStarlarkPackagePackageIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PostStarlarkPackagePackageIdResponse, error)
 
-	// ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse, error)
+	// PostStarlarkScript request with any body
+	PostStarlarkScriptWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostStarlarkScriptResponse, error)
 
-	ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceStoreWebFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse, error)
-
-	// ApiContainerApiApiContainerServiceUploadFilesArtifactWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceUploadFilesArtifactWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceUploadFilesArtifactResponse, error)
-
-	ApiContainerApiApiContainerServiceUploadFilesArtifactWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceUploadFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceUploadFilesArtifactResponse, error)
-
-	// ApiContainerApiApiContainerServiceUploadStarlarkPackageWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceUploadStarlarkPackageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse, error)
-
-	ApiContainerApiApiContainerServiceUploadStarlarkPackageWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceUploadStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse, error)
-
-	// ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse, error)
-
-	ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse, error)
-
-	// ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithBodyWithResponse request with any body
-	ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse, error)
-
-	ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse, error)
+	PostStarlarkScriptWithResponse(ctx context.Context, body PostStarlarkScriptJSONRequestBody, reqEditors ...RequestEditorFn) (*PostStarlarkScriptResponse, error)
 }
 
-type ApiContainerApiApiContainerServiceConnectServicesResponse struct {
+type GetArtifactResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceConnectServicesResponse) Status() string {
+func (r GetArtifactResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1918,20 +1676,20 @@ func (r ApiContainerApiApiContainerServiceConnectServicesResponse) Status() stri
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceConnectServicesResponse) StatusCode() int {
+func (r GetArtifactResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse struct {
+type PutArtifactLocalFileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse) Status() string {
+func (r PutArtifactLocalFileResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1939,20 +1697,20 @@ func (r ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse) Status(
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse) StatusCode() int {
+func (r PutArtifactLocalFileResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceExecCommandResponse struct {
+type PutArtifactRemoteFileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceExecCommandResponse) Status() string {
+func (r PutArtifactRemoteFileResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1960,20 +1718,20 @@ func (r ApiContainerApiApiContainerServiceExecCommandResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceExecCommandResponse) StatusCode() int {
+func (r PutArtifactRemoteFileResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse struct {
+type PutArtifactServiceServiceIdentifierResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse) Status() string {
+func (r PutArtifactServiceServiceIdentifierResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1981,20 +1739,20 @@ func (r ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentif
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse) StatusCode() int {
+func (r PutArtifactServiceServiceIdentifierResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceGetServicesResponse struct {
+type GetArtifactArtifactIdentifierResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceGetServicesResponse) Status() string {
+func (r GetArtifactArtifactIdentifierResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2002,20 +1760,20 @@ func (r ApiContainerApiApiContainerServiceGetServicesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceGetServicesResponse) StatusCode() int {
+func (r GetArtifactArtifactIdentifierResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceGetStarlarkRunResponse struct {
+type GetArtifactArtifactIdentifierDownloadResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceGetStarlarkRunResponse) Status() string {
+func (r GetArtifactArtifactIdentifierDownloadResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2023,20 +1781,20 @@ func (r ApiContainerApiApiContainerServiceGetStarlarkRunResponse) Status() strin
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceGetStarlarkRunResponse) StatusCode() int {
+func (r GetArtifactArtifactIdentifierDownloadResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse struct {
+type GetServiceResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse) Status() string {
+func (r GetServiceResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2044,20 +1802,20 @@ func (r ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse) 
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse) StatusCode() int {
+func (r GetServiceResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse struct {
+type PostServiceConnectionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse) Status() string {
+func (r PostServiceConnectionResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2065,20 +1823,20 @@ func (r ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse) StatusCode() int {
+func (r PostServiceConnectionResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceRunStarlarkPackageResponse struct {
+type GetServiceServiceIdentifierResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceRunStarlarkPackageResponse) Status() string {
+func (r GetServiceServiceIdentifierResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2086,20 +1844,20 @@ func (r ApiContainerApiApiContainerServiceRunStarlarkPackageResponse) Status() s
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceRunStarlarkPackageResponse) StatusCode() int {
+func (r GetServiceServiceIdentifierResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceRunStarlarkScriptResponse struct {
+type PostServiceServiceIdentifierCommandResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceRunStarlarkScriptResponse) Status() string {
+func (r PostServiceServiceIdentifierCommandResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2107,20 +1865,20 @@ func (r ApiContainerApiApiContainerServiceRunStarlarkScriptResponse) Status() st
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceRunStarlarkScriptResponse) StatusCode() int {
+func (r PostServiceServiceIdentifierCommandResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse struct {
+type PostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse) Status() string {
+func (r PostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2128,20 +1886,20 @@ func (r ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse)
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse) StatusCode() int {
+func (r PostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse struct {
+type GetStarlarkResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse) Status() string {
+func (r GetStarlarkResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2149,20 +1907,20 @@ func (r ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse) Status(
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse) StatusCode() int {
+func (r GetStarlarkResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceUploadFilesArtifactResponse struct {
+type PutStarlarkPackageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceUploadFilesArtifactResponse) Status() string {
+func (r PutStarlarkPackageResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2170,20 +1928,20 @@ func (r ApiContainerApiApiContainerServiceUploadFilesArtifactResponse) Status() 
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceUploadFilesArtifactResponse) StatusCode() int {
+func (r PutStarlarkPackageResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse struct {
+type PostStarlarkPackagePackageIdResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse) Status() string {
+func (r PostStarlarkPackagePackageIdResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2191,20 +1949,20 @@ func (r ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse) Status(
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse) StatusCode() int {
+func (r PostStarlarkPackagePackageIdResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse struct {
+type PostStarlarkScriptResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse) Status() string {
+func (r PostStarlarkScriptResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2212,315 +1970,229 @@ func (r ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResp
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse) StatusCode() int {
+func (r PostStarlarkScriptResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ApiContainerApiApiContainerServiceConnectServicesWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceConnectServicesResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceConnectServicesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceConnectServicesResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceConnectServicesWithBody(ctx, contentType, body, reqEditors...)
+// GetArtifactWithResponse request returning *GetArtifactResponse
+func (c *ClientWithResponses) GetArtifactWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetArtifactResponse, error) {
+	rsp, err := c.GetArtifact(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceConnectServicesResponse(rsp)
+	return ParseGetArtifactResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceConnectServicesWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceConnectServicesJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceConnectServicesResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceConnectServices(ctx, body, reqEditors...)
+// PutArtifactLocalFileWithBodyWithResponse request with arbitrary body returning *PutArtifactLocalFileResponse
+func (c *ClientWithResponses) PutArtifactLocalFileWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutArtifactLocalFileResponse, error) {
+	rsp, err := c.PutArtifactLocalFileWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceConnectServicesResponse(rsp)
+	return ParsePutArtifactLocalFileResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceDownloadFilesArtifactWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceDownloadFilesArtifactWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceDownloadFilesArtifactWithBody(ctx, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PutArtifactLocalFileWithResponse(ctx context.Context, body PutArtifactLocalFileJSONRequestBody, reqEditors ...RequestEditorFn) (*PutArtifactLocalFileResponse, error) {
+	rsp, err := c.PutArtifactLocalFile(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceDownloadFilesArtifactResponse(rsp)
+	return ParsePutArtifactLocalFileResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceDownloadFilesArtifactWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceDownloadFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceDownloadFilesArtifact(ctx, body, reqEditors...)
+// PutArtifactRemoteFileWithBodyWithResponse request with arbitrary body returning *PutArtifactRemoteFileResponse
+func (c *ClientWithResponses) PutArtifactRemoteFileWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutArtifactRemoteFileResponse, error) {
+	rsp, err := c.PutArtifactRemoteFileWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceDownloadFilesArtifactResponse(rsp)
+	return ParsePutArtifactRemoteFileResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceExecCommandWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceExecCommandResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceExecCommandWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceExecCommandResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceExecCommandWithBody(ctx, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PutArtifactRemoteFileWithResponse(ctx context.Context, body PutArtifactRemoteFileJSONRequestBody, reqEditors ...RequestEditorFn) (*PutArtifactRemoteFileResponse, error) {
+	rsp, err := c.PutArtifactRemoteFile(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceExecCommandResponse(rsp)
+	return ParsePutArtifactRemoteFileResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceExecCommandWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceExecCommandJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceExecCommandResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceExecCommand(ctx, body, reqEditors...)
+// PutArtifactServiceServiceIdentifierWithBodyWithResponse request with arbitrary body returning *PutArtifactServiceServiceIdentifierResponse
+func (c *ClientWithResponses) PutArtifactServiceServiceIdentifierWithBodyWithResponse(ctx context.Context, serviceIdentifier string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutArtifactServiceServiceIdentifierResponse, error) {
+	rsp, err := c.PutArtifactServiceServiceIdentifierWithBody(ctx, serviceIdentifier, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceExecCommandResponse(rsp)
+	return ParsePutArtifactServiceServiceIdentifierResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithBody(ctx, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PutArtifactServiceServiceIdentifierWithResponse(ctx context.Context, serviceIdentifier string, body PutArtifactServiceServiceIdentifierJSONRequestBody, reqEditors ...RequestEditorFn) (*PutArtifactServiceServiceIdentifierResponse, error) {
+	rsp, err := c.PutArtifactServiceServiceIdentifier(ctx, serviceIdentifier, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse(rsp)
+	return ParsePutArtifactServiceServiceIdentifierResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers(ctx, body, reqEditors...)
+// GetArtifactArtifactIdentifierWithResponse request returning *GetArtifactArtifactIdentifierResponse
+func (c *ClientWithResponses) GetArtifactArtifactIdentifierWithResponse(ctx context.Context, artifactIdentifier string, reqEditors ...RequestEditorFn) (*GetArtifactArtifactIdentifierResponse, error) {
+	rsp, err := c.GetArtifactArtifactIdentifier(ctx, artifactIdentifier, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse(rsp)
+	return ParseGetArtifactArtifactIdentifierResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceGetServicesWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceGetServicesResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceGetServicesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetServicesResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceGetServicesWithBody(ctx, contentType, body, reqEditors...)
+// GetArtifactArtifactIdentifierDownloadWithResponse request returning *GetArtifactArtifactIdentifierDownloadResponse
+func (c *ClientWithResponses) GetArtifactArtifactIdentifierDownloadWithResponse(ctx context.Context, artifactIdentifier string, reqEditors ...RequestEditorFn) (*GetArtifactArtifactIdentifierDownloadResponse, error) {
+	rsp, err := c.GetArtifactArtifactIdentifierDownload(ctx, artifactIdentifier, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceGetServicesResponse(rsp)
+	return ParseGetArtifactArtifactIdentifierDownloadResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceGetServicesWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceGetServicesJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetServicesResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceGetServices(ctx, body, reqEditors...)
+// GetServiceWithResponse request returning *GetServiceResponse
+func (c *ClientWithResponses) GetServiceWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetServiceResponse, error) {
+	rsp, err := c.GetService(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceGetServicesResponse(rsp)
+	return ParseGetServiceResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceGetStarlarkRunWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceGetStarlarkRunResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceGetStarlarkRunWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetStarlarkRunResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceGetStarlarkRunWithBody(ctx, contentType, body, reqEditors...)
+// PostServiceConnectionWithBodyWithResponse request with arbitrary body returning *PostServiceConnectionResponse
+func (c *ClientWithResponses) PostServiceConnectionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostServiceConnectionResponse, error) {
+	rsp, err := c.PostServiceConnectionWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceGetStarlarkRunResponse(rsp)
+	return ParsePostServiceConnectionResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceGetStarlarkRunWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceGetStarlarkRunJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceGetStarlarkRunResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceGetStarlarkRun(ctx, body, reqEditors...)
+func (c *ClientWithResponses) PostServiceConnectionWithResponse(ctx context.Context, body PostServiceConnectionJSONRequestBody, reqEditors ...RequestEditorFn) (*PostServiceConnectionResponse, error) {
+	rsp, err := c.PostServiceConnection(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceGetStarlarkRunResponse(rsp)
+	return ParsePostServiceConnectionResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithBody(ctx, contentType, body, reqEditors...)
+// GetServiceServiceIdentifierWithResponse request returning *GetServiceServiceIdentifierResponse
+func (c *ClientWithResponses) GetServiceServiceIdentifierWithResponse(ctx context.Context, serviceIdentifier string, params *GetServiceServiceIdentifierParams, reqEditors ...RequestEditorFn) (*GetServiceServiceIdentifierResponse, error) {
+	rsp, err := c.GetServiceServiceIdentifier(ctx, serviceIdentifier, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse(rsp)
+	return ParseGetServiceServiceIdentifierResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceInspectFilesArtifactContentsJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceInspectFilesArtifactContents(ctx, body, reqEditors...)
+// PostServiceServiceIdentifierCommandWithBodyWithResponse request with arbitrary body returning *PostServiceServiceIdentifierCommandResponse
+func (c *ClientWithResponses) PostServiceServiceIdentifierCommandWithBodyWithResponse(ctx context.Context, serviceIdentifier string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostServiceServiceIdentifierCommandResponse, error) {
+	rsp, err := c.PostServiceServiceIdentifierCommandWithBody(ctx, serviceIdentifier, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse(rsp)
+	return ParsePostServiceServiceIdentifierCommandResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithBody(ctx, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PostServiceServiceIdentifierCommandWithResponse(ctx context.Context, serviceIdentifier string, body PostServiceServiceIdentifierCommandJSONRequestBody, reqEditors ...RequestEditorFn) (*PostServiceServiceIdentifierCommandResponse, error) {
+	rsp, err := c.PostServiceServiceIdentifierCommand(ctx, serviceIdentifier, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse(rsp)
+	return ParsePostServiceServiceIdentifierCommandResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids(ctx, body, reqEditors...)
+// PostServiceServiceIdentifierEndpointPortNumberAvailabilityWithBodyWithResponse request with arbitrary body returning *PostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse
+func (c *ClientWithResponses) PostServiceServiceIdentifierEndpointPortNumberAvailabilityWithBodyWithResponse(ctx context.Context, serviceIdentifier string, portNumber int, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse, error) {
+	rsp, err := c.PostServiceServiceIdentifierEndpointPortNumberAvailabilityWithBody(ctx, serviceIdentifier, portNumber, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse(rsp)
+	return ParsePostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceRunStarlarkPackageWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceRunStarlarkPackageResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceRunStarlarkPackageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceRunStarlarkPackageResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceRunStarlarkPackageWithBody(ctx, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PostServiceServiceIdentifierEndpointPortNumberAvailabilityWithResponse(ctx context.Context, serviceIdentifier string, portNumber int, body PostServiceServiceIdentifierEndpointPortNumberAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*PostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse, error) {
+	rsp, err := c.PostServiceServiceIdentifierEndpointPortNumberAvailability(ctx, serviceIdentifier, portNumber, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceRunStarlarkPackageResponse(rsp)
+	return ParsePostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceRunStarlarkPackageWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceRunStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceRunStarlarkPackageResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceRunStarlarkPackage(ctx, body, reqEditors...)
+// GetStarlarkWithResponse request returning *GetStarlarkResponse
+func (c *ClientWithResponses) GetStarlarkWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetStarlarkResponse, error) {
+	rsp, err := c.GetStarlark(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceRunStarlarkPackageResponse(rsp)
+	return ParseGetStarlarkResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceRunStarlarkScriptWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceRunStarlarkScriptResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceRunStarlarkScriptWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceRunStarlarkScriptResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceRunStarlarkScriptWithBody(ctx, contentType, body, reqEditors...)
+// PutStarlarkPackageWithBodyWithResponse request with arbitrary body returning *PutStarlarkPackageResponse
+func (c *ClientWithResponses) PutStarlarkPackageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutStarlarkPackageResponse, error) {
+	rsp, err := c.PutStarlarkPackageWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceRunStarlarkScriptResponse(rsp)
+	return ParsePutStarlarkPackageResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceRunStarlarkScriptWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceRunStarlarkScriptJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceRunStarlarkScriptResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceRunStarlarkScript(ctx, body, reqEditors...)
+func (c *ClientWithResponses) PutStarlarkPackageWithResponse(ctx context.Context, body PutStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*PutStarlarkPackageResponse, error) {
+	rsp, err := c.PutStarlarkPackage(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceRunStarlarkScriptResponse(rsp)
+	return ParsePutStarlarkPackageResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithBody(ctx, contentType, body, reqEditors...)
+// PostStarlarkPackagePackageIdWithBodyWithResponse request with arbitrary body returning *PostStarlarkPackagePackageIdResponse
+func (c *ClientWithResponses) PostStarlarkPackagePackageIdWithBodyWithResponse(ctx context.Context, packageId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostStarlarkPackagePackageIdResponse, error) {
+	rsp, err := c.PostStarlarkPackagePackageIdWithBody(ctx, packageId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse(rsp)
+	return ParsePostStarlarkPackagePackageIdResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceStoreFilesArtifactFromService(ctx, body, reqEditors...)
+func (c *ClientWithResponses) PostStarlarkPackagePackageIdWithResponse(ctx context.Context, packageId string, body PostStarlarkPackagePackageIdJSONRequestBody, reqEditors ...RequestEditorFn) (*PostStarlarkPackagePackageIdResponse, error) {
+	rsp, err := c.PostStarlarkPackagePackageId(ctx, packageId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse(rsp)
+	return ParsePostStarlarkPackagePackageIdResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithBody(ctx, contentType, body, reqEditors...)
+// PostStarlarkScriptWithBodyWithResponse request with arbitrary body returning *PostStarlarkScriptResponse
+func (c *ClientWithResponses) PostStarlarkScriptWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostStarlarkScriptResponse, error) {
+	rsp, err := c.PostStarlarkScriptWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse(rsp)
+	return ParsePostStarlarkScriptResponse(rsp)
 }
 
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceStoreWebFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceStoreWebFilesArtifact(ctx, body, reqEditors...)
+func (c *ClientWithResponses) PostStarlarkScriptWithResponse(ctx context.Context, body PostStarlarkScriptJSONRequestBody, reqEditors ...RequestEditorFn) (*PostStarlarkScriptResponse, error) {
+	rsp, err := c.PostStarlarkScript(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse(rsp)
+	return ParsePostStarlarkScriptResponse(rsp)
 }
 
-// ApiContainerApiApiContainerServiceUploadFilesArtifactWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceUploadFilesArtifactResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceUploadFilesArtifactWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceUploadFilesArtifactResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceUploadFilesArtifactWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseApiContainerApiApiContainerServiceUploadFilesArtifactResponse(rsp)
-}
-
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceUploadFilesArtifactWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceUploadFilesArtifactJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceUploadFilesArtifactResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceUploadFilesArtifact(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseApiContainerApiApiContainerServiceUploadFilesArtifactResponse(rsp)
-}
-
-// ApiContainerApiApiContainerServiceUploadStarlarkPackageWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceUploadStarlarkPackageWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceUploadStarlarkPackageWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseApiContainerApiApiContainerServiceUploadStarlarkPackageResponse(rsp)
-}
-
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceUploadStarlarkPackageWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceUploadStarlarkPackageJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceUploadStarlarkPackage(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseApiContainerApiApiContainerServiceUploadStarlarkPackageResponse(rsp)
-}
-
-// ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse(rsp)
-}
-
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse(rsp)
-}
-
-// ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithBodyWithResponse request with arbitrary body returning *ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse(rsp)
-}
-
-func (c *ClientWithResponses) ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithResponse(ctx context.Context, body ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityJSONRequestBody, reqEditors ...RequestEditorFn) (*ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse, error) {
-	rsp, err := c.ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse(rsp)
-}
-
-// ParseApiContainerApiApiContainerServiceConnectServicesResponse parses an HTTP response from a ApiContainerApiApiContainerServiceConnectServicesWithResponse call
-func ParseApiContainerApiApiContainerServiceConnectServicesResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceConnectServicesResponse, error) {
+// ParseGetArtifactResponse parses an HTTP response from a GetArtifactWithResponse call
+func ParseGetArtifactResponse(rsp *http.Response) (*GetArtifactResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceConnectServicesResponse{
+	response := &GetArtifactResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2528,15 +2200,15 @@ func ParseApiContainerApiApiContainerServiceConnectServicesResponse(rsp *http.Re
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceDownloadFilesArtifactResponse parses an HTTP response from a ApiContainerApiApiContainerServiceDownloadFilesArtifactWithResponse call
-func ParseApiContainerApiApiContainerServiceDownloadFilesArtifactResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse, error) {
+// ParsePutArtifactLocalFileResponse parses an HTTP response from a PutArtifactLocalFileWithResponse call
+func ParsePutArtifactLocalFileResponse(rsp *http.Response) (*PutArtifactLocalFileResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceDownloadFilesArtifactResponse{
+	response := &PutArtifactLocalFileResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2544,15 +2216,15 @@ func ParseApiContainerApiApiContainerServiceDownloadFilesArtifactResponse(rsp *h
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceExecCommandResponse parses an HTTP response from a ApiContainerApiApiContainerServiceExecCommandWithResponse call
-func ParseApiContainerApiApiContainerServiceExecCommandResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceExecCommandResponse, error) {
+// ParsePutArtifactRemoteFileResponse parses an HTTP response from a PutArtifactRemoteFileWithResponse call
+func ParsePutArtifactRemoteFileResponse(rsp *http.Response) (*PutArtifactRemoteFileResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceExecCommandResponse{
+	response := &PutArtifactRemoteFileResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2560,15 +2232,15 @@ func ParseApiContainerApiApiContainerServiceExecCommandResponse(rsp *http.Respon
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse parses an HTTP response from a ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersWithResponse call
-func ParseApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse, error) {
+// ParsePutArtifactServiceServiceIdentifierResponse parses an HTTP response from a PutArtifactServiceServiceIdentifierWithResponse call
+func ParsePutArtifactServiceServiceIdentifierResponse(rsp *http.Response) (*PutArtifactServiceServiceIdentifierResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiersResponse{
+	response := &PutArtifactServiceServiceIdentifierResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2576,15 +2248,15 @@ func ParseApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdent
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceGetServicesResponse parses an HTTP response from a ApiContainerApiApiContainerServiceGetServicesWithResponse call
-func ParseApiContainerApiApiContainerServiceGetServicesResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceGetServicesResponse, error) {
+// ParseGetArtifactArtifactIdentifierResponse parses an HTTP response from a GetArtifactArtifactIdentifierWithResponse call
+func ParseGetArtifactArtifactIdentifierResponse(rsp *http.Response) (*GetArtifactArtifactIdentifierResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceGetServicesResponse{
+	response := &GetArtifactArtifactIdentifierResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2592,15 +2264,15 @@ func ParseApiContainerApiApiContainerServiceGetServicesResponse(rsp *http.Respon
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceGetStarlarkRunResponse parses an HTTP response from a ApiContainerApiApiContainerServiceGetStarlarkRunWithResponse call
-func ParseApiContainerApiApiContainerServiceGetStarlarkRunResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceGetStarlarkRunResponse, error) {
+// ParseGetArtifactArtifactIdentifierDownloadResponse parses an HTTP response from a GetArtifactArtifactIdentifierDownloadWithResponse call
+func ParseGetArtifactArtifactIdentifierDownloadResponse(rsp *http.Response) (*GetArtifactArtifactIdentifierDownloadResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceGetStarlarkRunResponse{
+	response := &GetArtifactArtifactIdentifierDownloadResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2608,15 +2280,15 @@ func ParseApiContainerApiApiContainerServiceGetStarlarkRunResponse(rsp *http.Res
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse parses an HTTP response from a ApiContainerApiApiContainerServiceInspectFilesArtifactContentsWithResponse call
-func ParseApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse, error) {
+// ParseGetServiceResponse parses an HTTP response from a GetServiceWithResponse call
+func ParseGetServiceResponse(rsp *http.Response) (*GetServiceResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse{
+	response := &GetServiceResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2624,15 +2296,15 @@ func ParseApiContainerApiApiContainerServiceInspectFilesArtifactContentsResponse
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse parses an HTTP response from a ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsWithResponse call
-func ParseApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse, error) {
+// ParsePostServiceConnectionResponse parses an HTTP response from a PostServiceConnectionWithResponse call
+func ParsePostServiceConnectionResponse(rsp *http.Response) (*PostServiceConnectionResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsResponse{
+	response := &PostServiceConnectionResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2640,15 +2312,15 @@ func ParseApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuidsRespon
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceRunStarlarkPackageResponse parses an HTTP response from a ApiContainerApiApiContainerServiceRunStarlarkPackageWithResponse call
-func ParseApiContainerApiApiContainerServiceRunStarlarkPackageResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceRunStarlarkPackageResponse, error) {
+// ParseGetServiceServiceIdentifierResponse parses an HTTP response from a GetServiceServiceIdentifierWithResponse call
+func ParseGetServiceServiceIdentifierResponse(rsp *http.Response) (*GetServiceServiceIdentifierResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceRunStarlarkPackageResponse{
+	response := &GetServiceServiceIdentifierResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2656,15 +2328,15 @@ func ParseApiContainerApiApiContainerServiceRunStarlarkPackageResponse(rsp *http
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceRunStarlarkScriptResponse parses an HTTP response from a ApiContainerApiApiContainerServiceRunStarlarkScriptWithResponse call
-func ParseApiContainerApiApiContainerServiceRunStarlarkScriptResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceRunStarlarkScriptResponse, error) {
+// ParsePostServiceServiceIdentifierCommandResponse parses an HTTP response from a PostServiceServiceIdentifierCommandWithResponse call
+func ParsePostServiceServiceIdentifierCommandResponse(rsp *http.Response) (*PostServiceServiceIdentifierCommandResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceRunStarlarkScriptResponse{
+	response := &PostServiceServiceIdentifierCommandResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2672,15 +2344,15 @@ func ParseApiContainerApiApiContainerServiceRunStarlarkScriptResponse(rsp *http.
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse parses an HTTP response from a ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceWithResponse call
-func ParseApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse, error) {
+// ParsePostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse parses an HTTP response from a PostServiceServiceIdentifierEndpointPortNumberAvailabilityWithResponse call
+func ParsePostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse(rsp *http.Response) (*PostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceResponse{
+	response := &PostServiceServiceIdentifierEndpointPortNumberAvailabilityResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2688,15 +2360,15 @@ func ParseApiContainerApiApiContainerServiceStoreFilesArtifactFromServiceRespons
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse parses an HTTP response from a ApiContainerApiApiContainerServiceStoreWebFilesArtifactWithResponse call
-func ParseApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse, error) {
+// ParseGetStarlarkResponse parses an HTTP response from a GetStarlarkWithResponse call
+func ParseGetStarlarkResponse(rsp *http.Response) (*GetStarlarkResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse{
+	response := &GetStarlarkResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2704,15 +2376,15 @@ func ParseApiContainerApiApiContainerServiceStoreWebFilesArtifactResponse(rsp *h
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceUploadFilesArtifactResponse parses an HTTP response from a ApiContainerApiApiContainerServiceUploadFilesArtifactWithResponse call
-func ParseApiContainerApiApiContainerServiceUploadFilesArtifactResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceUploadFilesArtifactResponse, error) {
+// ParsePutStarlarkPackageResponse parses an HTTP response from a PutStarlarkPackageWithResponse call
+func ParsePutStarlarkPackageResponse(rsp *http.Response) (*PutStarlarkPackageResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceUploadFilesArtifactResponse{
+	response := &PutStarlarkPackageResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2720,15 +2392,15 @@ func ParseApiContainerApiApiContainerServiceUploadFilesArtifactResponse(rsp *htt
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceUploadStarlarkPackageResponse parses an HTTP response from a ApiContainerApiApiContainerServiceUploadStarlarkPackageWithResponse call
-func ParseApiContainerApiApiContainerServiceUploadStarlarkPackageResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse, error) {
+// ParsePostStarlarkPackagePackageIdResponse parses an HTTP response from a PostStarlarkPackagePackageIdWithResponse call
+func ParsePostStarlarkPackagePackageIdResponse(rsp *http.Response) (*PostStarlarkPackagePackageIdResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceUploadStarlarkPackageResponse{
+	response := &PostStarlarkPackagePackageIdResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2736,31 +2408,15 @@ func ParseApiContainerApiApiContainerServiceUploadStarlarkPackageResponse(rsp *h
 	return response, nil
 }
 
-// ParseApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse parses an HTTP response from a ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityWithResponse call
-func ParseApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse, error) {
+// ParsePostStarlarkScriptResponse parses an HTTP response from a PostStarlarkScriptWithResponse call
+func ParsePostStarlarkScriptResponse(rsp *http.Response) (*PostStarlarkScriptResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailabilityResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse parses an HTTP response from a ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityWithResponse call
-func ParseApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse(rsp *http.Response) (*ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityResponse{
+	response := &PostStarlarkScriptResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -2771,53 +2427,50 @@ func ParseApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailabilityR
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (POST /api_container_api.ApiContainerService/ConnectServices)
-	ApiContainerApiApiContainerServiceConnectServices(ctx echo.Context) error
+	// (GET /artifact)
+	GetArtifact(ctx echo.Context) error
 
-	// (POST /api_container_api.ApiContainerService/DownloadFilesArtifact)
-	ApiContainerApiApiContainerServiceDownloadFilesArtifact(ctx echo.Context) error
+	// (PUT /artifact/local-file)
+	PutArtifactLocalFile(ctx echo.Context) error
 
-	// (POST /api_container_api.ApiContainerService/ExecCommand)
-	ApiContainerApiApiContainerServiceExecCommand(ctx echo.Context) error
+	// (PUT /artifact/remote-file)
+	PutArtifactRemoteFile(ctx echo.Context) error
 
-	// (POST /api_container_api.ApiContainerService/GetExistingAndHistoricalServiceIdentifiers)
-	ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers(ctx echo.Context) error
+	// (PUT /artifact/service/{service_identifier})
+	PutArtifactServiceServiceIdentifier(ctx echo.Context, serviceIdentifier string) error
 
-	// (POST /api_container_api.ApiContainerService/GetServices)
-	ApiContainerApiApiContainerServiceGetServices(ctx echo.Context) error
+	// (GET /artifact/{artifact_identifier})
+	GetArtifactArtifactIdentifier(ctx echo.Context, artifactIdentifier string) error
 
-	// (POST /api_container_api.ApiContainerService/GetStarlarkRun)
-	ApiContainerApiApiContainerServiceGetStarlarkRun(ctx echo.Context) error
+	// (GET /artifact/{artifact_identifier}/download)
+	GetArtifactArtifactIdentifierDownload(ctx echo.Context, artifactIdentifier string) error
 
-	// (POST /api_container_api.ApiContainerService/InspectFilesArtifactContents)
-	ApiContainerApiApiContainerServiceInspectFilesArtifactContents(ctx echo.Context) error
+	// (GET /service)
+	GetService(ctx echo.Context) error
 
-	// (POST /api_container_api.ApiContainerService/ListFilesArtifactNamesAndUuids)
-	ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids(ctx echo.Context) error
+	// (POST /service/connection)
+	PostServiceConnection(ctx echo.Context) error
 
-	// (POST /api_container_api.ApiContainerService/RunStarlarkPackage)
-	ApiContainerApiApiContainerServiceRunStarlarkPackage(ctx echo.Context) error
+	// (GET /service/{service_identifier})
+	GetServiceServiceIdentifier(ctx echo.Context, serviceIdentifier string, params GetServiceServiceIdentifierParams) error
 
-	// (POST /api_container_api.ApiContainerService/RunStarlarkScript)
-	ApiContainerApiApiContainerServiceRunStarlarkScript(ctx echo.Context) error
+	// (POST /service/{service_identifier}/command)
+	PostServiceServiceIdentifierCommand(ctx echo.Context, serviceIdentifier string) error
 
-	// (POST /api_container_api.ApiContainerService/StoreFilesArtifactFromService)
-	ApiContainerApiApiContainerServiceStoreFilesArtifactFromService(ctx echo.Context) error
+	// (POST /service/{service_identifier}/endpoint/{port_number}/availability)
+	PostServiceServiceIdentifierEndpointPortNumberAvailability(ctx echo.Context, serviceIdentifier string, portNumber int) error
 
-	// (POST /api_container_api.ApiContainerService/StoreWebFilesArtifact)
-	ApiContainerApiApiContainerServiceStoreWebFilesArtifact(ctx echo.Context) error
+	// (GET /starlark)
+	GetStarlark(ctx echo.Context) error
 
-	// (POST /api_container_api.ApiContainerService/UploadFilesArtifact)
-	ApiContainerApiApiContainerServiceUploadFilesArtifact(ctx echo.Context) error
+	// (PUT /starlark/package)
+	PutStarlarkPackage(ctx echo.Context) error
 
-	// (POST /api_container_api.ApiContainerService/UploadStarlarkPackage)
-	ApiContainerApiApiContainerServiceUploadStarlarkPackage(ctx echo.Context) error
+	// (POST /starlark/package/{package_id})
+	PostStarlarkPackagePackageId(ctx echo.Context, packageId string) error
 
-	// (POST /api_container_api.ApiContainerService/WaitForHttpGetEndpointAvailability)
-	ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability(ctx echo.Context) error
-
-	// (POST /api_container_api.ApiContainerService/WaitForHttpPostEndpointAvailability)
-	ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability(ctx echo.Context) error
+	// (POST /starlark/script)
+	PostStarlarkScript(ctx echo.Context) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -2825,147 +2478,204 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// ApiContainerApiApiContainerServiceConnectServices converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceConnectServices(ctx echo.Context) error {
+// GetArtifact converts echo context to params.
+func (w *ServerInterfaceWrapper) GetArtifact(ctx echo.Context) error {
 	var err error
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceConnectServices(ctx)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetArtifact(ctx)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceDownloadFilesArtifact converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceDownloadFilesArtifact(ctx echo.Context) error {
+// PutArtifactLocalFile converts echo context to params.
+func (w *ServerInterfaceWrapper) PutArtifactLocalFile(ctx echo.Context) error {
 	var err error
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceDownloadFilesArtifact(ctx)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PutArtifactLocalFile(ctx)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceExecCommand converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceExecCommand(ctx echo.Context) error {
+// PutArtifactRemoteFile converts echo context to params.
+func (w *ServerInterfaceWrapper) PutArtifactRemoteFile(ctx echo.Context) error {
 	var err error
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceExecCommand(ctx)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PutArtifactRemoteFile(ctx)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers(ctx echo.Context) error {
+// PutArtifactServiceServiceIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) PutArtifactServiceServiceIdentifier(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "service_identifier" -------------
+	var serviceIdentifier string
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers(ctx)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter service_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PutArtifactServiceServiceIdentifier(ctx, serviceIdentifier)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceGetServices converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceGetServices(ctx echo.Context) error {
+// GetArtifactArtifactIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) GetArtifactArtifactIdentifier(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "artifact_identifier" -------------
+	var artifactIdentifier string
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceGetServices(ctx)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "artifact_identifier", runtime.ParamLocationPath, ctx.Param("artifact_identifier"), &artifactIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter artifact_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetArtifactArtifactIdentifier(ctx, artifactIdentifier)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceGetStarlarkRun converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceGetStarlarkRun(ctx echo.Context) error {
+// GetArtifactArtifactIdentifierDownload converts echo context to params.
+func (w *ServerInterfaceWrapper) GetArtifactArtifactIdentifierDownload(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "artifact_identifier" -------------
+	var artifactIdentifier string
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceGetStarlarkRun(ctx)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "artifact_identifier", runtime.ParamLocationPath, ctx.Param("artifact_identifier"), &artifactIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter artifact_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetArtifactArtifactIdentifierDownload(ctx, artifactIdentifier)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceInspectFilesArtifactContents converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceInspectFilesArtifactContents(ctx echo.Context) error {
+// GetService converts echo context to params.
+func (w *ServerInterfaceWrapper) GetService(ctx echo.Context) error {
 	var err error
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceInspectFilesArtifactContents(ctx)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetService(ctx)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids(ctx echo.Context) error {
+// PostServiceConnection converts echo context to params.
+func (w *ServerInterfaceWrapper) PostServiceConnection(ctx echo.Context) error {
 	var err error
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids(ctx)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostServiceConnection(ctx)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceRunStarlarkPackage converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceRunStarlarkPackage(ctx echo.Context) error {
+// GetServiceServiceIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServiceServiceIdentifier(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "service_identifier" -------------
+	var serviceIdentifier string
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceRunStarlarkPackage(ctx)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter service_identifier: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServiceServiceIdentifierParams
+	// ------------- Optional query parameter "additional-properties" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "additional-properties", ctx.QueryParams(), &params.AdditionalProperties)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter additional-properties: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetServiceServiceIdentifier(ctx, serviceIdentifier, params)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceRunStarlarkScript converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceRunStarlarkScript(ctx echo.Context) error {
+// PostServiceServiceIdentifierCommand converts echo context to params.
+func (w *ServerInterfaceWrapper) PostServiceServiceIdentifierCommand(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "service_identifier" -------------
+	var serviceIdentifier string
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceRunStarlarkScript(ctx)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter service_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostServiceServiceIdentifierCommand(ctx, serviceIdentifier)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceStoreFilesArtifactFromService converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceStoreFilesArtifactFromService(ctx echo.Context) error {
+// PostServiceServiceIdentifierEndpointPortNumberAvailability converts echo context to params.
+func (w *ServerInterfaceWrapper) PostServiceServiceIdentifierEndpointPortNumberAvailability(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "service_identifier" -------------
+	var serviceIdentifier string
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceStoreFilesArtifactFromService(ctx)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter service_identifier: %s", err))
+	}
+
+	// ------------- Path parameter "port_number" -------------
+	var portNumber int
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "port_number", runtime.ParamLocationPath, ctx.Param("port_number"), &portNumber)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter port_number: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostServiceServiceIdentifierEndpointPortNumberAvailability(ctx, serviceIdentifier, portNumber)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceStoreWebFilesArtifact converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceStoreWebFilesArtifact(ctx echo.Context) error {
+// GetStarlark converts echo context to params.
+func (w *ServerInterfaceWrapper) GetStarlark(ctx echo.Context) error {
 	var err error
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceStoreWebFilesArtifact(ctx)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetStarlark(ctx)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceUploadFilesArtifact converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceUploadFilesArtifact(ctx echo.Context) error {
+// PutStarlarkPackage converts echo context to params.
+func (w *ServerInterfaceWrapper) PutStarlarkPackage(ctx echo.Context) error {
 	var err error
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceUploadFilesArtifact(ctx)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PutStarlarkPackage(ctx)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceUploadStarlarkPackage converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceUploadStarlarkPackage(ctx echo.Context) error {
+// PostStarlarkPackagePackageId converts echo context to params.
+func (w *ServerInterfaceWrapper) PostStarlarkPackagePackageId(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "package_id" -------------
+	var packageId string
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceUploadStarlarkPackage(ctx)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "package_id", runtime.ParamLocationPath, ctx.Param("package_id"), &packageId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter package_id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostStarlarkPackagePackageId(ctx, packageId)
 	return err
 }
 
-// ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability(ctx echo.Context) error {
+// PostStarlarkScript converts echo context to params.
+func (w *ServerInterfaceWrapper) PostStarlarkScript(ctx echo.Context) error {
 	var err error
 
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability(ctx)
-	return err
-}
-
-// ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability converts echo context to params.
-func (w *ServerInterfaceWrapper) ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability(ctx echo.Context) error {
-	var err error
-
-	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability(ctx)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostStarlarkScript(ctx)
 	return err
 }
 
@@ -2997,95 +2707,91 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/api_container_api.ApiContainerService/ConnectServices", wrapper.ApiContainerApiApiContainerServiceConnectServices)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/DownloadFilesArtifact", wrapper.ApiContainerApiApiContainerServiceDownloadFilesArtifact)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/ExecCommand", wrapper.ApiContainerApiApiContainerServiceExecCommand)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/GetExistingAndHistoricalServiceIdentifiers", wrapper.ApiContainerApiApiContainerServiceGetExistingAndHistoricalServiceIdentifiers)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/GetServices", wrapper.ApiContainerApiApiContainerServiceGetServices)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/GetStarlarkRun", wrapper.ApiContainerApiApiContainerServiceGetStarlarkRun)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/InspectFilesArtifactContents", wrapper.ApiContainerApiApiContainerServiceInspectFilesArtifactContents)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/ListFilesArtifactNamesAndUuids", wrapper.ApiContainerApiApiContainerServiceListFilesArtifactNamesAndUuids)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/RunStarlarkPackage", wrapper.ApiContainerApiApiContainerServiceRunStarlarkPackage)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/RunStarlarkScript", wrapper.ApiContainerApiApiContainerServiceRunStarlarkScript)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/StoreFilesArtifactFromService", wrapper.ApiContainerApiApiContainerServiceStoreFilesArtifactFromService)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/StoreWebFilesArtifact", wrapper.ApiContainerApiApiContainerServiceStoreWebFilesArtifact)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/UploadFilesArtifact", wrapper.ApiContainerApiApiContainerServiceUploadFilesArtifact)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/UploadStarlarkPackage", wrapper.ApiContainerApiApiContainerServiceUploadStarlarkPackage)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/WaitForHttpGetEndpointAvailability", wrapper.ApiContainerApiApiContainerServiceWaitForHttpGetEndpointAvailability)
-	router.POST(baseURL+"/api_container_api.ApiContainerService/WaitForHttpPostEndpointAvailability", wrapper.ApiContainerApiApiContainerServiceWaitForHttpPostEndpointAvailability)
+	router.GET(baseURL+"/artifact", wrapper.GetArtifact)
+	router.PUT(baseURL+"/artifact/local-file", wrapper.PutArtifactLocalFile)
+	router.PUT(baseURL+"/artifact/remote-file", wrapper.PutArtifactRemoteFile)
+	router.PUT(baseURL+"/artifact/service/:service_identifier", wrapper.PutArtifactServiceServiceIdentifier)
+	router.GET(baseURL+"/artifact/:artifact_identifier", wrapper.GetArtifactArtifactIdentifier)
+	router.GET(baseURL+"/artifact/:artifact_identifier/download", wrapper.GetArtifactArtifactIdentifierDownload)
+	router.GET(baseURL+"/service", wrapper.GetService)
+	router.POST(baseURL+"/service/connection", wrapper.PostServiceConnection)
+	router.GET(baseURL+"/service/:service_identifier", wrapper.GetServiceServiceIdentifier)
+	router.POST(baseURL+"/service/:service_identifier/command", wrapper.PostServiceServiceIdentifierCommand)
+	router.POST(baseURL+"/service/:service_identifier/endpoint/:port_number/availability", wrapper.PostServiceServiceIdentifierEndpointPortNumberAvailability)
+	router.GET(baseURL+"/starlark", wrapper.GetStarlark)
+	router.PUT(baseURL+"/starlark/package", wrapper.PutStarlarkPackage)
+	router.POST(baseURL+"/starlark/package/:package_id", wrapper.PostStarlarkPackagePackageId)
+	router.POST(baseURL+"/starlark/script", wrapper.PostStarlarkScript)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+w9f2/jNpZfhdAdMG3hOrPdxaIIcH+kSWbGt61jxElzh/NBS0tPNhuK1PGHE7fIdz+Q",
-	"omTJphxZduz0bvaP3Y1FPj6+3+/xkfNHEPE04wyYksH5H4GA/9Eg1U88JmB/wBkJI84UJgxEiDPSHysB",
-	"OIX4Cit8Odfs0QwzQ4CpfEZGSYQV4ezsN8mZ+U1Gc0ix+X//KiAJzoN/OVute5Z/lWdt1np5eekFMchI",
-	"kMwsEZwH//am/5mwAglksEAWjQl720WDnuUEERAH50poeOkFM85nFPqZ4IpPddK/TjO1PBjt/dAttdcw",
-	"eek5kA3ycckZg8iiU+fTR/Q9urwZDq8v79DZGfoJpEKQJFwolJn/Srh4wiImbDZhf0Hfo+FNWBk+qg9B",
-	"MZF4SiEOegEwnQbn/xW40UEvWE0N/rsXqGUGwXkglSBsFrz0mpEeg1iQCOSFmNndZYJnIJTThWi1s93E",
-	"uCCJoZ1Dhk9/s7+0QOYWZMaZBLNuu9n5X54NpHGI3daIglRWQK6o437AQuCl+RuYEsuME6Y6TV6ECyxy",
-	"WYljYmQB01ENrSYgq12SFM8gZDgF73ipsNKyE1/yv/rjHEJ7BtXneWV9fHczGl1foVyab++Hw8HwM5qw",
-	"H9D36H74j+HNwxBVpNcND3qBGxr0AjespRCXVvIXUDjGCm9KQAMJ2237ij8xynH8iVCjIookOFKFqhzX",
-	"JheoIIsLKpA5gl2u05PEwBRJSK5tdRrkqK1GIMXRDBSaLhVIY8qCXjc+XD9DdMnTFLP4NNQ3CCCHwdFJ",
-	"HuXrdrBFMjeo4Tam3c0BuXFV1vEEqTmgkg9IzbFyP1l0kJxzTWM0BQTPEGkFMSLsAByuWv86IeCZqDDi",
-	"sf2UcJFiFZwHhKm//rBalzAFMxBmGcpnIdcq0x7ffCGlTkGi+7tP3/+IgEXcONmu6BvJL1TyMo9OpPnt",
-	"qrrm+nYyrOabiI2wmiMBFCuyAKNBhuYJoYCwWyDw2EZJfodNWGPyOxScNCB6iLBcG4NejYB//5uXgAqe",
-	"VZgJWBB48pAQTYmy4OFZIReU9RBJKihTyp8k+kaSlFBsDcL9cPAfHyT6MAccf/h2H4KXFnmIU7hg8b0m",
-	"8SaVDR5D5wTW8c/XRAIyAdKIPptZ3I3TqNLNR3Hze7FiW7hak3g73Ha7/wzq+plIA/eCxV+IVFyQCFMX",
-	"QA1KNZbNyoQprYyr2ZUdU5aNRTdNUettrcejxzXzn0GhAoOjm/lNY71bDFkn1SQYg5oERtoqAI0CJqCi",
-	"OSIs4cYlT9ggQWBynx56IpSufTYaXLgHGWxwcWe+NstjuX2W8O5CaCbvgJXCgmLxeKvZNq+TgSApMIVp",
-	"mABWWsA++vIPLRSXRH7KQX2i2Ou7U0xYmGgWGYY2ZwIZjh5NqpAbIs9ngSkFSmTa0mkWric07ilUPMwR",
-	"MdbKt4AAqbBQYcYpiZa7U+M2nz/Kp+cxC8GU/A5xaJBviHQqo3Kp7xzjD0ymVUTXv7jgYjO3wfQJL6VL",
-	"bVIipbHplWQm/x70AvetZQYzYDKDSNXcWRFA3OalKb9LsxIhQxMXaueFdiN8owdtS7etmDcpk0W9Qt19",
-	"FKlN0NXRE/l01CsWw5twMBzf3d5f3g1uhuPw8uLyi0l6K5LRMKSlgPxMpNpglXS8eo3QdRnZl9Z+aelG",
-	"4BEX6vj+fTzHAmJ0YxGT6Jt7CTH6aYl+0VSRjAK6ZrGt+8hvj+7+U7ycQlipZ4a2NBlx6jWA+fAnTFSo",
-	"SArcl+OY1M6MQG4EirWwoE0a4EB5hJDpdJpnii3chRKYyYwbD1BBdzfhMsLQvysAjQo4O4iSZ7ZXXe8u",
-	"R86Ejy/vRkVp6mpU1de7y1HQC8z3oBfcX41aKmrdkfmNxfWv17du/YufHy7+c1yzE+Zr0AvyL21X1awI",
-	"YkZ5JNBQyaWcGZduh2xi9zAHNbdJPiA3qJLf28kx4gIxrvo2YkwwldAz41ltkg0hp4AyTSnEKBE8td8v",
-	"RoNLRHmE6Qq+4gL6aJAgoj5IhNc+W9BEolRLNWFzvAA0BWBIZ8ZRQ4y0dcH39s81GqBMEG6zzQhTaoZt",
-	"0infhxJ62zbczu02PhP1RU/RFBIuipqH0SXL9kpsPOWcArauJ6JcxyFhUmEWFTFanfJXkGBNlY3MbRju",
-	"08gcjpYgusOIxTIUmm2fbdnq3cqJouC8Dh678CxMXXy221qbIZ4tDkXYYyVyKVjaUqvL1HO5THmsbcZe",
-	"GsXpUnkrA/7IfdM0V6sMZg4q5liBRHHOF7TAVIPRhEkgNJsEviV3ywKa+f+3tbpQpxxhc6dlOSvfJqF5",
-	"+cPMbtir+XFiKdk3+jUJ8lkkV1PBuS084UJhfTQRkHLlQeg3LRXCKKF4ZrZMWGwcLuRssEy2Nqei/oRJ",
-	"EkNhx7zq4c1a1opx5RBkh4AyCXmMFbaJtoFemKjSDtXEYsLu5kRW7DI29CIx+vfxzbDRn7dzohX7OLY4",
-	"N7qRrwbtnRq0k5idw9qVY+f+ntLlZjWX+Y5HiAlYIk4pWNIZepoUq5dT1x2PCAXGfNj8vNdwLllfbFjh",
-	"jVvVW+13tTLtrT/f3w+u2gApEGwAYw+Gapt4FehuVHeFvo2Wg9VhfsfD7VV+lOkpJVFIshDHsefwa2S/",
-	"o8EIme8gJfqOa2Ws/Xd2p8AiaiLPpzkIqO7dCIAAHM3xlMKEDW/urs/Rg4sarckqzkFWE9gHhYRmjLBZ",
-	"r/YpJrH5FkNCmBGepW0PkT3k3MIUR4/AYhRzsECkzmz/iADzPya8zfe5WsuQtteUNDqi2DW6JWs2S9xH",
-	"gDNBFlhBM2OM8FW4wtdouXLIjkPbFtlzo4Wyde25cOJeNFwcSXvHb6i576oHpAhbroXgwle9d3laCMWA",
-	"XTvyHPwCUL6QceVMgcgEKHwI+IMatHIRG+EdZIFfS0gOeEue+/e/SWjzc5iClK7C0E3CSmr4nIOxawdc",
-	"QiqhI//ZPBYznRY9ol0PRjcXuhD+njFLW+NKbGxdwWpDASrfmw+FiAzlI8kyqKaDldg345IUK+y9p1EB",
-	"rDv9DVl8LNi6w/J03aaW/o1WQkUDzsa0hxScUYWQ63EM1SlrWUQ1uW3jVilh7RpeOu/iFqSmynskW1Cv",
-	"KnaiHL4nGTcN3htblVvNPhFG5Bzi64XrIF6zMNLklKHUUQRSJpq+KlerBqN9URsJPjPRjkeYtBDAVCgV",
-	"ZOUBefs2sNr03ar73GTHZp58AxGsHLv/7IT82I3urt5SOjdUIHT08599w5NVVNKpf6Lqd+tu5iBOYt11",
-	"rWzI3qCd9bIBf65A4X40qKriSy8w9iBxViOEwmx0Bl03QC+94AkLkxJ2B/rgAOyofevx4Bvb3ofVNuvL",
-	"uP0fYCEuoHZO/Unw1KUs/nJmuyJZYtuat3ZftuizHVTaoudYlUdMWkJs69D592Ut0a3UHbgWUYFLeTzF",
-	"M+KOp7xo2Tmhv8/U7BJPJadaldDNyL3WPACnmlsaXs+X65zq2bq6lpaMDAlIQACLCJshooqjhEQrLWCv",
-	"nTzA9B1cELCooAeYnvqGwKGUSgvP8dz97c9GWYr6uQVVANlfJtc5+SeTRc81xf8PFwfrnCmuAdV3bnEp",
-	"WMMXIDClayzabIxvPOCt3DbazWVvXliyYQssCNcyjMyXcI6lx1x/wXJe4D+6vf51cHM/RnaCLRPnJWfX",
-	"d27PT4kszlETIqTKx07YbUXy7Fm3Wzz/jhYEI6IkMkgU3fvFyZZRPFeOgglzt0MkkQpYtCxws+eZhKEI",
-	"S+NAUnCAn4xTYVwhARGQhb3G2EnM84aPRjU9rsDnyLxPi/tGxqj3Hm3fAybqExdflMo+gyq6+C4WmFA8",
-	"JZSo5WmcssELfeICfbm7G6HPoMoOQ1RF7ugSM+XxMlTw7GkaHCTuXMXhKUBpwZxFsQW0+uFVERemWDxC",
-	"jLBEON8ZBfQN9Gd99AUo5eiBCxp/2/cJFGFEEUzDGChehimhlEiIOItlQxxhSxhG2KpjjXmy3Y6aKUKL",
-	"Bi1n5nIbaLkQYUrbHUc3B842UF47lFIcRXOIHvtooGwHiT2qU1iYWF/NK2hIiuW8b+WiaKVA/3RgzuaA",
-	"qZr/03ug5W2atfhwoZrxqS3048cfP7bt8lGicKq1FX/BzxUelERFWCnjh2RxV5C4rMHdD3SMmZGF4YrO",
-	"7DF5Ll7mB8xQXgPZBblWMjPcLi9TUE9gDVO+37atCq2uVm5eqdzgzwGM3ojLd2v1DG5fzd5Xs/fnMXv2",
-	"2k1ohMW/rLvqWqzsJiAzoe/vRPxqSN+PIW18Vmb9bmOlmK6IovZIpWaEV90UCxAyR/UvZgmeAcMZCc6D",
-	"v/Y/9o3cGc2xBPUkhRcZKVuXXBHsbO1FFFuA4NKjBvcSRHlBc/1ZmcCikt/5GMTBeVBd6iIjnpXXF+5V",
-	"XkhavuHDR773aHyP8dgbhzbbs0T54ePHNaS+O/vugHiUqaXnGSbz20uvLUe9b4k087UYLhFer1OUlyrK",
-	"xNzAROOlVJB2YLkfs2MxvvmNlRO8fHW6V1aOLOat3hnbTcArT3g0i3V+0Ap5YWpGFsDK90RcUx8ueiRX",
-	"b490kOkqMseS5PVXak4gv0d+p+bIQut7JGZvsW3/lkazVN+6ZMGECybgIZwhPOVa2ecTwIFHE/3x4w9/",
-	"R/NyjerLCrtK+A54byiAj+y1hxCbXsd7aw53eNjkEALweph1W6aDgAZXZUOy66xZBWCumrnqSu7A1qPH",
-	"XuvvrpzAcB355ZUjGy7fAygHkdtVW0mz6BrSUizV6naZ0KyjZFbW+1MZFd9DL3szYNsLGFV27ErorXCP",
-	"ZRPaPExyivys1bMje7N2+6sb+zD3Fch/Hq1q+TDJ3qzYvLnfIrvAK2OXf0c8d8xagvgg0RTmmCYdjKAH",
-	"m2NpZMNTD6dQwqYG3kMye1xe7XwHvHbInIDVldvY/6c4vbUHsJnrd0CpLG7iV18n5Sji2bKhWIarteID",
-	"Vs62b+JY0vJ64+tpJKdNk+dh5Gi9b6+T/JQ9hc0F1yeYvoUEbaB/VMnxtq+e5F8dOFkD6ylUo7HXdG+V",
-	"8HTIbTk/yhpOGQ4r5z6cOsS6rQrZb82+bR2IB2Je64h3xb71t2P6KH8tRkGWP1aQi3jxflX1tasIs9oz",
-	"3vbc3hvpdmP7qxHzu2T8ln8gZB8Gv96q2MztnyiPHt3p/+oAxfYNbDSulO0ovfIRNKKQmguuZ3OEVx2J",
-	"jtAduNtiK8fyZC0bQE/g1t5PC+iberm315amHrcjqottZTuIvjRu5gQKs7V58OQac9L2wXekMi8v/xsA",
-	"AP//vgZ8abtsAAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
@@ -3093,16 +2799,16 @@ var swaggerSpec = []string{
 func decodeSpec() ([]byte, error) {
 	zipped, err := base64.StdEncoding.DecodeString(strings.Join(swaggerSpec, ""))
 	if err != nil {
-		return nil, fmt.Errorf("error base64 decoding spec: %w", err)
+		return nil, fmt.Errorf("error base64 decoding spec: %s", err)
 	}
 	zr, err := gzip.NewReader(bytes.NewReader(zipped))
 	if err != nil {
-		return nil, fmt.Errorf("error decompressing spec: %w", err)
+		return nil, fmt.Errorf("error decompressing spec: %s", err)
 	}
 	var buf bytes.Buffer
 	_, err = buf.ReadFrom(zr)
 	if err != nil {
-		return nil, fmt.Errorf("error decompressing spec: %w", err)
+		return nil, fmt.Errorf("error decompressing spec: %s", err)
 	}
 
 	return buf.Bytes(), nil
@@ -3120,7 +2826,7 @@ func decodeSpecCached() func() ([]byte, error) {
 
 // Constructs a synthetic filesystem for resolving external references when loading openapi specifications.
 func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
-	res := make(map[string]func() ([]byte, error))
+	var res = make(map[string]func() ([]byte, error))
 	if len(pathToFile) > 0 {
 		res[pathToFile] = rawSpec
 	}
@@ -3134,12 +2840,12 @@ func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
 // Externally referenced files must be embedded in the corresponding golang packages.
 // Urls can be supported but this task was out of the scope.
 func GetSwagger() (swagger *openapi3.T, err error) {
-	resolvePath := PathToRawSpec("")
+	var resolvePath = PathToRawSpec("")
 
 	loader := openapi3.NewLoader()
 	loader.IsExternalRefsAllowed = true
 	loader.ReadFromURIFunc = func(loader *openapi3.Loader, url *url.URL) ([]byte, error) {
-		pathToFile := url.String()
+		var pathToFile = url.String()
 		pathToFile = path.Clean(pathToFile)
 		getSpec, ok := resolvePath[pathToFile]
 		if !ok {
