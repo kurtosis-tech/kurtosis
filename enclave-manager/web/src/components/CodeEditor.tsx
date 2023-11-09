@@ -27,7 +27,9 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
       colors: {},
     });
     monaco.editor.setTheme("kurtosis-theme");
-    editor.onDidContentSizeChange(handleContentSizeChange);
+    if (!isReadOnly) {
+      editor.onDidContentSizeChange(handleContentSizeChange);
+    }
   };
 
   const handleChange: OnChange = (value, ev) => {
