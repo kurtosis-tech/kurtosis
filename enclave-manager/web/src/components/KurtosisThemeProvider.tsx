@@ -114,7 +114,8 @@ const theme = extendTheme({
           const outline = theme.components.Button.variants!.outline(props);
           return {
             ...outline,
-            _hover: { ...outline._hover, bg: "gray.700" },
+            _hover: { ...outline._hover, bg: "gray.700", borderColor: "gray.300", cursor: "unset" },
+            _active: { ...outline._active, bg: "gray.700", borderColor: "gray.300", cursor: "unset" },
             bg: "gray.700",
             color: `${props.colorScheme}.100`,
             borderColor: "gray.300",
@@ -135,6 +136,14 @@ const theme = extendTheme({
             ...ghost,
             color: "gray.100",
             textTransform: "uppercase",
+          };
+        },
+        breadcrumb: (props: StyleFunctionProps) => {
+          const ghost = theme.components.Button.variants!.ghost(props);
+          return {
+            ...ghost,
+            color: "gray.100",
+            fontWeight: "normal",
           };
         },
         nav: {

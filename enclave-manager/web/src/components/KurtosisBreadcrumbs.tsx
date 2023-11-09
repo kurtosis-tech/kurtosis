@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from "@chakra-ui/icons";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, Flex } from "@chakra-ui/react";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, Button, Flex } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { Link, Params, UIMatch, useMatches } from "react-router-dom";
 import { isDefined } from "../utils";
@@ -46,7 +46,13 @@ export const KurtosisBreadcrumbs = () => {
         {matchCrumbs.map(({ name, destination }, i, arr) => (
           <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
             <BreadcrumbLink as={i === arr.length - 1 ? undefined : Link} to={destination}>
-              {name}
+              {i === arr.length - 1 ? (
+                name
+              ) : (
+                <Button variant={"breadcrumb"} size={"sm"}>
+                  {name}
+                </Button>
+              )}
             </BreadcrumbLink>
           </BreadcrumbItem>
         ))}
