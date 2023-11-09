@@ -56,7 +56,7 @@ export const LogViewer = ({
 
   return (
     <Flex flexDirection={"column"} gap={"32px"}>
-      <Flex flexDirection={"column"} position={"relative"} bg={"gray.800"} borderRadius={"8px"}>
+      <Flex flexDirection={"column"} position={"relative"} bg={"gray.800"}>
         {isDefined(ProgressWidget) && (
           <Box
             display={"inline-flex"}
@@ -84,7 +84,7 @@ export const LogViewer = ({
           isScrolling={setUserIsScrolling}
           style={{ height: "660px" }}
           data={logLines.filter(({ message }) => isDefined(message))}
-          itemContent={(index, line) => <LogLine {...line} />}
+          itemContent={(_, line) => <LogLine {...line} />}
         />
         {isDefined(progressPercent) && (
           <Progress
