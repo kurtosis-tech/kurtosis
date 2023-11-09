@@ -25,8 +25,8 @@ export const FilesTable = ({ filesAndArtifacts, enclave }: FilesTableProps) => {
           //<Link to={`/enclave/${enclave.shortenedUuid}/file/${row.original.fileUuid}`}>
           //<Button size={"sm"} variant={"ghost"}>
           getValue(),
-          //</Button>
-          //</Link>
+        //</Button>
+        //</Link>
       }),
       columnHelper.display({
         id: "download",
