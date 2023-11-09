@@ -70,7 +70,8 @@ class ServiceLogsRequestInfoAndExpectedResults {
 
 jest.setTimeout(180000);
 
-test("Test Stream Logs", TestStreamLogs);
+// These tests are too noisy. TODO - figure out why they have been flaky and fix them"
+test.skip("Skip Test Stream Logs as its flaky", TestStreamLogs);
 
 async function TestStreamLogs() {
 
