@@ -1,0 +1,904 @@
+openapi: 3.0.0
+info:
+  title: api_container_service
+  description: ''
+  version: '1'
+paths:
+  /api_container_api.ApiContainerService/RunStarlarkScript:
+    post:
+      operationId: api_container_api.ApiContainerService.RunStarlarkScript
+      description: Executes a Starlark script on the user's behalf
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.RunStarlarkScriptArgs'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.StarlarkRunResponseLine'
+  /api_container_api.ApiContainerService/UploadStarlarkPackage:
+    post:
+      operationId: api_container_api.ApiContainerService.UploadStarlarkPackage
+      description: Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
+      requestBody:
+        $ref: '#/components/requestBodies/api_container_api.StreamedDataChunk'
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/google.protobuf.Empty'
+  /api_container_api.ApiContainerService/RunStarlarkPackage:
+    post:
+      operationId: api_container_api.ApiContainerService.RunStarlarkPackage
+      description: Executes a Starlark script on the user's behalf
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.RunStarlarkPackageArgs'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.StarlarkRunResponseLine'
+  /api_container_api.ApiContainerService/GetServices:
+    post:
+      operationId: api_container_api.ApiContainerService.GetServices
+      description: Returns the IDs of the current services in the enclave
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.GetServicesArgs'
+        description: |-
+          ==============================================================================================
+          Get Services
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.GetServicesResponse'
+  /api_container_api.ApiContainerService/GetExistingAndHistoricalServiceIdentifiers:
+    post:
+      operationId: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers
+      description: Returns information about all existing & historical services
+      requestBody:
+        $ref: '#/components/requestBodies/google.protobuf.Empty'
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse'
+  /api_container_api.ApiContainerService/ExecCommand:
+    post:
+      operationId: api_container_api.ApiContainerService.ExecCommand
+      description: Executes the given command inside a running container
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.ExecCommandArgs'
+        description: |-
+          ==============================================================================================
+          Exec Command
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.ExecCommandResponse'
+  /api_container_api.ApiContainerService/WaitForHttpGetEndpointAvailability:
+    post:
+      operationId: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability
+      description: Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.WaitForHttpGetEndpointAvailabilityArgs'
+        description: |-
+          ==============================================================================================
+          Wait For HTTP Get Endpoint Availability
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/google.protobuf.Empty'
+  /api_container_api.ApiContainerService/WaitForHttpPostEndpointAvailability:
+    post:
+      operationId: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability
+      description: Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.WaitForHttpPostEndpointAvailabilityArgs'
+        description: |-
+          ==============================================================================================
+          Wait For HTTP Post Endpoint Availability
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/google.protobuf.Empty'
+  /api_container_api.ApiContainerService/UploadFilesArtifact:
+    post:
+      operationId: api_container_api.ApiContainerService.UploadFilesArtifact
+      description: Uploads a files artifact to the Kurtosis File System
+      requestBody:
+        $ref: '#/components/requestBodies/api_container_api.StreamedDataChunk'
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.UploadFilesArtifactResponse'
+  /api_container_api.ApiContainerService/DownloadFilesArtifact:
+    post:
+      operationId: api_container_api.ApiContainerService.DownloadFilesArtifact
+      description: Downloads a files artifact from the Kurtosis File System
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.DownloadFilesArtifactArgs'
+        description: |-
+          ==============================================================================================
+          Download Files Artifact
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.StreamedDataChunk'
+  /api_container_api.ApiContainerService/StoreWebFilesArtifact:
+    post:
+      operationId: api_container_api.ApiContainerService.StoreWebFilesArtifact
+      description: Tells the API container to download a files artifact from the web to the Kurtosis File System
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.StoreWebFilesArtifactArgs'
+        description: |-
+          ==============================================================================================
+          Store Web Files Artifact
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.StoreWebFilesArtifactResponse'
+  /api_container_api.ApiContainerService/StoreFilesArtifactFromService:
+    post:
+      operationId: api_container_api.ApiContainerService.StoreFilesArtifactFromService
+      description: Tells the API container to copy a files artifact from a service to the Kurtosis File System
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.StoreFilesArtifactFromServiceArgs'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.StoreFilesArtifactFromServiceResponse'
+  /api_container_api.ApiContainerService/ListFilesArtifactNamesAndUuids:
+    post:
+      operationId: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids
+      description: ''
+      requestBody:
+        $ref: '#/components/requestBodies/google.protobuf.Empty'
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.ListFilesArtifactNamesAndUuidsResponse'
+  /api_container_api.ApiContainerService/InspectFilesArtifactContents:
+    post:
+      operationId: api_container_api.ApiContainerService.InspectFilesArtifactContents
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.InspectFilesArtifactContentsRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.InspectFilesArtifactContentsResponse'
+  /api_container_api.ApiContainerService/ConnectServices:
+    post:
+      operationId: api_container_api.ApiContainerService.ConnectServices
+      description: User services port forwarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_container_api.ConnectServicesArgs'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.ConnectServicesResponse'
+  /api_container_api.ApiContainerService/GetStarlarkRun:
+    post:
+      operationId: api_container_api.ApiContainerService.GetStarlarkRun
+      description: Get last Starlark run
+      requestBody:
+        $ref: '#/components/requestBodies/google.protobuf.Empty'
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/api_container_api.GetStarlarkRunResponse'
+components:
+  requestBodies:
+    api_container_api.StreamedDataChunk:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/api_container_api.StreamedDataChunk'
+      description: |-
+        ==============================================================================================
+        Streamed Data Chunk
+        ==============================================================================================
+      required: true
+    google.protobuf.Empty:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/google.protobuf.Empty'
+      required: true
+  schemas:
+    api_container_api.Port:
+      type: object
+      properties:
+        number:
+          type: integer
+          format: int32
+        transport_protocol:
+          $ref: '#/components/schemas/api_container_api.Port.TransportProtocol'
+        maybe_application_protocol:
+          type: string
+        maybe_wait_timeout:
+          type: string
+          description: The wait timeout duration in string
+      description: |-
+        ==============================================================================================
+        Shared Objects (Used By Multiple Endpoints)
+        ==============================================================================================
+    api_container_api.Container:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/api_container_api.Container.Status'
+        image_name:
+          type: string
+        entrypoint_args:
+          type: array
+          items:
+            type: string
+        cmd_args:
+          type: array
+          items:
+            type: string
+        env_vars:
+          type: object
+          additionalProperties:
+            type: string
+    api_container_api.ServiceStatus:
+      type: string
+      enum:
+        - STOPPED
+        - RUNNING
+        - UNKNOWN
+      description: |-
+        0 - STOPPED 
+        1 - RUNNING 
+        2 - UNKNOWN 
+    api_container_api.ImageDownloadMode:
+      type: string
+      enum:
+        - always
+        - missing
+      description: |-
+        0 - always 
+        1 - missing 
+    api_container_api.ServiceInfo:
+      type: object
+      properties:
+        service_uuid:
+          type: string
+          description: UUID of the service
+        private_ip_addr:
+          type: string
+          description: The IP address of the service inside the enclave
+        private_ports:
+          $ref: '#/components/schemas/api_container_api.Port'
+        maybe_public_ip_addr:
+          type: string
+          description: |-
+            Public IP address *outside* the enclave where the service is reachable
+            NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
+        maybe_public_ports:
+          $ref: '#/components/schemas/api_container_api.Port'
+        name:
+          type: string
+          description: Name of the service
+        shortened_uuid:
+          type: string
+          description: Shortened uuid of the service
+        service_status:
+          $ref: '#/components/schemas/api_container_api.ServiceStatus'
+        container:
+          $ref: '#/components/schemas/api_container_api.Container'
+    api_container_api.Connect:
+      type: string
+      enum:
+        - CONNECT
+        - NO_CONNECT
+      description: |-
+        0 - CONNECT // Best effort port forwarding
+        1 - NO_CONNECT // Port forwarding disabled
+    api_container_api.RunStarlarkScriptArgs:
+      type: object
+      properties:
+        serialized_script:
+          type: string
+        serialized_params:
+          type: string
+        dry_run:
+          type: boolean
+          description: Defaults to false
+        parallelism:
+          type: integer
+          format: int32
+          description: Defaults to 4
+        main_function_name:
+          type: string
+          description: The name of the main function, the default value is "run"
+        experimental_features:
+          type: array
+          items:
+            $ref: '#/components/schemas/api_container_api.KurtosisFeatureFlag'
+        cloud_instance_id:
+          type: string
+          description: Defaults to empty
+        cloud_user_id:
+          type: string
+          description: Defaults to empty
+        image_download_mode:
+          $ref: '#/components/schemas/api_container_api.ImageDownloadMode'
+    api_container_api.RunStarlarkPackageArgs:
+      type: object
+      properties:
+        package_id:
+          type: string
+        local:
+          type: string
+          format: byte
+          description: the payload of the local module
+        remote:
+          type: boolean
+          description: just a flag to indicate the module must be cloned inside the API
+        serialized_params:
+          type: string
+          description: |-
+            Serialized parameters data for the Starlark package main function
+            This should be a valid JSON string
+        dry_run:
+          type: boolean
+          description: Defaults to false
+        parallelism:
+          type: integer
+          format: int32
+          description: Defaults to 4
+        clone_package:
+          type: boolean
+          description: |-
+            Whether the package should be cloned or not.
+            If false, then the package will be pulled from the APIC local package store. If it's a local package then is must
+            have been uploaded using UploadStarlarkPackage prior to calling RunStarlarkPackage.
+            If true, then the package will be cloned from GitHub before execution starts
+        relative_path_to_main_file:
+          type: string
+          description: The relative main file filepath, the default value is the "main.star" file in the root of a package
+        main_function_name:
+          type: string
+          description: The name of the main function, the default value is "run"
+        experimental_features:
+          type: array
+          items:
+            $ref: '#/components/schemas/api_container_api.KurtosisFeatureFlag'
+        cloud_instance_id:
+          type: string
+          description: Defaults to empty
+        cloud_user_id:
+          type: string
+          description: Defaults to empty
+        image_download_mode:
+          $ref: '#/components/schemas/api_container_api.ImageDownloadMode'
+    api_container_api.KurtosisFeatureFlag:
+      type: string
+      enum:
+        - NO_INSTRUCTIONS_CACHING
+      description: '0 - NO_INSTRUCTIONS_CACHING '
+    api_container_api.StarlarkRunResponseLine:
+      type: object
+      properties:
+        instruction:
+          $ref: '#/components/schemas/api_container_api.StarlarkInstruction'
+        error:
+          $ref: '#/components/schemas/api_container_api.StarlarkError'
+        progress_info:
+          $ref: '#/components/schemas/api_container_api.StarlarkRunProgress'
+        instruction_result:
+          $ref: '#/components/schemas/api_container_api.StarlarkInstructionResult'
+        run_finished_event:
+          $ref: '#/components/schemas/api_container_api.StarlarkRunFinishedEvent'
+        warning:
+          $ref: '#/components/schemas/api_container_api.StarlarkWarning'
+        info:
+          $ref: '#/components/schemas/api_container_api.StarlarkInfo'
+      description: |-
+        ==============================================================================================
+        Starlark Execution Response
+        ==============================================================================================
+    api_container_api.StarlarkInfo:
+      type: object
+      properties:
+        info_message:
+          type: string
+    api_container_api.StarlarkWarning:
+      type: object
+      properties:
+        warning_message:
+          type: string
+    api_container_api.StarlarkInstruction:
+      type: object
+      properties:
+        position:
+          $ref: '#/components/schemas/api_container_api.StarlarkInstructionPosition'
+        instruction_name:
+          type: string
+        arguments:
+          type: array
+          items:
+            $ref: '#/components/schemas/api_container_api.StarlarkInstructionArg'
+        executable_instruction:
+          type: string
+        is_skipped:
+          type: boolean
+    api_container_api.StarlarkInstructionResult:
+      type: object
+      properties:
+        serialized_instruction_result:
+          type: string
+    api_container_api.StarlarkInstructionArg:
+      type: object
+      properties:
+        serialized_arg_value:
+          type: string
+        arg_name:
+          type: string
+        is_representative:
+          type: boolean
+    api_container_api.StarlarkInstructionPosition:
+      type: object
+      properties:
+        filename:
+          type: string
+        line:
+          type: integer
+          format: int32
+        column:
+          type: integer
+          format: int32
+    api_container_api.StarlarkError:
+      type: object
+      properties:
+        interpretation_error:
+          $ref: '#/components/schemas/api_container_api.StarlarkInterpretationError'
+        validation_error:
+          $ref: '#/components/schemas/api_container_api.StarlarkValidationError'
+        execution_error:
+          $ref: '#/components/schemas/api_container_api.StarlarkExecutionError'
+    api_container_api.StarlarkInterpretationError:
+      type: object
+      properties:
+        error_message:
+          type: string
+    api_container_api.StarlarkValidationError:
+      type: object
+      properties:
+        error_message:
+          type: string
+    api_container_api.StarlarkExecutionError:
+      type: object
+      properties:
+        error_message:
+          type: string
+    api_container_api.StarlarkRunProgress:
+      type: object
+      properties:
+        current_step_info:
+          type: array
+          items:
+            type: string
+        total_steps:
+          type: integer
+          format: int32
+        current_step_number:
+          type: integer
+          format: int32
+    api_container_api.StarlarkRunFinishedEvent:
+      type: object
+      properties:
+        is_run_successful:
+          type: boolean
+        serialized_output:
+          type: string
+    api_container_api.GetServicesArgs:
+      type: object
+      properties:
+        service_identifiers:
+          type: object
+          description: |-
+            "Set" of identifiers to fetch info for
+            If empty, will fetch info for all services
+          additionalProperties:
+            type: string
+      description: |-
+        ==============================================================================================
+        Get Services
+        ==============================================================================================
+    api_container_api.GetServicesResponse:
+      type: object
+      properties:
+        service_info:
+          $ref: '#/components/schemas/api_container_api.ServiceInfo'
+    api_container_api.ServiceIdentifiers:
+      type: object
+      properties:
+        service_uuid:
+          type: string
+          description: UUID of the service
+        name:
+          type: string
+          description: Name of the service
+        shortened_uuid:
+          type: string
+          description: The shortened uuid of the service
+      description: An service identifier is a collection of uuid, name and shortened uuid
+    api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse:
+      type: object
+      properties:
+        allIdentifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/api_container_api.ServiceIdentifiers'
+    api_container_api.ExecCommandArgs:
+      type: object
+      properties:
+        service_identifier:
+          type: string
+          description: The service identifier of the container that the command should be executed in
+        command_args:
+          type: array
+          items:
+            type: string
+      description: |-
+        ==============================================================================================
+        Exec Command
+        ==============================================================================================
+    api_container_api.ExecCommandResponse:
+      type: object
+      properties:
+        exit_code:
+          type: integer
+          format: int32
+        log_output:
+          type: string
+          description: Assumes UTF-8 encoding
+    api_container_api.WaitForHttpGetEndpointAvailabilityArgs:
+      type: object
+      properties:
+        service_identifier:
+          type: string
+          description: The identifier of the service to check.
+        port:
+          type: integer
+          format: int32
+          description: The port of the service to check. For instance 8080
+        path:
+          type: string
+          description: The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+        initial_delay_milliseconds:
+          type: integer
+          format: int32
+          description: The number of milliseconds to wait until executing the first HTTP call
+        retries:
+          type: integer
+          format: int32
+          description: Max number of HTTP call attempts that this will execute until giving up and returning an error
+        retries_delay_milliseconds:
+          type: integer
+          format: int32
+          description: Number of milliseconds to wait between retries
+        body_text:
+          type: string
+          description: If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+      description: |-
+        ==============================================================================================
+        Wait For HTTP Get Endpoint Availability
+        ==============================================================================================
+    api_container_api.WaitForHttpPostEndpointAvailabilityArgs:
+      type: object
+      properties:
+        service_identifier:
+          type: string
+          description: The identifier of the service to check.
+        port:
+          type: integer
+          format: int32
+          description: The port of the service to check. For instance 8080
+        path:
+          type: string
+          description: The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+        request_body:
+          type: string
+          description: The content of the request body.
+        initial_delay_milliseconds:
+          type: integer
+          format: int32
+          description: The number of milliseconds to wait until executing the first HTTP call
+        retries:
+          type: integer
+          format: int32
+          description: Max number of HTTP call attempts that this will execute until giving up and returning an error
+        retries_delay_milliseconds:
+          type: integer
+          format: int32
+          description: Number of milliseconds to wait between retries
+        body_text:
+          type: string
+          description: If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+      description: |-
+        ==============================================================================================
+        Wait For HTTP Post Endpoint Availability
+        ==============================================================================================
+    api_container_api.StreamedDataChunk:
+      type: object
+      properties:
+        data:
+          type: string
+          format: byte
+          description: Chunk of the overall files artifact bytes
+        previous_chunk_hash:
+          type: string
+          description: |-
+            Hash of the PREVIOUS chunk, or empty string is this is the first chunk
+            Referencing the previous chunk via its hash allows Kurtosis to validate
+            the consistency of the data in case some chunk were not received
+        metadata:
+          $ref: '#/components/schemas/api_container_api.DataChunkMetadata'
+      description: |-
+        ==============================================================================================
+        Streamed Data Chunk
+        ==============================================================================================
+    api_container_api.DataChunkMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+    api_container_api.UploadFilesArtifactResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: UUID of the files artifact, for use when referencing it in the future
+        name:
+          type: string
+          description: UUID of the files artifact, for use when referencing it in the future
+      description: |-
+        ==============================================================================================
+        Upload Files Artifact
+        ==============================================================================================
+    api_container_api.DownloadFilesArtifactArgs:
+      type: object
+      properties:
+        identifier:
+          type: string
+          description: Files identifier to get bytes for
+      description: |-
+        ==============================================================================================
+        Download Files Artifact
+        ==============================================================================================
+    api_container_api.StoreWebFilesArtifactArgs:
+      type: object
+      properties:
+        url:
+          type: string
+          description: URL to download the artifact from
+        name:
+          type: string
+          description: The name of the files artifact
+      description: |-
+        ==============================================================================================
+        Store Web Files Artifact
+        ==============================================================================================
+    api_container_api.StoreWebFilesArtifactResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: UUID of the files artifact, for use when referencing it in the future
+    api_container_api.StoreFilesArtifactFromServiceArgs:
+      type: object
+      properties:
+        service_identifier:
+          type: string
+          description: Identifier that will be used to identify the service where the source files will be copied from
+        source_path:
+          type: string
+          description: The absolute source path where the source files will be copied from
+        name:
+          type: string
+          description: The name of the files artifact
+    api_container_api.StoreFilesArtifactFromServiceResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: UUID of the files artifact, for use when referencing it in the future
+    api_container_api.FilesArtifactNameAndUuid:
+      type: object
+      properties:
+        fileName:
+          type: string
+          description: A string representing the name of the file
+        fileUuid:
+          type: string
+          description: A string representing the uuid of the file
+    api_container_api.ListFilesArtifactNamesAndUuidsResponse:
+      type: object
+      properties:
+        file_names_and_uuids:
+          type: array
+          items:
+            $ref: '#/components/schemas/api_container_api.FilesArtifactNameAndUuid'
+    api_container_api.InspectFilesArtifactContentsRequest:
+      type: object
+      properties:
+        file_names_and_uuid:
+          $ref: '#/components/schemas/api_container_api.FilesArtifactNameAndUuid'
+    api_container_api.InspectFilesArtifactContentsResponse:
+      type: object
+      properties:
+        file_descriptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/api_container_api.FileArtifactContentsFileDescription'
+    api_container_api.FileArtifactContentsFileDescription:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Path relative to the file artifact
+        size:
+          type: integer
+          format: int64
+          description: Size of the file, in bytes
+        text_preview:
+          type: string
+          description: A bit of text content, if the file allows (similar to UNIX's 'head')
+    api_container_api.ConnectServicesArgs:
+      type: object
+      properties:
+        connect:
+          $ref: '#/components/schemas/api_container_api.Connect'
+    api_container_api.ConnectServicesResponse:
+      type: object
+      properties: {}
+    api_container_api.RestartPolicy:
+      type: string
+      enum:
+        - NEVER
+        - ALWAYS
+      description: |-
+        0 - NEVER 
+        1 - ALWAYS 
+    api_container_api.GetStarlarkRunResponse:
+      type: object
+      properties:
+        package_id:
+          type: string
+        serialized_script:
+          type: string
+        serialized_params:
+          type: string
+        parallelism:
+          type: integer
+          format: int32
+        relative_path_to_main_file:
+          type: string
+        main_function_name:
+          type: string
+        experimental_features:
+          type: array
+          items:
+            $ref: '#/components/schemas/api_container_api.KurtosisFeatureFlag'
+        restart_policy:
+          $ref: '#/components/schemas/api_container_api.RestartPolicy'
+    api_container_api.Port.TransportProtocol:
+      type: string
+      enum:
+        - TCP
+        - SCTP
+        - UDP
+      description: |-
+        0 - TCP 
+        1 - SCTP 
+        2 - UDP 
+    api_container_api.Container.Status:
+      type: string
+      enum:
+        - STOPPED
+        - RUNNING
+        - UNKNOWN
+      description: |-
+        0 - STOPPED 
+        1 - RUNNING 
+        2 - UNKNOWN 
+    google.protobuf.Empty:
+      type: object
+      properties: {}

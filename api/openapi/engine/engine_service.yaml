@@ -1,0 +1,432 @@
+openapi: 3.0.0
+info:
+  title: engine_service
+  description: ''
+  version: '1'
+paths:
+  /engine_api.EngineService/GetEngineInfo:
+    post:
+      operationId: engine_api.EngineService.GetEngineInfo
+      description: Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
+      requestBody:
+        $ref: '#/components/requestBodies/google.protobuf.Empty'
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/engine_api.GetEngineInfoResponse'
+  /engine_api.EngineService/CreateEnclave:
+    post:
+      operationId: engine_api.EngineService.CreateEnclave
+      description: |-
+        ==============================================================================================
+        Enclave Management
+        ==============================================================================================
+        Creates a new Kurtosis Enclave
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/engine_api.CreateEnclaveArgs'
+        description: |-
+          ==============================================================================================
+          Create Enclave
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/engine_api.CreateEnclaveResponse'
+  /engine_api.EngineService/GetEnclaves:
+    post:
+      operationId: engine_api.EngineService.GetEnclaves
+      description: Returns information about the existing enclaves
+      requestBody:
+        $ref: '#/components/requestBodies/google.protobuf.Empty'
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/engine_api.GetEnclavesResponse'
+  /engine_api.EngineService/GetExistingAndHistoricalEnclaveIdentifiers:
+    post:
+      operationId: engine_api.EngineService.GetExistingAndHistoricalEnclaveIdentifiers
+      description: Returns information about all existing & historical enclaves
+      requestBody:
+        $ref: '#/components/requestBodies/google.protobuf.Empty'
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/engine_api.GetExistingAndHistoricalEnclaveIdentifiersResponse'
+  /engine_api.EngineService/StopEnclave:
+    post:
+      operationId: engine_api.EngineService.StopEnclave
+      description: Stops all containers in an enclave
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/engine_api.StopEnclaveArgs'
+        description: |-
+          ==============================================================================================
+          Stop Enclave
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/google.protobuf.Empty'
+  /engine_api.EngineService/DestroyEnclave:
+    post:
+      operationId: engine_api.EngineService.DestroyEnclave
+      description: Destroys an enclave, removing all artifacts associated with it
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/engine_api.DestroyEnclaveArgs'
+        description: |-
+          ==============================================================================================
+          Destroy Enclave
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/google.protobuf.Empty'
+  /engine_api.EngineService/Clean:
+    post:
+      operationId: engine_api.EngineService.Clean
+      description: Gets rid of old enclaves
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/engine_api.CleanArgs'
+        description: |-
+          ==============================================================================================
+          Create Enclave
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/engine_api.CleanResponse'
+  /engine_api.EngineService/GetServiceLogs:
+    post:
+      operationId: engine_api.EngineService.GetServiceLogs
+      description: Get service logs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/engine_api.GetServiceLogsArgs'
+        description: |-
+          ==============================================================================================
+          Get User Service Logs
+          ==============================================================================================
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/engine_api.GetServiceLogsResponse'
+components:
+  requestBodies:
+    google.protobuf.Empty:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/google.protobuf.Empty'
+      required: true
+  schemas:
+    engine_api.GetEngineInfoResponse:
+      type: object
+      properties:
+        engine_version:
+          type: string
+          description: Version of the engine server
+      description: |-
+        ==============================================================================================
+        Get Engine Info
+        ==============================================================================================
+    engine_api.CreateEnclaveArgs:
+      type: object
+      properties:
+        enclave_name:
+          type: string
+          description: The name of the new Kurtosis Enclave
+        api_container_version_tag:
+          type: string
+          description: |-
+            The image tag of the API container that should be used inside the enclave
+            If blank, will use the default version that the engine server uses
+        api_container_log_level:
+          type: string
+          description: The API container log level
+        mode:
+          $ref: '#/components/schemas/engine_api.EnclaveMode'
+      description: |-
+        ==============================================================================================
+        Create Enclave
+        ==============================================================================================
+    engine_api.EnclaveMode:
+      type: string
+      enum:
+        - TEST
+        - PRODUCTION
+      description: |-
+        0 - TEST 
+        1 - PRODUCTION 
+    engine_api.CreateEnclaveResponse:
+      type: object
+      properties:
+        enclave_info:
+          $ref: '#/components/schemas/engine_api.EnclaveInfo'
+    engine_api.EnclaveContainersStatus:
+      type: string
+      enum:
+        - EnclaveContainersStatus_EMPTY
+        - EnclaveContainersStatus_RUNNING
+        - EnclaveContainersStatus_STOPPED
+      description: |-
+        0 - EnclaveContainersStatus_EMPTY // The enclave has been created, but there are no containers inside it
+        1 - EnclaveContainersStatus_RUNNING // One or more containers are running in the enclave (which may or may not include the API container, depending on if the user was manually stopping/removing containers)
+        2 - EnclaveContainersStatus_STOPPED // There are >= 1 container in the enclave, but they're all stopped
+    engine_api.EnclaveAPIContainerStatus:
+      type: string
+      enum:
+        - EnclaveAPIContainerStatus_NONEXISTENT
+        - EnclaveAPIContainerStatus_RUNNING
+        - EnclaveAPIContainerStatus_STOPPED
+      description: |-
+        0 - EnclaveAPIContainerStatus_NONEXISTENT // No API container exists in the enclave
+        This is the only valid value when the enclave containers status is "EMPTY"
+        1 - EnclaveAPIContainerStatus_RUNNING // An API container exists and is running
+        NOTE: this does NOT say that the server inside the API container is available, because checking if it's available requires making a call to the API container
+        If we have a lot of API containers, we'd be making tons of calls
+        2 - EnclaveAPIContainerStatus_STOPPED // An API container exists, but isn't running
+    engine_api.EnclaveAPIContainerInfo:
+      type: object
+      properties:
+        container_id:
+          type: string
+          description: The container engine ID of the API container
+        ip_inside_enclave:
+          type: string
+          description: The IP inside the enclave network of the API container (i.e. how services inside the network can reach the API container)
+        grpc_port_inside_enclave:
+          type: integer
+          format: int32
+          description: The grpc port inside the enclave network that the API container is listening on
+        bridge_ip_address:
+          type: string
+          description: this is the bridge ip address that gets assigned to api container
+    engine_api.EnclaveAPIContainerHostMachineInfo:
+      type: object
+      properties:
+        ip_on_host_machine:
+          type: string
+          description: The interface IP on the container engine host machine where the API container can be reached
+        grpc_port_on_host_machine:
+          type: integer
+          format: int32
+          description: The grpc port on the container engine host machine where the API container can be reached
+      description: Will only be present if the API container is running
+    engine_api.EnclaveInfo:
+      type: object
+      properties:
+        enclave_uuid:
+          type: string
+          description: UUID of the enclave
+        name:
+          type: string
+          description: Name of the enclave
+        shortened_uuid:
+          type: string
+          description: The shortened uuid of the enclave
+        containers_status:
+          $ref: '#/components/schemas/engine_api.EnclaveContainersStatus'
+        api_container_status:
+          $ref: '#/components/schemas/engine_api.EnclaveAPIContainerStatus'
+        api_container_info:
+          $ref: '#/components/schemas/engine_api.EnclaveAPIContainerInfo'
+        api_container_host_machine_info:
+          $ref: '#/components/schemas/engine_api.EnclaveAPIContainerHostMachineInfo'
+        creation_time:
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        mode:
+          $ref: '#/components/schemas/engine_api.EnclaveMode'
+      description: Enclaves are defined by a network in the container system, which is why there's a bunch of network information here
+    engine_api.GetEnclavesResponse:
+      type: object
+      properties:
+        enclave_info:
+          $ref: '#/components/schemas/engine_api.EnclaveInfo'
+    engine_api.EnclaveIdentifiers:
+      type: object
+      properties:
+        enclave_uuid:
+          type: string
+          description: UUID of the enclave
+        name:
+          type: string
+          description: Name of the enclave
+        shortened_uuid:
+          type: string
+          description: The shortened uuid of the enclave
+      description: An enclave identifier is a collection of uuid, name and shortened uuid
+    engine_api.GetExistingAndHistoricalEnclaveIdentifiersResponse:
+      type: object
+      properties:
+        allIdentifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/engine_api.EnclaveIdentifiers'
+    engine_api.StopEnclaveArgs:
+      type: object
+      properties:
+        enclave_identifier:
+          type: string
+          description: The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to stop
+      description: |-
+        ==============================================================================================
+        Stop Enclave
+        ==============================================================================================
+    engine_api.DestroyEnclaveArgs:
+      type: object
+      properties:
+        enclave_identifier:
+          type: string
+          description: The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to destroy
+      description: |-
+        ==============================================================================================
+        Destroy Enclave
+        ==============================================================================================
+    engine_api.CleanArgs:
+      type: object
+      properties:
+        should_clean_all:
+          type: boolean
+          description: If true, It will clean even the running enclaves
+      description: |-
+        ==============================================================================================
+        Create Enclave
+        ==============================================================================================
+    engine_api.EnclaveNameAndUuid:
+      type: object
+      properties:
+        name:
+          type: string
+        uuid:
+          type: string
+    engine_api.CleanResponse:
+      type: object
+      properties:
+        removed_enclave_name_and_uuids:
+          type: array
+          items:
+            $ref: '#/components/schemas/engine_api.EnclaveNameAndUuid'
+          description: removed enclave name and uuids
+    engine_api.GetServiceLogsArgs:
+      type: object
+      properties:
+        enclave_identifier:
+          type: string
+          description: The identifier of the user service's Kurtosis Enclave
+        service_uuid_set:
+          type: object
+          description: '"Set" of service UUIDs in the enclave'
+          additionalProperties:
+            type: string
+        follow_logs:
+          type: boolean
+          description: If true, It will follow the container logs
+        conjunctive_filters:
+          type: array
+          items:
+            $ref: '#/components/schemas/engine_api.LogLineFilter'
+          description: The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
+        return_all_logs:
+          type: boolean
+          description: If true, return all log lines
+        num_log_lines:
+          type: integer
+          format: int32
+          description: If [return_all_logs] is false, return [num_log_lines]
+      description: |-
+        ==============================================================================================
+        Get User Service Logs
+        ==============================================================================================
+    engine_api.GetServiceLogsResponse:
+      type: object
+      properties:
+        service_logs_by_service_uuid:
+          $ref: '#/components/schemas/engine_api.LogLine'
+        not_found_service_uuid_set:
+          type: object
+          description: |-
+            A set of service GUIDs requested by the user that were not found in the logs database, could be related that users send
+            a wrong GUID or a right GUID for a service that has not sent any logs so far
+          additionalProperties:
+            type: string
+    engine_api.LogLine:
+      type: object
+      properties:
+        line:
+          type: array
+          items:
+            type: string
+      description: TODO add timestamp as well, for when we do timestamp-handling on the client side
+    engine_api.LogLineFilter:
+      type: object
+      properties:
+        operator:
+          $ref: '#/components/schemas/engine_api.LogLineOperator'
+        text_pattern:
+          type: string
+    engine_api.LogLineOperator:
+      type: string
+      enum:
+        - LogLineOperator_DOES_CONTAIN_TEXT
+        - LogLineOperator_DOES_NOT_CONTAIN_TEXT
+        - LogLineOperator_DOES_CONTAIN_MATCH_REGEX
+        - LogLineOperator_DOES_NOT_CONTAIN_MATCH_REGEX
+      description: |-
+        0 - LogLineOperator_DOES_CONTAIN_TEXT 
+        1 - LogLineOperator_DOES_NOT_CONTAIN_TEXT 
+        2 - LogLineOperator_DOES_CONTAIN_MATCH_REGEX 
+        3 - LogLineOperator_DOES_NOT_CONTAIN_MATCH_REGEX 
+    google.protobuf.Empty:
+      type: object
+      properties: {}
+    google.protobuf.Timestamp:
+      type: object
+      properties:
+        seconds:
+          type: integer
+          format: int64
+        nanos:
+          type: integer
+          format: int32
