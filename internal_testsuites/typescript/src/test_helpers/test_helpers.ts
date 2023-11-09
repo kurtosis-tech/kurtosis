@@ -60,9 +60,7 @@ const DEFAULT_SHOULD_RETURN_ALL_LOGS = true
 const DEFAULT_NUM_LOG_LINES = 0 // this value doesn't matter since default is to return all logs
 
 // skip flaky tests period
-
-const SKIP_FLAKY_TEST_START_DATE = new Date('2023-11-09');
-const ONE_WEEK_AFTER_START_DATE = new Date('2023-11-17');
+const SKIP_FLAKY_TEST_END_DATE = new Date('2023-11-17');
 
 
 // for validating data store is healthy
@@ -614,8 +612,9 @@ function getServiceWithLogLinesConfig(logLines: ServiceLog[]): string {
 }
 
 export function shouldSkipFlakyTest(testName: string): boolean {
-    if (SKIP_FLAKY_TEST_START_DATE < ONE_WEEK_AFTER_START_DATE) {
-        log.info(`Skipping ${testName}, because it is too noisy, until ${ONE_WEEK_AFTER_START_DATE} or until we fix the flakyness`)
+    const now = new Date()
+    if (now < SKIP_FLAKY_TEST_END_DATE) {
+        log.info(`Skipping ${testName}, because it is too noisy, until ${SKIP_FLAKY_TEST_END_DATE} or until we fix the flakyness`)
         return true
     }
     return false
