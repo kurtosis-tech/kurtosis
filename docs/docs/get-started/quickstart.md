@@ -39,7 +39,7 @@ You should get output that looks like:
 
 ![quickstart-default-run.png](/img/home/quickstart-default-run.png)
 
-By running this command, you've seen three [basic concepts][basic-concepts] of Kurtosis:
+By running this command, you can see the [basic concepts][basic-concepts] of Kurtosis at work:
 
 1. `github.com/kurtosis-tech/basic-service-package` is the [package][basic-package] you used, and it contains the logic to spin up your application.
 2. Your application runs in an [enclave][basic-enclave], which you named `quickstart` via the `--enclave` flag.
@@ -48,7 +48,7 @@ By running this command, you've seen three [basic concepts][basic-concepts] of K
 Inspect your deployed application
 --------------------
 
-Cmd-click, or copy-and-paste to your browser, the URL next to the service called `service-c-1` in your CLI output. This local port binding is handled automatically by Kurtosis, ensuring no port conflicts happen on your local machine as you work with your environments. You should see a simple frontend:
+Command-click, or copy-and-paste to your browser, the URL next to the service called `service-c-1` in your CLI output. This local port binding is handled automatically by Kurtosis, ensuring no port conflicts happen on your local machine as you work with your environments. You should see a simple frontend:
 
 ![quickstart-default-service-c-frontend.png](/img/home/quickstart-default-service-c-frontend.png)
 
