@@ -68,7 +68,7 @@ export const EnclaveConfigurationForm = forwardRef<
           return value;
       }
     };
-
+    console.log(kurtosisPackage.args)
     const newArgs: Record<string, any> = kurtosisPackage.args
       .map((arg): [PackageArg, any] => [
         arg,
