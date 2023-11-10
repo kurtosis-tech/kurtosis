@@ -180,11 +180,14 @@ In the output, you will see a block called `ENV:`. In that block, you should see
 
 </details>
 
-With a JSON (or YAML) interface to packages, developers don't have to dig through low-level docs, or track down the maintainers of Service A, B, or C to learn how to deploy their software in each of these different ways. They just use the arguments of the package to get their environments the way they want it.
+With a JSON (or YAML) interface to packages, developers don't have to dig through low-level docs, or track down the maintainers of Service A, B, or C to learn how to deploy their software in each of these different ways. They just use the arguments of the package to get their environments the way they want them.
 
-To continue working with Kurtosis by using packages that have already been written, take a look through our [code examples][code-examples].
+--------
 
-To learn how to write your own package, check out our guide on [writing your first package][write-your-first-package].
+Now that you've use the Kurtosis CLI to run a package, inspect the resulting environment, and then modify it by passing in a JSON config, you can take either one of these next steps:
+
+- To continue working with Kurtosis by using packages that have already been written, take a look through our [code examples][code-examples].
+- To learn how to write your own package, check out our guide on [writing your first package][write-your-first-package].
 
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
