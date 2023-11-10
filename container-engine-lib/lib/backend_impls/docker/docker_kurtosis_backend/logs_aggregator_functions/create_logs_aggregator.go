@@ -31,7 +31,7 @@ func CreateLogsAggregator(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator container.")
 	}
 	if found {
-		logrus.Warnf("Found existing logs aggregator; cannot start a new one.")
+		logrus.Debugf("Found existing logs aggregator; cannot start a new one.")
 		logsAggregatorObj, _, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred getting existing logs aggregator.")
