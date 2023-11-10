@@ -88,7 +88,7 @@ You can also do a set of actions you would expect from a standard Docker or Kube
 Modify your deployed application with a JSON configuration
 ----------
 
-Kurtosis packages take in JSON parameters, allowing developers to make high-level modifications to their deployed applications without needing to know the lower-level details like which environment variables, command line arguments, or configuration files to change. To see how this works, lets run the same application with 2 instances of Service A and Service B (perhaps to test high availability), and a feature flag turned on across all three services called `party_mode`:
+Kurtosis packages take in JSON parameters, allowing developers to make high-level modifications to their deployed applications. To see how this works, run:
 
 ```console
 kurtosis run --enclave quickstart github.com/kurtosis-tech/basic-service-package \
@@ -98,13 +98,23 @@ kurtosis run --enclave quickstart github.com/kurtosis-tech/basic-service-package
     "party_mode": true}'
 ```
 
-This will update your enclave with the new configuration of the package, resulting in an output like:
+This runs the same application, but with 2 instances of Service A and Service B (perhaps to test high availability), and a feature flag turned on across all three services called `party_mode`. Your output should look like:
 
 ![quickstart-params-output.png](/img/home/quickstart-params-output.png)
 
-### Check that changing the number of instances of each service works
+By changing the JSON input to the package, you made the following deployment-level changes:
+- Changed number of instances of Service A and Service B
+- Changed the configuration files of the services so they are aware of locations of each service
+- Turned on a feature flag on Service A using its configuration file
+- Turned on a feature flag on Service B using a command line flag to its server process
+- Turned on a feature flag on Service C using an environment variable on its container
 
-Here you can see 2 instances of Service A and 2 instances of Service B in the output, and you can verify that the configuration file of Service C has been properly changed so it can talk to all 4 of them:
+To see that each of these changes happened, follow the following:
+
+
+<details><summary>See how the count of each service changed</summary>
+
+You can see 2 instances of Service A and 2 instances of Service B in the CLI output, and you can verify that the configuration file of Service C has been properly changed so it can talk to all 4 of them:
 
 ```console
 kurtosis files download quickstart service-c-rendered-config
@@ -120,20 +130,24 @@ You should see the rendered config file with the contents:
 }
 ```
 
-### See feature flag turned on by an environment variable
+<details>
 
-Now, if you click through to Service C, you can see it is in party mode. It's claiming that it's in party mode because an environment variable on its container told it to:
+<details><summary>See feature flag turned on by an environment variable</summary>
+
+If you go to the new URL for Service C's frontend, you can see it is in party mode. It says that it's in party mode because of an environment variable on its container:
 
 ![quickstart-service-c-partying.png](/img/home/quickstart-service-c-partying.png)
 
-To verify the environment variable flag, run 
+To see the environment variable flag is indeed enabled, run 
 ```console
 kurtosis service inspect quickstart service-c-1
 ```
 
 In the output, you will see a block called `ENV:`. In that block, you should see the environment variable `PARTY_MODE: true`.
 
-### See feature flag turned on by an command line argument
+</details>
+
+<details><summary>See feature flag turned on by an command line argument</summary>
 
 Service B also has the `party_mode` flag turned on. However, Service B is triggered by a command line flag, rather than an environment variable. To see this, run:
 ```console
@@ -146,9 +160,11 @@ CMD:
   --party-mode
 ```
 
-### See feature flag turned on by a configuration file on disk
+</details>
 
-Finally, Service A also has the `party_mode` flagged turned on. For Service A, the flag is turned on via its configuration file. You can see that with by downloading the `service-a-rendered-config` files artifact, as you've seen before:
+<details><summary>See feature flag turned on by a configuration file on disk</summary>
+
+Service A also has the `party_mode` flagged turned on. For Service A, the flag is turned on via its configuration file. You can see that with by downloading the `service-a-rendered-config` files artifact, as you've seen before:
 
 ```console
 kurtosis files download quickstart service-a-rendered-config
@@ -162,6 +178,8 @@ You should see the config file contents with the feature flag turned on:
     "party_mode": true
 }
 ```
+
+</details>
 
 In this section, you've used one high-level JSON configuration to modify the deployment of your backend application in a variety of low-level ways:
 - Changing the number of instances of each service
