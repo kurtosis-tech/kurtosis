@@ -64,18 +64,16 @@ export const PortsTable = ({ privatePorts, publicPorts, publicIp }: PortsTablePr
             ) : (
               row.original.link
             )}
-            {
-              /*kurtosisClient.isRunningInCloud()*/ true && (
-                <Tooltip
-                  label={
-                    "Only enclaves started using the CLI will have their ports available. This port may not work if it was started using the app."
-                  }
-                  shouldWrapChildren
-                >
-                  <Icon m="0 10px" as={FiAlertTriangle} color={"orange.400"} />
-                </Tooltip>
-              )
-            }
+            {kurtosisClient.isRunningInCloud() && (
+              <Tooltip
+                label={
+                  "Only enclaves started using the CLI will have their ports available. This port may not work if it was started using the app."
+                }
+                shouldWrapChildren
+              >
+                <Icon m="0 10px" as={FiAlertTriangle} color={"orange.400"} />
+              </Tooltip>
+            )}
           </Text>
         ),
       }),
