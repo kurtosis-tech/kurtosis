@@ -50,7 +50,7 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
           color={"grey"}
           minW={"200px"}
         >
-          <>{timestamp.toLocal().toFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ")}</>
+          <>{timestamp.toLocal().toFormat("yyyy-MM-dd HH:mm:ss ZZZZ")}</>
         </Box>
       )}
       <Box
