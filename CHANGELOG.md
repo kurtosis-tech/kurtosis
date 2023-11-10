@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.85.11](https://github.com/kurtosis-tech/kurtosis/compare/0.85.10...0.85.11) (2023-11-10)
+
+
+### Features
+
+* add nix flake for setting up dev env ([#1641](https://github.com/kurtosis-tech/kurtosis/issues/1641)) ([d968b26](https://github.com/kurtosis-tech/kurtosis/commit/d968b264ecf63dc1bb517bc387597a5560642757))
+
+
+### Bug Fixes
+
+* minor enclave config changes and ui build ([#1737](https://github.com/kurtosis-tech/kurtosis/issues/1737)) ([e349ce8](https://github.com/kurtosis-tech/kurtosis/commit/e349ce80dab01ce92553d266b177eb48e507b175))
+
 ## [0.85.10](https://github.com/kurtosis-tech/kurtosis/compare/0.85.9...0.85.10) (2023-11-09)
 
 
