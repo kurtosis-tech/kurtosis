@@ -13,7 +13,7 @@ export const Navbar = ({ isRunningInCloud, baseApplicationUrl }: NavbarProps) =>
   const location = useLocation();
 
   return (
-    <Navigation isRunningInCloud={isRunningInCloud} baseApplicationUrl={baseApplicationUrl}>
+    <Navigation baseApplicationUrl={baseApplicationUrl}>
       <Link to={"/"}>
         <NavButton
           label={"View enclaves"}
