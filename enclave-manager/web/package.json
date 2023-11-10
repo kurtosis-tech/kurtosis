@@ -25,7 +25,10 @@
     "react-scripts": "5.0.1",
     "react-virtuoso": "^4.6.2",
     "streamsaver": "^2.0.6",
-    "true-myth": "^7.1.0"
+    "true-myth": "^7.1.0",
+    "ansi-to-html": "^0.7.2",
+    "has-ansi": "^5.0.1",
+    "html-react-parser": "^4.2.2"
   },
   "devDependencies": {
     "@types/luxon": "^3.3.3",

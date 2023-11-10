@@ -71,6 +71,7 @@ export const EnclaveConfigurationForm = forwardRef<
     };
 
     const newArgs: Record<string, any> = kurtosisPackage.args
+      .filter((arg) => arg.name !== "plan") // plan args needs to be filtered out as it's not an actual arg
       .map((arg): [PackageArg, any] => [
         arg,
         transformValue(
