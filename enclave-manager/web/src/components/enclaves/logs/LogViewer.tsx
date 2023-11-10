@@ -47,13 +47,11 @@ export const LogViewer = ({
   };
 
   const getLogsValue = () => {
-    return (
-      logLines
-        .map(({ message }) => message)
-        .filter(isDefined)
-        .map(stripAnsi)
-        .join("\n")
-    );
+    return logLines
+      .map(({ message }) => message)
+      .filter(isDefined)
+      .map(stripAnsi)
+      .join("\n");
   };
 
   return (
