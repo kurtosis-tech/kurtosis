@@ -24,6 +24,7 @@
     "react-router-dom": "^6.17.0",
     "react-scripts": "5.0.1",
     "react-virtuoso": "^4.6.2",
+    "streamsaver": "^2.0.6",
     "true-myth": "^7.1.0"
   },
   "devDependencies": {
@@ -31,6 +32,7 @@
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "@types/streamsaver": "^2.0.4",
     "monaco-editor": "^0.44.0",
     "prettier": "3.0.3",
     "prettier-plugin-organize-imports": "^3.2.3",
