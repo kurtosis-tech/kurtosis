@@ -26,6 +26,7 @@ import {
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
 import { assertDefined, asyncResult, isDefined } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
+import { KURTOSIS_CLOUD_HOST } from "../constants";
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
@@ -52,6 +53,10 @@ export abstract class KurtosisClient {
     this.baseApplicationUrl = childUrl;
     console.log("cloudUrl", this.cloudUrl);
     console.log("baseApplicationUrl", this.baseApplicationUrl);
+  }
+
+  isRunningInCloud() {
+    return this.cloudUrl.host.toLowerCase().includes(KURTOSIS_CLOUD_HOST);
   }
 
   abstract getHeaderOptions(): { headers?: Headers };

@@ -1,5 +1,8 @@
 import { FiHome } from "react-icons/fi";
+import { PiLinkSimpleBold } from "react-icons/pi";
 import { Link, useLocation } from "react-router-dom";
+import { KURTOSIS_CLOUD_CONNECT_URL } from "../client/constants";
+import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
 import { NavButton, Navigation } from "../components/Navigation";
 
 export type NavbarProps = {
@@ -8,6 +11,7 @@ export type NavbarProps = {
 
 export const Navbar = ({ baseApplicationUrl }: NavbarProps) => {
   const location = useLocation();
+  const kurtosisClient = useKurtosisClient();
 
   return (
     <Navigation baseApplicationUrl={baseApplicationUrl}>
@@ -18,6 +22,11 @@ export const Navbar = ({ baseApplicationUrl }: NavbarProps) => {
           isActive={location.pathname === "/" || location.pathname.startsWith("/enclave")}
         />
       </Link>
+      {kurtosisClient.isRunningInCloud() && (
+        <Link to={KURTOSIS_CLOUD_CONNECT_URL}>
+          <NavButton label={"Link your CLI"} Icon={<PiLinkSimpleBold />} isActive={true} />
+        </Link>
+      )}
       {/*<Link to={"/catalog"}>*/}
       {/*  <NavButton label={"View catalog"} Icon={<FiPackage />} isActive={location.pathname.startsWith("/catalog")} />*/}
       {/*</Link>*/}
