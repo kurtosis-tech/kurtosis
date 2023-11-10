@@ -44,7 +44,7 @@ export const KurtosisAlertModal = ({
         </ModalBody>
         <ModalFooter>
           <Flex justifyContent={"flex-end"} gap={"12px"}>
-            <Button color={"gray.100"} onClick={onClose} disabled={isLoading}>
+            <Button color={"gray.100"} onClick={onClose} isDisabled={isLoading}>
               Dismiss
             </Button>
             <Button onClick={onConfirm} {...confirmButtonProps} isLoading={isLoading}>

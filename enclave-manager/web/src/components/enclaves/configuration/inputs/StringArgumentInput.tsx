@@ -8,6 +8,8 @@ export const StringArgumentInput = (props: Omit<KurtosisArgumentTypeInputProps, 
   return (
     <Input
       {...register(props.name, { disabled: props.disabled, required: props.isRequired, validate: props.validate })}
+      width={props.width}
+      size={props.size || "lg"}
     />
   );
 };
