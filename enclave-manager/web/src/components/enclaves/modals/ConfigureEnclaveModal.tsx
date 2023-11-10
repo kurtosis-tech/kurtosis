@@ -237,7 +237,7 @@ export const ConfigureEnclaveModal = ({
                   name={"enclaveName"}
                   disabled={isDefined(existingEnclave)}
                   validate={(value) => {
-                    if (!isEnclaveNameAllowed(value)) {
+                    if (value.length > 0 && !isEnclaveNameAllowed(value)) {
                       return `The enclave name must match ${allowedEnclaveNamePattern}`;
                     }
                   }}
