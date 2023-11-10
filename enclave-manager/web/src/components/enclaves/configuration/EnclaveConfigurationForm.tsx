@@ -68,13 +68,14 @@ export const EnclaveConfigurationForm = forwardRef<
           return value;
       }
     };
-    console.log(kurtosisPackage.args)
+
     const newArgs: Record<string, any> = kurtosisPackage.args
+      .filter((arg) => arg.name !== "plan") // plan args needs to be filtered out as it's not an actual arg
       .map((arg): [PackageArg, any] => [
         arg,
         transformValue(
           arg.typeV2?.topLevelType,
-          data.args[arg.name],
+          data.args[arg.name], // data.args object is undefined
           arg.typeV2?.topLevelType === ArgumentValueType.LIST ? arg.typeV2?.innerType1 : arg.typeV2?.innerType2,
         ),
       ])
