@@ -794,13 +794,18 @@ jobs:
       # Execute port print
       - run: "${KURTOSIS_BINPATH} port print test-datastore datastore-0 grpc"
 
+      # Stop test-datastore enclave
+      - run: "${KURTOSIS_BINPATH} enclave stop test-datastore"
+
+      # Ensure we can still inspect stopped enclaves
+      - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
+
+      # Clean all before compose import to free resources
+      - run: "${KURTOSIS_BINPATH} clean -a"
+
       # Execute docker compose import
       - run: "${KURTOSIS_BINPATH} import --enclave test-import --env << pipeline.parameters.dockerimport-cli-dotenv-relative-path >> << pipeline.parameters.dockerimport-cli-dockerfile-relative-path >>"
-
-
-      - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
-      - run: "${KURTOSIS_BINPATH} enclave stop test-datastore"
-      - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"   # Ensure we can still inspect stopped enclaves
 
       # Execute engine functions
       - run: "${KURTOSIS_BINPATH} engine stop"
