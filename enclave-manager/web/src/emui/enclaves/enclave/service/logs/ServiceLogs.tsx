@@ -20,8 +20,11 @@ type ServiceLogsProps = {
   service: ServiceInfo;
 };
 
-// @ts-ignore
-export async function reTryCatch(callback, times: number = 1, isRetry: boolean = false) {
+export async function reTryCatch<R>(
+  callback: (isRetry: boolean) => Promise<R>,
+  times: number = 1,
+  isRetry: boolean = false,
+): Promise<R> {
   try {
     return await callback(isRetry);
   } catch (error) {
@@ -42,31 +45,29 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
   useEffect(() => {
     let canceled = false;
     const abortController = new AbortController();
-    if (kurtosisClient) {
-      setLogLines([]);
-      const callback = async (isRetry: boolean) => {
-        // TODO: when we have a way to track where we left off, we don't have to clear and re-read everything
-        if (isRetry) setLogLines([]);
-        console.info("Created a new logging stream");
-        try {
-          for await (const lineGroup of await kurtosisClient.getServiceLogs(abortController, enclave, [service])) {
-            if (canceled) return;
-            const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
-            if (!isDefined(lineGroupForService)) continue;
-            const parsedLines = serviceLogLineToLogLineProps(lineGroupForService.line, lineGroupForService.timestamp);
-            setLogLines((logLines) => [...logLines, ...parsedLines]);
-          }
-        } catch (error: any) {
-          if (canceled) {
-            console.info("The logging stream was successfully canceled (not an error)", error);
-            return;
-          }
-          console.error("An unhandled error occurred while streaming logs", error);
-          throw error;
+    setLogLines([]);
+    const callback = async (isRetry: boolean) => {
+      // TODO: when we have a way to track where we left off, we don't have to clear and re-read everything
+      if (isRetry) setLogLines([]);
+      console.info("Created a new logging stream");
+      try {
+        for await (const lineGroup of await kurtosisClient.getServiceLogs(abortController, enclave, [service])) {
+          if (canceled) return;
+          const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
+          if (!isDefined(lineGroupForService)) continue;
+          const parsedLines = serviceLogLineToLogLineProps(lineGroupForService.line, lineGroupForService.timestamp);
+          setLogLines((logLines) => [...logLines, ...parsedLines]);
         }
-      };
-      reTryCatch(callback, 100);
-    }
+      } catch (error: any) {
+        if (canceled) {
+          console.info("The logging stream was successfully canceled (not an error)", error);
+          return;
+        }
+        console.error("An unhandled error occurred while streaming logs", error);
+        throw error;
+      }
+    };
+    reTryCatch(callback, 100);
     return () => {
       canceled = true;
       abortController.abort();

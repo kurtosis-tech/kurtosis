@@ -56,7 +56,7 @@ export abstract class KurtosisClient {
   }
 
   isRunningInCloud() {
-    return this.cloudUrl.host.toLowerCase().includes(KURTOSIS_CLOUD_HOST);
+    return !this.cloudUrl.host.toLowerCase().includes(KURTOSIS_CLOUD_HOST);
   }
 
   abstract getHeaderOptions(): { headers?: Headers };
