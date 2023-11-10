@@ -52,7 +52,7 @@ Cmd-click, or copy-and-paste to your browser, the URL next to the service called
 
 ![quickstart-default-service-c-frontend.png](/img/home/quickstart-default-service-c-frontend.png)
 
-Here, Service C is claiming to depend on Service A and Service B, and has a configuration file containing the private IP addresses that it can use to communicate to Service A and Service B. To verify this is true, download the files artifact representing this config file with:
+Service C is depends on Service A and Service B, and has a configuration file containing their private IP addresses that it can use to communicate with them. To check that this is true, copy the files artifact containing this config file out of the enclave:
 
 ```console
 kurtosis files download quickstart service-c-rendered-config
@@ -114,8 +114,7 @@ kurtosis files download quickstart service-c-rendered-config
 
 Now, if you click through to Service C, you can see it is in party mode. It's claiming that it's in party mode because an environment variable on its container told it to:
 
-![quickstart-service-c-partying.png](/img/home/quickstart-service-c-partyin
-g.png)
+![quickstart-service-c-partying.png](/img/home/quickstart-service-c-partying.png)
 
 To verify the environment variable flag, run 
 ```console
