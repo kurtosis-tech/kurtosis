@@ -1,8 +1,11 @@
 import { Flex, IconButton, IconButtonProps, Image, Tooltip } from "@chakra-ui/react";
 import { PropsWithChildren } from "react";
-import { NavbarProps } from "../emui/Navbar";
 
-export const Navigation = ({ baseApplicationUrl, children }: PropsWithChildren & NavbarProps) => {
+export type NavigationProps = {
+  baseApplicationUrl: URL;
+};
+
+export const Navigation = ({ baseApplicationUrl, children }: PropsWithChildren & NavigationProps) => {
   return (
     <Flex
       as={"nav"}
