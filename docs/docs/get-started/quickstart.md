@@ -104,7 +104,7 @@ Here you can see 2 instances of Service A and 2 instances of Service B in the ou
 ```console
 kurtosis files download quickstart service-c-rendered-config
 ```
-```
+```console
 ~ cat service-c-rendered-config/service-config.json
 {
     "service-a": [{"name": "service-a-1", "uri": "172.16.16.4:8501"},{"name": "service-a-2", "uri": "172.16.16.7:8501"}],
@@ -117,12 +117,35 @@ Now, if you click through to Service C, you can see it is in party mode. It's cl
 ![quickstart-service-c-partying.png](/img/home/quickstart-service-c-partyin
 g.png)
 
-To see if that's true, run 
-```
+To verify the environment variable flag, run 
+```console
 kurtosis service inspect quickstart service-c-1
 ```
 
 In the output, you will see a block called `ENV:`. In that block, you should see the environment variable setting `PARTY_MODE: true`.
+
+Service B also has the `party_mode` flag turned on. However, Service B is triggered by a command line flag, rather than an environment variable. To see this, run:
+```console
+kurtosis service inspect quickstart service-b-1
+```
+
+You should see, in the output, the CMD block indicating that the flag was passed as a command line argument to the server process:
+```console
+CMD:
+  --party-mode
+```
+
+Finally, Service A also has the `party_mode` flagged turned on. For Service A, the flag is turned on via its configuration file. You can see that with by downloading the `service-a-rendered-config` files artifact, as you've seen before:
+
+```console
+kurtosis files download quickstart service-a-rendered-config
+```
+```console
+~ cat service-a-rendered-config/service-config.json
+{
+    "party_mode": true
+}
+```
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
