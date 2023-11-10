@@ -41,9 +41,9 @@ You should get output that looks like:
 
 By running this command, you've seen three [basic concepts][basic-concepts] of Kurtosis:
 
-1. The [package][basic-package] you used, remotely hosted on Github at `github.com/kurtosis-tech/basic-service-package`
-2. The [enclave][basic-enclave] you created, which was named `quickstart` via the `--enclave` flag.
-3. The [files artifacts][files-artifacts-reference] stored in the enclave, which represent the rendered configuration files of each service.
+1. `github.com/kurtosis-tech/basic-service-package` is the [package][basic-package] you used, and it contains the logic to spin up your application.
+2. Your application runs in an [enclave][basic-enclave], which you named `quickstart` via the `--enclave` flag.
+3. Your enclave has both services and [files artifacts][basic-files-artifact], which contain the dynamically rendered configuration files of each service.
 
 Inspect your deployed application
 --------------------
@@ -199,6 +199,7 @@ Now that you've use the Kurtosis CLI to run a package, inspect the resulting env
 [basic-concepts]: ../get-started/basic-concepts.md
 [basic-enclave]: ../get-started/basic-concepts.md#enclave
 [basic-package]: ../get-started/basic-concepts.md#package
+[basic-files-artifact]: ../get-started/basic-concepts.md#files-artifact
 [write-your-first-package]: write-your-first-package.md
 
 <!--------------------------- Advanced Concepts ------------------------------------>
