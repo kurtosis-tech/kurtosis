@@ -1,4 +1,3 @@
-import { useToast } from "@chakra-ui/react";
 import { FilesArtifactNameAndUuid } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useState } from "react";
 import streamsaver from "streamsaver";
@@ -13,7 +12,6 @@ type DownloadFileButtonProps = {
 
 export const DownloadFileArtifactButton = ({ file, enclave }: DownloadFileButtonProps) => {
   const kurtosisClient = useKurtosisClient();
-  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDownloadClick = async () => {

@@ -123,7 +123,7 @@ export const ConfigureEnclaveModal = ({
     const parsedForm = JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
     kurtosisPackage.args
       .filter((arg) => !isDefined(arg.typeV2?.topLevelType) || arg.typeV2?.topLevelType === ArgumentValueType.JSON)
-      .map((arg) => {
+      .forEach((arg) => {
         if (parsedForm.args[arg.name]) {
           try {
             parsedForm.args[arg.name] = JSON.stringify(JSON.parse(parsedForm.args[arg.name]), undefined, 4);

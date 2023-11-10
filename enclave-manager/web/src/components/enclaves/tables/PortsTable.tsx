@@ -91,7 +91,7 @@ export const PortsTable = ({ privatePorts, publicPorts, publicIp }: PortsTablePr
         ),
       }),
     ],
-    [],
+    [kurtosisClient],
   );
 
   return (

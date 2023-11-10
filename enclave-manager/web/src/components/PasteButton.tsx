@@ -18,7 +18,9 @@ export const PasteButton = <IsIconButton extends boolean>({
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePasteClick = async () => {
+    setIsLoading(true);
     const value = await navigator.clipboard.readText();
+    setIsLoading(false);
     if (isDefined(value)) {
       onValuePasted(value);
     }
