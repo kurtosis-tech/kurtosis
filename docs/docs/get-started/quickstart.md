@@ -106,7 +106,7 @@ If you go to the URL of any of the services, for example Service C, you will see
 
 ![quickstart-service-c-partying.png](/img/home/quickstart-service-c-partying.png)
 
-Each service is partying, but they're each partying for different reasons, so you can see many of the ways that you can influence application deployment changes with Kurtosis. By changing the JSON input to the package, you did all of these:
+Each service is partying, but they're each partying for different reasons at the configuration level. Here, you can see some of the ways that you can modify application deployments with Kurtosis. By changing the JSON input to the package, you did all of these:
 - Changed number of instances of Service A and Service B
 - Turned on a feature flag on Service A using its configuration file
 - Turned on a feature flag on Service B using a command line flag to its server process
@@ -171,7 +171,7 @@ CMD:
 <details><summary><b>See a feature flag turned on by an environment variable</b></summary>
 
 Service C has the `party_mode` flag turned on by virtue of an environment variable. To see the environment variable flag is indeed enabled, run:
- 
+
 ```console
 kurtosis service inspect quickstart service-c-1
 ```
@@ -180,14 +180,12 @@ In the output, you will see a block called `ENV:`. In that block, you should see
 
 </details>
 
-In this section, you used one high-level JSON configuration to modify the deployment of your backend application in a variety of low-level ways:
-- Changing the number of instances of each service
-- Turning on a feature flag on each service, using:
-  - Environment variables
-  - Command line flags
-  - Configuration files
+With a JSON (or YAML) interface to packages, developers don't have to dig through low-level docs, or track down the maintainers of Service A, B, or C to learn how to deploy their software in each of these different ways. They just use the arguments of the package to get their environments the way they want it.
 
-The main benefit here is that you didn't have to dig through low-level docs, or track down the maintainers of Service A, B, or C to learn how to deploy their software in each of these different ways. You just had to use the arguments of the package to get your environment the way you wanted it!
+To continue working with Kurtosis by using packages that have already been written, take a look through our [code examples][code-examples] docs.
+
+To learn how to write your own package, continue to our guide on [writing your first package][write-your-first-package].
+
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
@@ -198,7 +196,7 @@ The main benefit here is that you didn't have to dig through low-level docs, or 
 [basic-concepts]: ../get-started/basic-concepts.md
 [basic-enclave]: ../get-started/basic-concepts.md#enclave
 [basic-package]: ../get-started/basic-concepts.md#package
-[how-to-set-up-postgres-guide]: write-your-first-package.md
+[write-your-first-package]: write-your-first-package.md
 
 <!--------------------------- Advanced Concepts ------------------------------------>
 [architecture-explanation]: ../advanced-concepts/architecture.md
@@ -233,6 +231,7 @@ The main benefit here is that you didn't have to dig through low-level docs, or 
 [plan-reference]: ../advanced-concepts/plan.md
 [future-references-reference]: ../advanced-concepts/future-references.md
 [files-artifacts-reference]: ../advanced-concepts/files-artifacts.md
+[code-examples]: ../code-examples.md
 
 <!--------------------------- Other ------------------------------------>
 <!-- Examples repo -->
