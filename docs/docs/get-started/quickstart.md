@@ -7,18 +7,7 @@ toc_max_heading_level: 2
 sidebar_position: 3
 ---
 
-Introduction
-------------
-
-Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~5 minutes and will walk you through running a containerized application in Kurtosis using the Kurtosis CLI. To see how to write your own package, check out our [quickstart on writing a package.][how-to-set-up-postgres-guide]
-
-:::tip What You'll Do
-1. Install Kurtosis, if you haven't already.
-2. Run a basic application directly from a Kurtosis package hosted on Github.
-3. Inspect your environment with the Kurtosis CLI.
-4. Modify your environment by passing in arguments to the package in JSON format.
-5. Run the application over Kubernetes, instead of Docker.
-:::
+This guide takes ~5 minutes and will walk you through running a containerized application using the Kurtosis CLI. You'll also inspect your running environment, modify the deployed application, and then run it over Kubernetes.
 
 <details><summary>Forget installing! Let me do it on Gitpod</summary>
 
@@ -30,24 +19,24 @@ Click on the "New Workspace" button! You don't have to worry about the Context U
  
 </details>
 
-1. Install dependencies
+1. Install Kurtosis
 --------------------
 Before you get started, make sure you have:
 * [Installed Docker](https://docs.docker.com/get-docker/) and ensure the Docker Daemon is running on your machine (e.g. open Docker Desktop). You can quickly check if Docker is running by running: `docker image ls` from your terminal to see all your Docker images.
 * [Installed Kurtosis](https://docs.kurtosis.com/install/#ii-install-the-cli) or [upgrade Kurtosis to the latest version](https://docs.kurtosis.com/upgrade). You can check if Kurtosis is running using the command: `kurtosis version`, which will print your current Kurtosis engine version and CLI version.
 
-2. Run a basic package from Github
+1. Run a basic package from Github
 ---------------------------------------
 
 Run the following in your CLI:
 
 ```console
-kurtosis run github.com/kurtosis-tech/basic-service-package
+kurtosis run github.com/kurtosis-tech/basic-service-package --enclave quickstart
 ```
 
 You should get output that looks like:
 
-![basic-service-default-output.png](/img/home/basic-service-default-output.png)
+![quickstart-default-run.png](/img/home/quickstart-default-run.png)
 
 Spin up your system!
 --------------------
