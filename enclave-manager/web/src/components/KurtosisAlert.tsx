@@ -1,12 +1,12 @@
-import { Alert, AlertDescription, AlertIcon, AlertTitle } from "@chakra-ui/react";
+import { Alert, AlertDescription, AlertIcon, AlertProps, AlertTitle } from "@chakra-ui/react";
 
-type KurtosisAlertProps = {
+type KurtosisAlertProps = AlertProps & {
   message: string;
 };
 
-export const KurtosisAlert = ({ message }: KurtosisAlertProps) => {
+export const KurtosisAlert = ({ message, ...alertProps }: KurtosisAlertProps) => {
   return (
-    <Alert status="error">
+    <Alert status="error" {...alertProps}>
       <AlertIcon />
       <AlertTitle>Error</AlertTitle>
       <AlertDescription>{message}</AlertDescription>

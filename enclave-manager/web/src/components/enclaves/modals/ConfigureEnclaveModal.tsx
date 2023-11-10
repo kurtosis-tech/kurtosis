@@ -175,24 +175,47 @@ export const ConfigureEnclaveModal = ({
   };
 
   return (
-    <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={handleClose} isCentered size={"5xl"}>
+    <Modal
+      closeOnOverlayClick={false}
+      isOpen={isOpen}
+      onClose={handleClose}
+      isCentered
+      size={"5xl"}
+      scrollBehavior={"inside"}
+    >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader textAlign={"center"}>{!isDefined(existingEnclave) && "New "}Enclave Configuration</ModalHeader>
+        <ModalHeader flex={"0"} textAlign={"center"}>
+          {!isDefined(existingEnclave) && "New "}Enclave Configuration
+        </ModalHeader>
         <ModalCloseButton />
         <EnclaveConfigurationForm
           ref={formRef}
           initialValues={initialValues}
           onSubmit={handleLoadSubmit}
           kurtosisPackage={kurtosisPackage}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flex: "0 1 auto",
+            minHeight: 0,
+          }}
         >
-          <ModalBody p={"0px"}>
-            <Flex fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
+          <ModalBody flex="0 1 auto" p={"0px"} display={"flex"} flexDirection={"column"}>
+            <Flex flex={"0"} fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
               <Text>Configuring</Text>
               <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
             </Flex>
-            {isDefined(error) && <KurtosisAlert message={error} />}
-            <Flex flexDirection={"column"} gap={"24px"} p={"12px 24px"} bg={"gray.900"}>
+            {isDefined(error) && <KurtosisAlert flex={"0"} message={error} />}
+            <Flex
+              flex={"0 1 auto"}
+              overflowY={"scroll"}
+              minHeight={0}
+              flexDirection={"column"}
+              gap={"24px"}
+              p={"12px 24px"}
+              bg={"gray.900"}
+            >
               <Flex justifyContent={"space-between"} alignItems={"center"}>
                 <Tooltip
                   shouldWrapChildren
@@ -223,7 +246,7 @@ export const ConfigureEnclaveModal = ({
               ))}
             </Flex>
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter flex={"0"}>
             <Flex justifyContent={"flex-end"} gap={"12px"}>
               <Button color={"gray.100"} onClick={handleClose} disabled={isLoading}>
                 Cancel

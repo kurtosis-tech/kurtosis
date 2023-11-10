@@ -1,4 +1,4 @@
-import { forwardRef, PropsWithChildren, useImperativeHandle } from "react";
+import { CSSProperties, forwardRef, PropsWithChildren, useImperativeHandle } from "react";
 import { FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import {
   ArgumentValueType,
@@ -12,6 +12,7 @@ type EnclaveConfigurationFormProps = PropsWithChildren<{
   onSubmit: SubmitHandler<ConfigureEnclaveForm>;
   kurtosisPackage: KurtosisPackage;
   initialValues?: ConfigureEnclaveForm;
+  style?: CSSProperties;
 }>;
 
 export type EnclaveConfigurationFormImperativeAttributes = {
@@ -21,7 +22,7 @@ export type EnclaveConfigurationFormImperativeAttributes = {
 export const EnclaveConfigurationForm = forwardRef<
   EnclaveConfigurationFormImperativeAttributes,
   EnclaveConfigurationFormProps
->(({ children, kurtosisPackage, onSubmit, initialValues }: EnclaveConfigurationFormProps, ref) => {
+>(({ children, kurtosisPackage, onSubmit, initialValues, style }: EnclaveConfigurationFormProps, ref) => {
   const methods = useForm<ConfigureEnclaveForm>({ values: initialValues });
 
   useImperativeHandle(
@@ -103,7 +104,9 @@ export const EnclaveConfigurationForm = forwardRef<
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(handleSubmit)}>{children}</form>
+      <form style={style} onSubmit={methods.handleSubmit(handleSubmit)}>
+        {children}
+      </form>
     </FormProvider>
   );
 });
