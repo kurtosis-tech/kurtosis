@@ -1,6 +1,7 @@
-import { CircularProgress } from "@chakra-ui/react";
+import { CircularProgress, Icon } from "@chakra-ui/react";
 import { StarlarkRunResponseLine } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useEffect, useState } from "react";
+import { FiCheck, FiX } from "react-icons/fi";
 import { Location, useLocation, useNavigate, useRevalidator } from "react-router-dom";
 import { LogLineProps } from "../../../../components/enclaves/logs/LogLine";
 import { LogViewer } from "../../../../components/enclaves/logs/LogViewer";
@@ -139,7 +140,7 @@ const ProgressSummary = ({ progress }: ProgressSummaryProps) => {
           <CircularProgress
             size={"18px"}
             value={(100 * progress.step + 1) / (progress.totalSteps + 1)}
-            color={"green"}
+            color={"kurtosisGreen.400"}
           />
           <span>
             {progress.step} / {progress.totalSteps}
@@ -148,7 +149,7 @@ const ProgressSummary = ({ progress }: ProgressSummaryProps) => {
       )}
       {progress.stage === "done" && (
         <>
-          <CircularProgress size={"18px"} value={100} color={"green"} />
+          <Icon as={FiCheck} size={"18px"} color={"kurtosisGreen.400"} />
           <span>
             {progress.totalSteps} / {progress.totalSteps}
           </span>
@@ -156,7 +157,7 @@ const ProgressSummary = ({ progress }: ProgressSummaryProps) => {
       )}
       {progress.stage === "failed" && (
         <>
-          <CircularProgress size={"18px"} value={100} color={"red"} />
+          <Icon as={FiX} size={"18px"} color={"red.400"} />
           <span>Failed</span>
         </>
       )}

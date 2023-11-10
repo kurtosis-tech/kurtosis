@@ -100,9 +100,6 @@ const (
 	packageArgsFileFlagKey      = "args-file"
 	packageArgsFileDefaultValue = ""
 
-	runFailed    = false
-	runSucceeded = true
-
 	imageDownloadFlagKey = "image-download"
 	defaultImageDownload = "missing"
 
@@ -231,7 +228,7 @@ func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	metricsClient metrics_client.MetricsClient,
+	_ metrics_client.MetricsClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -337,7 +334,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, metricsClient, isProduction)
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isProduction)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
@@ -395,12 +392,6 @@ func run(
 	}
 
 	errRunningKurtosis = ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
-	var runStatusForMetrics bool
-	if errRunningKurtosis != nil {
-		runStatusForMetrics = runFailed
-	} else {
-		runStatusForMetrics = runSucceeded
-	}
 
 	if err = enclaveCtx.ConnectServices(ctx, connect); err != nil {
 		logrus.Warnf("An error occurred configuring the user services port forwarding\nError was: %v", err)
@@ -409,11 +400,6 @@ func run(
 	servicesInEnclavePostRun, servicesInEnclaveError := enclaveCtx.GetServices()
 	if servicesInEnclaveError != nil {
 		logrus.Warn("Tried getting number of services in the enclave to log metrics but failed")
-	} else {
-		// TODO(gyani-cloud-metrics) move this to APIC
-		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics); err != nil {
-			logrus.Warn("An error occurred tracking kurtosis run finished event")
-		}
 	}
 
 	if errRunningKurtosis != nil {
@@ -559,7 +545,6 @@ func getOrCreateEnclaveContext(
 	ctx context.Context,
 	enclaveIdentifierOrName string,
 	kurtosisContext *kurtosis_context.KurtosisContext,
-	metricsClient metrics_client.MetricsClient,
 	isProduction bool,
 ) (*enclaves.EnclaveContext, bool, error) {
 
@@ -583,10 +568,6 @@ func getOrCreateEnclaveContext(
 	}
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
-	}
-	subnetworkDisableBecauseItIsDeprecated := false
-	if err = metricsClient.TrackCreateEnclave(enclaveIdentifierOrName, subnetworkDisableBecauseItIsDeprecated); err != nil {
-		logrus.Error("An error occurred while logging the create enclave event")
 	}
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil

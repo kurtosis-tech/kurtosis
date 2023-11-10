@@ -1,7 +1,7 @@
 import { Box } from "@chakra-ui/react";
 import { Editor, OnChange, OnMount } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { isDefined } from "../utils";
 
 type CodeEditorProps = {
@@ -14,8 +14,12 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
   const isReadOnly = !isDefined(onTextChange);
   const [editor, setEditor] = useState<editor.IStandaloneCodeEditor>();
 
-  const handleContentSizeChange = (e: editor.IContentSizeChangedEvent) => {
-    editor?.layout({ width: 500, height: e.contentHeight });
+  const resizeEditorBasedOnContent = () => {
+    if (isDefined(editor)) {
+      const contentHeight = Math.min(750, editor.getContentHeight() || 10);
+      editor.layout({ width: 500, height: contentHeight });
+      editor.layout();
+    }
   };
 
   const handleMount: OnMount = (editor, monaco) => {
@@ -27,17 +31,19 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
       colors: {},
     });
     monaco.editor.setTheme("kurtosis-theme");
-    editor.onDidContentSizeChange(handleContentSizeChange);
   };
+
+  useEffect(() => resizeEditorBasedOnContent(), [editor]);
 
   const handleChange: OnChange = (value, ev) => {
     if (isDefined(value) && onTextChange) {
       onTextChange(value);
+      resizeEditorBasedOnContent();
     }
   };
 
   return (
-    <Box width={"100%"} minHeight={`${editor?.getContentHeight() || 10}px`}>
+    <Box width={"100%"} minHeight={`${editor?.getLayoutInfo().height || 10}px`}>
       <Editor
         onMount={handleMount}
         value={text}
@@ -53,6 +59,9 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
           selectionHighlight: !isReadOnly,
           occurrencesHighlight: !isReadOnly,
           overviewRulerLanes: isReadOnly ? 0 : 3,
+          scrollbar: {
+            alwaysConsumeMouseWheel: false,
+          },
         }}
         defaultLanguage={"json"}
         theme={"vs-dark"}

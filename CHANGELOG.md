@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.85.10](https://github.com/kurtosis-tech/kurtosis/compare/0.85.9...0.85.10) (2023-11-09)
+
+
+### Features
+
+* add download artifacts endpoint to enclave manager ([#1730](https://github.com/kurtosis-tech/kurtosis/issues/1730)) ([3909d5c](https://github.com/kurtosis-tech/kurtosis/commit/3909d5c27ef0450b05aab303a8d6c7986220e01e))
+* improve logging part 1 ([#1728](https://github.com/kurtosis-tech/kurtosis/issues/1728)) ([8f631ae](https://github.com/kurtosis-tech/kurtosis/commit/8f631ae44cf33ba138aaf373374f9a311ebbe645))
+* new emui use monaco as json editor ([#1733](https://github.com/kurtosis-tech/kurtosis/issues/1733)) ([298a0a2](https://github.com/kurtosis-tech/kurtosis/commit/298a0a2b085c24b8f95f1f0449bf750e7bf17ab0))
+
+## [0.85.9](https://github.com/kurtosis-tech/kurtosis/compare/0.85.8...0.85.9) (2023-11-09)
+
+
+### Bug Fixes
+
+* using the CLI+KurtosisCloud should not rely on the local Docker engine running ([#1726](https://github.com/kurtosis-tech/kurtosis/issues/1726)) ([b447196](https://github.com/kurtosis-tech/kurtosis/commit/b447196b3534fce13db09d0c85a6aa2837b02c99)), closes [#1719](https://github.com/kurtosis-tech/kurtosis/issues/1719)
+
+## [0.85.8](https://github.com/kurtosis-tech/kurtosis/compare/0.85.7...0.85.8) (2023-11-08)
+
+
+### Features
+
+* support downloading artifacts in the new emui ([#1720](https://github.com/kurtosis-tech/kurtosis/issues/1720)) ([fbfeaa3](https://github.com/kurtosis-tech/kurtosis/commit/fbfeaa36310dee15be0b259a687ae656a18e470e))
+
+
+### Bug Fixes
+
+* stop all services first to update the service status in the service registration during a `kurtosis enclave stop` execution ([#1712](https://github.com/kurtosis-tech/kurtosis/issues/1712)) ([3d1e142](https://github.com/kurtosis-tech/kurtosis/commit/3d1e14230cb96bd4aeb7613d45cc1fba95b5c2fd)), closes [#1711](https://github.com/kurtosis-tech/kurtosis/issues/1711)
+
+## [0.85.7](https://github.com/kurtosis-tech/kurtosis/compare/0.85.6...0.85.7) (2023-11-08)
+
+
+### Features
+
+* Cancel payment subscription protobuf ([#1669](https://github.com/kurtosis-tech/kurtosis/issues/1669)) ([d2b7ab8](https://github.com/kurtosis-tech/kurtosis/commit/d2b7ab8173f0fed523c2f852d23847321dbf4e00))
+
+
+### Bug Fixes
+
+* emui colormodefixer ([#1716](https://github.com/kurtosis-tech/kurtosis/issues/1716)) ([b6a0b02](https://github.com/kurtosis-tech/kurtosis/commit/b6a0b027d3602cec7561a724ea45350899cb099f))
+
 ## [0.85.6](https://github.com/kurtosis-tech/kurtosis/compare/0.85.5...0.85.6) (2023-11-07)
 
 

@@ -1,6 +1,7 @@
-import { Button, ButtonProps, Icon, Tag } from "@chakra-ui/react";
+import { Button, ButtonGroup, ButtonProps, Icon, Tag } from "@chakra-ui/react";
 import { IoLogoGithub } from "react-icons/io";
 import { isDefined } from "../../../utils";
+import { CopyButton } from "../../CopyButton";
 
 type EnclaveSourceProps = ButtonProps & {
   source: string | null;
@@ -11,17 +12,27 @@ export const EnclaveSourceButton = ({ source, ...buttonProps }: EnclaveSourcePro
     return <Tag>Unknown</Tag>;
   }
 
-  if (source.startsWith("github.com/")) {
-    return (
-      <Button leftIcon={<Icon as={IoLogoGithub} color={"gray.400"} />} variant={"ghost"} size={"xs"} {...buttonProps}>
-        {source.replace("github.com/", "")}
+  let button = (
+    <a href={`https://${source}`} target="_blank" rel="noopener noreferrer">
+      <Button variant={"ghost"} size={"xs"} {...buttonProps}>
+        {source}
       </Button>
+    </a>
+  );
+  if (source.startsWith("github.com/")) {
+    button = (
+      <a href={`https://${source}`} target="_blank" rel="noopener noreferrer">
+        <Button leftIcon={<Icon as={IoLogoGithub} color={"gray.400"} />} variant={"ghost"} size={"xs"} {...buttonProps}>
+          {source.replace("github.com/", "")}
+        </Button>
+      </a>
     );
   }
 
   return (
-    <Button variant={"ghost"} size={"xs"} {...buttonProps}>
-      {source}
-    </Button>
+    <ButtonGroup>
+      {button}
+      <CopyButton contentName={"package id"} valueToCopy={source} isIconButton aria-label={"Copy package id"} />
+    </ButtonGroup>
   );
 };

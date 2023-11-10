@@ -25,7 +25,7 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
   };
 
   return (
-    <Flex borderBottom={"1px solid #444444"} p={"14px 0"} m={"0 16px"} gap={"8px"} alignItems={"center"}>
+    <Flex p={"2px 0"} m={"0 16px"} gap={"8px"} alignItems={"top"}>
       {isDefined(timestamp) && (
         <Box
           as={"pre"}
@@ -35,8 +35,11 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
           fontWeight={600}
           fontFamily={logFontFamily}
           color={"grey"}
+          minW={"200px"}
         >
-          {timestamp.toLocal().toFormat("yyyy-MM-dd HH:MM:ss.SSS ZZZZ")} |
+          <>
+          {timestamp.toLocal().toFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ")}
+          </>
         </Box>
       )}
       <Box
@@ -48,7 +51,7 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
         fontFamily={logFontFamily}
         color={statusToColor(status)}
       >
-        {message || <i>No message</i>}
+        {message}
       </Box>
     </Flex>
   );

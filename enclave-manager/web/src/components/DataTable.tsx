@@ -1,5 +1,4 @@
-import { TriangleDownIcon, TriangleUpIcon } from "@chakra-ui/icons";
-import { chakra, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
+import { Button, Icon, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
 import {
   ColumnDef,
   flexRender,
@@ -13,6 +12,7 @@ import {
 import { type RowSelectionState } from "@tanstack/table-core/src/features/RowSelection";
 import { type OnChangeFn } from "@tanstack/table-core/src/types";
 import { useState } from "react";
+import { BiDownArrowAlt, BiUpArrowAlt } from "react-icons/bi";
 import { assertDefined, isDefined } from "../utils";
 
 declare module "@tanstack/table-core" {
@@ -79,16 +79,22 @@ export function DataTable<Data extends object>({
                   isNumeric={meta?.isNumeric}
                   textAlign={!!meta?.centerAligned ? "center" : undefined}
                 >
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                  {header.column.getIsSorted() && (
-                    <chakra.span pl="4">
-                      {header.column.getIsSorted() === "desc" ? (
-                        <TriangleDownIcon aria-label="sorted descending" />
-                      ) : (
-                        <TriangleUpIcon aria-label="sorted ascending" />
-                      )}
-                    </chakra.span>
+                  {header.column.getCanSort() && (
+                    <Button
+                      variant={"sortableHeader"}
+                      size={"xs"}
+                      rightIcon={
+                        header.column.getIsSorted() === "desc" ? (
+                          <Icon as={BiDownArrowAlt} color={"gray.400"} />
+                        ) : header.column.getIsSorted() === "asc" ? (
+                          <Icon as={BiUpArrowAlt} color={"gray.400"} />
+                        ) : undefined
+                      }
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </Button>
                   )}
+                  {!header.column.getCanSort() && flexRender(header.column.columnDef.header, header.getContext())}
                 </Th>
               );
             })}
@@ -97,16 +103,11 @@ export function DataTable<Data extends object>({
       </Thead>
       <Tbody>
         {table.getRowModel().rows.map((row) => (
-          <Tr key={row.id} bg={row.getIsSelected() ? "kurtosisSelected.100" : ""}>
+          <Tr key={row.id} bg={row.getIsSelected() ? "gray.700" : ""}>
             {row.getVisibleCells().map((cell) => {
               const meta = cell.column.columnDef.meta;
               return (
-                <Td
-                  key={cell.id}
-                  isNumeric={meta?.isNumeric}
-                  textAlign={!!meta?.centerAligned ? "center" : undefined}
-                  width={cell.column.getSize()}
-                >
+                <Td key={cell.id} isNumeric={meta?.isNumeric} textAlign={!!meta?.centerAligned ? "center" : undefined}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </Td>
               );

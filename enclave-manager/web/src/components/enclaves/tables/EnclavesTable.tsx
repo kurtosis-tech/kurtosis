@@ -87,14 +87,17 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
       }),
       columnHelper.accessor("status", {
         header: "Status",
-        cell: (statusCell) => <EnclaveStatus status={statusCell.getValue()} />,
+        cell: (statusCell) => <EnclaveStatus status={statusCell.getValue()} variant={"square"} />,
       }),
       columnHelper.accessor("created", {
         header: "Created",
         cell: (createdCell) => (
-          <Button size={"xs"} variant={"ghost"}>
-            <FormatDateTime dateTime={createdCell.getValue()} format={"relative"} />
-          </Button>
+          <FormatDateTime
+            fontSize={"xs"}
+            fontWeight={"semibold"}
+            dateTime={createdCell.getValue()}
+            format={"relative"}
+          />
         ),
       }),
       columnHelper.accessor("source", {
