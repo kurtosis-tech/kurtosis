@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.85.13](https://github.com/kurtosis-tech/kurtosis/compare/0.85.12...0.85.13) (2023-11-10)
+
+
+### Features
+
+* enable ansi coloring ([#1746](https://github.com/kurtosis-tech/kurtosis/issues/1746)) ([2694464](https://github.com/kurtosis-tech/kurtosis/commit/269446449d0b76fb280be3c5f2ccf334a0d11085))
+
+
+### Bug Fixes
+
+* additional emui feedback changes ([#1749](https://github.com/kurtosis-tech/kurtosis/issues/1749)) ([f52fcef](https://github.com/kurtosis-tech/kurtosis/commit/f52fcefd53e9795c7f4152d901260a933f1aff86))
+* improve some log messages ([#1747](https://github.com/kurtosis-tech/kurtosis/issues/1747)) ([2bc6d08](https://github.com/kurtosis-tech/kurtosis/commit/2bc6d08e59cd1b44204c6b497466fe0b78ca8779))
+
 ## [0.85.12](https://github.com/kurtosis-tech/kurtosis/compare/0.85.11...0.85.12) (2023-11-10)
 
 
