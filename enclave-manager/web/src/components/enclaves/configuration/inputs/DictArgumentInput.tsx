@@ -20,11 +20,13 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
           <KurtosisArgumentTypeInput
             type={keyType}
             name={`${otherProps.name as `args.${string}.${number}.value`}.${i}.key`}
+            validate={otherProps.validate}
             isRequired
           />
           <KurtosisArgumentTypeInput
             type={valueType}
             name={`${otherProps.name as `args.${string}.${number}.value`}.${i}.value`}
+            validate={otherProps.validate}
             isRequired
           />
           <Button onClick={() => remove(i)} leftIcon={<FiDelete />} minW={"90px"}>
