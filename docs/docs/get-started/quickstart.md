@@ -10,23 +10,19 @@ sidebar_position: 3
 Introduction
 ------------
 
-Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~5 minutes and will walk you through how to use a Kurtosis package to spin up a distributed system over Docker. Specifically, you will use the [ethereum-package][ethereum-package] to bootstrap and start-up a private Ethereum testnet. 
-
-Kurtosis is a platform for packaging and launching environments of containerized services and serve two types of users: the author of an environment definition, referred to as a [Kurtosis package][packages-reference], and the consumer or user of the environment definition. This quickstart is intended to put you in the shoes of the consumer - someone who needs a quick and easy way to get a production-like environment to develop and test changes against for your distributed system. A separate guide is [available here][how-to-set-up-postgres-guide] to introduce you to the world of Kurtosis package authoring and how one might define and build an environment with Kurtosis for themselves or for their team.
-
-Further reading about what Kurtosis is and what problems Kurtosis aims to solve, is available on our [introduction page][homepage]. To learn more about our motivations behind starting Kurtosis, go [here][why-kurtosis-explanation].
-
-This guide is in a "code along" format, which means you are expected to follow the code examples and run the Kurtosis CLI commands on your local machine. Everything you run in this guide is free, public, and does not contain any sensitive data. 
+Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~5 minutes and will walk you through running a containerized application in Kurtosis using the Kurtosis CLI. To see how to write your own package, check out our [quickstart on writing a package.][how-to-set-up-postgres-guide]
 
 :::tip What You'll Do
-1. Install Kurtosis and Docker, if you haven't already.
-2. Configure how you want your distributed system to be spun up, using parameters that are passed in at runtime.
-3. Run a single command to spin up your network.
+1. Install Kurtosis, if you haven't already.
+2. Run a basic application directly from a Kurtosis package hosted on Github.
+3. Inspect your environment with the Kurtosis CLI.
+4. Modify your environment by passing in arguments to the package in JSON format.
+5. Run the application over Kubernetes, instead of Docker.
 :::
 
-<details><summary>TL;DR Version</summary>
+<details><summary>Forget installing! Let me do it on Gitpod</summary>
 
-This quickstart is in a "code along" format. You can also dive straight into running the end results and exploring the code too.
+If you don't want to install Docker and Kurtosis, you can run through the quickstart on Gitpod:
  
 **Open the Playground: [Start](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/ethereum-package)**
 
@@ -34,55 +30,24 @@ Click on the "New Workspace" button! You don't have to worry about the Context U
  
 </details>
 
-If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, feel free to post your question in our [Github Discussions Forum][github-discussions] or ask us in our [Discord server](https://discord.gg/jJFG7XBqcY).
-
-Install dependencies
+1. Install dependencies
 --------------------
 Before you get started, make sure you have:
 * [Installed Docker](https://docs.docker.com/get-docker/) and ensure the Docker Daemon is running on your machine (e.g. open Docker Desktop). You can quickly check if Docker is running by running: `docker image ls` from your terminal to see all your Docker images.
 * [Installed Kurtosis](https://docs.kurtosis.com/install/#ii-install-the-cli) or [upgrade Kurtosis to the latest version](https://docs.kurtosis.com/upgrade). You can check if Kurtosis is running using the command: `kurtosis version`, which will print your current Kurtosis engine version and CLI version.
 
-Define how your system should look like
+2. Run a basic package from Github
 ---------------------------------------
 
-Kurtosis environment definitions, referred to here on as [Kurtosis packages][packages-reference], support parameterization out of the box. This means your teams or your communities can leverage the same package with different configurations for their specific use-case, eliminating the need to maintain different Bash scripts or `docker-compose.yml` files per use of the environment definition.
+Run the following in your CLI:
 
-You're now going to create a file to house the parameters that you will pass in at runtime when your system starts up. Check out the README for the [ethereum-package][ethereum-package] to see the full list of configuration options and flags available for use.
-
-Create a file titled: `network_params.yaml` in your home directory, populate it with the below contents, and save your file:
-```yaml
-participants:
-	- el_client_type: geth
-		el_client_image: ethereum/client-go:latest
-		el_client_log_level: ''
-		el_extra_params: []
-		cl_client_type: lighthouse
-		cl_client_image: sigp/lighthouse:latest
-		cl_client_log_level: ''
-		beacon_extra_params: []
-		validator_extra_params: []
-		builder_network_params:
-		count: 2
-network_params:
-  network_id: '3151908'
-  deposit_contract_address: '0x4242424242424242424242424242424242424242'
-  seconds_per_slot: 12
-  slots_per_epoch: 32
-  num_validator_keys_per_node: 64
-  preregistered_validator_keys_mnemonic: 'giant issue aisle success illegal bike spike
-    question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy
-    very lucky have athlete'
-  deneb_for_epoch: 500
-verifications_epoch_limit: 5
-global_client_log_level: info
-additional_services: []
-
+```console
+kurtosis run github.com/kurtosis-tech/basic-service-package
 ```
-The arrays in the `participant` object enables you to define the specific Ethereum client types and respective image tags you want to use in your network, alongside any extra parameters for the validator, beacon, or builder as well as some useful flags for the verbosity of log lines. In this example you'll be using the `latest` image tags for the Geth and Lighthouse clients and have specified `2` nodes to be spun up.
 
-Meanwhile, the `network_params` object defines the specific parameters for the network, including traits like the `network_id`, `seconds_per_slot`, and `slots_per_epoch`. 
+You should get output that looks like:
 
-Lastly, there are a few fields that let you, as a consumer, define the log verbosity level and whether or not you'd like additional services and infrastructure to be spun up with your distributed system. In this example, you will not spin up extra monitoring tools (via the `launch_additional_service` field) or Proposer-Builder Separation (PBS) infrastructure (via the `mev_type` field).
+![basic-service-default-output.png](/img/home/basic-service-default-output.png)
 
 Spin up your system!
 --------------------

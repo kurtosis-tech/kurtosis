@@ -10,13 +10,13 @@ Package
 
 A package defines the set up logic for a containerized backend. Packages can be accessed via Github locators.
 
-```bash 
+```console
 kurtosis run github.com/kurtosis-tech/basic-service-package
 ```
 
 Packages can accept a set of parameters, defined by the package author, which enable the package consumer to modify their deployed backend at a high-level without needing to know how to configure each individual service.
 
-```bash
+```console
 kurtosis run github.com/kurtosis-tech/basic-service-package \
   '{"service_a_count": 2, 
     "service_b_count": 2, 
@@ -34,7 +34,7 @@ Plan
 
 The "plan" is the series of instructions, encoded in a package, that runs in an enclave. Each instruction in a plan is a basic building block for spinning up a containerized backend. You can see the plan that a package will run by "dry-running" the package:
 
-```bash
+```consoles
 kurtosis run --dry-run github.com/kurtosis-tech/basic-service-package
 ```
 
