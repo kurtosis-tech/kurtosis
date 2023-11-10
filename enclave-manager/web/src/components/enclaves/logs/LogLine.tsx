@@ -1,6 +1,13 @@
 import { Box, Flex } from "@chakra-ui/react";
 import { DateTime } from "luxon";
 import { isDefined } from "../../../utils";
+import parse from "html-react-parser";
+// @ts-ignore
+import hasAnsi from "has-ansi";
+
+
+const Convert = require('ansi-to-html');
+const convert = new Convert();
 
 export type LogStatus = "info" | "error";
 
@@ -23,6 +30,15 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
         return "white";
     }
   };
+
+  const processText = (message: string) => {
+    if (hasAnsi(message)) {
+      const ansiInHtml = convert.toHtml(message)
+      return parse(ansiInHtml);
+    } else {
+      return <>{message}</>
+    }
+  }
 
   return (
     <Flex p={"2px 0"} m={"0 16px"} gap={"8px"} alignItems={"top"}>
@@ -49,7 +65,7 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
         fontFamily={logFontFamily}
         color={statusToColor(status)}
       >
-        {message}
+        {message && processText(message)}
       </Box>
     </Flex>
   );
