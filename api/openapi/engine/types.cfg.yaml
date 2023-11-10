@@ -1,0 +1,4 @@
+package: kurtosis_engine_http_api_bindings
+generate:
+  models: true
+output: api/golang/engine/kurtosis_engine_http_api_bindings/engine_types.gen.go
