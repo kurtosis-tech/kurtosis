@@ -75,7 +75,7 @@ export const EnclaveConfigurationForm = forwardRef<
         arg,
         transformValue(
           arg.typeV2?.topLevelType,
-          data.args[arg.name], // data.args object is undefined
+          data.args[arg.name],
           arg.typeV2?.topLevelType === ArgumentValueType.LIST ? arg.typeV2?.innerType1 : arg.typeV2?.innerType2,
         ),
       ])
