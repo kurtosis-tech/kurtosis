@@ -22,6 +22,8 @@ export const IntegerArgumentInput = (props: Omit<KurtosisArgumentTypeInputProps,
           }
         },
       })}
+      width={props.width}
+      size={props.size || "lg"}
     />
   );
 };

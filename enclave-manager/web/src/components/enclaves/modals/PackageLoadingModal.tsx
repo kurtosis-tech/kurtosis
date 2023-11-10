@@ -76,7 +76,7 @@ export const PackageLoadingModal = ({ packageId, onPackageLoaded }: PackageLoadi
         </ModalBody>
         <ModalFooter>
           <Flex justifyContent={"flex-end"} gap={"12px"}>
-            <Button color={"gray.100"} onClick={() => setModalOpen(false)} disabled={isPreloading}>
+            <Button color={"gray.100"} onClick={() => setModalOpen(false)} isDisabled={isPreloading}>
               Close
             </Button>
           </Flex>
