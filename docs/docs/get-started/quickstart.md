@@ -48,7 +48,7 @@ By running this command, you've seen three [basic concepts][basic-concepts] of K
 Inspect your deployed application
 --------------------
 
-Cmd-click, or copy-and-paste to your browser, the URL next to the service called `service-c-1` in your CLI output. This port binding is handled automatically by Kurtosis, ensuring no port conflicts happen on your local machine as you work with your environments. You should see a simple frontend, looking something like:
+Cmd-click, or copy-and-paste to your browser, the URL next to the service called `service-c-1` in your CLI output. This local port binding is handled automatically by Kurtosis, ensuring no port conflicts happen on your local machine as you work with your environments. You should see a simple frontend:
 
 ![quickstart-default-service-c-frontend.png](/img/home/quickstart-default-service-c-frontend.png)
 
@@ -127,7 +127,7 @@ To verify the environment variable flag, run
 kurtosis service inspect quickstart service-c-1
 ```
 
-In the output, you will see a block called `ENV:`. In that block, you should see the environment variable setting `PARTY_MODE: true`.
+In the output, you will see a block called `ENV:`. In that block, you should see the environment variable `PARTY_MODE: true`.
 
 Service B also has the `party_mode` flag turned on. However, Service B is triggered by a command line flag, rather than an environment variable. To see this, run:
 ```console
