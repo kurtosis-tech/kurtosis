@@ -23,7 +23,7 @@ export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
   if (enclave.starlarkRun.isErr) {
     return (
       <Tooltip label={"Cannot find previous run config to edit"}>
-        <Button disabled={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
+        <Button isDisabled={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
           Edit
         </Button>
       </Tooltip>
