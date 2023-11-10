@@ -85,12 +85,44 @@ You can also do a set of actions you would expect from a standard Docker or Kube
 Modify your deployed application with a JSON configuration
 ----------
 
-Kurtosis packages take in JSON parameters, allowing developers to make high-level modifications to their deployed applications without needing to know the lower-level details like which environment variables, command line arguments, or configuration files to change. To see how this works, lets run the same application with 2 instances of Service A and Service B (perhaps to test that high availability is functioning), and a feature flag turned on across all three services called `party_mode`:
+Kurtosis packages take in JSON parameters, allowing developers to make high-level modifications to their deployed applications without needing to know the lower-level details like which environment variables, command line arguments, or configuration files to change. To see how this works, lets run the same application with 2 instances of Service A and Service B (perhaps to test high availability), and a feature flag turned on across all three services called `party_mode`:
 
 ```console
-
+kurtosis run --enclave quickstart github.com/kurtosis-tech/basic-service-package \
+  '{"service_a_count": 2,
+    "service_b_count": 2,
+    "service_c_count": 1,
+    "party_mode": true}'
 ```
 
+This will update your enclave with the new configuration of the package, resulting in an output like:
+
+![quickstart-params-output.png](/img/home/quickstart-params-output.png)
+
+Here you can see 2 instances of Service A and 2 instances of Service B in the output, and you can verify that the configuration file of Service C has been properly changed so it can talk to all 4 of them:
+
+```console
+kurtosis files download quickstart service-c-rendered-config
+```
+```
+~ cat service-c-rendered-config/service-config.json
+{
+    "service-a": [{"name": "service-a-1", "uri": "172.16.16.4:8501"},{"name": "service-a-2", "uri": "172.16.16.7:8501"}],
+    "service-b": [{"name": "service-b-1", "uri": "172.16.16.5:8501"},{"name": "service-b-2", "uri": "172.16.16.8:8501"}]
+}
+```
+
+Now, if you click through to Service C, you can see it is in party mode. It's claiming that it's in party mode because an environment variable on its container told it to:
+
+![quickstart-service-c-partying.png](/img/home/quickstart-service-c-partyin
+g.png)
+
+To see if that's true, run 
+```
+kurtosis service inspect quickstart service-c-1
+```
+
+In the output, you will see a block called `ENV:`. In that block, you should see the environment variable setting `PARTY_MODE: true`.
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
