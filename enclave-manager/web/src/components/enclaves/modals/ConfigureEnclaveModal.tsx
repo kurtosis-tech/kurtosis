@@ -120,7 +120,19 @@ export const ConfigureEnclaveModal = ({
     if (!isDefined(preloadArgs)) {
       return undefined;
     }
-    return JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
+    const parsedForm = JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
+    kurtosisPackage.args
+      .filter((arg) => !isDefined(arg.typeV2?.topLevelType) || arg.typeV2?.topLevelType === ArgumentValueType.JSON)
+      .map((arg) => {
+        if (parsedForm.args[arg.name]) {
+          try {
+            parsedForm.args[arg.name] = JSON.stringify(JSON.parse(parsedForm.args[arg.name]), undefined, 4);
+          } catch (err: any) {
+            // do nothing, the input was not valid json.
+          }
+        }
+      });
+    return parsedForm;
   }, [existingEnclave, kurtosisPackage.args]);
 
   const getLinkToCurrentConfig = () => {
