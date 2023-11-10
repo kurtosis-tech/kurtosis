@@ -1,5 +1,5 @@
 package: kurtosis_engine_http_api_bindings
 generate:
-  strict-server: true
   embedded-spec: true
+  echo-server: true
 output: api/golang/engine/kurtosis_engine_http_api_bindings/engine_server.gen.go

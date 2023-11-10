@@ -6,345 +6,317 @@ package kurtosis_core_http_api_bindings
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
+	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/labstack/echo/v4"
 )
 
-type SuccessAsteriskResponse struct {
-	Body io.Reader
-
-	ContentType   string
-	ContentLength int64
-}
-
-type GetArtifactsRequestObject struct {
-}
-
-type GetArtifactsResponseObject interface {
-	VisitGetArtifactsResponse(w http.ResponseWriter) error
-}
-
-type GetArtifacts200JSONResponse ListFilesArtifactNamesAndUuidsResponse
-
-func (response GetArtifacts200JSONResponse) VisitGetArtifactsResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PutArtifactsLocalFileRequestObject struct {
-	Body *PutArtifactsLocalFileJSONRequestBody
-}
-
-type PutArtifactsLocalFileResponseObject interface {
-	VisitPutArtifactsLocalFileResponse(w http.ResponseWriter) error
-}
-
-type PutArtifactsLocalFile200JSONResponse UploadFilesArtifactResponse
-
-func (response PutArtifactsLocalFile200JSONResponse) VisitPutArtifactsLocalFileResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PutArtifactsRemoteFileRequestObject struct {
-	Body *PutArtifactsRemoteFileJSONRequestBody
-}
-
-type PutArtifactsRemoteFileResponseObject interface {
-	VisitPutArtifactsRemoteFileResponse(w http.ResponseWriter) error
-}
-
-type PutArtifactsRemoteFile200JSONResponse StoreWebFilesArtifactResponse
-
-func (response PutArtifactsRemoteFile200JSONResponse) VisitPutArtifactsRemoteFileResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PutArtifactsServicesServiceIdentifierRequestObject struct {
-	ServiceIdentifier string `json:"service_identifier"`
-	Body              *PutArtifactsServicesServiceIdentifierJSONRequestBody
-}
-
-type PutArtifactsServicesServiceIdentifierResponseObject interface {
-	VisitPutArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error
-}
-
-type PutArtifactsServicesServiceIdentifier200JSONResponse StoreFilesArtifactFromServiceResponse
-
-func (response PutArtifactsServicesServiceIdentifier200JSONResponse) VisitPutArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetArtifactsArtifactIdentifierRequestObject struct {
-	ArtifactIdentifier string `json:"artifact_identifier"`
-}
-
-type GetArtifactsArtifactIdentifierResponseObject interface {
-	VisitGetArtifactsArtifactIdentifierResponse(w http.ResponseWriter) error
-}
-
-type GetArtifactsArtifactIdentifier200JSONResponse InspectFilesArtifactContentsResponse
-
-func (response GetArtifactsArtifactIdentifier200JSONResponse) VisitGetArtifactsArtifactIdentifierResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetArtifactsArtifactIdentifierDownloadRequestObject struct {
-	ArtifactIdentifier string `json:"artifact_identifier"`
-}
-
-type GetArtifactsArtifactIdentifierDownloadResponseObject interface {
-	VisitGetArtifactsArtifactIdentifierDownloadResponse(w http.ResponseWriter) error
-}
-
-type GetArtifactsArtifactIdentifierDownload200JSONResponse StreamedDataChunk
-
-func (response GetArtifactsArtifactIdentifierDownload200JSONResponse) VisitGetArtifactsArtifactIdentifierDownloadResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetServicesRequestObject struct {
-}
-
-type GetServicesResponseObject interface {
-	VisitGetServicesResponse(w http.ResponseWriter) error
-}
-
-type GetServices200JSONResponse GetExistingAndHistoricalServiceIdentifiersResponse
-
-func (response GetServices200JSONResponse) VisitGetServicesResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostServicesConnectionRequestObject struct {
-	Body *PostServicesConnectionJSONRequestBody
-}
-
-type PostServicesConnectionResponseObject interface {
-	VisitPostServicesConnectionResponse(w http.ResponseWriter) error
-}
-
-type PostServicesConnection200JSONResponse ConnectServicesResponse
-
-func (response PostServicesConnection200JSONResponse) VisitPostServicesConnectionResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetServicesServiceIdentifierRequestObject struct {
-	ServiceIdentifier string `json:"service_identifier"`
-	Params            GetServicesServiceIdentifierParams
-}
-
-type GetServicesServiceIdentifierResponseObject interface {
-	VisitGetServicesServiceIdentifierResponse(w http.ResponseWriter) error
-}
-
-type GetServicesServiceIdentifier200JSONResponse GetServicesResponse
-
-func (response GetServicesServiceIdentifier200JSONResponse) VisitGetServicesServiceIdentifierResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostServicesServiceIdentifierCommandRequestObject struct {
-	ServiceIdentifier string `json:"service_identifier"`
-	Body              *PostServicesServiceIdentifierCommandJSONRequestBody
-}
-
-type PostServicesServiceIdentifierCommandResponseObject interface {
-	VisitPostServicesServiceIdentifierCommandResponse(w http.ResponseWriter) error
-}
-
-type PostServicesServiceIdentifierCommand200JSONResponse ExecCommandResponse
-
-func (response PostServicesServiceIdentifierCommand200JSONResponse) VisitPostServicesServiceIdentifierCommandResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject struct {
-	ServiceIdentifier string `json:"service_identifier"`
-	PortNumber        int    `json:"port_number"`
-	Body              *PostServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody
-}
-
-type PostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject interface {
-	VisitPostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error
-}
-
-type PostServicesServiceIdentifierEndpointsPortNumberAvailability200AsteriskResponse struct{ SuccessAsteriskResponse }
-
-func (response PostServicesServiceIdentifierEndpointsPortNumberAvailability200AsteriskResponse) VisitPostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", response.ContentType)
-	if response.ContentLength != 0 {
-		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
-	}
-	w.WriteHeader(200)
-
-	if closer, ok := response.Body.(io.ReadCloser); ok {
-		defer closer.Close()
-	}
-	_, err := io.Copy(w, response.Body)
-	return err
-}
-
-type GetStarlarkRequestObject struct {
-}
-
-type GetStarlarkResponseObject interface {
-	VisitGetStarlarkResponse(w http.ResponseWriter) error
-}
-
-type GetStarlark200JSONResponse GetStarlarkRunResponse
-
-func (response GetStarlark200JSONResponse) VisitGetStarlarkResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PutStarlarkPackagesRequestObject struct {
-	Body *PutStarlarkPackagesJSONRequestBody
-}
-
-type PutStarlarkPackagesResponseObject interface {
-	VisitPutStarlarkPackagesResponse(w http.ResponseWriter) error
-}
-
-type PutStarlarkPackages200AsteriskResponse struct{ SuccessAsteriskResponse }
-
-func (response PutStarlarkPackages200AsteriskResponse) VisitPutStarlarkPackagesResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", response.ContentType)
-	if response.ContentLength != 0 {
-		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
-	}
-	w.WriteHeader(200)
-
-	if closer, ok := response.Body.(io.ReadCloser); ok {
-		defer closer.Close()
-	}
-	_, err := io.Copy(w, response.Body)
-	return err
-}
-
-type PostStarlarkPackagesPackageIdRequestObject struct {
-	PackageId string `json:"package_id"`
-	Body      *PostStarlarkPackagesPackageIdJSONRequestBody
-}
-
-type PostStarlarkPackagesPackageIdResponseObject interface {
-	VisitPostStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error
-}
-
-type PostStarlarkPackagesPackageId200JSONResponse StarlarkRunResponseLine
-
-func (response PostStarlarkPackagesPackageId200JSONResponse) VisitPostStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostStarlarkScriptsRequestObject struct {
-	Body *PostStarlarkScriptsJSONRequestBody
-}
-
-type PostStarlarkScriptsResponseObject interface {
-	VisitPostStarlarkScriptsResponse(w http.ResponseWriter) error
-}
-
-type PostStarlarkScripts200JSONResponse StarlarkRunResponseLine
-
-func (response PostStarlarkScripts200JSONResponse) VisitPostStarlarkScriptsResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
+// ServerInterface represents all server handlers.
+type ServerInterface interface {
 
 	// (GET /artifacts)
-	GetArtifacts(ctx context.Context, request GetArtifactsRequestObject) (GetArtifactsResponseObject, error)
+	GetArtifacts(ctx echo.Context) error
 
 	// (PUT /artifacts/local-file)
-	PutArtifactsLocalFile(ctx context.Context, request PutArtifactsLocalFileRequestObject) (PutArtifactsLocalFileResponseObject, error)
+	PutArtifactsLocalFile(ctx echo.Context) error
 
 	// (PUT /artifacts/remote-file)
-	PutArtifactsRemoteFile(ctx context.Context, request PutArtifactsRemoteFileRequestObject) (PutArtifactsRemoteFileResponseObject, error)
+	PutArtifactsRemoteFile(ctx echo.Context) error
 
 	// (PUT /artifacts/services/{service_identifier})
-	PutArtifactsServicesServiceIdentifier(ctx context.Context, request PutArtifactsServicesServiceIdentifierRequestObject) (PutArtifactsServicesServiceIdentifierResponseObject, error)
+	PutArtifactsServicesServiceIdentifier(ctx echo.Context, serviceIdentifier string) error
 
 	// (GET /artifacts/{artifact_identifier})
-	GetArtifactsArtifactIdentifier(ctx context.Context, request GetArtifactsArtifactIdentifierRequestObject) (GetArtifactsArtifactIdentifierResponseObject, error)
+	GetArtifactsArtifactIdentifier(ctx echo.Context, artifactIdentifier string) error
 
 	// (GET /artifacts/{artifact_identifier}/download)
-	GetArtifactsArtifactIdentifierDownload(ctx context.Context, request GetArtifactsArtifactIdentifierDownloadRequestObject) (GetArtifactsArtifactIdentifierDownloadResponseObject, error)
+	GetArtifactsArtifactIdentifierDownload(ctx echo.Context, artifactIdentifier string) error
 
 	// (GET /services)
-	GetServices(ctx context.Context, request GetServicesRequestObject) (GetServicesResponseObject, error)
+	GetServices(ctx echo.Context) error
 
 	// (POST /services/connection)
-	PostServicesConnection(ctx context.Context, request PostServicesConnectionRequestObject) (PostServicesConnectionResponseObject, error)
+	PostServicesConnection(ctx echo.Context) error
 
 	// (GET /services/{service_identifier})
-	GetServicesServiceIdentifier(ctx context.Context, request GetServicesServiceIdentifierRequestObject) (GetServicesServiceIdentifierResponseObject, error)
+	GetServicesServiceIdentifier(ctx echo.Context, serviceIdentifier string, params GetServicesServiceIdentifierParams) error
 
 	// (POST /services/{service_identifier}/command)
-	PostServicesServiceIdentifierCommand(ctx context.Context, request PostServicesServiceIdentifierCommandRequestObject) (PostServicesServiceIdentifierCommandResponseObject, error)
+	PostServicesServiceIdentifierCommand(ctx echo.Context, serviceIdentifier string) error
 
 	// (POST /services/{service_identifier}/endpoints/{port_number}/availability)
-	PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx context.Context, request PostServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject) (PostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject, error)
+	PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, serviceIdentifier string, portNumber int) error
 
 	// (GET /starlark)
-	GetStarlark(ctx context.Context, request GetStarlarkRequestObject) (GetStarlarkResponseObject, error)
+	GetStarlark(ctx echo.Context) error
 
 	// (PUT /starlark/packages)
-	PutStarlarkPackages(ctx context.Context, request PutStarlarkPackagesRequestObject) (PutStarlarkPackagesResponseObject, error)
+	PutStarlarkPackages(ctx echo.Context) error
 
 	// (POST /starlark/packages/{package_id})
-	PostStarlarkPackagesPackageId(ctx context.Context, request PostStarlarkPackagesPackageIdRequestObject) (PostStarlarkPackagesPackageIdResponseObject, error)
+	PostStarlarkPackagesPackageId(ctx echo.Context, packageId string) error
 
 	// (POST /starlark/scripts)
-	PostStarlarkScripts(ctx context.Context, request PostStarlarkScriptsRequestObject) (PostStarlarkScriptsResponseObject, error)
+	PostStarlarkScripts(ctx echo.Context) error
+}
+
+// ServerInterfaceWrapper converts echo contexts to parameters.
+type ServerInterfaceWrapper struct {
+	Handler ServerInterface
+}
+
+// GetArtifacts converts echo context to params.
+func (w *ServerInterfaceWrapper) GetArtifacts(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetArtifacts(ctx)
+	return err
+}
+
+// PutArtifactsLocalFile converts echo context to params.
+func (w *ServerInterfaceWrapper) PutArtifactsLocalFile(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PutArtifactsLocalFile(ctx)
+	return err
+}
+
+// PutArtifactsRemoteFile converts echo context to params.
+func (w *ServerInterfaceWrapper) PutArtifactsRemoteFile(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PutArtifactsRemoteFile(ctx)
+	return err
+}
+
+// PutArtifactsServicesServiceIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) PutArtifactsServicesServiceIdentifier(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "service_identifier" -------------
+	var serviceIdentifier string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter service_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PutArtifactsServicesServiceIdentifier(ctx, serviceIdentifier)
+	return err
+}
+
+// GetArtifactsArtifactIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) GetArtifactsArtifactIdentifier(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "artifact_identifier" -------------
+	var artifactIdentifier string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "artifact_identifier", runtime.ParamLocationPath, ctx.Param("artifact_identifier"), &artifactIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter artifact_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetArtifactsArtifactIdentifier(ctx, artifactIdentifier)
+	return err
+}
+
+// GetArtifactsArtifactIdentifierDownload converts echo context to params.
+func (w *ServerInterfaceWrapper) GetArtifactsArtifactIdentifierDownload(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "artifact_identifier" -------------
+	var artifactIdentifier string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "artifact_identifier", runtime.ParamLocationPath, ctx.Param("artifact_identifier"), &artifactIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter artifact_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetArtifactsArtifactIdentifierDownload(ctx, artifactIdentifier)
+	return err
+}
+
+// GetServices converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServices(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetServices(ctx)
+	return err
+}
+
+// PostServicesConnection converts echo context to params.
+func (w *ServerInterfaceWrapper) PostServicesConnection(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostServicesConnection(ctx)
+	return err
+}
+
+// GetServicesServiceIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) GetServicesServiceIdentifier(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "service_identifier" -------------
+	var serviceIdentifier string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter service_identifier: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetServicesServiceIdentifierParams
+	// ------------- Optional query parameter "additional-properties" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "additional-properties", ctx.QueryParams(), &params.AdditionalProperties)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter additional-properties: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetServicesServiceIdentifier(ctx, serviceIdentifier, params)
+	return err
+}
+
+// PostServicesServiceIdentifierCommand converts echo context to params.
+func (w *ServerInterfaceWrapper) PostServicesServiceIdentifierCommand(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "service_identifier" -------------
+	var serviceIdentifier string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter service_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostServicesServiceIdentifierCommand(ctx, serviceIdentifier)
+	return err
+}
+
+// PostServicesServiceIdentifierEndpointsPortNumberAvailability converts echo context to params.
+func (w *ServerInterfaceWrapper) PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "service_identifier" -------------
+	var serviceIdentifier string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter service_identifier: %s", err))
+	}
+
+	// ------------- Path parameter "port_number" -------------
+	var portNumber int
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "port_number", runtime.ParamLocationPath, ctx.Param("port_number"), &portNumber)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter port_number: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx, serviceIdentifier, portNumber)
+	return err
+}
+
+// GetStarlark converts echo context to params.
+func (w *ServerInterfaceWrapper) GetStarlark(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetStarlark(ctx)
+	return err
+}
+
+// PutStarlarkPackages converts echo context to params.
+func (w *ServerInterfaceWrapper) PutStarlarkPackages(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PutStarlarkPackages(ctx)
+	return err
+}
+
+// PostStarlarkPackagesPackageId converts echo context to params.
+func (w *ServerInterfaceWrapper) PostStarlarkPackagesPackageId(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "package_id" -------------
+	var packageId string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "package_id", runtime.ParamLocationPath, ctx.Param("package_id"), &packageId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter package_id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostStarlarkPackagesPackageId(ctx, packageId)
+	return err
+}
+
+// PostStarlarkScripts converts echo context to params.
+func (w *ServerInterfaceWrapper) PostStarlarkScripts(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostStarlarkScripts(ctx)
+	return err
+}
+
+// This is a simple interface which specifies echo.Route addition functions which
+// are present on both echo.Echo and echo.Group, since we want to allow using
+// either of them for path registration
+type EchoRouter interface {
+	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+}
+
+// RegisterHandlers adds each server route to the EchoRouter.
+func RegisterHandlers(router EchoRouter, si ServerInterface) {
+	RegisterHandlersWithBaseURL(router, si, "")
+}
+
+// Registers handlers, and prepends BaseURL to the paths, so that the paths
+// can be served under a prefix.
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+
+	wrapper := ServerInterfaceWrapper{
+		Handler: si,
+	}
+
+	router.GET(baseURL+"/artifacts", wrapper.GetArtifacts)
+	router.PUT(baseURL+"/artifacts/local-file", wrapper.PutArtifactsLocalFile)
+	router.PUT(baseURL+"/artifacts/remote-file", wrapper.PutArtifactsRemoteFile)
+	router.PUT(baseURL+"/artifacts/services/:service_identifier", wrapper.PutArtifactsServicesServiceIdentifier)
+	router.GET(baseURL+"/artifacts/:artifact_identifier", wrapper.GetArtifactsArtifactIdentifier)
+	router.GET(baseURL+"/artifacts/:artifact_identifier/download", wrapper.GetArtifactsArtifactIdentifierDownload)
+	router.GET(baseURL+"/services", wrapper.GetServices)
+	router.POST(baseURL+"/services/connection", wrapper.PostServicesConnection)
+	router.GET(baseURL+"/services/:service_identifier", wrapper.GetServicesServiceIdentifier)
+	router.POST(baseURL+"/services/:service_identifier/command", wrapper.PostServicesServiceIdentifierCommand)
+	router.POST(baseURL+"/services/:service_identifier/endpoints/:port_number/availability", wrapper.PostServicesServiceIdentifierEndpointsPortNumberAvailability)
+	router.GET(baseURL+"/starlark", wrapper.GetStarlark)
+	router.PUT(baseURL+"/starlark/packages", wrapper.PutStarlarkPackages)
+	router.POST(baseURL+"/starlark/packages/:package_id", wrapper.PostStarlarkPackagesPackageId)
+	router.POST(baseURL+"/starlark/scripts", wrapper.PostStarlarkScripts)
+
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

@@ -6,198 +6,210 @@ package kurtosis_engine_http_api_bindings
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 
+	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/labstack/echo/v4"
 )
 
-type DeleteEnclavesRequestObject struct {
-	Params DeleteEnclavesParams
-}
-
-type DeleteEnclavesResponseObject interface {
-	VisitDeleteEnclavesResponse(w http.ResponseWriter) error
-}
-
-type DeleteEnclaves200JSONResponse CleanResponse
-
-func (response DeleteEnclaves200JSONResponse) VisitDeleteEnclavesResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetEnclavesRequestObject struct {
-}
-
-type GetEnclavesResponseObject interface {
-	VisitGetEnclavesResponse(w http.ResponseWriter) error
-}
-
-type GetEnclaves200JSONResponse GetEnclavesResponse
-
-func (response GetEnclaves200JSONResponse) VisitGetEnclavesResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostEnclavesRequestObject struct {
-	Body *PostEnclavesJSONRequestBody
-}
-
-type PostEnclavesResponseObject interface {
-	VisitPostEnclavesResponse(w http.ResponseWriter) error
-}
-
-type PostEnclaves200JSONResponse CreateEnclaveResponse
-
-func (response PostEnclaves200JSONResponse) VisitPostEnclavesResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetEnclavesHistoricalRequestObject struct {
-}
-
-type GetEnclavesHistoricalResponseObject interface {
-	VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error
-}
-
-type GetEnclavesHistorical200JSONResponse GetExistingAndHistoricalEnclaveIdentifiersResponse
-
-func (response GetEnclavesHistorical200JSONResponse) VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type DeleteEnclavesEnclaveIdentifierRequestObject struct {
-	EnclaveIdentifier string `json:"enclave_identifier"`
-}
-
-type DeleteEnclavesEnclaveIdentifierResponseObject interface {
-	VisitDeleteEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error
-}
-
-type DeleteEnclavesEnclaveIdentifier200JSONResponse map[string]interface{}
-
-func (response DeleteEnclavesEnclaveIdentifier200JSONResponse) VisitDeleteEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetEnclavesEnclaveIdentifierRequestObject struct {
-	EnclaveIdentifier string `json:"enclave_identifier"`
-}
-
-type GetEnclavesEnclaveIdentifierResponseObject interface {
-	VisitGetEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error
-}
-
-type GetEnclavesEnclaveIdentifier200JSONResponse EnclaveInfo
-
-func (response GetEnclavesEnclaveIdentifier200JSONResponse) VisitGetEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostEnclavesEnclaveIdentifierLogsRequestObject struct {
-	EnclaveIdentifier string `json:"enclave_identifier"`
-	Body              *PostEnclavesEnclaveIdentifierLogsJSONRequestBody
-}
-
-type PostEnclavesEnclaveIdentifierLogsResponseObject interface {
-	VisitPostEnclavesEnclaveIdentifierLogsResponse(w http.ResponseWriter) error
-}
-
-type PostEnclavesEnclaveIdentifierLogs200JSONResponse GetServiceLogsResponse
-
-func (response PostEnclavesEnclaveIdentifierLogs200JSONResponse) VisitPostEnclavesEnclaveIdentifierLogsResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostEnclavesEnclaveIdentifierStopRequestObject struct {
-	EnclaveIdentifier string `json:"enclave_identifier"`
-}
-
-type PostEnclavesEnclaveIdentifierStopResponseObject interface {
-	VisitPostEnclavesEnclaveIdentifierStopResponse(w http.ResponseWriter) error
-}
-
-type PostEnclavesEnclaveIdentifierStop200JSONResponse map[string]interface{}
-
-func (response PostEnclavesEnclaveIdentifierStop200JSONResponse) VisitPostEnclavesEnclaveIdentifierStopResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetEngineInfoRequestObject struct {
-}
-
-type GetEngineInfoResponseObject interface {
-	VisitGetEngineInfoResponse(w http.ResponseWriter) error
-}
-
-type GetEngineInfo200JSONResponse GetEngineInfoResponse
-
-func (response GetEngineInfo200JSONResponse) VisitGetEngineInfoResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-// StrictServerInterface represents all server handlers.
-type StrictServerInterface interface {
+// ServerInterface represents all server handlers.
+type ServerInterface interface {
 	// Delete Enclaves
 	// (DELETE /enclaves)
-	DeleteEnclaves(ctx context.Context, request DeleteEnclavesRequestObject) (DeleteEnclavesResponseObject, error)
+	DeleteEnclaves(ctx echo.Context, params DeleteEnclavesParams) error
 	// Get Enclaves
 	// (GET /enclaves)
-	GetEnclaves(ctx context.Context, request GetEnclavesRequestObject) (GetEnclavesResponseObject, error)
+	GetEnclaves(ctx echo.Context) error
 	// Create Enclave
 	// (POST /enclaves)
-	PostEnclaves(ctx context.Context, request PostEnclavesRequestObject) (PostEnclavesResponseObject, error)
+	PostEnclaves(ctx echo.Context) error
 	// Get Historical Enclaves
 	// (GET /enclaves/historical)
-	GetEnclavesHistorical(ctx context.Context, request GetEnclavesHistoricalRequestObject) (GetEnclavesHistoricalResponseObject, error)
+	GetEnclavesHistorical(ctx echo.Context) error
 	// Destroy Enclave
 	// (DELETE /enclaves/{enclave_identifier})
-	DeleteEnclavesEnclaveIdentifier(ctx context.Context, request DeleteEnclavesEnclaveIdentifierRequestObject) (DeleteEnclavesEnclaveIdentifierResponseObject, error)
+	DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier string) error
 	// Get Enclave Info
 	// (GET /enclaves/{enclave_identifier})
-	GetEnclavesEnclaveIdentifier(ctx context.Context, request GetEnclavesEnclaveIdentifierRequestObject) (GetEnclavesEnclaveIdentifierResponseObject, error)
+	GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier string) error
 	// Get Service Logs
 	// (POST /enclaves/{enclave_identifier}/logs)
-	PostEnclavesEnclaveIdentifierLogs(ctx context.Context, request PostEnclavesEnclaveIdentifierLogsRequestObject) (PostEnclavesEnclaveIdentifierLogsResponseObject, error)
+	PostEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier string) error
 	// Stop Enclave
 	// (POST /enclaves/{enclave_identifier}/stop)
-	PostEnclavesEnclaveIdentifierStop(ctx context.Context, request PostEnclavesEnclaveIdentifierStopRequestObject) (PostEnclavesEnclaveIdentifierStopResponseObject, error)
+	PostEnclavesEnclaveIdentifierStop(ctx echo.Context, enclaveIdentifier string) error
 	// Get Engine Info
 	// (GET /engine/info)
-	GetEngineInfo(ctx context.Context, request GetEngineInfoRequestObject) (GetEngineInfoResponseObject, error)
+	GetEngineInfo(ctx echo.Context) error
+}
+
+// ServerInterfaceWrapper converts echo contexts to parameters.
+type ServerInterfaceWrapper struct {
+	Handler ServerInterface
+}
+
+// DeleteEnclaves converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteEnclaves(ctx echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteEnclavesParams
+	// ------------- Optional query parameter "remove_all" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "remove_all", ctx.QueryParams(), &params.RemoveAll)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter remove_all: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteEnclaves(ctx, params)
+	return err
+}
+
+// GetEnclaves converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclaves(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetEnclaves(ctx)
+	return err
+}
+
+// PostEnclaves converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclaves(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostEnclaves(ctx)
+	return err
+}
+
+// GetEnclavesHistorical converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesHistorical(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetEnclavesHistorical(ctx)
+	return err
+}
+
+// DeleteEnclavesEnclaveIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteEnclavesEnclaveIdentifier(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteEnclavesEnclaveIdentifier(ctx, enclaveIdentifier)
+	return err
+}
+
+// GetEnclavesEnclaveIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifier(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetEnclavesEnclaveIdentifier(ctx, enclaveIdentifier)
+	return err
+}
+
+// PostEnclavesEnclaveIdentifierLogs converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierLogs(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostEnclavesEnclaveIdentifierLogs(ctx, enclaveIdentifier)
+	return err
+}
+
+// PostEnclavesEnclaveIdentifierStop converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStop(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostEnclavesEnclaveIdentifierStop(ctx, enclaveIdentifier)
+	return err
+}
+
+// GetEngineInfo converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEngineInfo(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetEngineInfo(ctx)
+	return err
+}
+
+// This is a simple interface which specifies echo.Route addition functions which
+// are present on both echo.Echo and echo.Group, since we want to allow using
+// either of them for path registration
+type EchoRouter interface {
+	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+}
+
+// RegisterHandlers adds each server route to the EchoRouter.
+func RegisterHandlers(router EchoRouter, si ServerInterface) {
+	RegisterHandlersWithBaseURL(router, si, "")
+}
+
+// Registers handlers, and prepends BaseURL to the paths, so that the paths
+// can be served under a prefix.
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
+
+	wrapper := ServerInterfaceWrapper{
+		Handler: si,
+	}
+
+	router.DELETE(baseURL+"/enclaves", wrapper.DeleteEnclaves)
+	router.GET(baseURL+"/enclaves", wrapper.GetEnclaves)
+	router.POST(baseURL+"/enclaves", wrapper.PostEnclaves)
+	router.GET(baseURL+"/enclaves/historical", wrapper.GetEnclavesHistorical)
+	router.DELETE(baseURL+"/enclaves/:enclave_identifier", wrapper.DeleteEnclavesEnclaveIdentifier)
+	router.GET(baseURL+"/enclaves/:enclave_identifier", wrapper.GetEnclavesEnclaveIdentifier)
+	router.POST(baseURL+"/enclaves/:enclave_identifier/logs", wrapper.PostEnclavesEnclaveIdentifierLogs)
+	router.POST(baseURL+"/enclaves/:enclave_identifier/stop", wrapper.PostEnclavesEnclaveIdentifierStop)
+	router.GET(baseURL+"/engine/info", wrapper.GetEngineInfo)
+
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
