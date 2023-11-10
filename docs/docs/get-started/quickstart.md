@@ -52,7 +52,7 @@ Cmd-click, or copy-and-paste to your browser, the URL next to the service called
 
 ![quickstart-default-service-c-frontend.png](/img/home/quickstart-default-service-c-frontend.png)
 
-Service C is depends on Service A and Service B, and has a configuration file containing their private IP addresses that it can use to communicate with them. To check that this is true, copy the files artifact containing this config file out of the enclave:
+Service C depends on Service A and Service B, and has a configuration file containing their private IP addresses that it can use to communicate with them. To check that this is true, copy the files artifact containing this config file out of the enclave:
 
 ```console
 kurtosis files download quickstart service-c-rendered-config
