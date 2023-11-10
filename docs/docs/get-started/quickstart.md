@@ -102,6 +102,8 @@ This will update your enclave with the new configuration of the package, resulti
 
 ![quickstart-params-output.png](/img/home/quickstart-params-output.png)
 
+### Check that changing the number of instances of each service works
+
 Here you can see 2 instances of Service A and 2 instances of Service B in the output, and you can verify that the configuration file of Service C has been properly changed so it can talk to all 4 of them:
 
 ```console
@@ -118,6 +120,8 @@ You should see the rendered config file with the contents:
 }
 ```
 
+### See feature flag turned on by an environment variable
+
 Now, if you click through to Service C, you can see it is in party mode. It's claiming that it's in party mode because an environment variable on its container told it to:
 
 ![quickstart-service-c-partying.png](/img/home/quickstart-service-c-partying.png)
@@ -129,6 +133,8 @@ kurtosis service inspect quickstart service-c-1
 
 In the output, you will see a block called `ENV:`. In that block, you should see the environment variable `PARTY_MODE: true`.
 
+### See feature flag turned on by an command line argument
+
 Service B also has the `party_mode` flag turned on. However, Service B is triggered by a command line flag, rather than an environment variable. To see this, run:
 ```console
 kurtosis service inspect quickstart service-b-1
@@ -139,6 +145,8 @@ You should see, in the output, the CMD block indicating that the flag was passed
 CMD:
   --party-mode
 ```
+
+### See feature flag turned on by a configuration file on disk
 
 Finally, Service A also has the `party_mode` flagged turned on. For Service A, the flag is turned on via its configuration file. You can see that with by downloading the `service-a-rendered-config` files artifact, as you've seen before:
 
@@ -154,6 +162,15 @@ You should see the config file contents with the feature flag turned on:
     "party_mode": true
 }
 ```
+
+In this section, you've used one high-level JSON configuration to modify the deployment of your backend application in a variety of low-level ways:
+- Changing the number of instances of each service
+- Turning on a feature flag on each service, using:
+  - Environment variables
+  - Command line flags
+  - Configuration files
+
+The main benefit here is that you didn't have to dig through low-level docs, or track down the maintainers of Service A, B, or C to learn how to deploy their software in each of these different ways. You just had to use the arguments of the package to get your environment the way you wanted it!
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
