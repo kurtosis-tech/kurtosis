@@ -67,7 +67,7 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
         throw error;
       }
     };
-    reTryCatch(callback, 100);
+    reTryCatch(callback, 25);
     return () => {
       canceled = true;
       abortController.abort();
