@@ -39,7 +39,7 @@ You should get output that looks like:
 
 ![quickstart-default-run.png](/img/home/quickstart-default-run.png)
 
-By running this command, you've seen the three [basic concepts][basic-concepts] of Kurtosis:
+By running this command, you've seen three [basic concepts][basic-concepts] of Kurtosis:
 
 1. The [package][basic-package] you used, remotely hosted on Github at `github.com/kurtosis-tech/basic-service-package`
 2. The [enclave][basic-enclave] you created, which was named `quickstart` via the `--enclave` flag.
@@ -48,7 +48,7 @@ By running this command, you've seen the three [basic concepts][basic-concepts] 
 Inspect your deployed application
 --------------------
 
-Cmd-click, or copy-and-paste to your browser, the URL next to the service called `service-c-1` in your CLI output. This port binding is handled automatically by Kurtosis, ensuring no port conflict happen on your local machine as you run and modify various environments. You should see a simple frontend, looking something like:
+Cmd-click, or copy-and-paste to your browser, the URL next to the service called `service-c-1` in your CLI output. This port binding is handled automatically by Kurtosis, ensuring no port conflicts happen on your local machine as you work with your environments. You should see a simple frontend, looking something like:
 
 ![quickstart-default-service-c-frontend.png](/img/home/quickstart-default-service-c-frontend.png)
 
@@ -75,41 +75,22 @@ In this step, you saw two ways to interact with your enclave:
 
 <details><summary>More ways to interact with an enclave</summary>
 
-For future reference, you can also do the set of actions you would expect from standard Docker or Kubernetes deployments, like:
-1. Shell into a service with `kurtosis service shell quickstart service-c-1`
-2. See a service's logs with `kurtosis service logs quickstart service-c-1`
-3. Execute a command on a service with `kurtosis service exec quickstart service-c-1 'echo hello world'`
+You can also do a set of actions you would expect from a standard Docker or Kubernetes deployments, like:
+1. Shell into a service: `kurtosis service shell quickstart service-c-1`
+2. See a service's logs: `kurtosis service logs quickstart service-c-1`
+3. Execute a command on a service: `kurtosis service exec quickstart service-c-1 'echo hello world'`
 
 </details>
 
-Conclusion
+Modify your deployed application with a JSON configuration
 ----------
-And that's it - you've successfully used Kurtosis to instantiate a full, private Ethereum testnet - one of the most complex distributed systems in todays time.
 
-Let's review. In this tutorial you have:
+Kurtosis packages take in JSON parameters, allowing developers to make high-level modifications to their deployed applications without needing to know the lower-level details like which environment variables, command line arguments, or configuration files to change. To see how this works, lets run the same application with 2 instances of Service A and Service B (perhaps to test that high availability is functioning), and a feature flag turned on across all three services called `party_mode`:
 
-1. Installed Kurtosis and Docker.
-2. Configure how your system should look like, using parameters that are passed in at runtime.
-3. Run a single command to spin up your network.
-4. Reviewed how package consumers benefit from using environment definitions written for Kurtosis.
+```console
 
-:::tip
-In this short guide, you went through the workflow that a Kurtosis package consumer would experience. It is strongly encouraged that you check out the [next guide][how-to-set-up-postgres-guide] where you will set up a Postgres database and an API server to as a package author.
-:::
-   
-This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-kurtosis-explanation]. 
+```
 
-To learn more about how Kurtosis is used, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of Kurtosis in action, including:
-- How to run a simple [Go test][go-test-example] or [Typescript test][ts-test-example] against the app we just built
-- The [Ethereum package][ethereum-package], used by the Ethereum Foundation, which can be used to set up local testnets 
-- A parameterized package for standing up an [n-node Cassandra cluster with Grafana and Prometheus][cassandra-package-example] out-of-the-box
-- The [NEAR package][near-package] for local dApp development in the NEAR ecosystem
-
-Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
-
-Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), post your questions on our [Github Discussions Forum][github-discussions], [join the community in our Discord](https://discord.gg/6Jjp9c89z9), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
-
-Thank you for trying our quickstart. We hope you enjoyed it. 
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
