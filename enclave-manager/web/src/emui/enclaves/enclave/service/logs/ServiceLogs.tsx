@@ -42,14 +42,14 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
   useEffect(() => {
     let canceled = false;
     const abortController = new AbortController();
-    if(kurtosisClient) {
+    if (kurtosisClient) {
       setLogLines([]);
       const callback = async (isRetry: boolean) => {
         // TODO: when we have a way to track where we left off, we don't have to clear and re-read everything
         if (isRetry) setLogLines([]);
         console.info("Created a new logging stream");
         try {
-          for await (const lineGroup of await kurtosisClient.getServiceLogs(abortController,enclave,[service])) {
+          for await (const lineGroup of await kurtosisClient.getServiceLogs(abortController, enclave, [service])) {
             if (canceled) return;
             const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
             if (!isDefined(lineGroupForService)) continue;
