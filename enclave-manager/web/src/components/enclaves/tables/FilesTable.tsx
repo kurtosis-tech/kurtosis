@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { RemoveFunctions } from "../../../utils/types";
 import { DataTable } from "../../DataTable";
-import { DownloadFileButton } from "../widgets/DownloadFileButton";
+import { DownloadFileArtifactButton } from "../widgets/DownloadFileArtifactButton";
 
 const columnHelper = createColumnHelper<FilesArtifactNameAndUuid>();
 
@@ -25,12 +25,12 @@ export const FilesTable = ({ filesAndArtifacts, enclave }: FilesTableProps) => {
           //<Link to={`/enclave/${enclave.shortenedUuid}/file/${row.original.fileUuid}`}>
           //<Button size={"sm"} variant={"ghost"}>
           getValue(),
-          //</Button>
-          //</Link>
+        //</Button>
+        //</Link>
       }),
       columnHelper.display({
         id: "download",
-        cell: ({ row }) => <DownloadFileButton file={row.original} enclave={enclave} />,
+        cell: ({ row }) => <DownloadFileArtifactButton file={row.original} enclave={enclave} />,
       }),
     ],
     [enclave],

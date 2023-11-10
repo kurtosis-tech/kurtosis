@@ -32,6 +32,7 @@ import { StringArgumentInput } from "../configuration/inputs/StringArgumentInput
 import { KurtosisArgumentFormControl } from "../configuration/KurtosisArgumentFormControl";
 import { KurtosisPackageArgumentInput } from "../configuration/KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../configuration/types";
+import { allowedEnclaveNamePattern, isEnclaveNameAllowed } from "../utils";
 import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
 
 type ConfigureEnclaveModalProps = {
@@ -119,7 +120,19 @@ export const ConfigureEnclaveModal = ({
     if (!isDefined(preloadArgs)) {
       return undefined;
     }
-    return JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
+    const parsedForm = JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
+    kurtosisPackage.args
+      .filter((arg) => !isDefined(arg.typeV2?.topLevelType) || arg.typeV2?.topLevelType === ArgumentValueType.JSON)
+      .forEach((arg) => {
+        if (parsedForm.args[arg.name]) {
+          try {
+            parsedForm.args[arg.name] = JSON.stringify(JSON.parse(parsedForm.args[arg.name]), undefined, 4);
+          } catch (err: any) {
+            // do nothing, the input was not valid json.
+          }
+        }
+      });
+    return parsedForm;
   }, [existingEnclave, kurtosisPackage.args]);
 
   const getLinkToCurrentConfig = () => {
@@ -132,8 +145,10 @@ export const ConfigureEnclaveModal = ({
   };
 
   const handleClose = () => {
-    navigator("#", { replace: true });
-    onClose();
+    if (!isLoading) {
+      navigator("#", { replace: true });
+      onClose();
+    }
   };
 
   const handleLoadSubmit: SubmitHandler<ConfigureEnclaveForm> = async (formData) => {
@@ -174,24 +189,49 @@ export const ConfigureEnclaveModal = ({
   };
 
   return (
-    <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={handleClose} isCentered size={"5xl"}>
+    <Modal
+      closeOnOverlayClick={false}
+      isOpen={isOpen}
+      onClose={handleClose}
+      isCentered
+      size={"5xl"}
+      scrollBehavior={"inside"}
+    >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader textAlign={"center"}>{!isDefined(existingEnclave) && "New "}Enclave Configuration</ModalHeader>
+        <ModalHeader flex={"0"} textAlign={"center"}>
+          {!isDefined(existingEnclave) && "New "}Enclave Configuration
+        </ModalHeader>
         <ModalCloseButton />
         <EnclaveConfigurationForm
           ref={formRef}
           initialValues={initialValues}
           onSubmit={handleLoadSubmit}
           kurtosisPackage={kurtosisPackage}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flex: "0 1 auto",
+            minHeight: 0,
+          }}
         >
-          <ModalBody p={"0px"}>
-            <Flex fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
+          <ModalBody flex="0 1 auto" p={"0px"} display={"flex"} flexDirection={"column"}>
+            <Flex flex={"0"} fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
               <Text>Configuring</Text>
               <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
             </Flex>
-            {isDefined(error) && <KurtosisAlert message={error} />}
-            <Flex flexDirection={"column"} gap={"24px"} p={"12px 24px"} bg={"gray.900"}>
+            {isDefined(error) && (
+              <KurtosisAlert flex={"0"} message={"Could not execute configuration"} details={error} />
+            )}
+            <Flex
+              flex={"0 1 auto"}
+              overflowY={"scroll"}
+              minHeight={0}
+              flexDirection={"column"}
+              gap={"24px"}
+              p={"12px 24px"}
+              bg={"gray.900"}
+            >
               <Flex justifyContent={"space-between"} alignItems={"center"}>
                 <Tooltip
                   shouldWrapChildren
@@ -207,16 +247,24 @@ export const ConfigureEnclaveModal = ({
                 </Tooltip>
               </Flex>
               <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
-                <StringArgumentInput name={"enclaveName"} disabled={isDefined(existingEnclave)} />
+                <StringArgumentInput
+                  name={"enclaveName"}
+                  disabled={isDefined(existingEnclave)}
+                  validate={(value) => {
+                    if (value.length > 0 && !isEnclaveNameAllowed(value)) {
+                      return `The enclave name must match ${allowedEnclaveNamePattern}`;
+                    }
+                  }}
+                />
               </KurtosisArgumentFormControl>
               {kurtosisPackage.args.map((arg, i) => (
                 <KurtosisPackageArgumentInput key={i} argument={arg} />
               ))}
             </Flex>
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter flex={"0"}>
             <Flex justifyContent={"flex-end"} gap={"12px"}>
-              <Button color={"gray.100"} onClick={handleClose} disabled={isLoading}>
+              <Button color={"gray.100"} onClick={handleClose} isDisabled={isLoading}>
                 Cancel
               </Button>
               <Button type={"submit"} isLoading={isLoading} colorScheme={"kurtosisGreen"}>

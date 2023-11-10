@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
 import { LogLineProps } from "../../../../../components/enclaves/logs/LogLine";
 import { LogViewer } from "../../../../../components/enclaves/logs/LogViewer";
-import { isDefined, stringifyError } from "../../../../../utils";
+import { isDefined } from "../../../../../utils";
 import { EnclaveFullInfo } from "../../../types";
 
 const serviceLogLineToLogLineProps = (lines: string[], timestamp?: Timestamp): LogLineProps[] => {
@@ -20,39 +20,60 @@ type ServiceLogsProps = {
   service: ServiceInfo;
 };
 
+export async function reTryCatch<R>(
+  callback: (isRetry: boolean) => Promise<R>,
+  times: number = 1,
+  isRetry: boolean = false,
+): Promise<R> {
+  try {
+    return await callback(isRetry);
+  } catch (error) {
+    if (times > 0) {
+      console.info(`retrying another ${times} times`);
+      return await reTryCatch(callback, times - 1, true);
+    } else {
+      console.info("retry: giving up and throwing error");
+      throw error;
+    }
+  }
+}
+
 export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
   const kurtosisClient = useKurtosisClient();
   const [logLines, setLogLines] = useState<LogLineProps[]>([]);
 
   useEffect(() => {
-    let cancelled = false;
+    let canceled = false;
     const abortController = new AbortController();
-    (async () => {
-      setLogLines([]);
+    setLogLines([]);
+    const callback = async (isRetry: boolean) => {
+      // TODO: when we have a way to track where we left off, we don't have to clear and re-read everything
+      if (isRetry) setLogLines([]);
+      console.info("Created a new logging stream");
       try {
         for await (const lineGroup of await kurtosisClient.getServiceLogs(abortController, enclave, [service])) {
-          if (cancelled) {
-            return;
-          }
+          if (canceled) return;
           const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
-          if (!isDefined(lineGroupForService)) {
-            continue;
-          }
+          if (!isDefined(lineGroupForService)) continue;
           const parsedLines = serviceLogLineToLogLineProps(lineGroupForService.line, lineGroupForService.timestamp);
           setLogLines((logLines) => [...logLines, ...parsedLines]);
         }
       } catch (error: any) {
-        if (cancelled) {
+        if (canceled) {
+          console.info("The logging stream was successfully canceled (not an error)", error);
           return;
         }
-        setLogLines((logLines) => [...logLines, { message: `Error: ${stringifyError(error)}`, status: "error" }]);
+        console.error("An unhandled error occurred while streaming logs", error);
+        throw error;
       }
-    })();
+    };
+    reTryCatch(callback, 100);
     return () => {
-      cancelled = true;
+      canceled = true;
       abortController.abort();
     };
   }, [enclave, service, kurtosisClient]);
 
-  return <LogViewer logLines={logLines} />;
+  const logsFileName = `${enclave.name}--${service.name}-logs.txt`;
+  return <LogViewer logLines={logLines} logsFileName={logsFileName} />;
 };

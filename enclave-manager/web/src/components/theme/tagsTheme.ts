@@ -5,6 +5,9 @@ const { defineMultiStyleConfig } = createMultiStyleConfigHelpers(tagAnatomy.keys
 
 // export the component theme
 export const tagTheme = defineMultiStyleConfig({
+  baseStyle: {
+    container: { textTransform: "uppercase" },
+  },
   variants: {
     asText: (props: StyleFunctionProps) => ({
       container: {
@@ -24,7 +27,6 @@ export const tagTheme = defineMultiStyleConfig({
         fontSize: "xs",
         lineHeight: "16px",
         borderRadius: "2px",
-        textTransform: "uppercase",
         fontWeight: "bold",
         minHeight: "unset",
       },

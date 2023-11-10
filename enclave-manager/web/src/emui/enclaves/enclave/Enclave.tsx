@@ -84,7 +84,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
 
   useEffect(() => {
     if (isDefined(actionData)) {
-      navigator(`/enclave/${enclave.shortenedUuid}/logs`, { state: actionData });
+      navigator(`/enclave/${enclave.shortenedUuid}/logs`, { state: actionData, replace: true });
     }
   }, [navigator, actionData, activeIndex, enclave.shortenedUuid]);
 

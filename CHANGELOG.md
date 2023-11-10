@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.85.13](https://github.com/kurtosis-tech/kurtosis/compare/0.85.12...0.85.13) (2023-11-10)
+
+
+### Features
+
+* enable ansi coloring ([#1746](https://github.com/kurtosis-tech/kurtosis/issues/1746)) ([2694464](https://github.com/kurtosis-tech/kurtosis/commit/269446449d0b76fb280be3c5f2ccf334a0d11085))
+
+
+### Bug Fixes
+
+* additional emui feedback changes ([#1749](https://github.com/kurtosis-tech/kurtosis/issues/1749)) ([f52fcef](https://github.com/kurtosis-tech/kurtosis/commit/f52fcefd53e9795c7f4152d901260a933f1aff86))
+* improve some log messages ([#1747](https://github.com/kurtosis-tech/kurtosis/issues/1747)) ([2bc6d08](https://github.com/kurtosis-tech/kurtosis/commit/2bc6d08e59cd1b44204c6b497466fe0b78ca8779))
+
+## [0.85.12](https://github.com/kurtosis-tech/kurtosis/compare/0.85.11...0.85.12) (2023-11-10)
+
+
+### Features
+
+* reconnect to service logs and link ([#1742](https://github.com/kurtosis-tech/kurtosis/issues/1742)) ([57468d0](https://github.com/kurtosis-tech/kurtosis/commit/57468d04dec4eb784c3a848ab5b405b99994ac5d))
+
+## [0.85.11](https://github.com/kurtosis-tech/kurtosis/compare/0.85.10...0.85.11) (2023-11-10)
+
+
+### Features
+
+* add nix flake for setting up dev env ([#1641](https://github.com/kurtosis-tech/kurtosis/issues/1641)) ([d968b26](https://github.com/kurtosis-tech/kurtosis/commit/d968b264ecf63dc1bb517bc387597a5560642757))
+
+
+### Bug Fixes
+
+* minor enclave config changes and ui build ([#1737](https://github.com/kurtosis-tech/kurtosis/issues/1737)) ([e349ce8](https://github.com/kurtosis-tech/kurtosis/commit/e349ce80dab01ce92553d266b177eb48e507b175))
+
+## [0.85.10](https://github.com/kurtosis-tech/kurtosis/compare/0.85.9...0.85.10) (2023-11-09)
+
+
+### Features
+
+* add download artifacts endpoint to enclave manager ([#1730](https://github.com/kurtosis-tech/kurtosis/issues/1730)) ([3909d5c](https://github.com/kurtosis-tech/kurtosis/commit/3909d5c27ef0450b05aab303a8d6c7986220e01e))
+* improve logging part 1 ([#1728](https://github.com/kurtosis-tech/kurtosis/issues/1728)) ([8f631ae](https://github.com/kurtosis-tech/kurtosis/commit/8f631ae44cf33ba138aaf373374f9a311ebbe645))
+* new emui use monaco as json editor ([#1733](https://github.com/kurtosis-tech/kurtosis/issues/1733)) ([298a0a2](https://github.com/kurtosis-tech/kurtosis/commit/298a0a2b085c24b8f95f1f0449bf750e7bf17ab0))
+
 ## [0.85.9](https://github.com/kurtosis-tech/kurtosis/compare/0.85.8...0.85.9) (2023-11-09)
 
 
