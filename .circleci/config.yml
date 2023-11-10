@@ -132,10 +132,10 @@ executors:
       # This custom CircleCi Ubuntu image has a pre-installed Docker, so we are not using the CircleCI remote Docker when we
       # initiate this machine. More here: https://discuss.circleci.com/t/linux-machine-executor-images-2022-january-q1-update/42831
       image: ubuntu-2004:2023.07.1
-  ubuntu_vm_large:
+  ubuntu_vm_xlarge:
     machine:
       image: ubuntu-2004:2023.10.1
-      resource_class: large
+      resource_class: xlarge
 
 parameters:
   go-version:
@@ -494,7 +494,7 @@ jobs:
             - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
   build_golang_testsuite:
-    executor: ubuntu_vm_large
+    executor: ubuntu_vm_xlarge
     parameters:
       <<: *param_cli_cluster_backend
     steps:
@@ -568,7 +568,7 @@ jobs:
       - run: "! [ -f /tmp/testsuite-failed ]"
 
   build_typescript_testsuite:
-    executor: ubuntu_vm_large
+    executor: ubuntu_vm_xlarge
     parameters:
       <<: *param_cli_cluster_backend
     steps:
