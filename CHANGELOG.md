@@ -1,5 +1,99 @@
 # Changelog
 
+## [0.85.10](https://github.com/kurtosis-tech/kurtosis/compare/0.85.9...0.85.10) (2023-11-09)
+
+
+### Features
+
+* add download artifacts endpoint to enclave manager ([#1730](https://github.com/kurtosis-tech/kurtosis/issues/1730)) ([3909d5c](https://github.com/kurtosis-tech/kurtosis/commit/3909d5c27ef0450b05aab303a8d6c7986220e01e))
+* improve logging part 1 ([#1728](https://github.com/kurtosis-tech/kurtosis/issues/1728)) ([8f631ae](https://github.com/kurtosis-tech/kurtosis/commit/8f631ae44cf33ba138aaf373374f9a311ebbe645))
+* new emui use monaco as json editor ([#1733](https://github.com/kurtosis-tech/kurtosis/issues/1733)) ([298a0a2](https://github.com/kurtosis-tech/kurtosis/commit/298a0a2b085c24b8f95f1f0449bf750e7bf17ab0))
+
+## [0.85.9](https://github.com/kurtosis-tech/kurtosis/compare/0.85.8...0.85.9) (2023-11-09)
+
+
+### Bug Fixes
+
+* using the CLI+KurtosisCloud should not rely on the local Docker engine running ([#1726](https://github.com/kurtosis-tech/kurtosis/issues/1726)) ([b447196](https://github.com/kurtosis-tech/kurtosis/commit/b447196b3534fce13db09d0c85a6aa2837b02c99)), closes [#1719](https://github.com/kurtosis-tech/kurtosis/issues/1719)
+
+## [0.85.8](https://github.com/kurtosis-tech/kurtosis/compare/0.85.7...0.85.8) (2023-11-08)
+
+
+### Features
+
+* support downloading artifacts in the new emui ([#1720](https://github.com/kurtosis-tech/kurtosis/issues/1720)) ([fbfeaa3](https://github.com/kurtosis-tech/kurtosis/commit/fbfeaa36310dee15be0b259a687ae656a18e470e))
+
+
+### Bug Fixes
+
+* stop all services first to update the service status in the service registration during a `kurtosis enclave stop` execution ([#1712](https://github.com/kurtosis-tech/kurtosis/issues/1712)) ([3d1e142](https://github.com/kurtosis-tech/kurtosis/commit/3d1e14230cb96bd4aeb7613d45cc1fba95b5c2fd)), closes [#1711](https://github.com/kurtosis-tech/kurtosis/issues/1711)
+
+## [0.85.7](https://github.com/kurtosis-tech/kurtosis/compare/0.85.6...0.85.7) (2023-11-08)
+
+
+### Features
+
+* Cancel payment subscription protobuf ([#1669](https://github.com/kurtosis-tech/kurtosis/issues/1669)) ([d2b7ab8](https://github.com/kurtosis-tech/kurtosis/commit/d2b7ab8173f0fed523c2f852d23847321dbf4e00))
+
+
+### Bug Fixes
+
+* emui colormodefixer ([#1716](https://github.com/kurtosis-tech/kurtosis/issues/1716)) ([b6a0b02](https://github.com/kurtosis-tech/kurtosis/commit/b6a0b027d3602cec7561a724ea45350899cb099f))
+
+## [0.85.6](https://github.com/kurtosis-tech/kurtosis/compare/0.85.5...0.85.6) (2023-11-07)
+
+
+### Features
+
+* improve logs, links and fonts ([#1713](https://github.com/kurtosis-tech/kurtosis/issues/1713)) ([7dc1078](https://github.com/kurtosis-tech/kurtosis/commit/7dc1078e613921a0f3282a13cdeac645e7780ac2))
+
+## [0.85.5](https://github.com/kurtosis-tech/kurtosis/compare/0.85.4...0.85.5) (2023-11-07)
+
+
+### Features
+
+* emui service overview ([#1708](https://github.com/kurtosis-tech/kurtosis/issues/1708)) ([e4c0226](https://github.com/kurtosis-tech/kurtosis/commit/e4c02266df1c5773fdb462aa50de8838818ced77))
+
+
+### Bug Fixes
+
+* pass cloud user id and cloud instance id while creating metrics client ([#1703](https://github.com/kurtosis-tech/kurtosis/issues/1703)) ([166da06](https://github.com/kurtosis-tech/kurtosis/commit/166da0660912447f87ba0bf9fa8b633ebea8ddfe))
+
+## [0.85.4](https://github.com/kurtosis-tech/kurtosis/compare/0.85.3...0.85.4) (2023-11-07)
+
+
+### Features
+
+* add autocomplete for cluster set command ([#1695](https://github.com/kurtosis-tech/kurtosis/issues/1695)) ([d36164d](https://github.com/kurtosis-tech/kurtosis/commit/d36164d2dd5738abe2ade548346ec7aa4d8353a3))
+* manage parameters and URL ([#1689](https://github.com/kurtosis-tech/kurtosis/issues/1689)) ([eafc056](https://github.com/kurtosis-tech/kurtosis/commit/eafc056e04643e289998a18d560d5d998c0cdffa))
+* new em ui enclave logs ([#1696](https://github.com/kurtosis-tech/kurtosis/issues/1696)) ([788c7bc](https://github.com/kurtosis-tech/kurtosis/commit/788c7bc8948f750afcdf9452e9c9f010ddd4bc9f))
+* print Made with Kurtosis at the end of a run ([#1687](https://github.com/kurtosis-tech/kurtosis/issues/1687)) ([a08b0b1](https://github.com/kurtosis-tech/kurtosis/commit/a08b0b1e77abbec4fcdff0ff47a9f9f3c1c47c80))
+
+
+### Bug Fixes
+
+* correct is_ci value in metrics from APIC ([#1697](https://github.com/kurtosis-tech/kurtosis/issues/1697)) ([9df62dd](https://github.com/kurtosis-tech/kurtosis/commit/9df62dd9eac2fa8aed456da27c06e63267c54618))
+* kurtosis run considers every nonexistent path to be a URL and fails with a suspicious error ([#1706](https://github.com/kurtosis-tech/kurtosis/issues/1706)) ([0f7809e](https://github.com/kurtosis-tech/kurtosis/commit/0f7809e0a846e77ee26e7f5f92a1a4bfa1622d2f)), closes [#1705](https://github.com/kurtosis-tech/kurtosis/issues/1705)
+* return the correct yaml parsing error ([#1691](https://github.com/kurtosis-tech/kurtosis/issues/1691)) ([c6170ec](https://github.com/kurtosis-tech/kurtosis/commit/c6170eccae1f9b346fc45b1a8289363b82667582))
+* user/instance id values were flipped ([#1698](https://github.com/kurtosis-tech/kurtosis/issues/1698)) ([901069c](https://github.com/kurtosis-tech/kurtosis/commit/901069c1d3bee4e8408848f4bc3cee63fb1be00c))
+
+## [0.85.3](https://github.com/kurtosis-tech/kurtosis/compare/0.85.2...0.85.3) (2023-11-03)
+
+
+### Features
+
+* add timestamps to log lines ([#1675](https://github.com/kurtosis-tech/kurtosis/issues/1675)) ([2eeb643](https://github.com/kurtosis-tech/kurtosis/commit/2eeb643fb0512fc4b9b8ea45506dc6964da2064c))
+* new emui design tweaks ([#1670](https://github.com/kurtosis-tech/kurtosis/issues/1670)) ([f172cd7](https://github.com/kurtosis-tech/kurtosis/commit/f172cd78e81dc02cb9a2a25561244f3c24eedebe))
+* rename all JSON to YAML ([#1650](https://github.com/kurtosis-tech/kurtosis/issues/1650)) ([219ac7a](https://github.com/kurtosis-tech/kurtosis/commit/219ac7ad275ac49c63a750cb7333033e076a7848))
+
+
+### Bug Fixes
+
+* actually create production enclaves ([#1682](https://github.com/kurtosis-tech/kurtosis/issues/1682)) ([8987212](https://github.com/kurtosis-tech/kurtosis/commit/8987212ffd7a1caba7cf25403a219870073d9306))
+* Improve description of the image-download flag ([#1660](https://github.com/kurtosis-tech/kurtosis/issues/1660)) ([230b4d0](https://github.com/kurtosis-tech/kurtosis/commit/230b4d095e905c624664c23b1e44aecab7b969ab))
+* mention URL JSON path in kurtosis run -h ([#1676](https://github.com/kurtosis-tech/kurtosis/issues/1676)) ([c8c0ec8](https://github.com/kurtosis-tech/kurtosis/commit/c8c0ec8f7a238bbcd7fc2e7f9977e5917cfc95d6))
+* prefix warning to the image validation ([#1673](https://github.com/kurtosis-tech/kurtosis/issues/1673)) ([88147fb](https://github.com/kurtosis-tech/kurtosis/commit/88147fbb7b3110d87bff90aea5c81ef5ec2245c2))
+
 ## [0.85.2](https://github.com/kurtosis-tech/kurtosis/compare/0.85.1...0.85.2) (2023-10-31)
 
 

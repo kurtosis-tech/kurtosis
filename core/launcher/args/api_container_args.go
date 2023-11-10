@@ -3,6 +3,7 @@ package args
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"reflect"
 	"strings"
 
@@ -44,6 +45,20 @@ type APIContainerArgs struct {
 
 	//User consent to send metrics
 	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
+
+	//If its running in a CI environment
+	IsCI bool `json:"is_ci"`
+
+	// The Cloud User ID of the current user if available
+	CloudUserID metrics_client.CloudUserID `json:"cloud_user_id"`
+
+	// The Cloud Instance ID of the current user if available
+	CloudInstanceID metrics_client.CloudInstanceID `json:"cloud_instance_id"`
+}
+
+var skipValidation = map[string]bool{
+	"cloud_instance_id": true,
+	"cloud_user_id":     true,
 }
 
 func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
@@ -92,6 +107,9 @@ func NewAPIContainerArgs(
 	isProductionEnclave bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		Version:                     version,
@@ -105,6 +123,9 @@ func NewAPIContainerArgs(
 		IsProductionEnclave:         isProductionEnclave,
 		MetricsUserID:               metricsUserID,
 		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
+		IsCI:                        isCI,
+		CloudUserID:                 cloudUserID,
+		CloudInstanceID:             cloudInstanceID,
 	}
 
 	if err := result.validate(); err != nil {
@@ -121,6 +142,10 @@ func (args APIContainerArgs) validate() error {
 	for i := 0; i < reflectValType.NumField(); i++ {
 		field := reflectValType.Field(i)
 		jsonFieldName := field.Tag.Get(jsonFieldTag)
+
+		if _, found := skipValidation[jsonFieldName]; found {
+			continue
+		}
 
 		// Ensure no empty strings
 		strVal := reflectVal.Field(i).String()

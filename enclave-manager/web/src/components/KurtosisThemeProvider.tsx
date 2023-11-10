@@ -1,7 +1,15 @@
-import { ChakraProvider, defineStyle, extendTheme, StyleFunctionProps, ThemeConfig, Tooltip } from "@chakra-ui/react";
+import {
+  ChakraProvider,
+  defineStyle,
+  extendTheme,
+  StyleFunctionProps,
+  ThemeConfig,
+  Tooltip,
+  useColorMode,
+} from "@chakra-ui/react";
 import type { ChakraProviderProps } from "@chakra-ui/react/dist/chakra-provider";
 import { mode } from "@chakra-ui/theme-tools";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import Fonts from "./theme/Fonts";
 import { formsTheme } from "./theme/formsTheme";
 import { tabsTheme } from "./theme/tabsTheme";
@@ -27,9 +35,6 @@ const theme = extendTheme({
     body: `'Inter', sans-serif`,
   },
   colors: {
-    kurtosisSelected: {
-      100: "#292929",
-    },
     kurtosisGreen: {
       100: "#005e11",
       200: "#008c19",
@@ -40,6 +45,7 @@ const theme = extendTheme({
       700: "#99f7aa",
     },
     darkBlue: {
+      200: "#516A77",
       400: "#516A77",
     },
     gray: {
@@ -62,7 +68,7 @@ const theme = extendTheme({
     md: "16px",
     lg: "18px",
     xl: "20px",
-    ["2xl"]: "22px",
+    "2xl": "22px",
   },
   styles: {
     global: (props: StyleFunctionProps) => ({
@@ -91,8 +97,8 @@ const theme = extendTheme({
       },
       variants: {
         outline: (props: StyleFunctionProps) => ({
-          _hover: { bg: "initial", borderColor: `${props.colorScheme}.400` },
-          _active: { bg: "initial" },
+          _hover: { borderColor: `${props.colorScheme}.400`, bg: `gray.700` },
+          _active: { bg: `gray.800` },
           color: `${props.colorScheme}.400`,
           borderColor: "gray.300",
         }),
@@ -109,7 +115,8 @@ const theme = extendTheme({
           const outline = theme.components.Button.variants!.outline(props);
           return {
             ...outline,
-            _hover: { ...outline._hover, bg: "gray.700" },
+            _hover: { ...outline._hover, bg: "gray.700", borderColor: "gray.300", cursor: "unset" },
+            _active: { ...outline._active, bg: "gray.700", borderColor: "gray.300", cursor: "unset" },
             bg: "gray.700",
             color: `${props.colorScheme}.100`,
             borderColor: "gray.300",
@@ -123,8 +130,23 @@ const theme = extendTheme({
         })),
         ghost: defineStyle((props) => ({
           _hover: { bg: "gray.650" },
-          color: `gray.100`,
         })),
+        sortableHeader: (props: StyleFunctionProps) => {
+          const ghost = theme.components.Button.variants!.ghost(props);
+          return {
+            ...ghost,
+            color: "gray.100",
+            textTransform: "uppercase",
+          };
+        },
+        breadcrumb: (props: StyleFunctionProps) => {
+          const ghost = theme.components.Button.variants!.ghost(props);
+          return {
+            ...ghost,
+            color: "gray.100",
+            fontWeight: "normal",
+          };
+        },
         nav: {
           _active: {
             bg: "gray.600",
@@ -204,6 +226,9 @@ const theme = extendTheme({
       },
     },
     Switch: {
+      defaultProps: {
+        colorScheme: "green",
+      },
       baseStyle: defineStyle((props) => ({
         track: {
           _checked: {
@@ -273,8 +298,24 @@ export const KurtosisThemeProvider = ({
 }: PropsWithChildren<Omit<ChakraProviderProps, "theme">>) => {
   return (
     <ChakraProvider theme={theme} toastOptions={{ defaultOptions: { position: "top" } }} {...chakraProps}>
+      <ColorModeFixer />
       <Fonts />
       {children}
     </ChakraProvider>
   );
+};
+
+// This component handles legacy local storage settings on browsers that used the old
+// emui, where the color mode may be set to 'light'.
+const ColorModeFixer = () => {
+  const { colorMode, toggleColorMode } = useColorMode();
+
+  useEffect(() => {
+    // Currently only Dark Mode is supported.
+    if (colorMode === "light") {
+      toggleColorMode();
+    }
+  }, [colorMode, toggleColorMode]);
+
+  return null;
 };

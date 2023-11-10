@@ -18,7 +18,8 @@ If you notice an issue in our docs (e.g. typo, grammar, conflicting information)
 ### Questions, help, or feedback
 
 If you have a question around how Kurtosis works and the [docs](https://docs.kurtosis.com) aren't enough, we're more than happy to help and chat about your use case via the following ways:
-- Get help in our [Discord server](https://discord.gg/Es7QHbY4)
+- Post your question on our [Github Discussions Forum](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a)
+- Get help in our [Discord server](https://discord.gg/6Jjp9c89z9)
 - Email us at [feedback@kurtosistech.com](mailto:feedback@kurtosistech.com)
 - Schedule a 1:1 session with us [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 

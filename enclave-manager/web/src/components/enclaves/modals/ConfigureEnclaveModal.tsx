@@ -2,7 +2,6 @@ import {
   Button,
   Flex,
   FormControl,
-  Input,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -21,6 +20,7 @@ import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClient
 import { ArgumentValueType, KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { assertDefined, isDefined, stringifyError } from "../../../utils";
+import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../../constants";
 import { CopyButton } from "../../CopyButton";
 import { KurtosisAlert } from "../../KurtosisAlert";
 import {
@@ -86,7 +86,7 @@ export const ConfigureEnclaveModal = ({
               assertDefined(innerType2, `Cannot parse a dict argument type without knowing innterType2`);
               return isDefined(value)
                 ? Object.entries(value).map(([k, v]) => ({ key: k, value: convertArgValue(innerType2, v) }), {})
-                : {};
+                : [];
             default:
               return value;
           }
@@ -115,22 +115,23 @@ export const ConfigureEnclaveModal = ({
       }
     }
     const searchParams = new URLSearchParams(window.location.search);
-    const preloadArgs = searchParams.get("preloadArgs");
+    const preloadArgs = searchParams.get(KURTOSIS_PACKAGE_PARAMS_URL_ARG);
     if (!isDefined(preloadArgs)) {
       return undefined;
     }
     return JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
-  }, [window.location.search, existingEnclave]);
+  }, [existingEnclave, kurtosisPackage.args]);
 
-  // TODO: Improve for cloud config
-  const getLinkToCurrentConfig = () =>
-    `${window.location.href.split("?")[0]}?${new URLSearchParams({
-      preloadPackage: kurtosisPackage.name,
-      preloadArgs: btoa(JSON.stringify(formRef.current?.getValues())),
-    })}`;
+  const getLinkToCurrentConfig = () => {
+    const params = new URLSearchParams({
+      [KURTOSIS_PACKAGE_ID_URL_ARG]: kurtosisPackage.name,
+      [KURTOSIS_PACKAGE_PARAMS_URL_ARG]: btoa(JSON.stringify(formRef.current?.getValues())),
+    });
+
+    return `${kurtosisClient.getCloudBasePathUrl()}?${params}`;
+  };
 
   const handleClose = () => {
-    // TODO: verify how this effects cloud
     navigator("#", { replace: true });
     onClose();
   };
@@ -165,7 +166,7 @@ export const ConfigureEnclaveModal = ({
       { config: formData, packageId: kurtosisPackage.name, apicInfo: apicInfo.toJson() },
       {
         method: "post",
-        action: `/enclave/${enclaveUUID}`,
+        action: `/enclave/${enclaveUUID}/logs`,
         encType: "application/json",
       },
     );
@@ -173,10 +174,10 @@ export const ConfigureEnclaveModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered size={"5xl"}>
+    <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={handleClose} isCentered size={"5xl"}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader textAlign={"center"}>Enclave Configuration</ModalHeader>
+        <ModalHeader textAlign={"center"}>{!isDefined(existingEnclave) && "New "}Enclave Configuration</ModalHeader>
         <ModalCloseButton />
         <EnclaveConfigurationForm
           ref={formRef}
@@ -186,10 +187,8 @@ export const ConfigureEnclaveModal = ({
         >
           <ModalBody p={"0px"}>
             <Flex fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
-              <Text>Deploying</Text>
+              <Text>Configuring</Text>
               <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
-              <Text>to</Text>
-              <Input size={"sm"} placeholder={"an unamed environment"} width={"auto"} />
             </Flex>
             {isDefined(error) && <KurtosisAlert message={error} />}
             <Flex flexDirection={"column"} gap={"24px"} p={"12px 24px"} bg={"gray.900"}>
@@ -204,7 +203,7 @@ export const ConfigureEnclaveModal = ({
                   </FormControl>
                 </Tooltip>
                 <Tooltip shouldWrapChildren label={"Create a link that can be used to share this configuration."}>
-                  <CopyButton valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
+                  <CopyButton contentName={"url"} valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
                 </Tooltip>
               </Flex>
               <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
@@ -221,7 +220,7 @@ export const ConfigureEnclaveModal = ({
                 Cancel
               </Button>
               <Button type={"submit"} isLoading={isLoading} colorScheme={"kurtosisGreen"}>
-                Run
+                {existingEnclave ? "Update" : "Run"}
               </Button>
             </Flex>
           </ModalFooter>

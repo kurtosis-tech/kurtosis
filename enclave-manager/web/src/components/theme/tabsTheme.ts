@@ -15,13 +15,17 @@ export const tabsTheme = defineMultiStyleConfig({
         fontStyle: "normal",
         fontWeight: "medium",
         fontSize: "lg",
-        color: "gray.200",
+        color: "gray.100",
         lineHeight: "28px",
+        _hover: {
+          bg: `gray.700`,
+        },
         _selected: {
           fontWeight: "semibold",
           color: `${props.colorScheme}.400`,
           bg: `gray.800`,
         },
+        textTransform: "capitalize",
       },
       tabpanel: {
         padding: "32px 0px",

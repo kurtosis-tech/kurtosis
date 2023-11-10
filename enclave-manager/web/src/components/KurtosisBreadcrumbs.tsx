@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from "@chakra-ui/icons";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, Flex } from "@chakra-ui/react";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, Button, Flex } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { Link, Params, UIMatch, useMatches } from "react-router-dom";
 import { isDefined } from "../utils";
@@ -12,18 +12,27 @@ export type KurtosisBreadcrumb = {
 export const KurtosisBreadcrumbs = () => {
   const matches = useMatches() as UIMatch<
     object,
-    { crumb?: (data: object, params: Params<string>) => KurtosisBreadcrumb | Promise<KurtosisBreadcrumb> }
+    {
+      crumb?: (
+        data: Record<string, object>,
+        params: Params<string>,
+      ) => KurtosisBreadcrumb | Promise<KurtosisBreadcrumb>;
+    }
   >[];
 
   const [matchCrumbs, setMatchCrumbs] = useState<KurtosisBreadcrumb[]>([]);
 
   useEffect(() => {
     (async () => {
+      const allLoaderData = matches
+        .filter((match) => isDefined(match.data))
+        .reduce((acc, match) => ({ ...acc, [match.id]: match.data }), {});
+
       setMatchCrumbs(
         await Promise.all(
           matches
             .map((match) =>
-              isDefined(match.handle?.crumb) ? Promise.resolve(match.handle.crumb(match.data, match.params)) : null,
+              isDefined(match.handle?.crumb) ? Promise.resolve(match.handle.crumb(allLoaderData, match.params)) : null,
             )
             .filter(isDefined),
         ),
@@ -37,7 +46,13 @@ export const KurtosisBreadcrumbs = () => {
         {matchCrumbs.map(({ name, destination }, i, arr) => (
           <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
             <BreadcrumbLink as={i === arr.length - 1 ? undefined : Link} to={destination}>
-              {name}
+              {i === arr.length - 1 ? (
+                name
+              ) : (
+                <Button variant={"breadcrumb"} size={"sm"}>
+                  {name}
+                </Button>
+              )}
             </BreadcrumbLink>
           </BreadcrumbItem>
         ))}

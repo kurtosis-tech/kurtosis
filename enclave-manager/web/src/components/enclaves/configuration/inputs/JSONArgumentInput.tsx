@@ -1,17 +1,19 @@
-import { Textarea } from "@chakra-ui/react";
+import { Controller } from "react-hook-form";
 import { stringifyError } from "../../../../utils";
+import { CodeEditor } from "../../../CodeEditor";
 import { useEnclaveConfigurationFormContext } from "../EnclaveConfigurationForm";
 import { KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
 
 export const JSONArgumentInput = (props: Omit<KurtosisArgumentTypeInputProps, "type">) => {
-  const { register } = useEnclaveConfigurationFormContext();
+  const { control } = useEnclaveConfigurationFormContext();
 
   return (
-    <Textarea
-      {...register(props.name, {
-        disabled: props.disabled,
+    <Controller
+      render={({ field }) => <CodeEditor text={field.value} onTextChange={field.onChange} />}
+      name={props.name}
+      defaultValue={"{}"}
+      rules={{
         required: props.isRequired,
-        value: "{}",
         validate: (value: string) => {
           try {
             JSON.parse(value);
@@ -19,7 +21,8 @@ export const JSONArgumentInput = (props: Omit<KurtosisArgumentTypeInputProps, "t
             return `This is not valid JSON. ${stringifyError(err)}`;
           }
         },
-      })}
+      }}
+      disabled={props.disabled}
     />
   );
 };

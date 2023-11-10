@@ -1,5 +1,5 @@
 ---
-title: How to launch a private Ethereum testnet with Flashbot's MEV Boost implementation of Proposer Builder Seperation (PBS)
+title: How to launch a private Ethereum testnet with Flashbot's MEV Boost implementation of Proposer Builder Separation (PBS)
 sidebar_label: Launch a testnet with MEV infra
 slug: /how-to-full-mev-with-ethereum-package
 toc_max_heading_level: 2
@@ -23,7 +23,7 @@ Keep reading to learn [how it all works](#brief-overview-of-the-architecture) & 
 As a reminder, the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) is a reproducible and portable environment definition that should be used to bootstrap & deploy private testnets. The package will function the exact same way locally or in the cloud over Docker or Kubernetes, supports all major Execution Layer (EL) and Consensus Layer (CL) client implementations, and can be scaled to whatever size your team needs - limited only by your underlying hardware/backend.
 
 #### What if I only want the MEV parts?
-And if that wasn't enough, Kurtosis environment definitions (known as [Packages](https://docs.kurtosis.com/concepts-reference/packages/)) are entirely composable, meaning you can define and build-your-own private testnet using only the parts you need and with the option of adding your own services (e.g. MEV searcher tools). Feel free to check out the following [code example](https://github.com/kurtosis-tech/2-el-cl-mev-package/blob/main/main.star).
+And if that wasn't enough, Kurtosis environment definitions (known as [Packages](https://docs.kurtosis.com/advanced-concepts/packages/)) are entirely composable, meaning you can define and build-your-own private testnet using only the parts you need and with the option of adding your own services (e.g. MEV searcher tools). Feel free to check out the following [code example](https://github.com/kurtosis-tech/2-el-cl-mev-package/blob/main/main.star).
 
 ## Brief overview of the architecture
 Explicitly, the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) supports two modes: `full-mev` and `mock-mev`. 
@@ -173,9 +173,9 @@ f833b940ae5b   transaction-spammer                        <none>                
 
 As you can see above, there is *a lot* going on in your enclave - but don't worry, let's go through everything together.
 
-The first section that gets printed contains some basic metadata about the enclave that was spun up. This includes the name of the enclave `eth-network`, its [Resource Idenfitier](https://docs.kurtosis.com/concepts-reference/resource-identifier/), your enclave's status, and the time it was created.
+The first section that gets printed contains some basic metadata about the enclave that was spun up. This includes the name of the enclave `eth-network`, its [Resource Idenfitier](https://docs.kurtosis.com/advanced-concepts/resource-identifier/), your enclave's status, and the time it was created.
 
-Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/), which are Kurtosis' first-class representation of data inside your enclave, stored as compressed TGZ files. You'll notice there are configuration files for the nodes, grafana, and prometheus as well as private keys for pre-funded accounts and genesis-related data. These files artifacts were generated and used by Kurtosis to start the network and abstracts away the complexities and overhead that come with generating validator keys and getting genesis and node config files produced and mounted to the right containers yourself.
+Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.com/advanced-concepts/files-artifacts/), which are Kurtosis' first-class representation of data inside your enclave, stored as compressed TGZ files. You'll notice there are configuration files for the nodes, grafana, and prometheus as well as private keys for pre-funded accounts and genesis-related data. These files artifacts were generated and used by Kurtosis to start the network and abstracts away the complexities and overhead that come with generating validator keys and getting genesis and node config files produced and mounted to the right containers yourself.
 
 Lastly, there is a section called `User Services` which display the number of services (running in Docker containers) that make up your network. You will notice that there are 2 Ethereum nodes, each with a `MEV-Boost` instance spun up & connected to it. In addition to this, you will see the rest of the Flashbots MEV infrastructure including the `mev-relay` suite of services (read more about the `mev-relay` services [here](https://github.com/flashbots/mev-boost-relay/blob/main/ARCHITECTURE.md)) and `mev-flood`. By default, the `ethereum-package` also comes with supporting services which include a fork monitor, redis, postgres, grafana, prometheus, a transaction spammer, a testnet-verifier, and the services used to generate genesis data. Both of the Redis and Postgres instances are required for `mev-relay` to function properly. Each of these services are running in Docker containers inside your local enclave & Kurtosis has automatically mapped each container port to your machine's ephemeral ports for seamless interaction with the services running in your enclave.
 
@@ -189,7 +189,7 @@ The screenshot above is what the website looks like after the 4th epoch. You can
 And there you have it! You've now spun up a private Ethereum testnet over Docker with the Flashbot's implementation of PBS! 
 
 ## Roadmap
-The inclusion of a Proposer Builder Seperation (PBS) implemention was in support of the Ethereum Foundation's efforts to validate functionality and behavior in end-to-end testing (between in-protocol and out-of-protocol infrastructure), as well as the functionality of the beacon chain for in-protocol code paths (e.g. can clients: call for payloads reject invalid payloads, and trigger the circuit breaker when necessary).
+The inclusion of a Proposer Builder Separation (PBS) implemention was in support of the Ethereum Foundation's efforts to validate functionality and behavior in end-to-end testing (between in-protocol and out-of-protocol infrastructure), as well as the functionality of the beacon chain for in-protocol code paths (e.g. can clients: call for payloads reject invalid payloads, and trigger the circuit breaker when necessary).
 
 The next immediate thing we hope to do is to *decompose* the environment definition into smaller pieces, enabling developers to build-their-own MEV-enabled systems by simply importing only the parts of the MEV infrastructure that they need. We've begun working on this already with [eth-kurtosis](https://github.com/kurtosis-tech/eth-kurtosis), which contains an index of composable building blocks to define your own testnet.
 

@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/cluster/ls"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
@@ -33,13 +34,21 @@ var SetCmd = &lowlevel.LowlevelKurtosisCommand{
 			IsOptional:            false,
 			DefaultValue:          nil,
 			IsGreedy:              false,
-			ArgCompletionProvider: nil,
+			ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletions),
 			ValidationFunc:        nil,
 		},
 	},
 	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
 	PostValidationAndRunFunc: nil,
+}
+
+func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+	clusterList, err := ls.GetClusterList()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get Kurtosis cluster list")
+	}
+	return clusterList, nil
 }
 
 func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {

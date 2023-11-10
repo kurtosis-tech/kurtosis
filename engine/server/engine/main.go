@@ -26,6 +26,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -55,6 +58,8 @@ const (
 	remoteBackendConfigFilename = "remote_backend_config.json"
 	pathToStaticFolder          = "/run/webapp"
 	indexPath                   = "index.html"
+
+	shouldFlushMetricsClientQueueOnEachEvent = false
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -151,7 +156,7 @@ func runMain() error {
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
 	logFileManager.StartLogFileManagement(ctx)
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
+	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, serverArgs.IsCI, serverArgs.CloudUserID, serverArgs.CloudInstanceID)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -197,6 +202,31 @@ func runMain() error {
 		}
 	}()
 
+	logger := logrus.StandardLogger()
+	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
+		metrics_client.NewMetricsClientCreatorOption(
+			source.KurtosisEngineSource,
+			serverArgs.ImageVersionTag,
+			serverArgs.MetricsUserID,
+			serverArgs.KurtosisBackendType.String(),
+			serverArgs.DidUserAcceptSendingMetrics,
+			shouldFlushMetricsClientQueueOnEachEvent,
+			metrics_client.DoNothingMetricsClientCallback{},
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			serverArgs.IsCI,
+			serverArgs.CloudUserID,
+			serverArgs.CloudInstanceID,
+		),
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
+	}
+	defer func() {
+		if err := closeClientFunc(); err != nil {
+			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
+		}
+	}()
+
 	engineConnectServer := server.NewEngineConnectServerService(
 		serverArgs.ImageVersionTag,
 		enclaveManager,
@@ -204,7 +234,8 @@ func runMain() error {
 		serverArgs.DidUserAcceptSendingMetrics,
 		perWeekLogsDatabaseClient,
 		perFileLogsDatabaseClient,
-		logFileManager)
+		logFileManager,
+		metricsClient)
 	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
 	defer func() {
 		if err := engineConnectServer.Close(); err != nil {
@@ -229,6 +260,9 @@ func getEnclaveManager(
 	enclaveLogFileManager *log_file_manager.LogFileManager,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	isCI bool,
+	cloudUserId metrics_client.CloudUserID,
+	cloudInstanceId metrics_client.CloudInstanceID,
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
@@ -250,6 +284,9 @@ func getEnclaveManager(
 		enclaveLogFileManager,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		isCI,
+		cloudUserId,
+		cloudInstanceId,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave manager for backend type '%+v' using pool-size '%v' and engine version '%v'", kurtosisBackendType, poolSize, engineVersion)

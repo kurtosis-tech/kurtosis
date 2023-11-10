@@ -20,30 +20,30 @@ type ServicesTableRow = {
   status: ServiceStatus;
   // started: DateTime | null; TODO: The api needs to support this field
   image?: string;
-  ports: { privatePorts: Port[]; publicPorts: Port[] };
+  ports: { privatePorts: Record<string, Port>; publicPorts: Record<string, Port> };
 };
 
 const serviceToRow = (service: ServiceInfo): ServicesTableRow => {
   return {
-    serviceUUID: service.serviceUuid,
+    serviceUUID: service.shortenedUuid,
     name: service.name,
     status: service.serviceStatus,
     image: service.container?.imageName,
     ports: {
-      privatePorts: Object.values(service.privatePorts),
-      publicPorts: Object.values(service.maybePublicPorts),
+      privatePorts: service.privatePorts,
+      publicPorts: service.maybePublicPorts,
     },
   };
 };
 
 const columnHelper = createColumnHelper<ServicesTableRow>();
 
-type EnclavesTableProps = {
+type ServicesTableProps = {
   enclaveShortUUID: string;
   servicesResponse: RemoveFunctions<GetServicesResponse>;
 };
 
-export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: EnclavesTableProps) => {
+export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: ServicesTableProps) => {
   const services = Object.values(servicesResponse.serviceInfo).map(serviceToRow);
 
   const columns = useMemo<ColumnDef<ServicesTableRow, any>[]>(
@@ -60,7 +60,7 @@ export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: EnclavesTa
       }),
       columnHelper.accessor("status", {
         header: "Status",
-        cell: (statusCell) => <ServiceStatusTag status={statusCell.getValue()} />,
+        cell: (statusCell) => <ServiceStatusTag status={statusCell.getValue()} variant={"square"} />,
       }),
       columnHelper.accessor("image", {
         header: "Image",
@@ -75,10 +75,7 @@ export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: EnclavesTa
           />
         ),
         sortingFn: (a, b) =>
-          a.original.ports.publicPorts.length +
-          a.original.ports.privatePorts.length -
-          b.original.ports.publicPorts.length -
-          b.original.ports.privatePorts.length,
+          Object.keys(a.original.ports.publicPorts).length - Object.keys(b.original.ports.publicPorts).length,
       }),
       columnHelper.accessor("serviceUUID", {
         header: "Logs",
@@ -92,7 +89,7 @@ export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: EnclavesTa
         enableSorting: false,
       }),
     ],
-    [],
+    [enclaveShortUUID],
   );
 
   return <DataTable columns={columns} data={services} defaultSorting={[{ id: "name", desc: true }]} />;

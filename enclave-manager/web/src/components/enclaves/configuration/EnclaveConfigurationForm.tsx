@@ -34,7 +34,7 @@ export const EnclaveConfigurationForm = forwardRef<
     [methods],
   );
 
-  const handleSubmit: SubmitHandler<ConfigureEnclaveForm> = (data) => {
+  const handleSubmit: SubmitHandler<ConfigureEnclaveForm> = (data: { args: { [x: string]: any } }) => {
     const transformValue = (
       valueType: ArgumentValueType | undefined,
       value: any,
@@ -98,7 +98,7 @@ export const EnclaveConfigurationForm = forwardRef<
         {},
       );
 
-    onSubmit({ ...data, args: newArgs });
+    onSubmit({ enclaveName: "", restartServices: false, ...data, args: newArgs });
   };
 
   return (

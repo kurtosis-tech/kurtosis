@@ -5,27 +5,36 @@ const { defineMultiStyleConfig } = createMultiStyleConfigHelpers(tagAnatomy.keys
 
 // export the component theme
 export const tagTheme = defineMultiStyleConfig({
-  baseStyle: (props: StyleFunctionProps) => ({
-    container: {
-      bg: `${props.colorScheme}.900`,
-      color: `${props.colorScheme}.400`,
-      padding: "0 4px",
-      fontSize: "xs",
-      lineHeight: "16px",
-      borderRadius: "2px",
-      textTransform: "uppercase",
-      fontWeight: "bold",
-      minHeight: "unset",
-    },
-  }),
+  baseStyle: {
+    container: { textTransform: "uppercase" },
+  },
   variants: {
     asText: (props: StyleFunctionProps) => ({
       container: {
         bg: "none",
+        color: `${props.colorScheme}.400`,
         padding: 0,
         fontSize: "inherit",
         lineHeight: "inherit",
         fontWeight: "semibold",
+      },
+    }),
+    square: (props: StyleFunctionProps) => ({
+      container: {
+        bg: `${props.colorScheme}.900`,
+        color: `${props.colorScheme}.400`,
+        padding: "0 4px",
+        fontSize: "xs",
+        lineHeight: "16px",
+        borderRadius: "2px",
+        fontWeight: "bold",
+        minHeight: "unset",
+      },
+    }),
+    solid: (props: StyleFunctionProps) => ({
+      container: {
+        color: `${props.colorScheme}.400`,
+        bg: "gray.700",
       },
     }),
   },

@@ -1,13 +1,22 @@
-import { Button, ButtonProps, useToast } from "@chakra-ui/react";
+import { Button, ButtonProps, IconButton, IconButtonProps, useToast } from "@chakra-ui/react";
 import { FiCopy } from "react-icons/fi";
 import { isDefined } from "../utils";
+import { SuccessToast } from "./Toasts";
 
-type CopyButtonProps = ButtonProps & {
+type CopyButtonProps<IsIconButton extends boolean> = (IsIconButton extends true ? IconButtonProps : ButtonProps) & {
   valueToCopy?: (() => string) | string | null;
-  text?: string;
+  text?: IsIconButton extends true ? string : never;
+  isIconButton?: IsIconButton;
+  contentName: string;
 };
 
-export const CopyButton = ({ valueToCopy, text, ...buttonProps }: CopyButtonProps) => {
+export const CopyButton = <IsIconButton extends boolean>({
+  valueToCopy,
+  text,
+  contentName,
+  isIconButton,
+  ...buttonProps
+}: CopyButtonProps<IsIconButton>) => {
   const toast = useToast();
 
   const handleCopyClick = () => {
@@ -15,19 +24,34 @@ export const CopyButton = ({ valueToCopy, text, ...buttonProps }: CopyButtonProp
       const v = typeof valueToCopy === "string" ? valueToCopy : valueToCopy();
       navigator.clipboard.writeText(v);
       toast({
-        title: `Copied '${v}' to the clipboard`,
-        status: `success`,
+        position: "bottom",
+        render: () => <SuccessToast message={`Copied ${contentName} to the clipboard`} />,
       });
     }
   };
 
-  if (!isDefined(valueToCopy)) {
+  if (!isDefined(valueToCopy) && !isDefined(buttonProps.onClick)) {
     return null;
   }
 
-  return (
-    <Button leftIcon={<FiCopy />} size={"xs"} colorScheme={"darkBlue"} onClick={handleCopyClick} {...buttonProps}>
-      {text || "Copy"}
-    </Button>
-  );
+  if (isIconButton) {
+    return (
+      <IconButton
+        icon={<FiCopy />}
+        size={"xs"}
+        variant={"ghost"}
+        colorScheme={"darkBlue"}
+        onClick={handleCopyClick}
+        {...(buttonProps as IconButtonProps)}
+      >
+        {text || "Copy"}
+      </IconButton>
+    );
+  } else {
+    return (
+      <Button leftIcon={<FiCopy />} size={"xs"} colorScheme={"darkBlue"} onClick={handleCopyClick} {...buttonProps}>
+        {text || "Copy"}
+      </Button>
+    );
+  }
 };

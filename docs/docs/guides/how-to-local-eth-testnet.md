@@ -81,9 +81,9 @@ Congratulations! You used Kurtosis to instantiate a local Ethereum testnet, with
 
 ### Review
 
-In this section, you executed a command that directed Kurtosis to use the [`ethereum-package` hosted remotely on GitHub](https://github.com/kurtosis-tech/ethereum-package) to spin up a local Ethereum testnet within a Kurtosis [Enclave](https://docs.kurtosis.com/concepts-reference/enclaves/). Inside your enclave, you will find both "file artifacts" and "user services".
+In this section, you executed a command that directed Kurtosis to use the [`ethereum-package` hosted remotely on GitHub](https://github.com/kurtosis-tech/ethereum-package) to spin up a local Ethereum testnet within a Kurtosis [Enclave](https://docs.kurtosis.com/advanced-concepts/enclaves/). Inside your enclave, you will find both "file artifacts" and "user services".
 
-The [File Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/) in your enclave include all the data generated and utilized to bootstrap the EL and CL clients. The data was created using the `prelaunch-data-generator` service built from this [Docker image](https://github.com/ethpandaops/ethereum-genesis-generator)
+The [File Artifacts](https://docs.kurtosis.com/advanced-concepts/files-artifacts/) in your enclave include all the data generated and utilized to bootstrap the EL and CL clients. The data was created using the `prelaunch-data-generator` service built from this [Docker image](https://github.com/ethpandaops/ethereum-genesis-generator)
 
 User services display all the containerized services operating in your enclave. You will notice that a single node, featuring both an EL client and a CL client, has been created.
 
@@ -325,7 +325,7 @@ And that's it! To recap this short guide, you:
 * Deployed a dApp and ran a simple test against it on the local Ethereum network
 * Configured the underlying Ethereum network to have 3 nodes
 
-We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or [email us](mailto:feedback@kurtosistech.com)!
+We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via a post in our [discussions forum on Github](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a) or in our [Discord Server](https://discord.gg/jJFG7XBqcY).
 
 ### Other examples and guides
 We encourage you to check out our [quickstart](https://docs.kurtosis.com/quickstart) (where you’ll build a Postgres database and API on top) and our other examples in our [awesome-kurtosis repository](https://github.com/kurtosis-tech/awesome-kurtosis) where you’ll find some great examples.
