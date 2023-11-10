@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.85.14](https://github.com/kurtosis-tech/kurtosis/compare/0.85.13...0.85.14) (2023-11-10)
+
+
+### Features
+
+* receive request for URL and broadcast url change ([#1753](https://github.com/kurtosis-tech/kurtosis/issues/1753)) ([9b3ef55](https://github.com/kurtosis-tech/kurtosis/commit/9b3ef5597a6b72b32bc97f10e742daafc249e925))
+
+
+### Bug Fixes
+
+* triple logs bug ([#1752](https://github.com/kurtosis-tech/kurtosis/issues/1752)) ([5c4c86d](https://github.com/kurtosis-tech/kurtosis/commit/5c4c86dc7c5826de624bf96c4b681fa013dfc8bd))
+
 ## [0.85.13](https://github.com/kurtosis-tech/kurtosis/compare/0.85.12...0.85.13) (2023-11-10)
 
 
