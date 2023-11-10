@@ -470,6 +470,7 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
 
   /**
    * Defaults to empty
+   * Deprecated: This value isn't used in the APIC anymore
    *
    * @generated from field: optional string cloud_instance_id = 12;
    */
@@ -477,6 +478,7 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
 
   /**
    * Defaults to empty
+   * Deprecated: This value isn't used in the APIC anymore
    *
    * @generated from field: optional string cloud_user_id = 13;
    */
