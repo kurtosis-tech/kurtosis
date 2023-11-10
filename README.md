@@ -121,7 +121,46 @@ This repository is structured as a monorepo, containing the following projects:
 - `docs`: Documentation that is published to [docs.kurtosis.com](docs)
 - `internal_testsuites`: End to end tests
 
-Dev Dependencies
+Dev Dependencies (Nix)
+----------------
+
+Install the [Nix package manager](https://nixos.org/download).
+```bash
+sh <(curl -L https://nixos.org/nix/install)
+```
+
+And enable some Nix flags (alternatively you can add `--extra-experimental-features 'nix-command flakes'` every time calling the `nix` command):
+```bash
+mkdir -p ~/.config/nix
+echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+```
+
+And to bring the environment up, just open a new shell terminal, go to the root folder of the repo and run:
+```bash
+nix  develop
+```
+
+This will download all dev deps and setup the environment accordingly.
+
+You can also use the [`direnv`](https://direnv.net/) to automatically load the environment when entering the main folder or using a plugin in your preferred IDE:
+- `vscode`: [mkhl.direnv](https://github.com/direnv/direnv-vscode)
+- `jet brains`: [Direnv integration](https://plugins.jetbrains.com/plugin/15285-direnv-integration)
+
+Direnv can also be easily installed with Nix (or [HomeBrew](https://formulae.brew.sh/formula/direnv) if you prefer):
+```bash
+nix-env -f '<nixpkgs>' -iA direnv
+```
+
+Now you just to add the direnv hook to your shell:
+```bash
+echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+# or for ZSH
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+```
+
+Now next time you open a new shell terminal and go to repo's folder you environment will update and load automatically.
+
+Dev Dependencies (Manual install)
 ----------------
 
 The commands below assume that the env variable BREW_PREFIX contains the brew prefix.
