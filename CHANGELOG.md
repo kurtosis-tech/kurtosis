@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.12](https://github.com/kurtosis-tech/kurtosis/compare/0.85.11...0.85.12) (2023-11-10)
+
+
+### Features
+
+* reconnect to service logs and link ([#1742](https://github.com/kurtosis-tech/kurtosis/issues/1742)) ([57468d0](https://github.com/kurtosis-tech/kurtosis/commit/57468d04dec4eb784c3a848ab5b405b99994ac5d))
+
 ## [0.85.11](https://github.com/kurtosis-tech/kurtosis/compare/0.85.10...0.85.11) (2023-11-10)
 
 
