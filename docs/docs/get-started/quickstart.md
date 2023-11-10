@@ -61,7 +61,10 @@ kurtosis files download quickstart service-c-rendered-config
 This will put the `service-c-rendered-config` [files artifact][files-artifacts-reference] on your machine. You can see its contents with:
 
 ```console
-~ cat service-c-rendered-config/service-config.json
+cat service-c-rendered-config/service-config.json
+```
+You should see the rendered config file with the contents:
+```
 {
     "service-a": [{"name": "service-a-1", "uri": "172.16.12.4:8501"}],
     "service-b": [{"name": "service-b-1", "uri": "172.16.12.5:8501"}]
@@ -105,7 +108,10 @@ Here you can see 2 instances of Service A and 2 instances of Service B in the ou
 kurtosis files download quickstart service-c-rendered-config
 ```
 ```console
-~ cat service-c-rendered-config/service-config.json
+cat service-c-rendered-config/service-config.json
+```
+You should see the rendered config file with the contents:
+```
 {
     "service-a": [{"name": "service-a-1", "uri": "172.16.16.4:8501"},{"name": "service-a-2", "uri": "172.16.16.7:8501"}],
     "service-b": [{"name": "service-b-1", "uri": "172.16.16.5:8501"},{"name": "service-b-2", "uri": "172.16.16.8:8501"}]
@@ -140,7 +146,10 @@ Finally, Service A also has the `party_mode` flagged turned on. For Service A, t
 kurtosis files download quickstart service-a-rendered-config
 ```
 ```console
-~ cat service-a-rendered-config/service-config.json
+cat service-a-rendered-config/service-config.json
+```
+You should see the config file contents with the feature flag turned on:
+```
 {
     "party_mode": true
 }
