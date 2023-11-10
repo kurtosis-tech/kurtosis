@@ -208,7 +208,9 @@ export const ConfigureEnclaveModal = ({
               <Text>Configuring</Text>
               <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
             </Flex>
-            {isDefined(error) && <KurtosisAlert flex={"0"} message={error} />}
+            {isDefined(error) && (
+              <KurtosisAlert flex={"0"} message={"Could not execute configuration"} details={error} />
+            )}
             <Flex
               flex={"0 1 auto"}
               overflowY={"scroll"}
