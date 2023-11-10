@@ -54,7 +54,7 @@
 
             in [
               goreleaser
-              go_1_19
+              go_1_20
               gopls
               golangci-lint
               delve
