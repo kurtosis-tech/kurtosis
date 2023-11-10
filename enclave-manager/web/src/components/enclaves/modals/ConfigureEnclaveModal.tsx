@@ -32,6 +32,7 @@ import { StringArgumentInput } from "../configuration/inputs/StringArgumentInput
 import { KurtosisArgumentFormControl } from "../configuration/KurtosisArgumentFormControl";
 import { KurtosisPackageArgumentInput } from "../configuration/KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../configuration/types";
+import { allowedEnclaveNamePattern, isEnclaveNameAllowed } from "../utils";
 import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
 
 type ConfigureEnclaveModalProps = {
@@ -207,7 +208,15 @@ export const ConfigureEnclaveModal = ({
                 </Tooltip>
               </Flex>
               <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
-                <StringArgumentInput name={"enclaveName"} disabled={isDefined(existingEnclave)} />
+                <StringArgumentInput
+                  name={"enclaveName"}
+                  disabled={isDefined(existingEnclave)}
+                  validate={(value) => {
+                    if (!isEnclaveNameAllowed(value)) {
+                      return `The enclave name must match ${allowedEnclaveNamePattern}`;
+                    }
+                  }}
+                />
               </KurtosisArgumentFormControl>
               {kurtosisPackage.args.map((arg, i) => (
                 <KurtosisPackageArgumentInput key={i} argument={arg} />
