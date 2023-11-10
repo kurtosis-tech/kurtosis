@@ -3163,6 +3163,11 @@
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-2.0.1.tgz#20f18294f797f2209b5f65c8e3b5c8e8261d127c"
   integrity sha512-Hl219/BT5fLAaz6NDkSuhzasy49dwQS/DSdu4MdggFB8zcXv7vflBI3xp7FEmkmdDkBUI2bPUNeMttp2knYdxw==
 
+"@types/streamsaver@^2.0.4":
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/@types/streamsaver/-/streamsaver-2.0.4.tgz#b57e47f9246dc0ed69378f7d1387857c94043ecf"
+  integrity sha512-XxpGYIaBP+2NgZ5+4YeG7hI3wYAyOX8QB92xlPpNvStIAvlniml1th+D0bes1lUZz52IWkPlXMf88wy8NzFkbA==
+
 "@types/trusted-types@^2.0.2":
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/@types/trusted-types/-/trusted-types-2.0.4.tgz#2b38784cd16957d3782e8e2b31c03bc1d13b4d65"
@@ -9832,6 +9837,11 @@ statuses@2.0.1:
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/statuses/-/statuses-1.5.0.tgz#161c7dac177659fd9811f43771fa99381478628c"
   integrity sha512-OpZ3zP+jT1PI7I8nemJX4AKmAX070ZkYPVWV/AaKTJl+tXCTGyVdC1a4SL8RUQYEwk/f34ZX8UTykN68FwrqAA==
+
+streamsaver@^2.0.6:
+  version "2.0.6"
+  resolved "https://registry.yarnpkg.com/streamsaver/-/streamsaver-2.0.6.tgz#869d2347dd70191e0ac888d52296956a8cba2ed9"
+  integrity sha512-LK4e7TfCV8HzuM0PKXuVUfKyCB1FtT9L0EGxsFk5Up8njj0bXK8pJM9+Wq2Nya7/jslmCQwRK39LFm55h7NBTw==
 
 string-length@^4.0.1:
   version "4.0.2"

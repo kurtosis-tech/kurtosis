@@ -16,6 +16,7 @@ export const BooleanArgumentInput = ({ inputType, ...props }: BooleanArgumentInp
           disabled: props.disabled,
           required: props.isRequired,
           value: true,
+          validate: props.validate,
         })}
       />
     );
@@ -27,6 +28,7 @@ export const BooleanArgumentInput = ({ inputType, ...props }: BooleanArgumentInp
             {...register(props.name, {
               disabled: props.disabled,
               required: props.isRequired,
+              validate: props.validate,
             })}
             value={"true"}
           >
@@ -36,6 +38,7 @@ export const BooleanArgumentInput = ({ inputType, ...props }: BooleanArgumentInp
             {...register(props.name, {
               disabled: props.disabled,
               required: props.isRequired,
+              validate: props.validate,
             })}
             value={"false"}
           >

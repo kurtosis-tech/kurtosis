@@ -32,7 +32,13 @@ export const EnclaveSourceButton = ({ source, ...buttonProps }: EnclaveSourcePro
   return (
     <ButtonGroup>
       {button}
-      <CopyButton contentName={"package id"} valueToCopy={source} isIconButton aria-label={"Copy package id"} />
+      <CopyButton
+        contentName={"package id"}
+        valueToCopy={source}
+        isIconButton
+        aria-label={"Copy package id"}
+        size={buttonProps.size || "xs"}
+      />
     </ButtonGroup>
   );
 };

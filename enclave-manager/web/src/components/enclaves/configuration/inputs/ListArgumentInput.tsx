@@ -20,6 +20,7 @@ export const ListArgumentInput = ({ valueType, ...otherProps }: ListArgumentInpu
             type={valueType}
             name={`${otherProps.name as `args.${string}.${number}`}.${i}.value`}
             isRequired
+            validate={otherProps.validate}
           />
           <Button onClick={() => remove(i)} leftIcon={<FiDelete />} minW={"90px"}>
             Delete
