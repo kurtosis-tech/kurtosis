@@ -6,6 +6,7 @@ import { FiDelete, FiPlus } from "react-icons/fi";
 import { stringifyError } from "../../../../utils";
 import { CopyButton } from "../../../CopyButton";
 import { PasteButton } from "../../../PasteButton";
+import { KurtosisArgumentSubtypeFormControl } from "../KurtosisArgumentFormControl";
 import { ConfigureEnclaveForm } from "../types";
 import { KurtosisArgumentTypeInput, KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
 
@@ -52,22 +53,34 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
       </ButtonGroup>
       {fields.map((field, i) => (
         <Flex key={i} gap={"10px"}>
-          <KurtosisArgumentTypeInput
-            type={keyType}
-            name={`${otherProps.name as `args.${string}.${number}.value`}.${i}.key`}
-            validate={otherProps.validate}
-            isRequired
-            size={"xs"}
-            width={"222px"}
-          />
-          <KurtosisArgumentTypeInput
-            type={valueType}
-            name={`${otherProps.name as `args.${string}.${number}.value`}.${i}.value`}
-            validate={otherProps.validate}
-            isRequired
-            size={"xs"}
-            width={"222px"}
-          />
+          <KurtosisArgumentSubtypeFormControl
+            name={`${otherProps.name as `args.${string}`}.${i}.key`}
+            disabled={otherProps.disabled}
+            isRequired={otherProps.isRequired}
+          >
+            <KurtosisArgumentTypeInput
+              type={keyType}
+              name={`${otherProps.name as `args.${string}`}.${i}.key`}
+              validate={otherProps.validate}
+              isRequired
+              size={"xs"}
+              width={"222px"}
+            />
+          </KurtosisArgumentSubtypeFormControl>
+          <KurtosisArgumentSubtypeFormControl
+            name={`${otherProps.name as `args.${string}`}.${i}.value`}
+            disabled={otherProps.disabled}
+            isRequired={otherProps.isRequired}
+          >
+            <KurtosisArgumentTypeInput
+              type={valueType}
+              name={`${otherProps.name as `args.${string}`}.${i}.value`}
+              validate={otherProps.validate}
+              isRequired
+              size={"xs"}
+              width={"222px"}
+            />
+          </KurtosisArgumentSubtypeFormControl>
           <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"xs"} colorScheme={"red"}>
             Delete
           </Button>

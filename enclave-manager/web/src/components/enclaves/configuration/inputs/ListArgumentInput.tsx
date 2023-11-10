@@ -6,6 +6,7 @@ import { FiDelete, FiPlus } from "react-icons/fi";
 import { stringifyError } from "../../../../utils";
 import { CopyButton } from "../../../CopyButton";
 import { PasteButton } from "../../../PasteButton";
+import { KurtosisArgumentSubtypeFormControl } from "../KurtosisArgumentFormControl";
 import { ConfigureEnclaveForm } from "../types";
 import { KurtosisArgumentTypeInput, KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
 
@@ -43,22 +44,28 @@ export const ListArgumentInput = ({ valueType, ...otherProps }: ListArgumentInpu
         <PasteButton onValuePasted={handleValuePaste} />
       </ButtonGroup>
       {fields.map((field, i) => (
-        <Flex key={i} gap={"10px"}>
-          <KurtosisArgumentTypeInput
-            type={valueType}
-            name={`${otherProps.name as `args.${string}.${number}`}.${i}.value`}
-            isRequired
-            validate={otherProps.validate}
-            width={"411px"}
-            size={"xs"}
-          />
+        <Flex key={field.id} gap={"10px"}>
+          <KurtosisArgumentSubtypeFormControl
+            disabled={otherProps.disabled}
+            isRequired={otherProps.isRequired}
+            name={`${otherProps.name as `args.${string}`}.${i}.value`}
+          >
+            <KurtosisArgumentTypeInput
+              type={valueType}
+              name={`${otherProps.name as `args.${string}`}.${i}.value`}
+              isRequired
+              validate={otherProps.validate}
+              width={"411px"}
+              size={"xs"}
+            />
+          </KurtosisArgumentSubtypeFormControl>
           <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"xs"} colorScheme={"red"}>
             Delete
           </Button>
         </Flex>
       ))}
       <Flex>
-        <Button onClick={() => append({})} leftIcon={<FiPlus />} colorScheme={"kurtosisGreen"} size={"xs"}>
+        <Button onClick={() => append({ value: "" })} leftIcon={<FiPlus />} colorScheme={"kurtosisGreen"} size={"xs"}>
           Add
         </Button>
       </Flex>
