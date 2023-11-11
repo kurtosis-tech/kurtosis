@@ -85,7 +85,7 @@ You can also do a set of actions you would expect from a standard Docker or Kube
 
 </details>
 
-Modify your deployed application with a JSON configuration
+Modify your deployed application with a JSON config
 ----------
 
 Kurtosis packages take in JSON parameters, allowing developers to make high-level modifications to their deployed applications. To see how this works, run:
