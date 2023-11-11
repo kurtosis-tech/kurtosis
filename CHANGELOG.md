@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.17](https://github.com/kurtosis-tech/kurtosis/compare/0.85.16...0.85.17) (2023-11-11)
+
+
+### Bug Fixes
+
+* EM UI improvements ([#1764](https://github.com/kurtosis-tech/kurtosis/issues/1764)) ([65e450d](https://github.com/kurtosis-tech/kurtosis/commit/65e450d9d8c4682e12e203f7f7ab66db1a096b2f))
+
 ## [0.85.16](https://github.com/kurtosis-tech/kurtosis/compare/0.85.15...0.85.16) (2023-11-11)
 
 
