@@ -75,7 +75,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
         featureName: "Enclave Logs",
         issueUrl: "https://github.com/kurtosis-tech/kurtosis/issues/1721",
         message:
-          "Enclave logs are currently only viewable during configuration. Please open a feature request if you’d like these logs to be persisted.",
+          "Enclave logs are currently only viewable during configuration. Please upvote this feature request if you'd like enclave logs to be persisted.",
       });
       return;
     }
