@@ -1,6 +1,6 @@
 ---
-title: Installing Historical Versions
-sidebar_label: Installing Historical Versions
+title: Installing Old Versions
+sidebar_label: Installing Old Versions
 slug: /install-historical
 sidebar_position: 4
 ---
@@ -12,9 +12,9 @@ import TabItem from '@theme/TabItem';
 
 <!---------- END IMPORTS ------------>
 
-Occasionally, using historical versions of Kurtosis is necessary. For example, when working with a [Starlark](../advanced-concepts/starlark.md) Kurtosis package that was initially developed with an older version of Kurtosis, we might want rollback our Kurtosis version to ensure the version of Kurtosis we are running is compatible with the Kurtosis package.
+Occasionally, using older versions of Kurtosis is necessary. For example, when working with a [Starlark](../advanced-concepts/starlark.md) Kurtosis package that was initially developed with an older version of Kurtosis, we might want rollback our Kurtosis version to ensure the version of Kurtosis we are running is compatible with the Kurtosis package.
 
-The instructions in this guide will walk you through installing and using a historical version of Kurtosis. To see what versions are available, reference our [changelog](../changelog.md).
+The instructions in this guide will walk you through installing and using an older version of Kurtosis. To see what versions are available, reference our [changelog](../changelog.md).
 
 If you're looking to install the latest version of Kurtosis, [see here][install-kurtosis].
 
