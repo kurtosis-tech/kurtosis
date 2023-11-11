@@ -7,7 +7,7 @@ toc_max_heading_level: 2
 sidebar_position: 3
 ---
 
-This guide takes ~5 minutes and will walk you through running a containerized application using the Kurtosis CLI. You'll also inspect your running environment, modify the deployed application, and then run it over Kubernetes.
+This guide takes ~5 minutes and will walk you through running a containerized application using the Kurtosis CLI. You'll install Kurtosis, deploy an application from a Github locator, inspect your running environment, and then modify the deployed application by passing in a JSON config.
 
 <details><summary>Forget installing! Let me do it on Gitpod</summary>
 
