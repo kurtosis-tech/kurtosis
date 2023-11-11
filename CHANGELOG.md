@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.16](https://github.com/kurtosis-tech/kurtosis/compare/0.85.15...0.85.16) (2023-11-11)
+
+
+### Bug Fixes
+
+* new build (6) ([#1762](https://github.com/kurtosis-tech/kurtosis/issues/1762)) ([b5b8db4](https://github.com/kurtosis-tech/kurtosis/commit/b5b8db47e0b7ad4a2a5d7ae5a37e32b7a44bfc1c))
+
 ## [0.85.15](https://github.com/kurtosis-tech/kurtosis/compare/0.85.14...0.85.15) (2023-11-11)
 
 
