@@ -1,4 +1,4 @@
-# Enclave Manager UI (EM UI)   
+# Enclave Manager UI (EM UI)
 
 This codebase produces the enclave manager UI (ie `kurtosis web`). The `src` directory contains:
 
