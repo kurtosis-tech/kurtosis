@@ -1,7 +1,5 @@
 import { FiHome } from "react-icons/fi";
-import { PiLinkSimpleBold } from "react-icons/pi";
 import { Link, useLocation } from "react-router-dom";
-import { KURTOSIS_CLOUD_CONNECT_URL } from "../client/constants";
 import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
 import { NavButton, Navigation } from "../components/Navigation";
 
