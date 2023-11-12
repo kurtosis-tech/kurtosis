@@ -22,11 +22,11 @@ export const Navbar = ({ baseApplicationUrl }: NavbarProps) => {
           isActive={location.pathname === "/" || location.pathname.startsWith("/enclave")}
         />
       </Link>
-      {kurtosisClient.isRunningInCloud() && (
-        <Link to={KURTOSIS_CLOUD_CONNECT_URL}>
-          <NavButton label={"Link your CLI"} Icon={<PiLinkSimpleBold />} isActive={true} />
-        </Link>
-      )}
+      {/*{kurtosisClient.isRunningInCloud() && (*/}
+      {/*  <Link to={KURTOSIS_CLOUD_CONNECT_URL}>*/}
+      {/*    <NavButton label={"Link your CLI"} Icon={<PiLinkSimpleBold />} isActive={true} />*/}
+      {/*  </Link>*/}
+      {/*)}*/}
       {/*<Link to={"/catalog"}>*/}
       {/*  <NavButton label={"View catalog"} Icon={<FiPackage />} isActive={location.pathname.startsWith("/catalog")} />*/}
       {/*</Link>*/}
