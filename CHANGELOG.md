@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.18](https://github.com/kurtosis-tech/kurtosis/compare/0.85.17...0.85.18) (2023-11-12)
+
+
+### Features
+
+* disable connect button ([#1766](https://github.com/kurtosis-tech/kurtosis/issues/1766)) ([6b079d2](https://github.com/kurtosis-tech/kurtosis/commit/6b079d2824809096015ab5e094cd2b32cb54ae4c))
+
 ## [0.85.17](https://github.com/kurtosis-tech/kurtosis/compare/0.85.16...0.85.17) (2023-11-11)
 
 
