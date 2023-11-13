@@ -1,15 +1,19 @@
-import { Button, ButtonGroup, ButtonProps, Icon, Tag } from "@chakra-ui/react";
+import { Button, ButtonGroup, ButtonProps, Icon, Spinner, Tag } from "@chakra-ui/react";
 import { IoLogoGithub } from "react-icons/io";
 import { isDefined } from "../../../utils";
 import { CopyButton } from "../../CopyButton";
 
 type EnclaveSourceProps = ButtonProps & {
-  source: string | null;
+  source: "loading" | string | null;
 };
 
 export const EnclaveSourceButton = ({ source, ...buttonProps }: EnclaveSourceProps) => {
   if (!isDefined(source)) {
     return <Tag>Unknown</Tag>;
+  }
+
+  if (source === "loading") {
+    return <Spinner size={"xs"} />;
   }
 
   let button = (

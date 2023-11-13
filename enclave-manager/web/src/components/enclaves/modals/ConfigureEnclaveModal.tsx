@@ -15,9 +15,10 @@ import {
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { useMemo, useRef, useState } from "react";
 import { SubmitHandler } from "react-hook-form";
-import { useNavigate, useSubmit } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
 import { ArgumentValueType, KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
+import { useEmuiAppContext } from "../../../emui/EmuiAppContext";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { assertDefined, isDefined, stringifyError } from "../../../utils";
 import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../../constants";
@@ -49,14 +50,14 @@ export const ConfigureEnclaveModal = ({
   existingEnclave,
 }: ConfigureEnclaveModalProps) => {
   const kurtosisClient = useKurtosisClient();
+  const { createEnclave, runStarlarkPackage } = useEmuiAppContext();
   const navigator = useNavigate();
-  const submit = useSubmit();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
   const formRef = useRef<EnclaveConfigurationFormImperativeAttributes>(null);
 
   const initialValues = useMemo(() => {
-    if (isDefined(existingEnclave)) {
+    if (isDefined(existingEnclave) && isDefined(existingEnclave.starlarkRun)) {
       if (existingEnclave.starlarkRun.isErr) {
         setError(
           `Could not retrieve starlark run for previous configuration, got error: ${existingEnclave.starlarkRun.isErr}`,
@@ -73,7 +74,7 @@ export const ConfigureEnclaveModal = ({
         ): any => {
           switch (argType) {
             case ArgumentValueType.BOOL:
-              return !!value ? "true" : "false";
+              return !!value ? "true" : isDefined(value) ? "false" : "";
             case ArgumentValueType.INTEGER:
               return isDefined(value) ? `${value}` : "";
             case ArgumentValueType.STRING:
@@ -158,7 +159,7 @@ export const ConfigureEnclaveModal = ({
     let enclaveUUID = existingEnclave?.shortenedUuid;
     if (!isDefined(existingEnclave)) {
       setIsLoading(true);
-      const newEnclave = await kurtosisClient.createEnclave(formData.enclaveName, "info", formData.restartServices);
+      const newEnclave = await createEnclave(formData.enclaveName, "info", formData.restartServices);
       setIsLoading(false);
 
       if (newEnclave.isErr) {
@@ -177,14 +178,9 @@ export const ConfigureEnclaveModal = ({
       setError(`Cannot trigger starlark run as apic info cannot be found`);
       return;
     }
-    submit(
-      { config: formData, packageId: kurtosisPackage.name, apicInfo: apicInfo.toJson() },
-      {
-        method: "post",
-        action: `/enclave/${enclaveUUID}/logs`,
-        encType: "application/json",
-      },
-    );
+
+    const logsIterator = await runStarlarkPackage(apicInfo, kurtosisPackage.name, formData.args);
+    navigator(`/enclave/${enclaveUUID}/logs`, { state: { logs: logsIterator } });
     onClose();
   };
 

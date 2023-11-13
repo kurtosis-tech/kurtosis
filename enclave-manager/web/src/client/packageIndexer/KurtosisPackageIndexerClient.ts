@@ -36,6 +36,7 @@ export class KurtosisPackageIndexerClient {
             baseUrl: "github.com",
             owner: components[1],
             name: components[2],
+            rootPath: components.filter((v, i) => i > 2 && v.length > 0).join("/") + "/",
           },
         }),
       );

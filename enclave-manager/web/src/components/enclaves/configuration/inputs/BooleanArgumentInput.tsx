@@ -7,7 +7,9 @@ type BooleanArgumentInputProps = Omit<KurtosisArgumentTypeInputProps, "type"> & 
 };
 
 export const BooleanArgumentInput = ({ inputType, ...props }: BooleanArgumentInputProps) => {
-  const { register } = useEnclaveConfigurationFormContext();
+  const { register, getValues } = useEnclaveConfigurationFormContext();
+
+  const currentDefault = getValues(props.name);
 
   if (inputType === "switch") {
     return (
@@ -22,7 +24,7 @@ export const BooleanArgumentInput = ({ inputType, ...props }: BooleanArgumentInp
     );
   } else {
     return (
-      <RadioGroup>
+      <RadioGroup defaultValue={currentDefault}>
         <Stack direction={"row"}>
           <Radio
             {...register(props.name, {
