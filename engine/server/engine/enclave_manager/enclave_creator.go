@@ -2,12 +2,13 @@ package enclave_manager
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -43,7 +44,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
-) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
+) (*types.EnclaveInfo, error) {
 
 	uuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
@@ -109,11 +110,11 @@ func (creator *EnclaveCreator) CreateEnclave(
 		}
 	}()
 
-	var apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
+	var apiContainerHostMachineInfo *types.EnclaveAPIContainerHostMachineInfo
 	if apiContainer.GetPublicIPAddress() != nil &&
 		apiContainer.GetPublicGRPCPort() != nil {
 
-		apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
+		apiContainerHostMachineInfo = &types.EnclaveAPIContainerHostMachineInfo{
 			IpOnHostMachine:       apiContainer.GetPublicIPAddress().String(),
 			GrpcPortOnHostMachine: uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
 		}
@@ -132,25 +133,25 @@ func (creator *EnclaveCreator) CreateEnclave(
 		bridgeIpAddr = apiContainer.GetBridgeNetworkIPAddress().String()
 	}
 
-	mode := kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
+	mode := types.EnclaveMode_TEST
 	if newEnclave.IsProductionEnclave() {
-		mode = kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
+		mode = types.EnclaveMode_PRODUCTION
 	}
 
-	newEnclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
-		EnclaveUuid:        newEnclaveUuidStr,
-		Name:               newEnclave.GetName(),
-		ShortenedUuid:      shortenedUuid,
-		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
-		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
-		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
+	newEnclaveInfo := &types.EnclaveInfo{
+		EnclaveUuid:             newEnclaveUuidStr,
+		Name:                    newEnclave.GetName(),
+		ShortenedUuid:           shortenedUuid,
+		EnclaveContainersStatus: types.EnclaveContainersStatus_RUNNING,
+		ApiContainerStatus:      types.ContainerStatus_RUNNING,
+		ApiContainerInfo: &types.EnclaveAPIContainerInfo{
 			ContainerId:           "",
 			IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),
 			GrpcPortInsideEnclave: uint32(apiContainerListenGrpcPortNumInsideNetwork),
 			BridgeIpAddress:       bridgeIpAddr,
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
-		CreationTime:                creationTimestamp,
+		CreationTime:                *creationTimestamp,
 		Mode:                        mode,
 	}
 
