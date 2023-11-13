@@ -6,7 +6,9 @@ package kurtosis_engine_http_api_bindings
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -210,6 +212,430 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/enclaves/:enclave_identifier/stop", wrapper.PostEnclavesEnclaveIdentifierStop)
 	router.GET(baseURL+"/engine/info", wrapper.GetEngineInfo)
 
+}
+
+type DeleteEnclavesRequestObject struct {
+	Params DeleteEnclavesParams
+}
+
+type DeleteEnclavesResponseObject interface {
+	VisitDeleteEnclavesResponse(w http.ResponseWriter) error
+}
+
+type DeleteEnclaves200JSONResponse CleanResponse
+
+func (response DeleteEnclaves200JSONResponse) VisitDeleteEnclavesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetEnclavesRequestObject struct {
+}
+
+type GetEnclavesResponseObject interface {
+	VisitGetEnclavesResponse(w http.ResponseWriter) error
+}
+
+type GetEnclaves200JSONResponse GetEnclavesResponse
+
+func (response GetEnclaves200JSONResponse) VisitGetEnclavesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostEnclavesRequestObject struct {
+	Body *PostEnclavesJSONRequestBody
+}
+
+type PostEnclavesResponseObject interface {
+	VisitPostEnclavesResponse(w http.ResponseWriter) error
+}
+
+type PostEnclaves200JSONResponse CreateEnclaveResponse
+
+func (response PostEnclaves200JSONResponse) VisitPostEnclavesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetEnclavesHistoricalRequestObject struct {
+}
+
+type GetEnclavesHistoricalResponseObject interface {
+	VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error
+}
+
+type GetEnclavesHistorical200JSONResponse GetExistingAndHistoricalEnclaveIdentifiersResponse
+
+func (response GetEnclavesHistorical200JSONResponse) VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteEnclavesEnclaveIdentifierRequestObject struct {
+	EnclaveIdentifier string `json:"enclave_identifier"`
+}
+
+type DeleteEnclavesEnclaveIdentifierResponseObject interface {
+	VisitDeleteEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error
+}
+
+type DeleteEnclavesEnclaveIdentifier200JSONResponse map[string]interface{}
+
+func (response DeleteEnclavesEnclaveIdentifier200JSONResponse) VisitDeleteEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetEnclavesEnclaveIdentifierRequestObject struct {
+	EnclaveIdentifier string `json:"enclave_identifier"`
+}
+
+type GetEnclavesEnclaveIdentifierResponseObject interface {
+	VisitGetEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error
+}
+
+type GetEnclavesEnclaveIdentifier200JSONResponse EnclaveInfo
+
+func (response GetEnclavesEnclaveIdentifier200JSONResponse) VisitGetEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostEnclavesEnclaveIdentifierLogsRequestObject struct {
+	EnclaveIdentifier string `json:"enclave_identifier"`
+	Body              *PostEnclavesEnclaveIdentifierLogsJSONRequestBody
+}
+
+type PostEnclavesEnclaveIdentifierLogsResponseObject interface {
+	VisitPostEnclavesEnclaveIdentifierLogsResponse(w http.ResponseWriter) error
+}
+
+type PostEnclavesEnclaveIdentifierLogs200JSONResponse GetServiceLogsResponse
+
+func (response PostEnclavesEnclaveIdentifierLogs200JSONResponse) VisitPostEnclavesEnclaveIdentifierLogsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostEnclavesEnclaveIdentifierStopRequestObject struct {
+	EnclaveIdentifier string `json:"enclave_identifier"`
+}
+
+type PostEnclavesEnclaveIdentifierStopResponseObject interface {
+	VisitPostEnclavesEnclaveIdentifierStopResponse(w http.ResponseWriter) error
+}
+
+type PostEnclavesEnclaveIdentifierStop200JSONResponse map[string]interface{}
+
+func (response PostEnclavesEnclaveIdentifierStop200JSONResponse) VisitPostEnclavesEnclaveIdentifierStopResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetEngineInfoRequestObject struct {
+}
+
+type GetEngineInfoResponseObject interface {
+	VisitGetEngineInfoResponse(w http.ResponseWriter) error
+}
+
+type GetEngineInfo200JSONResponse GetEngineInfoResponse
+
+func (response GetEngineInfo200JSONResponse) VisitGetEngineInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+	// Delete Enclaves
+	// (DELETE /enclaves)
+	DeleteEnclaves(ctx context.Context, request DeleteEnclavesRequestObject) (DeleteEnclavesResponseObject, error)
+	// Get Enclaves
+	// (GET /enclaves)
+	GetEnclaves(ctx context.Context, request GetEnclavesRequestObject) (GetEnclavesResponseObject, error)
+	// Create Enclave
+	// (POST /enclaves)
+	PostEnclaves(ctx context.Context, request PostEnclavesRequestObject) (PostEnclavesResponseObject, error)
+	// Get Historical Enclaves
+	// (GET /enclaves/historical)
+	GetEnclavesHistorical(ctx context.Context, request GetEnclavesHistoricalRequestObject) (GetEnclavesHistoricalResponseObject, error)
+	// Destroy Enclave
+	// (DELETE /enclaves/{enclave_identifier})
+	DeleteEnclavesEnclaveIdentifier(ctx context.Context, request DeleteEnclavesEnclaveIdentifierRequestObject) (DeleteEnclavesEnclaveIdentifierResponseObject, error)
+	// Get Enclave Info
+	// (GET /enclaves/{enclave_identifier})
+	GetEnclavesEnclaveIdentifier(ctx context.Context, request GetEnclavesEnclaveIdentifierRequestObject) (GetEnclavesEnclaveIdentifierResponseObject, error)
+	// Get Service Logs
+	// (POST /enclaves/{enclave_identifier}/logs)
+	PostEnclavesEnclaveIdentifierLogs(ctx context.Context, request PostEnclavesEnclaveIdentifierLogsRequestObject) (PostEnclavesEnclaveIdentifierLogsResponseObject, error)
+	// Stop Enclave
+	// (POST /enclaves/{enclave_identifier}/stop)
+	PostEnclavesEnclaveIdentifierStop(ctx context.Context, request PostEnclavesEnclaveIdentifierStopRequestObject) (PostEnclavesEnclaveIdentifierStopResponseObject, error)
+	// Get Engine Info
+	// (GET /engine/info)
+	GetEngineInfo(ctx context.Context, request GetEngineInfoRequestObject) (GetEngineInfoResponseObject, error)
+}
+
+type StrictHandlerFunc func(ctx echo.Context, args interface{}) (interface{}, error)
+
+type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+}
+
+// DeleteEnclaves operation middleware
+func (sh *strictHandler) DeleteEnclaves(ctx echo.Context, params DeleteEnclavesParams) error {
+	var request DeleteEnclavesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteEnclaves(ctx.Request().Context(), request.(DeleteEnclavesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteEnclaves")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteEnclavesResponseObject); ok {
+		return validResponse.VisitDeleteEnclavesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetEnclaves operation middleware
+func (sh *strictHandler) GetEnclaves(ctx echo.Context) error {
+	var request GetEnclavesRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEnclaves(ctx.Request().Context(), request.(GetEnclavesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEnclaves")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetEnclavesResponseObject); ok {
+		return validResponse.VisitGetEnclavesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostEnclaves operation middleware
+func (sh *strictHandler) PostEnclaves(ctx echo.Context) error {
+	var request PostEnclavesRequestObject
+
+	var body PostEnclavesJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostEnclaves(ctx.Request().Context(), request.(PostEnclavesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostEnclaves")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostEnclavesResponseObject); ok {
+		return validResponse.VisitPostEnclavesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetEnclavesHistorical operation middleware
+func (sh *strictHandler) GetEnclavesHistorical(ctx echo.Context) error {
+	var request GetEnclavesHistoricalRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEnclavesHistorical(ctx.Request().Context(), request.(GetEnclavesHistoricalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEnclavesHistorical")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetEnclavesHistoricalResponseObject); ok {
+		return validResponse.VisitGetEnclavesHistoricalResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteEnclavesEnclaveIdentifier operation middleware
+func (sh *strictHandler) DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier string) error {
+	var request DeleteEnclavesEnclaveIdentifierRequestObject
+
+	request.EnclaveIdentifier = enclaveIdentifier
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteEnclavesEnclaveIdentifier(ctx.Request().Context(), request.(DeleteEnclavesEnclaveIdentifierRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteEnclavesEnclaveIdentifier")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteEnclavesEnclaveIdentifierResponseObject); ok {
+		return validResponse.VisitDeleteEnclavesEnclaveIdentifierResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetEnclavesEnclaveIdentifier operation middleware
+func (sh *strictHandler) GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier string) error {
+	var request GetEnclavesEnclaveIdentifierRequestObject
+
+	request.EnclaveIdentifier = enclaveIdentifier
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEnclavesEnclaveIdentifier(ctx.Request().Context(), request.(GetEnclavesEnclaveIdentifierRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEnclavesEnclaveIdentifier")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetEnclavesEnclaveIdentifierResponseObject); ok {
+		return validResponse.VisitGetEnclavesEnclaveIdentifierResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostEnclavesEnclaveIdentifierLogs operation middleware
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier string) error {
+	var request PostEnclavesEnclaveIdentifierLogsRequestObject
+
+	request.EnclaveIdentifier = enclaveIdentifier
+
+	var body PostEnclavesEnclaveIdentifierLogsJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostEnclavesEnclaveIdentifierLogs(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierLogsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostEnclavesEnclaveIdentifierLogs")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierLogsResponseObject); ok {
+		return validResponse.VisitPostEnclavesEnclaveIdentifierLogsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostEnclavesEnclaveIdentifierStop operation middleware
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierStop(ctx echo.Context, enclaveIdentifier string) error {
+	var request PostEnclavesEnclaveIdentifierStopRequestObject
+
+	request.EnclaveIdentifier = enclaveIdentifier
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostEnclavesEnclaveIdentifierStop(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierStopRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostEnclavesEnclaveIdentifierStop")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierStopResponseObject); ok {
+		return validResponse.VisitPostEnclavesEnclaveIdentifierStopResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetEngineInfo operation middleware
+func (sh *strictHandler) GetEngineInfo(ctx echo.Context) error {
+	var request GetEngineInfoRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEngineInfo(ctx.Request().Context(), request.(GetEngineInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEngineInfo")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetEngineInfoResponseObject); ok {
+		return validResponse.VisitGetEngineInfoResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object

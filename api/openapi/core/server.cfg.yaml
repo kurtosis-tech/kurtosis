@@ -2,4 +2,5 @@ package: kurtosis_core_http_api_bindings
 generate:
   embedded-spec: true
   echo-server: true
+  strict-server: true
 output: api/golang/core/kurtosis_core_http_api_bindings/api_container_server.gen.go

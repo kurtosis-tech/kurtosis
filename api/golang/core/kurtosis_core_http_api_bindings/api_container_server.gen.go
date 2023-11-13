@@ -6,8 +6,11 @@ package kurtosis_core_http_api_bindings
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -317,6 +320,762 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/starlark/packages/:package_id", wrapper.PostStarlarkPackagesPackageId)
 	router.POST(baseURL+"/starlark/scripts", wrapper.PostStarlarkScripts)
 
+}
+
+type SuccessAsteriskResponse struct {
+	Body io.Reader
+
+	ContentType   string
+	ContentLength int64
+}
+
+type GetArtifactsRequestObject struct {
+}
+
+type GetArtifactsResponseObject interface {
+	VisitGetArtifactsResponse(w http.ResponseWriter) error
+}
+
+type GetArtifacts200JSONResponse ListFilesArtifactNamesAndUuidsResponse
+
+func (response GetArtifacts200JSONResponse) VisitGetArtifactsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutArtifactsLocalFileRequestObject struct {
+	Body *PutArtifactsLocalFileJSONRequestBody
+}
+
+type PutArtifactsLocalFileResponseObject interface {
+	VisitPutArtifactsLocalFileResponse(w http.ResponseWriter) error
+}
+
+type PutArtifactsLocalFile200JSONResponse UploadFilesArtifactResponse
+
+func (response PutArtifactsLocalFile200JSONResponse) VisitPutArtifactsLocalFileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutArtifactsRemoteFileRequestObject struct {
+	Body *PutArtifactsRemoteFileJSONRequestBody
+}
+
+type PutArtifactsRemoteFileResponseObject interface {
+	VisitPutArtifactsRemoteFileResponse(w http.ResponseWriter) error
+}
+
+type PutArtifactsRemoteFile200JSONResponse StoreWebFilesArtifactResponse
+
+func (response PutArtifactsRemoteFile200JSONResponse) VisitPutArtifactsRemoteFileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutArtifactsServicesServiceIdentifierRequestObject struct {
+	ServiceIdentifier string `json:"service_identifier"`
+	Body              *PutArtifactsServicesServiceIdentifierJSONRequestBody
+}
+
+type PutArtifactsServicesServiceIdentifierResponseObject interface {
+	VisitPutArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error
+}
+
+type PutArtifactsServicesServiceIdentifier200JSONResponse StoreFilesArtifactFromServiceResponse
+
+func (response PutArtifactsServicesServiceIdentifier200JSONResponse) VisitPutArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetArtifactsArtifactIdentifierRequestObject struct {
+	ArtifactIdentifier string `json:"artifact_identifier"`
+}
+
+type GetArtifactsArtifactIdentifierResponseObject interface {
+	VisitGetArtifactsArtifactIdentifierResponse(w http.ResponseWriter) error
+}
+
+type GetArtifactsArtifactIdentifier200JSONResponse InspectFilesArtifactContentsResponse
+
+func (response GetArtifactsArtifactIdentifier200JSONResponse) VisitGetArtifactsArtifactIdentifierResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetArtifactsArtifactIdentifierDownloadRequestObject struct {
+	ArtifactIdentifier string `json:"artifact_identifier"`
+}
+
+type GetArtifactsArtifactIdentifierDownloadResponseObject interface {
+	VisitGetArtifactsArtifactIdentifierDownloadResponse(w http.ResponseWriter) error
+}
+
+type GetArtifactsArtifactIdentifierDownload200JSONResponse StreamedDataChunk
+
+func (response GetArtifactsArtifactIdentifierDownload200JSONResponse) VisitGetArtifactsArtifactIdentifierDownloadResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetServicesRequestObject struct {
+}
+
+type GetServicesResponseObject interface {
+	VisitGetServicesResponse(w http.ResponseWriter) error
+}
+
+type GetServices200JSONResponse GetExistingAndHistoricalServiceIdentifiersResponse
+
+func (response GetServices200JSONResponse) VisitGetServicesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostServicesConnectionRequestObject struct {
+	Body *PostServicesConnectionJSONRequestBody
+}
+
+type PostServicesConnectionResponseObject interface {
+	VisitPostServicesConnectionResponse(w http.ResponseWriter) error
+}
+
+type PostServicesConnection200JSONResponse ConnectServicesResponse
+
+func (response PostServicesConnection200JSONResponse) VisitPostServicesConnectionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetServicesServiceIdentifierRequestObject struct {
+	ServiceIdentifier string `json:"service_identifier"`
+	Params            GetServicesServiceIdentifierParams
+}
+
+type GetServicesServiceIdentifierResponseObject interface {
+	VisitGetServicesServiceIdentifierResponse(w http.ResponseWriter) error
+}
+
+type GetServicesServiceIdentifier200JSONResponse GetServicesResponse
+
+func (response GetServicesServiceIdentifier200JSONResponse) VisitGetServicesServiceIdentifierResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostServicesServiceIdentifierCommandRequestObject struct {
+	ServiceIdentifier string `json:"service_identifier"`
+	Body              *PostServicesServiceIdentifierCommandJSONRequestBody
+}
+
+type PostServicesServiceIdentifierCommandResponseObject interface {
+	VisitPostServicesServiceIdentifierCommandResponse(w http.ResponseWriter) error
+}
+
+type PostServicesServiceIdentifierCommand200JSONResponse ExecCommandResponse
+
+func (response PostServicesServiceIdentifierCommand200JSONResponse) VisitPostServicesServiceIdentifierCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject struct {
+	ServiceIdentifier string `json:"service_identifier"`
+	PortNumber        int    `json:"port_number"`
+	Body              *PostServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody
+}
+
+type PostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject interface {
+	VisitPostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error
+}
+
+type PostServicesServiceIdentifierEndpointsPortNumberAvailability200AsteriskResponse struct{ SuccessAsteriskResponse }
+
+func (response PostServicesServiceIdentifierEndpointsPortNumberAvailability200AsteriskResponse) VisitPostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", response.ContentType)
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetStarlarkRequestObject struct {
+}
+
+type GetStarlarkResponseObject interface {
+	VisitGetStarlarkResponse(w http.ResponseWriter) error
+}
+
+type GetStarlark200JSONResponse GetStarlarkRunResponse
+
+func (response GetStarlark200JSONResponse) VisitGetStarlarkResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutStarlarkPackagesRequestObject struct {
+	Body *PutStarlarkPackagesJSONRequestBody
+}
+
+type PutStarlarkPackagesResponseObject interface {
+	VisitPutStarlarkPackagesResponse(w http.ResponseWriter) error
+}
+
+type PutStarlarkPackages200AsteriskResponse struct{ SuccessAsteriskResponse }
+
+func (response PutStarlarkPackages200AsteriskResponse) VisitPutStarlarkPackagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", response.ContentType)
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type PostStarlarkPackagesPackageIdRequestObject struct {
+	PackageId string `json:"package_id"`
+	Body      *PostStarlarkPackagesPackageIdJSONRequestBody
+}
+
+type PostStarlarkPackagesPackageIdResponseObject interface {
+	VisitPostStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error
+}
+
+type PostStarlarkPackagesPackageId200JSONResponse StarlarkRunResponseLine
+
+func (response PostStarlarkPackagesPackageId200JSONResponse) VisitPostStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostStarlarkScriptsRequestObject struct {
+	Body *PostStarlarkScriptsJSONRequestBody
+}
+
+type PostStarlarkScriptsResponseObject interface {
+	VisitPostStarlarkScriptsResponse(w http.ResponseWriter) error
+}
+
+type PostStarlarkScripts200JSONResponse StarlarkRunResponseLine
+
+func (response PostStarlarkScripts200JSONResponse) VisitPostStarlarkScriptsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+// StrictServerInterface represents all server handlers.
+type StrictServerInterface interface {
+
+	// (GET /artifacts)
+	GetArtifacts(ctx context.Context, request GetArtifactsRequestObject) (GetArtifactsResponseObject, error)
+
+	// (PUT /artifacts/local-file)
+	PutArtifactsLocalFile(ctx context.Context, request PutArtifactsLocalFileRequestObject) (PutArtifactsLocalFileResponseObject, error)
+
+	// (PUT /artifacts/remote-file)
+	PutArtifactsRemoteFile(ctx context.Context, request PutArtifactsRemoteFileRequestObject) (PutArtifactsRemoteFileResponseObject, error)
+
+	// (PUT /artifacts/services/{service_identifier})
+	PutArtifactsServicesServiceIdentifier(ctx context.Context, request PutArtifactsServicesServiceIdentifierRequestObject) (PutArtifactsServicesServiceIdentifierResponseObject, error)
+
+	// (GET /artifacts/{artifact_identifier})
+	GetArtifactsArtifactIdentifier(ctx context.Context, request GetArtifactsArtifactIdentifierRequestObject) (GetArtifactsArtifactIdentifierResponseObject, error)
+
+	// (GET /artifacts/{artifact_identifier}/download)
+	GetArtifactsArtifactIdentifierDownload(ctx context.Context, request GetArtifactsArtifactIdentifierDownloadRequestObject) (GetArtifactsArtifactIdentifierDownloadResponseObject, error)
+
+	// (GET /services)
+	GetServices(ctx context.Context, request GetServicesRequestObject) (GetServicesResponseObject, error)
+
+	// (POST /services/connection)
+	PostServicesConnection(ctx context.Context, request PostServicesConnectionRequestObject) (PostServicesConnectionResponseObject, error)
+
+	// (GET /services/{service_identifier})
+	GetServicesServiceIdentifier(ctx context.Context, request GetServicesServiceIdentifierRequestObject) (GetServicesServiceIdentifierResponseObject, error)
+
+	// (POST /services/{service_identifier}/command)
+	PostServicesServiceIdentifierCommand(ctx context.Context, request PostServicesServiceIdentifierCommandRequestObject) (PostServicesServiceIdentifierCommandResponseObject, error)
+
+	// (POST /services/{service_identifier}/endpoints/{port_number}/availability)
+	PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx context.Context, request PostServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject) (PostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject, error)
+
+	// (GET /starlark)
+	GetStarlark(ctx context.Context, request GetStarlarkRequestObject) (GetStarlarkResponseObject, error)
+
+	// (PUT /starlark/packages)
+	PutStarlarkPackages(ctx context.Context, request PutStarlarkPackagesRequestObject) (PutStarlarkPackagesResponseObject, error)
+
+	// (POST /starlark/packages/{package_id})
+	PostStarlarkPackagesPackageId(ctx context.Context, request PostStarlarkPackagesPackageIdRequestObject) (PostStarlarkPackagesPackageIdResponseObject, error)
+
+	// (POST /starlark/scripts)
+	PostStarlarkScripts(ctx context.Context, request PostStarlarkScriptsRequestObject) (PostStarlarkScriptsResponseObject, error)
+}
+
+type StrictHandlerFunc func(ctx echo.Context, args interface{}) (interface{}, error)
+
+type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
+
+func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareFunc) ServerInterface {
+	return &strictHandler{ssi: ssi, middlewares: middlewares}
+}
+
+type strictHandler struct {
+	ssi         StrictServerInterface
+	middlewares []StrictMiddlewareFunc
+}
+
+// GetArtifacts operation middleware
+func (sh *strictHandler) GetArtifacts(ctx echo.Context) error {
+	var request GetArtifactsRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetArtifacts(ctx.Request().Context(), request.(GetArtifactsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetArtifacts")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetArtifactsResponseObject); ok {
+		return validResponse.VisitGetArtifactsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PutArtifactsLocalFile operation middleware
+func (sh *strictHandler) PutArtifactsLocalFile(ctx echo.Context) error {
+	var request PutArtifactsLocalFileRequestObject
+
+	var body PutArtifactsLocalFileJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PutArtifactsLocalFile(ctx.Request().Context(), request.(PutArtifactsLocalFileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutArtifactsLocalFile")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PutArtifactsLocalFileResponseObject); ok {
+		return validResponse.VisitPutArtifactsLocalFileResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PutArtifactsRemoteFile operation middleware
+func (sh *strictHandler) PutArtifactsRemoteFile(ctx echo.Context) error {
+	var request PutArtifactsRemoteFileRequestObject
+
+	var body PutArtifactsRemoteFileJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PutArtifactsRemoteFile(ctx.Request().Context(), request.(PutArtifactsRemoteFileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutArtifactsRemoteFile")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PutArtifactsRemoteFileResponseObject); ok {
+		return validResponse.VisitPutArtifactsRemoteFileResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PutArtifactsServicesServiceIdentifier operation middleware
+func (sh *strictHandler) PutArtifactsServicesServiceIdentifier(ctx echo.Context, serviceIdentifier string) error {
+	var request PutArtifactsServicesServiceIdentifierRequestObject
+
+	request.ServiceIdentifier = serviceIdentifier
+
+	var body PutArtifactsServicesServiceIdentifierJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PutArtifactsServicesServiceIdentifier(ctx.Request().Context(), request.(PutArtifactsServicesServiceIdentifierRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutArtifactsServicesServiceIdentifier")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PutArtifactsServicesServiceIdentifierResponseObject); ok {
+		return validResponse.VisitPutArtifactsServicesServiceIdentifierResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetArtifactsArtifactIdentifier operation middleware
+func (sh *strictHandler) GetArtifactsArtifactIdentifier(ctx echo.Context, artifactIdentifier string) error {
+	var request GetArtifactsArtifactIdentifierRequestObject
+
+	request.ArtifactIdentifier = artifactIdentifier
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetArtifactsArtifactIdentifier(ctx.Request().Context(), request.(GetArtifactsArtifactIdentifierRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetArtifactsArtifactIdentifier")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetArtifactsArtifactIdentifierResponseObject); ok {
+		return validResponse.VisitGetArtifactsArtifactIdentifierResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetArtifactsArtifactIdentifierDownload operation middleware
+func (sh *strictHandler) GetArtifactsArtifactIdentifierDownload(ctx echo.Context, artifactIdentifier string) error {
+	var request GetArtifactsArtifactIdentifierDownloadRequestObject
+
+	request.ArtifactIdentifier = artifactIdentifier
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetArtifactsArtifactIdentifierDownload(ctx.Request().Context(), request.(GetArtifactsArtifactIdentifierDownloadRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetArtifactsArtifactIdentifierDownload")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetArtifactsArtifactIdentifierDownloadResponseObject); ok {
+		return validResponse.VisitGetArtifactsArtifactIdentifierDownloadResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetServices operation middleware
+func (sh *strictHandler) GetServices(ctx echo.Context) error {
+	var request GetServicesRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetServices(ctx.Request().Context(), request.(GetServicesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetServices")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetServicesResponseObject); ok {
+		return validResponse.VisitGetServicesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostServicesConnection operation middleware
+func (sh *strictHandler) PostServicesConnection(ctx echo.Context) error {
+	var request PostServicesConnectionRequestObject
+
+	var body PostServicesConnectionJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostServicesConnection(ctx.Request().Context(), request.(PostServicesConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostServicesConnection")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostServicesConnectionResponseObject); ok {
+		return validResponse.VisitPostServicesConnectionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetServicesServiceIdentifier operation middleware
+func (sh *strictHandler) GetServicesServiceIdentifier(ctx echo.Context, serviceIdentifier string, params GetServicesServiceIdentifierParams) error {
+	var request GetServicesServiceIdentifierRequestObject
+
+	request.ServiceIdentifier = serviceIdentifier
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetServicesServiceIdentifier(ctx.Request().Context(), request.(GetServicesServiceIdentifierRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetServicesServiceIdentifier")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetServicesServiceIdentifierResponseObject); ok {
+		return validResponse.VisitGetServicesServiceIdentifierResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostServicesServiceIdentifierCommand operation middleware
+func (sh *strictHandler) PostServicesServiceIdentifierCommand(ctx echo.Context, serviceIdentifier string) error {
+	var request PostServicesServiceIdentifierCommandRequestObject
+
+	request.ServiceIdentifier = serviceIdentifier
+
+	var body PostServicesServiceIdentifierCommandJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostServicesServiceIdentifierCommand(ctx.Request().Context(), request.(PostServicesServiceIdentifierCommandRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostServicesServiceIdentifierCommand")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostServicesServiceIdentifierCommandResponseObject); ok {
+		return validResponse.VisitPostServicesServiceIdentifierCommandResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostServicesServiceIdentifierEndpointsPortNumberAvailability operation middleware
+func (sh *strictHandler) PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, serviceIdentifier string, portNumber int) error {
+	var request PostServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject
+
+	request.ServiceIdentifier = serviceIdentifier
+	request.PortNumber = portNumber
+
+	var body PostServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx.Request().Context(), request.(PostServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostServicesServiceIdentifierEndpointsPortNumberAvailability")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject); ok {
+		return validResponse.VisitPostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetStarlark operation middleware
+func (sh *strictHandler) GetStarlark(ctx echo.Context) error {
+	var request GetStarlarkRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetStarlark(ctx.Request().Context(), request.(GetStarlarkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetStarlark")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetStarlarkResponseObject); ok {
+		return validResponse.VisitGetStarlarkResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PutStarlarkPackages operation middleware
+func (sh *strictHandler) PutStarlarkPackages(ctx echo.Context) error {
+	var request PutStarlarkPackagesRequestObject
+
+	var body PutStarlarkPackagesJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PutStarlarkPackages(ctx.Request().Context(), request.(PutStarlarkPackagesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutStarlarkPackages")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PutStarlarkPackagesResponseObject); ok {
+		return validResponse.VisitPutStarlarkPackagesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostStarlarkPackagesPackageId operation middleware
+func (sh *strictHandler) PostStarlarkPackagesPackageId(ctx echo.Context, packageId string) error {
+	var request PostStarlarkPackagesPackageIdRequestObject
+
+	request.PackageId = packageId
+
+	var body PostStarlarkPackagesPackageIdJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostStarlarkPackagesPackageId(ctx.Request().Context(), request.(PostStarlarkPackagesPackageIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostStarlarkPackagesPackageId")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostStarlarkPackagesPackageIdResponseObject); ok {
+		return validResponse.VisitPostStarlarkPackagesPackageIdResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostStarlarkScripts operation middleware
+func (sh *strictHandler) PostStarlarkScripts(ctx echo.Context) error {
+	var request PostStarlarkScriptsRequestObject
+
+	var body PostStarlarkScriptsJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostStarlarkScripts(ctx.Request().Context(), request.(PostStarlarkScriptsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostStarlarkScripts")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostStarlarkScriptsResponseObject); ok {
+		return validResponse.VisitPostStarlarkScriptsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
