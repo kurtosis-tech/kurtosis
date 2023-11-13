@@ -2,7 +2,9 @@ import { ChevronRightIcon } from "@chakra-ui/icons";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, Button, Flex } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { Link, Params, UIMatch, useMatches } from "react-router-dom";
+import { EmuiAppState, useEmuiAppContext } from "../emui/EmuiAppContext";
 import { isDefined } from "../utils";
+import { RemoveFunctions } from "../utils/types";
 
 export type KurtosisBreadcrumb = {
   name: string;
@@ -10,11 +12,13 @@ export type KurtosisBreadcrumb = {
 };
 
 export const KurtosisBreadcrumbs = () => {
+  const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave } = useEmuiAppContext();
+
   const matches = useMatches() as UIMatch<
     object,
     {
       crumb?: (
-        data: Record<string, object>,
+        state: RemoveFunctions<EmuiAppState>,
         params: Params<string>,
       ) => KurtosisBreadcrumb | Promise<KurtosisBreadcrumb>;
     }
@@ -24,21 +28,24 @@ export const KurtosisBreadcrumbs = () => {
 
   useEffect(() => {
     (async () => {
-      const allLoaderData = matches
-        .filter((match) => isDefined(match.data))
-        .reduce((acc, match) => ({ ...acc, [match.id]: match.data }), {});
-
       setMatchCrumbs(
         await Promise.all(
           matches
             .map((match) =>
-              isDefined(match.handle?.crumb) ? Promise.resolve(match.handle.crumb(allLoaderData, match.params)) : null,
+              isDefined(match.handle?.crumb)
+                ? Promise.resolve(
+                    match.handle.crumb(
+                      { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave },
+                      match.params,
+                    ),
+                  )
+                : null,
             )
             .filter(isDefined),
         ),
       );
     })();
-  }, [matches]);
+  }, [matches, enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave]);
 
   return (
     <Flex h="40px" p={"4px 0"} alignItems={"center"}>

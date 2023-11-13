@@ -1,6 +1,5 @@
 import { FiHome } from "react-icons/fi";
 import { Link, useLocation } from "react-router-dom";
-import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
 import { NavButton, Navigation } from "../components/Navigation";
 
 export type NavbarProps = {
@@ -9,7 +8,7 @@ export type NavbarProps = {
 
 export const Navbar = ({ baseApplicationUrl }: NavbarProps) => {
   const location = useLocation();
-  const kurtosisClient = useKurtosisClient();
+  // const kurtosisClient = useKurtosisClient();
 
   return (
     <Navigation baseApplicationUrl={baseApplicationUrl}>

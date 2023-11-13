@@ -1,14 +1,18 @@
-import { Flex, Tag, TagProps, Tooltip } from "@chakra-ui/react";
+import { Flex, Spinner, Tag, TagProps, Tooltip } from "@chakra-ui/react";
 import { ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
 import { isDefined } from "../../../utils";
 
 type ServicesSummaryProps = {
-  services: ServiceInfo[] | null;
+  services: "loading" | ServiceInfo[] | null;
 };
 
 export const EnclaveServicesSummary = ({ services }: ServicesSummaryProps) => {
   if (!isDefined(services)) {
     return <Tag>Unknown</Tag>;
+  }
+
+  if (services === "loading") {
+    return <Spinner size={"xs"} />;
   }
 
   const runningServices = services.filter(({ serviceStatus }) => serviceStatus === ServiceStatus.RUNNING).length;

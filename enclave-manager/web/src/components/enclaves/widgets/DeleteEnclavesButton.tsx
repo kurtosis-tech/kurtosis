@@ -1,7 +1,8 @@
 import { Button } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
-import { useFetcher } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useEmuiAppContext } from "../../../emui/EmuiAppContext";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { KurtosisAlertModal } from "../../KurtosisAlertModal";
 
@@ -10,7 +11,8 @@ type DeleteEnclavesButtonProps = {
 };
 
 export const DeleteEnclavesButton = ({ enclaves }: DeleteEnclavesButtonProps) => {
-  const fetcher = useFetcher();
+  const { destroyEnclave } = useEmuiAppContext();
+  const navigator = useNavigate();
 
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,13 +30,12 @@ export const DeleteEnclavesButton = ({ enclaves }: DeleteEnclavesButtonProps) =>
 
   const handleDelete = async () => {
     setIsLoading(true);
-    fetcher.submit(
-      {
-        intent: "delete",
-        enclaveUUIDs: enclaves.map(({ enclaveUuid }) => enclaveUuid),
-      },
-      { method: "post", action: "/enclaves", encType: "application/json" },
-    );
+    for (const enclaveUUID of enclaves.map(({ enclaveUuid }) => enclaveUuid)) {
+      await destroyEnclave(enclaveUUID);
+    }
+    navigator("/enclaves");
+    setIsLoading(false);
+    setShowModal(false);
   };
 
   return (
