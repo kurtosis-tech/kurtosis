@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.85.19](https://github.com/kurtosis-tech/kurtosis/compare/0.85.18...0.85.19) (2023-11-13)
+
+
+### Features
+
+* add enclave's flags info in the `kurtosis enclave inspect` CLI command ([#1751](https://github.com/kurtosis-tech/kurtosis/issues/1751)) ([35bad59](https://github.com/kurtosis-tech/kurtosis/commit/35bad59b59c5fca0705086b0cfdce7ab381c73ee)), closes [#1363](https://github.com/kurtosis-tech/kurtosis/issues/1363)
+
+
+### Bug Fixes
+
+* emui optimistic data loading ([#1771](https://github.com/kurtosis-tech/kurtosis/issues/1771)) ([f105fa0](https://github.com/kurtosis-tech/kurtosis/commit/f105fa0579a2c6a987ebc6d1bb4143fa074d7966))
+
 ## [0.85.18](https://github.com/kurtosis-tech/kurtosis/compare/0.85.17...0.85.18) (2023-11-12)
 
 
