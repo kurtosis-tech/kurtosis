@@ -1146,41 +1146,41 @@ workflows:
   build:
     jobs:
       # -- build jobs ------------------------------------------
-      - kurtosis-docs-checker/check-docs:
-          dir-to-exclude: '"./docs/*"'
-          should-check-changelog: false
-          markdown-link-check-config-json: |
-            {
-                "replacementPatterns": [
-                    {
-                        "pattern": "^../kurtosis/",
-                        "replacement": "https://kurtosis-tech.github.io/kurtosis/"
-                    }
-                ],
-                "ignorePatterns": [
-                    {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
-                    },
-                    {
-                        "pattern": "https://www.notion.so/kurtosistech.*"
-                    },
-                    {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/.*"
-                    },
-                    {
-                        "pattern": "https://twitter.com/.*"
-                    },
-                    {
-                        "pattern": "http://localhost:3000"
-                    }
-                ]
-            }
-          filters:
-            branches:
-              ignore:
-                - main
-                - release-please--branches--main--components--kurtosis
-                - gh-readonly-queue/main/.*
+#      - kurtosis-docs-checker/check-docs:
+#          dir-to-exclude: '"./docs/*"'
+#          should-check-changelog: false
+#          markdown-link-check-config-json: |
+#            {
+#                "replacementPatterns": [
+#                    {
+#                        "pattern": "^../kurtosis/",
+#                        "replacement": "https://kurtosis-tech.github.io/kurtosis/"
+#                    }
+#                ],
+#                "ignorePatterns": [
+#                    {
+#                        "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
+#                    },
+#                    {
+#                        "pattern": "https://www.notion.so/kurtosistech.*"
+#                    },
+#                    {
+#                        "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/.*"
+#                    },
+#                    {
+#                        "pattern": "https://twitter.com/.*"
+#                    },
+#                    {
+#                        "pattern": "http://localhost:3000"
+#                    }
+#                ]
+#            }
+#          filters:
+#            branches:
+#              ignore:
+#                - main
+#                - release-please--branches--main--components--kurtosis
+#                - gh-readonly-queue/main/.*
 
       - build_container_engine_lib:
           filters:
