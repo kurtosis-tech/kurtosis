@@ -40,6 +40,7 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
       <ButtonGroup isAttached>
         <CopyButton
           contentName={"value"}
+          size={"sm"}
           valueToCopy={() =>
             JSON.stringify(
               getValues(otherProps.name).reduce(
@@ -49,7 +50,7 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
             )
           }
         />
-        <PasteButton onValuePasted={handleValuePaste} />
+        <PasteButton size="sm" onValuePasted={handleValuePaste} />
       </ButtonGroup>
       {fields.map((field, i) => (
         <Flex key={i} gap={"10px"}>
@@ -63,7 +64,7 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
               name={`${otherProps.name as `args.${string}`}.${i}.key`}
               validate={otherProps.validate}
               isRequired
-              size={"xs"}
+              size={"sm"}
               width={"222px"}
             />
           </KurtosisArgumentSubtypeFormControl>
@@ -77,17 +78,17 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
               name={`${otherProps.name as `args.${string}`}.${i}.value`}
               validate={otherProps.validate}
               isRequired
-              size={"xs"}
+              size={"sm"}
               width={"222px"}
             />
           </KurtosisArgumentSubtypeFormControl>
-          <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"xs"} colorScheme={"red"}>
+          <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"}>
             Delete
           </Button>
         </Flex>
       ))}
       <Flex>
-        <Button onClick={() => append({})} leftIcon={<FiPlus />} size={"xs"} colorScheme={"kurtosisGreen"}>
+        <Button onClick={() => append({})} leftIcon={<FiPlus />} size={"sm"} colorScheme={"kurtosisGreen"}>
           Add
         </Button>
       </Flex>
