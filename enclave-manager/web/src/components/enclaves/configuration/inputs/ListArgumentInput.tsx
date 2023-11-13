@@ -38,6 +38,7 @@ export const ListArgumentInput = ({ valueType, ...otherProps }: ListArgumentInpu
     <Flex flexDirection={"column"} gap={"10px"}>
       <ButtonGroup isAttached>
         <CopyButton
+          size={"sm"}
           contentName={"value"}
           valueToCopy={() => JSON.stringify(getValues(otherProps.name).map(({ value }: { value: any }) => value))}
         />
@@ -56,16 +57,16 @@ export const ListArgumentInput = ({ valueType, ...otherProps }: ListArgumentInpu
               isRequired
               validate={otherProps.validate}
               width={"411px"}
-              size={"xs"}
+              size={"sm"}
             />
           </KurtosisArgumentSubtypeFormControl>
-          <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"xs"} colorScheme={"red"}>
+          <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"}>
             Delete
           </Button>
         </Flex>
       ))}
       <Flex>
-        <Button onClick={() => append({ value: "" })} leftIcon={<FiPlus />} colorScheme={"kurtosisGreen"} size={"xs"}>
+        <Button onClick={() => append({ value: "" })} leftIcon={<FiPlus />} colorScheme={"kurtosisGreen"} size={"sm"}>
           Add
         </Button>
       </Flex>
