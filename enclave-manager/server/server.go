@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -38,8 +39,10 @@ type Authentication struct {
 }
 
 type WebServer struct {
+	*sync.RWMutex
 	engineServiceClient *kurtosis_engine_rpc_api_bindingsconnect.EngineServiceClient
 	enforceAuth         bool
+	instanceConfig      *kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
 }
 
 func NewWebserver(enforceAuth bool) (*WebServer, error) {
@@ -50,6 +53,7 @@ func NewWebserver(enforceAuth bool) (*WebServer, error) {
 	return &WebServer{
 		engineServiceClient: &engineServiceClient,
 		enforceAuth:         enforceAuth,
+		RWMutex:             &sync.RWMutex{},
 	}, nil
 }
 
@@ -408,6 +412,14 @@ func (c *WebServer) GetCloudInstanceConfig(
 	ctx context.Context,
 	apiKey string,
 ) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
+	// Check if we have already fetched the instance config, if so return the cache
+	if c.instanceConfig != nil {
+		return c.instanceConfig, nil
+	}
+
+	// We have not yet fetched the instance configuration, so we write lock, make the external call and cache the result
+	c.Lock()
+
 	client, err := c.createKurtosisCloudBackendClient(
 		kurtosisCloudApiHost,
 		kurtosisCloudApiPort,
@@ -420,6 +432,7 @@ func (c *WebServer) GetCloudInstanceConfig(
 			ApiKey: apiKey,
 		},
 	}
+
 	getInstanceResponse, err := (*client).GetOrCreateInstance(ctx, getInstanceRequest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get the instance")
@@ -434,6 +447,9 @@ func (c *WebServer) GetCloudInstanceConfig(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get the instance config")
 	}
+
+	c.instanceConfig = getInstanceConfigResponse.Msg
+	c.Unlock()
 
 	return getInstanceConfigResponse.Msg, nil
 }
