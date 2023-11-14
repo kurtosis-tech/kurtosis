@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.20](https://github.com/kurtosis-tech/kurtosis/compare/0.85.19...0.85.20) (2023-11-14)
+
+
+### Bug Fixes
+
+* cache the instance config and api key ([#1775](https://github.com/kurtosis-tech/kurtosis/issues/1775)) ([dafe2bb](https://github.com/kurtosis-tech/kurtosis/commit/dafe2bb46dc13c457b15bb563a92ce951e9fdfc5))
+
 ## [0.85.19](https://github.com/kurtosis-tech/kurtosis/compare/0.85.18...0.85.19) (2023-11-13)
 
 
