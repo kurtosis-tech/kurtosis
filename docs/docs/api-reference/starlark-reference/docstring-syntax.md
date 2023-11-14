@@ -90,20 +90,51 @@ def run(plan, required_arg, optional_arg=True, untyped_arg=None):
 
 Several things to note about this docstring syntax:
 
-- Every function MUST have a description, in order for the docstring to be parsed properly
-- The names of the arguments in the docstring must correspond to the function argument names
+- Every function MUST have a description before the `Args` block (until [this issue](https://github.com/kurtosis-tech/kurtosis-package-indexer/issues/58) is resolved)
+- The description after the `:` (including continuation lines) is rendered in the form using Markdown. For example, entering the following:
+  ```
+  some_arg (string): Some description about this argument.
+      See [this link](https://some-location.com) for more information.
+  ```
+  would render a link in the description of the argument in the generated form.
+- The names of the arguments in the docstring must exactly correspond to the names of the function arguments
 - The `plan` argument does not need to be documented; it corresponds to the [`Plan` object](./plan.md) and Kurtosis will inject it automatically
-- If an argument has a default value, it will be marked as optional in the Kurtosis-generated form corresponding to this function
+- If an argument has  no default value, it will be marked as required in the Kurtosis-generated form
+- If an argument has a default value, it will be marked as optional in the Kurtosis-generated form
 - The type of an argument (specified within `()`) is optional
 
 ### Types
-The values available within `()`
+The values available for use within the `()` to document the type of a function argument are as follows:
 
+Primitives:
+- `string`
+- `int`
+- `bool`
 
-- The available primitive types are `string`, `bool`, and `int`, and the available complex types are `list[PRIMITIVE]` and `dict[PRIMITIVE, PRIMITIVE]`
-    - E.g. to specify that an argument is a dict of `int` -> `string` key/value pairs, the type inside `()` should be `dict[int, string]`
-- If the type of an argument is not specified or invalid, Kurtosis will generate a YAML input box for the form so that the user can specify 
-- 
+Complex types:
+- `list[X]` where `X` is a primitive type
+- `dict[X, X]`  where `X` is a primitive type
 
-The available types 
+If a type argument is not specified, Kurtosis will instead generate a JSON field for inputting arbitrary values into the field. The JSON value that the user enters will be transliterated to a Starlark `dict` object.
 
+For example, if the user enters the following JSON in the form field of an argument without a type specified:
+
+```json
+{
+    "some_key": {
+        "inner_key": "Inner key value"
+    },
+    "some_bool": true
+}
+```
+
+then the equivalent Starlark that will be passed in for the function parameter will be:
+
+```python
+{
+    "some_key": {
+        "inner_key": "Inner key value",
+    },
+    "some_bool": True,
+}
+```
