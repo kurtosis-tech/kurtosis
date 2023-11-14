@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.85.20](https://github.com/kurtosis-tech/kurtosis/compare/0.85.19...0.85.20) (2023-11-14)
+
+
+### Bug Fixes
+
+* cache the instance config and api key ([#1775](https://github.com/kurtosis-tech/kurtosis/issues/1775)) ([dafe2bb](https://github.com/kurtosis-tech/kurtosis/commit/dafe2bb46dc13c457b15bb563a92ce951e9fdfc5))
+
+## [0.85.19](https://github.com/kurtosis-tech/kurtosis/compare/0.85.18...0.85.19) (2023-11-13)
+
+
+### Features
+
+* add enclave's flags info in the `kurtosis enclave inspect` CLI command ([#1751](https://github.com/kurtosis-tech/kurtosis/issues/1751)) ([35bad59](https://github.com/kurtosis-tech/kurtosis/commit/35bad59b59c5fca0705086b0cfdce7ab381c73ee)), closes [#1363](https://github.com/kurtosis-tech/kurtosis/issues/1363)
+
+
+### Bug Fixes
+
+* emui optimistic data loading ([#1771](https://github.com/kurtosis-tech/kurtosis/issues/1771)) ([f105fa0](https://github.com/kurtosis-tech/kurtosis/commit/f105fa0579a2c6a987ebc6d1bb4143fa074d7966))
+
+## [0.85.18](https://github.com/kurtosis-tech/kurtosis/compare/0.85.17...0.85.18) (2023-11-12)
+
+
+### Features
+
+* disable connect button ([#1766](https://github.com/kurtosis-tech/kurtosis/issues/1766)) ([6b079d2](https://github.com/kurtosis-tech/kurtosis/commit/6b079d2824809096015ab5e094cd2b32cb54ae4c))
+
 ## [0.85.17](https://github.com/kurtosis-tech/kurtosis/compare/0.85.16...0.85.17) (2023-11-11)
 
 

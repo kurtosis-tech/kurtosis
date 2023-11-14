@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -38,8 +39,12 @@ type Authentication struct {
 }
 
 type WebServer struct {
+	instanceConfigMutex *sync.RWMutex
+	apiKeyMutex         *sync.RWMutex
 	engineServiceClient *kurtosis_engine_rpc_api_bindingsconnect.EngineServiceClient
 	enforceAuth         bool
+	instanceConfig      *kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
+	apiKey              *string
 }
 
 func NewWebserver(enforceAuth bool) (*WebServer, error) {
@@ -50,6 +55,8 @@ func NewWebserver(enforceAuth bool) (*WebServer, error) {
 	return &WebServer{
 		engineServiceClient: &engineServiceClient,
 		enforceAuth:         enforceAuth,
+		instanceConfigMutex: &sync.RWMutex{},
+		apiKeyMutex:         &sync.RWMutex{},
 	}, nil
 }
 
@@ -408,6 +415,15 @@ func (c *WebServer) GetCloudInstanceConfig(
 	ctx context.Context,
 	apiKey string,
 ) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
+	// Check if we have already fetched the instance config, if so return the cache
+	if c.instanceConfig != nil {
+		return c.instanceConfig, nil
+	}
+
+	// We have not yet fetched the instance configuration, so we write lock, make the external call and cache the result
+	c.instanceConfigMutex.Lock()
+	defer c.instanceConfigMutex.Unlock()
+
 	client, err := c.createKurtosisCloudBackendClient(
 		kurtosisCloudApiHost,
 		kurtosisCloudApiPort,
@@ -420,6 +436,7 @@ func (c *WebServer) GetCloudInstanceConfig(
 			ApiKey: apiKey,
 		},
 	}
+
 	getInstanceResponse, err := (*client).GetOrCreateInstance(ctx, getInstanceRequest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get the instance")
@@ -434,6 +451,8 @@ func (c *WebServer) GetCloudInstanceConfig(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get the instance config")
 	}
+
+	c.instanceConfig = getInstanceConfigResponse.Msg
 
 	return getInstanceConfigResponse.Msg, nil
 }
@@ -454,20 +473,33 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 			AccessToken: jwtToken,
 		},
 	}
-	result, err := (*client).GetOrCreateApiKey(ctx, request)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get the API key")
-	}
 
-	if result == nil {
-		// User does not have an API key (unlikely if valid jwt token)
-		return nil, stacktrace.NewError("User does not have an API key assigned")
-	}
-	if len(result.Msg.ApiKey) > 0 {
+	if c.apiKey != nil {
 		return &Authentication{
-			ApiKey:   result.Msg.ApiKey,
+			ApiKey:   *c.apiKey,
 			JwtToken: jwtToken,
 		}, nil
+	} else {
+		c.apiKeyMutex.Lock()
+		defer c.apiKeyMutex.Unlock()
+
+		result, err := (*client).GetOrCreateApiKey(ctx, request)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to get the API key")
+		}
+
+		if result == nil {
+			// User does not have an API key (not really possible if they have a valid jwt token)
+			return nil, stacktrace.NewError("User does not have an API key assigned")
+		}
+
+		if len(result.Msg.ApiKey) > 0 {
+			c.apiKey = &result.Msg.ApiKey
+			return &Authentication{
+				ApiKey:   result.Msg.ApiKey,
+				JwtToken: jwtToken,
+			}, nil
+		}
 	}
 
 	return nil, stacktrace.NewError("an empty API key was returned from Kurtosis Cloud Backend")
