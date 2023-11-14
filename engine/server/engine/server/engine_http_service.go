@@ -295,7 +295,7 @@ func (engine EngineRuntime) PostEnclavesEnclaveIdentifierLogs(ctx context.Contex
 		cancelCtxFunc                func()
 	)
 
-	notFoundServiceUuids, err := engine.reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(contextWithCancel, enclaveUuid, requestedServiceUuids)
+	notFoundServiceUuids, err := engine.reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(ctx, enclaveUuid, requestedServiceUuids)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred reporting missing user service UUIDs for enclave '%v' and requested service UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
 	}
@@ -415,8 +415,9 @@ func (response StreamLogs) VisitPostEnclavesEnclaveIdentifierLogsResponse(w http
 			logrus.Debug("The user service logs stream has done")
 			return nil
 		//error from logs database case
-		case _, isChanOpen := <-response.errChan:
+		case err, isChanOpen := <-response.errChan:
 			if isChanOpen {
+				logrus.Error(err)
 				logrus.Debug("Exiting the stream because an error from the logs database client was received through the error chan.")
 				return nil
 			}
