@@ -7,7 +7,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"net"
 	"net/http"
@@ -68,6 +67,8 @@ const (
 	indexPath                   = "index.html"
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
+
+	restAPIPortAddr uint16 = 9779
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -365,8 +366,6 @@ func restApiServer(
 	metricsClient metrics_client.MetricsClient,
 ) {
 	logrus.Info("Running REST API server...")
-	port := flag.String("port", "8008", "Port for test HTTP server")
-	flag.Parse()
 
 	_, err := api.GetSwagger()
 	if err != nil {
@@ -401,6 +400,5 @@ func restApiServer(
 	// We now register our runtime above as the handler for the interface
 	api.RegisterHandlers(e, api.NewStrictHandler(runtime, nil))
 
-	// And we serve HTTP until the world ends.
-	e.Logger.Fatal(e.Start(net.JoinHostPort("0.0.0.0", *port)))
+	e.Logger.Fatal(e.Start(net.JoinHostPort("0.0.0.0", fmt.Sprint(restAPIPortAddr))))
 }
