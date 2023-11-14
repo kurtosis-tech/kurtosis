@@ -39,10 +39,12 @@ type Authentication struct {
 }
 
 type WebServer struct {
-	*sync.RWMutex
+	instanceConfigMutex *sync.RWMutex
+	apiKeyMutex         *sync.RWMutex
 	engineServiceClient *kurtosis_engine_rpc_api_bindingsconnect.EngineServiceClient
 	enforceAuth         bool
 	instanceConfig      *kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
+	apiKey              *string
 }
 
 func NewWebserver(enforceAuth bool) (*WebServer, error) {
@@ -53,7 +55,8 @@ func NewWebserver(enforceAuth bool) (*WebServer, error) {
 	return &WebServer{
 		engineServiceClient: &engineServiceClient,
 		enforceAuth:         enforceAuth,
-		RWMutex:             &sync.RWMutex{},
+		instanceConfigMutex: &sync.RWMutex{},
+		apiKeyMutex:         &sync.RWMutex{},
 	}, nil
 }
 
@@ -418,7 +421,8 @@ func (c *WebServer) GetCloudInstanceConfig(
 	}
 
 	// We have not yet fetched the instance configuration, so we write lock, make the external call and cache the result
-	c.Lock()
+	c.instanceConfigMutex.Lock()
+	defer c.instanceConfigMutex.Unlock()
 
 	client, err := c.createKurtosisCloudBackendClient(
 		kurtosisCloudApiHost,
@@ -449,7 +453,6 @@ func (c *WebServer) GetCloudInstanceConfig(
 	}
 
 	c.instanceConfig = getInstanceConfigResponse.Msg
-	c.Unlock()
 
 	return getInstanceConfigResponse.Msg, nil
 }
@@ -470,20 +473,33 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 			AccessToken: jwtToken,
 		},
 	}
-	result, err := (*client).GetOrCreateApiKey(ctx, request)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get the API key")
-	}
 
-	if result == nil {
-		// User does not have an API key (unlikely if valid jwt token)
-		return nil, stacktrace.NewError("User does not have an API key assigned")
-	}
-	if len(result.Msg.ApiKey) > 0 {
+	if c.apiKey != nil {
 		return &Authentication{
-			ApiKey:   result.Msg.ApiKey,
+			ApiKey:   *c.apiKey,
 			JwtToken: jwtToken,
 		}, nil
+	} else {
+		c.apiKeyMutex.Lock()
+		defer c.apiKeyMutex.Unlock()
+
+		result, err := (*client).GetOrCreateApiKey(ctx, request)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to get the API key")
+		}
+
+		if result == nil {
+			// User does not have an API key (not really possible if they have a valid jwt token)
+			return nil, stacktrace.NewError("User does not have an API key assigned")
+		}
+
+		if len(result.Msg.ApiKey) > 0 {
+			c.apiKey = &result.Msg.ApiKey
+			return &Authentication{
+				ApiKey:   result.Msg.ApiKey,
+				JwtToken: jwtToken,
+			}, nil
+		}
 	}
 
 	return nil, stacktrace.NewError("an empty API key was returned from Kurtosis Cloud Backend")
