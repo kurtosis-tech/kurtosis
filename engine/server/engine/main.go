@@ -235,6 +235,15 @@ func runMain() error {
 		}
 	}()
 
+	go restApiServer(
+		serverArgs,
+		enclaveManager,
+		perWeekLogsDatabaseClient,
+		perFileLogsDatabaseClient,
+		logFileManager,
+		metricsClient,
+	)
+
 	engineConnectServer := server.NewEngineConnectServerService(
 		serverArgs.ImageVersionTag,
 		enclaveManager,
@@ -251,20 +260,11 @@ func runMain() error {
 		}
 	}()
 
-	logrus.Info("Running server...")
 	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
 	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
 
-	go restApiServer(
-		serverArgs,
-		enclaveManager,
-		perWeekLogsDatabaseClient,
-		perFileLogsDatabaseClient,
-		logFileManager,
-		metricsClient,
-	)
 	return nil
 }
 
@@ -364,6 +364,7 @@ func restApiServer(
 	logFileManager *log_file_manager.LogFileManager,
 	metricsClient metrics_client.MetricsClient,
 ) {
+	logrus.Info("Running REST API server...")
 	port := flag.String("port", "8008", "Port for test HTTP server")
 	flag.Parse()
 
@@ -398,7 +399,7 @@ func restApiServer(
 	// e.Use(middleware.OapiRequestValidator(swagger))
 
 	// We now register our runtime above as the handler for the interface
-	api.NewStrictHandler(runtime, nil)
+	api.RegisterHandlers(e, api.NewStrictHandler(runtime, nil))
 
 	// And we serve HTTP until the world ends.
 	e.Logger.Fatal(e.Start(net.JoinHostPort("0.0.0.0", *port)))
