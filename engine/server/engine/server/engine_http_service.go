@@ -272,7 +272,7 @@ func (engine EngineRuntime) PostEnclavesEnclaveIdentifierLogs(ctx context.Contex
 
 	if err != nil {
 		logrus.Errorf("An error occurred while fetching uuid for enclave '%v'. This could happen if the enclave has been deleted. Treating it as UUID", enclaveIdentifier)
-		enclaveUuid = enclave.EnclaveUUID(enclaveIdentifier)
+		return StreamLogsNotFound{}, nil
 	}
 	serviceUuidStrSet := *request.Body.ServiceUuidSet
 	requestedServiceUuids := make(map[user_service.ServiceUUID]bool, len(serviceUuidStrSet))
@@ -383,6 +383,14 @@ type StreamLogs struct {
 	missingServicesUUID          []string
 	contextWithCancel            context.Context
 	cancelCtxFunc                func()
+}
+
+type StreamLogsNotFound struct{}
+
+func (response StreamLogsNotFound) VisitPostEnclavesEnclaveIdentifierLogsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	return nil
 }
 
 func (response StreamLogs) VisitPostEnclavesEnclaveIdentifierLogsResponse(w http.ResponseWriter) error {
