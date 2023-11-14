@@ -64,7 +64,7 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
             throw Error(`Cannot configure an authenticated kurtosis client on this path: \`${path}\``);
           }
 
-          const gatewayHost = matches[1].match(/^([0-9]+-){3}[0-9]+$/) ? matches[1].replaceAll("-", ".") : matches[1];
+          const gatewayHost = matches[1];
           const port = parseInt(matches[2]);
           if (isNaN(port)) {
             throw Error(`Port ${port} is not a number.`);
