@@ -58,7 +58,7 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
         let newClient: KurtosisClient | null = null;
 
         if (path.startsWith("/gateway")) {
-          const pathConfigPattern = /\/gateway\/ips\/([^\/]+)\/ports\/([^\/]+)(\/|$)/;
+          const pathConfigPattern = /\/gateway\/ips\/([^/]+)\/ports\/([^/]+)(\/|$)/;
           const matches = path.match(pathConfigPattern);
           if (!matches) {
             throw Error(`Cannot configure an authenticated kurtosis client on this path: \`${path}\``);
@@ -130,15 +130,4 @@ export const useKurtosisClient = (): KurtosisClient => {
   assertDefined(client, `useKurtosisClient used incorrectly - KurtosisClient is not currently available.`);
 
   return client;
-};
-
-const paramToUrl = (searchParams: URLSearchParams, param: string) => {
-  let paramString = searchParams.get(param);
-  if (paramString === null) {
-    return null;
-  } else {
-    paramString = atob(paramString);
-    assertDefined(paramString, `The parameter ${param}' is not defined`);
-    return new URL(paramString);
-  }
 };

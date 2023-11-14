@@ -5,9 +5,7 @@ import { KURTOSIS_CLOUD_CONNECT_URL } from "../client/constants";
 import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
 import { NavButton, Navigation } from "../components/Navigation";
 
-export type NavbarProps = {};
-
-export const Navbar = ({}: NavbarProps) => {
+export const Navbar = () => {
   const location = useLocation();
   const kurtosisClient = useKurtosisClient();
 
