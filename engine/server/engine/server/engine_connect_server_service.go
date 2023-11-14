@@ -153,7 +153,7 @@ func toGrpcEnclaveInfo(info types.EnclaveInfo) kurtosis_engine_rpc_api_bindings.
 }
 
 func toGrpcEnclaveInfos(infos map[string]*types.EnclaveInfo) map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo {
-	var info_map map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo
+	info_map := make(map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo)
 	for key, info := range infos {
 		grpc_info := toGrpcEnclaveInfo(*info)
 		info_map[key] = &grpc_info

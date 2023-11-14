@@ -83,6 +83,9 @@ func toHttpApiContainerStatus(status types.ContainerStatus) api.ApiContainerStat
 }
 
 func toHttpApiEnclaveAPIContainerInfo(info *types.EnclaveAPIContainerInfo) api.EnclaveAPIContainerInfo {
+	if info == nil {
+		return api.EnclaveAPIContainerInfo{}
+	}
 	port := int(info.GrpcPortInsideEnclave)
 	return api.EnclaveAPIContainerInfo{
 		ContainerId:           &info.ContainerId,
@@ -93,6 +96,9 @@ func toHttpApiEnclaveAPIContainerInfo(info *types.EnclaveAPIContainerInfo) api.E
 }
 
 func toHttpApiApiContainerHostMachineInfo(info *types.EnclaveAPIContainerHostMachineInfo) api.EnclaveAPIContainerHostMachineInfo {
+	if info == nil {
+		return api.EnclaveAPIContainerHostMachineInfo{}
+	}
 	port := int(info.GrpcPortOnHostMachine)
 	return api.EnclaveAPIContainerHostMachineInfo{
 		IpOnHostMachine:       &info.IpOnHostMachine,
@@ -131,10 +137,12 @@ func toHttpApiEnclaveInfo(info types.EnclaveInfo) api.EnclaveInfo {
 }
 
 func toHttpApiEnclaveInfos(infos map[string]*types.EnclaveInfo) map[string]api.EnclaveInfo {
-	var info_map map[string]api.EnclaveInfo
+	info_map := make(map[string]api.EnclaveInfo)
 	for key, info := range infos {
-		grpc_info := toHttpApiEnclaveInfo(*info)
-		info_map[key] = grpc_info
+		if info != nil {
+			grpc_info := toHttpApiEnclaveInfo(*info)
+			info_map[key] = grpc_info
+		}
 	}
 	return info_map
 }
