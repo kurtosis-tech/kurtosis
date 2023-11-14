@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.21](https://github.com/kurtosis-tech/kurtosis/compare/0.85.20...0.85.21) (2023-11-14)
+
+
+### Features
+
+* show usage text when CLI cmd fails because of missing a required argument ([#1774](https://github.com/kurtosis-tech/kurtosis/issues/1774)) ([a7df8cf](https://github.com/kurtosis-tech/kurtosis/commit/a7df8cfff3bac270a9fb755ed71a55d1e72f3d5d))
+
 ## [0.85.20](https://github.com/kurtosis-tech/kurtosis/compare/0.85.19...0.85.20) (2023-11-14)
 
 
