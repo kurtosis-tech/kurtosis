@@ -5,6 +5,10 @@ import { KURTOSIS_CLOUD_UI_URL, KURTOSIS_DEFAULT_EM_API_PORT } from "../constant
 import { KurtosisClient } from "./KurtosisClient";
 
 function constructGatewayURL(remoteHost: string): string {
+  if (remoteHost === "localhost") {
+    return "http://localhost:8081";
+  }
+
   return `${KURTOSIS_CLOUD_UI_URL}/gateway/ips/${remoteHost}/ports/${KURTOSIS_DEFAULT_EM_API_PORT}`;
 }
 

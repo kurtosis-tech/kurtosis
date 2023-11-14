@@ -2,7 +2,7 @@
   "name": "enclave-manager-ui",
   "version": "0.1.0",
   "private": true,
-  "homepage": ".",
+  "homepage": "./",
   "dependencies": {
     "@chakra-ui/icons": "^2.1.1",
     "@chakra-ui/react": "^2.8.1",
@@ -48,7 +48,8 @@
     "prebuild": "rm -rf ../../engine/server/webapp",
     "clean": "rm -rf build",
     "cleanInstall": "rm -rf node_modules; yarn install",
-    "start": "PORT=4001 react-scripts start",
+    "start": "PORT=4000 react-scripts start",
+    "start:cloud": "BROWSER=none PUBLIC_URL=http://localhost:3000/gateway/ips/localhost/ports/9711 PORT=4000 react-scripts start",
     "start:prod": "serve -p 4000 -s build",
     "build": "react-scripts build",
     "postbuild": "cp -r build/ ../../engine/server/webapp",
