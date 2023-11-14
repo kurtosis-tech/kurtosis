@@ -242,7 +242,7 @@ export const ConfigureEnclaveModal = ({
                   <CopyButton contentName={"url"} valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
                 </Tooltip>
               </Flex>
-              <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
+              <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"text"}>
                 <StringArgumentInput
                   name={"enclaveName"}
                   disabled={isDefined(existingEnclave)}
