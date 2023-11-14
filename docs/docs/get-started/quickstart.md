@@ -116,7 +116,11 @@ To inspect how each of these changes happened, check out the following:
 
 <details><summary><b>See that the count of each service changed</b></summary>
 
-You can see 2 instances of Service A and 2 instances of Service B in the CLI output, and you can verify that the configuration file of Service C has been properly changed so it can talk to all 4 of them:
+You can see 2 instances of Service A and 2 instances of Service B in the CLI output:
+
+![quickstart-params-output.png](/img/home/quickstart-params-output.png)
+
+You can verify that the configuration file of Service C has been properly changed so it can talk to all 4 of them:
 
 ```console
 kurtosis files download quickstart service-c-rendered-config
