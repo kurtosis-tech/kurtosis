@@ -222,7 +222,7 @@ type DeleteEnclavesResponseObject interface {
 	VisitDeleteEnclavesResponse(w http.ResponseWriter) error
 }
 
-type DeleteEnclaves200JSONResponse CleanResponse
+type DeleteEnclaves200JSONResponse DeleteResponse
 
 func (response DeleteEnclaves200JSONResponse) VisitDeleteEnclavesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -641,26 +641,27 @@ func (sh *strictHandler) GetEngineInfo(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xYTW/jNhP+KwLf9+jGaXvzLU22WQPpbrBJTosFwYgjmQFFcsmRu0bg/16Q+rT1YdmJ",
-	"CxTtzZZmOF/PPDPUK4l1ZrQChY4sXomLV5Cx8PNaAlNfwBmtHPgHxmoDFgWE1xYyvQZOQcWSrYEqlgFl",
-	"itM8FzxICIQs/Pi/hYQsyP/mja15aWj+oVD/xDK4UvwpF5xsZwQ3BsiCMGvZhmybB/r5BWL0EtcWGEKp",
-	"fWVT1/WQGUFjrZAJBZZKnVIJa5D+VXmcQytU6o/blV2DdUIriiztlW7H3CuQaR5egMozsvhKHj88PJIZ",
-	"uf/y+ebp+nH5+RP5NtvXOhjlcC0qf4RK9MSEL71or80qp/fL6yohH7XDP1i8EqrQ6ziQWhNToy1SrehK",
-	"O6RZId7KjlAIKVhvQpgRubF89PjW79CzFTwFKgxlnFtwrrdMTcUF7xVo4hLKCQ4V2gfDGhSbENWSg0KR",
-	"CLBuuMS+u3pdHcSiW2mLoIAP6Y651Jvc3WZpl/EYBI4BrNORJ57bf5hDhrnrr2Et5cbFfGMGihBF2scc",
-	"exQZOGSZaXPHYCFP4Y4zlb/Nyh0UDFo8ws4tYGnKTWc3xrnwuWfyfkduMut1HBl0LS0BOeacl6kmxhFh",
-	"/xAOhUqvFP8oHGorYia7RDBsmEm5RxjHzNu26qR5ewv4AHYtYrjTqesfuLFWL7mKUayBJkLiMX7d6fRO",
-	"KPg9qHVdmpFES6n/9GO83ZLPWvs1JXRAnhVDXigY6FoLmFtFmZQj57gizNAu1AGOQa6rPQ1ZrVQOV1hp",
-	"pInOlffiHV1qIvQ5oM+bneNPbbCyfhNTUEl3Ypbl0xozHXbZxwXW5DqdhUdcKgHYccz/ZqhtP7AQfiA1",
-	"DBHsVA54bPudaJsxJAvCGcJPYaZ090O/YZQUiAKlf1cwVHR1vyQzUnMQ+fni8uLSG9EGFDOCLMiv4dGM",
-	"GIarENC8pNXwh4MEhCZOodWSkwW5Cc8rig7qlmVQdPZXr+diKwwWZpdJhDaHWVTcDSImZVRZuYhuIGG5",
-	"xEi4KGHS+QiF1/qeg92QaoKV9wrfo2RWXkf6YL395tu5aJ0Qwi+XlyUHIaiiQ4yRIg7BzF9cQc7NgWNQ",
-	"2b36hMzvRvqQxzE4l+Qyso3YjLg8y5jd1JmL6tT5ZbJo3N0MtyYgOWNEfYP2pLhuAXeCMtr1RHWv3W5Y",
-	"33Nw+Jvmm/erUecCGOLxpoQFThYeittzgqT3bnZSUoujqryGl3V7zlf1ehBuWgdA1CwT54bTkQvMyWhr",
-	"Tm8BbydDr/WGWNvdTme1js+HaO7paXkzi+q9Oir+axt5Bot0EuEKKt6rSM7TbsNxXX/JPnJ7uK8eBG+l",
-	"vv0BfRK9ObR600D2ML39+/I8/TPM24g4qj/mjPfEvFp6D5N2p1h+Vf1nFOz9R03P3edvnjUDV4aTgVMe",
-	"FoWqTgCOQ21OBM6DV/2PUQ+WxedpfwPwy/282vmH+bX6SnH2BbLzOeQNzBUuLhX9bf8KAAD//6fYwzqI",
-	"GAAA",
+	"H4sIAAAAAAAC/+xY34/ithP/VyJ/v4/psW3feKML3UO6BbRkpatOJ8ubTMCnxM7ZE3roxP9e2fkJcSCw",
+	"t5Wq9g2S8cx85sdnxvlOQplmUoBATcbfiQ63kDL7c5LxeymQcQFqjQxz+xREnpLxJ/L0vFjMFw/EJ+tg",
+	"uVrNpsQni+WCzj7O18FsEZDPPsF9BmRMNCouNuTgk3sFDGEmwoTtYKI2VmOmZAYKOdh/LOM0rMzSRG5o",
+	"AjtIzKuOumPZHSjNpaDINk5pKMxSwVJwCqQysi/+ryAmY/K/UROaURmXUen7oxE9HGqI8uULhNiB+AQ6",
+	"k0JDF2blDBexHGhzbkSdNqeQAJ4xpiCVO4hoOwKUiYjmOY+sBEdI9UA/FiyFiYiecx6RxhumFNu73avy",
+	"vZrX9fReanxk4ZaLAlbH5Y3KQppJhVQKupUaaVqItzLHBcIGlDHBszNyVYYH+uZ26EXxaAOUZ5RFkQKt",
+	"nSXUVCOPnAINLi40j6DKSS+sXrEBqGpIelj/zh5XwR/Oxq1KMAKBPOagdH9Jm6JyYu9tPL2VCkFA1Hf2",
+	"DEZ3to6ZoV0X13TcuYrt0M+Net3KdJ2vc+ocDN2uQT1QTV+1GF2GzSyp8vQiNwY8BY0szdps21sNV7Pt",
+	"GxXQY+lH1RjBbB0Qn6yeltPn+2C+XJxriDYXdoqw190rnHwALE3p4cOERRE3WWPJ6khu8JDpONLr2qbs",
+	"h3POGZlqOl8B+xvXyMVmIqL3XKNUPGRJl4f6DbMkOeGra6Zc++igKfcAuAa14yF8kBvtXm5CKb7kIkS+",
+	"AxrzBK/x64PcfOACfrfHui75JJZJIv80K1N7Nr1ImQATtn3ytFiouADtHjgKMFeCsiQ5o0cXMG2vUQ14",
+	"BKFT7NdGrj+hQiKNZS6M0ds9aPw3COnL/kjbre1TZmdg61TSHYhJ+XQ4GKxJdzg7n3GpLK+OY+Y3Q6kG",
+	"xmFZiRtT8A1pxhBBDW3/Uy0tep4uZ2t6v1wEk/mCBrOPhqvts8UycD6vnj1Ogvv39Gn2MPvoOtJ+7SL8",
+	"oB3nWKqUIRmTiCH8ZGdj54gBVhEyckzMu4IvvclqTnxSMyL5+d3duztjRGYgWMbJmPxqH/kkY7i1CRiV",
+	"JG//RHbhb/LCpZhHZFxeBKqBYY8rlkLBM5/MOR0qnmFhdh57qHLwveJ+4LEk8Sor77wpxCxP0OPai1mi",
+	"DUJuTn3NQe1JNYzLu4VhDOKXt0cXaxw+G3IpOttC+OXurmREBIHFzpYlPLRgRl90MSoaheeK7uT+Y0N/",
+	"DHWdhyFoHeeJpxoxn+g8TZna16Hz6tiZXb0gluMQtwYyeUNIrrl/E64HwCNQmdQOVCupj2F9zUHjbzLa",
+	"/zBE3bu/xWNMcQURGZtaPLxhSN0385uCWqiq4mpf1v052tbbir3IXiiiZrd563K6cp+6udoa7a3CO4rQ",
+	"93phre0ehtNax+dLPPf8PJ/6Xn1H8Ir/UnmGwjwZe7iFivgqljO825Bc119yWrkO8qsnwWu573SjuIne",
+	"NCq5b0r2Mr39++I8/CPc64jYqz/lne+JUbWDXybtTrLMKv3PSNiPHzWOq9jfPGt6rjQ3F06pzLNZHVA4",
+	"GmV2Y+GszdH/GPViWkycTjcAs92PqqW/n1+rjyZvvkB2vs68grnszaWiv8NfAQAA//+kzK+LOBoAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

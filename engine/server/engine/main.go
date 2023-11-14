@@ -7,7 +7,18 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+
+	api "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_http_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
@@ -19,6 +30,7 @@ import (
 	em_api "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
@@ -26,19 +38,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
+	restApi "github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/labstack/echo/v4"
+	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"runtime"
-	"strings"
-	"time"
 )
 
 const (
@@ -248,6 +256,15 @@ func runMain() error {
 	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
+
+	go restApiServer(
+		serverArgs,
+		enclaveManager,
+		perWeekLogsDatabaseClient,
+		perFileLogsDatabaseClient,
+		logFileManager,
+		metricsClient,
+	)
 	return nil
 }
 
@@ -337,4 +354,52 @@ func formatFilenameFunctionForLogs(filename string, functionName string) string 
 	output.WriteString(functionName)
 	output.WriteString("]")
 	return output.String()
+}
+
+func restApiServer(
+	serverArgs *args.EngineServerArgs,
+	enclave_manager *enclave_manager.EnclaveManager,
+	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient,
+	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient,
+	logFileManager *log_file_manager.LogFileManager,
+	metricsClient metrics_client.MetricsClient,
+) {
+	port := flag.String("port", "8008", "Port for test HTTP server")
+	flag.Parse()
+
+	_, err := api.GetSwagger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
+		os.Exit(1)
+	}
+
+	// Clear out the servers array in the swagger spec, that skips validating
+	// that server names match. We don't know how this thing will be run.
+	// swagger.Servers = nil
+
+	// Create an instance of our handler which satisfies the generated interface
+	runtime := restApi.EngineRuntime{
+		ImageVersionTag:             serverArgs.ImageVersionTag,
+		EnclaveManager:              enclave_manager,
+		MetricsUserID:               serverArgs.MetricsUserID,
+		DidUserAcceptSendingMetrics: serverArgs.DidUserAcceptSendingMetrics,
+		PerWeekLogsDatabaseClient:   perWeekLogsDatabaseClient,
+		PerFileLogsDatabaseClient:   perFileLogsDatabaseClient,
+		LogFileManager:              logFileManager,
+		MetricsClient:               metricsClient,
+	}
+
+	// This is how you set up a basic Echo router
+	e := echo.New()
+	// Log all requests
+	e.Use(echomiddleware.Logger())
+	// Use our validation middleware to check all requests against the
+	// OpenAPI schema.
+	// e.Use(middleware.OapiRequestValidator(swagger))
+
+	// We now register our runtime above as the handler for the interface
+	api.NewStrictHandler(runtime, nil)
+
+	// And we serve HTTP until the world ends.
+	e.Logger.Fatal(e.Start(net.JoinHostPort("0.0.0.0", *port)))
 }

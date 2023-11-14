@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -177,14 +178,6 @@ func toGrpcEnclaveNameAndUuid(identifier *types.EnclaveNameAndUuid) *kurtosis_en
 	return &ident
 }
 
-func mapList[T, U any](data []T, f func(T) U) []U {
-	res := make([]U, 0, len(data))
-	for _, e := range data {
-		res = append(res, f(e))
-	}
-	return res
-}
-
 func (service *EngineConnectServerService) GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
 	result := &kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse{
 		EngineVersion: service.imageVersionTag,
@@ -244,7 +237,7 @@ func (service *EngineConnectServerService) GetExistingAndHistoricalEnclaveIdenti
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave identifiers")
 	}
-	response := &kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse{AllIdentifiers: mapList(allIdentifiers, toGrpcEnclaveIdentifiers)}
+	response := &kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse{AllIdentifiers: utils.MapList(allIdentifiers, toGrpcEnclaveIdentifiers)}
 	return connect.NewResponse(response), nil
 }
 
@@ -288,7 +281,7 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 			return nil, stacktrace.Propagate(err, "An error occurred removing all logs.")
 		}
 	}
-	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveNameAndUuids: mapList(removedEnclaveUuidsAndNames, toGrpcEnclaveNameAndUuid)}
+	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveNameAndUuids: utils.MapList(removedEnclaveUuidsAndNames, toGrpcEnclaveNameAndUuid)}
 	return connect.NewResponse(response), nil
 }
 

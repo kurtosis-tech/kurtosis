@@ -7,37 +7,53 @@ import (
 	"time"
 )
 
-// Defines values for CreateEnclaveArgsMode.
+// Defines values for ApiContainerStatus.
 const (
-	CreateEnclaveArgsModePRODUCTION CreateEnclaveArgsMode = "PRODUCTION"
-	CreateEnclaveArgsModeTEST       CreateEnclaveArgsMode = "TEST"
+	ApiContainerStatusNONEXISTENT ApiContainerStatus = "NON_EXISTENT"
+	ApiContainerStatusRUNNING     ApiContainerStatus = "RUNNING"
+	ApiContainerStatusSTOPPED     ApiContainerStatus = "STOPPED"
 )
 
-// Defines values for EnclaveInfoMode.
+// Defines values for EnclaveContainersStatus.
 const (
-	EnclaveInfoModePRODUCTION EnclaveInfoMode = "PRODUCTION"
-	EnclaveInfoModeTEST       EnclaveInfoMode = "TEST"
+	EnclaveContainersStatusEMPTY   EnclaveContainersStatus = "EMPTY"
+	EnclaveContainersStatusRUNNING EnclaveContainersStatus = "RUNNING"
+	EnclaveContainersStatusSTOPPED EnclaveContainersStatus = "STOPPED"
 )
 
-// CleanResponse defines model for CleanResponse.
-type CleanResponse struct {
-	RemovedEnclaveNameAndUuids *[]EnclaveNameAndUuid `json:"removed_enclave_name_and_uuids,omitempty"`
-}
+// Defines values for EnclaveMode.
+const (
+	PRODUCTION EnclaveMode = "PRODUCTION"
+	TEST       EnclaveMode = "TEST"
+)
+
+// Defines values for LogLineOperator.
+const (
+	DOESCONTAINMATCHREGEX    LogLineOperator = "DOES_CONTAIN_MATCH_REGEX"
+	DOESCONTAINTEXT          LogLineOperator = "DOES_CONTAIN_TEXT"
+	DOESNOTCONTAINMATCHREGEX LogLineOperator = "DOES_NOT_CONTAIN_MATCH_REGEX"
+	DOESNOTCONTAINTEXT       LogLineOperator = "DOES_NOT_CONTAIN_TEXT"
+)
+
+// ApiContainerStatus defines model for ApiContainerStatus.
+type ApiContainerStatus string
 
 // CreateEnclaveArgs defines model for CreateEnclaveArgs.
 type CreateEnclaveArgs struct {
-	ApiContainerLogLevel   *string                `json:"api_container_log_level,omitempty"`
-	ApiContainerVersionTag *string                `json:"api_container_version_tag,omitempty"`
-	EnclaveName            *string                `json:"enclave_name,omitempty"`
-	Mode                   *CreateEnclaveArgsMode `json:"mode,omitempty"`
+	ApiContainerLogLevel   *string      `json:"api_container_log_level,omitempty"`
+	ApiContainerVersionTag *string      `json:"api_container_version_tag,omitempty"`
+	EnclaveName            *string      `json:"enclave_name,omitempty"`
+	Mode                   *EnclaveMode `json:"mode,omitempty"`
 }
-
-// CreateEnclaveArgsMode defines model for CreateEnclaveArgs.Mode.
-type CreateEnclaveArgsMode string
 
 // CreateEnclaveResponse defines model for CreateEnclaveResponse.
 type CreateEnclaveResponse struct {
 	EnclaveInfo *EnclaveInfo `json:"enclave_info,omitempty"`
+}
+
+// DeleteResponse defines model for DeleteResponse.
+type DeleteResponse struct {
+	RemovedEnclaveNameAndUuids *[]EnclaveNameAndUuid `json:"removed_enclave_name_and_uuids,omitempty"`
 }
 
 // EnclaveAPIContainerHostMachineInfo defines model for EnclaveAPIContainerHostMachineInfo.
@@ -54,6 +70,9 @@ type EnclaveAPIContainerInfo struct {
 	IpInsideEnclave       *string `json:"ip_inside_enclave,omitempty"`
 }
 
+// EnclaveContainersStatus defines model for EnclaveContainersStatus.
+type EnclaveContainersStatus string
+
 // EnclaveIdentifiers defines model for EnclaveIdentifiers.
 type EnclaveIdentifiers struct {
 	EnclaveUuid   *string `json:"enclave_uuid,omitempty"`
@@ -65,17 +84,17 @@ type EnclaveIdentifiers struct {
 type EnclaveInfo struct {
 	ApiContainerHostMachineInfo *EnclaveAPIContainerHostMachineInfo `json:"api_container_host_machine_info,omitempty"`
 	ApiContainerInfo            *EnclaveAPIContainerInfo            `json:"api_container_info,omitempty"`
-	ApiContainerStatus          *int                                `json:"api_container_status,omitempty"`
-	ContainersStatus            *int                                `json:"containers_status,omitempty"`
+	ApiContainerStatus          *ApiContainerStatus                 `json:"api_container_status,omitempty"`
+	ContainersStatus            *EnclaveContainersStatus            `json:"containers_status,omitempty"`
 	CreationTime                *Timestamp                          `json:"creation_time,omitempty"`
 	EnclaveUuid                 *string                             `json:"enclave_uuid,omitempty"`
-	Mode                        *EnclaveInfoMode                    `json:"mode,omitempty"`
+	Mode                        *EnclaveMode                        `json:"mode,omitempty"`
 	Name                        *string                             `json:"name,omitempty"`
 	ShortenedUuid               *string                             `json:"shortened_uuid,omitempty"`
 }
 
-// EnclaveInfoMode defines model for EnclaveInfo.Mode.
-type EnclaveInfoMode string
+// EnclaveMode defines model for EnclaveMode.
+type EnclaveMode string
 
 // EnclaveNameAndUuid defines model for EnclaveNameAndUuid.
 type EnclaveNameAndUuid struct {
@@ -104,12 +123,12 @@ type GetServiceLogsArgs struct {
 	FollowLogs         *bool            `json:"follow_logs,omitempty"`
 	NumLogLines        *int             `json:"num_log_lines,omitempty"`
 	ReturnAllLogs      *bool            `json:"return_all_logs,omitempty"`
-	ServiceUuidSet     *map[string]bool `json:"service_uuid_set,omitempty"`
+	ServiceUuidSet     *[]string        `json:"service_uuid_set,omitempty"`
 }
 
 // GetServiceLogsResponse defines model for GetServiceLogsResponse.
 type GetServiceLogsResponse struct {
-	NotFoundServiceUuidSet   *map[string]bool    `json:"not_found_service_uuid_set,omitempty"`
+	NotFoundServiceUuidSet   *[]string           `json:"not_found_service_uuid_set,omitempty"`
 	ServiceLogsByServiceUuid *map[string]LogLine `json:"service_logs_by_service_uuid,omitempty"`
 }
 
@@ -121,9 +140,12 @@ type LogLine struct {
 
 // LogLineFilter defines model for LogLineFilter.
 type LogLineFilter struct {
-	Operator    *int    `json:"operator,omitempty"`
-	TextPattern *string `json:"text_pattern,omitempty"`
+	Operator    *LogLineOperator `json:"operator,omitempty"`
+	TextPattern *string          `json:"text_pattern,omitempty"`
 }
+
+// LogLineOperator defines model for LogLineOperator.
+type LogLineOperator string
 
 // Timestamp defines model for Timestamp.
 type Timestamp = time.Time

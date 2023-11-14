@@ -56,7 +56,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CleanResponse'
+                $ref: '#/components/schemas/DeleteResponse'
                 
   /enclaves/historical:
     get:
@@ -184,10 +184,27 @@ components:
         api_container_log_level:
           type: string
         mode:
-          type: string
-          enum:
-            - TEST
-            - PRODUCTION
+          $ref: '#/components/schemas/EnclaveMode'
+    
+    EnclaveMode:
+      type: string
+      enum:
+        - TEST
+        - PRODUCTION
+    
+    EnclaveContainersStatus:
+      type: string
+      enum:
+        - RUNNING
+        - STOPPED
+        - EMPTY
+    
+    ApiContainerStatus:
+      type: string
+      enum:
+        - RUNNING
+        - STOPPED
+        - NON_EXISTENT
 
     CreateEnclaveResponse:
       type: object
@@ -205,9 +222,9 @@ components:
         shortened_uuid:
           type: string
         containers_status:
-          type: integer
+          $ref: '#/components/schemas/EnclaveContainersStatus'
         api_container_status:
-          type: integer
+          $ref: '#/components/schemas/ApiContainerStatus'
         api_container_info:
           $ref: '#/components/schemas/EnclaveAPIContainerInfo'
         api_container_host_machine_info:
@@ -215,10 +232,8 @@ components:
         creation_time:
           $ref: '#/components/schemas/Timestamp'
         mode:
-          type: string
-          enum:
-            - TEST
-            - PRODUCTION
+          $ref: '#/components/schemas/EnclaveMode'
+          
 
     EnclaveAPIContainerInfo:
       type: object
@@ -258,7 +273,7 @@ components:
         uuid:
           type: string
 
-    CleanResponse:
+    DeleteResponse:
       type: object
       properties:
         removed_enclave_name_and_uuids:
@@ -270,9 +285,9 @@ components:
       type: object
       properties:
         service_uuid_set:
-          type: object
-          additionalProperties:
-            type: boolean
+          type: array
+          items:
+            type: string
         follow_logs:
           type: boolean
         conjunctive_filters:
@@ -292,9 +307,9 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/LogLine'
         not_found_service_uuid_set:
-          type: object
-          additionalProperties:
-            type: boolean
+          type: array
+          items:
+            type: string
 
     LogLine:
       type: object
@@ -310,9 +325,17 @@ components:
       type: object
       properties:
         operator:
-          type: integer
+          $ref: '#/components/schemas/LogLineOperator'
         text_pattern:
           type: string
+
+    LogLineOperator:
+      type: string
+      enum:
+        - DOES_CONTAIN_TEXT
+        - DOES_NOT_CONTAIN_TEXT
+        - DOES_CONTAIN_MATCH_REGEX
+        - DOES_NOT_CONTAIN_MATCH_REGEX
 
     Timestamp:
       type: string
