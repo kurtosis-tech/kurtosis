@@ -1,7 +1,9 @@
 import { Flex, Heading, Spinner } from "@chakra-ui/react";
+import Cookies from "js-cookie";
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
-import { assertDefined, isDefined, isStringTrue, stringifyError } from "../../utils";
+import { assertDefined, isDefined, stringifyError } from "../../utils";
+import { KURTOSIS_CLOUD_EM_PAGE, KURTOSIS_CLOUD_EM_URL } from "../constants";
 import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
 import { KurtosisClient } from "./KurtosisClient";
 import { LocalKurtosisClient } from "./LocalKurtosisClient";
@@ -14,7 +16,6 @@ const KurtosisClientContext = createContext<KurtosisClientContextState>({ client
 
 export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
   const [client, setClient] = useState<KurtosisClient>();
-  const [jwtToken, setJwtToken] = useState<string>();
   const [error, setError] = useState<string>();
 
   const errorHandlingClient = useMemo(() => {
@@ -48,46 +49,38 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
   }, [client]);
 
   useEffect(() => {
-    const receiveMessage = (event: MessageEvent) => {
-      const message = event.data.message;
-      switch (message) {
-        case "jwtToken":
-          const value = event.data.value;
-          if (isDefined(value)) {
-            setJwtToken(value);
-          }
-          break;
-      }
-    };
-    window.addEventListener("message", receiveMessage);
-    return () => window.removeEventListener("message", receiveMessage);
-  }, []);
-
-  useEffect(() => {
     (async () => {
-      const searchParams = new URLSearchParams(window.location.search);
-      const requireAuth = isStringTrue(searchParams.get("require-authentication"));
+      // If the pathname starts with /gateway` then we are trying to use an Authenticated client.
+      const path = window.location.pathname;
 
       try {
         setError(undefined);
         let newClient: KurtosisClient | null = null;
 
-        if (requireAuth) {
-          const requestedGatewayHost = searchParams.get("api-host");
-          assertDefined(requestedGatewayHost, `The parameter 'api-host' is not defined`);
+        if (path.startsWith("/gateway")) {
+          const pathConfigPattern = /\/gateway\/ips\/([^\/]+)\/ports\/([^\/]+)(\/|$)/;
+          const matches = path.match(pathConfigPattern);
+          if (!matches) {
+            throw Error(`Cannot configure an authenticated kurtosis client on this path: \`${path}\``);
+          }
 
-          // Get the parent location and path:
-          let parentLocationPath = paramToUrl(searchParams, "parent-location-path") || new URL(window.location.href);
-          // Get the child location and path:
-          let childLocationPath = paramToUrl(searchParams, "child-location-path") || new URL(window.location.href);
+          const gatewayHost = matches[1].match(/^([0-9]+-){3}[0-9]+$/) ? matches[1].replaceAll("-", ".") : matches[1];
+          const port = parseInt(matches[2]);
+          if (isNaN(port)) {
+            throw Error(`Port ${port} is not a number.`);
+          }
+
+          const jwtToken = Cookies.get("kurtosis");
 
           if (isDefined(jwtToken)) {
             newClient = new AuthenticatedKurtosisClient(
-              requestedGatewayHost,
+              `${gatewayHost}`,
               jwtToken,
-              parentLocationPath,
-              childLocationPath,
+              new URL(`${window.location.protocol}//${window.location.host}/${KURTOSIS_CLOUD_EM_PAGE}`),
+              new URL(`${window.location.protocol}//${window.location.host}${matches[0]}`),
             );
+          } else {
+            window.location.href = KURTOSIS_CLOUD_EM_URL;
           }
         } else {
           newClient = new LocalKurtosisClient();
@@ -106,7 +99,7 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
         setError(stringifyError(e));
       }
     })();
-  }, [jwtToken]);
+  }, []);
 
   if (errorHandlingClient) {
     return (
