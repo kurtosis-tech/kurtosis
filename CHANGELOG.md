@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.23](https://github.com/kurtosis-tech/kurtosis/compare/0.85.22...0.85.23) (2023-11-15)
+
+
+### Bug Fixes
+
+* args were positioned incorrectly ([#1799](https://github.com/kurtosis-tech/kurtosis/issues/1799)) ([18c8b53](https://github.com/kurtosis-tech/kurtosis/commit/18c8b53e3a4d1a58be57105f5a3dfbc28c86c2b3))
+
 ## [0.85.22](https://github.com/kurtosis-tech/kurtosis/compare/0.85.21...0.85.22) (2023-11-15)
 
 
