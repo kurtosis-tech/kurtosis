@@ -91,8 +91,6 @@ export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
                 refreshFilesAndArtifacts(enclave),
               ]);
             }
-
-            console.log(line.runResponseLine.value);
           }
         } catch (error: any) {
           if (cancelled) {
