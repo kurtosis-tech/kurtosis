@@ -43,6 +43,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
 ) (*api_container.APIContainer, error) {
+	logrus.Debugf("Creating the APIC for enclave '%v'", enclaveUuid)
+
 	// Verify no API container already exists in the enclave
 	apiContainersInEnclaveFilters := &api_container.APIContainerFilters{
 		EnclaveIDs: map[enclave.EnclaveUUID]bool{
@@ -203,6 +205,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
 	}
 
+	logrus.Debugf("Checking for the APIC availability in enclave '%v'...", enclaveUuid)
 	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		ctx,
 		backend.dockerManager,
@@ -213,6 +216,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
 	}
+	logrus.Debugf("...APIC is available in enclave '%v'", enclaveUuid)
 
 	bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
 	if err != nil {
@@ -223,6 +227,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an API container object from container with ID '%v'", containerId)
 	}
+
+	logrus.Debugf("APIC for enclave '%v' successfully created", enclaveUuid)
 
 	shouldKillContainer = false
 	return result, nil
