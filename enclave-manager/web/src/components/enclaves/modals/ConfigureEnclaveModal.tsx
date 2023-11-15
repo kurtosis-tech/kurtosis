@@ -89,8 +89,10 @@ export const ConfigureEnclaveModal = ({
               return isDefined(value)
                 ? Object.entries(value).map(([k, v]) => ({ key: k, value: convertArgValue(innerType2, v) }), {})
                 : [];
+            case ArgumentValueType.JSON:
             default:
-              return value;
+              // By default, a typeless parameter is JSON.
+              return isDefined(value) ? JSON.stringify(value) : "{}";
           }
         };
 
@@ -129,6 +131,7 @@ export const ConfigureEnclaveModal = ({
           try {
             parsedForm.args[arg.name] = JSON.stringify(JSON.parse(parsedForm.args[arg.name]), undefined, 4);
           } catch (err: any) {
+            console.error("err", err);
             // do nothing, the input was not valid json.
           }
         }
