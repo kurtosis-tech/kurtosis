@@ -24,50 +24,50 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (GET /artifacts)
-	GetArtifacts(ctx echo.Context) error
+	// (GET /enclaves/{enclave_identifier}/artifacts)
+	GetEnclavesEnclaveIdentifierArtifacts(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 
-	// (PUT /artifacts/local-file)
-	PutArtifactsLocalFile(ctx echo.Context) error
+	// (PUT /enclaves/{enclave_identifier}/artifacts/local-file)
+	PutEnclavesEnclaveIdentifierArtifactsLocalFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 
-	// (PUT /artifacts/remote-file)
-	PutArtifactsRemoteFile(ctx echo.Context) error
+	// (PUT /enclaves/{enclave_identifier}/artifacts/remote-file)
+	PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 
-	// (PUT /artifacts/services/{service_identifier})
-	PutArtifactsServicesServiceIdentifier(ctx echo.Context, serviceIdentifier string) error
+	// (PUT /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
+	PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error
 
-	// (GET /artifacts/{artifact_identifier})
-	GetArtifactsArtifactIdentifier(ctx echo.Context, artifactIdentifier string) error
+	// (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier})
+	GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, artifactIdentifier ArtifactIdentifier) error
 
-	// (GET /artifacts/{artifact_identifier}/download)
-	GetArtifactsArtifactIdentifierDownload(ctx echo.Context, artifactIdentifier string) error
+	// (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download)
+	GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, artifactIdentifier ArtifactIdentifier) error
 
-	// (GET /services)
-	GetServices(ctx echo.Context) error
+	// (GET /enclaves/{enclave_identifier}/services)
+	GetEnclavesEnclaveIdentifierServices(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 
-	// (POST /services/connection)
-	PostServicesConnection(ctx echo.Context) error
+	// (POST /enclaves/{enclave_identifier}/services/connection)
+	PostEnclavesEnclaveIdentifierServicesConnection(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 
-	// (GET /services/{service_identifier})
-	GetServicesServiceIdentifier(ctx echo.Context, serviceIdentifier string, params GetServicesServiceIdentifierParams) error
+	// (GET /enclaves/{enclave_identifier}/services/{service_identifier})
+	GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier, params GetEnclavesEnclaveIdentifierServicesServiceIdentifierParams) error
 
-	// (POST /services/{service_identifier}/command)
-	PostServicesServiceIdentifierCommand(ctx echo.Context, serviceIdentifier string) error
+	// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/command)
+	PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error
 
-	// (POST /services/{service_identifier}/endpoints/{port_number}/availability)
-	PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, serviceIdentifier string, portNumber int) error
+	// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
+	PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier, portNumber PortNumber) error
 
-	// (GET /starlark)
-	GetStarlark(ctx echo.Context) error
+	// (GET /enclaves/{enclave_identifier}/starlark)
+	GetEnclavesEnclaveIdentifierStarlark(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 
-	// (PUT /starlark/packages)
-	PutStarlarkPackages(ctx echo.Context) error
+	// (PUT /enclaves/{enclave_identifier}/starlark/packages)
+	PutEnclavesEnclaveIdentifierStarlarkPackages(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 
-	// (POST /starlark/packages/{package_id})
-	PostStarlarkPackagesPackageId(ctx echo.Context, packageId string) error
+	// (POST /enclaves/{enclave_identifier}/starlark/packages/{package_id})
+	PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, packageId PackageId) error
 
-	// (POST /starlark/scripts)
-	PostStarlarkScripts(ctx echo.Context) error
+	// (POST /enclaves/{enclave_identifier}/starlark/scripts)
+	PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -75,38 +75,67 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// GetArtifacts converts echo context to params.
-func (w *ServerInterfaceWrapper) GetArtifacts(ctx echo.Context) error {
+// GetEnclavesEnclaveIdentifierArtifacts converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierArtifacts(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetArtifacts(ctx)
+	err = w.Handler.GetEnclavesEnclaveIdentifierArtifacts(ctx, enclaveIdentifier)
 	return err
 }
 
-// PutArtifactsLocalFile converts echo context to params.
-func (w *ServerInterfaceWrapper) PutArtifactsLocalFile(ctx echo.Context) error {
+// PutEnclavesEnclaveIdentifierArtifactsLocalFile converts echo context to params.
+func (w *ServerInterfaceWrapper) PutEnclavesEnclaveIdentifierArtifactsLocalFile(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PutArtifactsLocalFile(ctx)
+	err = w.Handler.PutEnclavesEnclaveIdentifierArtifactsLocalFile(ctx, enclaveIdentifier)
 	return err
 }
 
-// PutArtifactsRemoteFile converts echo context to params.
-func (w *ServerInterfaceWrapper) PutArtifactsRemoteFile(ctx echo.Context) error {
+// PutEnclavesEnclaveIdentifierArtifactsRemoteFile converts echo context to params.
+func (w *ServerInterfaceWrapper) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PutArtifactsRemoteFile(ctx)
+	err = w.Handler.PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx, enclaveIdentifier)
 	return err
 }
 
-// PutArtifactsServicesServiceIdentifier converts echo context to params.
-func (w *ServerInterfaceWrapper) PutArtifactsServicesServiceIdentifier(ctx echo.Context) error {
+// PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
 	// ------------- Path parameter "service_identifier" -------------
-	var serviceIdentifier string
+	var serviceIdentifier ServiceIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
 	if err != nil {
@@ -114,15 +143,23 @@ func (w *ServerInterfaceWrapper) PutArtifactsServicesServiceIdentifier(ctx echo.
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PutArtifactsServicesServiceIdentifier(ctx, serviceIdentifier)
+	err = w.Handler.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx, enclaveIdentifier, serviceIdentifier)
 	return err
 }
 
-// GetArtifactsArtifactIdentifier converts echo context to params.
-func (w *ServerInterfaceWrapper) GetArtifactsArtifactIdentifier(ctx echo.Context) error {
+// GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
 	// ------------- Path parameter "artifact_identifier" -------------
-	var artifactIdentifier string
+	var artifactIdentifier ArtifactIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "artifact_identifier", runtime.ParamLocationPath, ctx.Param("artifact_identifier"), &artifactIdentifier)
 	if err != nil {
@@ -130,15 +167,23 @@ func (w *ServerInterfaceWrapper) GetArtifactsArtifactIdentifier(ctx echo.Context
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetArtifactsArtifactIdentifier(ctx, artifactIdentifier)
+	err = w.Handler.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx, enclaveIdentifier, artifactIdentifier)
 	return err
 }
 
-// GetArtifactsArtifactIdentifierDownload converts echo context to params.
-func (w *ServerInterfaceWrapper) GetArtifactsArtifactIdentifierDownload(ctx echo.Context) error {
+// GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
 	// ------------- Path parameter "artifact_identifier" -------------
-	var artifactIdentifier string
+	var artifactIdentifier ArtifactIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "artifact_identifier", runtime.ParamLocationPath, ctx.Param("artifact_identifier"), &artifactIdentifier)
 	if err != nil {
@@ -146,33 +191,55 @@ func (w *ServerInterfaceWrapper) GetArtifactsArtifactIdentifierDownload(ctx echo
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetArtifactsArtifactIdentifierDownload(ctx, artifactIdentifier)
+	err = w.Handler.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx, enclaveIdentifier, artifactIdentifier)
 	return err
 }
 
-// GetServices converts echo context to params.
-func (w *ServerInterfaceWrapper) GetServices(ctx echo.Context) error {
+// GetEnclavesEnclaveIdentifierServices converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierServices(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetServices(ctx)
+	err = w.Handler.GetEnclavesEnclaveIdentifierServices(ctx, enclaveIdentifier)
 	return err
 }
 
-// PostServicesConnection converts echo context to params.
-func (w *ServerInterfaceWrapper) PostServicesConnection(ctx echo.Context) error {
+// PostEnclavesEnclaveIdentifierServicesConnection converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierServicesConnection(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostServicesConnection(ctx)
+	err = w.Handler.PostEnclavesEnclaveIdentifierServicesConnection(ctx, enclaveIdentifier)
 	return err
 }
 
-// GetServicesServiceIdentifier converts echo context to params.
-func (w *ServerInterfaceWrapper) GetServicesServiceIdentifier(ctx echo.Context) error {
+// GetEnclavesEnclaveIdentifierServicesServiceIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
 	// ------------- Path parameter "service_identifier" -------------
-	var serviceIdentifier string
+	var serviceIdentifier ServiceIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
 	if err != nil {
@@ -180,7 +247,7 @@ func (w *ServerInterfaceWrapper) GetServicesServiceIdentifier(ctx echo.Context) 
 	}
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetServicesServiceIdentifierParams
+	var params GetEnclavesEnclaveIdentifierServicesServiceIdentifierParams
 	// ------------- Optional query parameter "additional-properties" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "additional-properties", ctx.QueryParams(), &params.AdditionalProperties)
@@ -189,15 +256,23 @@ func (w *ServerInterfaceWrapper) GetServicesServiceIdentifier(ctx echo.Context) 
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetServicesServiceIdentifier(ctx, serviceIdentifier, params)
+	err = w.Handler.GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx, enclaveIdentifier, serviceIdentifier, params)
 	return err
 }
 
-// PostServicesServiceIdentifierCommand converts echo context to params.
-func (w *ServerInterfaceWrapper) PostServicesServiceIdentifierCommand(ctx echo.Context) error {
+// PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
 	// ------------- Path parameter "service_identifier" -------------
-	var serviceIdentifier string
+	var serviceIdentifier ServiceIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
 	if err != nil {
@@ -205,15 +280,23 @@ func (w *ServerInterfaceWrapper) PostServicesServiceIdentifierCommand(ctx echo.C
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostServicesServiceIdentifierCommand(ctx, serviceIdentifier)
+	err = w.Handler.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx, enclaveIdentifier, serviceIdentifier)
 	return err
 }
 
-// PostServicesServiceIdentifierEndpointsPortNumberAvailability converts echo context to params.
-func (w *ServerInterfaceWrapper) PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context) error {
+// PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
 	// ------------- Path parameter "service_identifier" -------------
-	var serviceIdentifier string
+	var serviceIdentifier ServiceIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
 	if err != nil {
@@ -221,7 +304,7 @@ func (w *ServerInterfaceWrapper) PostServicesServiceIdentifierEndpointsPortNumbe
 	}
 
 	// ------------- Path parameter "port_number" -------------
-	var portNumber int
+	var portNumber PortNumber
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "port_number", runtime.ParamLocationPath, ctx.Param("port_number"), &portNumber)
 	if err != nil {
@@ -229,33 +312,55 @@ func (w *ServerInterfaceWrapper) PostServicesServiceIdentifierEndpointsPortNumbe
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx, serviceIdentifier, portNumber)
+	err = w.Handler.PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx, enclaveIdentifier, serviceIdentifier, portNumber)
 	return err
 }
 
-// GetStarlark converts echo context to params.
-func (w *ServerInterfaceWrapper) GetStarlark(ctx echo.Context) error {
+// GetEnclavesEnclaveIdentifierStarlark converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierStarlark(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetStarlark(ctx)
+	err = w.Handler.GetEnclavesEnclaveIdentifierStarlark(ctx, enclaveIdentifier)
 	return err
 }
 
-// PutStarlarkPackages converts echo context to params.
-func (w *ServerInterfaceWrapper) PutStarlarkPackages(ctx echo.Context) error {
+// PutEnclavesEnclaveIdentifierStarlarkPackages converts echo context to params.
+func (w *ServerInterfaceWrapper) PutEnclavesEnclaveIdentifierStarlarkPackages(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PutStarlarkPackages(ctx)
+	err = w.Handler.PutEnclavesEnclaveIdentifierStarlarkPackages(ctx, enclaveIdentifier)
 	return err
 }
 
-// PostStarlarkPackagesPackageId converts echo context to params.
-func (w *ServerInterfaceWrapper) PostStarlarkPackagesPackageId(ctx echo.Context) error {
+// PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
 	// ------------- Path parameter "package_id" -------------
-	var packageId string
+	var packageId PackageId
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "package_id", runtime.ParamLocationPath, ctx.Param("package_id"), &packageId)
 	if err != nil {
@@ -263,16 +368,23 @@ func (w *ServerInterfaceWrapper) PostStarlarkPackagesPackageId(ctx echo.Context)
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostStarlarkPackagesPackageId(ctx, packageId)
+	err = w.Handler.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx, enclaveIdentifier, packageId)
 	return err
 }
 
-// PostStarlarkScripts converts echo context to params.
-func (w *ServerInterfaceWrapper) PostStarlarkScripts(ctx echo.Context) error {
+// PostEnclavesEnclaveIdentifierStarlarkScripts converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.Context) error {
 	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostStarlarkScripts(ctx)
+	err = w.Handler.PostEnclavesEnclaveIdentifierStarlarkScripts(ctx, enclaveIdentifier)
 	return err
 }
 
@@ -304,21 +416,21 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.GET(baseURL+"/artifacts", wrapper.GetArtifacts)
-	router.PUT(baseURL+"/artifacts/local-file", wrapper.PutArtifactsLocalFile)
-	router.PUT(baseURL+"/artifacts/remote-file", wrapper.PutArtifactsRemoteFile)
-	router.PUT(baseURL+"/artifacts/services/:service_identifier", wrapper.PutArtifactsServicesServiceIdentifier)
-	router.GET(baseURL+"/artifacts/:artifact_identifier", wrapper.GetArtifactsArtifactIdentifier)
-	router.GET(baseURL+"/artifacts/:artifact_identifier/download", wrapper.GetArtifactsArtifactIdentifierDownload)
-	router.GET(baseURL+"/services", wrapper.GetServices)
-	router.POST(baseURL+"/services/connection", wrapper.PostServicesConnection)
-	router.GET(baseURL+"/services/:service_identifier", wrapper.GetServicesServiceIdentifier)
-	router.POST(baseURL+"/services/:service_identifier/command", wrapper.PostServicesServiceIdentifierCommand)
-	router.POST(baseURL+"/services/:service_identifier/endpoints/:port_number/availability", wrapper.PostServicesServiceIdentifierEndpointsPortNumberAvailability)
-	router.GET(baseURL+"/starlark", wrapper.GetStarlark)
-	router.PUT(baseURL+"/starlark/packages", wrapper.PutStarlarkPackages)
-	router.POST(baseURL+"/starlark/packages/:package_id", wrapper.PostStarlarkPackagesPackageId)
-	router.POST(baseURL+"/starlark/scripts", wrapper.PostStarlarkScripts)
+	router.GET(baseURL+"/enclaves/:enclave_identifier/artifacts", wrapper.GetEnclavesEnclaveIdentifierArtifacts)
+	router.PUT(baseURL+"/enclaves/:enclave_identifier/artifacts/local-file", wrapper.PutEnclavesEnclaveIdentifierArtifactsLocalFile)
+	router.PUT(baseURL+"/enclaves/:enclave_identifier/artifacts/remote-file", wrapper.PutEnclavesEnclaveIdentifierArtifactsRemoteFile)
+	router.PUT(baseURL+"/enclaves/:enclave_identifier/artifacts/services/:service_identifier", wrapper.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier)
+	router.GET(baseURL+"/enclaves/:enclave_identifier/artifacts/:artifact_identifier", wrapper.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier)
+	router.GET(baseURL+"/enclaves/:enclave_identifier/artifacts/:artifact_identifier/download", wrapper.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload)
+	router.GET(baseURL+"/enclaves/:enclave_identifier/services", wrapper.GetEnclavesEnclaveIdentifierServices)
+	router.POST(baseURL+"/enclaves/:enclave_identifier/services/connection", wrapper.PostEnclavesEnclaveIdentifierServicesConnection)
+	router.GET(baseURL+"/enclaves/:enclave_identifier/services/:service_identifier", wrapper.GetEnclavesEnclaveIdentifierServicesServiceIdentifier)
+	router.POST(baseURL+"/enclaves/:enclave_identifier/services/:service_identifier/command", wrapper.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand)
+	router.POST(baseURL+"/enclaves/:enclave_identifier/services/:service_identifier/endpoints/:port_number/availability", wrapper.PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability)
+	router.GET(baseURL+"/enclaves/:enclave_identifier/starlark", wrapper.GetEnclavesEnclaveIdentifierStarlark)
+	router.PUT(baseURL+"/enclaves/:enclave_identifier/starlark/packages", wrapper.PutEnclavesEnclaveIdentifierStarlarkPackages)
+	router.POST(baseURL+"/enclaves/:enclave_identifier/starlark/packages/:package_id", wrapper.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId)
+	router.POST(baseURL+"/enclaves/:enclave_identifier/starlark/scripts", wrapper.PostEnclavesEnclaveIdentifierStarlarkScripts)
 
 }
 
@@ -329,190 +441,201 @@ type SuccessAsteriskResponse struct {
 	ContentLength int64
 }
 
-type GetArtifactsRequestObject struct {
+type GetEnclavesEnclaveIdentifierArtifactsRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
 
-type GetArtifactsResponseObject interface {
-	VisitGetArtifactsResponse(w http.ResponseWriter) error
+type GetEnclavesEnclaveIdentifierArtifactsResponseObject interface {
+	VisitGetEnclavesEnclaveIdentifierArtifactsResponse(w http.ResponseWriter) error
 }
 
-type GetArtifacts200JSONResponse ListFilesArtifactNamesAndUuidsResponse
+type GetEnclavesEnclaveIdentifierArtifacts200JSONResponse ListFilesArtifactNamesAndUuidsResponse
 
-func (response GetArtifacts200JSONResponse) VisitGetArtifactsResponse(w http.ResponseWriter) error {
+func (response GetEnclavesEnclaveIdentifierArtifacts200JSONResponse) VisitGetEnclavesEnclaveIdentifierArtifactsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PutArtifactsLocalFileRequestObject struct {
-	Body *PutArtifactsLocalFileJSONRequestBody
+type PutEnclavesEnclaveIdentifierArtifactsLocalFileRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	Body              *PutEnclavesEnclaveIdentifierArtifactsLocalFileJSONRequestBody
 }
 
-type PutArtifactsLocalFileResponseObject interface {
-	VisitPutArtifactsLocalFileResponse(w http.ResponseWriter) error
+type PutEnclavesEnclaveIdentifierArtifactsLocalFileResponseObject interface {
+	VisitPutEnclavesEnclaveIdentifierArtifactsLocalFileResponse(w http.ResponseWriter) error
 }
 
-type PutArtifactsLocalFile200JSONResponse UploadFilesArtifactResponse
+type PutEnclavesEnclaveIdentifierArtifactsLocalFile200JSONResponse UploadFilesArtifactResponse
 
-func (response PutArtifactsLocalFile200JSONResponse) VisitPutArtifactsLocalFileResponse(w http.ResponseWriter) error {
+func (response PutEnclavesEnclaveIdentifierArtifactsLocalFile200JSONResponse) VisitPutEnclavesEnclaveIdentifierArtifactsLocalFileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PutArtifactsRemoteFileRequestObject struct {
-	Body *PutArtifactsRemoteFileJSONRequestBody
+type PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	Body              *PutEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody
 }
 
-type PutArtifactsRemoteFileResponseObject interface {
-	VisitPutArtifactsRemoteFileResponse(w http.ResponseWriter) error
+type PutEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject interface {
+	VisitPutEnclavesEnclaveIdentifierArtifactsRemoteFileResponse(w http.ResponseWriter) error
 }
 
-type PutArtifactsRemoteFile200JSONResponse StoreWebFilesArtifactResponse
+type PutEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse StoreWebFilesArtifactResponse
 
-func (response PutArtifactsRemoteFile200JSONResponse) VisitPutArtifactsRemoteFileResponse(w http.ResponseWriter) error {
+func (response PutEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse) VisitPutEnclavesEnclaveIdentifierArtifactsRemoteFileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PutArtifactsServicesServiceIdentifierRequestObject struct {
-	ServiceIdentifier string `json:"service_identifier"`
-	Body              *PutArtifactsServicesServiceIdentifierJSONRequestBody
+type PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	ServiceIdentifier ServiceIdentifier `json:"service_identifier"`
+	Body              *PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody
 }
 
-type PutArtifactsServicesServiceIdentifierResponseObject interface {
-	VisitPutArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error
+type PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject interface {
+	VisitPutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error
 }
 
-type PutArtifactsServicesServiceIdentifier200JSONResponse StoreFilesArtifactFromServiceResponse
+type PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier200JSONResponse StoreFilesArtifactFromServiceResponse
 
-func (response PutArtifactsServicesServiceIdentifier200JSONResponse) VisitPutArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error {
+func (response PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier200JSONResponse) VisitPutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetArtifactsArtifactIdentifierRequestObject struct {
-	ArtifactIdentifier string `json:"artifact_identifier"`
+type GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierRequestObject struct {
+	EnclaveIdentifier  EnclaveIdentifier  `json:"enclave_identifier"`
+	ArtifactIdentifier ArtifactIdentifier `json:"artifact_identifier"`
 }
 
-type GetArtifactsArtifactIdentifierResponseObject interface {
-	VisitGetArtifactsArtifactIdentifierResponse(w http.ResponseWriter) error
+type GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponseObject interface {
+	VisitGetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponse(w http.ResponseWriter) error
 }
 
-type GetArtifactsArtifactIdentifier200JSONResponse InspectFilesArtifactContentsResponse
+type GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier200JSONResponse InspectFilesArtifactContentsResponse
 
-func (response GetArtifactsArtifactIdentifier200JSONResponse) VisitGetArtifactsArtifactIdentifierResponse(w http.ResponseWriter) error {
+func (response GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier200JSONResponse) VisitGetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetArtifactsArtifactIdentifierDownloadRequestObject struct {
-	ArtifactIdentifier string `json:"artifact_identifier"`
+type GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadRequestObject struct {
+	EnclaveIdentifier  EnclaveIdentifier  `json:"enclave_identifier"`
+	ArtifactIdentifier ArtifactIdentifier `json:"artifact_identifier"`
 }
 
-type GetArtifactsArtifactIdentifierDownloadResponseObject interface {
-	VisitGetArtifactsArtifactIdentifierDownloadResponse(w http.ResponseWriter) error
+type GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadResponseObject interface {
+	VisitGetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadResponse(w http.ResponseWriter) error
 }
 
-type GetArtifactsArtifactIdentifierDownload200JSONResponse StreamedDataChunk
+type GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload200JSONResponse StreamedDataChunk
 
-func (response GetArtifactsArtifactIdentifierDownload200JSONResponse) VisitGetArtifactsArtifactIdentifierDownloadResponse(w http.ResponseWriter) error {
+func (response GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload200JSONResponse) VisitGetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetServicesRequestObject struct {
+type GetEnclavesEnclaveIdentifierServicesRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
 
-type GetServicesResponseObject interface {
-	VisitGetServicesResponse(w http.ResponseWriter) error
+type GetEnclavesEnclaveIdentifierServicesResponseObject interface {
+	VisitGetEnclavesEnclaveIdentifierServicesResponse(w http.ResponseWriter) error
 }
 
-type GetServices200JSONResponse GetExistingAndHistoricalServiceIdentifiersResponse
+type GetEnclavesEnclaveIdentifierServices200JSONResponse GetExistingAndHistoricalServiceIdentifiersResponse
 
-func (response GetServices200JSONResponse) VisitGetServicesResponse(w http.ResponseWriter) error {
+func (response GetEnclavesEnclaveIdentifierServices200JSONResponse) VisitGetEnclavesEnclaveIdentifierServicesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostServicesConnectionRequestObject struct {
-	Body *PostServicesConnectionJSONRequestBody
+type PostEnclavesEnclaveIdentifierServicesConnectionRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	Body              *PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody
 }
 
-type PostServicesConnectionResponseObject interface {
-	VisitPostServicesConnectionResponse(w http.ResponseWriter) error
+type PostEnclavesEnclaveIdentifierServicesConnectionResponseObject interface {
+	VisitPostEnclavesEnclaveIdentifierServicesConnectionResponse(w http.ResponseWriter) error
 }
 
-type PostServicesConnection200JSONResponse ConnectServicesResponse
+type PostEnclavesEnclaveIdentifierServicesConnection200JSONResponse ConnectServicesResponse
 
-func (response PostServicesConnection200JSONResponse) VisitPostServicesConnectionResponse(w http.ResponseWriter) error {
+func (response PostEnclavesEnclaveIdentifierServicesConnection200JSONResponse) VisitPostEnclavesEnclaveIdentifierServicesConnectionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetServicesServiceIdentifierRequestObject struct {
-	ServiceIdentifier string `json:"service_identifier"`
-	Params            GetServicesServiceIdentifierParams
+type GetEnclavesEnclaveIdentifierServicesServiceIdentifierRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	ServiceIdentifier ServiceIdentifier `json:"service_identifier"`
+	Params            GetEnclavesEnclaveIdentifierServicesServiceIdentifierParams
 }
 
-type GetServicesServiceIdentifierResponseObject interface {
-	VisitGetServicesServiceIdentifierResponse(w http.ResponseWriter) error
+type GetEnclavesEnclaveIdentifierServicesServiceIdentifierResponseObject interface {
+	VisitGetEnclavesEnclaveIdentifierServicesServiceIdentifierResponse(w http.ResponseWriter) error
 }
 
-type GetServicesServiceIdentifier200JSONResponse GetServicesResponse
+type GetEnclavesEnclaveIdentifierServicesServiceIdentifier200JSONResponse GetServicesResponse
 
-func (response GetServicesServiceIdentifier200JSONResponse) VisitGetServicesServiceIdentifierResponse(w http.ResponseWriter) error {
+func (response GetEnclavesEnclaveIdentifierServicesServiceIdentifier200JSONResponse) VisitGetEnclavesEnclaveIdentifierServicesServiceIdentifierResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostServicesServiceIdentifierCommandRequestObject struct {
-	ServiceIdentifier string `json:"service_identifier"`
-	Body              *PostServicesServiceIdentifierCommandJSONRequestBody
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	ServiceIdentifier ServiceIdentifier `json:"service_identifier"`
+	Body              *PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody
 }
 
-type PostServicesServiceIdentifierCommandResponseObject interface {
-	VisitPostServicesServiceIdentifierCommandResponse(w http.ResponseWriter) error
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponseObject interface {
+	VisitPostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponse(w http.ResponseWriter) error
 }
 
-type PostServicesServiceIdentifierCommand200JSONResponse ExecCommandResponse
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand200JSONResponse ExecCommandResponse
 
-func (response PostServicesServiceIdentifierCommand200JSONResponse) VisitPostServicesServiceIdentifierCommandResponse(w http.ResponseWriter) error {
+func (response PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand200JSONResponse) VisitPostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject struct {
-	ServiceIdentifier string `json:"service_identifier"`
-	PortNumber        int    `json:"port_number"`
-	Body              *PostServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	ServiceIdentifier ServiceIdentifier `json:"service_identifier"`
+	PortNumber        PortNumber        `json:"port_number"`
+	Body              *PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody
 }
 
-type PostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject interface {
-	VisitPostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject interface {
+	VisitPostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error
 }
 
-type PostServicesServiceIdentifierEndpointsPortNumberAvailability200AsteriskResponse struct{ SuccessAsteriskResponse }
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability200AsteriskResponse struct{ SuccessAsteriskResponse }
 
-func (response PostServicesServiceIdentifierEndpointsPortNumberAvailability200AsteriskResponse) VisitPostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error {
+func (response PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability200AsteriskResponse) VisitPostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", response.ContentType)
 	if response.ContentLength != 0 {
 		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
@@ -526,33 +649,35 @@ func (response PostServicesServiceIdentifierEndpointsPortNumberAvailability200As
 	return err
 }
 
-type GetStarlarkRequestObject struct {
+type GetEnclavesEnclaveIdentifierStarlarkRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
 
-type GetStarlarkResponseObject interface {
-	VisitGetStarlarkResponse(w http.ResponseWriter) error
+type GetEnclavesEnclaveIdentifierStarlarkResponseObject interface {
+	VisitGetEnclavesEnclaveIdentifierStarlarkResponse(w http.ResponseWriter) error
 }
 
-type GetStarlark200JSONResponse GetStarlarkRunResponse
+type GetEnclavesEnclaveIdentifierStarlark200JSONResponse GetStarlarkRunResponse
 
-func (response GetStarlark200JSONResponse) VisitGetStarlarkResponse(w http.ResponseWriter) error {
+func (response GetEnclavesEnclaveIdentifierStarlark200JSONResponse) VisitGetEnclavesEnclaveIdentifierStarlarkResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PutStarlarkPackagesRequestObject struct {
-	Body *PutStarlarkPackagesJSONRequestBody
+type PutEnclavesEnclaveIdentifierStarlarkPackagesRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	Body              *PutEnclavesEnclaveIdentifierStarlarkPackagesJSONRequestBody
 }
 
-type PutStarlarkPackagesResponseObject interface {
-	VisitPutStarlarkPackagesResponse(w http.ResponseWriter) error
+type PutEnclavesEnclaveIdentifierStarlarkPackagesResponseObject interface {
+	VisitPutEnclavesEnclaveIdentifierStarlarkPackagesResponse(w http.ResponseWriter) error
 }
 
-type PutStarlarkPackages200AsteriskResponse struct{ SuccessAsteriskResponse }
+type PutEnclavesEnclaveIdentifierStarlarkPackages200AsteriskResponse struct{ SuccessAsteriskResponse }
 
-func (response PutStarlarkPackages200AsteriskResponse) VisitPutStarlarkPackagesResponse(w http.ResponseWriter) error {
+func (response PutEnclavesEnclaveIdentifierStarlarkPackages200AsteriskResponse) VisitPutEnclavesEnclaveIdentifierStarlarkPackagesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", response.ContentType)
 	if response.ContentLength != 0 {
 		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
@@ -566,35 +691,37 @@ func (response PutStarlarkPackages200AsteriskResponse) VisitPutStarlarkPackagesR
 	return err
 }
 
-type PostStarlarkPackagesPackageIdRequestObject struct {
-	PackageId string `json:"package_id"`
-	Body      *PostStarlarkPackagesPackageIdJSONRequestBody
+type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	PackageId         PackageId         `json:"package_id"`
+	Body              *PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody
 }
 
-type PostStarlarkPackagesPackageIdResponseObject interface {
-	VisitPostStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error
+type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponseObject interface {
+	VisitPostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error
 }
 
-type PostStarlarkPackagesPackageId200JSONResponse StarlarkRunResponseLine
+type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200JSONResponse StarlarkRunResponseLine
 
-func (response PostStarlarkPackagesPackageId200JSONResponse) VisitPostStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error {
+func (response PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200JSONResponse) VisitPostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostStarlarkScriptsRequestObject struct {
-	Body *PostStarlarkScriptsJSONRequestBody
+type PostEnclavesEnclaveIdentifierStarlarkScriptsRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	Body              *PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody
 }
 
-type PostStarlarkScriptsResponseObject interface {
-	VisitPostStarlarkScriptsResponse(w http.ResponseWriter) error
+type PostEnclavesEnclaveIdentifierStarlarkScriptsResponseObject interface {
+	VisitPostEnclavesEnclaveIdentifierStarlarkScriptsResponse(w http.ResponseWriter) error
 }
 
-type PostStarlarkScripts200JSONResponse StarlarkRunResponseLine
+type PostEnclavesEnclaveIdentifierStarlarkScripts200JSONResponse StarlarkRunResponseLine
 
-func (response PostStarlarkScripts200JSONResponse) VisitPostStarlarkScriptsResponse(w http.ResponseWriter) error {
+func (response PostEnclavesEnclaveIdentifierStarlarkScripts200JSONResponse) VisitPostEnclavesEnclaveIdentifierStarlarkScriptsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -604,50 +731,50 @@ func (response PostStarlarkScripts200JSONResponse) VisitPostStarlarkScriptsRespo
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
-	// (GET /artifacts)
-	GetArtifacts(ctx context.Context, request GetArtifactsRequestObject) (GetArtifactsResponseObject, error)
+	// (GET /enclaves/{enclave_identifier}/artifacts)
+	GetEnclavesEnclaveIdentifierArtifacts(ctx context.Context, request GetEnclavesEnclaveIdentifierArtifactsRequestObject) (GetEnclavesEnclaveIdentifierArtifactsResponseObject, error)
 
-	// (PUT /artifacts/local-file)
-	PutArtifactsLocalFile(ctx context.Context, request PutArtifactsLocalFileRequestObject) (PutArtifactsLocalFileResponseObject, error)
+	// (PUT /enclaves/{enclave_identifier}/artifacts/local-file)
+	PutEnclavesEnclaveIdentifierArtifactsLocalFile(ctx context.Context, request PutEnclavesEnclaveIdentifierArtifactsLocalFileRequestObject) (PutEnclavesEnclaveIdentifierArtifactsLocalFileResponseObject, error)
 
-	// (PUT /artifacts/remote-file)
-	PutArtifactsRemoteFile(ctx context.Context, request PutArtifactsRemoteFileRequestObject) (PutArtifactsRemoteFileResponseObject, error)
+	// (PUT /enclaves/{enclave_identifier}/artifacts/remote-file)
+	PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx context.Context, request PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject) (PutEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject, error)
 
-	// (PUT /artifacts/services/{service_identifier})
-	PutArtifactsServicesServiceIdentifier(ctx context.Context, request PutArtifactsServicesServiceIdentifierRequestObject) (PutArtifactsServicesServiceIdentifierResponseObject, error)
+	// (PUT /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
+	PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx context.Context, request PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject) (PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject, error)
 
-	// (GET /artifacts/{artifact_identifier})
-	GetArtifactsArtifactIdentifier(ctx context.Context, request GetArtifactsArtifactIdentifierRequestObject) (GetArtifactsArtifactIdentifierResponseObject, error)
+	// (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier})
+	GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx context.Context, request GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierRequestObject) (GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponseObject, error)
 
-	// (GET /artifacts/{artifact_identifier}/download)
-	GetArtifactsArtifactIdentifierDownload(ctx context.Context, request GetArtifactsArtifactIdentifierDownloadRequestObject) (GetArtifactsArtifactIdentifierDownloadResponseObject, error)
+	// (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download)
+	GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx context.Context, request GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadRequestObject) (GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadResponseObject, error)
 
-	// (GET /services)
-	GetServices(ctx context.Context, request GetServicesRequestObject) (GetServicesResponseObject, error)
+	// (GET /enclaves/{enclave_identifier}/services)
+	GetEnclavesEnclaveIdentifierServices(ctx context.Context, request GetEnclavesEnclaveIdentifierServicesRequestObject) (GetEnclavesEnclaveIdentifierServicesResponseObject, error)
 
-	// (POST /services/connection)
-	PostServicesConnection(ctx context.Context, request PostServicesConnectionRequestObject) (PostServicesConnectionResponseObject, error)
+	// (POST /enclaves/{enclave_identifier}/services/connection)
+	PostEnclavesEnclaveIdentifierServicesConnection(ctx context.Context, request PostEnclavesEnclaveIdentifierServicesConnectionRequestObject) (PostEnclavesEnclaveIdentifierServicesConnectionResponseObject, error)
 
-	// (GET /services/{service_identifier})
-	GetServicesServiceIdentifier(ctx context.Context, request GetServicesServiceIdentifierRequestObject) (GetServicesServiceIdentifierResponseObject, error)
+	// (GET /enclaves/{enclave_identifier}/services/{service_identifier})
+	GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx context.Context, request GetEnclavesEnclaveIdentifierServicesServiceIdentifierRequestObject) (GetEnclavesEnclaveIdentifierServicesServiceIdentifierResponseObject, error)
 
-	// (POST /services/{service_identifier}/command)
-	PostServicesServiceIdentifierCommand(ctx context.Context, request PostServicesServiceIdentifierCommandRequestObject) (PostServicesServiceIdentifierCommandResponseObject, error)
+	// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/command)
+	PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx context.Context, request PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandRequestObject) (PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponseObject, error)
 
-	// (POST /services/{service_identifier}/endpoints/{port_number}/availability)
-	PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx context.Context, request PostServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject) (PostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject, error)
+	// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
+	PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx context.Context, request PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject) (PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject, error)
 
-	// (GET /starlark)
-	GetStarlark(ctx context.Context, request GetStarlarkRequestObject) (GetStarlarkResponseObject, error)
+	// (GET /enclaves/{enclave_identifier}/starlark)
+	GetEnclavesEnclaveIdentifierStarlark(ctx context.Context, request GetEnclavesEnclaveIdentifierStarlarkRequestObject) (GetEnclavesEnclaveIdentifierStarlarkResponseObject, error)
 
-	// (PUT /starlark/packages)
-	PutStarlarkPackages(ctx context.Context, request PutStarlarkPackagesRequestObject) (PutStarlarkPackagesResponseObject, error)
+	// (PUT /enclaves/{enclave_identifier}/starlark/packages)
+	PutEnclavesEnclaveIdentifierStarlarkPackages(ctx context.Context, request PutEnclavesEnclaveIdentifierStarlarkPackagesRequestObject) (PutEnclavesEnclaveIdentifierStarlarkPackagesResponseObject, error)
 
-	// (POST /starlark/packages/{package_id})
-	PostStarlarkPackagesPackageId(ctx context.Context, request PostStarlarkPackagesPackageIdRequestObject) (PostStarlarkPackagesPackageIdResponseObject, error)
+	// (POST /enclaves/{enclave_identifier}/starlark/packages/{package_id})
+	PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx context.Context, request PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdRequestObject) (PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponseObject, error)
 
-	// (POST /starlark/scripts)
-	PostStarlarkScripts(ctx context.Context, request PostStarlarkScriptsRequestObject) (PostStarlarkScriptsResponseObject, error)
+	// (POST /enclaves/{enclave_identifier}/starlark/scripts)
+	PostEnclavesEnclaveIdentifierStarlarkScripts(ctx context.Context, request PostEnclavesEnclaveIdentifierStarlarkScriptsRequestObject) (PostEnclavesEnclaveIdentifierStarlarkScriptsResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx echo.Context, args interface{}) (interface{}, error)
@@ -663,415 +790,438 @@ type strictHandler struct {
 	middlewares []StrictMiddlewareFunc
 }
 
-// GetArtifacts operation middleware
-func (sh *strictHandler) GetArtifacts(ctx echo.Context) error {
-	var request GetArtifactsRequestObject
+// GetEnclavesEnclaveIdentifierArtifacts operation middleware
+func (sh *strictHandler) GetEnclavesEnclaveIdentifierArtifacts(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request GetEnclavesEnclaveIdentifierArtifactsRequestObject
+
+	request.EnclaveIdentifier = enclaveIdentifier
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetArtifacts(ctx.Request().Context(), request.(GetArtifactsRequestObject))
+		return sh.ssi.GetEnclavesEnclaveIdentifierArtifacts(ctx.Request().Context(), request.(GetEnclavesEnclaveIdentifierArtifactsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetArtifacts")
+		handler = middleware(handler, "GetEnclavesEnclaveIdentifierArtifacts")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetArtifactsResponseObject); ok {
-		return validResponse.VisitGetArtifactsResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetEnclavesEnclaveIdentifierArtifactsResponseObject); ok {
+		return validResponse.VisitGetEnclavesEnclaveIdentifierArtifactsResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// PutArtifactsLocalFile operation middleware
-func (sh *strictHandler) PutArtifactsLocalFile(ctx echo.Context) error {
-	var request PutArtifactsLocalFileRequestObject
+// PutEnclavesEnclaveIdentifierArtifactsLocalFile operation middleware
+func (sh *strictHandler) PutEnclavesEnclaveIdentifierArtifactsLocalFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request PutEnclavesEnclaveIdentifierArtifactsLocalFileRequestObject
 
-	var body PutArtifactsLocalFileJSONRequestBody
+	request.EnclaveIdentifier = enclaveIdentifier
+
+	var body PutEnclavesEnclaveIdentifierArtifactsLocalFileJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PutArtifactsLocalFile(ctx.Request().Context(), request.(PutArtifactsLocalFileRequestObject))
+		return sh.ssi.PutEnclavesEnclaveIdentifierArtifactsLocalFile(ctx.Request().Context(), request.(PutEnclavesEnclaveIdentifierArtifactsLocalFileRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutArtifactsLocalFile")
+		handler = middleware(handler, "PutEnclavesEnclaveIdentifierArtifactsLocalFile")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PutArtifactsLocalFileResponseObject); ok {
-		return validResponse.VisitPutArtifactsLocalFileResponse(ctx.Response())
+	} else if validResponse, ok := response.(PutEnclavesEnclaveIdentifierArtifactsLocalFileResponseObject); ok {
+		return validResponse.VisitPutEnclavesEnclaveIdentifierArtifactsLocalFileResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// PutArtifactsRemoteFile operation middleware
-func (sh *strictHandler) PutArtifactsRemoteFile(ctx echo.Context) error {
-	var request PutArtifactsRemoteFileRequestObject
+// PutEnclavesEnclaveIdentifierArtifactsRemoteFile operation middleware
+func (sh *strictHandler) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject
 
-	var body PutArtifactsRemoteFileJSONRequestBody
+	request.EnclaveIdentifier = enclaveIdentifier
+
+	var body PutEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PutArtifactsRemoteFile(ctx.Request().Context(), request.(PutArtifactsRemoteFileRequestObject))
+		return sh.ssi.PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx.Request().Context(), request.(PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutArtifactsRemoteFile")
+		handler = middleware(handler, "PutEnclavesEnclaveIdentifierArtifactsRemoteFile")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PutArtifactsRemoteFileResponseObject); ok {
-		return validResponse.VisitPutArtifactsRemoteFileResponse(ctx.Response())
+	} else if validResponse, ok := response.(PutEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject); ok {
+		return validResponse.VisitPutEnclavesEnclaveIdentifierArtifactsRemoteFileResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// PutArtifactsServicesServiceIdentifier operation middleware
-func (sh *strictHandler) PutArtifactsServicesServiceIdentifier(ctx echo.Context, serviceIdentifier string) error {
-	var request PutArtifactsServicesServiceIdentifierRequestObject
+// PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier operation middleware
+func (sh *strictHandler) PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error {
+	var request PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject
 
+	request.EnclaveIdentifier = enclaveIdentifier
 	request.ServiceIdentifier = serviceIdentifier
 
-	var body PutArtifactsServicesServiceIdentifierJSONRequestBody
+	var body PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PutArtifactsServicesServiceIdentifier(ctx.Request().Context(), request.(PutArtifactsServicesServiceIdentifierRequestObject))
+		return sh.ssi.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx.Request().Context(), request.(PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutArtifactsServicesServiceIdentifier")
+		handler = middleware(handler, "PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PutArtifactsServicesServiceIdentifierResponseObject); ok {
-		return validResponse.VisitPutArtifactsServicesServiceIdentifierResponse(ctx.Response())
+	} else if validResponse, ok := response.(PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject); ok {
+		return validResponse.VisitPutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// GetArtifactsArtifactIdentifier operation middleware
-func (sh *strictHandler) GetArtifactsArtifactIdentifier(ctx echo.Context, artifactIdentifier string) error {
-	var request GetArtifactsArtifactIdentifierRequestObject
+// GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier operation middleware
+func (sh *strictHandler) GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, artifactIdentifier ArtifactIdentifier) error {
+	var request GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierRequestObject
 
+	request.EnclaveIdentifier = enclaveIdentifier
 	request.ArtifactIdentifier = artifactIdentifier
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetArtifactsArtifactIdentifier(ctx.Request().Context(), request.(GetArtifactsArtifactIdentifierRequestObject))
+		return sh.ssi.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx.Request().Context(), request.(GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetArtifactsArtifactIdentifier")
+		handler = middleware(handler, "GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetArtifactsArtifactIdentifierResponseObject); ok {
-		return validResponse.VisitGetArtifactsArtifactIdentifierResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponseObject); ok {
+		return validResponse.VisitGetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// GetArtifactsArtifactIdentifierDownload operation middleware
-func (sh *strictHandler) GetArtifactsArtifactIdentifierDownload(ctx echo.Context, artifactIdentifier string) error {
-	var request GetArtifactsArtifactIdentifierDownloadRequestObject
+// GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload operation middleware
+func (sh *strictHandler) GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, artifactIdentifier ArtifactIdentifier) error {
+	var request GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadRequestObject
 
+	request.EnclaveIdentifier = enclaveIdentifier
 	request.ArtifactIdentifier = artifactIdentifier
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetArtifactsArtifactIdentifierDownload(ctx.Request().Context(), request.(GetArtifactsArtifactIdentifierDownloadRequestObject))
+		return sh.ssi.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx.Request().Context(), request.(GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetArtifactsArtifactIdentifierDownload")
+		handler = middleware(handler, "GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetArtifactsArtifactIdentifierDownloadResponseObject); ok {
-		return validResponse.VisitGetArtifactsArtifactIdentifierDownloadResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadResponseObject); ok {
+		return validResponse.VisitGetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// GetServices operation middleware
-func (sh *strictHandler) GetServices(ctx echo.Context) error {
-	var request GetServicesRequestObject
+// GetEnclavesEnclaveIdentifierServices operation middleware
+func (sh *strictHandler) GetEnclavesEnclaveIdentifierServices(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request GetEnclavesEnclaveIdentifierServicesRequestObject
+
+	request.EnclaveIdentifier = enclaveIdentifier
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetServices(ctx.Request().Context(), request.(GetServicesRequestObject))
+		return sh.ssi.GetEnclavesEnclaveIdentifierServices(ctx.Request().Context(), request.(GetEnclavesEnclaveIdentifierServicesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetServices")
+		handler = middleware(handler, "GetEnclavesEnclaveIdentifierServices")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetServicesResponseObject); ok {
-		return validResponse.VisitGetServicesResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetEnclavesEnclaveIdentifierServicesResponseObject); ok {
+		return validResponse.VisitGetEnclavesEnclaveIdentifierServicesResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// PostServicesConnection operation middleware
-func (sh *strictHandler) PostServicesConnection(ctx echo.Context) error {
-	var request PostServicesConnectionRequestObject
+// PostEnclavesEnclaveIdentifierServicesConnection operation middleware
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierServicesConnection(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request PostEnclavesEnclaveIdentifierServicesConnectionRequestObject
 
-	var body PostServicesConnectionJSONRequestBody
+	request.EnclaveIdentifier = enclaveIdentifier
+
+	var body PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PostServicesConnection(ctx.Request().Context(), request.(PostServicesConnectionRequestObject))
+		return sh.ssi.PostEnclavesEnclaveIdentifierServicesConnection(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierServicesConnectionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostServicesConnection")
+		handler = middleware(handler, "PostEnclavesEnclaveIdentifierServicesConnection")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PostServicesConnectionResponseObject); ok {
-		return validResponse.VisitPostServicesConnectionResponse(ctx.Response())
+	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierServicesConnectionResponseObject); ok {
+		return validResponse.VisitPostEnclavesEnclaveIdentifierServicesConnectionResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// GetServicesServiceIdentifier operation middleware
-func (sh *strictHandler) GetServicesServiceIdentifier(ctx echo.Context, serviceIdentifier string, params GetServicesServiceIdentifierParams) error {
-	var request GetServicesServiceIdentifierRequestObject
+// GetEnclavesEnclaveIdentifierServicesServiceIdentifier operation middleware
+func (sh *strictHandler) GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier, params GetEnclavesEnclaveIdentifierServicesServiceIdentifierParams) error {
+	var request GetEnclavesEnclaveIdentifierServicesServiceIdentifierRequestObject
 
+	request.EnclaveIdentifier = enclaveIdentifier
 	request.ServiceIdentifier = serviceIdentifier
 	request.Params = params
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetServicesServiceIdentifier(ctx.Request().Context(), request.(GetServicesServiceIdentifierRequestObject))
+		return sh.ssi.GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx.Request().Context(), request.(GetEnclavesEnclaveIdentifierServicesServiceIdentifierRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetServicesServiceIdentifier")
+		handler = middleware(handler, "GetEnclavesEnclaveIdentifierServicesServiceIdentifier")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetServicesServiceIdentifierResponseObject); ok {
-		return validResponse.VisitGetServicesServiceIdentifierResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetEnclavesEnclaveIdentifierServicesServiceIdentifierResponseObject); ok {
+		return validResponse.VisitGetEnclavesEnclaveIdentifierServicesServiceIdentifierResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// PostServicesServiceIdentifierCommand operation middleware
-func (sh *strictHandler) PostServicesServiceIdentifierCommand(ctx echo.Context, serviceIdentifier string) error {
-	var request PostServicesServiceIdentifierCommandRequestObject
+// PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand operation middleware
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error {
+	var request PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandRequestObject
 
+	request.EnclaveIdentifier = enclaveIdentifier
 	request.ServiceIdentifier = serviceIdentifier
 
-	var body PostServicesServiceIdentifierCommandJSONRequestBody
+	var body PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PostServicesServiceIdentifierCommand(ctx.Request().Context(), request.(PostServicesServiceIdentifierCommandRequestObject))
+		return sh.ssi.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostServicesServiceIdentifierCommand")
+		handler = middleware(handler, "PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PostServicesServiceIdentifierCommandResponseObject); ok {
-		return validResponse.VisitPostServicesServiceIdentifierCommandResponse(ctx.Response())
+	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponseObject); ok {
+		return validResponse.VisitPostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// PostServicesServiceIdentifierEndpointsPortNumberAvailability operation middleware
-func (sh *strictHandler) PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, serviceIdentifier string, portNumber int) error {
-	var request PostServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject
+// PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability operation middleware
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier, portNumber PortNumber) error {
+	var request PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject
 
+	request.EnclaveIdentifier = enclaveIdentifier
 	request.ServiceIdentifier = serviceIdentifier
 	request.PortNumber = portNumber
 
-	var body PostServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody
+	var body PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PostServicesServiceIdentifierEndpointsPortNumberAvailability(ctx.Request().Context(), request.(PostServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject))
+		return sh.ssi.PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostServicesServiceIdentifierEndpointsPortNumberAvailability")
+		handler = middleware(handler, "PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject); ok {
-		return validResponse.VisitPostServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(ctx.Response())
+	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject); ok {
+		return validResponse.VisitPostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// GetStarlark operation middleware
-func (sh *strictHandler) GetStarlark(ctx echo.Context) error {
-	var request GetStarlarkRequestObject
+// GetEnclavesEnclaveIdentifierStarlark operation middleware
+func (sh *strictHandler) GetEnclavesEnclaveIdentifierStarlark(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request GetEnclavesEnclaveIdentifierStarlarkRequestObject
+
+	request.EnclaveIdentifier = enclaveIdentifier
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetStarlark(ctx.Request().Context(), request.(GetStarlarkRequestObject))
+		return sh.ssi.GetEnclavesEnclaveIdentifierStarlark(ctx.Request().Context(), request.(GetEnclavesEnclaveIdentifierStarlarkRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetStarlark")
+		handler = middleware(handler, "GetEnclavesEnclaveIdentifierStarlark")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetStarlarkResponseObject); ok {
-		return validResponse.VisitGetStarlarkResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetEnclavesEnclaveIdentifierStarlarkResponseObject); ok {
+		return validResponse.VisitGetEnclavesEnclaveIdentifierStarlarkResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// PutStarlarkPackages operation middleware
-func (sh *strictHandler) PutStarlarkPackages(ctx echo.Context) error {
-	var request PutStarlarkPackagesRequestObject
+// PutEnclavesEnclaveIdentifierStarlarkPackages operation middleware
+func (sh *strictHandler) PutEnclavesEnclaveIdentifierStarlarkPackages(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request PutEnclavesEnclaveIdentifierStarlarkPackagesRequestObject
 
-	var body PutStarlarkPackagesJSONRequestBody
+	request.EnclaveIdentifier = enclaveIdentifier
+
+	var body PutEnclavesEnclaveIdentifierStarlarkPackagesJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PutStarlarkPackages(ctx.Request().Context(), request.(PutStarlarkPackagesRequestObject))
+		return sh.ssi.PutEnclavesEnclaveIdentifierStarlarkPackages(ctx.Request().Context(), request.(PutEnclavesEnclaveIdentifierStarlarkPackagesRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutStarlarkPackages")
+		handler = middleware(handler, "PutEnclavesEnclaveIdentifierStarlarkPackages")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PutStarlarkPackagesResponseObject); ok {
-		return validResponse.VisitPutStarlarkPackagesResponse(ctx.Response())
+	} else if validResponse, ok := response.(PutEnclavesEnclaveIdentifierStarlarkPackagesResponseObject); ok {
+		return validResponse.VisitPutEnclavesEnclaveIdentifierStarlarkPackagesResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// PostStarlarkPackagesPackageId operation middleware
-func (sh *strictHandler) PostStarlarkPackagesPackageId(ctx echo.Context, packageId string) error {
-	var request PostStarlarkPackagesPackageIdRequestObject
+// PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId operation middleware
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, packageId PackageId) error {
+	var request PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdRequestObject
 
+	request.EnclaveIdentifier = enclaveIdentifier
 	request.PackageId = packageId
 
-	var body PostStarlarkPackagesPackageIdJSONRequestBody
+	var body PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PostStarlarkPackagesPackageId(ctx.Request().Context(), request.(PostStarlarkPackagesPackageIdRequestObject))
+		return sh.ssi.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostStarlarkPackagesPackageId")
+		handler = middleware(handler, "PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PostStarlarkPackagesPackageIdResponseObject); ok {
-		return validResponse.VisitPostStarlarkPackagesPackageIdResponse(ctx.Response())
+	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponseObject); ok {
+		return validResponse.VisitPostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// PostStarlarkScripts operation middleware
-func (sh *strictHandler) PostStarlarkScripts(ctx echo.Context) error {
-	var request PostStarlarkScriptsRequestObject
+// PostEnclavesEnclaveIdentifierStarlarkScripts operation middleware
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request PostEnclavesEnclaveIdentifierStarlarkScriptsRequestObject
 
-	var body PostStarlarkScriptsJSONRequestBody
+	request.EnclaveIdentifier = enclaveIdentifier
+
+	var body PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PostStarlarkScripts(ctx.Request().Context(), request.(PostStarlarkScriptsRequestObject))
+		return sh.ssi.PostEnclavesEnclaveIdentifierStarlarkScripts(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierStarlarkScriptsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostStarlarkScripts")
+		handler = middleware(handler, "PostEnclavesEnclaveIdentifierStarlarkScripts")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PostStarlarkScriptsResponseObject); ok {
-		return validResponse.VisitPostStarlarkScriptsResponse(ctx.Response())
+	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierStarlarkScriptsResponseObject); ok {
+		return validResponse.VisitPostEnclavesEnclaveIdentifierStarlarkScriptsResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
@@ -1081,70 +1231,72 @@ func (sh *strictHandler) PostStarlarkScripts(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"Gk+yfueyeHz8vwAAAP//MYxsmN1LAAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

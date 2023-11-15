@@ -18,8 +18,8 @@ const (
 
 // Defines values for ImageDownloadMode.
 const (
-	Always  ImageDownloadMode = "always"
-	Missing ImageDownloadMode = "missing"
+	ImageDownloadModeALWAYS  ImageDownloadMode = "ALWAYS"
+	ImageDownloadModeMISSING ImageDownloadMode = "MISSING"
 )
 
 // Defines values for KurtosisFeatureFlag.
@@ -36,8 +36,8 @@ const (
 
 // Defines values for RestartPolicy.
 const (
-	ALWAYS RestartPolicy = "ALWAYS"
-	NEVER  RestartPolicy = "NEVER"
+	RestartPolicyALWAYS RestartPolicy = "ALWAYS"
+	RestartPolicyNEVER  RestartPolicy = "NEVER"
 )
 
 // Defines values for ServiceStatus.
@@ -149,8 +149,8 @@ type GetStarlarkRunResponse struct {
 	SerializedScript *string        `json:"serialized_script,omitempty"`
 }
 
-// ImageDownloadMode 0 - always
-// 1 - missing
+// ImageDownloadMode 0 - ALWAYS
+// 1 - MISSING
 type ImageDownloadMode string
 
 // InspectFilesArtifactContentsResponse defines model for InspectFilesArtifactContentsResponse.
@@ -172,12 +172,12 @@ type Port struct {
 
 	// MaybeWaitTimeout The wait timeout duration in string
 	MaybeWaitTimeout *string `json:"maybe_wait_timeout,omitempty"`
-	Number           *int32  `json:"number,omitempty"`
+	Number           int32   `json:"number"`
 
 	// TransportProtocol 0 - TCP
 	// 1 - SCTP
 	// 2 - UDP
-	TransportProtocol *PortTransportProtocol `json:"transport_protocol,omitempty"`
+	TransportProtocol PortTransportProtocol `json:"transport_protocol"`
 }
 
 // PortTransportProtocol 0 - TCP
@@ -207,8 +207,8 @@ type RunStarlarkPackageArgs struct {
 	DryRun               *bool                  `json:"dry_run,omitempty"`
 	ExperimentalFeatures *[]KurtosisFeatureFlag `json:"experimental_features,omitempty"`
 
-	// ImageDownloadMode 0 - always
-	// 1 - missing
+	// ImageDownloadMode 0 - ALWAYS
+	// 1 - MISSING
 	ImageDownloadMode *ImageDownloadMode `json:"image_download_mode,omitempty"`
 
 	// Local the payload of the local module
@@ -244,8 +244,8 @@ type RunStarlarkScriptArgs struct {
 	DryRun               *bool                  `json:"dry_run,omitempty"`
 	ExperimentalFeatures *[]KurtosisFeatureFlag `json:"experimental_features,omitempty"`
 
-	// ImageDownloadMode 0 - always
-	// 1 - missing
+	// ImageDownloadMode 0 - ALWAYS
+	// 1 - MISSING
 	ImageDownloadMode *ImageDownloadMode `json:"image_download_mode,omitempty"`
 
 	// MainFunctionName The name of the main function, the default value is "run"
@@ -463,38 +463,53 @@ type WaitForEndpointAvailabilityArgs struct {
 // WaitForEndpointAvailabilityArgsHttpMethod defines model for WaitForEndpointAvailabilityArgs.HttpMethod.
 type WaitForEndpointAvailabilityArgsHttpMethod string
 
+// ArtifactIdentifier defines model for artifact_identifier.
+type ArtifactIdentifier = string
+
+// EnclaveIdentifier The package identifier that will be executed
+type EnclaveIdentifier = string
+
+// PackageId defines model for package_id.
+type PackageId = string
+
+// PortNumber defines model for port_number.
+type PortNumber = int32
+
+// ServiceIdentifier defines model for service_identifier.
+type ServiceIdentifier = string
+
 // StreamedDataBody Streamed Data Chunk
 type StreamedDataBody = StreamedDataChunk
 
-// GetServicesServiceIdentifierParams defines parameters for GetServicesServiceIdentifier.
-type GetServicesServiceIdentifierParams struct {
+// GetEnclavesEnclaveIdentifierServicesServiceIdentifierParams defines parameters for GetEnclavesEnclaveIdentifierServicesServiceIdentifier.
+type GetEnclavesEnclaveIdentifierServicesServiceIdentifierParams struct {
 	// AdditionalProperties Additional properties
 	AdditionalProperties *string `form:"additional-properties,omitempty" json:"additional-properties,omitempty"`
 }
 
-// PutArtifactsLocalFileJSONRequestBody defines body for PutArtifactsLocalFile for application/json ContentType.
-type PutArtifactsLocalFileJSONRequestBody = StreamedDataChunk
+// PutEnclavesEnclaveIdentifierArtifactsLocalFileJSONRequestBody defines body for PutEnclavesEnclaveIdentifierArtifactsLocalFile for application/json ContentType.
+type PutEnclavesEnclaveIdentifierArtifactsLocalFileJSONRequestBody = StreamedDataChunk
 
-// PutArtifactsRemoteFileJSONRequestBody defines body for PutArtifactsRemoteFile for application/json ContentType.
-type PutArtifactsRemoteFileJSONRequestBody = StoreWebFilesArtifactArgs
+// PutEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody defines body for PutEnclavesEnclaveIdentifierArtifactsRemoteFile for application/json ContentType.
+type PutEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody = StoreWebFilesArtifactArgs
 
-// PutArtifactsServicesServiceIdentifierJSONRequestBody defines body for PutArtifactsServicesServiceIdentifier for application/json ContentType.
-type PutArtifactsServicesServiceIdentifierJSONRequestBody = StoreFilesArtifactFromServiceArgs
+// PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody defines body for PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier for application/json ContentType.
+type PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody = StoreFilesArtifactFromServiceArgs
 
-// PostServicesConnectionJSONRequestBody defines body for PostServicesConnection for application/json ContentType.
-type PostServicesConnectionJSONRequestBody = ConnectServicesArgs
+// PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesConnection for application/json ContentType.
+type PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody = ConnectServicesArgs
 
-// PostServicesServiceIdentifierCommandJSONRequestBody defines body for PostServicesServiceIdentifierCommand for application/json ContentType.
-type PostServicesServiceIdentifierCommandJSONRequestBody = ExecCommandArgs
+// PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand for application/json ContentType.
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody = ExecCommandArgs
 
-// PostServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody defines body for PostServicesServiceIdentifierEndpointsPortNumberAvailability for application/json ContentType.
-type PostServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody = WaitForEndpointAvailabilityArgs
+// PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability for application/json ContentType.
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody = WaitForEndpointAvailabilityArgs
 
-// PutStarlarkPackagesJSONRequestBody defines body for PutStarlarkPackages for application/json ContentType.
-type PutStarlarkPackagesJSONRequestBody = StreamedDataChunk
+// PutEnclavesEnclaveIdentifierStarlarkPackagesJSONRequestBody defines body for PutEnclavesEnclaveIdentifierStarlarkPackages for application/json ContentType.
+type PutEnclavesEnclaveIdentifierStarlarkPackagesJSONRequestBody = StreamedDataChunk
 
-// PostStarlarkPackagesPackageIdJSONRequestBody defines body for PostStarlarkPackagesPackageId for application/json ContentType.
-type PostStarlarkPackagesPackageIdJSONRequestBody = RunStarlarkPackageArgs
+// PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId for application/json ContentType.
+type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody = RunStarlarkPackageArgs
 
-// PostStarlarkScriptsJSONRequestBody defines body for PostStarlarkScripts for application/json ContentType.
-type PostStarlarkScriptsJSONRequestBody = RunStarlarkScriptArgs
+// PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStarlarkScripts for application/json ContentType.
+type PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody = RunStarlarkScriptArgs

@@ -1,57 +1,59 @@
 openapi: 3.0.0
 info:
   title: Enclave API
-  description: ""
+  description: API to manipulate the enclaves
   version: "1"
 paths:
 
-  /starlark:
+  /enclaves/{enclave_identifier}/starlark:
     get:
       description: Get last Starlark run
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetStarlarkRunResponse"
 
-  /starlark/packages:
+  /enclaves/{enclave_identifier}/starlark/packages:
     put:
       description: Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
       requestBody:
         $ref: "#/components/requestBodies/StreamedDataBody"
       responses:
         "200":
           $ref: "#/components/responses/Success"
 
-  /starlark/packages/{package_id}:
+  /enclaves/{enclave_identifier}/starlark/packages/{package_id}:
     post:
       description: Executes a Starlark script on the user's behalf
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: '#/components/parameters/package_id'
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/RunStarlarkPackageArgs"
         required: true
-      parameters:
-        - in: path
-          name: package_id
-          schema:
-            type: string
-          description: The package identifier that will be executed
-          required: true
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/StarlarkRunResponseLine"
 
-  /starlark/scripts:
+  /enclaves/{enclave_identifier}/starlark/scripts:
     post:
       description: Executes a Starlark script on the user's behalf
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
       requestBody:
         content:
           application/json:
@@ -60,32 +62,30 @@ paths:
         required: true
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/StarlarkRunResponseLine"
 
-  /services:
+  /enclaves/{enclave_identifier}/services:
     get:
       description: Returns information about all existing & historical services
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetExistingAndHistoricalServiceIdentifiersResponse"
 
-  /services/{service_identifier}:
+  /enclaves/{enclave_identifier}/services/{service_identifier}:
     get:
       parameters:
-        - in: path
-          name: service_identifier
-          schema:
-            type: string
-          required: true
-          description: Service identifier to fetch info
+        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: '#/components/parameters/service_identifier'
         - in: query
           name: additional-properties
           schema:
@@ -93,15 +93,18 @@ paths:
           description: Additional properties
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetServicesResponse"
 
-  /services/{service_identifier}/command:
+  /enclaves/{enclave_identifier}/services/{service_identifier}/command:
     post:
       description: Executes the given command inside a running container
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: '#/components/parameters/service_identifier'
       requestBody:
         content:
           application/json:
@@ -109,24 +112,21 @@ paths:
               $ref: "#/components/schemas/ExecCommandArgs"
         description: Exec Command
         required: true
-      parameters:
-        - in: path
-          name: service_identifier
-          schema:
-            type: string
-          description: The service identifier of the container that the command should be executed in
-          required: true
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExecCommandResponse"
 
-  /services/{service_identifier}/endpoints/{port_number}/availability:
+  /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability:
     post:
       description: Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: '#/components/parameters/service_identifier'
+        - $ref: '#/components/parameters/port_number'
       requestBody:
         content:
           application/json:
@@ -134,85 +134,71 @@ paths:
               $ref: "#/components/schemas/WaitForEndpointAvailabilityArgs"
         description: Wait For HTTP Get Endpoint Availability
         required: true
-      parameters:
-        - in: path
-          name: service_identifier
-          schema:
-            type: string
-          description: The service identifier of the container that the command should be executed in
-          required: true
-        - in: path
-          name: port_number
-          schema:
-            type: integer
-          description: The port number to check availability
-          required: true
       responses:
         "200":
           $ref: "#/components/responses/Success"
 
-  /artifacts:
+  /enclaves/{enclave_identifier}/artifacts:
     get:
+      description: List all files artifacts
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListFilesArtifactNamesAndUuidsResponse"
 
-  /artifacts/{artifact_identifier}:
+  /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}:
     get:
-      description: ""
       parameters:
-        - in: path
-          name: artifact_identifier
-          schema:
-            type: string
-          description: The artifact name or uuid
-          required: true
+        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: '#/components/parameters/artifact_identifier'
+      description: Inspect the content of a file artifact
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/InspectFilesArtifactContentsResponse"
 
-  /artifacts/{artifact_identifier}/download:
+  /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download:
     get:
       description: Downloads a files artifact from the Kurtosis File System
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: '#/components/parameters/artifact_identifier'
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/StreamedDataChunk"
-      parameters:
-        - in: path
-          name: artifact_identifier
-          schema:
-            type: string
-          required: true
-          description: Numeric ID of the user to get
 
-  /artifacts/local-file:
+  /enclaves/{enclave_identifier}/artifacts/local-file:
     put:
       description: Uploads a files artifact to the Kurtosis File System
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
       requestBody:
         $ref: "#/components/requestBodies/StreamedDataBody"
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UploadFilesArtifactResponse"
 
-  /artifacts/remote-file:
+  /enclaves/{enclave_identifier}/artifacts/remote-file:
     put:
       description: Tells the API container to download a files artifact from the web to the Kurtosis File System
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
       requestBody:
         content:
           application/json:
@@ -222,39 +208,37 @@ paths:
         required: true
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/StoreWebFilesArtifactResponse"
 
-  /artifacts/services/{service_identifier}:
+  /enclaves/{enclave_identifier}/artifacts/services/{service_identifier}:
     put:
       description: Tells the API container to copy a files artifact from a service to the Kurtosis File System
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: '#/components/parameters/service_identifier'
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/StoreFilesArtifactFromServiceArgs"
         required: true
-      parameters:
-        - in: path
-          name: service_identifier
-          schema:
-            type: string
-          required: true
-          description: Numeric ID of the user to get
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/StoreFilesArtifactFromServiceResponse"
 
-  /services/connection:
+  /enclaves/{enclave_identifier}/services/connection:
     post:
       description: User services port forwarding
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
       requestBody:
         content:
           application/json:
@@ -263,12 +247,54 @@ paths:
         required: true
       responses:
         "200":
-          description: ""
+          description: Successful request
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ConnectServicesResponse"
 components:
+
+  parameters:
+    enclave_identifier:
+      in: path
+      name: enclave_identifier
+      schema:
+        type: string
+        description: The package identifier that will be executed
+      required: true
+
+    service_identifier:
+      in: path
+      name: service_identifier
+      schema:
+        type: string
+      description: The service identifier of the container that the command should be executed in
+      required: true
+        
+    port_number:
+      in: path
+      name: port_number
+      schema:
+        type: integer
+        format: int32
+      description: The port number to check availability
+      required: true
+  
+    artifact_identifier:
+      in: path
+      name: artifact_identifier
+      schema:
+        type: string
+      description: The artifact name or uuid
+      required: true
+        
+    package_id:
+      in: path
+      name: package_id
+      schema:
+        type: string
+      description: The package identifier that will be executed
+      required: true
 
   requestBodies:
 
@@ -304,6 +330,9 @@ components:
         maybe_wait_timeout:
           type: string
           description: The wait timeout duration in string
+      required:
+        - number
+        - transport_protocol
       description: Shared Objects (Used By Multiple Endpoints)
 
     Container:
@@ -340,11 +369,11 @@ components:
     ImageDownloadMode:
       type: string
       enum:
-        - always
-        - missing
+        - ALWAYS
+        - MISSING
       description: |-
-        0 - always 
-        1 - missing
+        0 - ALWAYS 
+        1 - MISSING
 
     ServiceInfo:
       type: object
