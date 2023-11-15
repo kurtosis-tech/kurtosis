@@ -167,7 +167,7 @@ export const ConfigureEnclaveModal = ({
       }
     } catch (err) {
       toast({
-        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError("asdas")}`,
+        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(err)}`,
         colorScheme: "red",
       });
       return;
