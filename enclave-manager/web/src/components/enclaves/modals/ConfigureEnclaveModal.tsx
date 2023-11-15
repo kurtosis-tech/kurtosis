@@ -196,7 +196,7 @@ export const ConfigureEnclaveModal = ({
       };
       console.debug("formData does not have Args field", submissionData);
     }
-    console.log("submissionData", submissionData);
+    console.log("submissionData for runStarlarkPackage", submissionData);
 
     const logsIterator = await runStarlarkPackage(apicInfo, kurtosisPackage.name, submissionData);
     navigator(`/enclave/${enclaveUUID}/logs`, { state: { logs: logsIterator } });
