@@ -10,7 +10,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  Tooltip,
+  Tooltip, useToast,
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { useMemo, useRef, useState } from "react";
@@ -55,6 +55,7 @@ export const ConfigureEnclaveModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
   const formRef = useRef<EnclaveConfigurationFormImperativeAttributes>(null);
+  const toast = useToast();
 
   const initialValues = useMemo(() => {
     if (isDefined(existingEnclave) && isDefined(existingEnclave.starlarkRun)) {
@@ -157,6 +158,20 @@ export const ConfigureEnclaveModal = ({
 
   const handleLoadSubmit: SubmitHandler<ConfigureEnclaveForm> = async (formData) => {
     setError(undefined);
+
+    try {
+      console.debug("formData", formData);
+      if (formData.args && formData.args.args) {
+        formData.args.args = JSON.parse(formData.args.args);
+        console.debug("successfully parsed args as proper JSON", formData.args.args);
+      }
+    } catch (err) {
+      toast({
+        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError("asdas")}`,
+        colorScheme: "red",
+      });
+      return;
+    }
 
     let apicInfo = existingEnclave?.apiContainerInfo;
     let enclaveUUID = existingEnclave?.shortenedUuid;
