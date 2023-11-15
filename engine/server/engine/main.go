@@ -17,7 +17,8 @@ import (
 	"strings"
 	"time"
 
-	api "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_http_api_bindings"
+	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_http_api_bindings"
+	engineApi "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_http_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
@@ -237,6 +238,7 @@ func runMain() error {
 	}()
 
 	go restApiServer(
+		ctx,
 		serverArgs,
 		enclaveManager,
 		perWeekLogsDatabaseClient,
@@ -358,6 +360,7 @@ func formatFilenameFunctionForLogs(filename string, functionName string) string 
 }
 
 func restApiServer(
+	ctx context.Context,
 	serverArgs *args.EngineServerArgs,
 	enclave_manager *enclave_manager.EnclaveManager,
 	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient,
@@ -367,18 +370,23 @@ func restApiServer(
 ) {
 	logrus.Info("Running REST API server...")
 
-	_, err := api.GetSwagger()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
-		os.Exit(1)
-	}
+	// This is how you set up a basic Echo router
+	e := echo.New()
+	// Log all requests
+	e.Use(echomiddleware.Logger())
 
-	// Clear out the servers array in the swagger spec, that skips validating
-	// that server names match. We don't know how this thing will be run.
+	// Use our validation middleware to check all requests against the
+	// OpenAPI schema.
+	// _, err := engineApi.GetSwagger()
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
+	// 	os.Exit(1)
+	// }
 	// swagger.Servers = nil
+	// e.Use(middleware.OapiRequestValidator(swagger))
 
-	// Create an instance of our handler which satisfies the generated interface
-	runtime := restApi.EngineRuntime{
+	// We now register our runtime above as the handler for the interface
+	engineRuntime := restApi.EngineRuntime{
 		ImageVersionTag:             serverArgs.ImageVersionTag,
 		EnclaveManager:              enclave_manager,
 		MetricsUserID:               serverArgs.MetricsUserID,
@@ -388,17 +396,13 @@ func restApiServer(
 		LogFileManager:              logFileManager,
 		MetricsClient:               metricsClient,
 	}
+	engineApi.RegisterHandlers(e, engineApi.NewStrictHandler(engineRuntime, nil))
 
-	// This is how you set up a basic Echo router
-	e := echo.New()
-	// Log all requests
-	e.Use(echomiddleware.Logger())
-	// Use our validation middleware to check all requests against the
-	// OpenAPI schema.
-	// e.Use(middleware.OapiRequestValidator(swagger))
+	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, enclave_manager)
+	if err != nil {
 
-	// We now register our runtime above as the handler for the interface
-	api.RegisterHandlers(e, api.NewStrictHandler(runtime, nil))
+	}
+	enclaveApi.RegisterHandlers(e, enclaveApi.NewStrictHandler(enclaveRuntime, nil))
 
 	e.Logger.Fatal(e.Start(net.JoinHostPort("0.0.0.0", fmt.Sprint(restAPIPortAddr))))
 }
