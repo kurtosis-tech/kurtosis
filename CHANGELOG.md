@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.22](https://github.com/kurtosis-tech/kurtosis/compare/0.85.21...0.85.22) (2023-11-15)
+
+
+### Features
+
+* configured CORS logs in the enclave manager server inside the Kurtosis engine ([#1797](https://github.com/kurtosis-tech/kurtosis/issues/1797)) ([1eaf469](https://github.com/kurtosis-tech/kurtosis/commit/1eaf469ba0d8d1a742c8bdf544c42e4ff1b17b67))
+
 ## [0.85.21](https://github.com/kurtosis-tech/kurtosis/compare/0.85.20...0.85.21) (2023-11-14)
 
 
