@@ -7,11 +7,11 @@ If you add a docstring in a specific format to the `run` function inside your pa
 
 For example, this is the form produced by Kurtosis for running the Postgres package:
 
-<img src="../../../static/img/api-reference/starlark-reference/postgres-package-configuration-form.png">
+<img src="../../../static/img/api-reference/starlark-reference/postgres-package-configuration-form.png" />
 
 which Kurtosis autogenerates based on [the docstring comment on the package's `main.star` function](https://github.com/kurtosis-tech/postgres-package/blob/main/main.star#L27):
 
-```python
+~~~python
 def run(
     plan,
     image="postgres:alpine",
@@ -70,7 +70,7 @@ def run(
         }
         ```
     """
-```
+~~~
 
 The syntax for this docstring is [the Google function docstring syntax](https://google.github.io/styleguide/pyguide.html#383-functions-and-methods), with optional PEP-484 type annotations in parentheses:
 
