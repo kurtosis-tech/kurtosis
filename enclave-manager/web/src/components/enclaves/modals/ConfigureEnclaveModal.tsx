@@ -182,7 +182,23 @@ export const ConfigureEnclaveModal = ({
       return;
     }
 
-    const logsIterator = await runStarlarkPackage(apicInfo, kurtosisPackage.name, formData.args);
+    let submissionData = {};
+    if (formData.args.args) {
+      const { args, ...rest } = formData.args;
+      submissionData = {
+        ...args,
+        ...rest,
+      };
+      console.debug("formData has `args` field and is merged with other potential args", submissionData);
+    } else {
+      submissionData = {
+        ...formData.args,
+      };
+      console.debug("formData does not have Args field", submissionData);
+    }
+    console.log("submissionData", submissionData);
+
+    const logsIterator = await runStarlarkPackage(apicInfo, kurtosisPackage.name, submissionData);
     navigator(`/enclave/${enclaveUUID}/logs`, { state: { logs: logsIterator } });
     onClose();
   };
