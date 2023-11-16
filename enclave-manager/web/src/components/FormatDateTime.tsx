@@ -31,7 +31,7 @@ export const FormatDateTime = ({ dateTime, format, ...textProps }: FormatDateTim
   }
 
   return (
-    <Tooltip label={dateTime.toISO()}>
+    <Tooltip label={dateTime.toLocal().toFormat("yyyy-MM-dd HH:mm:ss ZZZZ")}>
       <Text as={"span"} {...textProps}>
         {formattedDateTime}
       </Text>
