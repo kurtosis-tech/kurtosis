@@ -250,7 +250,28 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 
 // (GET /enclaves/{enclave_identifier}/services)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServices(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesRequestObject) (api.GetEnclavesEnclaveIdentifierServicesResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Listing services from enclave %s", enclave_identifier)
+
+	services, err := apiContainerClient.GetExistingAndHistoricalServiceIdentifiers(ctx, &emptypb.Empty{})
+	if err != nil {
+		logrus.Errorf("Can't list services using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
+	}
+
+	mapped_services := utils.MapList(services.AllIdentifiers, func(service *kurtosis_core_rpc_api_bindings.ServiceIdentifiers) api.ServiceIdentifiers {
+		return api.ServiceIdentifiers{
+			ServiceUuid:   &service.ServiceUuid,
+			ShortenedUuid: &service.ShortenedUuid,
+			Name:          &service.Name,
+		}
+	})
+	response := api.GetExistingAndHistoricalServiceIdentifiersResponse{
+		AllIdentifiers: &mapped_services,
+	}
+
+	return api.GetEnclavesEnclaveIdentifierServices200JSONResponse(response), nil
 }
 
 // (POST /enclaves/{enclave_identifier}/services/connection)
