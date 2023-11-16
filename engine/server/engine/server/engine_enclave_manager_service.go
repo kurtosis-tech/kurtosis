@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -234,19 +233,16 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 	}
 
 	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
-	fileContent, err := clientStream.ReceiveData(
+	pipeReader := clientStream.PipeReader(
 		artifact_identifier,
 		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
 			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
 		},
 	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred downloading files artifact '%v'", artifact_identifier)
-	}
 
 	response := api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload200ApplicationoctetStreamResponse{
-		Body:          bytes.NewReader(fileContent),
-		ContentLength: int64(len(fileContent)),
+		Body:          pipeReader,
+		ContentLength: 0, // No file size is provided since we are streaming it directly
 	}
 
 	return api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload200ApplicationoctetStreamResponse(response), nil
