@@ -2,11 +2,8 @@ package server
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"io"
-	"net/http"
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
@@ -147,46 +144,20 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(c
 	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
 	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
 
-	uploadStreamingCall, err := apiContainerClient.UploadFilesArtifact(ctx)
+	storeWebFilesArtifactArgs := kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs{
+		Url:  request.Body.Url,
+		Name: request.Body.Name,
+	}
+	stored_artifact, err := apiContainerClient.StoreWebFilesArtifact(ctx, &storeWebFilesArtifactArgs)
 	if err != nil {
 		logrus.Errorf("Can't start file upload gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
 	}
 
-	remoteFile, err := http.Get(*request.Body.Url)
-	if err != nil {
-		logrus.Errorf("Failed to retrieve remote file %s, error: %s", *request.Body.Url, err)
-		return nil, err
+	artifact_response := api.UploadFilesArtifactResponse{
+		Uuid: &stored_artifact.Uuid,
+		Name: &request.Body.Name,
 	}
-
-	buf := make([]byte, 1024)
-	var n int
-	hasher := sha1.New()
-	previousChunkHash := ""
-
-	for {
-		n, err = remoteFile.Body.Read(buf)
-		if err == io.EOF {
-			break
-		}
-		chunk := kurtosis_core_rpc_api_bindings.StreamedDataChunk{
-			Data:              buf[:n],
-			PreviousChunkHash: previousChunkHash,
-		}
-		uploadStreamingCall.Send(&chunk)
-		hasher.Reset()
-		hasher.Write(chunk.Data)
-		previousChunkHash = hex.EncodeToString(hasher.Sum(nil))
-	}
-
-	artifact_info, closing_err := uploadStreamingCall.CloseAndRecv()
-	if closing_err != nil {
-		logrus.Errorf("Failed to close upload gRPC call with enclave %s, error: %s", enclave_identifier, closing_err)
-		return nil, closing_err
-	}
-
-	artifact_response := toHttpUploadFilesArtifactResponse(artifact_info)
-
 	return api.PutEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse(artifact_response), nil
 }
 

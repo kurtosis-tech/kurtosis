@@ -412,10 +412,10 @@ type StoreFilesArtifactFromServiceResponse struct {
 // StoreWebFilesArtifactArgs Store Web Files Artifact
 type StoreWebFilesArtifactArgs struct {
 	// Name The name of the files artifact
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// Url URL to download the artifact from
-	Url *string `json:"url,omitempty"`
+	Url string `json:"url"`
 }
 
 // StreamedDataChunk Streamed Data Chunk
