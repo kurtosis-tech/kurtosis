@@ -90,3 +90,11 @@ export async function asyncResult<T>(
     return Result.err(errorMessage || stringifyError(e));
   }
 }
+
+export function wrapResult<T>(c: () => T, errorMessage?: string): Result<T, string> {
+  try {
+    return Result.ok(c());
+  } catch (e: any) {
+    return Result.err(errorMessage || stringifyError(e));
+  }
+}

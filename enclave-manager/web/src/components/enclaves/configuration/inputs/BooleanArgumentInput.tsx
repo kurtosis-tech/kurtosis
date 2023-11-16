@@ -1,8 +1,8 @@
 import { Radio, RadioGroup, Stack, Switch } from "@chakra-ui/react";
 import { useEnclaveConfigurationFormContext } from "../EnclaveConfigurationForm";
-import { KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
+import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-type BooleanArgumentInputProps = Omit<KurtosisArgumentTypeInputProps, "type"> & {
+type BooleanArgumentInputProps = KurtosisArgumentTypeInputImplProps & {
   inputType?: "radio" | "switch";
 };
 
