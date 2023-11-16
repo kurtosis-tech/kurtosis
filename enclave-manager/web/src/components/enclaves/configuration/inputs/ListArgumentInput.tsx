@@ -8,9 +8,9 @@ import { CopyButton } from "../../../CopyButton";
 import { PasteButton } from "../../../PasteButton";
 import { KurtosisArgumentSubtypeFormControl } from "../KurtosisArgumentFormControl";
 import { ConfigureEnclaveForm } from "../types";
-import { KurtosisArgumentTypeInput, KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
+import { KurtosisArgumentTypeInput, KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-type ListArgumentInputProps = Omit<KurtosisArgumentTypeInputProps, "type"> & {
+type ListArgumentInputProps = KurtosisArgumentTypeInputImplProps & {
   valueType: ArgumentValueType;
 };
 
