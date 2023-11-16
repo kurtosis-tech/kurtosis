@@ -11,6 +11,7 @@ lang_root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 cd "${lang_root_dirpath}"
 yarn install --frozen-lockfile
+yarn prettier
 # There are no unit tests currently
 # CGO_ENABLED=0 yarn test
 yarn clean

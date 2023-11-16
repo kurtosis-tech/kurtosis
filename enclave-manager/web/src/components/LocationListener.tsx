@@ -5,14 +5,14 @@ import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContex
 export const LocationListener = () => {
   const client = useKurtosisClient();
   const navigate = useNavigate();
+  const cloudUrl = client.getCloudUrl();
 
   useEffect(() => {
-    if (client.getCloudUrl()) {
-      console.log(client.getParentRequestedRoute());
+    if (cloudUrl) {
       const route = client.getParentRequestedRoute();
       if (route) navigate(route);
     }
-  }, [client.getCloudUrl()]);
+  }, [cloudUrl, client, navigate]);
 
   return <></>;
 };

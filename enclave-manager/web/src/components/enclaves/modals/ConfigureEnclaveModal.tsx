@@ -11,6 +11,7 @@ import {
   ModalOverlay,
   Text,
   Tooltip,
+  useToast,
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { useMemo, useRef, useState } from "react";
@@ -55,6 +56,7 @@ export const ConfigureEnclaveModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
   const formRef = useRef<EnclaveConfigurationFormImperativeAttributes>(null);
+  const toast = useToast();
 
   const initialValues = useMemo(() => {
     if (isDefined(existingEnclave) && isDefined(existingEnclave.starlarkRun)) {
@@ -79,8 +81,6 @@ export const ConfigureEnclaveModal = ({
               return isDefined(value) ? `${value}` : "";
             case ArgumentValueType.STRING:
               return value || "";
-            case ArgumentValueType.JSON:
-              return isDefined(value) ? JSON.stringify(value) : "{}";
             case ArgumentValueType.LIST:
               assertDefined(innerType1, `Cannot parse a list argument type without knowing innerType1`);
               return isDefined(value) ? value.map((v: any) => convertArgValue(innerType1, v)) : [];
@@ -89,8 +89,10 @@ export const ConfigureEnclaveModal = ({
               return isDefined(value)
                 ? Object.entries(value).map(([k, v]) => ({ key: k, value: convertArgValue(innerType2, v) }), {})
                 : [];
+            case ArgumentValueType.JSON:
             default:
-              return value;
+              // By default, a typeless parameter is JSON.
+              return isDefined(value) ? JSON.stringify(value) : "{}";
           }
         };
 
@@ -129,6 +131,7 @@ export const ConfigureEnclaveModal = ({
           try {
             parsedForm.args[arg.name] = JSON.stringify(JSON.parse(parsedForm.args[arg.name]), undefined, 4);
           } catch (err: any) {
+            console.error("err", err);
             // do nothing, the input was not valid json.
           }
         }
@@ -148,12 +151,29 @@ export const ConfigureEnclaveModal = ({
   const handleClose = () => {
     if (!isLoading) {
       navigator("#", { replace: true });
+      setError(undefined);
       onClose();
     }
   };
 
   const handleLoadSubmit: SubmitHandler<ConfigureEnclaveForm> = async (formData) => {
     setError(undefined);
+
+    try {
+      console.debug("formData", formData);
+      if (formData.args && formData.args.args) {
+        formData.args.args = JSON.parse(formData.args.args);
+        console.debug("successfully parsed args as proper JSON", formData.args.args);
+      }
+    } catch (err) {
+      toast({
+        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(
+          err,
+        )}`,
+        colorScheme: "red",
+      });
+      return;
+    }
 
     let apicInfo = existingEnclave?.apiContainerInfo;
     let enclaveUUID = existingEnclave?.shortenedUuid;
@@ -179,7 +199,23 @@ export const ConfigureEnclaveModal = ({
       return;
     }
 
-    const logsIterator = await runStarlarkPackage(apicInfo, kurtosisPackage.name, formData.args);
+    let submissionData = {};
+    if (formData.args.args) {
+      const { args, ...rest } = formData.args;
+      submissionData = {
+        ...args,
+        ...rest,
+      };
+      console.debug("formData has `args` field and is merged with other potential args", submissionData);
+    } else {
+      submissionData = {
+        ...formData.args,
+      };
+      console.debug("formData does not have Args field", submissionData);
+    }
+    console.log("submissionData for runStarlarkPackage", submissionData);
+
+    const logsIterator = await runStarlarkPackage(apicInfo, kurtosisPackage.name, submissionData);
     navigator(`/enclave/${enclaveUUID}/logs`, { state: { logs: logsIterator } });
     onClose();
   };
@@ -217,7 +253,7 @@ export const ConfigureEnclaveModal = ({
               <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
             </Flex>
             {isDefined(error) && (
-              <KurtosisAlert flex={"0"} message={"Could not execute configuration"} details={error} />
+              <KurtosisAlert flex={"1 0 auto"} message={"Could not execute configuration"} details={error} />
             )}
             <Flex
               flex={"0 1 auto"}

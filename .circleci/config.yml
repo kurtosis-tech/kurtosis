@@ -186,6 +186,9 @@ parameters:
   file-artifacts-expander-image-filename:
     type: string
     default: "file-artifacts-expander-image.tgz"
+  enclave-manager-yarn-cache-key-prefix:
+    type: string
+    default: "enclave-manager_yarn"
   engine-server-image-filename:
     type: string
     default: "engine-server-image.tgz"
@@ -394,6 +397,33 @@ jobs:
           paths:
             - "<< pipeline.parameters.core-server-image-filename >>"
 
+  build_enclave_manager_webapp:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.enclave-manager-yarn-cache-key-prefix>>-{{ checksum "enclave-manager/api/typescript/yarn.lock" }}-{{ checksum "enclave-manager/web/yarn.lock" }}
+
+      - run: npm install -g yarn
+
+      - run: |
+          enclave-manager/scripts/build.sh
+
+      - save_cache:
+          key: << pipeline.parameters.enclave-manager-yarn-cache-key-prefix>>-{{ checksum "enclave-manager/api/typescript/yarn.lock" }}-{{ checksum "enclave-manager/web/yarn.lock" }}
+          paths:
+            - "/home/circleci/.cache/yarn"
+
+      - persist_to_workspace:
+          root: engine/server
+          paths:
+            - webapp
+
   build_engine_launcher:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version >>"
@@ -415,6 +445,11 @@ jobs:
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
+
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - run: cp -R << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/webapp engine/server/webapp
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
@@ -1068,6 +1103,10 @@ jobs:
           version="$(cat version.txt)"
           "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $version
 
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - run: cp -R << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/webapp engine/server/webapp
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -1235,6 +1274,11 @@ workflows:
               ignore:
                 - main
 
+      - build_enclave_manager_webapp:
+          filters:
+            branches:
+              ignore:
+                - main
       - build_engine_launcher:
           filters:
             branches:
@@ -1243,6 +1287,8 @@ workflows:
       - build_engine_server:
           context:
             - docker-user
+          requires:
+            - build_enclave_manager_webapp
           filters:
             branches:
               ignore:
@@ -1387,6 +1433,8 @@ workflows:
           context:
             - docker-user
             - slack-secrets
+          requires:
+            - build_enclave_manager_webapp
           filters:
             branches:
               ignore: /.*/
