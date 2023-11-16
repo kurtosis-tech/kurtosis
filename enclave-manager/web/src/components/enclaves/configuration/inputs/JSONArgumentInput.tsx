@@ -1,12 +1,9 @@
 import { Controller } from "react-hook-form";
 import { isDefined, stringifyError } from "../../../../utils";
 import { CodeEditor } from "../../../CodeEditor";
-import { useEnclaveConfigurationFormContext } from "../EnclaveConfigurationForm";
-import { KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
+import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-export const JSONArgumentInput = (props: Omit<KurtosisArgumentTypeInputProps, "type">) => {
-  const { control } = useEnclaveConfigurationFormContext();
-
+export const JSONArgumentInput = (props: KurtosisArgumentTypeInputImplProps) => {
   return (
     <Controller
       render={({ field }) => <CodeEditor text={field.value} onTextChange={field.onChange} />}

@@ -1,20 +1,18 @@
+import { Icon } from "@chakra-ui/react";
+import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
+import { FiPlus } from "react-icons/fi";
 import { Params, RouteObject } from "react-router-dom";
 import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
-import { enclavesAction } from "./action";
-import { Enclave, enclaveLoader, enclaveTabLoader } from "./enclave";
-import { runStarlarkAction } from "./enclave/action";
-import { EnclaveLoaderDeferred } from "./enclave/loader";
+import { RemoveFunctions } from "../../utils/types";
+import { EmuiAppState } from "../EmuiAppContext";
+import { Enclave } from "./enclave/Enclave";
 import { Service } from "./enclave/service/Service";
-import { serviceTabLoader } from "./enclave/service/tabLoader";
 import { EnclaveList } from "./EnclaveList";
-import { enclavesLoader } from "./loader";
 
 export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => [
   {
     path: "/enclaves?",
     handle: { crumb: () => ({ name: "Enclaves", destination: "/" }) },
-    loader: enclavesLoader(kurtosisClient),
-    action: enclavesAction(kurtosisClient),
     id: "enclaves",
     element: <EnclaveList />,
   },
@@ -24,14 +22,27 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
     children: [
       {
         path: "/enclave/:enclaveUUID",
-        loader: enclaveLoader(kurtosisClient),
         id: "enclave",
         handle: {
-          crumb: async (data: Record<string, object>, params: Params) => {
-            const resolvedData = await (data["enclave"] as EnclaveLoaderDeferred).data;
+          crumb: async ({ enclaves: enclavesResult }: RemoveFunctions<EmuiAppState>, params: Params) => {
+            const enclaves = enclavesResult.unwrapOr([]);
+            const enclave = enclaves.find((enclave) => enclave.shortenedUuid === params.enclaveUUID);
             return {
-              name: resolvedData.routeName,
+              name: enclave?.name || params.enclaveUUID,
               destination: `/enclave/${params.enclaveUUID}`,
+              alternatives: [
+                ...enclaves
+                  .filter((enclave) => enclave.shortenedUuid !== params.enclaveUUID)
+                  .map((enclave) => ({
+                    name: enclave.name,
+                    destination: `/enclave/${enclave.shortenedUuid}`,
+                  })),
+                {
+                  name: "New Enclave",
+                  destination: `${window.location.href}/#create-enclave`,
+                  icon: <Icon as={FiPlus} color={"gray.400"} w={"24px"} h={"24px"}></Icon>,
+                },
+              ],
             };
           },
         },
@@ -39,42 +50,45 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
           {
             path: "service/:serviceUUID",
             handle: {
-              crumb: async (data: Record<string, object>, params: Params) => {
-                const resolvedData = await (data["enclave"] as EnclaveLoaderDeferred).data;
-                let serviceName = "Unknown";
-                if (
-                  resolvedData.enclave &&
-                  resolvedData.enclave.isOk &&
-                  resolvedData.enclave.value.services.isOk &&
-                  params.serviceUUID
-                ) {
-                  const service = Object.values(resolvedData.enclave.value.services.value.serviceInfo).find(
-                    (service) => service.shortenedUuid === params.serviceUUID,
-                  );
-                  if (service) {
-                    serviceName = service.name;
-                  }
-                }
+              crumb: async ({ servicesByEnclave }: RemoveFunctions<EmuiAppState>, params: Params) => {
+                const services = Object.values(
+                  servicesByEnclave[params.enclaveUUID || ""]?.unwrapOr({
+                    serviceInfo: {} as Record<string, ServiceInfo>,
+                  }).serviceInfo || {},
+                );
+                const service = services.find((service) => service.shortenedUuid === params.serviceUUID);
+                const serviceName = service?.name || "Unknown";
 
                 return {
                   name: serviceName,
                   destination: `/enclave/${params.enclaveUUID}/service/${params.serviceUUID}`,
+                  alternatives: services
+                    .filter((service) => service.shortenedUuid !== params.serviceUUID)
+                    .map((service) => ({
+                      name: service.name,
+                      destination: `/enclave/${params.enclaveUUID}/service/${service.shortenedUuid}`,
+                    })),
                 };
               },
             },
             children: [
               {
                 path: ":activeTab?",
-                loader: serviceTabLoader,
                 id: "serviceActiveTab",
                 element: <Service />,
                 handle: {
-                  crumb: (data: Record<string, object>, params: Params<string>) => ({
-                    name: (data["serviceActiveTab"] as Awaited<ReturnType<typeof serviceTabLoader>>).routeName,
-                    destination: `/enclave/${params.enclaveUUID}/service/${params.serviceUUID}/${
-                      params.activeTab || "overview"
-                    }`,
-                  }),
+                  crumb: (data: RemoveFunctions<EmuiAppState>, params: Params<string>) => {
+                    const activeTab = params.activeTab;
+
+                    let routeName = activeTab?.toLowerCase() === "logs" ? "Logs" : "Overview";
+
+                    return {
+                      name: routeName,
+                      destination: `/enclave/${params.enclaveUUID}/service/${params.serviceUUID}/${
+                        params.activeTab || "overview"
+                      }`,
+                    };
+                  },
                 },
               },
             ],
@@ -84,15 +98,24 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
           },
           {
             path: ":activeTab?",
-            loader: enclaveTabLoader,
-            action: runStarlarkAction(kurtosisClient),
             id: "enclaveActiveTab",
             element: <Enclave />,
             handle: {
-              crumb: (data: Record<string, object>, params: Params<string>) => ({
-                name: (data["enclaveActiveTab"] as Awaited<ReturnType<typeof enclaveTabLoader>>).routeName,
-                destination: `/enclave/${params.enclaveUUID}/${params.activeTab || "overview"}`,
-              }),
+              crumb: (data: RemoveFunctions<EmuiAppState>, params: Params<string>) => {
+                const activeTab = params.activeTab;
+
+                let routeName =
+                  activeTab?.toLowerCase() === "logs"
+                    ? "Logs"
+                    : activeTab?.toLowerCase() === "source"
+                    ? "Source"
+                    : "Overview";
+
+                return {
+                  name: routeName,
+                  destination: `/enclave/${params.enclaveUUID}/${params.activeTab || "overview"}`,
+                };
+              },
             },
           },
         ],

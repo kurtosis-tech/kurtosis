@@ -284,6 +284,11 @@ export class PackageArg extends Message<PackageArg> {
    */
   typeV2?: PackageArgumentType;
 
+  /**
+   * @generated from field: optional string defaultValue = 6;
+   */
+  defaultValue?: string;
+
   constructor(data?: PartialMessage<PackageArg>) {
     super();
     proto3.util.initPartial(data, this);
@@ -296,6 +301,7 @@ export class PackageArg extends Message<PackageArg> {
     { no: 2, name: "is_required", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 4, name: "description", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "typeV2", kind: "message", T: PackageArgumentType },
+    { no: 6, name: "defaultValue", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PackageArg {

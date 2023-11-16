@@ -1,6 +1,11 @@
 import { Box, Flex } from "@chakra-ui/react";
+import parse from "html-react-parser";
 import { DateTime } from "luxon";
 import { isDefined } from "../../../utils";
+// @ts-ignore
+import hasAnsi from "has-ansi";
+const Convert = require("ansi-to-html");
+const convert = new Convert();
 
 export type LogStatus = "info" | "error";
 
@@ -24,6 +29,14 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
     }
   };
 
+  const processText = (message: string) => {
+    if (hasAnsi(message)) {
+      return parse(convert.toHtml(message));
+    } else {
+      return <>{message}</>;
+    }
+  };
+
   return (
     <Flex p={"2px 0"} m={"0 16px"} gap={"8px"} alignItems={"top"}>
       {isDefined(timestamp) && (
@@ -37,19 +50,20 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
           color={"grey"}
           minW={"200px"}
         >
-          <>{timestamp.toLocal().toFormat("yyyy-MM-dd HH:mm:ss.SSS ZZZZ")}</>
+          <>{timestamp.toLocal().toFormat("yyyy-MM-dd HH:mm:ss ZZZZ")}</>
         </Box>
       )}
       <Box
         as={"pre"}
         whiteSpace={"pre-wrap"}
+        overflowWrap={"anywhere"}
         fontSize={"xs"}
         lineHeight="2"
         fontWeight={400}
         fontFamily={logFontFamily}
         color={statusToColor(status)}
       >
-        {message}
+        {message && processText(message)}
       </Box>
     </Flex>
   );

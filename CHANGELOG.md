@@ -1,5 +1,138 @@
 # Changelog
 
+## [0.85.26](https://github.com/kurtosis-tech/kurtosis/compare/0.85.25...0.85.26) (2023-11-16)
+
+
+### Features
+
+* emui improvements ([#1808](https://github.com/kurtosis-tech/kurtosis/issues/1808)) ([4e77667](https://github.com/kurtosis-tech/kurtosis/commit/4e776673fc017a8e2d44f138aa67f057f524ff58))
+
+## [0.85.25](https://github.com/kurtosis-tech/kurtosis/compare/0.85.24...0.85.25) (2023-11-16)
+
+
+### Bug Fixes
+
+* display create enclave error in scrollable box ([#1802](https://github.com/kurtosis-tech/kurtosis/issues/1802)) ([21adc5d](https://github.com/kurtosis-tech/kurtosis/commit/21adc5d70575b0d59980367146a528d1cfe137dc))
+
+## [0.85.24](https://github.com/kurtosis-tech/kurtosis/compare/0.85.23...0.85.24) (2023-11-16)
+
+
+### Features
+
+* generate enclave manager ui in build process and check prettier ([#1717](https://github.com/kurtosis-tech/kurtosis/issues/1717)) ([d6be248](https://github.com/kurtosis-tech/kurtosis/commit/d6be2482cc1af81830e909b8fdbaca104a7b73c3))
+
+## [0.85.23](https://github.com/kurtosis-tech/kurtosis/compare/0.85.22...0.85.23) (2023-11-15)
+
+
+### Bug Fixes
+
+* args were positioned incorrectly ([#1799](https://github.com/kurtosis-tech/kurtosis/issues/1799)) ([18c8b53](https://github.com/kurtosis-tech/kurtosis/commit/18c8b53e3a4d1a58be57105f5a3dfbc28c86c2b3))
+
+## [0.85.22](https://github.com/kurtosis-tech/kurtosis/compare/0.85.21...0.85.22) (2023-11-15)
+
+
+### Features
+
+* configured CORS logs in the enclave manager server inside the Kurtosis engine ([#1797](https://github.com/kurtosis-tech/kurtosis/issues/1797)) ([1eaf469](https://github.com/kurtosis-tech/kurtosis/commit/1eaf469ba0d8d1a742c8bdf544c42e4ff1b17b67))
+
+## [0.85.21](https://github.com/kurtosis-tech/kurtosis/compare/0.85.20...0.85.21) (2023-11-14)
+
+
+### Features
+
+* show usage text when CLI cmd fails because of missing a required argument ([#1774](https://github.com/kurtosis-tech/kurtosis/issues/1774)) ([a7df8cf](https://github.com/kurtosis-tech/kurtosis/commit/a7df8cfff3bac270a9fb755ed71a55d1e72f3d5d))
+
+## [0.85.20](https://github.com/kurtosis-tech/kurtosis/compare/0.85.19...0.85.20) (2023-11-14)
+
+
+### Bug Fixes
+
+* cache the instance config and api key ([#1775](https://github.com/kurtosis-tech/kurtosis/issues/1775)) ([dafe2bb](https://github.com/kurtosis-tech/kurtosis/commit/dafe2bb46dc13c457b15bb563a92ce951e9fdfc5))
+
+## [0.85.19](https://github.com/kurtosis-tech/kurtosis/compare/0.85.18...0.85.19) (2023-11-13)
+
+
+### Features
+
+* add enclave's flags info in the `kurtosis enclave inspect` CLI command ([#1751](https://github.com/kurtosis-tech/kurtosis/issues/1751)) ([35bad59](https://github.com/kurtosis-tech/kurtosis/commit/35bad59b59c5fca0705086b0cfdce7ab381c73ee)), closes [#1363](https://github.com/kurtosis-tech/kurtosis/issues/1363)
+
+
+### Bug Fixes
+
+* emui optimistic data loading ([#1771](https://github.com/kurtosis-tech/kurtosis/issues/1771)) ([f105fa0](https://github.com/kurtosis-tech/kurtosis/commit/f105fa0579a2c6a987ebc6d1bb4143fa074d7966))
+
+## [0.85.18](https://github.com/kurtosis-tech/kurtosis/compare/0.85.17...0.85.18) (2023-11-12)
+
+
+### Features
+
+* disable connect button ([#1766](https://github.com/kurtosis-tech/kurtosis/issues/1766)) ([6b079d2](https://github.com/kurtosis-tech/kurtosis/commit/6b079d2824809096015ab5e094cd2b32cb54ae4c))
+
+## [0.85.17](https://github.com/kurtosis-tech/kurtosis/compare/0.85.16...0.85.17) (2023-11-11)
+
+
+### Bug Fixes
+
+* EM UI improvements ([#1764](https://github.com/kurtosis-tech/kurtosis/issues/1764)) ([65e450d](https://github.com/kurtosis-tech/kurtosis/commit/65e450d9d8c4682e12e203f7f7ab66db1a096b2f))
+
+## [0.85.16](https://github.com/kurtosis-tech/kurtosis/compare/0.85.15...0.85.16) (2023-11-11)
+
+
+### Bug Fixes
+
+* new build (6) ([#1762](https://github.com/kurtosis-tech/kurtosis/issues/1762)) ([b5b8db4](https://github.com/kurtosis-tech/kurtosis/commit/b5b8db47e0b7ad4a2a5d7ae5a37e32b7a44bfc1c))
+
+## [0.85.15](https://github.com/kurtosis-tech/kurtosis/compare/0.85.14...0.85.15) (2023-11-11)
+
+
+### Bug Fixes
+
+* new build ([#1756](https://github.com/kurtosis-tech/kurtosis/issues/1756)) ([fcd09e5](https://github.com/kurtosis-tech/kurtosis/commit/fcd09e57b7b4a4aa8d476f3ad2a2c774f172dc1c))
+
+## [0.85.14](https://github.com/kurtosis-tech/kurtosis/compare/0.85.13...0.85.14) (2023-11-10)
+
+
+### Features
+
+* receive request for URL and broadcast url change ([#1753](https://github.com/kurtosis-tech/kurtosis/issues/1753)) ([9b3ef55](https://github.com/kurtosis-tech/kurtosis/commit/9b3ef5597a6b72b32bc97f10e742daafc249e925))
+
+
+### Bug Fixes
+
+* triple logs bug ([#1752](https://github.com/kurtosis-tech/kurtosis/issues/1752)) ([5c4c86d](https://github.com/kurtosis-tech/kurtosis/commit/5c4c86dc7c5826de624bf96c4b681fa013dfc8bd))
+
+## [0.85.13](https://github.com/kurtosis-tech/kurtosis/compare/0.85.12...0.85.13) (2023-11-10)
+
+
+### Features
+
+* enable ansi coloring ([#1746](https://github.com/kurtosis-tech/kurtosis/issues/1746)) ([2694464](https://github.com/kurtosis-tech/kurtosis/commit/269446449d0b76fb280be3c5f2ccf334a0d11085))
+
+
+### Bug Fixes
+
+* additional emui feedback changes ([#1749](https://github.com/kurtosis-tech/kurtosis/issues/1749)) ([f52fcef](https://github.com/kurtosis-tech/kurtosis/commit/f52fcefd53e9795c7f4152d901260a933f1aff86))
+* improve some log messages ([#1747](https://github.com/kurtosis-tech/kurtosis/issues/1747)) ([2bc6d08](https://github.com/kurtosis-tech/kurtosis/commit/2bc6d08e59cd1b44204c6b497466fe0b78ca8779))
+
+## [0.85.12](https://github.com/kurtosis-tech/kurtosis/compare/0.85.11...0.85.12) (2023-11-10)
+
+
+### Features
+
+* reconnect to service logs and link ([#1742](https://github.com/kurtosis-tech/kurtosis/issues/1742)) ([57468d0](https://github.com/kurtosis-tech/kurtosis/commit/57468d04dec4eb784c3a848ab5b405b99994ac5d))
+
+## [0.85.11](https://github.com/kurtosis-tech/kurtosis/compare/0.85.10...0.85.11) (2023-11-10)
+
+
+### Features
+
+* add nix flake for setting up dev env ([#1641](https://github.com/kurtosis-tech/kurtosis/issues/1641)) ([d968b26](https://github.com/kurtosis-tech/kurtosis/commit/d968b264ecf63dc1bb517bc387597a5560642757))
+
+
+### Bug Fixes
+
+* minor enclave config changes and ui build ([#1737](https://github.com/kurtosis-tech/kurtosis/issues/1737)) ([e349ce8](https://github.com/kurtosis-tech/kurtosis/commit/e349ce80dab01ce92553d266b177eb48e507b175))
+
 ## [0.85.10](https://github.com/kurtosis-tech/kurtosis/compare/0.85.9...0.85.10) (2023-11-09)
 
 

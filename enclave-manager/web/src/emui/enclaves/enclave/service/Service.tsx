@@ -1,11 +1,11 @@
 import { Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
-import { FunctionComponent, Suspense } from "react";
-import { Await, useNavigate, useParams, useRouteLoaderData } from "react-router-dom";
+import { FunctionComponent } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
 import { isDefined } from "../../../../utils";
+import { useFullEnclave } from "../../../EmuiAppContext";
 import { EnclaveFullInfo } from "../../types";
-import { EnclaveLoaderResolved } from "../loader";
 import { ServiceLogs } from "./logs/ServiceLogs";
 import { ServiceOverview } from "./overview/ServiceOverview";
 
@@ -15,48 +15,29 @@ const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInf
 ];
 
 export const Service = () => {
-  const { data } = useRouteLoaderData("enclave") as EnclaveLoaderResolved;
-
-  return (
-    <Suspense
-      fallback={
-        <Flex justifyContent={"center"} p={"20px"}>
-          <Spinner size={"xl"} />
-        </Flex>
-      }
-    >
-      <Await resolve={data} children={(data) => <MaybeServiceImpl enclave={data.enclave} />} />
-    </Suspense>
-  );
-};
-
-type MaybeServiceImplProps = {
-  enclave: EnclaveLoaderResolved["data"]["enclave"];
-};
-
-const MaybeServiceImpl = ({ enclave: enclaveResult }: MaybeServiceImplProps) => {
   const { enclaveUUID, serviceUUID } = useParams();
+  const enclave = useFullEnclave(enclaveUUID || "unknown");
 
-  if (!isDefined(enclaveResult)) {
-    return <KurtosisAlert message={`Could not find enclave ${enclaveUUID}`} />;
-  }
-
-  if (enclaveResult.isErr) {
+  if (enclave.isErr) {
     return <KurtosisAlert message={"Enclave could not load"} />;
   }
 
-  if (enclaveResult.value.services.isErr) {
+  if (!isDefined(enclave.value.services)) {
+    return <Spinner />;
+  }
+
+  if (enclave.value.services.isErr) {
     return <KurtosisAlert message={"Services for enclave could not load"} />;
   }
 
-  const service = Object.values(enclaveResult.value.services.value.serviceInfo).find(
+  const service = Object.values(enclave.value.services.value.serviceInfo).find(
     (service) => service.shortenedUuid === serviceUUID,
   );
   if (!isDefined(service)) {
     return <KurtosisAlert message={`Could not find service ${serviceUUID}`} />;
   }
 
-  return <ServiceImpl enclave={enclaveResult.value} service={service} />;
+  return <ServiceImpl enclave={enclave.value} service={service} />;
 };
 
 type ServiceImplProps = {
