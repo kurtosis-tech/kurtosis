@@ -167,7 +167,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to run generated starlark from compose")
 	}
-	if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), doNotShowFullUuids); err != nil {
+	if err = inspect.PrintEnclaveInspect(ctx, kurtosisCtx, enclaveCtx.GetEnclaveName(), doNotShowFullUuids); err != nil {
 		logrus.Errorf("An error occurred while printing enclave status and contents:\n%s", err)
 	}
 	return nil

@@ -1,39 +1,16 @@
-import { Button, ButtonGroup, Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
-import { Suspense, useEffect, useState } from "react";
-import { Await, useRouteLoaderData } from "react-router-dom";
+import { Button, ButtonGroup, Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import { useState } from "react";
 import { CreateEnclaveButton } from "../../components/enclaves/CreateEnclaveButton";
 import { EnclavesTable } from "../../components/enclaves/tables/EnclavesTable";
 import { DeleteEnclavesButton } from "../../components/enclaves/widgets/DeleteEnclavesButton";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
-import { EnclavesLoaderResolved } from "./loader";
+import { useFullEnclaves } from "../EmuiAppContext";
 import { EnclaveFullInfo } from "./types";
 
 export const EnclaveList = () => {
-  const { enclaves } = useRouteLoaderData("enclaves") as EnclavesLoaderResolved;
+  const enclaves = useFullEnclaves();
 
-  return (
-    <Suspense
-      fallback={
-        <Flex justifyContent={"center"} p={"20px"}>
-          <Spinner size={"xl"} />
-        </Flex>
-      }
-    >
-      <Await resolve={enclaves} children={(enclaves) => <EnclaveListImpl enclaves={enclaves} />} />
-    </Suspense>
-  );
-};
-
-type EnclaveListImplProps = {
-  enclaves: EnclavesLoaderResolved["enclaves"];
-};
-
-const EnclaveListImpl = ({ enclaves }: EnclaveListImplProps) => {
   const [selectedEnclaves, setSelectedEnclaves] = useState<EnclaveFullInfo[]>([]);
-
-  useEffect(() => {
-    setSelectedEnclaves([]);
-  }, [enclaves]);
 
   return (
     <Flex direction="column">

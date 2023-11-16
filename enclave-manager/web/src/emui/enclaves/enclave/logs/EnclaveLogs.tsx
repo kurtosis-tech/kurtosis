@@ -2,12 +2,12 @@ import { CircularProgress, Icon } from "@chakra-ui/react";
 import { StarlarkRunResponseLine } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useEffect, useState } from "react";
 import { FiCheck, FiX } from "react-icons/fi";
-import { Location, useLocation, useNavigate, useRevalidator } from "react-router-dom";
+import { Location, useLocation, useNavigate } from "react-router-dom";
 import { LogLineProps } from "../../../../components/enclaves/logs/LogLine";
 import { LogViewer } from "../../../../components/enclaves/logs/LogViewer";
 import { isAsyncIterable, stringifyError } from "../../../../utils";
+import { useEmuiAppContext } from "../../../EmuiAppContext";
 import { EnclaveFullInfo } from "../../types";
-import { RunStarlarkResolvedType } from "../action";
 
 // These are the stages we want to catch and handle in the UI
 type EnclaveLogStage =
@@ -43,9 +43,9 @@ type EnclaveLogsProps = {
 };
 
 export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
+  const { refreshServices, refreshFilesAndArtifacts, refreshStarlarkRun } = useEmuiAppContext();
   const navigator = useNavigate();
-  const revalidator = useRevalidator();
-  const location = useLocation() as Location<RunStarlarkResolvedType | undefined>;
+  const location = useLocation() as Location<{ logs: AsyncIterable<StarlarkRunResponseLine> }>;
   const [progress, setProgress] = useState<EnclaveLogStage>({ stage: "waiting" });
   const [logLines, setLogLines] = useState<LogLineProps[]>([]);
 
@@ -78,22 +78,26 @@ export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
                 }
               }
               if (line.runResponseLine.case === "runFinishedEvent") {
-                revalidator.revalidate();
                 return line.runResponseLine.value.isRunSuccessful
                   ? { stage: "done", totalSteps: oldProgress.stage === "executing" ? oldProgress.totalSteps : null }
                   : { stage: "failed" };
               }
               return oldProgress;
             });
-
-            console.log(line.runResponseLine.value);
+            if (line.runResponseLine.case === "runFinishedEvent") {
+              await Promise.all([
+                refreshStarlarkRun(enclave),
+                refreshServices(enclave),
+                refreshFilesAndArtifacts(enclave),
+              ]);
+            }
           }
         } catch (error: any) {
           if (cancelled) {
             return;
           }
           setLogLines((logLines) => [...logLines, { message: `Error: ${stringifyError(error)}`, status: "error" }]);
-          revalidator.revalidate();
+          await Promise.all([refreshStarlarkRun(enclave), refreshServices(enclave), refreshFilesAndArtifacts(enclave)]);
         }
       } else {
         navigator(`/enclave/${enclave.shortenedUuid}/overview`);
@@ -103,7 +107,7 @@ export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location, enclave.shortenedUuid, navigator, revalidator.revalidate]);
+  }, [location, enclave.shortenedUuid, navigator]);
 
   const progressPercent =
     progress.stage === "validating"

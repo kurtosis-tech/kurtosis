@@ -1,3 +1,4 @@
+import * as CSS from "csstype";
 import { FieldPath } from "react-hook-form";
 import { ArgumentValueType } from "../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { assertDefined } from "../../../../utils";
@@ -15,7 +16,10 @@ export type KurtosisArgumentTypeInputProps = {
   subType2?: ArgumentValueType;
   name: FieldPath<ConfigureEnclaveForm>;
   isRequired?: boolean;
+  validate?: (value: any) => string | undefined;
   disabled?: boolean;
+  width?: CSS.Property.Width;
+  size?: string;
 };
 
 export const KurtosisArgumentTypeInput = ({
@@ -24,11 +28,23 @@ export const KurtosisArgumentTypeInput = ({
   subType2,
   name,
   isRequired,
+  validate,
   disabled,
+  width,
+  size,
 }: KurtosisArgumentTypeInputProps) => {
   switch (type) {
     case ArgumentValueType.INTEGER:
-      return <IntegerArgumentInput name={name} isRequired={isRequired} disabled={disabled} />;
+      return (
+        <IntegerArgumentInput
+          name={name}
+          isRequired={isRequired}
+          disabled={disabled}
+          validate={validate}
+          width={width}
+          size={size}
+        />
+      );
     case ArgumentValueType.DICT:
       assertDefined(subType1, `innerType1 was not defined on DICT argument ${name}`);
       assertDefined(subType2, `innerType2 was not defined on DICT argument ${name}`);
@@ -38,18 +54,58 @@ export const KurtosisArgumentTypeInput = ({
           isRequired={isRequired}
           keyType={subType1}
           valueType={subType2}
+          validate={validate}
           disabled={disabled}
+          width={width}
+          size={size}
         />
       );
     case ArgumentValueType.LIST:
       assertDefined(subType1, `innerType1 was not defined on DICT argument ${name}`);
-      return <ListArgumentInput name={name} isRequired={isRequired} valueType={subType1} disabled={disabled} />;
+      return (
+        <ListArgumentInput
+          name={name}
+          isRequired={isRequired}
+          valueType={subType1}
+          validate={validate}
+          disabled={disabled}
+          width={width}
+          size={size}
+        />
+      );
     case ArgumentValueType.BOOL:
-      return <BooleanArgumentInput name={name} isRequired={isRequired} />;
+      return (
+        <BooleanArgumentInput
+          name={name}
+          isRequired={isRequired}
+          validate={validate}
+          disabled={disabled}
+          width={width}
+          size={size}
+        />
+      );
     case ArgumentValueType.STRING:
-      return <StringArgumentInput name={name} isRequired={isRequired} disabled={disabled} />;
+      return (
+        <StringArgumentInput
+          name={name}
+          isRequired={isRequired}
+          validate={validate}
+          disabled={disabled}
+          width={width}
+          size={size}
+        />
+      );
     case ArgumentValueType.JSON:
     default:
-      return <JSONArgumentInput name={name} isRequired={isRequired} disabled={disabled} />;
+      return (
+        <JSONArgumentInput
+          name={name}
+          isRequired={isRequired}
+          validate={validate}
+          disabled={disabled}
+          width={width}
+          size={size}
+        />
+      );
   }
 };

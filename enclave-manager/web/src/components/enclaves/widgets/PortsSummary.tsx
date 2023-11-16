@@ -21,7 +21,6 @@ type PortsSummaryProps = {
 };
 
 export const PortsSummary = ({ privatePorts, publicPorts }: PortsSummaryProps) => {
-  console.log(privatePorts, publicPorts);
   return (
     <Popover trigger={"hover"} preventOverflow isLazy>
       <PopoverTrigger>
