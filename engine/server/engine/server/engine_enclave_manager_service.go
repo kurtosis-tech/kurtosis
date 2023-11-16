@@ -163,7 +163,27 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(c
 
 // (PUT /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
 func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx context.Context, request api.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject) (api.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	service_identifier := request.ServiceIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Storing file artifact from service %s on enclave %s", service_identifier, enclave_identifier)
+
+	storeWebFilesArtifactArgs := kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{
+		ServiceIdentifier: service_identifier,
+		SourcePath:        request.Body.SourcePath,
+		Name:              request.Body.Name,
+	}
+	stored_artifact, err := apiContainerClient.StoreFilesArtifactFromService(ctx, &storeWebFilesArtifactArgs)
+	if err != nil {
+		logrus.Errorf("Can't start file upload gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
+	}
+
+	artifact_response := api.UploadFilesArtifactResponse{
+		Uuid: &stored_artifact.Uuid,
+		Name: &request.Body.Name,
+	}
+	return api.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier200JSONResponse(artifact_response), nil
 }
 
 // (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier})

@@ -397,16 +397,10 @@ type StarlarkWarning struct {
 // StoreFilesArtifactFromServiceArgs defines model for StoreFilesArtifactFromServiceArgs.
 type StoreFilesArtifactFromServiceArgs struct {
 	// Name The name of the files artifact
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// SourcePath The absolute source path where the source files will be copied from
-	SourcePath *string `json:"source_path,omitempty"`
-}
-
-// StoreFilesArtifactFromServiceResponse defines model for StoreFilesArtifactFromServiceResponse.
-type StoreFilesArtifactFromServiceResponse struct {
-	// Uuid UUID of the files artifact, for use when referencing it in the future
-	Uuid *string `json:"uuid,omitempty"`
+	SourcePath string `json:"source_path"`
 }
 
 // StoreWebFilesArtifactArgs Store Web Files Artifact
