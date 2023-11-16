@@ -1162,7 +1162,10 @@ workflows:
                         "pattern": "https://twitter.com/.*"
                     },
                     {
-                        "pattern": "http://localhost(?:\|:).*"
+                        "pattern": "http://localhost:.*"
+                    },
+                    {
+                        "pattern": "http://localhost/.*"
                     }
                 ]
             }
