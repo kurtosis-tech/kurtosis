@@ -21,7 +21,7 @@ type KurtosisAlertProps = AlertProps & {
 
 export const KurtosisAlert = ({ message, details, ...alertProps }: KurtosisAlertProps) => {
   return (
-    <Alert status="error" {...alertProps}>
+    <Alert status="error" overflowY={"auto"} maxHeight={"300px"} alignItems={"flex-start"} {...alertProps}>
       <AlertIcon />
       <Flex flexDirection={"column"} width={"100%"} gap={"8px"}>
         <Flex direction={"row"}>
@@ -40,7 +40,9 @@ export const KurtosisAlert = ({ message, details, ...alertProps }: KurtosisAlert
                 </AccordionButton>
               </h2>
               <AccordionPanel pb={4}>
-                <Box as={"pre"}>{details}</Box>
+                <Box as={"pre"} whiteSpace={"pre-wrap"} wordBreak={"break-word"}>
+                  {details}
+                </Box>
               </AccordionPanel>
             </AccordionItem>
           </Accordion>

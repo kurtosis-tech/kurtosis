@@ -151,6 +151,7 @@ export const ConfigureEnclaveModal = ({
   const handleClose = () => {
     if (!isLoading) {
       navigator("#", { replace: true });
+      setError(undefined);
       onClose();
     }
   };
@@ -252,7 +253,7 @@ export const ConfigureEnclaveModal = ({
               <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
             </Flex>
             {isDefined(error) && (
-              <KurtosisAlert flex={"0"} message={"Could not execute configuration"} details={error} />
+              <KurtosisAlert flex={"1 0 auto"} message={"Could not execute configuration"} details={error} />
             )}
             <Flex
               flex={"0 1 auto"}
