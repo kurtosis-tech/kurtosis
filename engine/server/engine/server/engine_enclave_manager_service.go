@@ -276,7 +276,20 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServices(ctx context.
 
 // (POST /enclaves/{enclave_identifier}/services/connection)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesConnection(ctx context.Context, request api.PostEnclavesEnclaveIdentifierServicesConnectionRequestObject) (api.PostEnclavesEnclaveIdentifierServicesConnectionResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Listing services from enclave %s", enclave_identifier)
+
+	connectServicesArgs := kurtosis_core_rpc_api_bindings.ConnectServicesArgs{
+		Connect: toGrpcConnect(*request.Body.Connect),
+	}
+	_, err := apiContainerClient.ConnectServices(ctx, &connectServicesArgs)
+	if err != nil {
+		logrus.Errorf("Can't list services using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
+	}
+
+	return api.PostEnclavesEnclaveIdentifierServicesConnection200JSONResponse{}, nil
 }
 
 // (GET /enclaves/{enclave_identifier}/services/{service_identifier})
@@ -340,4 +353,15 @@ func (manager enclaveRuntime) GetGrpcClientForEnclaveUUID(enclave_uuid string) k
 		panic(fmt.Sprintf("can't find enclave %s", enclave_uuid))
 	}
 	return client
+}
+
+func toGrpcConnect(conn api.Connect) kurtosis_core_rpc_api_bindings.Connect {
+	switch conn {
+	case api.CONNECT:
+		return kurtosis_core_rpc_api_bindings.Connect_CONNECT
+	case api.NOCONNECT:
+		return kurtosis_core_rpc_api_bindings.Connect_NO_CONNECT
+	default:
+		panic(fmt.Sprintf("Missing convertion of Connect Enum value: %s", conn))
+	}
 }
