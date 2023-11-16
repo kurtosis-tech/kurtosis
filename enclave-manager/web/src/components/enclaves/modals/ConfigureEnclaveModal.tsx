@@ -10,7 +10,8 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  Tooltip, useToast,
+  Tooltip,
+  useToast,
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { useMemo, useRef, useState } from "react";
@@ -167,7 +168,9 @@ export const ConfigureEnclaveModal = ({
       }
     } catch (err) {
       toast({
-        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(err)}`,
+        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(
+          err,
+        )}`,
         colorScheme: "red",
       });
       return;
