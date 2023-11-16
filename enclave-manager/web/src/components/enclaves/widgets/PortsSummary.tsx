@@ -53,6 +53,7 @@ const PortTable = ({ privatePorts, publicPorts }: PortTableProps) => {
     <Table>
       <Thead>
         <Tr>
+          <Th>Name</Th>
           <Th>Port</Th>
           <Th>Public Port</Th>
           <Th>Application Protocol</Th>
@@ -63,6 +64,7 @@ const PortTable = ({ privatePorts, publicPorts }: PortTableProps) => {
           .sort(([name1, p1], [name2, p2]) => p1.number - p2.number)
           .map(([name, port], i) => (
             <Tr key={i}>
+              <Td>{name}</Td>
               <Td>
                 {privatePorts[name].number}/{transportProtocolToString(port.transportProtocol)}
               </Td>
