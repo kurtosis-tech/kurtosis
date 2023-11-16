@@ -1103,10 +1103,6 @@ jobs:
           version="$(cat version.txt)"
           "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $version
 
-      - attach_workspace:
-          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
-
-      - run: cp -R << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/webapp engine/server/webapp
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -1433,8 +1429,6 @@ workflows:
           context:
             - docker-user
             - slack-secrets
-          requires:
-            - build_enclave_manager_webapp
           filters:
             branches:
               ignore: /.*/
