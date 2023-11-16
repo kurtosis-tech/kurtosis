@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.28](https://github.com/kurtosis-tech/kurtosis/compare/0.85.27...0.85.28) (2023-11-16)
+
+
+### Bug Fixes
+
+* update emui build ([#1814](https://github.com/kurtosis-tech/kurtosis/issues/1814)) ([39d2285](https://github.com/kurtosis-tech/kurtosis/commit/39d228528c61b07827f12280cc3f5e7af4aa16fa))
+
 ## [0.85.27](https://github.com/kurtosis-tech/kurtosis/compare/0.85.26...0.85.27) (2023-11-16)
 
 
