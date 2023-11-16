@@ -436,7 +436,45 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.
 
 // (POST /enclaves/{enclave_identifier}/starlark/packages)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStarlarkPackagesRequestObject) (api.PostEnclavesEnclaveIdentifierStarlarkPackagesResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Upload Starlark package on enclave %s", enclave_identifier)
+
+	for {
+		// Get next part (file) from the the multipart POST request
+		part, err := request.Body.NextPart()
+		if err == io.EOF {
+			break
+		}
+		filename := part.FileName()
+		client, err := apiContainerClient.UploadStarlarkPackage(ctx)
+		if err != nil {
+			logrus.Errorf("Can't upload Starlark package using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+			return nil, stacktrace.NewError("Can't upload Starlark package using gRPC call with enclave %s", enclave_identifier)
+		}
+		clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, emptypb.Empty](client)
+
+		_, err = clientStream.SendData(
+			filename,
+			part,
+			0, // Length unknown head of time
+			func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
+				return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+					Data:              contentChunk,
+					PreviousChunkHash: previousChunkHash,
+					Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+						Name: filename,
+					},
+				}, nil
+			},
+		)
+		if err != nil {
+			// TODO(edgar) Should we stop on failure in case of multiple files? Should we return a list of succeed uploads?
+			return nil, err
+		}
+	}
+
+	return api.PostEnclavesEnclaveIdentifierStarlarkPackages200Response{}, nil
 }
 
 // (POST /enclaves/{enclave_identifier}/starlark/packages/{package_id})
