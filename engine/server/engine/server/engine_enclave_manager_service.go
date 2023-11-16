@@ -408,7 +408,30 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 
 // (GET /enclaves/{enclave_identifier}/starlark)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.Context, request api.GetEnclavesEnclaveIdentifierStarlarkRequestObject) (api.GetEnclavesEnclaveIdentifierStarlarkResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Getting info about last Starlark run on enclave %s", enclave_identifier)
+
+	starlark_result, err := apiContainerClient.GetStarlarkRun(ctx, &emptypb.Empty{})
+	if err != nil {
+		logrus.Errorf("Can't get Starlark info using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't get Starlark info using gRPC call with enclave %s", enclave_identifier)
+	}
+
+	flags := utils.MapList(starlark_result.ExperimentalFeatures, toHttpFeatureFlag)
+	policy := toHttpRestartPolicy(starlark_result.RestartPolicy)
+	response := api.GetStarlarkRunResponse{
+		ExperimentalFeatures:   &flags,
+		MainFunctionName:       &starlark_result.MainFunctionName,
+		PackageId:              &starlark_result.PackageId,
+		Parallelism:            &starlark_result.Parallelism,
+		RelativePathToMainFile: &starlark_result.RelativePathToMainFile,
+		RestartPolicy:          &policy,
+		SerializedParams:       &starlark_result.SerializedParams,
+		SerializedScript:       &starlark_result.SerializedScript,
+	}
+
+	return api.GetEnclavesEnclaveIdentifierStarlark200JSONResponse(response), nil
 }
 
 // (POST /enclaves/{enclave_identifier}/starlark/packages)
@@ -540,5 +563,25 @@ func toHttpServiceInfo(service *kurtosis_core_rpc_api_bindings.ServiceInfo) api.
 		ServiceStatus:     &serviceStatus,
 		ServiceUuid:       &service.ServiceUuid,
 		ShortenedUuid:     &service.ShortenedUuid,
+	}
+}
+
+func toHttpFeatureFlag(flag kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag) api.KurtosisFeatureFlag {
+	switch flag {
+	case kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING:
+		return api.NOINSTRUCTIONSCACHING
+	default:
+		panic(fmt.Sprintf("Missing conversion of Feature Flag Enum value: %s", flag))
+	}
+}
+
+func toHttpRestartPolicy(policy kurtosis_core_rpc_api_bindings.RestartPolicy) api.RestartPolicy {
+	switch policy {
+	case kurtosis_core_rpc_api_bindings.RestartPolicy_ALWAYS:
+		return api.RestartPolicyALWAYS
+	case kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER:
+		return api.RestartPolicyNEVER
+	default:
+		panic(fmt.Sprintf("Missing conversion of Restart Policy Enum value: %s", policy))
 	}
 }
