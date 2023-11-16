@@ -325,16 +325,18 @@ export const useFullEnclaves = (): Result<EnclaveFullInfo[], string> => {
     cachedStarlarkRunsByEnclave,
   ]);
 
-  if (enclaves.isErr) {
-    return enclaves.cast();
-  }
-
-  return Result.ok(
-    enclaves.value.map((enclave) => ({
-      ...enclave,
-      services: servicesByEnclave[enclave.shortenedUuid],
-      filesAndArtifacts: filesAndArtifactsByEnclave[enclave.shortenedUuid],
-      starlarkRun: starlarkRunsByEnclave[enclave.shortenedUuid],
-    })),
+  const fullEnclaves = useMemo(
+    () =>
+      enclaves.map((enclaves) =>
+        enclaves.map((enclave) => ({
+          ...enclave,
+          services: cachedServicesByEnclave[enclave.shortenedUuid],
+          filesAndArtifacts: cachedFilesAndArtifactsByEnclave[enclave.shortenedUuid],
+          starlarkRun: cachedStarlarkRunsByEnclave[enclave.shortenedUuid],
+        })),
+      ),
+    [enclaves, cachedServicesByEnclave, cachedStarlarkRunsByEnclave, cachedFilesAndArtifactsByEnclave],
   );
+
+  return fullEnclaves;
 };
