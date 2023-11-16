@@ -10,8 +10,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  Tooltip,
-  useToast,
+  Tooltip, useToast,
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { useMemo, useRef, useState } from "react";
@@ -81,6 +80,8 @@ export const ConfigureEnclaveModal = ({
               return isDefined(value) ? `${value}` : "";
             case ArgumentValueType.STRING:
               return value || "";
+            case ArgumentValueType.JSON:
+              return isDefined(value) ? JSON.stringify(value) : "{}";
             case ArgumentValueType.LIST:
               assertDefined(innerType1, `Cannot parse a list argument type without knowing innerType1`);
               return isDefined(value) ? value.map((v: any) => convertArgValue(innerType1, v)) : [];
@@ -167,9 +168,7 @@ export const ConfigureEnclaveModal = ({
       }
     } catch (err) {
       toast({
-        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(
-          err,
-        )}`,
+        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(err)}`,
         colorScheme: "red",
       });
       return;
