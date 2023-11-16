@@ -336,7 +336,26 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 
 // (POST /enclaves/{enclave_identifier}/services/{service_identifier}/command)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx context.Context, request api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandRequestObject) (api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	service_identifier := request.ServiceIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
+
+	execCommandArgs := kurtosis_core_rpc_api_bindings.ExecCommandArgs{
+		ServiceIdentifier: service_identifier,
+		CommandArgs:       *request.Body.CommandArgs,
+	}
+	exec_result, err := apiContainerClient.ExecCommand(ctx, &execCommandArgs)
+	if err != nil {
+		logrus.Errorf("Can't execute commands using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't execute commands using gRPC call with enclave %s", enclave_identifier)
+	}
+
+	response := api.ExecCommandResponse{
+		ExitCode:  &exec_result.ExitCode,
+		LogOutput: &exec_result.LogOutput,
+	}
+	return api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand200JSONResponse(response), nil
 }
 
 // (POST /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
