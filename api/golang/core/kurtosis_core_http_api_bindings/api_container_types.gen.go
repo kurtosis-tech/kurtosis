@@ -123,16 +123,6 @@ type FileArtifactReference struct {
 	Uuid *string `json:"uuid,omitempty"`
 }
 
-// GetExistingAndHistoricalServiceIdentifiersResponse defines model for GetExistingAndHistoricalServiceIdentifiersResponse.
-type GetExistingAndHistoricalServiceIdentifiersResponse struct {
-	AllIdentifiers *[]ServiceIdentifiers `json:"allIdentifiers,omitempty"`
-}
-
-// GetServicesResponse defines model for GetServicesResponse.
-type GetServicesResponse struct {
-	ServiceInfo *ServiceInfo `json:"service_info,omitempty"`
-}
-
 // GetStarlarkRunResponse defines model for GetStarlarkRunResponse.
 type GetStarlarkRunResponse struct {
 	ExperimentalFeatures   *[]KurtosisFeatureFlag `json:"experimental_features,omitempty"`
@@ -274,19 +264,15 @@ type ServiceInfo struct {
 
 	// MaybePublicIpAddr Public IP address *outside* the enclave where the service is reachable
 	// NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
-	MaybePublicIpAddr *string `json:"maybe_public_ip_addr,omitempty"`
-
-	// MaybePublicPorts Shared Objects (Used By Multiple Endpoints)
-	MaybePublicPorts *Port `json:"maybe_public_ports,omitempty"`
+	MaybePublicIpAddr *string          `json:"maybe_public_ip_addr,omitempty"`
+	MaybePublicPorts  *map[string]Port `json:"maybe_public_ports,omitempty"`
 
 	// Name Name of the service
 	Name *string `json:"name,omitempty"`
 
 	// PrivateIpAddr The IP address of the service inside the enclave
-	PrivateIpAddr *string `json:"private_ip_addr,omitempty"`
-
-	// PrivatePorts Shared Objects (Used By Multiple Endpoints)
-	PrivatePorts *Port `json:"private_ports,omitempty"`
+	PrivateIpAddr *string          `json:"private_ip_addr,omitempty"`
+	PrivatePorts  *map[string]Port `json:"private_ports,omitempty"`
 
 	// ServiceStatus 0 - STOPPED
 	// 1 - RUNNING
@@ -447,10 +433,10 @@ type ServiceIdentifier = string
 // PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartBody defines parameters for PostEnclavesEnclaveIdentifierArtifactsLocalFile.
 type PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartBody = openapi_types.File
 
-// GetEnclavesEnclaveIdentifierServicesServiceIdentifierParams defines parameters for GetEnclavesEnclaveIdentifierServicesServiceIdentifier.
-type GetEnclavesEnclaveIdentifierServicesServiceIdentifierParams struct {
-	// AdditionalProperties Additional properties
-	AdditionalProperties *string `form:"additional-properties,omitempty" json:"additional-properties,omitempty"`
+// GetEnclavesEnclaveIdentifierServicesParams defines parameters for GetEnclavesEnclaveIdentifierServices.
+type GetEnclavesEnclaveIdentifierServicesParams struct {
+	// Services Select services to get information
+	Services *[]string `form:"services,omitempty" json:"services,omitempty"`
 }
 
 // PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartBody defines parameters for PostEnclavesEnclaveIdentifierStarlarkPackages.

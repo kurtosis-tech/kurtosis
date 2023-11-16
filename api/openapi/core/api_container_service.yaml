@@ -68,7 +68,20 @@ paths:
               schema:
                 $ref: "#/components/schemas/StarlarkRunResponseLine"
 
-  /enclaves/{enclave_identifier}/services:
+  /enclaves/{enclave_identifier}/services/{service_identifier}:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: '#/components/parameters/service_identifier'
+      responses:
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceInfo"
+
+  /enclaves/{enclave_identifier}/services/history:
     get:
       description: Returns information about all existing & historical services
       parameters:
@@ -79,25 +92,30 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GetExistingAndHistoricalServiceIdentifiersResponse"
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceIdentifiers"
 
-  /enclaves/{enclave_identifier}/services/{service_identifier}:
+  /enclaves/{enclave_identifier}/services:
     get:
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/service_identifier'
         - in: query
-          name: additional-properties
+          name: services
           schema:
-            type: string
-          description: Additional properties
+            type: array
+            items:
+              type: string
+          description: Select services to get information
       responses:
         "200":
           description: Successful request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GetServicesResponse"
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/ServiceInfo"
 
   /enclaves/{enclave_identifier}/services/{service_identifier}/command:
     post:
@@ -387,14 +405,18 @@ components:
           type: string
           description: The IP address of the service inside the enclave
         private_ports:
-          $ref: "#/components/schemas/Port"
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Port"
         maybe_public_ip_addr:
           type: string
           description: |-
             Public IP address *outside* the enclave where the service is reachable
             NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
         maybe_public_ports:
-          $ref: "#/components/schemas/Port"
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Port"
         name:
           type: string
           description: Name of the service
@@ -646,14 +668,6 @@ components:
           type: string
           description: The shortened uuid of the service
       description: An service identifier is a collection of uuid, name and shortened uuid
-
-    GetExistingAndHistoricalServiceIdentifiersResponse:
-      type: object
-      properties:
-        allIdentifiers:
-          type: array
-          items:
-            $ref: "#/components/schemas/ServiceIdentifiers"
 
     ExecCommandArgs:
       type: object

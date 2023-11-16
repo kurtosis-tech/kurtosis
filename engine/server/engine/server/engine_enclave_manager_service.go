@@ -252,6 +252,26 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServices(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesRequestObject) (api.GetEnclavesEnclaveIdentifierServicesResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Getting info about services enclave %s", enclave_identifier)
+
+	service_ids := utils.DerefWith(request.Params.Services, []string{})
+	getServicesArgs := kurtosis_core_rpc_api_bindings.GetServicesArgs{
+		ServiceIdentifiers: utils.NewMapFromList(service_ids, func(x string) bool { return true }),
+	}
+	services, err := apiContainerClient.GetServices(ctx, &getServicesArgs)
+	if err != nil {
+		logrus.Errorf("Can't list services using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
+	}
+
+	mapped_services := utils.MapMapValues(services.ServiceInfo, toHttpServiceInfo)
+	return api.GetEnclavesEnclaveIdentifierServices200JSONResponse(mapped_services), nil
+}
+
+// (GET /enclaves/{enclave_identifier}/services/history)
+func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesHistory(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesHistoryRequestObject) (api.GetEnclavesEnclaveIdentifierServicesHistoryResponseObject, error) {
+	enclave_identifier := request.EnclaveIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
 	logrus.Infof("Listing services from enclave %s", enclave_identifier)
 
 	services, err := apiContainerClient.GetExistingAndHistoricalServiceIdentifiers(ctx, &emptypb.Empty{})
@@ -260,18 +280,15 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServices(ctx context.
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	mapped_services := utils.MapList(services.AllIdentifiers, func(service *kurtosis_core_rpc_api_bindings.ServiceIdentifiers) api.ServiceIdentifiers {
+	response := utils.MapList(services.AllIdentifiers, func(service *kurtosis_core_rpc_api_bindings.ServiceIdentifiers) api.ServiceIdentifiers {
 		return api.ServiceIdentifiers{
 			ServiceUuid:   &service.ServiceUuid,
 			ShortenedUuid: &service.ShortenedUuid,
 			Name:          &service.Name,
 		}
 	})
-	response := api.GetExistingAndHistoricalServiceIdentifiersResponse{
-		AllIdentifiers: &mapped_services,
-	}
 
-	return api.GetEnclavesEnclaveIdentifierServices200JSONResponse(response), nil
+	return api.GetEnclavesEnclaveIdentifierServicesHistory200JSONResponse(response), nil
 }
 
 // (POST /enclaves/{enclave_identifier}/services/connection)
@@ -294,7 +311,27 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesConnection(c
 
 // (GET /enclaves/{enclave_identifier}/services/{service_identifier})
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierRequestObject) (api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	service_identifier := request.ServiceIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
+
+	getServicesArgs := kurtosis_core_rpc_api_bindings.GetServicesArgs{
+		ServiceIdentifiers: map[string]bool{service_identifier: true},
+	}
+	services, err := apiContainerClient.GetServices(ctx, &getServicesArgs)
+	if err != nil {
+		logrus.Errorf("Can't list services using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
+	}
+
+	mapped_services := utils.MapMapValues(services.ServiceInfo, toHttpServiceInfo)
+	selected_service, found := mapped_services[service_identifier]
+	if !found {
+		// TODO(edgar) add 404 return
+		return nil, stacktrace.NewError("Service %s not found", service_identifier)
+	}
+	return api.GetEnclavesEnclaveIdentifierServicesServiceIdentifier200JSONResponse(selected_service), nil
 }
 
 // (POST /enclaves/{enclave_identifier}/services/{service_identifier}/command)
@@ -362,6 +399,84 @@ func toGrpcConnect(conn api.Connect) kurtosis_core_rpc_api_bindings.Connect {
 	case api.NOCONNECT:
 		return kurtosis_core_rpc_api_bindings.Connect_NO_CONNECT
 	default:
-		panic(fmt.Sprintf("Missing convertion of Connect Enum value: %s", conn))
+		panic(fmt.Sprintf("Missing conversion of Connect Enum value: %s", conn))
+	}
+}
+
+func toHttpContainerStatus(status kurtosis_core_rpc_api_bindings.Container_Status) api.ContainerStatus {
+	switch status {
+	case kurtosis_core_rpc_api_bindings.Container_RUNNING:
+		return api.ContainerStatusRUNNING
+	case kurtosis_core_rpc_api_bindings.Container_STOPPED:
+		return api.ContainerStatusSTOPPED
+	case kurtosis_core_rpc_api_bindings.Container_UNKNOWN:
+		return api.ContainerStatusUNKNOWN
+	default:
+		panic(fmt.Sprintf("Missing conversion of Container Status Enum value: %s", status))
+	}
+}
+
+func toHttpTransportProtocol(protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol) api.PortTransportProtocol {
+	switch protocol {
+	case kurtosis_core_rpc_api_bindings.Port_TCP:
+		return api.TCP
+	case kurtosis_core_rpc_api_bindings.Port_UDP:
+		return api.UDP
+	case kurtosis_core_rpc_api_bindings.Port_SCTP:
+		return api.SCTP
+	default:
+		panic(fmt.Sprintf("Missing conversion of Transport Protocol Enum value: %s", protocol))
+	}
+}
+
+func toHttpServiceStatus(status kurtosis_core_rpc_api_bindings.ServiceStatus) api.ServiceStatus {
+	switch status {
+	case kurtosis_core_rpc_api_bindings.ServiceStatus_RUNNING:
+		return api.ServiceStatusRUNNING
+	case kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED:
+		return api.ServiceStatusSTOPPED
+	case kurtosis_core_rpc_api_bindings.ServiceStatus_UNKNOWN:
+		return api.ServiceStatusUNKNOWN
+	default:
+		panic(fmt.Sprintf("Missing conversion of Service Status Enum value: %s", status))
+	}
+}
+
+func toHttpContainer(container *kurtosis_core_rpc_api_bindings.Container) api.Container {
+	status := toHttpContainerStatus(container.Status)
+	return api.Container{
+		CmdArgs:        &container.CmdArgs,
+		EntrypointArgs: &container.EntrypointArgs,
+		EnvVars:        &container.EnvVars,
+		ImageName:      &container.ImageName,
+		Status:         &status,
+	}
+}
+
+func toHttpPorts(port *kurtosis_core_rpc_api_bindings.Port) api.Port {
+	protocol := toHttpTransportProtocol(port.TransportProtocol)
+	return api.Port{
+		MaybeApplicationProtocol: &port.MaybeApplicationProtocol,
+		MaybeWaitTimeout:         &port.MaybeWaitTimeout,
+		Number:                   int32(port.Number),
+		TransportProtocol:        protocol,
+	}
+}
+
+func toHttpServiceInfo(service *kurtosis_core_rpc_api_bindings.ServiceInfo) api.ServiceInfo {
+	container := toHttpContainer(service.Container)
+	serviceStatus := toHttpServiceStatus(service.ServiceStatus)
+	publicPorts := utils.MapMapValues(service.MaybePublicPorts, toHttpPorts)
+	privatePorts := utils.MapMapValues(service.PrivatePorts, toHttpPorts)
+	return api.ServiceInfo{
+		Container:         &container,
+		MaybePublicIpAddr: &service.MaybePublicIpAddr,
+		MaybePublicPorts:  &publicPorts,
+		Name:              &service.Name,
+		PrivateIpAddr:     &service.PrivateIpAddr,
+		PrivatePorts:      &privatePorts,
+		ServiceStatus:     &serviceStatus,
+		ServiceUuid:       &service.ServiceUuid,
+		ShortenedUuid:     &service.ShortenedUuid,
 	}
 }
