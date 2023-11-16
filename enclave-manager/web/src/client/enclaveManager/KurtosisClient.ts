@@ -50,15 +50,12 @@ export abstract class KurtosisClient {
     this.client = client;
     this.cloudUrl = parentUrl;
     this.baseApplicationUrl = childUrl;
-    console.log("cloudUrl", this.cloudUrl);
-    console.log("baseApplicationUrl", this.baseApplicationUrl);
     this.getParentRequestedRoute();
   }
 
   getParentRequestedRoute() {
     const splits = this.cloudUrl.pathname.split("/enclave-manager");
     if (splits[1]) {
-      console.log("splits ", splits[1]);
       return splits[1];
     }
     return undefined;
