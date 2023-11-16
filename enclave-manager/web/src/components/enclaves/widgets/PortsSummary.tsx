@@ -1,5 +1,4 @@
 import {
-  Button,
   Card,
   Flex,
   Popover,
@@ -8,6 +7,7 @@ import {
   Table,
   Tbody,
   Td,
+  Text,
   Th,
   Thead,
   Tr,
@@ -24,9 +24,9 @@ export const PortsSummary = ({ privatePorts, publicPorts }: PortsSummaryProps) =
   return (
     <Popover trigger={"hover"} preventOverflow isLazy>
       <PopoverTrigger>
-        <Button variant="ghost" size="xs">
+        <Text fontWeight={"semibold"} fontSize={"xs"} pl={"8px"}>
           {Object.keys(publicPorts).length}
-        </Button>
+        </Text>
       </PopoverTrigger>
       <PopoverContent maxWidth={"50vw"} w={"unset"}>
         <Flex flexDirection={"row"} gap={"16px"}>
