@@ -19,12 +19,12 @@ paths:
                 $ref: "#/components/schemas/GetStarlarkRunResponse"
 
   /enclaves/{enclave_identifier}/starlark/packages:
-    put:
+    post:
       description: Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
       requestBody:
-        $ref: "#/components/requestBodies/StreamedDataBody"
+        $ref: "#/components/requestBodies/fileUploadBody"
       responses:
         "200":
           $ref: "#/components/responses/Success"
@@ -180,19 +180,21 @@ paths:
                 $ref: "#/components/schemas/StreamedDataChunk"
 
   /enclaves/{enclave_identifier}/artifacts/local-file:
-    put:
+    post:
       description: Uploads a files artifact to the Kurtosis File System
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
       requestBody:
-        $ref: "#/components/requestBodies/StreamedDataBody"
+        $ref: "#/components/requestBodies/fileUploadBody"
       responses:
         "200":
           description: Successful request
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UploadFilesArtifactResponse"
+                type: array
+                items:
+                  $ref: "#/components/schemas/UploadFilesArtifactResponse"
 
   /enclaves/{enclave_identifier}/artifacts/remote-file:
     put:
@@ -298,13 +300,12 @@ components:
 
   requestBodies:
 
-    StreamedDataBody:
+    fileUploadBody:
       content:
-        application/json:
+        multipart/form-data:
           schema:
-            $ref: "#/components/schemas/StreamedDataChunk"
-      description: Streamed Data Chunk
-      required: true
+            type: string
+            format: binary
 
   responses:
   

@@ -400,8 +400,10 @@ func restApiServer(
 
 	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, enclave_manager)
 	if err != nil {
-
+		// TODO(edgar) fix error handling
 	}
+	// TODO(edgar) add enclave Close()
+	// defer enclaveRuntime.ShutDown()
 	enclaveApi.RegisterHandlers(e, enclaveApi.NewStrictHandler(enclaveRuntime, nil))
 
 	e.Logger.Fatal(e.Start(net.JoinHostPort("0.0.0.0", fmt.Sprint(restAPIPortAddr))))

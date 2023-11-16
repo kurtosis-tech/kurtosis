@@ -2,7 +2,10 @@ package server
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
+	"io"
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
@@ -27,6 +30,13 @@ func toHttpFilesArtifactNameAndUuid(rpc_artifact *kurtosis_core_rpc_api_bindings
 
 func toHttpIdentifierArtifacts(rpc_artifact_list *kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse) []kurtosis_core_http_api_bindings.FilesArtifactNameAndUuid {
 	return utils.MapList(rpc_artifact_list.FileNamesAndUuids, toHttpFilesArtifactNameAndUuid)
+}
+
+func toHttpUploadFilesArtifactResponse(rpc_upload_artifact *kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse) api.UploadFilesArtifactResponse {
+	return api.UploadFilesArtifactResponse{
+		Name: &rpc_upload_artifact.Name,
+		Uuid: &rpc_upload_artifact.Uuid,
+	}
 }
 
 type enclaveRuntime struct {
@@ -67,7 +77,6 @@ func NewEnclaveRuntime(ctx context.Context, manager *enclave_manager.EnclaveMana
 // (GET /enclaves/{enclave_identifier}/artifacts)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context.Context, request api.GetEnclavesEnclaveIdentifierArtifactsRequestObject) (api.GetEnclavesEnclaveIdentifierArtifactsResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-
 	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
 
 	artifacts, err := apiContainerClient.ListFilesArtifactNamesAndUuids(ctx, &emptypb.Empty{})
@@ -83,9 +92,54 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context
 
 }
 
-// (PUT /enclaves/{enclave_identifier}/artifacts/local-file)
-func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsLocalFile(ctx context.Context, request api.PutEnclavesEnclaveIdentifierArtifactsLocalFileRequestObject) (api.PutEnclavesEnclaveIdentifierArtifactsLocalFileResponseObject, error) {
-	return nil, Error{}
+// (POST /enclaves/{enclave_identifier}/artifacts/local-file)
+func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(ctx context.Context, request api.PostEnclavesEnclaveIdentifierArtifactsLocalFileRequestObject) (api.PostEnclavesEnclaveIdentifierArtifactsLocalFileResponseObject, error) {
+	enclave_identifier := request.EnclaveIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
+
+	buf := make([]byte, 1024)
+	hasher := sha1.New()
+	uploaded_artifacts := []api.UploadFilesArtifactResponse{}
+	for {
+	uploadStreamingCall, err := apiContainerClient.UploadFilesArtifact(ctx)
+	if err != nil {
+		logrus.Errorf("Can't start file upload gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
+	}
+		part, err := request.Body.NextPart()
+		if err == io.EOF {
+			break
+		}
+		var n int
+		previousChunkHash := ""
+		for {
+			n, err = part.Read(buf)
+			if err == io.EOF {
+				break
+			}
+			chunk := kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+				Data:              buf[:n],
+				PreviousChunkHash: previousChunkHash,
+			}
+			uploadStreamingCall.Send(&chunk)
+			hasher.Reset()
+			hasher.Write(chunk.Data)
+			previousChunkHash = hex.EncodeToString(hasher.Sum(nil))
+	}
+
+	artifact_info, closing_err := uploadStreamingCall.CloseAndRecv()
+	if closing_err != nil {
+		logrus.Errorf("Failed to close upload gRPC call with enclave %s, error: %s", enclave_identifier, closing_err)
+		return nil, closing_err
+	}
+
+		// TODO(edgar) track uploaded artifacts by upload file name
+	artifact_response := toHttpUploadFilesArtifactResponse(artifact_info)
+		uploaded_artifacts = append(uploaded_artifacts, artifact_response)
+	}
+
+	return api.PostEnclavesEnclaveIdentifierArtifactsLocalFile200JSONResponse(uploaded_artifacts), nil
 }
 
 // (PUT /enclaves/{enclave_identifier}/artifacts/remote-file)
@@ -138,8 +192,8 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.
 	return nil, Error{}
 }
 
-// (PUT /enclaves/{enclave_identifier}/starlark/packages)
-func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierStarlarkPackages(ctx context.Context, request api.PutEnclavesEnclaveIdentifierStarlarkPackagesRequestObject) (api.PutEnclavesEnclaveIdentifierStarlarkPackagesResponseObject, error) {
+// (POST /enclaves/{enclave_identifier}/starlark/packages)
+func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStarlarkPackagesRequestObject) (api.PostEnclavesEnclaveIdentifierStarlarkPackagesResponseObject, error) {
 	return nil, Error{}
 }
 
