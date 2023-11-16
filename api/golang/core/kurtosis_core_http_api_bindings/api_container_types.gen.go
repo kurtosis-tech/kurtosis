@@ -119,13 +119,13 @@ type FileArtifactContentsFileDescription struct {
 	TextPreview *string `json:"text_preview,omitempty"`
 }
 
-// FilesArtifactNameAndUuid defines model for FilesArtifactNameAndUuid.
-type FilesArtifactNameAndUuid struct {
-	// FileName A string representing the name of the file
-	FileName *string `json:"fileName,omitempty"`
+// FileArtifactReference Files Artifact identifier
+type FileArtifactReference struct {
+	// Name UUID of the files artifact, for use when referencing it in the future
+	Name *string `json:"name,omitempty"`
 
-	// FileUuid A string representing the uuid of the file
-	FileUuid *string `json:"fileUuid,omitempty"`
+	// Uuid UUID of the files artifact, for use when referencing it in the future
+	Uuid *string `json:"uuid,omitempty"`
 }
 
 // GetExistingAndHistoricalServiceIdentifiersResponse defines model for GetExistingAndHistoricalServiceIdentifiersResponse.
@@ -167,7 +167,7 @@ type KurtosisFeatureFlag string
 
 // ListFilesArtifactNamesAndUuidsResponse defines model for ListFilesArtifactNamesAndUuidsResponse.
 type ListFilesArtifactNamesAndUuidsResponse struct {
-	FileNamesAndUuids *[]FilesArtifactNameAndUuid `json:"file_names_and_uuids,omitempty"`
+	FileNamesAndUuids *[]FileArtifactReference `json:"file_names_and_uuids,omitempty"`
 }
 
 // Port Shared Objects (Used By Multiple Endpoints)
@@ -422,15 +422,6 @@ type StreamedDataChunk struct {
 	// Referencing the previous chunk via its hash allows Kurtosis to validate
 	// the consistency of the data in case some chunk were not received
 	PreviousChunkHash *string `json:"previous_chunk_hash,omitempty"`
-}
-
-// UploadFilesArtifactResponse Upload Files Artifact
-type UploadFilesArtifactResponse struct {
-	// Name UUID of the files artifact, for use when referencing it in the future
-	Name *string `json:"name,omitempty"`
-
-	// Uuid UUID of the files artifact, for use when referencing it in the future
-	Uuid *string `json:"uuid,omitempty"`
 }
 
 // WaitForEndpointAvailabilityArgs Wait For HTTP Endpoint Availability

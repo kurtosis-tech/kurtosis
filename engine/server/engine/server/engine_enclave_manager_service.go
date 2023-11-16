@@ -20,24 +20,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 )
 
-func toHttpFilesArtifactNameAndUuid(rpc_artifact *kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid) kurtosis_core_http_api_bindings.FilesArtifactNameAndUuid {
-	return kurtosis_core_http_api_bindings.FilesArtifactNameAndUuid{
-		FileName: &rpc_artifact.FileName,
-		FileUuid: &rpc_artifact.FileUuid,
-	}
-}
-
-func toHttpIdentifierArtifacts(rpc_artifact_list *kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse) []kurtosis_core_http_api_bindings.FilesArtifactNameAndUuid {
-	return utils.MapList(rpc_artifact_list.FileNamesAndUuids, toHttpFilesArtifactNameAndUuid)
-}
-
-func toHttpUploadFilesArtifactResponse(rpc_upload_artifact *kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse) api.UploadFilesArtifactResponse {
-	return api.UploadFilesArtifactResponse{
-		Name: &rpc_upload_artifact.Name,
-		Uuid: &rpc_upload_artifact.Uuid,
-	}
-}
-
 type enclaveRuntime struct {
 	enclaveManager           *enclave_manager.EnclaveManager
 	remoteApiContainerClient map[string]kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
@@ -83,7 +65,15 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context
 		return nil, err
 	}
 
-	http_artifacts := toHttpIdentifierArtifacts(artifacts)
+	http_artifacts := utils.MapList(
+		artifacts.FileNamesAndUuids,
+		func(x *kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid) kurtosis_core_http_api_bindings.FileArtifactReference {
+			return kurtosis_core_http_api_bindings.FileArtifactReference{
+				Name: &x.FileName,
+				Uuid: &x.FileUuid,
+			}
+		})
+
 	result := api.ListFilesArtifactNamesAndUuidsResponse{
 		FileNamesAndUuids: &http_artifacts,
 	}
@@ -97,7 +87,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
 	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
 
-	uploaded_artifacts := map[string]api.UploadFilesArtifactResponse{}
+	uploaded_artifacts := map[string]api.FileArtifactReference{}
 	for {
 		// Get next part (file) from the the multipart POST request
 		part, err := request.Body.NextPart()
@@ -130,7 +120,10 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 		// The response is nil when a file artifact with the same has already been uploaded
 		// TODO (edgar) Is this the expected behavior? If so, we should be explicit about it.
 		if response != nil {
-			artifact_response := toHttpUploadFilesArtifactResponse(response)
+			artifact_response := api.FileArtifactReference{
+				Name: &response.Name,
+				Uuid: &response.Uuid,
+			}
 			uploaded_artifacts[filename] = artifact_response
 		}
 	}
@@ -154,7 +147,7 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(c
 		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
 	}
 
-	artifact_response := api.UploadFilesArtifactResponse{
+	artifact_response := api.FileArtifactReference{
 		Uuid: &stored_artifact.Uuid,
 		Name: &request.Body.Name,
 	}
@@ -179,7 +172,7 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsServicesServ
 		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
 	}
 
-	artifact_response := api.UploadFilesArtifactResponse{
+	artifact_response := api.FileArtifactReference{
 		Uuid: &stored_artifact.Uuid,
 		Name: &request.Body.Name,
 	}
