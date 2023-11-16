@@ -1274,11 +1274,9 @@ workflows:
               ignore:
                 - main
 
-      - build_enclave_manager_webapp:
-          filters:
-            branches:
-              ignore:
-                - main
+      # Runs on branches and on main as it's used during publish and during testing
+      - build_enclave_manager_webapp
+
       - build_engine_launcher:
           filters:
             branches:
