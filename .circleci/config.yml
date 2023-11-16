@@ -1274,9 +1274,11 @@ workflows:
               ignore:
                 - main
 
-      # Runs on branches and on main as it's used during publish and during testing
-      - build_enclave_manager_webapp
-
+      - build_enclave_manager_webapp:
+          filters:
+            branches:
+              ignore:
+                - main
       - build_engine_launcher:
           filters:
             branches:
@@ -1378,15 +1380,15 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
-#      - test_old_enclave_continuity:
-#          context:
-#            - docker-user
-#          requires:
-#            - build_cli
-#            - build_api_container_server
-#            - build_engine_server
-#            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
+      - test_old_enclave_continuity:
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
 
       # -- Artifact-publishing jobs --------------------------------
       - publish_kurtosis_sdk_rust:
