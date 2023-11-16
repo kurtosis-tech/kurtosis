@@ -175,9 +175,10 @@ paths:
         "200":
           description: Successful request
           content:
-            application/json:
+            application/octet-stream:
               schema:
-                $ref: "#/components/schemas/StreamedDataChunk"
+                type: string
+                format: binary
 
   /enclaves/{enclave_identifier}/artifacts/local-file:
     post:
@@ -699,30 +700,6 @@ components:
           type: string
           description: If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
       description: Wait For HTTP Endpoint Availability
-
-    StreamedDataChunk:
-      type: object
-      properties:
-        data:
-          type: string
-          format: byte
-          description: Chunk of the overall files artifact bytes
-        previous_chunk_hash:
-          type: string
-          description: |-
-            Hash of the PREVIOUS chunk, or empty string is this is the first chunk
-            Referencing the previous chunk via its hash allows Kurtosis to validate
-            the consistency of the data in case some chunk were not received
-        metadata:
-          $ref: "#/components/schemas/DataChunkMetadata"
-      description: |-
-        Streamed Data Chunk
-
-    DataChunkMetadata:
-      type: object
-      properties:
-        name:
-          type: string
 
     FileArtifactReference:
       type: object

@@ -89,11 +89,6 @@ type Container struct {
 // 2 - UNKNOWN
 type ContainerStatus string
 
-// DataChunkMetadata defines model for DataChunkMetadata.
-type DataChunkMetadata struct {
-	Name *string `json:"name,omitempty"`
-}
-
 // ExecCommandArgs Exec Command
 type ExecCommandArgs struct {
 	CommandArgs *[]string `json:"command_args,omitempty"`
@@ -410,18 +405,6 @@ type StoreWebFilesArtifactArgs struct {
 
 	// Url URL to download the artifact from
 	Url string `json:"url"`
-}
-
-// StreamedDataChunk Streamed Data Chunk
-type StreamedDataChunk struct {
-	// Data Chunk of the overall files artifact bytes
-	Data     *[]byte            `json:"data,omitempty"`
-	Metadata *DataChunkMetadata `json:"metadata,omitempty"`
-
-	// PreviousChunkHash Hash of the PREVIOUS chunk, or empty string is this is the first chunk
-	// Referencing the previous chunk via its hash allows Kurtosis to validate
-	// the consistency of the data in case some chunk were not received
-	PreviousChunkHash *string `json:"previous_chunk_hash,omitempty"`
 }
 
 // WaitForEndpointAvailabilityArgs Wait For HTTP Endpoint Availability

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -218,7 +219,37 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 
 // (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx context.Context, request api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadRequestObject) (api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	artifact_identifier := request.ArtifactIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Downloading file artifact %s from enclave %s", artifact_identifier, enclave_identifier)
+
+	downloadFilesArtifactArgs := kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
+		Identifier: artifact_identifier,
+	}
+	client, err := apiContainerClient.DownloadFilesArtifact(ctx, &downloadFilesArtifactArgs)
+	if err != nil {
+		logrus.Errorf("Can't start file download gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't start file download gRPC call with enclave %s", enclave_identifier)
+	}
+
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
+	fileContent, err := clientStream.ReceiveData(
+		artifact_identifier,
+		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
+		},
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred downloading files artifact '%v'", artifact_identifier)
+	}
+
+	response := api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload200ApplicationoctetStreamResponse{
+		Body:          bytes.NewReader(fileContent),
+		ContentLength: int64(len(fileContent)),
+	}
+
+	return api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload200ApplicationoctetStreamResponse(response), nil
 }
 
 // (GET /enclaves/{enclave_identifier}/services)
