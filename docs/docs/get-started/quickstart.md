@@ -106,7 +106,7 @@ If you go to the URL of any of the services, for example Service C, you will see
 
 ![quickstart-service-c-partying.png](/img/home/quickstart-service-c-partying.png)
 
-Each service is partying, but they're each partying for different reasons at the configuration level. Here, you can see some of the ways that you can modify application deployments with Kurtosis. By changing the JSON input to the package, you did all of these:
+Each service is partying, but they're each partying for different reasons at the configuration level. By changing the JSON input to the package, you did all of these:
 - Changed number of instances of Service A and Service B
 - Turned on a feature flag on Service A using its configuration file
 - Turned on a feature flag on Service B using a command line flag to its server process
