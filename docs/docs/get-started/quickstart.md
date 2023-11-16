@@ -167,6 +167,7 @@ kurtosis service inspect quickstart service-b-1
 You should see, in the output, the CMD block indicating that the flag was passed as a command line argument to the server process:
 ```console
 CMD:
+  --
   --party-mode
 ```
 
