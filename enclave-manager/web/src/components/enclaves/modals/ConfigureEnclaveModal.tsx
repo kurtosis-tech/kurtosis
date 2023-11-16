@@ -81,8 +81,6 @@ export const ConfigureEnclaveModal = ({
               return isDefined(value) ? `${value}` : "";
             case ArgumentValueType.STRING:
               return value || "";
-            case ArgumentValueType.JSON:
-              return isDefined(value) ? JSON.stringify(value) : "{}";
             case ArgumentValueType.LIST:
               assertDefined(innerType1, `Cannot parse a list argument type without knowing innerType1`);
               return isDefined(value) ? value.map((v: any) => convertArgValue(innerType1, v)) : [];
