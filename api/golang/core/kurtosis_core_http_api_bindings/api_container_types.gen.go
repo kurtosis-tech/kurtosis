@@ -205,20 +205,19 @@ type RunStarlarkPackageArgs struct {
 
 	// MainFunctionName The name of the main function, the default value is "run"
 	MainFunctionName *string `json:"main_function_name,omitempty"`
-	PackageId        *string `json:"package_id,omitempty"`
+	PackageId        string  `json:"package_id"`
 
 	// Parallelism Defaults to 4
 	Parallelism *int32 `json:"parallelism,omitempty"`
+
+	// Params Parameters data for the Starlark package main function
+	Params *map[string]interface{} `json:"params,omitempty"`
 
 	// RelativePathToMainFile The relative main file filepath, the default value is the "main.star" file in the root of a package
 	RelativePathToMainFile *string `json:"relative_path_to_main_file,omitempty"`
 
 	// Remote just a flag to indicate the module must be cloned inside the API
 	Remote *bool `json:"remote,omitempty"`
-
-	// SerializedParams Serialized parameters data for the Starlark package main function
-	// This should be a valid JSON string
-	SerializedParams *string `json:"serialized_params,omitempty"`
 }
 
 // RunStarlarkScriptArgs defines model for RunStarlarkScriptArgs.
@@ -241,9 +240,11 @@ type RunStarlarkScriptArgs struct {
 	MainFunctionName *string `json:"main_function_name,omitempty"`
 
 	// Parallelism Defaults to 4
-	Parallelism      *int32  `json:"parallelism,omitempty"`
-	SerializedParams *string `json:"serialized_params,omitempty"`
-	SerializedScript *string `json:"serialized_script,omitempty"`
+	Parallelism *int32 `json:"parallelism,omitempty"`
+
+	// Params Parameters data for the Starlark package main function
+	Params           *map[string]interface{} `json:"params,omitempty"`
+	SerializedScript string                  `json:"serialized_script"`
 }
 
 // ServiceIdentifiers An service identifier is a collection of uuid, name and shortened uuid

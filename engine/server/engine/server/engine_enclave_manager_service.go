@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -479,12 +480,98 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx
 
 // (POST /enclaves/{enclave_identifier}/starlark/packages/{package_id})
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdRequestObject) (api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Run Starlark package on enclave %s", enclave_identifier)
+
+	package_id := request.PackageId
+	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api.KurtosisFeatureFlag{}), toGrpcFeatureFlag)
+	jsonString := utils.MapPointer(request.Body.Params, func(v map[string]interface{}) string {
+		jsonBlob, err := json.Marshal(v)
+		if err != nil {
+			panic("Failed to serialize parsed JSON")
+		}
+		return string(jsonBlob)
+	})
+
+	runStarlarkPackageArgs := kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
+		PackageId:              request.Body.PackageId,
+		StarlarkPackageContent: nil,
+		SerializedParams:       jsonString,
+		DryRun:                 request.Body.DryRun,
+		Parallelism:            request.Body.Parallelism,
+		ClonePackage:           request.Body.ClonePackage,
+		RelativePathToMainFile: request.Body.RelativePathToMainFile,
+		MainFunctionName:       request.Body.MainFunctionName,
+		ExperimentalFeatures:   flags,
+		CloudInstanceId:        request.Body.CloudInstanceId,
+		CloudUserId:            request.Body.CloudUserId,
+		ImageDownloadMode:      utils.MapPointer(request.Body.ImageDownloadMode, toGrpcImageDownloadMode),
+	}
+	client, err := apiContainerClient.RunStarlarkPackage(ctx, &runStarlarkPackageArgs)
+	if err != nil {
+		logrus.Errorf("Can't run Starlark package using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't run Starlark package using gRPC call with enclave %s", enclave_identifier)
+	}
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
+	pipeReader := clientStream.PipeReader(
+		package_id,
+		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
+		},
+	)
+	response := api.PostEnclavesEnclaveIdentifierStarlarkScripts200ApplicationoctetStreamResponse{
+		Body:          pipeReader,
+		ContentLength: 0, // No file size is provided since we are streaming it directly
+	}
+
+	return api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200ApplicationoctetStreamResponse(response), nil
 }
 
 // (POST /enclaves/{enclave_identifier}/starlark/scripts)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStarlarkScriptsRequestObject) (api.PostEnclavesEnclaveIdentifierStarlarkScriptsResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Run Starlark script on enclave %s", enclave_identifier)
+
+	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api.KurtosisFeatureFlag{}), toGrpcFeatureFlag)
+	jsonString := utils.MapPointer(request.Body.Params, func(v map[string]interface{}) string {
+		jsonBlob, err := json.Marshal(v)
+		if err != nil {
+			panic("Failed to serialize parsed JSON")
+		}
+		return string(jsonBlob)
+	})
+
+	runStarlarkScriptArgs := kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
+		SerializedScript:     request.Body.SerializedScript,
+		SerializedParams:     jsonString,
+		DryRun:               request.Body.DryRun,
+		Parallelism:          request.Body.Parallelism,
+		MainFunctionName:     request.Body.MainFunctionName,
+		ExperimentalFeatures: flags,
+		CloudInstanceId:      request.Body.CloudInstanceId,
+		CloudUserId:          request.Body.CloudUserId,
+		ImageDownloadMode:    utils.MapPointer(request.Body.ImageDownloadMode, toGrpcImageDownloadMode),
+	}
+	client, err := apiContainerClient.RunStarlarkScript(ctx, &runStarlarkScriptArgs)
+	if err != nil {
+		logrus.Errorf("Can't run Starlark script using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't run Starlark script using gRPC call with enclave %s", enclave_identifier)
+	}
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
+	pipeReader := clientStream.PipeReader(
+		"__RunStarlarkScript__",
+		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
+		},
+	)
+	response := api.PostEnclavesEnclaveIdentifierStarlarkScripts200ApplicationoctetStreamResponse{
+		Body:          pipeReader,
+		ContentLength: 0, // No file size is provided since we are streaming it directly
+	}
+
+	return api.PostEnclavesEnclaveIdentifierStarlarkScripts200ApplicationoctetStreamResponse(response), nil
 }
 
 // ===============================================================================================================
@@ -621,5 +708,25 @@ func toHttpRestartPolicy(policy kurtosis_core_rpc_api_bindings.RestartPolicy) ap
 		return api.RestartPolicyNEVER
 	default:
 		panic(fmt.Sprintf("Missing conversion of Restart Policy Enum value: %s", policy))
+	}
+}
+
+func toGrpcFeatureFlag(flag api.KurtosisFeatureFlag) kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag {
+	switch flag {
+	case api.NOINSTRUCTIONSCACHING:
+		return kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING
+	default:
+		panic(fmt.Sprintf("Missing conversion of Feature Flag Enum value: %s", flag))
+	}
+}
+
+func toGrpcImageDownloadMode(flag api.ImageDownloadMode) kurtosis_core_rpc_api_bindings.ImageDownloadMode {
+	switch flag {
+	case api.ImageDownloadModeALWAYS:
+		return kurtosis_core_rpc_api_bindings.ImageDownloadMode_always
+	case api.ImageDownloadModeMISSING:
+		return kurtosis_core_rpc_api_bindings.ImageDownloadMode_missing
+	default:
+		panic(fmt.Sprintf("Missing conversion of Image Download Mode Enum value: %s", flag))
 	}
 }

@@ -45,9 +45,15 @@ paths:
         "200":
           description: Successful request
           content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
             application/json:
               schema:
-                $ref: "#/components/schemas/StarlarkRunResponseLine"
+                type: array
+                items:
+                  $ref: "#/components/schemas/StarlarkRunResponseLine"
 
   /enclaves/{enclave_identifier}/starlark/scripts:
     post:
@@ -64,9 +70,15 @@ paths:
         "200":
           description: Successful request
           content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
             application/json:
               schema:
-                $ref: "#/components/schemas/StarlarkRunResponseLine"
+                type: array
+                items:
+                  $ref: "#/components/schemas/StarlarkRunResponseLine"
 
   /enclaves/{enclave_identifier}/services/{service_identifier}:
     get:
@@ -433,8 +445,11 @@ components:
       properties:
         serialized_script:
           type: string
-        serialized_params:
-          type: string
+        params:
+          type: object
+          additionalProperties: true
+          description: |-
+            Parameters data for the Starlark package main function
         dry_run:
           type: boolean
           description: Defaults to false
@@ -457,6 +472,8 @@ components:
           description: Defaults to empty
         image_download_mode:
           $ref: "#/components/schemas/ImageDownloadMode"
+      required:
+        - serialized_script
 
     RunStarlarkPackageArgs:
       type: object
@@ -470,11 +487,11 @@ components:
         remote:
           type: boolean
           description: just a flag to indicate the module must be cloned inside the API
-        serialized_params:
-          type: string
+        params:
+          type: object
+          additionalProperties: true
           description: |-
-            Serialized parameters data for the Starlark package main function
-            This should be a valid JSON string
+            Parameters data for the Starlark package main function
         dry_run:
           type: boolean
           description: Defaults to false
@@ -507,6 +524,8 @@ components:
           description: Defaults to empty
         image_download_mode:
           $ref: "#/components/schemas/ImageDownloadMode"
+      required:
+        - package_id
 
     KurtosisFeatureFlag:
       type: string
