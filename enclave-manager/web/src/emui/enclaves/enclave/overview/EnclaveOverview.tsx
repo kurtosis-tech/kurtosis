@@ -1,4 +1,4 @@
-import { Flex, Grid, GridItem } from "@chakra-ui/react";
+import { Flex, Grid, GridItem, Spinner } from "@chakra-ui/react";
 import { DateTime } from "luxon";
 import { FilesTable } from "../../../../components/enclaves/tables/FilesTable";
 import { ServicesTable } from "../../../../components/enclaves/tables/ServicesTable";
@@ -48,16 +48,20 @@ export const EnclaveOverview = ({ enclave }: EnclaveOverviewProps) => {
         </GridItem>
       </Grid>
       <TitledCard title={"Services"}>
-        {enclave.services.isOk && (
+        {!isDefined(enclave.services) && <Spinner />}
+        {isDefined(enclave.services) && enclave.services.isOk && (
           <ServicesTable servicesResponse={enclave.services.value} enclaveShortUUID={enclave.shortenedUuid} />
         )}
-        {enclave.services.isErr && <KurtosisAlert message={enclave.services.error} />}
+        {isDefined(enclave.services) && enclave.services.isErr && <KurtosisAlert message={enclave.services.error} />}
       </TitledCard>
       <TitledCard title={"Files Artifacts"}>
-        {enclave.filesAndArtifacts.isOk && (
+        {!isDefined(enclave.filesAndArtifacts) && <Spinner />}
+        {isDefined(enclave.filesAndArtifacts) && enclave.filesAndArtifacts.isOk && (
           <FilesTable filesAndArtifacts={enclave.filesAndArtifacts.value} enclave={enclave} />
         )}
-        {enclave.filesAndArtifacts.isErr && <KurtosisAlert message={enclave.filesAndArtifacts.error} />}
+        {isDefined(enclave.filesAndArtifacts) && enclave.filesAndArtifacts.isErr && (
+          <KurtosisAlert message={enclave.filesAndArtifacts.error} />
+        )}
       </TitledCard>
     </Flex>
   );

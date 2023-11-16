@@ -1,4 +1,5 @@
 import { Port_TransportProtocol } from "enclave-manager-sdk/build/api_container_service_pb";
+import { isDefined } from "../../utils";
 
 export function transportProtocolToString(protocol: Port_TransportProtocol) {
   switch (protocol) {
@@ -9,4 +10,13 @@ export function transportProtocolToString(protocol: Port_TransportProtocol) {
     case Port_TransportProtocol.UDP:
       return "UDP";
   }
+}
+
+export const allowedEnclaveNamePattern = /^[-A-Za-z0-9]{1,60}$/;
+
+export function isEnclaveNameAllowed(name: any): boolean {
+  if (typeof name !== "string") {
+    return false;
+  }
+  return isDefined(name.match(allowedEnclaveNamePattern));
 }

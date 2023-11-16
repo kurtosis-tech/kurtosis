@@ -5,5 +5,11 @@ import { KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
 export const StringArgumentInput = (props: Omit<KurtosisArgumentTypeInputProps, "type">) => {
   const { register } = useEnclaveConfigurationFormContext();
 
-  return <Input {...register(props.name, { disabled: props.disabled, required: props.isRequired })} />;
+  return (
+    <Input
+      {...register(props.name, { disabled: props.disabled, required: props.isRequired, validate: props.validate })}
+      width={props.width}
+      size={props.size || "lg"}
+    />
+  );
 };

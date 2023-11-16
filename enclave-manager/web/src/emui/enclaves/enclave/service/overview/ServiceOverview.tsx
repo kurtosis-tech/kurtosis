@@ -43,7 +43,11 @@ export const ServiceOverview = ({ service, enclave }: ServiceOverviewProps) => {
         </GridItem>
       </Grid>
       <TitledCard title={"Ports"}>
-        <PortsTable privatePorts={service.privatePorts} publicPorts={service.maybePublicPorts} />
+        <PortsTable
+          privatePorts={service.privatePorts}
+          publicPorts={service.maybePublicPorts}
+          publicIp={service.maybePublicIpAddr}
+        />
       </TitledCard>
       {isDefined(service.container) && (
         <ContainerOverview serviceName={service.name} enclaveName={enclave.name} container={service.container} />

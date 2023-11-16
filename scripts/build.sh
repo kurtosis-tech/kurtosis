@@ -5,9 +5,14 @@ set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
 
-if ! bash "${script_dirpath}/versions_check.sh"; then
-  exit 1
+set +u
+# Check if it's running inside a nix shell env so there is no need to check versions
+if [ -z "${IN_NIX_SHELL}" ]; then
+    if ! bash "${script_dirpath}/versions_check.sh"; then
+    exit 1
+    fi
 fi
+set -u
 
 
 # ==================================================================================================

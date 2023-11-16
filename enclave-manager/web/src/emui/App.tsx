@@ -8,7 +8,10 @@ import {
 import { AppLayout } from "../components/AppLayout";
 import { CreateEnclave } from "../components/enclaves/CreateEnclave";
 import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
+import { LocationBroadcaster } from "../components/LocationBroadcaster";
+import { LocationListener } from "../components/LocationListener";
 import { catalogRoutes } from "./catalog/CatalogRoutes";
+import { EmuiAppContextProvider } from "./EmuiAppContext";
 import { enclaveRoutes } from "./enclaves/EnclaveRoutes";
 import { Navbar } from "./Navbar";
 
@@ -17,7 +20,9 @@ export const EmuiApp = () => {
     <KurtosisThemeProvider>
       <KurtosisPackageIndexerProvider>
         <KurtosisClientProvider>
-          <KurtosisRouter />
+          <EmuiAppContextProvider>
+            <KurtosisRouter />
+          </EmuiAppContextProvider>
         </KurtosisClientProvider>
       </KurtosisPackageIndexerProvider>
     </KurtosisThemeProvider>
@@ -37,6 +42,8 @@ const KurtosisRouter = () => {
               <AppLayout Nav={<Navbar baseApplicationUrl={kurtosisClient.getBaseApplicationUrl()} />}>
                 <Outlet />
                 <CreateEnclave />
+                <LocationBroadcaster />
+                <LocationListener />
               </AppLayout>
             ),
             children: [

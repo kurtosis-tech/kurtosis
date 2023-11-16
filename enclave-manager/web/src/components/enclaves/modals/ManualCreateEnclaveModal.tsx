@@ -91,7 +91,7 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
           </ModalBody>
           <ModalFooter>
             <Flex justifyContent={"flex-end"} gap={"12px"}>
-              <Button color={"gray.100"} onClick={handleClose} disabled={isLoading}>
+              <Button color={"gray.100"} onClick={handleClose} isDisabled={isLoading}>
                 Cancel
               </Button>
               <Button type={"submit"} isLoading={isLoading} colorScheme={"kurtosisGreen"}>
