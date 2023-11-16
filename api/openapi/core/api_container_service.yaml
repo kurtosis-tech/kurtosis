@@ -214,7 +214,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StoreWebFilesArtifactResponse"
+                $ref: "#/components/schemas/UploadFilesArtifactResponse"
 
   /enclaves/{enclave_identifier}/artifacts/services/{service_identifier}:
     put:
@@ -756,13 +756,6 @@ components:
           description: The name of the files artifact
       description: |-
         Store Web Files Artifact
-
-    StoreWebFilesArtifactResponse:
-      type: object
-      properties:
-        uuid:
-          type: string
-          description: UUID of the files artifact, for use when referencing it in the future
 
     StoreFilesArtifactFromServiceArgs:
       type: object

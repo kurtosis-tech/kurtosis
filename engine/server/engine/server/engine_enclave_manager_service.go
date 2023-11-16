@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
@@ -102,11 +103,11 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 	hasher := sha1.New()
 	uploaded_artifacts := []api.UploadFilesArtifactResponse{}
 	for {
-	uploadStreamingCall, err := apiContainerClient.UploadFilesArtifact(ctx)
-	if err != nil {
-		logrus.Errorf("Can't start file upload gRPC call with enclave %s, error: %s", enclave_identifier, err)
-		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
-	}
+		uploadStreamingCall, err := apiContainerClient.UploadFilesArtifact(ctx)
+		if err != nil {
+			logrus.Errorf("Can't start file upload gRPC call with enclave %s, error: %s", enclave_identifier, err)
+			return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
+		}
 		part, err := request.Body.NextPart()
 		if err == io.EOF {
 			break
@@ -126,16 +127,16 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 			hasher.Reset()
 			hasher.Write(chunk.Data)
 			previousChunkHash = hex.EncodeToString(hasher.Sum(nil))
-	}
+		}
 
-	artifact_info, closing_err := uploadStreamingCall.CloseAndRecv()
-	if closing_err != nil {
-		logrus.Errorf("Failed to close upload gRPC call with enclave %s, error: %s", enclave_identifier, closing_err)
-		return nil, closing_err
-	}
+		artifact_info, closing_err := uploadStreamingCall.CloseAndRecv()
+		if closing_err != nil {
+			logrus.Errorf("Failed to close upload gRPC call with enclave %s, error: %s", enclave_identifier, closing_err)
+			return nil, closing_err
+		}
 
 		// TODO(edgar) track uploaded artifacts by upload file name
-	artifact_response := toHttpUploadFilesArtifactResponse(artifact_info)
+		artifact_response := toHttpUploadFilesArtifactResponse(artifact_info)
 		uploaded_artifacts = append(uploaded_artifacts, artifact_response)
 	}
 
@@ -144,7 +145,51 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 
 // (PUT /enclaves/{enclave_identifier}/artifacts/remote-file)
 func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx context.Context, request api.PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject) (api.PutEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
+
+	uploadStreamingCall, err := apiContainerClient.UploadFilesArtifact(ctx)
+	if err != nil {
+		logrus.Errorf("Can't start file upload gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
+	}
+
+	remoteFile, err := http.Get(*request.Body.Url)
+	if err != nil {
+		logrus.Errorf("Failed to retrieve remote file %s, error: %s", *request.Body.Url, err)
+		return nil, err
+	}
+
+	buf := make([]byte, 1024)
+	var n int
+	hasher := sha1.New()
+	previousChunkHash := ""
+
+	for {
+		n, err = remoteFile.Body.Read(buf)
+		if err == io.EOF {
+			break
+		}
+		chunk := kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+			Data:              buf[:n],
+			PreviousChunkHash: previousChunkHash,
+		}
+		uploadStreamingCall.Send(&chunk)
+		hasher.Reset()
+		hasher.Write(chunk.Data)
+		previousChunkHash = hex.EncodeToString(hasher.Sum(nil))
+	}
+
+	artifact_info, closing_err := uploadStreamingCall.CloseAndRecv()
+	if closing_err != nil {
+		logrus.Errorf("Failed to close upload gRPC call with enclave %s, error: %s", enclave_identifier, closing_err)
+		return nil, closing_err
+	}
+
+	artifact_response := toHttpUploadFilesArtifactResponse(artifact_info)
+
+	return api.PutEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse(artifact_response), nil
 }
 
 // (PUT /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
@@ -214,8 +259,10 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 // GetGrpcClientConn returns a client conn dialed in to the local port
 // It is the caller's responsibility to call resultClientConn.close()
 func getGrpcClientConn(enclaveInfo *types.EnclaveInfo) (resultClientConn *grpc.ClientConn, resultErr error) {
-	apiContainerGrpcPort := enclaveInfo.ApiContainerInfo.GrpcPortInsideEnclave
-	apiContainerIP := enclaveInfo.ApiContainerInfo.ContainerId
+	// apiContainerGrpcPort := enclaveInfo.ApiContainerInfo.GrpcPortInsideEnclave
+	// apiContainerIP := enclaveInfo.ApiContainerInfo.ContainerId
+	apiContainerGrpcPort := enclaveInfo.ApiContainerHostMachineInfo.GrpcPortOnHostMachine
+	apiContainerIP := enclaveInfo.ApiContainerHostMachineInfo.IpOnHostMachine
 	grpcServerAddress := fmt.Sprintf("%v:%v", apiContainerIP, apiContainerGrpcPort)
 	grpcConnection, err := grpc.Dial(grpcServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

@@ -418,12 +418,6 @@ type StoreWebFilesArtifactArgs struct {
 	Url *string `json:"url,omitempty"`
 }
 
-// StoreWebFilesArtifactResponse defines model for StoreWebFilesArtifactResponse.
-type StoreWebFilesArtifactResponse struct {
-	// Uuid UUID of the files artifact, for use when referencing it in the future
-	Uuid *string `json:"uuid,omitempty"`
-}
-
 // StreamedDataChunk Streamed Data Chunk
 type StreamedDataChunk struct {
 	// Data Chunk of the overall files artifact bytes
