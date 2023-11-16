@@ -69,7 +69,7 @@ const PortTable = ({ privatePorts, publicPorts }: PortTableProps) => {
                 {privatePorts[name].number}/{transportProtocolToString(port.transportProtocol)}
               </Td>
               <Td fontSize={"xs"}>{port.number}</Td>
-              <Td fontSize={"xs"}>{port.maybeApplicationProtocol || <i>Unknown</i>}</Td>
+              <Td fontSize={"xs"}>{port.maybeApplicationProtocol || <i>Undefined</i>}</Td>
             </Tr>
           ))}
       </Tbody>
