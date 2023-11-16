@@ -192,8 +192,8 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
+                type: object
+                additionalProperties:
                   $ref: "#/components/schemas/UploadFilesArtifactResponse"
 
   /enclaves/{enclave_identifier}/artifacts/remote-file:

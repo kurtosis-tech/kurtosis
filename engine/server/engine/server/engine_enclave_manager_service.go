@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
+	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -99,45 +100,42 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
 	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
 
-	buf := make([]byte, 1024)
-	hasher := sha1.New()
-	uploaded_artifacts := []api.UploadFilesArtifactResponse{}
+	uploaded_artifacts := map[string]api.UploadFilesArtifactResponse{}
 	for {
-		uploadStreamingCall, err := apiContainerClient.UploadFilesArtifact(ctx)
-		if err != nil {
-			logrus.Errorf("Can't start file upload gRPC call with enclave %s, error: %s", enclave_identifier, err)
-			return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
-		}
+		// Get next part (file) from the the multipart POST request
 		part, err := request.Body.NextPart()
 		if err == io.EOF {
 			break
 		}
-		var n int
-		previousChunkHash := ""
-		for {
-			n, err = part.Read(buf)
-			if err == io.EOF {
-				break
-			}
-			chunk := kurtosis_core_rpc_api_bindings.StreamedDataChunk{
-				Data:              buf[:n],
-				PreviousChunkHash: previousChunkHash,
-			}
-			uploadStreamingCall.Send(&chunk)
-			hasher.Reset()
-			hasher.Write(chunk.Data)
-			previousChunkHash = hex.EncodeToString(hasher.Sum(nil))
-		}
+		filename := part.FileName()
 
-		artifact_info, closing_err := uploadStreamingCall.CloseAndRecv()
-		if closing_err != nil {
-			logrus.Errorf("Failed to close upload gRPC call with enclave %s, error: %s", enclave_identifier, closing_err)
-			return nil, closing_err
+		client, err := apiContainerClient.UploadFilesArtifact(ctx)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Can't start file upload gRPC call with enclave %s", enclave_identifier)
 		}
+		clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](client)
 
-		// TODO(edgar) track uploaded artifacts by upload file name
-		artifact_response := toHttpUploadFilesArtifactResponse(artifact_info)
-		uploaded_artifacts = append(uploaded_artifacts, artifact_response)
+		response, err := clientStream.SendData(
+			filename,
+			part,
+			0, // Length unknown head of time
+			func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
+				return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+					Data:              contentChunk,
+					PreviousChunkHash: previousChunkHash,
+					Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+						Name: filename,
+					},
+				}, nil
+			},
+		)
+
+		// The response is nil when a file artifact with the same has already been uploaded
+		// TODO (edgar) Is this the expected behavior? If so, we should be explicit about it.
+		if response != nil {
+			artifact_response := toHttpUploadFilesArtifactResponse(response)
+			uploaded_artifacts[filename] = artifact_response
+		}
 	}
 
 	return api.PostEnclavesEnclaveIdentifierArtifactsLocalFile200JSONResponse(uploaded_artifacts), nil
