@@ -181,7 +181,39 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsServicesServ
 
 // (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier})
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx context.Context, request api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierRequestObject) (api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponseObject, error) {
-	return nil, Error{}
+	enclave_identifier := request.EnclaveIdentifier
+	artifact_identifier := request.ArtifactIdentifier
+	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	logrus.Infof("Inspecting file artifact %s on enclave %s", artifact_identifier, enclave_identifier)
+
+	inspectFilesArtifactContentsRequest := kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest{
+		FileNamesAndUuid: &kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid{
+			FileName: artifact_identifier,
+			FileUuid: artifact_identifier,
+		},
+	}
+	stored_artifact, err := apiContainerClient.InspectFilesArtifactContents(ctx, &inspectFilesArtifactContentsRequest)
+	if err != nil {
+		logrus.Errorf("Can't inspect artifact using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.NewError("Can't inspect artifact using gRPC call with enclave %s", enclave_identifier)
+	}
+
+	artifact_content_list := utils.MapList(
+		stored_artifact.FileDescriptions,
+		func(x *kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) api.FileArtifactContentsFileDescription {
+			size := int64(x.Size)
+			return api.FileArtifactContentsFileDescription{
+				Path:        &x.Path,
+				Size:        &size,
+				TextPreview: x.TextPreview,
+			}
+		})
+
+	artifact_response := api.InspectFilesArtifactContentsResponse{
+		FileDescriptions: &artifact_content_list,
+	}
+
+	return api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier200JSONResponse(artifact_response), nil
 }
 
 // (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download)
