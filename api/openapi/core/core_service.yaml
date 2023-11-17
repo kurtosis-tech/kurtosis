@@ -16,7 +16,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GetStarlarkRunResponse"
+                $ref: "#/components/schemas/StarlarkDescription"
 
   /enclaves/{enclave_identifier}/starlark/packages:
     post:
@@ -39,7 +39,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RunStarlarkPackageArgs"
+              $ref: "#/components/schemas/RunStarlarkPackage"
         required: true
       responses:
         "200":
@@ -64,7 +64,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RunStarlarkScriptArgs"
+              $ref: "#/components/schemas/RunStarlarkScript"
         required: true
       responses:
         "200":
@@ -139,7 +139,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ExecCommandArgs"
+              $ref: "#/components/schemas/ExecCommand"
         description: Exec Command
         required: true
       responses:
@@ -148,7 +148,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExecCommandResponse"
+                $ref: "#/components/schemas/ExecCommandResult"
 
   /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability:
     post:
@@ -161,7 +161,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/WaitForEndpointAvailabilityArgs"
+              $ref: "#/components/schemas/WaitForEndpointAvailability"
         description: Wait For HTTP Get Endpoint Availability
         required: true
       responses:
@@ -179,7 +179,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ListFilesArtifactNamesAndUuidsResponse"
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileArtifactReference"
 
   /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}:
     get:
@@ -193,7 +195,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InspectFilesArtifactContentsResponse"
+                $ref: "#/components/schemas/InspectFilesArtifactContents"
 
   /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download:
     get:
@@ -236,7 +238,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/StoreWebFilesArtifactArgs"
+              $ref: "#/components/schemas/StoreWebFilesArtifact"
         description: Store Web Files Artifact
         required: true
       responses:
@@ -257,7 +259,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/StoreFilesArtifactFromServiceArgs"
+              $ref: "#/components/schemas/StoreFilesArtifactFromService"
         required: true
       responses:
         "200":
@@ -276,18 +278,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ConnectServicesArgs"
+              $ref: "#/components/schemas/ConnectServices"
         required: true
       responses:
         "200":
           description: Successful request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ConnectServicesResponse"
+
+# =========================================================================================================================
+# =========================================================================================================================
+# > > > > > > > > > > > > > > > > > > > > > > > > Data Models < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < 
+# =========================================================================================================================
+# =========================================================================================================================
+
 components:
 
   parameters:
+
     enclave_identifier:
       in: path
       name: enclave_identifier
@@ -347,7 +353,7 @@ components:
           type: integer
           format: int32
         transport_protocol:
-          $ref: "#/components/schemas/Port.TransportProtocol"
+          $ref: "#/components/schemas/TransportProtocol"
         maybe_application_protocol:
           type: string
         maybe_wait_timeout:
@@ -362,7 +368,7 @@ components:
       type: object
       properties:
         status:
-          $ref: "#/components/schemas/Container.Status"
+          $ref: "#/components/schemas/ContainerStatus"
         image_name:
           type: string
         entrypoint_args:
@@ -440,7 +446,7 @@ components:
         0 - CONNECT // Best effort port forwarding
         1 - NO_CONNECT // Port forwarding disabled
 
-    RunStarlarkScriptArgs:
+    RunStarlarkScript:
       type: object
       properties:
         serialized_script:
@@ -475,7 +481,7 @@ components:
       required:
         - serialized_script
 
-    RunStarlarkPackageArgs:
+    RunStarlarkPackage:
       type: object
       properties:
         package_id:
@@ -575,7 +581,7 @@ components:
         arguments:
           type: array
           items:
-            $ref: "#/components/schemas/StarlarkInstructionArg"
+            $ref: "#/components/schemas/StarlarkInstructionArgument"
         executable_instruction:
           type: string
         is_skipped:
@@ -587,7 +593,7 @@ components:
         serialized_instruction_result:
           type: string
 
-    StarlarkInstructionArg:
+    StarlarkInstructionArgument:
       type: object
       properties:
         serialized_arg_value:
@@ -679,7 +685,7 @@ components:
           description: The shortened uuid of the service
       description: An service identifier is a collection of uuid, name and shortened uuid
 
-    ExecCommandArgs:
+    ExecCommand:
       type: object
       properties:
         command_args:
@@ -689,7 +695,7 @@ components:
       description: |-
         Exec Command
 
-    ExecCommandResponse:
+    ExecCommandResult:
       type: object
       properties:
         exit_code:
@@ -699,7 +705,7 @@ components:
           type: string
           description: Assumes UTF-8 encoding
 
-    WaitForEndpointAvailabilityArgs:
+    WaitForEndpointAvailability:
       type: object
       properties:
         http_method:
@@ -737,16 +743,7 @@ components:
       description: |-
         Files Artifact identifier
 
-    DownloadFilesArtifactArgs:
-      type: object
-      properties:
-        identifier:
-          type: string
-          description: Files identifier to get bytes for
-      description: |-
-        Download Files Artifact
-
-    StoreWebFilesArtifactArgs:
+    StoreWebFilesArtifact:
       type: object
       properties:
         url:
@@ -761,7 +758,7 @@ components:
       description: |-
         Store Web Files Artifact
 
-    StoreFilesArtifactFromServiceArgs:
+    StoreFilesArtifactFromService:
       type: object
       properties:
         source_path:
@@ -774,29 +771,15 @@ components:
         - source_path
         - name
 
-    ListFilesArtifactNamesAndUuidsResponse:
-      type: object
-      properties:
-        file_names_and_uuids:
-          type: array
-          items:
-            $ref: "#/components/schemas/FileArtifactReference"
-
-    InspectFilesArtifactContentsRequest:
-      type: object
-      properties:
-        file_names_and_uuid:
-          $ref: "#/components/schemas/FileArtifactReference"
-
-    InspectFilesArtifactContentsResponse:
+    InspectFilesArtifactContents:
       type: object
       properties:
         file_descriptions:
           type: array
           items:
-            $ref: "#/components/schemas/FileArtifactContentsFileDescription"
+            $ref: "#/components/schemas/FileArtifactDescription"
 
-    FileArtifactContentsFileDescription:
+    FileArtifactDescription:
       type: object
       properties:
         path:
@@ -810,15 +793,11 @@ components:
           type: string
           description: A bit of text content, if the file allows (similar to UNIX's 'head')
 
-    ConnectServicesArgs:
+    ConnectServices:
       type: object
       properties:
         connect:
           $ref: "#/components/schemas/Connect"
-
-    ConnectServicesResponse:
-      type: object
-      properties: {}
 
     RestartPolicy:
       type: string
@@ -829,7 +808,7 @@ components:
         0 - NEVER 
         1 - ALWAYS
 
-    GetStarlarkRunResponse:
+    StarlarkDescription:
       type: object
       properties:
         package_id:
@@ -852,7 +831,7 @@ components:
         restart_policy:
           $ref: "#/components/schemas/RestartPolicy"
 
-    Port.TransportProtocol:
+    TransportProtocol:
       type: string
       enum:
         - TCP
@@ -863,7 +842,7 @@ components:
         1 - SCTP 
         2 - UDP
 
-    Container.Status:
+    ContainerStatus:
       type: string
       enum:
         - STOPPED

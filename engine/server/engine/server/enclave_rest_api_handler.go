@@ -66,7 +66,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context
 		return nil, err
 	}
 
-	http_artifacts := utils.MapList(
+	results := utils.MapList(
 		artifacts.FileNamesAndUuids,
 		func(x *kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid) kurtosis_core_rest_api_bindings.FileArtifactReference {
 			return kurtosis_core_rest_api_bindings.FileArtifactReference{
@@ -75,11 +75,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context
 			}
 		})
 
-	result := api.ListFilesArtifactNamesAndUuidsResponse{
-		FileNamesAndUuids: &http_artifacts,
-	}
-	return api.GetEnclavesEnclaveIdentifierArtifacts200JSONResponse(result), nil
-
+	return api.GetEnclavesEnclaveIdentifierArtifacts200JSONResponse(results), nil
 }
 
 // (POST /enclaves/{enclave_identifier}/artifacts/local-file)
@@ -201,16 +197,16 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 
 	artifact_content_list := utils.MapList(
 		stored_artifact.FileDescriptions,
-		func(x *kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) api.FileArtifactContentsFileDescription {
+		func(x *kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) api.FileArtifactDescription {
 			size := int64(x.Size)
-			return api.FileArtifactContentsFileDescription{
+			return api.FileArtifactDescription{
 				Path:        &x.Path,
 				Size:        &size,
 				TextPreview: x.TextPreview,
 			}
 		})
 
-	artifact_response := api.InspectFilesArtifactContentsResponse{
+	artifact_response := api.InspectFilesArtifactContents{
 		FileDescriptions: &artifact_content_list,
 	}
 
@@ -307,7 +303,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesConnection(c
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	return api.PostEnclavesEnclaveIdentifierServicesConnection200JSONResponse{}, nil
+	return api.PostEnclavesEnclaveIdentifierServicesConnection200Response{}, nil
 }
 
 // (GET /enclaves/{enclave_identifier}/services/{service_identifier})
@@ -352,7 +348,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 		return nil, stacktrace.NewError("Can't execute commands using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	response := api.ExecCommandResponse{
+	response := api.ExecCommandResult{
 		ExitCode:  &exec_result.ExitCode,
 		LogOutput: &exec_result.LogOutput,
 	}
@@ -421,7 +417,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.
 
 	flags := utils.MapList(starlark_result.ExperimentalFeatures, toHttpFeatureFlag)
 	policy := toHttpRestartPolicy(starlark_result.RestartPolicy)
-	response := api.GetStarlarkRunResponse{
+	response := api.StarlarkDescription{
 		ExperimentalFeatures:   &flags,
 		MainFunctionName:       &starlark_result.MainFunctionName,
 		PackageId:              &starlark_result.PackageId,
@@ -626,7 +622,7 @@ func toHttpContainerStatus(status kurtosis_core_rpc_api_bindings.Container_Statu
 	}
 }
 
-func toHttpTransportProtocol(protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol) api.PortTransportProtocol {
+func toHttpTransportProtocol(protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol) api.TransportProtocol {
 	switch protocol {
 	case kurtosis_core_rpc_api_bindings.Port_TCP:
 		return api.TCP

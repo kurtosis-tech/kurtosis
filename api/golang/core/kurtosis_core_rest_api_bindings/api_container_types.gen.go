@@ -31,13 +31,6 @@ const (
 	NOINSTRUCTIONSCACHING KurtosisFeatureFlag = "NO_INSTRUCTIONS_CACHING"
 )
 
-// Defines values for PortTransportProtocol.
-const (
-	SCTP PortTransportProtocol = "SCTP"
-	TCP  PortTransportProtocol = "TCP"
-	UDP  PortTransportProtocol = "UDP"
-)
-
 // Defines values for RestartPolicy.
 const (
 	RestartPolicyALWAYS RestartPolicy = "ALWAYS"
@@ -51,25 +44,29 @@ const (
 	ServiceStatusUNKNOWN ServiceStatus = "UNKNOWN"
 )
 
-// Defines values for WaitForEndpointAvailabilityArgsHttpMethod.
+// Defines values for TransportProtocol.
 const (
-	GET  WaitForEndpointAvailabilityArgsHttpMethod = "GET"
-	POST WaitForEndpointAvailabilityArgsHttpMethod = "POST"
+	SCTP TransportProtocol = "SCTP"
+	TCP  TransportProtocol = "TCP"
+	UDP  TransportProtocol = "UDP"
+)
+
+// Defines values for WaitForEndpointAvailabilityHttpMethod.
+const (
+	GET  WaitForEndpointAvailabilityHttpMethod = "GET"
+	POST WaitForEndpointAvailabilityHttpMethod = "POST"
 )
 
 // Connect 0 - CONNECT // Best effort port forwarding
 // 1 - NO_CONNECT // Port forwarding disabled
 type Connect string
 
-// ConnectServicesArgs defines model for ConnectServicesArgs.
-type ConnectServicesArgs struct {
+// ConnectServices defines model for ConnectServices.
+type ConnectServices struct {
 	// Connect 0 - CONNECT // Best effort port forwarding
 	// 1 - NO_CONNECT // Port forwarding disabled
 	Connect *Connect `json:"connect,omitempty"`
 }
-
-// ConnectServicesResponse defines model for ConnectServicesResponse.
-type ConnectServicesResponse = map[string]interface{}
 
 // Container defines model for Container.
 type Container struct {
@@ -89,21 +86,21 @@ type Container struct {
 // 2 - UNKNOWN
 type ContainerStatus string
 
-// ExecCommandArgs Exec Command
-type ExecCommandArgs struct {
+// ExecCommand Exec Command
+type ExecCommand struct {
 	CommandArgs *[]string `json:"command_args,omitempty"`
 }
 
-// ExecCommandResponse defines model for ExecCommandResponse.
-type ExecCommandResponse struct {
+// ExecCommandResult defines model for ExecCommandResult.
+type ExecCommandResult struct {
 	ExitCode *int32 `json:"exit_code,omitempty"`
 
 	// LogOutput Assumes UTF-8 encoding
 	LogOutput *string `json:"log_output,omitempty"`
 }
 
-// FileArtifactContentsFileDescription defines model for FileArtifactContentsFileDescription.
-type FileArtifactContentsFileDescription struct {
+// FileArtifactDescription defines model for FileArtifactDescription.
+type FileArtifactDescription struct {
 	// Path Path relative to the file artifact
 	Path *string `json:"path,omitempty"`
 
@@ -123,37 +120,17 @@ type FileArtifactReference struct {
 	Uuid *string `json:"uuid,omitempty"`
 }
 
-// GetStarlarkRunResponse defines model for GetStarlarkRunResponse.
-type GetStarlarkRunResponse struct {
-	ExperimentalFeatures   *[]KurtosisFeatureFlag `json:"experimental_features,omitempty"`
-	MainFunctionName       *string                `json:"main_function_name,omitempty"`
-	PackageId              *string                `json:"package_id,omitempty"`
-	Parallelism            *int32                 `json:"parallelism,omitempty"`
-	RelativePathToMainFile *string                `json:"relative_path_to_main_file,omitempty"`
-
-	// RestartPolicy 0 - NEVER
-	// 1 - ALWAYS
-	RestartPolicy    *RestartPolicy `json:"restart_policy,omitempty"`
-	SerializedParams *string        `json:"serialized_params,omitempty"`
-	SerializedScript *string        `json:"serialized_script,omitempty"`
-}
-
 // ImageDownloadMode 0 - ALWAYS
 // 1 - MISSING
 type ImageDownloadMode string
 
-// InspectFilesArtifactContentsResponse defines model for InspectFilesArtifactContentsResponse.
-type InspectFilesArtifactContentsResponse struct {
-	FileDescriptions *[]FileArtifactContentsFileDescription `json:"file_descriptions,omitempty"`
+// InspectFilesArtifactContents defines model for InspectFilesArtifactContents.
+type InspectFilesArtifactContents struct {
+	FileDescriptions *[]FileArtifactDescription `json:"file_descriptions,omitempty"`
 }
 
 // KurtosisFeatureFlag 0 - NO_INSTRUCTIONS_CACHING
 type KurtosisFeatureFlag string
-
-// ListFilesArtifactNamesAndUuidsResponse defines model for ListFilesArtifactNamesAndUuidsResponse.
-type ListFilesArtifactNamesAndUuidsResponse struct {
-	FileNamesAndUuids *[]FileArtifactReference `json:"file_names_and_uuids,omitempty"`
-}
 
 // Port Shared Objects (Used By Multiple Endpoints)
 type Port struct {
@@ -166,20 +143,15 @@ type Port struct {
 	// TransportProtocol 0 - TCP
 	// 1 - SCTP
 	// 2 - UDP
-	TransportProtocol PortTransportProtocol `json:"transport_protocol"`
+	TransportProtocol TransportProtocol `json:"transport_protocol"`
 }
-
-// PortTransportProtocol 0 - TCP
-// 1 - SCTP
-// 2 - UDP
-type PortTransportProtocol string
 
 // RestartPolicy 0 - NEVER
 // 1 - ALWAYS
 type RestartPolicy string
 
-// RunStarlarkPackageArgs defines model for RunStarlarkPackageArgs.
-type RunStarlarkPackageArgs struct {
+// RunStarlarkPackage defines model for RunStarlarkPackage.
+type RunStarlarkPackage struct {
 	// ClonePackage Whether the package should be cloned or not.
 	// If false, then the package will be pulled from the APIC local package store. If it's a local package then is must
 	// have been uploaded using UploadStarlarkPackage prior to calling RunStarlarkPackage.
@@ -220,8 +192,8 @@ type RunStarlarkPackageArgs struct {
 	Remote *bool `json:"remote,omitempty"`
 }
 
-// RunStarlarkScriptArgs defines model for RunStarlarkScriptArgs.
-type RunStarlarkScriptArgs struct {
+// RunStarlarkScript defines model for RunStarlarkScript.
+type RunStarlarkScript struct {
 	// CloudInstanceId Defaults to empty
 	CloudInstanceId *string `json:"cloud_instance_id,omitempty"`
 
@@ -292,6 +264,21 @@ type ServiceInfo struct {
 // 2 - UNKNOWN
 type ServiceStatus string
 
+// StarlarkDescription defines model for StarlarkDescription.
+type StarlarkDescription struct {
+	ExperimentalFeatures   *[]KurtosisFeatureFlag `json:"experimental_features,omitempty"`
+	MainFunctionName       *string                `json:"main_function_name,omitempty"`
+	PackageId              *string                `json:"package_id,omitempty"`
+	Parallelism            *int32                 `json:"parallelism,omitempty"`
+	RelativePathToMainFile *string                `json:"relative_path_to_main_file,omitempty"`
+
+	// RestartPolicy 0 - NEVER
+	// 1 - ALWAYS
+	RestartPolicy    *RestartPolicy `json:"restart_policy,omitempty"`
+	SerializedParams *string        `json:"serialized_params,omitempty"`
+	SerializedScript *string        `json:"serialized_script,omitempty"`
+}
+
 // StarlarkError defines model for StarlarkError.
 type StarlarkError struct {
 	ExecutionError      *StarlarkExecutionError      `json:"execution_error,omitempty"`
@@ -311,15 +298,15 @@ type StarlarkInfo struct {
 
 // StarlarkInstruction defines model for StarlarkInstruction.
 type StarlarkInstruction struct {
-	Arguments             *[]StarlarkInstructionArg    `json:"arguments,omitempty"`
-	ExecutableInstruction *string                      `json:"executable_instruction,omitempty"`
-	InstructionName       *string                      `json:"instruction_name,omitempty"`
-	IsSkipped             *bool                        `json:"is_skipped,omitempty"`
-	Position              *StarlarkInstructionPosition `json:"position,omitempty"`
+	Arguments             *[]StarlarkInstructionArgument `json:"arguments,omitempty"`
+	ExecutableInstruction *string                        `json:"executable_instruction,omitempty"`
+	InstructionName       *string                        `json:"instruction_name,omitempty"`
+	IsSkipped             *bool                          `json:"is_skipped,omitempty"`
+	Position              *StarlarkInstructionPosition   `json:"position,omitempty"`
 }
 
-// StarlarkInstructionArg defines model for StarlarkInstructionArg.
-type StarlarkInstructionArg struct {
+// StarlarkInstructionArgument defines model for StarlarkInstructionArgument.
+type StarlarkInstructionArgument struct {
 	ArgName            *string `json:"arg_name,omitempty"`
 	IsRepresentative   *bool   `json:"is_representative,omitempty"`
 	SerializedArgValue *string `json:"serialized_arg_value,omitempty"`
@@ -376,8 +363,8 @@ type StarlarkWarning struct {
 	WarningMessage *string `json:"warning_message,omitempty"`
 }
 
-// StoreFilesArtifactFromServiceArgs defines model for StoreFilesArtifactFromServiceArgs.
-type StoreFilesArtifactFromServiceArgs struct {
+// StoreFilesArtifactFromService defines model for StoreFilesArtifactFromService.
+type StoreFilesArtifactFromService struct {
 	// Name The name of the files artifact
 	Name string `json:"name"`
 
@@ -385,8 +372,8 @@ type StoreFilesArtifactFromServiceArgs struct {
 	SourcePath string `json:"source_path"`
 }
 
-// StoreWebFilesArtifactArgs Store Web Files Artifact
-type StoreWebFilesArtifactArgs struct {
+// StoreWebFilesArtifact Store Web Files Artifact
+type StoreWebFilesArtifact struct {
 	// Name The name of the files artifact
 	Name string `json:"name"`
 
@@ -394,11 +381,16 @@ type StoreWebFilesArtifactArgs struct {
 	Url string `json:"url"`
 }
 
-// WaitForEndpointAvailabilityArgs Wait For HTTP Endpoint Availability
-type WaitForEndpointAvailabilityArgs struct {
+// TransportProtocol 0 - TCP
+// 1 - SCTP
+// 2 - UDP
+type TransportProtocol string
+
+// WaitForEndpointAvailability Wait For HTTP Endpoint Availability
+type WaitForEndpointAvailability struct {
 	// BodyText If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-	BodyText   *string                                    `json:"body_text,omitempty"`
-	HttpMethod *WaitForEndpointAvailabilityArgsHttpMethod `json:"http_method,omitempty"`
+	BodyText   *string                                `json:"body_text,omitempty"`
+	HttpMethod *WaitForEndpointAvailabilityHttpMethod `json:"http_method,omitempty"`
 
 	// InitialDelayMilliseconds The number of milliseconds to wait until executing the first HTTP call
 	InitialDelayMilliseconds *int32 `json:"initial_delay_milliseconds,omitempty"`
@@ -413,8 +405,8 @@ type WaitForEndpointAvailabilityArgs struct {
 	RetriesDelayMilliseconds *int32 `json:"retries_delay_milliseconds,omitempty"`
 }
 
-// WaitForEndpointAvailabilityArgsHttpMethod defines model for WaitForEndpointAvailabilityArgs.HttpMethod.
-type WaitForEndpointAvailabilityArgsHttpMethod string
+// WaitForEndpointAvailabilityHttpMethod defines model for WaitForEndpointAvailability.HttpMethod.
+type WaitForEndpointAvailabilityHttpMethod string
 
 // ArtifactIdentifier defines model for artifact_identifier.
 type ArtifactIdentifier = string
@@ -447,25 +439,25 @@ type PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartBody = openapi_types.
 type PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartRequestBody = PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartBody
 
 // PutEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody defines body for PutEnclavesEnclaveIdentifierArtifactsRemoteFile for application/json ContentType.
-type PutEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody = StoreWebFilesArtifactArgs
+type PutEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody = StoreWebFilesArtifact
 
 // PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody defines body for PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier for application/json ContentType.
-type PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody = StoreFilesArtifactFromServiceArgs
+type PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody = StoreFilesArtifactFromService
 
 // PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesConnection for application/json ContentType.
-type PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody = ConnectServicesArgs
+type PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody = ConnectServices
 
 // PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand for application/json ContentType.
-type PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody = ExecCommandArgs
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody = ExecCommand
 
 // PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability for application/json ContentType.
-type PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody = WaitForEndpointAvailabilityArgs
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody = WaitForEndpointAvailability
 
 // PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartRequestBody defines body for PostEnclavesEnclaveIdentifierStarlarkPackages for multipart/form-data ContentType.
 type PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartRequestBody = PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartBody
 
 // PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId for application/json ContentType.
-type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody = RunStarlarkPackageArgs
+type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody = RunStarlarkPackage
 
 // PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStarlarkScripts for application/json ContentType.
-type PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody = RunStarlarkScriptArgs
+type PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody = RunStarlarkScript
