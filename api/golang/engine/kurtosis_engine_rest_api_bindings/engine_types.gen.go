@@ -38,21 +38,16 @@ const (
 // ApiContainerStatus defines model for ApiContainerStatus.
 type ApiContainerStatus string
 
-// CreateEnclaveArgs defines model for CreateEnclaveArgs.
-type CreateEnclaveArgs struct {
+// CreateEnclave defines model for CreateEnclave.
+type CreateEnclave struct {
 	ApiContainerLogLevel   *string      `json:"api_container_log_level,omitempty"`
 	ApiContainerVersionTag *string      `json:"api_container_version_tag,omitempty"`
 	EnclaveName            *string      `json:"enclave_name,omitempty"`
 	Mode                   *EnclaveMode `json:"mode,omitempty"`
 }
 
-// CreateEnclaveResponse defines model for CreateEnclaveResponse.
-type CreateEnclaveResponse struct {
-	EnclaveInfo *EnclaveInfo `json:"enclave_info,omitempty"`
-}
-
-// DeleteResponse defines model for DeleteResponse.
-type DeleteResponse struct {
+// DeletionSummary defines model for DeletionSummary.
+type DeletionSummary struct {
 	RemovedEnclaveNameAndUuids *[]EnclaveNameAndUuid `json:"removed_enclave_name_and_uuids,omitempty"`
 }
 
@@ -102,19 +97,9 @@ type EnclaveNameAndUuid struct {
 	Uuid *string `json:"uuid,omitempty"`
 }
 
-// GetEnclavesResponse defines model for GetEnclavesResponse.
-type GetEnclavesResponse struct {
-	EnclaveInfo *map[string]EnclaveInfo `json:"enclave_info,omitempty"`
-}
-
-// GetEngineInfoResponse defines model for GetEngineInfoResponse.
-type GetEngineInfoResponse struct {
+// EngineInfo defines model for EngineInfo.
+type EngineInfo struct {
 	EngineVersion *string `json:"engine_version,omitempty"`
-}
-
-// GetExistingAndHistoricalEnclaveIdentifiersResponse defines model for GetExistingAndHistoricalEnclaveIdentifiersResponse.
-type GetExistingAndHistoricalEnclaveIdentifiersResponse struct {
-	AllIdentifiers *[]EnclaveIdentifiers `json:"allIdentifiers,omitempty"`
 }
 
 // GetServiceLogsArgs defines model for GetServiceLogsArgs.
@@ -157,7 +142,7 @@ type DeleteEnclavesParams struct {
 }
 
 // PostEnclavesJSONRequestBody defines body for PostEnclaves for application/json ContentType.
-type PostEnclavesJSONRequestBody = CreateEnclaveArgs
+type PostEnclavesJSONRequestBody = CreateEnclave
 
 // PostEnclavesEnclaveIdentifierLogsJSONRequestBody defines body for PostEnclavesEnclaveIdentifierLogs for application/json ContentType.
 type PostEnclavesEnclaveIdentifierLogsJSONRequestBody = GetServiceLogsArgs

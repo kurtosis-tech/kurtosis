@@ -222,7 +222,7 @@ type DeleteEnclavesResponseObject interface {
 	VisitDeleteEnclavesResponse(w http.ResponseWriter) error
 }
 
-type DeleteEnclaves200JSONResponse DeleteResponse
+type DeleteEnclaves200JSONResponse DeletionSummary
 
 func (response DeleteEnclaves200JSONResponse) VisitDeleteEnclavesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -238,7 +238,9 @@ type GetEnclavesResponseObject interface {
 	VisitGetEnclavesResponse(w http.ResponseWriter) error
 }
 
-type GetEnclaves200JSONResponse GetEnclavesResponse
+type GetEnclaves200JSONResponse struct {
+	EnclaveInfo *map[string]EnclaveInfo `json:"enclave_info,omitempty"`
+}
 
 func (response GetEnclaves200JSONResponse) VisitGetEnclavesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -255,7 +257,7 @@ type PostEnclavesResponseObject interface {
 	VisitPostEnclavesResponse(w http.ResponseWriter) error
 }
 
-type PostEnclaves200JSONResponse CreateEnclaveResponse
+type PostEnclaves200JSONResponse EnclaveInfo
 
 func (response PostEnclaves200JSONResponse) VisitPostEnclavesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -271,7 +273,7 @@ type GetEnclavesHistoricalResponseObject interface {
 	VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error
 }
 
-type GetEnclavesHistorical200JSONResponse GetExistingAndHistoricalEnclaveIdentifiersResponse
+type GetEnclavesHistorical200JSONResponse []EnclaveIdentifiers
 
 func (response GetEnclavesHistorical200JSONResponse) VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -356,7 +358,7 @@ type GetEngineInfoResponseObject interface {
 	VisitGetEngineInfoResponse(w http.ResponseWriter) error
 }
 
-type GetEngineInfo200JSONResponse GetEngineInfoResponse
+type GetEngineInfo200JSONResponse EngineInfo
 
 func (response GetEngineInfo200JSONResponse) VisitGetEngineInfoResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -641,27 +643,27 @@ func (sh *strictHandler) GetEngineInfo(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

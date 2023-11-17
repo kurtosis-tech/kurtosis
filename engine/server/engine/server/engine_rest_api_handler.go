@@ -175,7 +175,7 @@ func (engine EngineRuntime) DeleteEnclaves(ctx context.Context, request api.Dele
 		}
 	}
 	removedApiResponse := utils.MapList(removedEnclaveUuidsAndNames, toHttpApiEnclaveNameAndUuid)
-	return api.DeleteEnclaves200JSONResponse(api.DeleteResponse{RemovedEnclaveNameAndUuids: &removedApiResponse}), nil
+	return api.DeleteEnclaves200JSONResponse(api.DeletionSummary{RemovedEnclaveNameAndUuids: &removedApiResponse}), nil
 }
 
 // Get Enclaves
@@ -186,8 +186,10 @@ func (engine EngineRuntime) GetEnclaves(ctx context.Context, request api.GetEncl
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
 	}
 	info_map_http := toHttpApiEnclaveInfos(infoForEnclaves)
-	response := api.GetEnclavesResponse{EnclaveInfo: &info_map_http}
-	return api.GetEnclaves200JSONResponse(response), nil
+	response := api.GetEnclaves200JSONResponse{
+		EnclaveInfo: &info_map_http,
+	}
+	return response, nil
 }
 
 // Create Enclave
@@ -220,11 +222,7 @@ func (engine EngineRuntime) PostEnclaves(ctx context.Context, request api.PostEn
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", request.Body.EnclaveName)
 	}
 
-	grpcEnclaveInfo := toHttpApiEnclaveInfo(*enclaveInfo)
-	response := api.CreateEnclaveResponse{
-		EnclaveInfo: &grpcEnclaveInfo,
-	}
-
+	response := toHttpApiEnclaveInfo(*enclaveInfo)
 	return api.PostEnclaves200JSONResponse(response), nil
 }
 
@@ -236,8 +234,7 @@ func (engine EngineRuntime) GetEnclavesHistorical(ctx context.Context, request a
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave identifiers")
 	}
 	identifiers_map_api := utils.MapList(allIdentifiers, toHttpApiEnclaveIdentifiers)
-	response := api.GetExistingAndHistoricalEnclaveIdentifiersResponse{AllIdentifiers: &identifiers_map_api}
-	return api.GetEnclavesHistorical200JSONResponse(response), nil
+	return api.GetEnclavesHistorical200JSONResponse(identifiers_map_api), nil
 }
 
 // Destroy Enclave
@@ -368,7 +365,7 @@ func (engine EngineRuntime) PostEnclavesEnclaveIdentifierStop(ctx context.Contex
 // Get Engine Info
 // (GET /engine/info)
 func (engine EngineRuntime) GetEngineInfo(ctx context.Context, request api.GetEngineInfoRequestObject) (api.GetEngineInfoResponseObject, error) {
-	result := api.GetEngineInfoResponse{EngineVersion: &engine.ImageVersionTag}
+	result := api.EngineInfo{EngineVersion: &engine.ImageVersionTag}
 	return api.GetEngineInfo200JSONResponse(result), nil
 }
 
@@ -440,7 +437,7 @@ func (service *EngineRuntime) reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(
 
 	notFoundServiceUuidsMap := getNotFoundServiceUuidsAndEmptyServiceLogsMap(requestedServiceUuids, existingServiceUuids)
 	var notFoundServiceUuids []string
-	for service, _ := range notFoundServiceUuidsMap {
+	for service := range notFoundServiceUuidsMap {
 		notFoundServiceUuids = append(notFoundServiceUuids, service)
 	}
 	return notFoundServiceUuids, nil

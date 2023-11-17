@@ -1,7 +1,9 @@
 openapi: 3.0.0
+
 info:
   title: Engine API
-  version: 1.0.0
+  version: 0.1.0
+
 paths:
   /engine/info:
     get:
@@ -12,7 +14,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetEngineInfoResponse'
+                $ref: '#/components/schemas/EngineInfo'
 
   /enclaves:
     get:
@@ -23,7 +25,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetEnclavesResponse'
+                type: object
+                properties:
+                  enclave_info:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/EnclaveInfo'
                 
     post:
       summary: Create Enclave
@@ -32,14 +39,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateEnclaveArgs'
+              $ref: '#/components/schemas/CreateEnclave'
       responses:
         '200':
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateEnclaveResponse'
+                $ref: '#/components/schemas/EnclaveInfo'
                 
     delete:
       summary: Delete Enclaves
@@ -56,7 +63,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
+                $ref: '#/components/schemas/DeletionSummary'
                 
   /enclaves/historical:
     get:
@@ -67,7 +74,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetExistingAndHistoricalEnclaveIdentifiersResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnclaveIdentifiers'
 
   /enclaves/{enclave_identifier}:
     get:
@@ -148,33 +157,23 @@ paths:
               schema:
                 type: object
 
-
+# =========================================================================================================================
+# =========================================================================================================================
+# > > > > > > > > > > > > > > > > > > > > > > > > Data Models < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < 
+# =========================================================================================================================
+# =========================================================================================================================
 
 components:
+
   schemas:
-    GetEngineInfoResponse:
+
+    EngineInfo:
       type: object
       properties:
         engine_version:
           type: string
 
-    GetEnclavesResponse:
-      type: object
-      properties:
-        enclave_info:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/EnclaveInfo'
-
-    GetExistingAndHistoricalEnclaveIdentifiersResponse:
-      type: object
-      properties:
-        allIdentifiers:
-          type: array
-          items:
-            $ref: '#/components/schemas/EnclaveIdentifiers'
-
-    CreateEnclaveArgs:
+    CreateEnclave:
       type: object
       properties:
         enclave_name:
@@ -205,12 +204,6 @@ components:
         - RUNNING
         - STOPPED
         - NON_EXISTENT
-
-    CreateEnclaveResponse:
-      type: object
-      properties:
-        enclave_info:
-          $ref: '#/components/schemas/EnclaveInfo'
 
     EnclaveInfo:
       type: object
@@ -273,7 +266,7 @@ components:
         uuid:
           type: string
 
-    DeleteResponse:
+    DeletionSummary:
       type: object
       properties:
         removed_enclave_name_and_uuids:
