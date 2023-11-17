@@ -526,6 +526,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 
 	_, _, err := manager.FetchImage(ctx, dockerImage, args.imageDownloadMode)
 	if err != nil {
+		logrus.Debugf("Error occurred fetching image '%v'. Err:\n%v", dockerImage, err)
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
 
