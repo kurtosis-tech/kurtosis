@@ -8,6 +8,13 @@ filters_ignore_main: &filters_ignore_main
       ignore:
         - main
 
+# Don't run on tags
+filters_ignore_tags: &filters_ignore_tags
+  filters:
+    branches:
+      ignore: /.*/
+    tags:
+      only: /^[0-9]+\.[0-9]+\.[0-9]+$/
 
 # cli cluster param used to run test suites against docker/kubernetes tests
 param_cli_cluster_backend: &param_cli_cluster_backend
@@ -1274,8 +1281,8 @@ workflows:
               ignore:
                 - main
 
-      # Runs on branches and on main as it's used during publish and during testing
-      - build_enclave_manager_webapp
+      - build_enclave_manager_webapp:
+          <<: *filters_ignore_main
 
       - build_engine_launcher:
           filters:
@@ -1388,44 +1395,33 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
+  publish:
+    jobs:
       # -- Artifact-publishing jobs --------------------------------
       - publish_kurtosis_sdk_rust:
           context:
             - crates-publisher
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
 
       - publish_kurtosis_api_typescript:
           context:
             - npmjs-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
       - publish_files_artifacts_expander_image:
           context:
             - docker-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
       - publish_api_container_server_image:
           context:
             - docker-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
+
+      - build_enclave_manager_webapp:
+          <<: *filters_ignore_tags
 
       - publish_engine_server_image:
           context:
@@ -1433,11 +1429,7 @@ workflows:
             - slack-secrets
           requires:
             - build_enclave_manager_webapp
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
 
       - push_cli_artifacts:
           context:
@@ -1450,10 +1442,6 @@ workflows:
             - publish_api_container_server_image
             - publish_engine_server_image
             - publish_files_artifacts_expander_image
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
 
       # -- End artifact-publishing jobs ----------------------------
