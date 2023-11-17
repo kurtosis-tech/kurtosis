@@ -1,9 +1,12 @@
-import { Box, Flex } from "@chakra-ui/react";
+import {Box, Flex} from "@chakra-ui/react";
 import parse from "html-react-parser";
-import { DateTime } from "luxon";
-import { isDefined } from "../../../utils";
+import {DateTime} from "luxon";
+import {isDefined} from "../../../utils";
 // @ts-ignore
 import hasAnsi from "has-ansi";
+import {ReactElement} from "react";
+import {normalizeLogText} from "./LogViewer";
+
 const Convert = require("ansi-to-html");
 const convert = new Convert();
 
@@ -16,14 +19,19 @@ export type LogLineProps = {
 };
 
 export type LogLineSearch = {
-  searchTerm?: string;
+  searchTerm: string;
+  pattern: RegExp;
 };
 
-export type LogLineInput = LogLineProps | LogLineSearch;
+export type LogLineInput = {
+  logLineProps: LogLineProps;
+  logLineSearch?: LogLineSearch;
+};
 
 const logFontFamily = "Menlo, Monaco, Inconsolata, Consolas, Courier, monospace";
 
-export const LogLine = ( { timestamp, message, status}: LogLineProps) => {
+export const LogLine = ({ logLineProps, logLineSearch }: LogLineInput) => {
+  const { timestamp, message, status } = logLineProps;
   const statusToColor = (status?: LogStatus) => {
     switch (status) {
       case "error":
@@ -35,12 +43,38 @@ export const LogLine = ( { timestamp, message, status}: LogLineProps) => {
     }
   };
 
-  const processText = (message: string) => {
-    if (hasAnsi(message)) {
-      return parse(convert.toHtml(message));
+  const processText = (text: string) => {
+    let reactComponent;
+    if (hasAnsi(text)) {
+      reactComponent = parse(convert.toHtml(text));
     } else {
-      return <>{message}</>;
+      reactComponent = <>{text}</>;
     }
+
+    if (logLineSearch) {
+      reactComponent = HighlightPattern({ text, regex: logLineSearch.pattern });
+    }
+    return reactComponent;
+  };
+
+  const HighlightPattern = ({ text, regex }: { text: string; regex: RegExp }) => {
+    const normalizedLogText = normalizeLogText(text);
+    const splitText = normalizedLogText.split(regex);
+    const matches = normalizedLogText.match(regex);
+
+    if (!isDefined(matches)) {
+      return <span>{text}</span>;
+    }
+
+    return (
+      <span>
+        {splitText.reduce(
+          (arr: (ReactElement | string)[], element, index) =>
+            matches[index] ? [...arr, element, <mark key={index}>{matches[index]}</mark>] : [...arr, element],
+          [],
+        )}
+      </span>
+    );
   };
 
   return (

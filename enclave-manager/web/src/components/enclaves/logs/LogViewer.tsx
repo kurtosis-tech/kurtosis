@@ -1,29 +1,40 @@
+import { SmallCloseIcon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
   ButtonGroup,
+  Editable,
+  EditableInput,
+  EditablePreview,
   Flex,
   FormControl,
   FormLabel,
+  HStack,
   Input,
   InputGroup,
+  InputRightElement,
   Progress,
   Switch,
   Text,
+  Tooltip,
 } from "@chakra-ui/react";
 import { debounce, throttle } from "lodash";
-import { ChangeEvent, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, MutableRefObject, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { isDefined, isNotEmpty, stripAnsi } from "../../../utils";
 import { CopyButton } from "../../CopyButton";
 import { DownloadButton } from "../../DownloadButton";
-import { LogLine, LogLineProps } from "./LogLine";
+import { LogLine, LogLineProps, LogLineSearch } from "./LogLine";
 
 type LogViewerProps = {
   logLines: LogLineProps[];
   progressPercent?: number | "indeterminate" | "failed";
   ProgressWidget?: ReactElement;
   logsFileName?: string;
+};
+
+export const normalizeLogText = (rawText: string) => {
+  return rawText.trim();
 };
 
 export const LogViewer = ({
@@ -36,10 +47,42 @@ export const LogViewer = ({
   const [logLines, setLogLines] = useState(propsLogLines);
   const [userIsScrolling, setUserIsScrolling] = useState(false);
   const [automaticScroll, setAutomaticScroll] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [totalSearchMatches, setTotalSearchMatches] = useState<number | undefined>(undefined);
-
   const throttledSetLogLines = useMemo(() => throttle(setLogLines, 500), []);
+
+  const searchRef: MutableRefObject<HTMLInputElement | null> = useRef(null);
+  const [search, setSearch] = useState<LogLineSearch | undefined>(undefined);
+  const [rawSearchTerm, setRawSearchTerm] = useState("");
+  const [searchMatchesIndices, setSearchMatchesIndices] = useState<number[]>([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    window.addEventListener("keydown", function (e) {
+      const element = searchRef?.current;
+      if ((e.ctrlKey && e.keyCode === 70) || (e.metaKey && e.keyCode === 70)) {
+        if (element !== document.activeElement) {
+          e.preventDefault();
+          element?.focus();
+        }
+      }
+      // Next search match with cmd/ctrl+G
+      // if ((e.ctrlKey && e.keyCode === 71) || (e.metaKey && e.keyCode === 71)) {
+      //   console.log("NEXT", e.keyCode);
+      //   e.preventDefault();
+      //   nextMatch();
+      // }
+
+      // Clear the search on escape
+      if (e.key === "Escape" || e.keyCode === 27) {
+        if (element === document.activeElement) {
+          e.preventDefault();
+          setSearch(undefined);
+          setRawSearchTerm("");
+          setSearchMatchesIndices([]);
+          setCurrentSearchIndex(undefined);
+        }
+      }
+    });
+  }, []);
 
   useEffect(() => {
     throttledSetLogLines(propsLogLines);
@@ -68,35 +111,89 @@ export const LogViewer = ({
       .join("\n");
   };
 
-  const updateSearchTerm = (text: string) => {
-    console.log(`updating search term: ${text}`);
-    setSearchTerm(text);
+  useEffect(() => {
+    if (search) findMatches(search);
+  }, [search?.searchTerm, logLines]);
+
+  const updateSearchTerm = (rawText: string) => {
+    setCurrentSearchIndex(undefined);
+    const searchTerm = normalizeLogText(rawText);
+    const logLineSearch: LogLineSearch = {
+      searchTerm: searchTerm,
+      pattern: new RegExp(searchTerm, "gi"),
+    };
+    setSearch(logLineSearch);
   };
-  const debouncedUpdateSearchTerm = debounce(updateSearchTerm, 500);
+  const debouncedUpdateSearchTerm = debounce(updateSearchTerm, 100);
   const debouncedUpdateSearchTermCallback = useCallback(debouncedUpdateSearchTerm, []);
 
-  const findMatches = (searchTerm: string) => {
+  const hasSearchTerm = () => {
+    if (!search) return false;
+    return isDefined(search.searchTerm) && isNotEmpty(search.searchTerm);
+  };
+
+  const findMatches = (search: LogLineSearch) => {
+    setSearchMatchesIndices([]);
     if (hasSearchTerm()) {
-      setTotalSearchMatches(undefined);
-      let counter = 0;
-      console.log(`looking for "${searchTerm}"`);
-      logLines.forEach((line, index) => {
-        if (line.message?.match(searchTerm)) {
-          counter++;
-          // console.log(`Found match for ${searchTerm} on line ${index + 1}`);
+      const matches = logLines.flatMap((line, index) => {
+        if (line?.message && normalizeLogText(line.message).match(search.pattern)) {
+          return index;
+        } else {
+          return [];
         }
       });
-      console.log(`Found ${counter} matches for '${searchTerm}'`);
-      setTotalSearchMatches(counter);
+      setSearchMatchesIndices(matches);
     }
   };
 
-  useEffect(() => {
-    findMatches(searchTerm);
-  }, [searchTerm]);
+  const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setRawSearchTerm(e.target.value);
+    debouncedUpdateSearchTermCallback(e.target.value);
+  };
 
-  const hasSearchTerm = () => {
-    return isDefined(searchTerm) && isNotEmpty(searchTerm);
+  const priorMatch = () => {
+    if (searchMatchesIndices.length > 0) {
+      const newIndex = isDefined(currentSearchIndex) ? currentSearchIndex - 1 : 0;
+      updateSearchIndexBounded(newIndex);
+    }
+  };
+
+  const nextMatch = () => {
+    if (searchMatchesIndices.length > 0) {
+      const newIndex = isDefined(currentSearchIndex) ? currentSearchIndex + 1 : 0;
+      updateSearchIndexBounded(newIndex);
+    }
+  };
+
+  const updateSearchIndexBounded = (newIndex: number) => {
+    if (newIndex > searchMatchesIndices.length - 1) {
+      newIndex = 0;
+    }
+    if (newIndex < 0) {
+      newIndex = searchMatchesIndices.length - 1;
+    }
+    setCurrentSearchIndex(newIndex);
+    return newIndex;
+  };
+
+  useEffect(() => {
+    if (virtuosoRef?.current && currentSearchIndex !== undefined && currentSearchIndex >= 0) {
+      virtuosoRef.current.scrollToIndex(searchMatchesIndices[currentSearchIndex]);
+    }
+  }, [currentSearchIndex]);
+
+  const clearSearch = () => {
+    setRawSearchTerm("");
+    setSearch(undefined);
+    setSearchMatchesIndices([]);
+    setCurrentSearchIndex(undefined);
+  };
+
+  const parseMatchIndexRequest = (input: string) => {
+    let parsed = parseInt(input);
+    if (isNaN(parsed) || parsed < 1) return 1;
+    if (parsed > searchMatchesIndices.length) return searchMatchesIndices.length;
+    return parsed;
   };
 
   return (
@@ -105,19 +202,54 @@ export const LogViewer = ({
         <Box width={"100%"}>
           <Flex m={4}>
             <Flex width={"40%"}>
-              <InputGroup>
-                <Input placeholder={"search"} onChange={(e) => debouncedUpdateSearchTermCallback(e.target.value)} />
-                {/*<InputRightElement>*/}
-                {/*  <BsRegex />*/}
-                {/*</InputRightElement>*/}
+              <InputGroup size="sm">
+                <Input
+                  size={"sm"}
+                  ref={searchRef}
+                  value={rawSearchTerm}
+                  onChange={handleOnChange}
+                  placeholder={"search"}
+                />
+                {rawSearchTerm && (
+                  <InputRightElement>
+                    <SmallCloseIcon onClick={clearSearch} />
+                  </InputRightElement>
+                )}
               </InputGroup>
             </Flex>
-            <Button ml={2}>Previous</Button>
-            <Button ml={2}>Next</Button>
-            {hasSearchTerm() && isDefined(totalSearchMatches) && (
+            <Button size={"sm"} ml={2} onClick={priorMatch}>
+              Previous
+            </Button>
+            <Button size={"sm"} ml={2} onClick={nextMatch}>
+              Next
+            </Button>
+            {hasSearchTerm() && (
               <Box ml={2}>
-                <Text align={"center"}>
-                  {totalSearchMatches} matches for "{searchTerm}"
+                <Text align={"left"} color={searchMatchesIndices.length === 0 ? "red" : "kurtosisGreen.400"}>
+                  <HStack alignItems={"center"}>
+                    <>
+                      {searchMatchesIndices.length > 0 && currentSearchIndex !== undefined && (
+                        <>
+                          <Editable
+                            p={0}
+                            m={0}
+                            size={"sm"}
+                            value={`${currentSearchIndex + 1}`}
+                            onChange={(inputString) =>
+                              updateSearchIndexBounded(parseMatchIndexRequest(inputString) - 1)
+                            }
+                          >
+                            <Tooltip label="Click to edit" shouldWrapChildren={true}>
+                              <EditablePreview />
+                            </Tooltip>
+                            <EditableInput />
+                          </Editable>
+                          <>/ </>
+                        </>
+                      )}
+                      <>{searchMatchesIndices.length} matches</>
+                    </>
+                  </HStack>
                 </Text>
               </Box>
             )}
@@ -150,7 +282,7 @@ export const LogViewer = ({
           isScrolling={setUserIsScrolling}
           style={{ height: "100%" }}
           data={logLines.filter(({ message }) => isDefined(message))}
-          itemContent={(_, line) => <LogLine {...line} />}
+          itemContent={(_, line) => <LogLine logLineProps={line} logLineSearch={search} />}
         />
         {isDefined(progressPercent) && (
           <Progress
