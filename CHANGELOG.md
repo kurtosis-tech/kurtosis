@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.29](https://github.com/kurtosis-tech/kurtosis/compare/0.85.28...0.85.29) (2023-11-17)
+
+
+### Bug Fixes
+
+* check if record is empty ([#1819](https://github.com/kurtosis-tech/kurtosis/issues/1819)) ([392d47b](https://github.com/kurtosis-tech/kurtosis/commit/392d47b7962c9376551da2e0af3ddb32a304cb20))
+
 ## [0.85.28](https://github.com/kurtosis-tech/kurtosis/compare/0.85.27...0.85.28) (2023-11-16)
 
 
