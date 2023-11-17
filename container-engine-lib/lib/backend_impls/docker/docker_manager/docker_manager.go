@@ -1378,7 +1378,7 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 		return stacktrace.Propagate(err, "An error occurred communicating with docker engine")
 	}
 	logrus.Infof("Pulling image '%s'", imageName)
-	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClientNoTimeout, imageName, defaultPlatform)
+	err, retryWithLinuxAmd64 := pullImage(manager.dockerClientNoTimeout, imageName, defaultPlatform)
 	if err == nil {
 		return nil
 	}
@@ -1387,7 +1387,7 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 	}
 	// we retry with linux/amd64
 	logrus.Debugf("Retrying pulling image '%s' for '%s'", imageName, linuxAmd64)
-	err, _ = pullImage(context, manager.dockerClientNoTimeout, imageName, linuxAmd64)
+	err, _ = pullImage(manager.dockerClientNoTimeout, imageName, linuxAmd64)
 	if err != nil {
 		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
 	}
@@ -1994,9 +1994,12 @@ func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.En
 	return config
 }
 
-func pullImage(ctx context.Context, dockerClient *client.Client, imageName string, platform string) (error, bool) {
+func pullImage(dockerClient *client.Client, imageName string, platform string) (error, bool) {
+	// Own context for pulling images because we do not want to cancel this works in case the main context in the request is cancelled
+	// if the fist request fails the image will be ready for following request making the process faster
+	pullImageCtx := context.Background()
 	logrus.Tracef("Starting pulling '%s' for platform '%s'", imageName, platform)
-	out, err := dockerClient.ImagePull(ctx, imageName, types.ImagePullOptions{
+	out, err := dockerClient.ImagePull(pullImageCtx, imageName, types.ImagePullOptions{
 		All:           false,
 		RegistryAuth:  "",
 		PrivilegeFunc: nil,
