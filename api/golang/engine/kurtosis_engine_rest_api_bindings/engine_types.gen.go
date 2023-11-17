@@ -102,19 +102,13 @@ type EngineInfo struct {
 	EngineVersion *string `json:"engine_version,omitempty"`
 }
 
-// GetServiceLogsArgs defines model for GetServiceLogsArgs.
-type GetServiceLogsArgs struct {
+// GetServiceLogs defines model for GetServiceLogs.
+type GetServiceLogs struct {
 	ConjunctiveFilters *[]LogLineFilter `json:"conjunctive_filters,omitempty"`
 	FollowLogs         *bool            `json:"follow_logs,omitempty"`
 	NumLogLines        *int             `json:"num_log_lines,omitempty"`
 	ReturnAllLogs      *bool            `json:"return_all_logs,omitempty"`
 	ServiceUuidSet     *[]string        `json:"service_uuid_set,omitempty"`
-}
-
-// GetServiceLogsResponse defines model for GetServiceLogsResponse.
-type GetServiceLogsResponse struct {
-	NotFoundServiceUuidSet   *[]string           `json:"not_found_service_uuid_set,omitempty"`
-	ServiceLogsByServiceUuid *map[string]LogLine `json:"service_logs_by_service_uuid,omitempty"`
 }
 
 // LogLine defines model for LogLine.
@@ -132,17 +126,29 @@ type LogLineFilter struct {
 // LogLineOperator defines model for LogLineOperator.
 type LogLineOperator string
 
+// ServiceLogs defines model for ServiceLogs.
+type ServiceLogs struct {
+	NotFoundServiceUuidSet   *[]string           `json:"not_found_service_uuid_set,omitempty"`
+	ServiceLogsByServiceUuid *map[string]LogLine `json:"service_logs_by_service_uuid,omitempty"`
+}
+
 // Timestamp defines model for Timestamp.
 type Timestamp = time.Time
+
+// EnclaveIdentifier defines model for enclave_identifier.
+type EnclaveIdentifier = string
+
+// RemoveAll defines model for remove_all.
+type RemoveAll = bool
 
 // DeleteEnclavesParams defines parameters for DeleteEnclaves.
 type DeleteEnclavesParams struct {
 	// RemoveAll If true, remove all enclaves. Default is false
-	RemoveAll *bool `form:"remove_all,omitempty" json:"remove_all,omitempty"`
+	RemoveAll *RemoveAll `form:"remove_all,omitempty" json:"remove_all,omitempty"`
 }
 
 // PostEnclavesJSONRequestBody defines body for PostEnclaves for application/json ContentType.
 type PostEnclavesJSONRequestBody = CreateEnclave
 
 // PostEnclavesEnclaveIdentifierLogsJSONRequestBody defines body for PostEnclavesEnclaveIdentifierLogs for application/json ContentType.
-type PostEnclavesEnclaveIdentifierLogsJSONRequestBody = GetServiceLogsArgs
+type PostEnclavesEnclaveIdentifierLogsJSONRequestBody = GetServiceLogs

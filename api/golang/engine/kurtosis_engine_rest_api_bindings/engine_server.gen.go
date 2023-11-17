@@ -36,16 +36,16 @@ type ServerInterface interface {
 	GetEnclavesHistorical(ctx echo.Context) error
 	// Destroy Enclave
 	// (DELETE /enclaves/{enclave_identifier})
-	DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier string) error
+	DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Get Enclave Info
 	// (GET /enclaves/{enclave_identifier})
-	GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier string) error
+	GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Get Service Logs
 	// (POST /enclaves/{enclave_identifier}/logs)
-	PostEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier string) error
+	PostEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Stop Enclave
 	// (POST /enclaves/{enclave_identifier}/stop)
-	PostEnclavesEnclaveIdentifierStop(ctx echo.Context, enclaveIdentifier string) error
+	PostEnclavesEnclaveIdentifierStop(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Get Engine Info
 	// (GET /engine/info)
 	GetEngineInfo(ctx echo.Context) error
@@ -105,7 +105,7 @@ func (w *ServerInterfaceWrapper) GetEnclavesHistorical(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteEnclavesEnclaveIdentifier(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier string
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -121,7 +121,7 @@ func (w *ServerInterfaceWrapper) DeleteEnclavesEnclaveIdentifier(ctx echo.Contex
 func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifier(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier string
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -137,7 +137,7 @@ func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifier(ctx echo.Context) 
 func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierLogs(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier string
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -153,7 +153,7 @@ func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierLogs(ctx echo.Cont
 func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStop(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier string
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -238,9 +238,7 @@ type GetEnclavesResponseObject interface {
 	VisitGetEnclavesResponse(w http.ResponseWriter) error
 }
 
-type GetEnclaves200JSONResponse struct {
-	EnclaveInfo *map[string]EnclaveInfo `json:"enclave_info,omitempty"`
-}
+type GetEnclaves200JSONResponse map[string]EnclaveInfo
 
 func (response GetEnclaves200JSONResponse) VisitGetEnclavesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -283,24 +281,23 @@ func (response GetEnclavesHistorical200JSONResponse) VisitGetEnclavesHistoricalR
 }
 
 type DeleteEnclavesEnclaveIdentifierRequestObject struct {
-	EnclaveIdentifier string `json:"enclave_identifier"`
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
 
 type DeleteEnclavesEnclaveIdentifierResponseObject interface {
 	VisitDeleteEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error
 }
 
-type DeleteEnclavesEnclaveIdentifier200JSONResponse map[string]interface{}
+type DeleteEnclavesEnclaveIdentifier200Response struct {
+}
 
-func (response DeleteEnclavesEnclaveIdentifier200JSONResponse) VisitDeleteEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
+func (response DeleteEnclavesEnclaveIdentifier200Response) VisitDeleteEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	return nil
 }
 
 type GetEnclavesEnclaveIdentifierRequestObject struct {
-	EnclaveIdentifier string `json:"enclave_identifier"`
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
 
 type GetEnclavesEnclaveIdentifierResponseObject interface {
@@ -317,7 +314,7 @@ func (response GetEnclavesEnclaveIdentifier200JSONResponse) VisitGetEnclavesEncl
 }
 
 type PostEnclavesEnclaveIdentifierLogsRequestObject struct {
-	EnclaveIdentifier string `json:"enclave_identifier"`
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 	Body              *PostEnclavesEnclaveIdentifierLogsJSONRequestBody
 }
 
@@ -325,7 +322,7 @@ type PostEnclavesEnclaveIdentifierLogsResponseObject interface {
 	VisitPostEnclavesEnclaveIdentifierLogsResponse(w http.ResponseWriter) error
 }
 
-type PostEnclavesEnclaveIdentifierLogs200JSONResponse GetServiceLogsResponse
+type PostEnclavesEnclaveIdentifierLogs200JSONResponse ServiceLogs
 
 func (response PostEnclavesEnclaveIdentifierLogs200JSONResponse) VisitPostEnclavesEnclaveIdentifierLogsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -335,20 +332,19 @@ func (response PostEnclavesEnclaveIdentifierLogs200JSONResponse) VisitPostEnclav
 }
 
 type PostEnclavesEnclaveIdentifierStopRequestObject struct {
-	EnclaveIdentifier string `json:"enclave_identifier"`
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
 
 type PostEnclavesEnclaveIdentifierStopResponseObject interface {
 	VisitPostEnclavesEnclaveIdentifierStopResponse(w http.ResponseWriter) error
 }
 
-type PostEnclavesEnclaveIdentifierStop200JSONResponse map[string]interface{}
+type PostEnclavesEnclaveIdentifierStop200Response struct {
+}
 
-func (response PostEnclavesEnclaveIdentifierStop200JSONResponse) VisitPostEnclavesEnclaveIdentifierStopResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
+func (response PostEnclavesEnclaveIdentifierStop200Response) VisitPostEnclavesEnclaveIdentifierStopResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+	return nil
 }
 
 type GetEngineInfoRequestObject struct {
@@ -512,7 +508,7 @@ func (sh *strictHandler) GetEnclavesHistorical(ctx echo.Context) error {
 }
 
 // DeleteEnclavesEnclaveIdentifier operation middleware
-func (sh *strictHandler) DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier string) error {
+func (sh *strictHandler) DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
 	var request DeleteEnclavesEnclaveIdentifierRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
@@ -537,7 +533,7 @@ func (sh *strictHandler) DeleteEnclavesEnclaveIdentifier(ctx echo.Context, encla
 }
 
 // GetEnclavesEnclaveIdentifier operation middleware
-func (sh *strictHandler) GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier string) error {
+func (sh *strictHandler) GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
 	var request GetEnclavesEnclaveIdentifierRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
@@ -562,7 +558,7 @@ func (sh *strictHandler) GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveI
 }
 
 // PostEnclavesEnclaveIdentifierLogs operation middleware
-func (sh *strictHandler) PostEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier string) error {
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
 	var request PostEnclavesEnclaveIdentifierLogsRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
@@ -593,7 +589,7 @@ func (sh *strictHandler) PostEnclavesEnclaveIdentifierLogs(ctx echo.Context, enc
 }
 
 // PostEnclavesEnclaveIdentifierStop operation middleware
-func (sh *strictHandler) PostEnclavesEnclaveIdentifierStop(ctx echo.Context, enclaveIdentifier string) error {
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierStop(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
 	var request PostEnclavesEnclaveIdentifierStopRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
@@ -643,27 +639,27 @@ func (sh *strictHandler) GetEngineInfo(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

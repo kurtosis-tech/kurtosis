@@ -185,11 +185,8 @@ func (engine EngineRuntime) GetEnclaves(ctx context.Context, request api.GetEncl
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
 	}
-	info_map_http := toHttpApiEnclaveInfos(infoForEnclaves)
-	response := api.GetEnclaves200JSONResponse{
-		EnclaveInfo: &info_map_http,
-	}
-	return response, nil
+	response := toHttpApiEnclaveInfos(infoForEnclaves)
+	return api.GetEnclaves200JSONResponse(response), nil
 }
 
 // Create Enclave
@@ -249,7 +246,7 @@ func (engine EngineRuntime) DeleteEnclavesEnclaveIdentifier(ctx context.Context,
 	if err := engine.EnclaveManager.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with identifier '%v':", enclaveIdentifier)
 	}
-	return api.DeleteEnclavesEnclaveIdentifier200JSONResponse{}, nil
+	return api.DeleteEnclavesEnclaveIdentifier200Response{}, nil
 }
 
 // Get Enclave Info
@@ -359,7 +356,7 @@ func (engine EngineRuntime) PostEnclavesEnclaveIdentifierStop(ctx context.Contex
 		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
 	}
 
-	return api.PostEnclavesEnclaveIdentifierStop200JSONResponse{}, nil
+	return api.PostEnclavesEnclaveIdentifierStop200Response{}, nil
 }
 
 // Get Engine Info
@@ -447,7 +444,7 @@ func newLogsResponseHttp(
 	requestedServiceUuids []user_service.ServiceUUID,
 	serviceLogsByServiceUuid map[user_service.ServiceUUID][]logline.LogLine,
 	initialNotFoundServiceUuids []string,
-) *api.GetServiceLogsResponse {
+) *api.ServiceLogs {
 	serviceLogLinesByUuid := make(map[string]api.LogLine, len(serviceLogsByServiceUuid))
 	notFoundServiceUuids := make([]string, len(initialNotFoundServiceUuids))
 	for _, serviceUuid := range requestedServiceUuids {
@@ -471,11 +468,11 @@ func newLogsResponseHttp(
 		serviceLogLinesByUuid[serviceUuidStr] = logLines
 	}
 
-	getServiceLogsResponse := &api.GetServiceLogsResponse{
+	response := &api.ServiceLogs{
 		NotFoundServiceUuidSet:   &notFoundServiceUuids,
 		ServiceLogsByServiceUuid: &serviceLogLinesByUuid,
 	}
-	return getServiceLogsResponse
+	return response
 }
 
 func newHttpBindingsLogLineFromLogLines(logLines []logline.LogLine) api.LogLine {
