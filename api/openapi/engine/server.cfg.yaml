@@ -1,6 +1,6 @@
-package: kurtosis_engine_http_api_bindings
+package: kurtosis_engine_rest_api_bindings
 generate:
   embedded-spec: true
   echo-server: true
   strict-server: true
-output: api/golang/engine/kurtosis_engine_http_api_bindings/engine_server.gen.go
+output: api/golang/engine/kurtosis_engine_rest_api_bindings/engine_server.gen.go

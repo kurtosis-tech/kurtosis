@@ -20,7 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 
-	api "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_http_api_bindings"
+	api "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rest_api_bindings"
 )
 
 type EngineRuntime struct {

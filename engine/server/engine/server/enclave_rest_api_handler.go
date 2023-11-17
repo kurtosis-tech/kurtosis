@@ -16,8 +16,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_http_api_bindings"
-	api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_http_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rest_api_bindings"
+	api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rest_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 )
 
@@ -68,8 +68,8 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context
 
 	http_artifacts := utils.MapList(
 		artifacts.FileNamesAndUuids,
-		func(x *kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid) kurtosis_core_http_api_bindings.FileArtifactReference {
-			return kurtosis_core_http_api_bindings.FileArtifactReference{
+		func(x *kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid) kurtosis_core_rest_api_bindings.FileArtifactReference {
+			return kurtosis_core_rest_api_bindings.FileArtifactReference{
 				Name: &x.FileName,
 				Uuid: &x.FileUuid,
 			}
