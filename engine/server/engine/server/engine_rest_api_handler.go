@@ -82,10 +82,7 @@ func toHttpApiContainerStatus(status types.ContainerStatus) api.ApiContainerStat
 	}
 }
 
-func toHttpApiEnclaveAPIContainerInfo(info *types.EnclaveAPIContainerInfo) api.EnclaveAPIContainerInfo {
-	if info == nil {
-		return api.EnclaveAPIContainerInfo{}
-	}
+func toHttpApiEnclaveAPIContainerInfo(info types.EnclaveAPIContainerInfo) api.EnclaveAPIContainerInfo {
 	port := int(info.GrpcPortInsideEnclave)
 	return api.EnclaveAPIContainerInfo{
 		ContainerId:           info.ContainerId,
@@ -95,10 +92,7 @@ func toHttpApiEnclaveAPIContainerInfo(info *types.EnclaveAPIContainerInfo) api.E
 	}
 }
 
-func toHttpApiApiContainerHostMachineInfo(info *types.EnclaveAPIContainerHostMachineInfo) api.EnclaveAPIContainerHostMachineInfo {
-	if info == nil {
-		return api.EnclaveAPIContainerHostMachineInfo{}
-	}
+func toHttpApiApiContainerHostMachineInfo(info types.EnclaveAPIContainerHostMachineInfo) api.EnclaveAPIContainerHostMachineInfo {
 	port := int(info.GrpcPortOnHostMachine)
 	return api.EnclaveAPIContainerHostMachineInfo{
 		IpOnHostMachine:       info.IpOnHostMachine,
@@ -118,33 +112,17 @@ func toHttpApiEnclaveMode(mode types.EnclaveMode) api.EnclaveMode {
 }
 
 func toHttpApiEnclaveInfo(info types.EnclaveInfo) api.EnclaveInfo {
-	containerInfo := toHttpApiEnclaveAPIContainerInfo(info.ApiContainerInfo)
-	apiHostMachine := toHttpApiApiContainerHostMachineInfo(info.ApiContainerHostMachineInfo)
-	containersStatus := toHttpApiEnclaveContainersStatus(info.EnclaveContainersStatus)
-	apiContainerStatus := toHttpApiContainerStatus(info.ApiContainerStatus)
-	mode := toHttpApiEnclaveMode(info.Mode)
 	return api.EnclaveInfo{
 		EnclaveUuid:                 info.EnclaveUuid,
 		ShortenedUuid:               info.ShortenedUuid,
 		Name:                        info.Name,
-		ContainersStatus:            containersStatus,
-		ApiContainerStatus:          apiContainerStatus,
-		ApiContainerInfo:            &containerInfo,
-		ApiContainerHostMachineInfo: &apiHostMachine,
+		ContainersStatus:            toHttpApiEnclaveContainersStatus(info.EnclaveContainersStatus),
+		ApiContainerStatus:          toHttpApiContainerStatus(info.ApiContainerStatus),
+		ApiContainerInfo:            utils.MapPointer(info.ApiContainerInfo, toHttpApiEnclaveAPIContainerInfo),
+		ApiContainerHostMachineInfo: utils.MapPointer(info.ApiContainerHostMachineInfo, toHttpApiApiContainerHostMachineInfo),
 		CreationTime:                info.CreationTime,
-		Mode:                        mode,
+		Mode:                        toHttpApiEnclaveMode(info.Mode),
 	}
-}
-
-func toHttpApiEnclaveInfos(infos map[string]*types.EnclaveInfo) map[string]api.EnclaveInfo {
-	info_map := make(map[string]api.EnclaveInfo)
-	for key, info := range infos {
-		if info != nil {
-			grpc_info := toHttpApiEnclaveInfo(*info)
-			info_map[key] = grpc_info
-		}
-	}
-	return info_map
 }
 
 func toHttpApiEnclaveIdentifiers(identifier *types.EnclaveIdentifiers) api.EnclaveIdentifiers {
@@ -185,7 +163,7 @@ func (engine EngineRuntime) GetEnclaves(ctx context.Context, request api.GetEncl
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
 	}
-	response := toHttpApiEnclaveInfos(infoForEnclaves)
+	response := utils.MapMapValues(infoForEnclaves, func(enclave *types.EnclaveInfo) api.EnclaveInfo { return toHttpApiEnclaveInfo(*enclave) })
 	return api.GetEnclaves200JSONResponse(response), nil
 }
 
