@@ -286,12 +286,12 @@ func startTunnelServer(ctx context.Context, portalServer *KurtosisTunnelServer, 
 		Socks5:    false,
 		Reverse:   false, // reverse tunnelling is not exposed through the API yet, turn it off here
 		KeepAlive: 25 * time.Second,
-		//TLS: chserver.TLSConfig{
-		//	CA:      portalServer.tlsCaFilePath,
-		//	Cert:    portalServer.tlsServerCertFilePath,
-		//	Key:     portalServer.tlsServerKeyFilePath,
-		//	Domains: []string{},
-		//},
+		TLS: chserver.TLSConfig{
+			CA:      "",
+			Cert:    "",
+			Key:     "",
+			Domains: []string{},
+		},
 	})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating chisel server")
