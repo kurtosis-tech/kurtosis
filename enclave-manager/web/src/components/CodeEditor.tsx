@@ -48,7 +48,7 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
   resizeEditorBasedOnContent();
 
   return (
-    <Box width={"100%"} maxHeight={"1000px"}>
+    <Box width={"100%"}>
       <Editor
         onMount={handleMount}
         value={text}
