@@ -12,9 +12,12 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	chserver "github.com/jpillora/chisel/server"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
@@ -40,6 +43,12 @@ import (
 	"go.starlark.net/starlark"
 	"google.golang.org/grpc"
 )
+
+type KurtosisTunnelServer struct {
+	mutex *sync.Mutex
+
+	killTunnelFunc func() error
+}
 
 const (
 	successExitCode = 0
@@ -242,11 +251,70 @@ func runMain() error {
 		},
 	)
 
+	tunnelServer := &KurtosisTunnelServer{
+		mutex:          &sync.Mutex{},
+		killTunnelFunc: nil,
+	}
+	if err := startTunnelServer(ctx, tunnelServer, "0.0.0.0", 9721); err != nil {
+		return stacktrace.Propagate(err, "Unable to start server-side tunnel")
+	}
+
 	logrus.Info("Running server...")
 	if err := apiContainerServer.RunUntilInterrupted(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the API container server")
 	}
 
+	return nil
+}
+
+func startTunnelServer(ctx context.Context, portalServer *KurtosisTunnelServer, host string, listeningPort uint32) error {
+	portalServer.mutex.Lock()
+	defer portalServer.mutex.Unlock()
+
+	if portalServer.killTunnelFunc != nil {
+		logrus.Warn("Trying to start a server-side tunnel while one seem to already be running. Killing the current one first")
+		if err := portalServer.killTunnelFunc(); err != nil {
+			logrus.Errorf("An error occurred trying to kill the current tunnel. This might prevent the new tunnel from starting. Error was: \n%v", err.Error())
+		}
+	}
+
+	server, err := chserver.NewServer(&chserver.Config{
+		KeySeed:   "",
+		AuthFile:  "",
+		Auth:      "",
+		Proxy:     "",
+		Socks5:    false,
+		Reverse:   false, // reverse tunnelling is not exposed through the API yet, turn it off here
+		KeepAlive: 25 * time.Second,
+		//TLS: chserver.TLSConfig{
+		//	CA:      portalServer.tlsCaFilePath,
+		//	Cert:    portalServer.tlsServerCertFilePath,
+		//	Key:     portalServer.tlsServerKeyFilePath,
+		//	Domains: []string{},
+		//},
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating chisel server")
+	}
+
+	chiselStartedSuccessfully := false
+	cancellableContext, cancelFunc := context.WithCancel(ctx)
+	defer func() {
+		if chiselStartedSuccessfully {
+			return
+		}
+		cancelFunc()
+	}()
+
+	listeningPortStr := strconv.Itoa(int(listeningPort))
+	if err := server.StartContext(cancellableContext, host, listeningPortStr); err != nil {
+		return stacktrace.Propagate(err, "error running chisel server")
+	}
+	portalServer.killTunnelFunc = func() error {
+		cancelFunc() // cancelling the context will stop Chisel
+		return nil
+	}
+	chiselStartedSuccessfully = true
 	return nil
 }
 
