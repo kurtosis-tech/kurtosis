@@ -1,5 +1,5 @@
 import { Button, ButtonGroup, Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CreateEnclaveButton } from "../../components/enclaves/CreateEnclaveButton";
 import { EnclavesTable } from "../../components/enclaves/tables/EnclavesTable";
 import { DeleteEnclavesButton } from "../../components/enclaves/widgets/DeleteEnclavesButton";
@@ -11,6 +11,21 @@ export const EnclaveList = () => {
   const enclaves = useFullEnclaves();
 
   const [selectedEnclaves, setSelectedEnclaves] = useState<EnclaveFullInfo[]>([]);
+
+  const enclavesKey = useMemo(
+    () =>
+      enclaves.isErr
+        ? "error"
+        : enclaves.value
+            .map((enclave) => enclave.shortenedUuid)
+            .sort()
+            .join("|"),
+    [enclaves],
+  );
+
+  useEffect(() => {
+    setSelectedEnclaves([]);
+  }, [enclavesKey]);
 
   return (
     <Flex direction="column">

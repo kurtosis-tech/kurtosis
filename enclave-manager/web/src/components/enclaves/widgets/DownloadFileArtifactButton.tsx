@@ -18,7 +18,7 @@ export const DownloadFileArtifactButton = ({ file, enclave }: DownloadFileButton
     setIsLoading(true);
     // todo: get tgz download instead
     const fileParts = await kurtosisClient.downloadFilesArtifact(enclave, file);
-    const writableStream = streamsaver.createWriteStream(`${enclave.name}-${file.fileName}.tgz`);
+    const writableStream = streamsaver.createWriteStream(`${enclave.name}--${file.fileName}.tgz`);
     const writer = writableStream.getWriter();
 
     for await (const part of fileParts) {

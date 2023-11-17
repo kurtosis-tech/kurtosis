@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.85.30](https://github.com/kurtosis-tech/kurtosis/compare/0.85.29...0.85.30) (2023-11-17)
+
+
+### Bug Fixes
+
+* remove monaco max height limit ([#1823](https://github.com/kurtosis-tech/kurtosis/issues/1823)) ([ffe0f43](https://github.com/kurtosis-tech/kurtosis/commit/ffe0f43714cf5a6b1fe0313995fe2998ae856974))
+
+## [0.85.29](https://github.com/kurtosis-tech/kurtosis/compare/0.85.28...0.85.29) (2023-11-17)
+
+
+### Bug Fixes
+
+* check if record is empty ([#1819](https://github.com/kurtosis-tech/kurtosis/issues/1819)) ([392d47b](https://github.com/kurtosis-tech/kurtosis/commit/392d47b7962c9376551da2e0af3ddb32a304cb20))
+
+## [0.85.28](https://github.com/kurtosis-tech/kurtosis/compare/0.85.27...0.85.28) (2023-11-16)
+
+
+### Bug Fixes
+
+* update emui build ([#1814](https://github.com/kurtosis-tech/kurtosis/issues/1814)) ([39d2285](https://github.com/kurtosis-tech/kurtosis/commit/39d228528c61b07827f12280cc3f5e7af4aa16fa))
+
+## [0.85.27](https://github.com/kurtosis-tech/kurtosis/compare/0.85.26...0.85.27) (2023-11-16)
+
+
+### Bug Fixes
+
+* allow building webapp on main ([#1811](https://github.com/kurtosis-tech/kurtosis/issues/1811)) ([1410445](https://github.com/kurtosis-tech/kurtosis/commit/1410445099683124358bd6fe0a012cdecf93e209))
+
+## [0.85.26](https://github.com/kurtosis-tech/kurtosis/compare/0.85.25...0.85.26) (2023-11-16)
+
+
+### Features
+
+* emui improvements ([#1808](https://github.com/kurtosis-tech/kurtosis/issues/1808)) ([4e77667](https://github.com/kurtosis-tech/kurtosis/commit/4e776673fc017a8e2d44f138aa67f057f524ff58))
+
 ## [0.85.25](https://github.com/kurtosis-tech/kurtosis/compare/0.85.24...0.85.25) (2023-11-16)
 
 

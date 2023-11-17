@@ -81,6 +81,8 @@ export const ConfigureEnclaveModal = ({
               return isDefined(value) ? `${value}` : "";
             case ArgumentValueType.STRING:
               return value || "";
+            case ArgumentValueType.JSON:
+              return isDefined(value) ? JSON.stringify(value) : "{}";
             case ArgumentValueType.LIST:
               assertDefined(innerType1, `Cannot parse a list argument type without knowing innerType1`);
               return isDefined(value) ? value.map((v: any) => convertArgValue(innerType1, v)) : [];
@@ -278,7 +280,7 @@ export const ConfigureEnclaveModal = ({
                   <CopyButton contentName={"url"} valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
                 </Tooltip>
               </Flex>
-              <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
+              <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"text"}>
                 <StringArgumentInput
                   name={"enclaveName"}
                   disabled={isDefined(existingEnclave)}
@@ -287,6 +289,7 @@ export const ConfigureEnclaveModal = ({
                       return `The enclave name must match ${allowedEnclaveNamePattern}`;
                     }
                   }}
+                  tabIndex={1}
                 />
               </KurtosisArgumentFormControl>
               {kurtosisPackage.args.map((arg, i) => (

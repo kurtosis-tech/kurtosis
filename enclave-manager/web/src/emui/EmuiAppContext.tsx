@@ -46,7 +46,7 @@ export type EmuiAppState = {
     productionMode?: boolean,
     apiContainerVersionTag?: string,
   ) => Promise<Result<CreateEnclaveResponse, string>>;
-  destroyEnclave: (enclaveUUID: string) => Promise<Result<Empty, string>>;
+  destroyEnclaves: (enclaveUUIDs: string[]) => Promise<Result<Empty, string>[]>;
   runStarlarkPackage: (
     apicInfo: RemoveFunctions<EnclaveAPIContainerInfo>,
     packageId: string,
@@ -64,7 +64,7 @@ const EmuiAppContext = createContext<EmuiAppState>({
   refreshFilesAndArtifacts: () => null as any,
   refreshStarlarkRun: () => null as any,
   createEnclave: () => null as any,
-  destroyEnclave: () => null as any,
+  destroyEnclaves: () => null as any,
   runStarlarkPackage: () => null as any,
 });
 
@@ -153,18 +153,26 @@ export const EmuiAppContextProvider = ({ children }: PropsWithChildren) => {
     [kurtosisClient],
   );
 
-  const destroyEnclave = useCallback(
-    async (enclaveUUID: string) => {
-      const resp = await kurtosisClient.destroy(enclaveUUID);
-      if (resp.isOk) {
+  const destroyEnclaves = useCallback(
+    async (enclaveUUIDs: string[]) => {
+      const responses: Result<Empty, string>[] = [];
+      const destroyedEnclaves = new Set<string>();
+      for (const enclaveUUID of enclaveUUIDs) {
+        const resp = await kurtosisClient.destroy(enclaveUUID);
+        if (resp.isOk) {
+          destroyedEnclaves.add(enclaveUUID);
+        }
+        responses.push(resp);
+      }
+      if (destroyedEnclaves.size > 0) {
         setState((state) => ({
           ...state,
           enclaves: state.enclaves.isOk
-            ? Result.ok(state.enclaves.value.filter((enclave) => enclave.enclaveUuid !== enclaveUUID))
+            ? Result.ok(state.enclaves.value.filter((enclave) => !destroyedEnclaves.has(enclave.enclaveUuid)))
             : state.enclaves,
         }));
       }
-      return resp;
+      return responses;
     },
     [kurtosisClient],
   );
@@ -205,7 +213,7 @@ export const EmuiAppContextProvider = ({ children }: PropsWithChildren) => {
         refreshFilesAndArtifacts,
         refreshServices,
         createEnclave,
-        destroyEnclave,
+        destroyEnclaves,
         runStarlarkPackage,
       }}
     >
@@ -325,16 +333,18 @@ export const useFullEnclaves = (): Result<EnclaveFullInfo[], string> => {
     cachedStarlarkRunsByEnclave,
   ]);
 
-  if (enclaves.isErr) {
-    return enclaves.cast();
-  }
-
-  return Result.ok(
-    enclaves.value.map((enclave) => ({
-      ...enclave,
-      services: servicesByEnclave[enclave.shortenedUuid],
-      filesAndArtifacts: filesAndArtifactsByEnclave[enclave.shortenedUuid],
-      starlarkRun: starlarkRunsByEnclave[enclave.shortenedUuid],
-    })),
+  const fullEnclaves = useMemo(
+    () =>
+      enclaves.map((enclaves) =>
+        enclaves.map((enclave) => ({
+          ...enclave,
+          services: cachedServicesByEnclave[enclave.shortenedUuid],
+          filesAndArtifacts: cachedFilesAndArtifactsByEnclave[enclave.shortenedUuid],
+          starlarkRun: cachedStarlarkRunsByEnclave[enclave.shortenedUuid],
+        })),
+      ),
+    [enclaves, cachedServicesByEnclave, cachedStarlarkRunsByEnclave, cachedFilesAndArtifactsByEnclave],
   );
+
+  return fullEnclaves;
 };
