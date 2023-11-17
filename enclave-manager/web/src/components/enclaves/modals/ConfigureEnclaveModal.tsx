@@ -10,7 +10,8 @@ import {
   ModalHeader,
   ModalOverlay,
   Text,
-  Tooltip, useToast,
+  Tooltip,
+  useToast,
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { useMemo, useRef, useState } from "react";
@@ -168,7 +169,9 @@ export const ConfigureEnclaveModal = ({
       }
     } catch (err) {
       toast({
-        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(err)}`,
+        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(
+          err,
+        )}`,
         colorScheme: "red",
       });
       return;
@@ -277,7 +280,7 @@ export const ConfigureEnclaveModal = ({
                   <CopyButton contentName={"url"} valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
                 </Tooltip>
               </Flex>
-              <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
+              <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"text"}>
                 <StringArgumentInput
                   name={"enclaveName"}
                   disabled={isDefined(existingEnclave)}
@@ -286,6 +289,7 @@ export const ConfigureEnclaveModal = ({
                       return `The enclave name must match ${allowedEnclaveNamePattern}`;
                     }
                   }}
+                  tabIndex={1}
                 />
               </KurtosisArgumentFormControl>
               {kurtosisPackage.args.map((arg, i) => (
