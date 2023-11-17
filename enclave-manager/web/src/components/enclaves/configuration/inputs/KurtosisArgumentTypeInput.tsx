@@ -21,6 +21,7 @@ type KurtosisArgumentTypeInputProps = {
   disabled?: boolean;
   width?: CSS.Property.Width;
   size?: string;
+  tabIndex?: number;
 };
 
 export type KurtosisArgumentTypeInputImplProps = Omit<KurtosisArgumentTypeInputProps, "type" | "subType1" | "subType2">;
@@ -36,6 +37,7 @@ export const KurtosisArgumentTypeInput = ({
   disabled,
   width,
   size,
+  tabIndex,
 }: KurtosisArgumentTypeInputProps) => {
   const childProps: KurtosisArgumentTypeInputImplProps = {
     name,
@@ -45,6 +47,7 @@ export const KurtosisArgumentTypeInput = ({
     disabled,
     width,
     size,
+    tabIndex,
   };
 
   switch (type) {

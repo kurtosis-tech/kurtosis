@@ -11,6 +11,9 @@ export const tabsTheme = defineMultiStyleConfig({
   },
   variants: {
     "soft-rounded": (props: StyleFunctionProps) => ({
+      root: {
+        height: "100%",
+      },
       tab: {
         fontStyle: "normal",
         fontWeight: "medium",
@@ -27,8 +30,12 @@ export const tabsTheme = defineMultiStyleConfig({
         },
         textTransform: "capitalize",
       },
+      tabpanels: {
+        height: "100%",
+      },
       tabpanel: {
         padding: "32px 0px",
+        height: "100%",
       },
     }),
   },
