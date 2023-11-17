@@ -131,7 +131,7 @@ executors:
     machine:
       # This custom CircleCi Ubuntu image has a pre-installed Docker, so we are not using the CircleCI remote Docker when we
       # initiate this machine. More here: https://discuss.circleci.com/t/linux-machine-executor-images-2022-january-q1-update/42831
-      image: ubuntu-2004:2023.07.1
+      image: ubuntu-2004:2023.10.1
 
 parameters:
   go-version:
@@ -267,6 +267,15 @@ jobs:
       - checkout
       - <<: *abort_job_if_only_docs_changes
       - run: grpc-file-transfer/scripts/build.sh
+
+  build_metrics_library:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version>>"
+    steps:
+      - checkout
+      - <<: *abort_job_if_only_docs_changes
+      - run: metrics-library/scripts/build.sh
+
 
   build_name_generator:
     docker:
@@ -504,7 +513,7 @@ jobs:
       - when:
           condition:
             and:
-               - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -781,13 +790,18 @@ jobs:
       # Execute port print
       - run: "${KURTOSIS_BINPATH} port print test-datastore datastore-0 grpc"
 
+      # Stop test-datastore enclave
+      - run: "${KURTOSIS_BINPATH} enclave stop test-datastore"
+
+      # Ensure we can still inspect stopped enclaves
+      - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
+      - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
+
+      # Clean all before compose import to free resources
+      - run: "${KURTOSIS_BINPATH} clean -a"
+
       # Execute docker compose import
       - run: "${KURTOSIS_BINPATH} import --enclave test-import --env << pipeline.parameters.dockerimport-cli-dotenv-relative-path >> << pipeline.parameters.dockerimport-cli-dockerfile-relative-path >>"
-
-
-      - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
-      - run: "${KURTOSIS_BINPATH} enclave stop test-datastore"
-      - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"   # Ensure we can still inspect stopped enclaves
 
       # Execute engine functions
       - run: "${KURTOSIS_BINPATH} engine stop"
@@ -815,7 +829,7 @@ jobs:
                   docker container restart $(echo $apic_container_id)
                   ${KURTOSIS_BINPATH} service rm test-apic-restart service-test
 
-       # Test APIC idempotent runs restart
+      # Test APIC idempotent runs restart
       - when:
           condition:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
@@ -1177,6 +1191,12 @@ workflows:
                 - main
 
       - build_grpc_file_transfer:
+          filters:
+            branches:
+              ignore:
+                - main
+
+      - build_metrics_library:
           filters:
             branches:
               ignore:

@@ -49,6 +49,7 @@ def run(plan):
 )
 
 func TestAddServiceAndPersistentFileToDirectory(t *testing.T) {
+
 	ctx := context.Background()
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)

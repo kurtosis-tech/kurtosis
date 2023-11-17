@@ -65,7 +65,7 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered>
+    <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={handleClose} isCentered>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Create an Enclave</ModalHeader>
@@ -83,6 +83,7 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
                     disabled: isLoading,
                     required: true,
                   })}
+                  autoFocus={true}
                 />
               </InputGroup>
               <FormErrorMessage>{errors.url?.message}</FormErrorMessage>
@@ -90,7 +91,7 @@ export const ManualCreateEnclaveModal = ({ isOpen, onClose, onConfirm }: ManualC
           </ModalBody>
           <ModalFooter>
             <Flex justifyContent={"flex-end"} gap={"12px"}>
-              <Button color={"gray.100"} onClick={handleClose} disabled={isLoading}>
+              <Button color={"gray.100"} onClick={handleClose} isDisabled={isLoading}>
                 Cancel
               </Button>
               <Button type={"submit"} isLoading={isLoading} colorScheme={"kurtosisGreen"}>

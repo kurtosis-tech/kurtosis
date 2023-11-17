@@ -12,11 +12,14 @@ Passing [package parameters][package-parameterization] via the CLI can get hairy
    ```bash
    kurtosis run github.com/user/repo '{"some_param":5,"some_other_param":"My value"}'
    ```
-1. **When you have a large number of arguments:** put them in a `.json` file and use `--args-file` to slot them into the `kurtosis run` command. E.g.:
+1. **When you have a large number of arguments:** put them in a `.yaml` or `.json` file and use `--args-file` to slot them into the `kurtosis run` command. E.g.:
+   ```bash
+   kurtosis run github.com/user/repo --args-file my-params.yaml
+   ```
+   or if you prefer JSON:
    ```bash
    kurtosis run github.com/user/repo --args-file my-params.json
    ```
-
 Choosing the right wait
 -----------------------
 Kurtosis has three different types of waits. Described here are the three, with tips on when to use each:
@@ -36,7 +39,7 @@ Kurtosis has three different types of waits. Described here are the three, with 
 
 Choosing service names in Kurtosis
 ----------------------------------
-Kurtosis service names implements [RFC-1035](https://datatracker.ietf.org/doc/html/rfc1035), meaning the names of all services must be a valid [RFC-1035 Label Name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#rfc-1035-label-names). Tactically this means a service name must:
+Kurtosis service names implements [RFC-1035](https://datatracker.ietf.org/doc/html/rfc1035), meaning the names of all services must be a valid [RFC-1035 Label Name](https://kubernetes.io/docs/advanced-concepts/overview/working-with-objects/names/#rfc-1035-label-names). Tactically this means a service name must:
 
 - contain at most 63 characters
 - contain only lowercase alphanumeric characters or '-'
@@ -48,9 +51,9 @@ Failure to adhere to the above standards will result in errors when running Kurt
 
 
 <!---------------------------------------- ONLY LINKS BELOW HERE!!! ----------------------------------->
-[package-parameterization]: ./concepts-reference/packages.md#parameterization
+[package-parameterization]: ./advanced-concepts/packages.md#parameterization
 
-[service-config-starlark-reference]: ./starlark-reference/service-config.md
-[port-spec-starlark-reference]: ./starlark-reference/port-spec.md
-[ready-condition-starlark-reference]: ./starlark-reference/ready-condition.md
-[plan-wait-starlark-reference]: ./starlark-reference/plan.md#wait
+[service-config-starlark-reference]: ./api-reference/starlark-reference/service-config.md
+[port-spec-starlark-reference]: ./api-reference/starlark-reference/port-spec.md
+[ready-condition-starlark-reference]: ./api-reference/starlark-reference/ready-condition.md
+[plan-wait-starlark-reference]: ./api-reference/starlark-reference/plan.md#wait

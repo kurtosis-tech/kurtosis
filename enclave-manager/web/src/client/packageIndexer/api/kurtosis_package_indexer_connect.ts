@@ -48,5 +48,6 @@ export const KurtosisPackageIndexer = {
       O: ReadPackageResponse,
       kind: MethodKind.Unary,
     },
-  },
+  }
 } as const;
+

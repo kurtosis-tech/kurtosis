@@ -1,10 +1,10 @@
-import { TriangleDownIcon, TriangleUpIcon } from "@chakra-ui/icons";
-import { chakra, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
+import { Button, Icon, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
+  RowData,
   SortingState,
   TableState,
   useReactTable,
@@ -12,7 +12,16 @@ import {
 import { type RowSelectionState } from "@tanstack/table-core/src/features/RowSelection";
 import { type OnChangeFn } from "@tanstack/table-core/src/types";
 import { useState } from "react";
+import { BiDownArrowAlt, BiUpArrowAlt } from "react-icons/bi";
 import { assertDefined, isDefined } from "../utils";
+
+declare module "@tanstack/table-core" {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    isNumeric?: boolean;
+    centerAligned?: boolean;
+  }
+}
 
 export type DataTableProps<Data extends object> = {
   data: Data[];
@@ -62,20 +71,30 @@ export function DataTable<Data extends object>({
         {table.getHeaderGroups().map((headerGroup) => (
           <Tr key={headerGroup.id}>
             {headerGroup.headers.map((header) => {
-              // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
-              const meta: any = header.column.columnDef.meta;
+              const meta = header.column.columnDef.meta;
               return (
-                <Th key={header.id} onClick={header.column.getToggleSortingHandler()} isNumeric={meta?.isNumeric}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                  <chakra.span pl="4">
-                    {header.column.getIsSorted() ? (
-                      header.column.getIsSorted() === "desc" ? (
-                        <TriangleDownIcon aria-label="sorted descending" />
-                      ) : (
-                        <TriangleUpIcon aria-label="sorted ascending" />
-                      )
-                    ) : null}
-                  </chakra.span>
+                <Th
+                  key={header.id}
+                  onClick={header.column.getToggleSortingHandler()}
+                  isNumeric={meta?.isNumeric}
+                  textAlign={!!meta?.centerAligned ? "center" : undefined}
+                >
+                  {header.column.getCanSort() && (
+                    <Button
+                      variant={"sortableHeader"}
+                      size={"xs"}
+                      rightIcon={
+                        header.column.getIsSorted() === "desc" ? (
+                          <Icon as={BiDownArrowAlt} color={"gray.400"} />
+                        ) : header.column.getIsSorted() === "asc" ? (
+                          <Icon as={BiUpArrowAlt} color={"gray.400"} />
+                        ) : undefined
+                      }
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </Button>
+                  )}
+                  {!header.column.getCanSort() && flexRender(header.column.columnDef.header, header.getContext())}
                 </Th>
               );
             })}
@@ -84,12 +103,11 @@ export function DataTable<Data extends object>({
       </Thead>
       <Tbody>
         {table.getRowModel().rows.map((row) => (
-          <Tr key={row.id} bg={row.getIsSelected() ? "kurtosisSelected.100" : ""}>
+          <Tr key={row.id} bg={row.getIsSelected() ? "gray.700" : ""}>
             {row.getVisibleCells().map((cell) => {
-              // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
-              const meta: any = cell.column.columnDef.meta;
+              const meta = cell.column.columnDef.meta;
               return (
-                <Td key={cell.id} isNumeric={meta?.isNumeric}>
+                <Td key={cell.id} isNumeric={meta?.isNumeric} textAlign={!!meta?.centerAligned ? "center" : undefined}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </Td>
               );

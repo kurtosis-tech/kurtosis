@@ -279,14 +279,13 @@ export const GetServiceLogsResponse = proto3.makeMessageType(
 );
 
 /**
- * TODO add timestamp as well, for when we do timestamp-handling on the client side
- *
  * @generated from message engine_api.LogLine
  */
 export const LogLine = proto3.makeMessageType(
   "engine_api.LogLine",
   () => [
     { no: 1, name: "line", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 2, name: "timestamp", kind: "message", T: Timestamp },
   ],
 );
 

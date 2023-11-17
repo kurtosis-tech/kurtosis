@@ -10,7 +10,7 @@ To add a service to an enclave, run:
 kurtosis service add $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER $CONTAINER_IMAGE
 ```
 
-where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../concepts-reference/resource-identifier.md) for the enclave and service, respectively. 
+where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../advanced-concepts/resource-identifier.md) for the enclave and service, respectively. 
 Note, the service identifier needs to be formatted according to RFC 1035. Specifically, 1-63 lowercase alphanumeric characters with dashes and cannot start or end with dashes. Also service names
 have to start with a lowercase alphabet. 
 

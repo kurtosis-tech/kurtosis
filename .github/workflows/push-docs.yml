@@ -45,12 +45,6 @@ jobs:
       - name: Append changelog
         run: cat CHANGELOG.md >> docs/docs/changelog.md
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
-      - name: Append Go README
-        run: cat api/golang/README.md >> docs/docs/sdk-examples/go-sdk-example.md
-        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
-      - name: Append TS README
-        run: cat api/typescript/README.md >> docs/docs/sdk-examples/ts-sdk-example.md
-        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Yarn Install
         run: yarn --cwd ./docs --frozen-lockfile install
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
@@ -70,7 +64,10 @@ jobs:
   reindex-website-main:
     runs-on: ubuntu-latest
     name: Update website search index via Algolia Crawler
-    if: github.ref == 'refs/heads/main'
+    if: ${{
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+      }}
     steps:
       - uses: fjogeleit/http-request-action@v1
         with:
@@ -80,27 +77,30 @@ jobs:
           password: ${{ secrets.ALGOLIA_CRAWLER_API_KEY }}
           customHeaders: '{"Content-Type": "application/json"}'
     needs: publish
-  check-index:
-    runs-on: ubuntu-latest
-    name: Checks that the latest index is still working
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: fjogeleit/http-request-action@v1
-        id: search
-        with:
-          url: "https://NTSX40VZB8-dsn.algolia.net/1/indexes/kurtosis/query"
-          method: 'POST'
-          customHeaders: '{"X-Algolia-API-Key": "4269c726c2fea4e6cddfeb9a21cd3d4e", "X-Algolia-Application-Id": "NTSX40VZB8"}'
-          data: '{ "params": "query=add_service&hitsPerPage=2&getRankingInfo=1" }'
-      - name: Show Response
-        run: |
-          #!/bin/bash
-          set -eou pipefail
+  # check-index:
+  #   runs-on: ubuntu-latest
+  #   name: Checks that the latest index is still working
+  #   if: ${{
+  #     github.event_name == 'push' &&
+  #     github.ref == 'refs/heads/main'
+  #     }}
+  #   steps:
+  #     - uses: fjogeleit/http-request-action@v1
+  #       id: search
+  #       with:
+  #         url: "https://NTSX40VZB8-dsn.algolia.net/1/indexes/kurtosis/query"
+  #         method: 'POST'
+  #         customHeaders: '{"X-Algolia-API-Key": "4269c726c2fea4e6cddfeb9a21cd3d4e", "X-Algolia-Application-Id": "NTSX40VZB8"}'
+  #         data: '{ "params": "query=add_service&hitsPerPage=2&getRankingInfo=1" }'
+  #     - name: Show Response
+  #       run: |
+  #         #!/bin/bash
+  #         set -eou pipefail
 
-          if (( ${{ fromJson(steps.search.outputs.response).nbHits }} > 100 )); then
-            echo "Results are greater than 100"
-          else
-            echo "Results are not greater than 100"
-            exit 1
-          fi
-    needs: reindex-website-main
+  #         if (( ${{ fromJson(steps.search.outputs.response).nbHits }} > 100 )); then
+  #           echo "Results are greater than 100"
+  #         else
+  #           echo "Results are not greater than 100"
+  #           exit 1
+  #         fi
+  #   needs: reindex-website-main

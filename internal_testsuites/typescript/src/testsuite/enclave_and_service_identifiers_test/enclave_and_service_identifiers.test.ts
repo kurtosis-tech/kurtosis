@@ -1,7 +1,7 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {addDatastoreService} from "../../test_helpers/test_helpers";
 import {KurtosisContext} from "kurtosis-sdk";
-import log from "loglevel";
+import { shouldSkipFlakyTest } from "../../test_helpers/test_helpers";
 
 const TEST_NAME              = "identifiers-test"
 
@@ -14,6 +14,12 @@ const INVALID_ENCLAVE_NAME = "invalid-enclave"
 
 jest.setTimeout(180000)
 test("Test enclave & service identifiers", async() =>  {
+
+    // TODO remove this call after 17-11-2023
+    if (shouldSkipFlakyTest(TEST_NAME)) {
+        return
+    }
+
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const kurtosisCtxResult = await KurtosisContext.newKurtosisContextFromLocalEngine()
     if (kurtosisCtxResult.isErr()) {

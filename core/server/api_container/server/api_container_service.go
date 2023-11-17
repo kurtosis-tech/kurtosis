@@ -22,7 +22,7 @@ import (
 	"unicode"
 
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 
@@ -66,8 +66,6 @@ const (
 	unlimitedLineCount          = math.MaxInt
 	allFilePermissionsForOwner  = 0700
 
-	defaultCloudUserId       = ""
-	defaultCloudInstanceId   = ""
 	defaultImageDownloadMode = kurtosis_core_rpc_api_bindings.ImageDownloadMode_missing
 	isScript                 = true
 	isNotScript              = false
@@ -138,13 +136,11 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	mainFuncName := args.GetMainFunctionName()
 	experimentalFeatures := args.GetExperimentalFeatures()
-	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
-	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 
-	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, cloudInstanceID, cloudUserId)
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript)
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
@@ -240,8 +236,6 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	serializedParams := args.GetSerializedParams()
 	relativePathToMainFile := args.GetRelativePathToMainFile()
 	mainFuncName := args.GetMainFunctionName()
-	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
-	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
@@ -275,7 +269,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	packageReplaceOptions := kurtosisYml.GetPackageReplaceOptions()
 	logrus.Debugf("package replace options received '%+v'", packageReplaceOptions)
 
-	metricsErr := apicService.metricsClient.TrackKurtosisRun(packageName, isRemote, dryRun, isNotScript, cloudInstanceID, cloudUserId)
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(packageName, isRemote, dryRun, isNotScript)
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
@@ -803,6 +797,19 @@ func (apicService *ApiContainerService) runStarlark(
 				// We expect the stream to be closed soon and the above case to exit that function
 				logrus.Info("Startosis script execution returned, no more output to stream.")
 				return
+			}
+
+			if runFinishedEvent := responseLine.GetRunFinishedEvent(); runFinishedEvent != nil {
+				isSuccessful := runFinishedEvent.GetIsRunSuccessful()
+				numberOfServicesAfterRunFinished := 0
+				if serviceNames, err := apicService.serviceNetwork.GetServiceNames(); err != nil {
+					logrus.Warn("Couldn't figure out the number of services after run finished, will be logging 0 in the metrics")
+				} else {
+					numberOfServicesAfterRunFinished = len(serviceNames)
+				}
+				if err := apicService.metricsClient.TrackKurtosisRunFinishedEvent(packageId, numberOfServicesAfterRunFinished, isSuccessful); err != nil {
+					logrus.Warn("An error occurred tracking the run-finished event")
+				}
 			}
 			// in addition to send the msg to the RPC stream, we also print the lines to the APIC logs at debug level
 			logrus.Debugf("Received response line from Starlark runner: '%v'", responseLine)

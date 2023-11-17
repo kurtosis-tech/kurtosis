@@ -1,14 +1,18 @@
-import { Button, ButtonGroup, Tag, Tooltip } from "@chakra-ui/react";
+import { Flex, Spinner, Tag, TagProps, Tooltip } from "@chakra-ui/react";
 import { ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
 import { isDefined } from "../../../utils";
 
 type ServicesSummaryProps = {
-  services: ServiceInfo[] | null;
+  services: "loading" | ServiceInfo[] | null;
 };
 
 export const EnclaveServicesSummary = ({ services }: ServicesSummaryProps) => {
   if (!isDefined(services)) {
     return <Tag>Unknown</Tag>;
+  }
+
+  if (services === "loading") {
+    return <Spinner size={"xs"} />;
   }
 
   const runningServices = services.filter(({ serviceStatus }) => serviceStatus === ServiceStatus.RUNNING).length;
@@ -25,14 +29,36 @@ export const EnclaveServicesSummary = ({ services }: ServicesSummaryProps) => {
     .filter(isDefined)
     .join(", ");
 
+  const tagProps: Partial<TagProps> = {
+    variant: "solid",
+    fontSize: "xs",
+    fontWeight: "semibold",
+  };
+
   return (
     <Tooltip label={tooltipLabel} size={"xs"}>
-      <ButtonGroup size={"xs"} isAttached variant={"solid"}>
-        {totalServices === 0 && <Button color={"#A0AEC0"}>NONE</Button>}
-        {runningServices > 0 && <Button colorScheme={"green"}>{runningServices}</Button>}
-        {stopppedServices > 0 && <Button colorScheme={"red"}>{stopppedServices}</Button>}
-        {unknownServices > 0 && <Button colorScheme={"orange"}>{unknownServices}</Button>}
-      </ButtonGroup>
+      <Flex justifyContent={"center"}>
+        {totalServices === 0 && (
+          <Tag color={"#A0AEC0"} {...tagProps}>
+            NONE
+          </Tag>
+        )}
+        {runningServices > 0 && (
+          <Tag colorScheme={"green"} {...tagProps}>
+            {runningServices}
+          </Tag>
+        )}
+        {stopppedServices > 0 && (
+          <Tag colorScheme={"red"} {...tagProps}>
+            {stopppedServices}
+          </Tag>
+        )}
+        {unknownServices > 0 && (
+          <Tag colorScheme={"orange"} {...tagProps}>
+            {unknownServices}
+          </Tag>
+        )}
+      </Flex>
     </Tooltip>
   );
 };

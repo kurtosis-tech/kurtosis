@@ -1,5 +1,5 @@
 ---
-title: How to launch a private Ethereum testnet with Flashbot's MEV Boost implementation of Proposer Builder Seperation (PBS)
+title: How to launch a private Ethereum testnet with Flashbot's MEV Boost implementation of Proposer Builder Separation (PBS)
 sidebar_label: Launch a testnet with MEV infra
 slug: /how-to-full-mev-with-ethereum-package
 toc_max_heading_level: 2
@@ -23,7 +23,7 @@ Keep reading to learn [how it all works](#brief-overview-of-the-architecture) & 
 As a reminder, the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) is a reproducible and portable environment definition that should be used to bootstrap & deploy private testnets. The package will function the exact same way locally or in the cloud over Docker or Kubernetes, supports all major Execution Layer (EL) and Consensus Layer (CL) client implementations, and can be scaled to whatever size your team needs - limited only by your underlying hardware/backend.
 
 #### What if I only want the MEV parts?
-And if that wasn't enough, Kurtosis environment definitions (known as [Packages](https://docs.kurtosis.com/concepts-reference/packages/)) are entirely composable, meaning you can define and build-your-own private testnet using only the parts you need and with the option of adding your own services (e.g. MEV searcher tools). Feel free to check out the following [code example](https://github.com/kurtosis-tech/2-el-cl-mev-package/blob/main/main.star).
+And if that wasn't enough, Kurtosis environment definitions (known as [Packages](https://docs.kurtosis.com/advanced-concepts/packages/)) are entirely composable, meaning you can define and build-your-own private testnet using only the parts you need and with the option of adding your own services (e.g. MEV searcher tools). Feel free to check out the following [code example](https://github.com/kurtosis-tech/2-el-cl-mev-package/blob/main/main.star).
 
 ## Brief overview of the architecture
 Explicitly, the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) supports two modes: `full-mev` and `mock-mev`. 
@@ -51,7 +51,7 @@ Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provi
 ## Quickstart
 Leveraging the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) is simple. In this short quickstart, you will:
 1. Install Docker & Kurtosis locally.
-2. Configure your network using a `.json` file.
+2. Configure your network using a `.yaml` file.
 3. Run a single command to launch your network with `full MEV`.
 4. Visit the website to witness payloads being delivered from the Relayer to the `mev-boost` sidecar connected to each validator (for block proposals).
 
@@ -60,41 +60,39 @@ Leveraging the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-pa
 * [Install Kurtosis](https://docs.kurtosis.com/install/#ii-install-the-cli) or [upgrade Kurtosis to the latest version](https://docs.kurtosis.com/upgrade). You can check if Kurtosis is running using the command: `kurtosis version`, which will print your current Kurtosis engine version and CLI version.
 
 #### Configure your network
-Next, create a file titled: `ethereum-package-params.json` in your working directory and populate it with:
-```json
-{
-	"participants": [{
-		"el_client_type": "geth",
-		"el_client_image": "ethereum/client-go:latest",
-		"el_client_log_level": "",
-		"el_extra_params": [],
-		"cl_client_type": "lighthouse",
-		"cl_client_image": "sigp/lighthouse:latest",
-		"cl_client_log_level": "",
-		"beacon_extra_params": [],
-		"validator_extra_params": [],
-		"builder_network_params": null
-	}],
-	"network_params": {
-		"network_id": "3151908",
-		"deposit_contract_address": "0x4242424242424242424242424242424242424242",
-		"seconds_per_slot": 12,
-		"slots_per_epoch": 32,
-		"num_validator_keys_per_node": 64,
-		"preregistered_validator_keys_mnemonic": "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete",
-		"deneb_for_epoch": 500
-	},
-	"verifications_epoch_limit": 5,
-	"global_client_log_level": "info",
-	"mev_type": "full"
-}
+Next, create a file titled: `ethereum-package-params.yaml` in your working directory and populate it with:
+```yaml
+participants:
+	- el_client_type: geth
+		el_client_image: ethereum/client-go:latest
+		el_client_log_level: ''
+		el_extra_params: []
+		cl_client_type: lighthouse
+		cl_client_image: sigp/lighthouse:latest
+		cl_client_log_level: ''
+		beacon_extra_params: []
+		validator_extra_params: []
+		builder_network_params: null
+network_params:
+  network_id: '3151908'
+  deposit_contract_address: '0x4242424242424242424242424242424242424242'
+  seconds_per_slot: 12
+  slots_per_epoch: 32
+  num_validator_keys_per_node: 64
+  preregistered_validator_keys_mnemonic: 'giant issue aisle success illegal bike spike
+    question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy
+    very lucky have athlete'
+  deneb_for_epoch: 500
+verifications_epoch_limit: 5
+global_client_log_level: info
+mev_type: full
 ```
 You will use the above file by passing it in at runtime, effectively enabling you to define the way your network should look using parameters.
 
 #### Launch the network with `full MEV`
 Great! You're now ready to bring up your own network. Simply run:
 ```bash
-kurtosis run --enclave eth-network github.com/kurtosis-tech/ethereum-package "$(cat ~/ethereum-package-params.json)"
+kurtosis run --enclave eth-network github.com/kurtosis-tech/ethereum-package "$(cat ~/ethereum-package-params.yaml)"
 ```
 Kurtosis will then begin to spin up your private Ethereum testnet with `full MEV`. You will see a stream of text get printed in your terminal as Kurtosis begins to generate genesis files, configure the Ethereum nodes, launch a Grafana and Prometheus instance, and bootstrap the network together with the full suite of MEV products from Flashbots. In ~2 minutes, you should see the following output at the end:
 ```bash
@@ -175,9 +173,9 @@ f833b940ae5b   transaction-spammer                        <none>                
 
 As you can see above, there is *a lot* going on in your enclave - but don't worry, let's go through everything together.
 
-The first section that gets printed contains some basic metadata about the enclave that was spun up. This includes the name of the enclave `eth-network`, its [Resource Idenfitier](https://docs.kurtosis.com/concepts-reference/resource-identifier/), your enclave's status, and the time it was created.
+The first section that gets printed contains some basic metadata about the enclave that was spun up. This includes the name of the enclave `eth-network`, its [Resource Idenfitier](https://docs.kurtosis.com/advanced-concepts/resource-identifier/), your enclave's status, and the time it was created.
 
-Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/), which are Kurtosis' first-class representation of data inside your enclave, stored as compressed TGZ files. You'll notice there are configuration files for the nodes, grafana, and prometheus as well as private keys for pre-funded accounts and genesis-related data. These files artifacts were generated and used by Kurtosis to start the network and abstracts away the complexities and overhead that come with generating validator keys and getting genesis and node config files produced and mounted to the right containers yourself.
+Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.com/advanced-concepts/files-artifacts/), which are Kurtosis' first-class representation of data inside your enclave, stored as compressed TGZ files. You'll notice there are configuration files for the nodes, grafana, and prometheus as well as private keys for pre-funded accounts and genesis-related data. These files artifacts were generated and used by Kurtosis to start the network and abstracts away the complexities and overhead that come with generating validator keys and getting genesis and node config files produced and mounted to the right containers yourself.
 
 Lastly, there is a section called `User Services` which display the number of services (running in Docker containers) that make up your network. You will notice that there are 2 Ethereum nodes, each with a `MEV-Boost` instance spun up & connected to it. In addition to this, you will see the rest of the Flashbots MEV infrastructure including the `mev-relay` suite of services (read more about the `mev-relay` services [here](https://github.com/flashbots/mev-boost-relay/blob/main/ARCHITECTURE.md)) and `mev-flood`. By default, the `ethereum-package` also comes with supporting services which include a fork monitor, redis, postgres, grafana, prometheus, a transaction spammer, a testnet-verifier, and the services used to generate genesis data. Both of the Redis and Postgres instances are required for `mev-relay` to function properly. Each of these services are running in Docker containers inside your local enclave & Kurtosis has automatically mapped each container port to your machine's ephemeral ports for seamless interaction with the services running in your enclave.
 
@@ -191,7 +189,7 @@ The screenshot above is what the website looks like after the 4th epoch. You can
 And there you have it! You've now spun up a private Ethereum testnet over Docker with the Flashbot's implementation of PBS! 
 
 ## Roadmap
-The inclusion of a Proposer Builder Seperation (PBS) implemention was in support of the Ethereum Foundation's efforts to validate functionality and behavior in end-to-end testing (between in-protocol and out-of-protocol infrastructure), as well as the functionality of the beacon chain for in-protocol code paths (e.g. can clients: call for payloads reject invalid payloads, and trigger the circuit breaker when necessary).
+The inclusion of a Proposer Builder Separation (PBS) implemention was in support of the Ethereum Foundation's efforts to validate functionality and behavior in end-to-end testing (between in-protocol and out-of-protocol infrastructure), as well as the functionality of the beacon chain for in-protocol code paths (e.g. can clients: call for payloads reject invalid payloads, and trigger the circuit breaker when necessary).
 
 The next immediate thing we hope to do is to *decompose* the environment definition into smaller pieces, enabling developers to build-their-own MEV-enabled systems by simply importing only the parts of the MEV infrastructure that they need. We've begun working on this already with [eth-kurtosis](https://github.com/kurtosis-tech/eth-kurtosis), which contains an index of composable building blocks to define your own testnet.
 
@@ -200,14 +198,14 @@ If there are other use cases you had in mind (e.g. fuzzing the network at the pr
 ## Conclusion
 This guide was meant to be quick - we hope it was. To recap, you:
 - Installed Kurtosis and Docker
-- Created a `.json` file that contains the necessary parameters for the network
+- Created a `.yaml` file that contains the necessary parameters for the network
 - Ran a single command to spin up a private Ethereum testnet with MEV infrastructure
 
 The `ethereum-package` is available for anyone to use, will work the same way on your local machine or in the cloud, and will run on Docker or Kubernetes.
 
 You saw first-hand how packages, effectively environment definitions, are written once and then can be used by anyone in a very trivial way to reproduce the environment. This accelerates developer velocity by enabling engineers to spend less time on configuring and setting up development and testing frameworks, and more time instead on building the unique features and capabilities for their projects.
 
-Additionally, we hope you also enjoyed the parameterizability aspect of Kurtosis Packages. By changing the `ethereum-package-params.json`, you can get a fine-tune your testnet however you see fit. 
+Additionally, we hope you also enjoyed the parameterizability aspect of Kurtosis Packages. By changing the `ethereum-package-params.yaml`, you can get a fine-tune your testnet however you see fit. 
 
 We hope this guide was helpful and we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using [`kurtosis feedback`](../cli-reference/feedback.md) from the CLI to file an issue in our [Github](https://github.com/kurtosis-tech/eth-kurtosis/issues) or post your question in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions).
 

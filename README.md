@@ -46,9 +46,8 @@ kurtosis run github.com/kurtosis-tech/awesome-kurtosis/redis-voting-app
 Finally, open the `http` link printed in the last line in your browser.
 
 If you have an issue or feature request, we'd love to hear about it through one of the following:
-
+- Post your question on our [Github Discussions Forum](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a)
 - [Asking for help on our Discord server][discord]
-- Submitting a discussion point on our [forum](https://github.com/kurtosis-tech/kurtosis/discussions)
 - Filing an issue on our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) (which can also be done via `kurtosis feedback --bug` or `kurtosis feedback --feature`)
 - [Messaging us on Twitter][twitter]
 
@@ -56,7 +55,7 @@ If you have an issue or feature request, we'd love to hear about it through one 
 
 To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis] or one of these packages:
 
-- [Ethereum](https://github.com/kurtosis-tech/eth2-package): fully functional private Ethereum network in Kurtosis with Flashbots MEV-boost, any EL and CL client combination, and a collection of network monitoring tools.
+- [Ethereum](https://github.com/kurtosis-tech/ethereum-package): fully functional private Ethereum network in Kurtosis with Flashbots MEV-boost, any EL and CL client combination, and a collection of network monitoring tools.
 - [DIVE](https://github.com/HugoByte/DIVE): A CLI + Kurtosis package by [Hugobyte](https://hugobyte.com) for the ICON ecosystem that can spin up EVM, Cosmos, or JVM networks with a bridge between them.
 - [NEAR](https://github.com/kurtosis-tech/near-package): A private NEAR network in Kurtosis.
 
@@ -122,7 +121,46 @@ This repository is structured as a monorepo, containing the following projects:
 - `docs`: Documentation that is published to [docs.kurtosis.com](docs)
 - `internal_testsuites`: End to end tests
 
-Dev Dependencies
+Dev Dependencies (Nix)
+----------------
+
+Install the [Nix package manager](https://nixos.org/download).
+```bash
+sh <(curl -L https://nixos.org/nix/install)
+```
+
+And enable some Nix flags (alternatively you can add `--extra-experimental-features 'nix-command flakes'` every time calling the `nix` command):
+```bash
+mkdir -p ~/.config/nix
+echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+```
+
+And to bring the environment up, just open a new shell terminal, go to the root folder of the repo and run:
+```bash
+nix  develop
+```
+
+This will download all dev deps and setup the environment accordingly.
+
+You can also use the [`direnv`](https://direnv.net/) to automatically load the environment when entering the main folder or using a plugin in your preferred IDE:
+- `vscode`: [mkhl.direnv](https://github.com/direnv/direnv-vscode)
+- `jet brains`: [Direnv integration](https://plugins.jetbrains.com/plugin/15285-direnv-integration)
+
+Direnv can also be easily installed with Nix (or [HomeBrew](https://formulae.brew.sh/formula/direnv) if you prefer):
+```bash
+nix-env -f '<nixpkgs>' -iA direnv
+```
+
+Now you just to add the direnv hook to your shell:
+```bash
+echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+# or for ZSH
+echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+```
+
+Now next time you open a new shell terminal and go to repo's folder you environment will update and load automatically.
+
+Dev Dependencies (Manual install)
 ----------------
 
 The commands below assume that the env variable BREW_PREFIX contains the brew prefix.
@@ -322,10 +360,10 @@ kurtosis enclave add
 </details>
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
-[enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
+[enclave]: https://docs.kurtosis.com/advanced-concepts/enclaves
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis#readme
 [quickstart-reference]: https://docs.kurtosis.com/quickstart
-[discord]: https://discord.gg/Es7QHbY4
+[discord]: https://discord.gg/6Jjp9c89z9
 [kurtosis-tech]: https://github.com/kurtosis-tech
 [docs]: https://docs.kurtosis.com
 [twitter]: https://twitter.com/KurtosisTech

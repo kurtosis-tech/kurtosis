@@ -16,7 +16,7 @@ type KurtosisAlertModalProps = {
   title: string;
   content: string;
   isOpen: boolean;
-  isLoading: boolean;
+  isLoading?: boolean;
   onClose: () => void;
   onConfirm: () => void;
   confirmText: string;
@@ -44,8 +44,8 @@ export const KurtosisAlertModal = ({
         </ModalBody>
         <ModalFooter>
           <Flex justifyContent={"flex-end"} gap={"12px"}>
-            <Button color={"gray.100"} onClick={onClose} disabled={isLoading}>
-              Cancel
+            <Button color={"gray.100"} onClick={onClose} isDisabled={isLoading}>
+              Dismiss
             </Button>
             <Button onClick={onConfirm} {...confirmButtonProps} isLoading={isLoading}>
               {confirmText}

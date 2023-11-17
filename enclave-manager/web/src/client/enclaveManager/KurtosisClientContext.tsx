@@ -66,23 +66,37 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
   useEffect(() => {
     (async () => {
       const searchParams = new URLSearchParams(window.location.search);
-      const requireAuth = isStringTrue(searchParams.get("require_authentication"));
-      const requestedApiHost = searchParams.get("api_host");
+      const requireAuth = isStringTrue(searchParams.get("require-authentication"));
+
       try {
         setError(undefined);
         let newClient: KurtosisClient | null = null;
+
         if (requireAuth) {
-          assertDefined(requestedApiHost, `The parameter 'requestedApiHost' is not defined`);
+          const requestedGatewayHost = searchParams.get("api-host");
+          assertDefined(requestedGatewayHost, `The parameter 'api-host' is not defined`);
+
+          // Get the parent location and path:
+          let parentLocationPath = paramToUrl(searchParams, "parent-location-path") || new URL(window.location.href);
+          // Get the child location and path:
+          let childLocationPath = paramToUrl(searchParams, "child-location-path") || new URL(window.location.href);
+
           if (isDefined(jwtToken)) {
-            newClient = new AuthenticatedKurtosisClient(requestedApiHost, jwtToken);
+            newClient = new AuthenticatedKurtosisClient(
+              requestedGatewayHost,
+              jwtToken,
+              parentLocationPath,
+              childLocationPath,
+            );
           }
         } else {
           newClient = new LocalKurtosisClient();
         }
+
         if (isDefined(newClient)) {
           const checkResp = await newClient.checkHealth();
           if (checkResp.isErr) {
-            setError("Cannot reach the enclave manager backend - is your enclave manager definitely running?");
+            setError("Cannot reach the enclave manager backend - is the Enclave Manager API running and accessible?");
             return;
           }
           setClient(newClient);
@@ -123,4 +137,15 @@ export const useKurtosisClient = (): KurtosisClient => {
   assertDefined(client, `useKurtosisClient used incorrectly - KurtosisClient is not currently available.`);
 
   return client;
+};
+
+const paramToUrl = (searchParams: URLSearchParams, param: string) => {
+  let paramString = searchParams.get(param);
+  if (paramString === null) {
+    return null;
+  } else {
+    paramString = atob(paramString);
+    assertDefined(paramString, `The parameter ${param}' is not defined`);
+    return new URL(paramString);
+  }
 };

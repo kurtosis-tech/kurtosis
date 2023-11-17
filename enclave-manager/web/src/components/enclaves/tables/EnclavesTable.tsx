@@ -6,6 +6,7 @@ import { DateTime } from "luxon";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
+import { isDefined } from "../../../utils";
 import { DataTable } from "../../DataTable";
 import { FormatDateTime } from "../../FormatDateTime";
 import { EnclaveArtifactsSummary } from "../widgets/EnclaveArtifactsSummary";
@@ -18,9 +19,9 @@ type EnclaveTableRow = {
   name: string;
   status: EnclaveContainersStatus;
   created: DateTime | null;
-  source: string | null;
-  services: ServiceInfo[] | null;
-  artifacts: FilesArtifactNameAndUuid[] | null;
+  source: "loading" | string | null;
+  services: "loading" | ServiceInfo[] | null;
+  artifacts: "loading" | FilesArtifactNameAndUuid[] | null;
 };
 
 const enclaveToRow = (enclave: EnclaveFullInfo): EnclaveTableRow => {
@@ -29,9 +30,21 @@ const enclaveToRow = (enclave: EnclaveFullInfo): EnclaveTableRow => {
     name: enclave.name,
     status: enclave.containersStatus,
     created: enclave.creationTime ? DateTime.fromJSDate(enclave.creationTime.toDate()) : null,
-    source: enclave.starlarkRun.isOk ? enclave.starlarkRun.value.packageId : null,
-    services: enclave.services.isOk ? Object.values(enclave.services.value.serviceInfo) : null,
-    artifacts: enclave.filesAndArtifacts.isOk ? enclave.filesAndArtifacts.value.fileNamesAndUuids : null,
+    source: !isDefined(enclave.starlarkRun)
+      ? "loading"
+      : enclave.starlarkRun.isOk
+      ? enclave.starlarkRun.value.packageId
+      : null,
+    services: !isDefined(enclave.services)
+      ? "loading"
+      : enclave.services.isOk
+      ? Object.values(enclave.services.value.serviceInfo)
+      : null,
+    artifacts: !isDefined(enclave.filesAndArtifacts)
+      ? "loading"
+      : enclave.filesAndArtifacts.isOk
+      ? enclave.filesAndArtifacts.value.fileNamesAndUuids
+      : null,
   };
 };
 
@@ -87,14 +100,17 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
       }),
       columnHelper.accessor("status", {
         header: "Status",
-        cell: (statusCell) => <EnclaveStatus status={statusCell.getValue()} />,
+        cell: (statusCell) => <EnclaveStatus status={statusCell.getValue()} variant={"square"} />,
       }),
       columnHelper.accessor("created", {
         header: "Created",
         cell: (createdCell) => (
-          <Button size={"xs"} variant={"ghost"}>
-            <FormatDateTime dateTime={createdCell.getValue()} format={"relative"} />
-          </Button>
+          <FormatDateTime
+            fontSize={"xs"}
+            fontWeight={"semibold"}
+            dateTime={createdCell.getValue()}
+            format={"relative"}
+          />
         ),
       }),
       columnHelper.accessor("source", {
@@ -103,9 +119,12 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
       }),
       columnHelper.accessor("services", {
         cell: (servicesCell) => <EnclaveServicesSummary services={servicesCell.getValue()} />,
+        meta: { centerAligned: true },
       }),
       columnHelper.accessor("artifacts", {
+        header: "File artifacts",
         cell: (artifactsCell) => <EnclaveArtifactsSummary artifacts={artifactsCell.getValue()} />,
+        meta: { centerAligned: true },
       }),
     ],
     [],

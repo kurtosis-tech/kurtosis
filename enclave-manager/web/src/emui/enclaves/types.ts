@@ -8,7 +8,7 @@ import { Result } from "true-myth";
 import { RemoveFunctions } from "../../utils/types";
 
 export type EnclaveFullInfo = RemoveFunctions<EnclaveInfo> & {
-  starlarkRun: Result<RemoveFunctions<GetStarlarkRunResponse>, string>;
-  services: Result<RemoveFunctions<GetServicesResponse>, string>;
-  filesAndArtifacts: Result<RemoveFunctions<ListFilesArtifactNamesAndUuidsResponse>, string>;
+  starlarkRun?: Result<RemoveFunctions<GetStarlarkRunResponse>, string>;
+  services?: Result<RemoveFunctions<GetServicesResponse>, string>;
+  filesAndArtifacts?: Result<RemoveFunctions<ListFilesArtifactNamesAndUuidsResponse>, string>;
 };

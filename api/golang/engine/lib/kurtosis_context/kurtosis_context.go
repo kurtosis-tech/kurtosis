@@ -131,7 +131,7 @@ func (kurtosisCtx *KurtosisContext) CreateProductionEnclave(
 	enclaveName string,
 ) (*enclaves.EnclaveContext, error) {
 
-	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValues(enclaveName)
+	createEnclaveArgs := newCreateProductionEnclaveWithDefaultValues(enclaveName)
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
@@ -594,6 +594,22 @@ func newCreateEnclaveArgsWithDefaultValues(enclaveName string) *kurtosis_engine_
 	defaultApiContainerVersionTag := defaultApiContainerVersionTagStr
 	defaultApiContainerLogLevel := defaultApiContainerLogLevelStr
 	defaultEnclaveMode := kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
+
+	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
+		EnclaveName:            &enclaveName,
+		ApiContainerVersionTag: &defaultApiContainerVersionTag,
+		ApiContainerLogLevel:   &defaultApiContainerLogLevel,
+		Mode:                   &defaultEnclaveMode,
+	}
+
+	return createEnclaveArgs
+}
+
+func newCreateProductionEnclaveWithDefaultValues(enclaveName string) *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs {
+
+	defaultApiContainerVersionTag := defaultApiContainerVersionTagStr
+	defaultApiContainerLogLevel := defaultApiContainerLogLevelStr
+	defaultEnclaveMode := kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveName:            &enclaveName,

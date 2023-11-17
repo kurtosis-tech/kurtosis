@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/shared_starlark_calls"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -50,7 +52,7 @@ func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	metricsClient metrics_client.MetricsClient,
+	_ metrics_client.MetricsClient,
 	_ *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
@@ -63,8 +65,8 @@ func run(
 	stopEnclaveErrorStrs := []string{}
 	for _, enclaveIdentifier := range enclaveIdentifiers {
 		stopArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{EnclaveIdentifier: enclaveIdentifier}
-		if err = metricsClient.TrackStopEnclave(enclaveIdentifier); err != nil {
-			logrus.Warnf("An error occurred while logging the stop enclave event for enclave '%v'", enclaveIdentifier)
+		if err = stopAllEnclaveServices(ctx, enclaveIdentifier); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping all enclave services")
 		}
 		if _, err := engineClient.StopEnclave(ctx, stopArgs); err != nil {
 			wrappedErr := stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
@@ -86,5 +88,29 @@ func run(
 
 	logrus.Info("Enclaves stopped successfully")
 
+	return nil
+}
+
+func stopAllEnclaveServices(ctx context.Context, enclaveIdentifier string) error {
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
+	}
+
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
+	}
+
+	allEnclaveServices, err := enclaveCtx.GetServices()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting all enclave services")
+	}
+
+	for serviceName := range allEnclaveServices {
+		if err := shared_starlark_calls.StopServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping service '%s'", serviceName)
+		}
+	}
 	return nil
 }

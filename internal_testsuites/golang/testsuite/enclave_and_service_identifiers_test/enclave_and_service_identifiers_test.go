@@ -28,6 +28,7 @@ def run(plan):
 )
 
 func TestIdentifiers(t *testing.T) {
+
 	ctx := context.Background()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------

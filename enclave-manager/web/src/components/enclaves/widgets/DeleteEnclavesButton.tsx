@@ -1,7 +1,8 @@
-import { Button } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { Button, Tooltip } from "@chakra-ui/react";
+import { useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
-import { useFetcher } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useEmuiAppContext } from "../../../emui/EmuiAppContext";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { KurtosisAlertModal } from "../../KurtosisAlertModal";
 
@@ -10,33 +11,27 @@ type DeleteEnclavesButtonProps = {
 };
 
 export const DeleteEnclavesButton = ({ enclaves }: DeleteEnclavesButtonProps) => {
-  const fetcher = useFetcher();
+  const { destroyEnclaves } = useEmuiAppContext();
+  const navigator = useNavigate();
 
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(
-    () => {
-      setIsLoading(false);
-      setShowModal(false);
-    },
-    // These deps are defined this way to detect whether or not the enclaves in props are actually different
-    [enclaves.map(({ enclaveUuid }) => enclaveUuid).join(",")],
-  );
-
   const handleDelete = async () => {
     setIsLoading(true);
-    fetcher.submit(
-      { intent: "delete", enclaveUUIDs: enclaves.map(({ enclaveUuid }) => enclaveUuid) },
-      { method: "post", action: "/enclaves", encType: "application/json" },
-    );
+    await destroyEnclaves(enclaves.map(({ enclaveUuid }) => enclaveUuid));
+    navigator("/enclaves");
+    setIsLoading(false);
+    setShowModal(false);
   };
 
   return (
     <>
-      <Button colorScheme={"red"} leftIcon={<FiTrash2 />} onClick={() => setShowModal(true)}>
-        Delete
-      </Button>
+      <Tooltip label={`This will delete ${enclaves.length} enclaves.`} openDelay={1000}>
+        <Button colorScheme={"red"} leftIcon={<FiTrash2 />} onClick={() => setShowModal(true)}>
+          Delete
+        </Button>
+      </Tooltip>
       <KurtosisAlertModal
         isOpen={showModal}
         isLoading={isLoading}

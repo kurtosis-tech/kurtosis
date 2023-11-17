@@ -52,6 +52,13 @@ jobs:
           working-directory: grpc-file-transfer/golang/
           args: --timeout=3m
           skip-pkg-cache: true
+      - name: lint-metrics-library
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: ${{ env.GOLINT_VERSION }}
+          working-directory: metrics-library/golang
+          args: --timeout=3m
+          skip-pkg-cache: true
       - name: lint-name-generator
         uses: golangci/golangci-lint-action@v3
         with:

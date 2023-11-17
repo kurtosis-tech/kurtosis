@@ -1,5 +1,5 @@
 import {
-  Button,
+  Card,
   Flex,
   Popover,
   PopoverContent,
@@ -7,45 +7,32 @@ import {
   Table,
   Tbody,
   Td,
+  Text,
   Th,
   Thead,
   Tr,
 } from "@chakra-ui/react";
-import { Port, Port_TransportProtocol } from "enclave-manager-sdk/build/api_container_service_pb";
-import { TitledCard } from "../../TitledCard";
-
-function transportProtocolToString(protocol: Port_TransportProtocol) {
-  switch (protocol) {
-    case Port_TransportProtocol.TCP:
-      return "TCP";
-    case Port_TransportProtocol.SCTP:
-      return "SCTP";
-    case Port_TransportProtocol.UDP:
-      return "UDP";
-  }
-}
+import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
+import { transportProtocolToString } from "../utils";
 
 type PortsSummaryProps = {
-  privatePorts: Port[];
-  publicPorts: Port[];
+  privatePorts: Record<string, Port>;
+  publicPorts: Record<string, Port>;
 };
 
 export const PortsSummary = ({ privatePorts, publicPorts }: PortsSummaryProps) => {
   return (
     <Popover trigger={"hover"} preventOverflow isLazy>
       <PopoverTrigger>
-        <Button variant="ghost" size="xs">
-          {privatePorts.length + publicPorts.length}
-        </Button>
+        <Text fontWeight={"semibold"} fontSize={"xs"} pl={"8px"}>
+          {Object.keys(publicPorts).length}
+        </Text>
       </PopoverTrigger>
       <PopoverContent maxWidth={"50vw"} w={"unset"}>
         <Flex flexDirection={"row"} gap={"16px"}>
-          <TitledCard title={"Public Ports"}>
-            <PortTable ports={publicPorts} />
-          </TitledCard>
-          <TitledCard title={"Private Ports"}>
-            <PortTable ports={privatePorts} />
-          </TitledCard>
+          <Card>
+            <PortTable privatePorts={privatePorts} publicPorts={publicPorts} />
+          </Card>
         </Flex>
       </PopoverContent>
     </Popover>
@@ -53,11 +40,12 @@ export const PortsSummary = ({ privatePorts, publicPorts }: PortsSummaryProps) =
 };
 
 type PortTableProps = {
-  ports: Port[];
+  privatePorts: Record<string, Port>;
+  publicPorts: Record<string, Port>;
 };
 
-const PortTable = ({ ports }: PortTableProps) => {
-  if (ports.length === 0) {
+const PortTable = ({ privatePorts, publicPorts }: PortTableProps) => {
+  if (Object.keys(privatePorts).length === 0) {
     return <i>No ports</i>;
   }
 
@@ -65,21 +53,23 @@ const PortTable = ({ ports }: PortTableProps) => {
     <Table>
       <Thead>
         <Tr>
+          <Th>Name</Th>
           <Th>Port</Th>
-          <Th>Protocol</Th>
+          <Th>Public Port</Th>
           <Th>Application Protocol</Th>
-          <Th>Timeout</Th>
         </Tr>
       </Thead>
       <Tbody>
-        {ports
-          .sort((p1, p2) => p1.number - p2.number)
-          .map((port, i) => (
+        {Object.entries(publicPorts)
+          .sort(([name1, p1], [name2, p2]) => p1.number - p2.number)
+          .map(([name, port], i) => (
             <Tr key={i}>
-              <Td>{port.number}</Td>
-              <Td fontSize={"xs"}>{transportProtocolToString(port.transportProtocol)}</Td>
-              <Td fontSize={"xs"}>{port.maybeApplicationProtocol || <i>Unknown</i>}</Td>
-              <Td fontSize={"xs"}>{port.maybeWaitTimeout || ""}</Td>
+              <Td>{name}</Td>
+              <Td>
+                {privatePorts[name].number}/{transportProtocolToString(port.transportProtocol)}
+              </Td>
+              <Td fontSize={"xs"}>{port.number}</Td>
+              <Td fontSize={"xs"}>{port.maybeApplicationProtocol || <i>Undefined</i>}</Td>
             </Tr>
           ))}
       </Tbody>

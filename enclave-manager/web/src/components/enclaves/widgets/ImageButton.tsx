@@ -4,7 +4,7 @@ import { IoLogoDocker } from "react-icons/io5";
 import { isDefined } from "../../../utils";
 
 function getUrlForImage(image: string): string | null {
-  const [imageName, label] = image.split(":");
+  const [imageName] = image.split(":");
   const imageParts = imageName.split("/");
   if (imageParts.length === 1) {
     return `https://hub.docker.com/_/${imageParts[0]}`;
