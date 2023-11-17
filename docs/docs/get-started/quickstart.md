@@ -9,17 +9,6 @@ sidebar_position: 3
 
 This guide takes ~5 minutes and will walk you through running a containerized application using the Kurtosis CLI. You'll install Kurtosis, deploy an application from a Github locator, inspect your running environment, and then modify the deployed application by passing in a JSON config.
 
-<details><summary>Forget installing! Let me do it on Gitpod</summary>
-
-If you don't want to install Docker and Kurtosis, you can run through the quickstart on Gitpod:
- 
-**Open the Playground: [Start](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/ethereum-package)**
-
-Click on the "New Workspace" button! You don't have to worry about the Context URL, Editor or Class. It's all pre-configured for you.
- 
-</details>
-
-
 Install Kurtosis
 --------------------
 Before you get started, make sure you have:
