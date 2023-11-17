@@ -53,16 +53,16 @@ type DeletionSummary struct {
 
 // EnclaveAPIContainerHostMachineInfo defines model for EnclaveAPIContainerHostMachineInfo.
 type EnclaveAPIContainerHostMachineInfo struct {
-	GrpcPortOnHostMachine *int    `json:"grpc_port_on_host_machine,omitempty"`
-	IpOnHostMachine       *string `json:"ip_on_host_machine,omitempty"`
+	GrpcPortOnHostMachine int    `json:"grpc_port_on_host_machine"`
+	IpOnHostMachine       string `json:"ip_on_host_machine"`
 }
 
 // EnclaveAPIContainerInfo defines model for EnclaveAPIContainerInfo.
 type EnclaveAPIContainerInfo struct {
-	BridgeIpAddress       *string `json:"bridge_ip_address,omitempty"`
-	ContainerId           *string `json:"container_id,omitempty"`
-	GrpcPortInsideEnclave *int    `json:"grpc_port_inside_enclave,omitempty"`
-	IpInsideEnclave       *string `json:"ip_inside_enclave,omitempty"`
+	BridgeIpAddress       string `json:"bridge_ip_address"`
+	ContainerId           string `json:"container_id"`
+	GrpcPortInsideEnclave int    `json:"grpc_port_inside_enclave"`
+	IpInsideEnclave       string `json:"ip_inside_enclave"`
 }
 
 // EnclaveContainersStatus defines model for EnclaveContainersStatus.
@@ -70,22 +70,22 @@ type EnclaveContainersStatus string
 
 // EnclaveIdentifiers defines model for EnclaveIdentifiers.
 type EnclaveIdentifiers struct {
-	EnclaveUuid   *string `json:"enclave_uuid,omitempty"`
-	Name          *string `json:"name,omitempty"`
-	ShortenedUuid *string `json:"shortened_uuid,omitempty"`
+	EnclaveUuid   string `json:"enclave_uuid"`
+	Name          string `json:"name"`
+	ShortenedUuid string `json:"shortened_uuid"`
 }
 
 // EnclaveInfo defines model for EnclaveInfo.
 type EnclaveInfo struct {
 	ApiContainerHostMachineInfo *EnclaveAPIContainerHostMachineInfo `json:"api_container_host_machine_info,omitempty"`
 	ApiContainerInfo            *EnclaveAPIContainerInfo            `json:"api_container_info,omitempty"`
-	ApiContainerStatus          *ApiContainerStatus                 `json:"api_container_status,omitempty"`
-	ContainersStatus            *EnclaveContainersStatus            `json:"containers_status,omitempty"`
-	CreationTime                *Timestamp                          `json:"creation_time,omitempty"`
-	EnclaveUuid                 *string                             `json:"enclave_uuid,omitempty"`
-	Mode                        *EnclaveMode                        `json:"mode,omitempty"`
-	Name                        *string                             `json:"name,omitempty"`
-	ShortenedUuid               *string                             `json:"shortened_uuid,omitempty"`
+	ApiContainerStatus          ApiContainerStatus                  `json:"api_container_status"`
+	ContainersStatus            EnclaveContainersStatus             `json:"containers_status"`
+	CreationTime                Timestamp                           `json:"creation_time"`
+	EnclaveUuid                 string                              `json:"enclave_uuid"`
+	Mode                        EnclaveMode                         `json:"mode"`
+	Name                        string                              `json:"name"`
+	ShortenedUuid               string                              `json:"shortened_uuid"`
 }
 
 // EnclaveMode defines model for EnclaveMode.
@@ -93,13 +93,13 @@ type EnclaveMode string
 
 // EnclaveNameAndUuid defines model for EnclaveNameAndUuid.
 type EnclaveNameAndUuid struct {
-	Name *string `json:"name,omitempty"`
-	Uuid *string `json:"uuid,omitempty"`
+	Name string `json:"name"`
+	Uuid string `json:"uuid"`
 }
 
 // EngineInfo defines model for EngineInfo.
 type EngineInfo struct {
-	EngineVersion *string `json:"engine_version,omitempty"`
+	EngineVersion string `json:"engine_version"`
 }
 
 // GetServiceLogs defines model for GetServiceLogs.
@@ -113,14 +113,14 @@ type GetServiceLogs struct {
 
 // LogLine defines model for LogLine.
 type LogLine struct {
-	Line      *[]string  `json:"line,omitempty"`
-	Timestamp *Timestamp `json:"timestamp,omitempty"`
+	Line      []string  `json:"line"`
+	Timestamp Timestamp `json:"timestamp"`
 }
 
 // LogLineFilter defines model for LogLineFilter.
 type LogLineFilter struct {
-	Operator    *LogLineOperator `json:"operator,omitempty"`
-	TextPattern *string          `json:"text_pattern,omitempty"`
+	Operator    LogLineOperator `json:"operator"`
+	TextPattern string          `json:"text_pattern"`
 }
 
 // LogLineOperator defines model for LogLineOperator.

@@ -152,6 +152,8 @@ components:
       properties:
         engine_version:
           type: string
+      required:
+        - engine_version
 
     CreateEnclave:
       type: object
@@ -206,7 +208,14 @@ components:
           $ref: '#/components/schemas/Timestamp'
         mode:
           $ref: '#/components/schemas/EnclaveMode'
-          
+      required:
+        - enclave_uuid
+        - name
+        - shortened_uuid
+        - containers_status
+        - api_container_status
+        - creation_time
+        - mode
 
     EnclaveAPIContainerInfo:
       type: object
@@ -219,6 +228,11 @@ components:
           type: integer
         bridge_ip_address:
           type: string
+      required:
+        - container_id
+        - ip_inside_enclave
+        - grpc_port_inside_enclave
+        - bridge_ip_address
 
     EnclaveAPIContainerHostMachineInfo:
       type: object
@@ -227,6 +241,9 @@ components:
           type: string
         grpc_port_on_host_machine:
           type: integer
+      required:
+        - ip_on_host_machine
+        - grpc_port_on_host_machine
 
     EnclaveIdentifiers:
       type: object
@@ -237,6 +254,10 @@ components:
           type: string
         shortened_uuid:
           type: string
+      required:    
+        - enclave_uuid
+        - name
+        - shortened_uuid
 
     EnclaveNameAndUuid:
       type: object
@@ -245,6 +266,9 @@ components:
           type: string
         uuid:
           type: string
+      required:    
+        - name
+        - uuid
 
     DeletionSummary:
       type: object
@@ -293,6 +317,9 @@ components:
             type: string
         timestamp:
           $ref: '#/components/schemas/Timestamp'
+      required:
+        - line
+        - timestamp
 
     LogLineFilter:
       type: object
@@ -301,6 +328,9 @@ components:
           $ref: '#/components/schemas/LogLineOperator'
         text_pattern:
           type: string
+      required:
+        - operator
+        - text_pattern
 
     LogLineOperator:
       type: string

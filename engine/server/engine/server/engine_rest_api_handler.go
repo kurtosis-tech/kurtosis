@@ -88,10 +88,10 @@ func toHttpApiEnclaveAPIContainerInfo(info *types.EnclaveAPIContainerInfo) api.E
 	}
 	port := int(info.GrpcPortInsideEnclave)
 	return api.EnclaveAPIContainerInfo{
-		ContainerId:           &info.ContainerId,
-		IpInsideEnclave:       &info.IpInsideEnclave,
-		GrpcPortInsideEnclave: &port,
-		BridgeIpAddress:       &info.BridgeIpAddress,
+		ContainerId:           info.ContainerId,
+		IpInsideEnclave:       info.IpInsideEnclave,
+		GrpcPortInsideEnclave: port,
+		BridgeIpAddress:       info.BridgeIpAddress,
 	}
 }
 
@@ -101,8 +101,8 @@ func toHttpApiApiContainerHostMachineInfo(info *types.EnclaveAPIContainerHostMac
 	}
 	port := int(info.GrpcPortOnHostMachine)
 	return api.EnclaveAPIContainerHostMachineInfo{
-		IpOnHostMachine:       &info.IpOnHostMachine,
-		GrpcPortOnHostMachine: &port,
+		IpOnHostMachine:       info.IpOnHostMachine,
+		GrpcPortOnHostMachine: port,
 	}
 }
 
@@ -124,15 +124,15 @@ func toHttpApiEnclaveInfo(info types.EnclaveInfo) api.EnclaveInfo {
 	apiContainerStatus := toHttpApiContainerStatus(info.ApiContainerStatus)
 	mode := toHttpApiEnclaveMode(info.Mode)
 	return api.EnclaveInfo{
-		EnclaveUuid:                 &info.EnclaveUuid,
-		ShortenedUuid:               &info.ShortenedUuid,
-		Name:                        &info.Name,
-		ContainersStatus:            &containersStatus,
-		ApiContainerStatus:          &apiContainerStatus,
+		EnclaveUuid:                 info.EnclaveUuid,
+		ShortenedUuid:               info.ShortenedUuid,
+		Name:                        info.Name,
+		ContainersStatus:            containersStatus,
+		ApiContainerStatus:          apiContainerStatus,
 		ApiContainerInfo:            &containerInfo,
 		ApiContainerHostMachineInfo: &apiHostMachine,
-		CreationTime:                &info.CreationTime,
-		Mode:                        &mode,
+		CreationTime:                info.CreationTime,
+		Mode:                        mode,
 	}
 }
 
@@ -149,16 +149,16 @@ func toHttpApiEnclaveInfos(infos map[string]*types.EnclaveInfo) map[string]api.E
 
 func toHttpApiEnclaveIdentifiers(identifier *types.EnclaveIdentifiers) api.EnclaveIdentifiers {
 	return api.EnclaveIdentifiers{
-		EnclaveUuid:   &identifier.EnclaveUuid,
-		Name:          &identifier.Name,
-		ShortenedUuid: &identifier.ShortenedUuid,
+		EnclaveUuid:   identifier.EnclaveUuid,
+		Name:          identifier.Name,
+		ShortenedUuid: identifier.ShortenedUuid,
 	}
 }
 
 func toHttpApiEnclaveNameAndUuid(identifier *types.EnclaveNameAndUuid) api.EnclaveNameAndUuid {
 	return api.EnclaveNameAndUuid{
-		Uuid: &identifier.Uuid,
-		Name: &identifier.Name,
+		Uuid: identifier.Uuid,
+		Name: identifier.Name,
 	}
 }
 
@@ -362,7 +362,7 @@ func (engine EngineRuntime) PostEnclavesEnclaveIdentifierStop(ctx context.Contex
 // Get Engine Info
 // (GET /engine/info)
 func (engine EngineRuntime) GetEngineInfo(ctx context.Context, request api.GetEngineInfoRequestObject) (api.GetEngineInfoResponseObject, error) {
-	result := api.EngineInfo{EngineVersion: &engine.ImageVersionTag}
+	result := api.EngineInfo{EngineVersion: engine.ImageVersionTag}
 	return api.GetEngineInfo200JSONResponse(result), nil
 }
 
@@ -459,8 +459,8 @@ func newLogsResponseHttp(
 		// there is no new log lines but is a found UUID, so it has to be included in the service logs map
 		if !found && !isInNotFoundUuidList {
 			serviceLogLinesByUuid[serviceUuidStr] = api.LogLine{
-				Line:      nil,
-				Timestamp: nil,
+				Line:      []string{},
+				Timestamp: time.Now(),
 			}
 		}
 
@@ -484,7 +484,7 @@ func newHttpBindingsLogLineFromLogLines(logLines []logline.LogLine) api.LogLine 
 		logTimestamp = logLine.GetTimestamp()
 	}
 
-	return api.LogLine{Line: &logLinesStr, Timestamp: &logTimestamp}
+	return api.LogLine{Line: logLinesStr, Timestamp: logTimestamp}
 
 }
 
@@ -497,15 +497,15 @@ func newConjunctiveLogLineFiltersFromHttpLogLineFilters(
 		var filter *logline.LogLineFilter
 		operator := logLineFilter.Operator
 		filterTextPattern := logLineFilter.TextPattern
-		switch *operator {
+		switch operator {
 		case api.DOESCONTAINTEXT:
-			filter = logline.NewDoesContainTextLogLineFilter(*filterTextPattern)
+			filter = logline.NewDoesContainTextLogLineFilter(filterTextPattern)
 		case api.DOESNOTCONTAINTEXT:
-			filter = logline.NewDoesNotContainTextLogLineFilter(*filterTextPattern)
+			filter = logline.NewDoesNotContainTextLogLineFilter(filterTextPattern)
 		case api.DOESCONTAINMATCHREGEX:
-			filter = logline.NewDoesContainMatchRegexLogLineFilter(*filterTextPattern)
+			filter = logline.NewDoesContainMatchRegexLogLineFilter(filterTextPattern)
 		case api.DOESNOTCONTAINMATCHREGEX:
-			filter = logline.NewDoesNotContainMatchRegexLogLineFilter(*filterTextPattern)
+			filter = logline.NewDoesNotContainMatchRegexLogLineFilter(filterTextPattern)
 		default:
 			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in GRPC filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
 		}
