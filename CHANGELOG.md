@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.30](https://github.com/kurtosis-tech/kurtosis/compare/0.85.29...0.85.30) (2023-11-17)
+
+
+### Bug Fixes
+
+* remove monaco max height limit ([#1823](https://github.com/kurtosis-tech/kurtosis/issues/1823)) ([ffe0f43](https://github.com/kurtosis-tech/kurtosis/commit/ffe0f43714cf5a6b1fe0313995fe2998ae856974))
+
 ## [0.85.29](https://github.com/kurtosis-tech/kurtosis/compare/0.85.28...0.85.29) (2023-11-17)
 
 
