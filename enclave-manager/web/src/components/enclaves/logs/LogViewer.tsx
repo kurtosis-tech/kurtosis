@@ -1,8 +1,20 @@
-import { Box, ButtonGroup, Flex, FormControl, FormLabel, Progress, Switch } from "@chakra-ui/react";
-import { throttle } from "lodash";
-import { ChangeEvent, ReactElement, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  Flex,
+  FormControl,
+  FormLabel,
+  Input,
+  InputGroup,
+  Progress,
+  Switch,
+  Text,
+} from "@chakra-ui/react";
+import { debounce, throttle } from "lodash";
+import { ChangeEvent, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
-import { isDefined, stripAnsi } from "../../../utils";
+import { isDefined, isNotEmpty, stripAnsi } from "../../../utils";
 import { CopyButton } from "../../CopyButton";
 import { DownloadButton } from "../../DownloadButton";
 import { LogLine, LogLineProps } from "./LogLine";
@@ -24,6 +36,8 @@ export const LogViewer = ({
   const [logLines, setLogLines] = useState(propsLogLines);
   const [userIsScrolling, setUserIsScrolling] = useState(false);
   const [automaticScroll, setAutomaticScroll] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [totalSearchMatches, setTotalSearchMatches] = useState<number | undefined>(undefined);
 
   const throttledSetLogLines = useMemo(() => throttle(setLogLines, 500), []);
 
@@ -54,9 +68,61 @@ export const LogViewer = ({
       .join("\n");
   };
 
+  const updateSearchTerm = (text: string) => {
+    console.log(`updating search term: ${text}`);
+    setSearchTerm(text);
+  };
+  const debouncedUpdateSearchTerm = debounce(updateSearchTerm, 500);
+  const debouncedUpdateSearchTermCallback = useCallback(debouncedUpdateSearchTerm, []);
+
+  const findMatches = (searchTerm: string) => {
+    if (hasSearchTerm()) {
+      setTotalSearchMatches(undefined);
+      let counter = 0;
+      console.log(`looking for "${searchTerm}"`);
+      logLines.forEach((line, index) => {
+        if (line.message?.match(searchTerm)) {
+          counter++;
+          // console.log(`Found match for ${searchTerm} on line ${index + 1}`);
+        }
+      });
+      console.log(`Found ${counter} matches for '${searchTerm}'`);
+      setTotalSearchMatches(counter);
+    }
+  };
+
+  useEffect(() => {
+    findMatches(searchTerm);
+  }, [searchTerm]);
+
+  const hasSearchTerm = () => {
+    return isDefined(searchTerm) && isNotEmpty(searchTerm);
+  };
+
   return (
     <Flex flexDirection={"column"} gap={"32px"}>
       <Flex flexDirection={"column"} position={"relative"} bg={"gray.800"}>
+        <Box width={"100%"}>
+          <Flex m={4}>
+            <Flex width={"40%"}>
+              <InputGroup>
+                <Input placeholder={"search"} onChange={(e) => debouncedUpdateSearchTermCallback(e.target.value)} />
+                {/*<InputRightElement>*/}
+                {/*  <BsRegex />*/}
+                {/*</InputRightElement>*/}
+              </InputGroup>
+            </Flex>
+            <Button ml={2}>Previous</Button>
+            <Button ml={2}>Next</Button>
+            {hasSearchTerm() && isDefined(totalSearchMatches) && (
+              <Box ml={2}>
+                <Text align={"center"}>
+                  {totalSearchMatches} matches for "{searchTerm}"
+                </Text>
+              </Box>
+            )}
+          </Flex>
+        </Box>
         {isDefined(ProgressWidget) && (
           <Box
             display={"inline-flex"}

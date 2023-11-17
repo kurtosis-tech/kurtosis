@@ -15,9 +15,15 @@ export type LogLineProps = {
   status?: LogStatus;
 };
 
+export type LogLineSearch = {
+  searchTerm?: string;
+};
+
+export type LogLineInput = LogLineProps | LogLineSearch;
+
 const logFontFamily = "Menlo, Monaco, Inconsolata, Consolas, Courier, monospace";
 
-export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
+export const LogLine = ( { timestamp, message, status}: LogLineProps) => {
   const statusToColor = (status?: LogStatus) => {
     switch (status) {
       case "error":

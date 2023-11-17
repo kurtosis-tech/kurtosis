@@ -4,6 +4,10 @@ export function isDefined<T>(it: T | null | undefined): it is T {
   return it !== null && it !== undefined;
 }
 
+export function isNotEmpty(it: string): it is string {
+  return it.length > 0;
+}
+
 export function isStringTrue(value?: string | null) {
   return (value + "").toLowerCase() === "true";
 }
