@@ -80,15 +80,15 @@ const ContainerOverview = ({ enclaveName, container, serviceName }: ContainerOve
           <FileDisplay
             value={entrypointJson}
             title={"Entrypoint"}
-            filename={`${enclaveName}-${serviceName}-entrypoint.json`}
+            filename={`${enclaveName}--${serviceName}-entrypoint.json`}
           />
-          <FileDisplay value={cmdJson} title={"CMD"} filename={`${enclaveName}-${serviceName}-cmd.json`} />
+          <FileDisplay value={cmdJson} title={"CMD"} filename={`${enclaveName}--${serviceName}-cmd.json`} />
         </GridItem>
         <GridItem>
           <FileDisplay
             value={environmentJson}
             title={"Environment"}
-            filename={`${enclaveName}-${serviceName}-env.json`}
+            filename={`${enclaveName}--${serviceName}-env.json`}
           />
         </GridItem>
       </Grid>
