@@ -375,15 +375,17 @@ func restApiServer(
 	// Log all requests
 	e.Use(echomiddleware.Logger())
 
-	// Use our validation middleware to check all requests against the
+	// ============================== Engine Management API ======================================
 	// OpenAPI schema.
-	// _, err := engineApi.GetSwagger()
-	// if err != nil {
-	// 	fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
-	// 	os.Exit(1)
-	// }
-	// swagger.Servers = nil
-	// e.Use(middleware.OapiRequestValidator(swagger))
+	swagger_engine, err := engineApi.GetSwagger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
+		os.Exit(1)
+	}
+	server.ServeSwaggerUI(e, "/api/specs/engine", server.NewSwaggerUIConfig(swagger_engine))
+
+	// Use our validation middleware to check all requests against the
+	// e.Use(middleware.OapiRequestValidator(swagger_engine))
 
 	// We now register our runtime above as the handler for the interface
 	engineRuntime := restApi.EngineRuntime{
@@ -398,6 +400,17 @@ func restApiServer(
 	}
 	engineApi.RegisterHandlers(e, engineApi.NewStrictHandler(engineRuntime, nil))
 
+	// ============================== Engine Management API ======================================
+	// OpenAPI schema.
+	swagger_enclave, err := enclaveApi.GetSwagger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
+		os.Exit(1)
+	}
+	server.ServeSwaggerUI(e, "/api/specs/enclave", server.NewSwaggerUIConfig(swagger_enclave))
+
+	// Use our validation middleware to check all requests against the
+	// e.Use(middleware.OapiRequestValidator(swagger_enclave))
 	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, enclave_manager)
 	if err != nil {
 		// TODO(edgar) fix error handling
@@ -406,5 +419,6 @@ func restApiServer(
 	// defer enclaveRuntime.ShutDown()
 	enclaveApi.RegisterHandlers(e, enclaveApi.NewStrictHandler(enclaveRuntime, nil))
 
+	// ============================== Start Server ======================================
 	e.Logger.Fatal(e.Start(net.JoinHostPort("0.0.0.0", fmt.Sprint(restAPIPortAddr))))
 }
