@@ -36,10 +36,10 @@ func NewEnclaveRuntime(ctx context.Context, manager *enclave_manager.EnclaveMana
 	for uuid, info := range enclaves {
 		conn, err := getGrpcClientConn(info)
 		if err != nil {
-			logrus.Errorf("Failed to establish gRPC connection with enclave manager container %s on %s", uuid, info.ApiContainerInfo)
+			logrus.Errorf("Failed to establish gRPC connection with enclave manager service on enclave %s", uuid)
 			return nil, err
 		}
-		logrus.Debugf("Creating gRPC client to enclave manager container %s on %s", uuid, info.ApiContainerInfo)
+		logrus.Debugf("Creating gRPC connection with enclave manager service on enclave %s", uuid)
 		apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 		clients[uuid] = apiContainerClient
 	}
