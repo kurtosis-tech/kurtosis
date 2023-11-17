@@ -1,5 +1,4 @@
 import {
-  Button,
   Card,
   Flex,
   Popover,
@@ -8,6 +7,7 @@ import {
   Table,
   Tbody,
   Td,
+  Text,
   Th,
   Thead,
   Tr,
@@ -24,9 +24,9 @@ export const PortsSummary = ({ privatePorts, publicPorts }: PortsSummaryProps) =
   return (
     <Popover trigger={"hover"} preventOverflow isLazy>
       <PopoverTrigger>
-        <Button variant="ghost" size="xs">
+        <Text fontWeight={"semibold"} fontSize={"xs"} pl={"8px"}>
           {Object.keys(publicPorts).length}
-        </Button>
+        </Text>
       </PopoverTrigger>
       <PopoverContent maxWidth={"50vw"} w={"unset"}>
         <Flex flexDirection={"row"} gap={"16px"}>
@@ -53,6 +53,7 @@ const PortTable = ({ privatePorts, publicPorts }: PortTableProps) => {
     <Table>
       <Thead>
         <Tr>
+          <Th>Name</Th>
           <Th>Port</Th>
           <Th>Public Port</Th>
           <Th>Application Protocol</Th>
@@ -63,11 +64,12 @@ const PortTable = ({ privatePorts, publicPorts }: PortTableProps) => {
           .sort(([name1, p1], [name2, p2]) => p1.number - p2.number)
           .map(([name, port], i) => (
             <Tr key={i}>
+              <Td>{name}</Td>
               <Td>
                 {privatePorts[name].number}/{transportProtocolToString(port.transportProtocol)}
               </Td>
               <Td fontSize={"xs"}>{port.number}</Td>
-              <Td fontSize={"xs"}>{port.maybeApplicationProtocol || <i>Unknown</i>}</Td>
+              <Td fontSize={"xs"}>{port.maybeApplicationProtocol || <i>Undefined</i>}</Td>
             </Tr>
           ))}
       </Tbody>

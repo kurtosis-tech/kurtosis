@@ -1,9 +1,9 @@
 import { Controller } from "react-hook-form";
 import { isDefined, stringifyError } from "../../../../utils";
 import { CodeEditor } from "../../../CodeEditor";
-import { KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
+import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-export const JSONArgumentInput = (props: Omit<KurtosisArgumentTypeInputProps, "type">) => {
+export const JSONArgumentInput = (props: KurtosisArgumentTypeInputImplProps) => {
   return (
     <Controller
       render={({ field }) => <CodeEditor text={field.value} onTextChange={field.onChange} />}

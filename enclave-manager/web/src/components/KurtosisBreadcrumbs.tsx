@@ -1,14 +1,35 @@
 import { ChevronRightIcon } from "@chakra-ui/icons";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, Button, Flex } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  Button,
+  ButtonGroup,
+  Flex,
+  Icon,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+} from "@chakra-ui/react";
+import { ReactElement, useEffect, useState } from "react";
+import { MdFilterList } from "react-icons/md";
 import { Link, Params, UIMatch, useMatches } from "react-router-dom";
 import { EmuiAppState, useEmuiAppContext } from "../emui/EmuiAppContext";
 import { isDefined } from "../utils";
 import { RemoveFunctions } from "../utils/types";
 
+type KurtosisBreadcrumbMenuItem = {
+  name: string;
+  destination: string;
+  icon?: ReactElement;
+};
+
 export type KurtosisBreadcrumb = {
   name: string;
   destination: string;
+  alternatives?: KurtosisBreadcrumbMenuItem[];
 };
 
 export const KurtosisBreadcrumbs = () => {
@@ -50,21 +71,57 @@ export const KurtosisBreadcrumbs = () => {
   return (
     <Flex h="40px" p={"4px 0"} alignItems={"center"}>
       <Breadcrumb variant={"topNavigation"} separator={<ChevronRightIcon h={"20px"} w={"24px"} />}>
-        {matchCrumbs.map(({ name, destination }, i, arr) => (
+        {matchCrumbs.map((crumb, i, arr) => (
           <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
-            <BreadcrumbLink as={i === arr.length - 1 ? undefined : Link} to={destination}>
-              {i === arr.length - 1 ? (
-                name
-              ) : (
-                <Button variant={"breadcrumb"} size={"sm"}>
-                  {name}
-                </Button>
-              )}
-            </BreadcrumbLink>
+            <KurtosisBreadcrumbItem {...crumb} key={i} isLastItem={i === arr.length - 1} />
           </BreadcrumbItem>
         ))}
       </Breadcrumb>
       &nbsp;
     </Flex>
   );
+};
+
+type KurtosisBreadcrumbItemProps = KurtosisBreadcrumb & {
+  isLastItem: boolean;
+};
+
+const KurtosisBreadcrumbItem = ({ name, destination, alternatives, isLastItem }: KurtosisBreadcrumbItemProps) => {
+  if (isLastItem) {
+    return <BreadcrumbLink>{name}</BreadcrumbLink>;
+  }
+
+  const baseLink = (
+    <BreadcrumbLink as={Link} to={destination}>
+      <Button variant={"breadcrumb"} size={"sm"}>
+        {name}
+      </Button>
+    </BreadcrumbLink>
+  );
+
+  if (isDefined(alternatives) && alternatives.length > 0) {
+    // Render with menu
+    return (
+      <ButtonGroup isAttached>
+        {baseLink}
+        <Menu>
+          <MenuButton
+            as={IconButton}
+            variant={"breadcrumb"}
+            aria-label={"Other options"}
+            icon={<Icon as={MdFilterList} />}
+            size={"sm"}
+          />
+          <MenuList>
+            {alternatives.map(({ name, destination, icon }) => (
+              <MenuItem key={destination} as={Link} to={destination} icon={icon}>
+                {name}
+              </MenuItem>
+            ))}
+          </MenuList>
+        </Menu>
+      </ButtonGroup>
+    );
+  }
+  return baseLink;
 };

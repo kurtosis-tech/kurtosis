@@ -40,9 +40,14 @@ export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
 
   return (
     <>
-      <Button onClick={() => setShowPackageLoader(true)} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
-        Edit
-      </Button>
+      <Tooltip
+        label={"Edit this enclave. From here you can edit the enclave configuration and update it."}
+        openDelay={1000}
+      >
+        <Button onClick={() => setShowPackageLoader(true)} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
+          Edit
+        </Button>
+      </Tooltip>
       {showPackageLoader && (
         <PackageLoadingModal packageId={enclave.starlarkRun.value.packageId} onPackageLoaded={handlePackageLoaded} />
       )}
