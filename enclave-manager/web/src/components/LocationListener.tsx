@@ -8,7 +8,6 @@ export const LocationListener = () => {
 
   useEffect(() => {
     if (client.getCloudUrl()) {
-      console.log(client.getParentRequestedRoute());
       const route = client.getParentRequestedRoute();
       if (route) navigate(route);
     }

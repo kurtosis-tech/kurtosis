@@ -54,7 +54,8 @@ export const EnclaveConfigurationForm = forwardRef<
 
       switch (valueType) {
         case ArgumentValueType.DICT:
-          return transformRecordsToObject(value, innerValuetype);
+          if (!isDefined(value)) return {};
+          else return transformRecordsToObject(value, innerValuetype);
         case ArgumentValueType.LIST:
           return value.map((v: any) => transformValue(innerValuetype, v));
         case ArgumentValueType.BOOL:

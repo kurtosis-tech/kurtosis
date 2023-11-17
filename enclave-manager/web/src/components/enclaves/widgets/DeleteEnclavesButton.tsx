@@ -1,4 +1,4 @@
-import { Button } from "@chakra-ui/react";
+import { Button, Tooltip } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
@@ -40,9 +40,11 @@ export const DeleteEnclavesButton = ({ enclaves }: DeleteEnclavesButtonProps) =>
 
   return (
     <>
-      <Button colorScheme={"red"} leftIcon={<FiTrash2 />} onClick={() => setShowModal(true)}>
-        Delete
-      </Button>
+      <Tooltip label={`This will delete ${enclaves.length} enclaves.`} openDelay={1000}>
+        <Button colorScheme={"red"} leftIcon={<FiTrash2 />} onClick={() => setShowModal(true)}>
+          Delete
+        </Button>
+      </Tooltip>
       <KurtosisAlertModal
         isOpen={showModal}
         isLoading={isLoading}
