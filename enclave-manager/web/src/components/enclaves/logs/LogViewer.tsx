@@ -120,7 +120,7 @@ export const LogViewer = ({
     const searchTerm = normalizeLogText(rawText);
     const logLineSearch: LogLineSearch = {
       searchTerm: searchTerm,
-      pattern: new RegExp(searchTerm, "gi"),
+      pattern: new RegExp(searchTerm, "gi"), // `i` is invariant case
     };
     setSearch(logLineSearch);
   };
@@ -196,6 +196,14 @@ export const LogViewer = ({
     return parsed;
   };
 
+  const highlight = (currentSearchIndex: number | undefined, thisIndex: number, searchableIndices: number[]) => {
+    return (
+      currentSearchIndex !== undefined &&
+      searchableIndices.length > 0 &&
+      searchableIndices[currentSearchIndex] === thisIndex
+    );
+  };
+
   return (
     <Flex flexDirection={"column"} gap={"32px"} h={"100%"}>
       <Flex flexDirection={"column"} position={"relative"} bg={"gray.800"} h={"100%"}>
@@ -242,7 +250,7 @@ export const LogViewer = ({
                             <Tooltip label="Click to edit" shouldWrapChildren={true}>
                               <EditablePreview />
                             </Tooltip>
-                            <EditableInput />
+                            <EditableInput p={1} width={"50px"} />
                           </Editable>
                           <>/ </>
                         </>
@@ -282,7 +290,13 @@ export const LogViewer = ({
           isScrolling={setUserIsScrolling}
           style={{ height: "100%" }}
           data={logLines.filter(({ message }) => isDefined(message))}
-          itemContent={(_, line) => <LogLine logLineProps={line} logLineSearch={search} />}
+          itemContent={(index, line) => (
+            <LogLine
+              logLineProps={line}
+              logLineSearch={search}
+              selected={highlight(currentSearchIndex, index, searchMatchesIndices)}
+            />
+          )}
         />
         {isDefined(progressPercent) && (
           <Progress

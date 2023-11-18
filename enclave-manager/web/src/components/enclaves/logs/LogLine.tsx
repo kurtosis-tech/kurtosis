@@ -1,11 +1,11 @@
-import {Box, Flex} from "@chakra-ui/react";
+import { Box, Flex } from "@chakra-ui/react";
 import parse from "html-react-parser";
-import {DateTime} from "luxon";
-import {isDefined} from "../../../utils";
+import { DateTime } from "luxon";
+import { isDefined } from "../../../utils";
 // @ts-ignore
 import hasAnsi from "has-ansi";
-import {ReactElement} from "react";
-import {normalizeLogText} from "./LogViewer";
+import { ReactElement } from "react";
+import { normalizeLogText } from "./LogViewer";
 
 const Convert = require("ansi-to-html");
 const convert = new Convert();
@@ -26,11 +26,12 @@ export type LogLineSearch = {
 export type LogLineInput = {
   logLineProps: LogLineProps;
   logLineSearch?: LogLineSearch;
+  selected: boolean | undefined;
 };
 
 const logFontFamily = "Menlo, Monaco, Inconsolata, Consolas, Courier, monospace";
 
-export const LogLine = ({ logLineProps, logLineSearch }: LogLineInput) => {
+export const LogLine = ({ logLineProps, logLineSearch, selected }: LogLineInput) => {
   const { timestamp, message, status } = logLineProps;
   const statusToColor = (status?: LogStatus) => {
     switch (status) {
@@ -43,7 +44,7 @@ export const LogLine = ({ logLineProps, logLineSearch }: LogLineInput) => {
     }
   };
 
-  const processText = (text: string) => {
+  const processText = (text: string, selected: boolean | undefined) => {
     let reactComponent;
     if (hasAnsi(text)) {
       reactComponent = parse(convert.toHtml(text));
@@ -52,12 +53,20 @@ export const LogLine = ({ logLineProps, logLineSearch }: LogLineInput) => {
     }
 
     if (logLineSearch) {
-      reactComponent = HighlightPattern({ text, regex: logLineSearch.pattern });
+      reactComponent = HighlightPattern({ text, regex: logLineSearch.pattern, selected });
     }
     return reactComponent;
   };
 
-  const HighlightPattern = ({ text, regex }: { text: string; regex: RegExp }) => {
+  const HighlightPattern = ({
+    text,
+    regex,
+    selected,
+  }: {
+    text: string;
+    regex: RegExp;
+    selected: boolean | undefined;
+  }) => {
     const normalizedLogText = normalizeLogText(text);
     const splitText = normalizedLogText.split(regex);
     const matches = normalizedLogText.match(regex);
@@ -70,7 +79,15 @@ export const LogLine = ({ logLineProps, logLineSearch }: LogLineInput) => {
       <span>
         {splitText.reduce(
           (arr: (ReactElement | string)[], element, index) =>
-            matches[index] ? [...arr, element, <mark key={index}>{matches[index]}</mark>] : [...arr, element],
+            matches[index]
+              ? [
+                  ...arr,
+                  element,
+                  <mark key={index}>
+                    {matches[index]}
+                  </mark>,
+                ]
+              : [...arr, element],
           [],
         )}
       </span>
@@ -78,7 +95,7 @@ export const LogLine = ({ logLineProps, logLineSearch }: LogLineInput) => {
   };
 
   return (
-    <Flex p={"2px 0"} m={"0 16px"} gap={"8px"} alignItems={"top"}>
+    <Flex p={"2px 0"} m={"0 16px"} gap={"8px"} alignItems={"top"} backgroundColor={selected ? "gray.600" : ""}>
       {isDefined(timestamp) && (
         <Box
           as={"pre"}
@@ -102,8 +119,9 @@ export const LogLine = ({ logLineProps, logLineSearch }: LogLineInput) => {
         fontWeight={400}
         fontFamily={logFontFamily}
         color={statusToColor(status)}
+        _focus={{ boxShadow: "outline" }}
       >
-        {message && processText(message)}
+        {message && processText(message, selected)}
       </Box>
     </Flex>
   );
