@@ -70,8 +70,8 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context
 		artifacts.FileNamesAndUuids,
 		func(x *kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid) kurtosis_core_rest_api_bindings.FileArtifactReference {
 			return kurtosis_core_rest_api_bindings.FileArtifactReference{
-				Name: &x.FileName,
-				Uuid: &x.FileUuid,
+				Name: x.FileName,
+				Uuid: x.FileUuid,
 			}
 		})
 
@@ -118,8 +118,8 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 		// TODO (edgar) Is this the expected behavior? If so, we should be explicit about it.
 		if response != nil {
 			artifact_response := api.FileArtifactReference{
-				Name: &response.Name,
-				Uuid: &response.Uuid,
+				Name: response.Name,
+				Uuid: response.Uuid,
 			}
 			uploaded_artifacts[filename] = artifact_response
 		}
@@ -145,8 +145,8 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(c
 	}
 
 	artifact_response := api.FileArtifactReference{
-		Uuid: &stored_artifact.Uuid,
-		Name: &request.Body.Name,
+		Uuid: stored_artifact.Uuid,
+		Name: request.Body.Name,
 	}
 	return api.PutEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse(artifact_response), nil
 }
@@ -170,8 +170,8 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsServicesServ
 	}
 
 	artifact_response := api.FileArtifactReference{
-		Uuid: &stored_artifact.Uuid,
-		Name: &request.Body.Name,
+		Uuid: stored_artifact.Uuid,
+		Name: request.Body.Name,
 	}
 	return api.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier200JSONResponse(artifact_response), nil
 }
@@ -200,17 +200,13 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 		func(x *kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) api.FileArtifactDescription {
 			size := int64(x.Size)
 			return api.FileArtifactDescription{
-				Path:        &x.Path,
-				Size:        &size,
+				Path:        x.Path,
+				Size:        size,
 				TextPreview: x.TextPreview,
 			}
 		})
 
-	artifact_response := api.InspectFilesArtifactContents{
-		FileDescriptions: &artifact_content_list,
-	}
-
-	return api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier200JSONResponse(artifact_response), nil
+	return api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier200JSONResponse(artifact_content_list), nil
 }
 
 // (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download)
@@ -279,9 +275,9 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesHistory(ctx c
 
 	response := utils.MapList(services.AllIdentifiers, func(service *kurtosis_core_rpc_api_bindings.ServiceIdentifiers) api.ServiceIdentifiers {
 		return api.ServiceIdentifiers{
-			ServiceUuid:   &service.ServiceUuid,
-			ShortenedUuid: &service.ShortenedUuid,
-			Name:          &service.Name,
+			ServiceUuid:   service.ServiceUuid,
+			ShortenedUuid: service.ShortenedUuid,
+			Name:          service.Name,
 		}
 	})
 
@@ -295,7 +291,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesConnection(c
 	logrus.Infof("Listing services from enclave %s", enclave_identifier)
 
 	connectServicesArgs := kurtosis_core_rpc_api_bindings.ConnectServicesArgs{
-		Connect: toGrpcConnect(*request.Body.Connect),
+		Connect: toGrpcConnect(*request.Body),
 	}
 	_, err := apiContainerClient.ConnectServices(ctx, &connectServicesArgs)
 	if err != nil {
@@ -340,7 +336,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 
 	execCommandArgs := kurtosis_core_rpc_api_bindings.ExecCommandArgs{
 		ServiceIdentifier: service_identifier,
-		CommandArgs:       *request.Body.CommandArgs,
+		CommandArgs:       request.Body.CommandArgs,
 	}
 	exec_result, err := apiContainerClient.ExecCommand(ctx, &execCommandArgs)
 	if err != nil {
@@ -349,8 +345,8 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 	}
 
 	response := api.ExecCommandResult{
-		ExitCode:  &exec_result.ExitCode,
-		LogOutput: &exec_result.LogOutput,
+		ExitCode:  exec_result.ExitCode,
+		LogOutput: exec_result.LogOutput,
 	}
 	return api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand200JSONResponse(response), nil
 }
@@ -363,7 +359,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
 	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
 
-	endpoint_method := *request.Body.HttpMethod
+	endpoint_method := request.Body.HttpMethod
 
 	castToUInt32 := func(v int32) uint32 { return uint32(v) }
 
@@ -418,14 +414,14 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.
 	flags := utils.MapList(starlark_result.ExperimentalFeatures, toHttpFeatureFlag)
 	policy := toHttpRestartPolicy(starlark_result.RestartPolicy)
 	response := api.StarlarkDescription{
-		ExperimentalFeatures:   &flags,
-		MainFunctionName:       &starlark_result.MainFunctionName,
-		PackageId:              &starlark_result.PackageId,
-		Parallelism:            &starlark_result.Parallelism,
-		RelativePathToMainFile: &starlark_result.RelativePathToMainFile,
-		RestartPolicy:          &policy,
-		SerializedParams:       &starlark_result.SerializedParams,
-		SerializedScript:       &starlark_result.SerializedScript,
+		ExperimentalFeatures:   flags,
+		MainFunctionName:       starlark_result.MainFunctionName,
+		PackageId:              starlark_result.PackageId,
+		Parallelism:            starlark_result.Parallelism,
+		RelativePathToMainFile: starlark_result.RelativePathToMainFile,
+		RestartPolicy:          policy,
+		SerializedParams:       starlark_result.SerializedParams,
+		SerializedScript:       starlark_result.SerializedScript,
 	}
 
 	return api.GetEnclavesEnclaveIdentifierStarlark200JSONResponse(response), nil
@@ -651,21 +647,21 @@ func toHttpServiceStatus(status kurtosis_core_rpc_api_bindings.ServiceStatus) ap
 func toHttpContainer(container *kurtosis_core_rpc_api_bindings.Container) api.Container {
 	status := toHttpContainerStatus(container.Status)
 	return api.Container{
-		CmdArgs:        &container.CmdArgs,
-		EntrypointArgs: &container.EntrypointArgs,
-		EnvVars:        &container.EnvVars,
-		ImageName:      &container.ImageName,
-		Status:         &status,
+		CmdArgs:        container.CmdArgs,
+		EntrypointArgs: container.EntrypointArgs,
+		EnvVars:        container.EnvVars,
+		ImageName:      container.ImageName,
+		Status:         status,
 	}
 }
 
 func toHttpPorts(port *kurtosis_core_rpc_api_bindings.Port) api.Port {
 	protocol := toHttpTransportProtocol(port.TransportProtocol)
 	return api.Port{
-		MaybeApplicationProtocol: &port.MaybeApplicationProtocol,
-		MaybeWaitTimeout:         &port.MaybeWaitTimeout,
-		Number:                   int32(port.Number),
-		TransportProtocol:        protocol,
+		ApplicationProtocol: &port.MaybeApplicationProtocol,
+		WaitTimeout:         &port.MaybeWaitTimeout,
+		Number:              int32(port.Number),
+		TransportProtocol:   protocol,
 	}
 }
 
@@ -675,15 +671,15 @@ func toHttpServiceInfo(service *kurtosis_core_rpc_api_bindings.ServiceInfo) api.
 	publicPorts := utils.MapMapValues(service.MaybePublicPorts, toHttpPorts)
 	privatePorts := utils.MapMapValues(service.PrivatePorts, toHttpPorts)
 	return api.ServiceInfo{
-		Container:         &container,
-		MaybePublicIpAddr: &service.MaybePublicIpAddr,
-		MaybePublicPorts:  &publicPorts,
-		Name:              &service.Name,
-		PrivateIpAddr:     &service.PrivateIpAddr,
-		PrivatePorts:      &privatePorts,
-		ServiceStatus:     &serviceStatus,
-		ServiceUuid:       &service.ServiceUuid,
-		ShortenedUuid:     &service.ShortenedUuid,
+		Container:     container,
+		PublicIpAddr:  &service.MaybePublicIpAddr,
+		PublicPorts:   &publicPorts,
+		Name:          service.Name,
+		PrivateIpAddr: service.PrivateIpAddr,
+		PrivatePorts:  privatePorts,
+		ServiceStatus: serviceStatus,
+		ServiceUuid:   service.ServiceUuid,
+		ShortenedUuid: service.ShortenedUuid,
 	}
 }
 

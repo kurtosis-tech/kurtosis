@@ -4,6 +4,9 @@
 package kurtosis_core_rest_api_bindings
 
 import (
+	"encoding/json"
+
+	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 )
 
@@ -61,24 +64,17 @@ const (
 // 1 - NO_CONNECT // Port forwarding disabled
 type Connect string
 
-// ConnectServices defines model for ConnectServices.
-type ConnectServices struct {
-	// Connect 0 - CONNECT // Best effort port forwarding
-	// 1 - NO_CONNECT // Port forwarding disabled
-	Connect *Connect `json:"connect,omitempty"`
-}
-
 // Container defines model for Container.
 type Container struct {
-	CmdArgs        *[]string          `json:"cmd_args,omitempty"`
-	EntrypointArgs *[]string          `json:"entrypoint_args,omitempty"`
-	EnvVars        *map[string]string `json:"env_vars,omitempty"`
-	ImageName      *string            `json:"image_name,omitempty"`
+	CmdArgs        []string          `json:"cmd_args"`
+	EntrypointArgs []string          `json:"entrypoint_args"`
+	EnvVars        map[string]string `json:"env_vars"`
+	ImageName      string            `json:"image_name"`
 
 	// Status 0 - STOPPED
 	// 1 - RUNNING
 	// 2 - UNKNOWN
-	Status *ContainerStatus `json:"status,omitempty"`
+	Status ContainerStatus `json:"status"`
 }
 
 // ContainerStatus 0 - STOPPED
@@ -88,24 +84,24 @@ type ContainerStatus string
 
 // ExecCommand Exec Command
 type ExecCommand struct {
-	CommandArgs *[]string `json:"command_args,omitempty"`
+	CommandArgs []string `json:"command_args"`
 }
 
 // ExecCommandResult defines model for ExecCommandResult.
 type ExecCommandResult struct {
-	ExitCode *int32 `json:"exit_code,omitempty"`
+	ExitCode int32 `json:"exit_code"`
 
 	// LogOutput Assumes UTF-8 encoding
-	LogOutput *string `json:"log_output,omitempty"`
+	LogOutput string `json:"log_output"`
 }
 
 // FileArtifactDescription defines model for FileArtifactDescription.
 type FileArtifactDescription struct {
 	// Path Path relative to the file artifact
-	Path *string `json:"path,omitempty"`
+	Path string `json:"path"`
 
 	// Size Size of the file, in bytes
-	Size *int64 `json:"size,omitempty"`
+	Size int64 `json:"size"`
 
 	// TextPreview A bit of text content, if the file allows (similar to UNIX's 'head')
 	TextPreview *string `json:"text_preview,omitempty"`
@@ -114,36 +110,31 @@ type FileArtifactDescription struct {
 // FileArtifactReference Files Artifact identifier
 type FileArtifactReference struct {
 	// Name UUID of the files artifact, for use when referencing it in the future
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// Uuid UUID of the files artifact, for use when referencing it in the future
-	Uuid *string `json:"uuid,omitempty"`
+	Uuid string `json:"uuid"`
 }
 
 // ImageDownloadMode 0 - ALWAYS
 // 1 - MISSING
 type ImageDownloadMode string
 
-// InspectFilesArtifactContents defines model for InspectFilesArtifactContents.
-type InspectFilesArtifactContents struct {
-	FileDescriptions *[]FileArtifactDescription `json:"file_descriptions,omitempty"`
-}
-
 // KurtosisFeatureFlag 0 - NO_INSTRUCTIONS_CACHING
 type KurtosisFeatureFlag string
 
 // Port Shared Objects (Used By Multiple Endpoints)
 type Port struct {
-	MaybeApplicationProtocol *string `json:"maybe_application_protocol,omitempty"`
-
-	// MaybeWaitTimeout The wait timeout duration in string
-	MaybeWaitTimeout *string `json:"maybe_wait_timeout,omitempty"`
-	Number           int32   `json:"number"`
+	ApplicationProtocol *string `json:"application_protocol,omitempty"`
+	Number              int32   `json:"number"`
 
 	// TransportProtocol 0 - TCP
 	// 1 - SCTP
 	// 2 - UDP
 	TransportProtocol TransportProtocol `json:"transport_protocol"`
+
+	// WaitTimeout The wait timeout duration in string
+	WaitTimeout *string `json:"wait_timeout,omitempty"`
 }
 
 // RestartPolicy 0 - NEVER
@@ -222,41 +213,41 @@ type RunStarlarkScript struct {
 // ServiceIdentifiers An service identifier is a collection of uuid, name and shortened uuid
 type ServiceIdentifiers struct {
 	// Name Name of the service
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// ServiceUuid UUID of the service
-	ServiceUuid *string `json:"service_uuid,omitempty"`
+	ServiceUuid string `json:"service_uuid"`
 
 	// ShortenedUuid The shortened uuid of the service
-	ShortenedUuid *string `json:"shortened_uuid,omitempty"`
+	ShortenedUuid string `json:"shortened_uuid"`
 }
 
 // ServiceInfo defines model for ServiceInfo.
 type ServiceInfo struct {
-	Container *Container `json:"container,omitempty"`
-
-	// MaybePublicIpAddr Public IP address *outside* the enclave where the service is reachable
-	// NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
-	MaybePublicIpAddr *string          `json:"maybe_public_ip_addr,omitempty"`
-	MaybePublicPorts  *map[string]Port `json:"maybe_public_ports,omitempty"`
+	Container Container `json:"container"`
 
 	// Name Name of the service
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name"`
 
 	// PrivateIpAddr The IP address of the service inside the enclave
-	PrivateIpAddr *string          `json:"private_ip_addr,omitempty"`
-	PrivatePorts  *map[string]Port `json:"private_ports,omitempty"`
+	PrivateIpAddr string          `json:"private_ip_addr"`
+	PrivatePorts  map[string]Port `json:"private_ports"`
+
+	// PublicIpAddr Public IP address *outside* the enclave where the service is reachable
+	// NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
+	PublicIpAddr *string          `json:"public_ip_addr,omitempty"`
+	PublicPorts  *map[string]Port `json:"public_ports,omitempty"`
 
 	// ServiceStatus 0 - STOPPED
 	// 1 - RUNNING
 	// 2 - UNKNOWN
-	ServiceStatus *ServiceStatus `json:"service_status,omitempty"`
+	ServiceStatus ServiceStatus `json:"service_status"`
 
 	// ServiceUuid UUID of the service
-	ServiceUuid *string `json:"service_uuid,omitempty"`
+	ServiceUuid string `json:"service_uuid"`
 
 	// ShortenedUuid Shortened uuid of the service
-	ShortenedUuid *string `json:"shortened_uuid,omitempty"`
+	ShortenedUuid string `json:"shortened_uuid"`
 }
 
 // ServiceStatus 0 - STOPPED
@@ -266,101 +257,116 @@ type ServiceStatus string
 
 // StarlarkDescription defines model for StarlarkDescription.
 type StarlarkDescription struct {
-	ExperimentalFeatures   *[]KurtosisFeatureFlag `json:"experimental_features,omitempty"`
-	MainFunctionName       *string                `json:"main_function_name,omitempty"`
-	PackageId              *string                `json:"package_id,omitempty"`
-	Parallelism            *int32                 `json:"parallelism,omitempty"`
-	RelativePathToMainFile *string                `json:"relative_path_to_main_file,omitempty"`
+	ExperimentalFeatures   []KurtosisFeatureFlag `json:"experimental_features"`
+	MainFunctionName       string                `json:"main_function_name"`
+	PackageId              string                `json:"package_id"`
+	Parallelism            int32                 `json:"parallelism"`
+	RelativePathToMainFile string                `json:"relative_path_to_main_file"`
 
 	// RestartPolicy 0 - NEVER
 	// 1 - ALWAYS
-	RestartPolicy    *RestartPolicy `json:"restart_policy,omitempty"`
-	SerializedParams *string        `json:"serialized_params,omitempty"`
-	SerializedScript *string        `json:"serialized_script,omitempty"`
+	RestartPolicy    RestartPolicy `json:"restart_policy"`
+	SerializedParams string        `json:"serialized_params"`
+	SerializedScript string        `json:"serialized_script"`
 }
 
 // StarlarkError defines model for StarlarkError.
 type StarlarkError struct {
-	ExecutionError      *StarlarkExecutionError      `json:"execution_error,omitempty"`
-	InterpretationError *StarlarkInterpretationError `json:"interpretation_error,omitempty"`
-	ValidationError     *StarlarkValidationError     `json:"validation_error,omitempty"`
+	Error StarlarkError_Error `json:"error"`
+}
+
+// StarlarkError_Error defines model for StarlarkError.Error.
+type StarlarkError_Error struct {
+	union json.RawMessage
 }
 
 // StarlarkExecutionError defines model for StarlarkExecutionError.
 type StarlarkExecutionError struct {
-	ErrorMessage *string `json:"error_message,omitempty"`
+	ExecutionError struct {
+		ErrorMessage string `json:"error_message"`
+	} `json:"execution_error"`
 }
 
 // StarlarkInfo defines model for StarlarkInfo.
 type StarlarkInfo struct {
-	InfoMessage *string `json:"info_message,omitempty"`
+	Info struct {
+		Instruction struct {
+			InfoMessage string `json:"info_message"`
+		} `json:"instruction"`
+	} `json:"info"`
 }
 
 // StarlarkInstruction defines model for StarlarkInstruction.
 type StarlarkInstruction struct {
-	Arguments             *[]StarlarkInstructionArgument `json:"arguments,omitempty"`
-	ExecutableInstruction *string                        `json:"executable_instruction,omitempty"`
-	InstructionName       *string                        `json:"instruction_name,omitempty"`
-	IsSkipped             *bool                          `json:"is_skipped,omitempty"`
-	Position              *StarlarkInstructionPosition   `json:"position,omitempty"`
+	Arguments             []StarlarkInstructionArgument `json:"arguments"`
+	ExecutableInstruction string                        `json:"executable_instruction"`
+	InstructionName       string                        `json:"instruction_name"`
+	IsSkipped             bool                          `json:"is_skipped"`
+	Position              StarlarkInstructionPosition   `json:"position"`
 }
 
 // StarlarkInstructionArgument defines model for StarlarkInstructionArgument.
 type StarlarkInstructionArgument struct {
 	ArgName            *string `json:"arg_name,omitempty"`
-	IsRepresentative   *bool   `json:"is_representative,omitempty"`
-	SerializedArgValue *string `json:"serialized_arg_value,omitempty"`
+	IsRepresentative   bool    `json:"is_representative"`
+	SerializedArgValue string  `json:"serialized_arg_value"`
 }
 
 // StarlarkInstructionPosition defines model for StarlarkInstructionPosition.
 type StarlarkInstructionPosition struct {
-	Column   *int32  `json:"column,omitempty"`
-	Filename *string `json:"filename,omitempty"`
-	Line     *int32  `json:"line,omitempty"`
+	Column   int32  `json:"column"`
+	Filename string `json:"filename"`
+	Line     int32  `json:"line"`
 }
 
 // StarlarkInstructionResult defines model for StarlarkInstructionResult.
 type StarlarkInstructionResult struct {
-	SerializedInstructionResult *string `json:"serialized_instruction_result,omitempty"`
+	InstructionResult struct {
+		SerializedInstructionResult string `json:"serialized_instruction_result"`
+	} `json:"instruction_result"`
 }
 
 // StarlarkInterpretationError defines model for StarlarkInterpretationError.
 type StarlarkInterpretationError struct {
-	ErrorMessage *string `json:"error_message,omitempty"`
+	InterpretationError struct {
+		ErrorMessage string `json:"error_message"`
+	} `json:"interpretation_error"`
 }
 
 // StarlarkRunFinishedEvent defines model for StarlarkRunFinishedEvent.
 type StarlarkRunFinishedEvent struct {
-	IsRunSuccessful  *bool   `json:"is_run_successful,omitempty"`
-	SerializedOutput *string `json:"serialized_output,omitempty"`
+	RunFinishedEvent struct {
+		IsRunSuccessful  bool   `json:"is_run_successful"`
+		SerializedOutput string `json:"serialized_output"`
+	} `json:"run_finished_event"`
 }
 
 // StarlarkRunProgress defines model for StarlarkRunProgress.
 type StarlarkRunProgress struct {
-	CurrentStepInfo   *[]string `json:"current_step_info,omitempty"`
-	CurrentStepNumber *int32    `json:"current_step_number,omitempty"`
-	TotalSteps        *int32    `json:"total_steps,omitempty"`
+	ProgressInfo struct {
+		CurrentStepInfo   []string `json:"current_step_info"`
+		CurrentStepNumber int32    `json:"current_step_number"`
+		TotalSteps        int32    `json:"total_steps"`
+	} `json:"progress_info"`
 }
 
 // StarlarkRunResponseLine Starlark Execution Response
 type StarlarkRunResponseLine struct {
-	Error             *StarlarkError             `json:"error,omitempty"`
-	Info              *StarlarkInfo              `json:"info,omitempty"`
-	Instruction       *StarlarkInstruction       `json:"instruction,omitempty"`
-	InstructionResult *StarlarkInstructionResult `json:"instruction_result,omitempty"`
-	ProgressInfo      *StarlarkRunProgress       `json:"progress_info,omitempty"`
-	RunFinishedEvent  *StarlarkRunFinishedEvent  `json:"run_finished_event,omitempty"`
-	Warning           *StarlarkWarning           `json:"warning,omitempty"`
+	union json.RawMessage
 }
 
 // StarlarkValidationError defines model for StarlarkValidationError.
 type StarlarkValidationError struct {
-	ErrorMessage *string `json:"error_message,omitempty"`
+	ValidationError struct {
+		ErrorMessage string `json:"error_message"`
+	} `json:"validation_error"`
 }
 
 // StarlarkWarning defines model for StarlarkWarning.
 type StarlarkWarning struct {
-	WarningMessage *string `json:"warning_message,omitempty"`
+	Warning struct {
+		WarningMessage string `json:"warning_message"`
+	} `json:"warning"`
 }
 
 // StoreFilesArtifactFromService defines model for StoreFilesArtifactFromService.
@@ -389,8 +395,8 @@ type TransportProtocol string
 // WaitForEndpointAvailability Wait For HTTP Endpoint Availability
 type WaitForEndpointAvailability struct {
 	// BodyText If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-	BodyText   *string                                `json:"body_text,omitempty"`
-	HttpMethod *WaitForEndpointAvailabilityHttpMethod `json:"http_method,omitempty"`
+	BodyText   *string                               `json:"body_text,omitempty"`
+	HttpMethod WaitForEndpointAvailabilityHttpMethod `json:"http_method"`
 
 	// InitialDelayMilliseconds The number of milliseconds to wait until executing the first HTTP call
 	InitialDelayMilliseconds *int32 `json:"initial_delay_milliseconds,omitempty"`
@@ -445,7 +451,7 @@ type PutEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody = StoreWebFi
 type PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody = StoreFilesArtifactFromService
 
 // PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesConnection for application/json ContentType.
-type PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody = ConnectServices
+type PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody = Connect
 
 // PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand for application/json ContentType.
 type PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody = ExecCommand
@@ -461,3 +467,283 @@ type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody = Run
 
 // PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStarlarkScripts for application/json ContentType.
 type PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody = RunStarlarkScript
+
+// AsStarlarkInterpretationError returns the union data inside the StarlarkError_Error as a StarlarkInterpretationError
+func (t StarlarkError_Error) AsStarlarkInterpretationError() (StarlarkInterpretationError, error) {
+	var body StarlarkInterpretationError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStarlarkInterpretationError overwrites any union data inside the StarlarkError_Error as the provided StarlarkInterpretationError
+func (t *StarlarkError_Error) FromStarlarkInterpretationError(v StarlarkInterpretationError) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStarlarkInterpretationError performs a merge with any union data inside the StarlarkError_Error, using the provided StarlarkInterpretationError
+func (t *StarlarkError_Error) MergeStarlarkInterpretationError(v StarlarkInterpretationError) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+// AsStarlarkValidationError returns the union data inside the StarlarkError_Error as a StarlarkValidationError
+func (t StarlarkError_Error) AsStarlarkValidationError() (StarlarkValidationError, error) {
+	var body StarlarkValidationError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStarlarkValidationError overwrites any union data inside the StarlarkError_Error as the provided StarlarkValidationError
+func (t *StarlarkError_Error) FromStarlarkValidationError(v StarlarkValidationError) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStarlarkValidationError performs a merge with any union data inside the StarlarkError_Error, using the provided StarlarkValidationError
+func (t *StarlarkError_Error) MergeStarlarkValidationError(v StarlarkValidationError) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+// AsStarlarkExecutionError returns the union data inside the StarlarkError_Error as a StarlarkExecutionError
+func (t StarlarkError_Error) AsStarlarkExecutionError() (StarlarkExecutionError, error) {
+	var body StarlarkExecutionError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStarlarkExecutionError overwrites any union data inside the StarlarkError_Error as the provided StarlarkExecutionError
+func (t *StarlarkError_Error) FromStarlarkExecutionError(v StarlarkExecutionError) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStarlarkExecutionError performs a merge with any union data inside the StarlarkError_Error, using the provided StarlarkExecutionError
+func (t *StarlarkError_Error) MergeStarlarkExecutionError(v StarlarkExecutionError) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+func (t StarlarkError_Error) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *StarlarkError_Error) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsStarlarkInstruction returns the union data inside the StarlarkRunResponseLine as a StarlarkInstruction
+func (t StarlarkRunResponseLine) AsStarlarkInstruction() (StarlarkInstruction, error) {
+	var body StarlarkInstruction
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStarlarkInstruction overwrites any union data inside the StarlarkRunResponseLine as the provided StarlarkInstruction
+func (t *StarlarkRunResponseLine) FromStarlarkInstruction(v StarlarkInstruction) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStarlarkInstruction performs a merge with any union data inside the StarlarkRunResponseLine, using the provided StarlarkInstruction
+func (t *StarlarkRunResponseLine) MergeStarlarkInstruction(v StarlarkInstruction) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+// AsStarlarkError returns the union data inside the StarlarkRunResponseLine as a StarlarkError
+func (t StarlarkRunResponseLine) AsStarlarkError() (StarlarkError, error) {
+	var body StarlarkError
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStarlarkError overwrites any union data inside the StarlarkRunResponseLine as the provided StarlarkError
+func (t *StarlarkRunResponseLine) FromStarlarkError(v StarlarkError) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStarlarkError performs a merge with any union data inside the StarlarkRunResponseLine, using the provided StarlarkError
+func (t *StarlarkRunResponseLine) MergeStarlarkError(v StarlarkError) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+// AsStarlarkRunProgress returns the union data inside the StarlarkRunResponseLine as a StarlarkRunProgress
+func (t StarlarkRunResponseLine) AsStarlarkRunProgress() (StarlarkRunProgress, error) {
+	var body StarlarkRunProgress
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStarlarkRunProgress overwrites any union data inside the StarlarkRunResponseLine as the provided StarlarkRunProgress
+func (t *StarlarkRunResponseLine) FromStarlarkRunProgress(v StarlarkRunProgress) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStarlarkRunProgress performs a merge with any union data inside the StarlarkRunResponseLine, using the provided StarlarkRunProgress
+func (t *StarlarkRunResponseLine) MergeStarlarkRunProgress(v StarlarkRunProgress) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+// AsStarlarkInstructionResult returns the union data inside the StarlarkRunResponseLine as a StarlarkInstructionResult
+func (t StarlarkRunResponseLine) AsStarlarkInstructionResult() (StarlarkInstructionResult, error) {
+	var body StarlarkInstructionResult
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStarlarkInstructionResult overwrites any union data inside the StarlarkRunResponseLine as the provided StarlarkInstructionResult
+func (t *StarlarkRunResponseLine) FromStarlarkInstructionResult(v StarlarkInstructionResult) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStarlarkInstructionResult performs a merge with any union data inside the StarlarkRunResponseLine, using the provided StarlarkInstructionResult
+func (t *StarlarkRunResponseLine) MergeStarlarkInstructionResult(v StarlarkInstructionResult) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+// AsStarlarkRunFinishedEvent returns the union data inside the StarlarkRunResponseLine as a StarlarkRunFinishedEvent
+func (t StarlarkRunResponseLine) AsStarlarkRunFinishedEvent() (StarlarkRunFinishedEvent, error) {
+	var body StarlarkRunFinishedEvent
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStarlarkRunFinishedEvent overwrites any union data inside the StarlarkRunResponseLine as the provided StarlarkRunFinishedEvent
+func (t *StarlarkRunResponseLine) FromStarlarkRunFinishedEvent(v StarlarkRunFinishedEvent) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStarlarkRunFinishedEvent performs a merge with any union data inside the StarlarkRunResponseLine, using the provided StarlarkRunFinishedEvent
+func (t *StarlarkRunResponseLine) MergeStarlarkRunFinishedEvent(v StarlarkRunFinishedEvent) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+// AsStarlarkWarning returns the union data inside the StarlarkRunResponseLine as a StarlarkWarning
+func (t StarlarkRunResponseLine) AsStarlarkWarning() (StarlarkWarning, error) {
+	var body StarlarkWarning
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStarlarkWarning overwrites any union data inside the StarlarkRunResponseLine as the provided StarlarkWarning
+func (t *StarlarkRunResponseLine) FromStarlarkWarning(v StarlarkWarning) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStarlarkWarning performs a merge with any union data inside the StarlarkRunResponseLine, using the provided StarlarkWarning
+func (t *StarlarkRunResponseLine) MergeStarlarkWarning(v StarlarkWarning) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+// AsStarlarkInfo returns the union data inside the StarlarkRunResponseLine as a StarlarkInfo
+func (t StarlarkRunResponseLine) AsStarlarkInfo() (StarlarkInfo, error) {
+	var body StarlarkInfo
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStarlarkInfo overwrites any union data inside the StarlarkRunResponseLine as the provided StarlarkInfo
+func (t *StarlarkRunResponseLine) FromStarlarkInfo(v StarlarkInfo) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStarlarkInfo performs a merge with any union data inside the StarlarkRunResponseLine, using the provided StarlarkInfo
+func (t *StarlarkRunResponseLine) MergeStarlarkInfo(v StarlarkInfo) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+func (t StarlarkRunResponseLine) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *StarlarkRunResponseLine) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}

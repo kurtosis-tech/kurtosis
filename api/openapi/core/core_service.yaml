@@ -1,8 +1,10 @@
 openapi: 3.0.0
+
 info:
   title: Enclave API
   description: API to manipulate the enclaves
-  version: "1"
+  version: 0.1.0
+
 paths:
 
   /enclaves/{enclave_identifier}/starlark:
@@ -195,7 +197,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InspectFilesArtifactContents"
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileArtifactDescription"
 
   /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download:
     get:
@@ -278,7 +282,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ConnectServices"
+              $ref: "#/components/schemas/Connect"
         required: true
       responses:
         "200":
@@ -354,9 +358,9 @@ components:
           format: int32
         transport_protocol:
           $ref: "#/components/schemas/TransportProtocol"
-        maybe_application_protocol:
+        application_protocol:
           type: string
-        maybe_wait_timeout:
+        wait_timeout:
           type: string
           description: The wait timeout duration in string
       required:
@@ -383,6 +387,12 @@ components:
           type: object
           additionalProperties:
             type: string
+      required:
+        - status
+        - image_name
+        - entrypoint_args
+        - cmd_args
+        - env_vars
 
     ServiceStatus:
       type: string
@@ -417,12 +427,12 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/Port"
-        maybe_public_ip_addr:
+        public_ip_addr:
           type: string
           description: |-
             Public IP address *outside* the enclave where the service is reachable
             NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
-        maybe_public_ports:
+        public_ports:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/Port"
@@ -436,6 +446,14 @@ components:
           $ref: "#/components/schemas/ServiceStatus"
         container:
           $ref: "#/components/schemas/Container"
+      required:
+        - service_uuid
+        - private_ip_addr
+        - private_ports
+        - name
+        - shortened_uuid
+        - service_status
+        - container
 
     Connect:
       type: string
@@ -537,39 +555,51 @@ components:
       type: string
       enum:
         - NO_INSTRUCTIONS_CACHING
-      description: "0 - NO_INSTRUCTIONS_CACHING "
+      description: |-
+        0 - NO_INSTRUCTIONS_CACHING
 
     StarlarkRunResponseLine:
-      type: object
-      properties:
-        instruction:
-          $ref: "#/components/schemas/StarlarkInstruction"
-        error:
-          $ref: "#/components/schemas/StarlarkError"
-        progress_info:
-          $ref: "#/components/schemas/StarlarkRunProgress"
-        instruction_result:
-          $ref: "#/components/schemas/StarlarkInstructionResult"
-        run_finished_event:
-          $ref: "#/components/schemas/StarlarkRunFinishedEvent"
-        warning:
-          $ref: "#/components/schemas/StarlarkWarning"
-        info:
-          $ref: "#/components/schemas/StarlarkInfo"
+      oneOf: 
+        - $ref: "#/components/schemas/StarlarkInstruction"
+        - $ref: "#/components/schemas/StarlarkError"
+        - $ref: "#/components/schemas/StarlarkRunProgress"
+        - $ref: "#/components/schemas/StarlarkInstructionResult"
+        - $ref: "#/components/schemas/StarlarkRunFinishedEvent"
+        - $ref: "#/components/schemas/StarlarkWarning"
+        - $ref: "#/components/schemas/StarlarkInfo"
       description: |-
         Starlark Execution Response
 
     StarlarkInfo:
       type: object
       properties:
-        info_message:
-          type: string
+        info:
+          type: object
+          properties:
+            instruction:
+              type: object
+              properties:
+                info_message:
+                  type: string
+              required:
+                - info_message
+          required:
+            - instruction
+      required:
+        - info
 
     StarlarkWarning:
       type: object
       properties:
-        warning_message:
-          type: string
+        warning:
+          type: object
+          properties:
+            warning_message:
+              type: string
+          required:
+            - warning_message
+      required:
+        - warning
 
     StarlarkInstruction:
       type: object
@@ -586,12 +616,25 @@ components:
           type: string
         is_skipped:
           type: boolean
+      required:
+        - position
+        - instruction_name
+        - arguments
+        - executable_instruction
+        - is_skipped
 
     StarlarkInstructionResult:
       type: object
       properties:
-        serialized_instruction_result:
-          type: string
+        instruction_result:
+          type: object
+          properties:
+            serialized_instruction_result:
+              type: string
+          required:
+            - serialized_instruction_result
+      required:
+        - instruction_result
 
     StarlarkInstructionArgument:
       type: object
@@ -602,6 +645,9 @@ components:
           type: string
         is_representative:
           type: boolean
+      required:
+        - serialized_arg_value
+        - is_representative
 
     StarlarkInstructionPosition:
       type: object
@@ -614,62 +660,99 @@ components:
         column:
           type: integer
           format: int32
+      required:
+        - filename
+        - line
+        - column
 
     StarlarkError:
       type: object
       properties:
-        interpretation_error:
-          $ref: "#/components/schemas/StarlarkInterpretationError"
-        validation_error:
-          $ref: "#/components/schemas/StarlarkValidationError"
-        execution_error:
-          $ref: "#/components/schemas/StarlarkExecutionError"
+        error:
+          oneOf:
+              - $ref: "#/components/schemas/StarlarkInterpretationError"
+              - $ref: "#/components/schemas/StarlarkValidationError"
+              - $ref: "#/components/schemas/StarlarkExecutionError"
+      required:
+        - error
 
     StarlarkInterpretationError:
       type: object
       properties:
-        error_message:
-          type: string
+        interpretation_error:
+          type: object
+          properties:
+            error_message:
+              type: string
+          required:
+            - error_message
+      required:
+        - interpretation_error
 
     StarlarkValidationError:
       type: object
       properties:
-        error_message:
-          type: string
+        validation_error:
+          type: object
+          properties:
+            error_message:
+              type: string
+          required:
+            - error_message
+      required:
+        - validation_error
 
     StarlarkExecutionError:
       type: object
       properties:
-        error_message:
-          type: string
+        execution_error:
+          type: object
+          properties:
+            error_message:
+              type: string
+          required:
+            - error_message
+      required:
+        - execution_error
 
     StarlarkRunProgress:
       type: object
       properties:
-        current_step_info:
-          type: array
-          items:
-            type: string
-        total_steps:
-          type: integer
-          format: int32
-        current_step_number:
-          type: integer
-          format: int32
+        progress_info:
+          type: object
+          properties:
+            current_step_info:
+              type: array
+              items:
+                type: string
+            total_steps:
+              type: integer
+              format: int32
+            current_step_number:
+              type: integer
+              format: int32
+          required:
+            - current_step_info
+            - total_steps
+            - current_step_number
+      required:
+        - progress_info
 
     StarlarkRunFinishedEvent:
       type: object
       properties:
-        is_run_successful:
-          type: boolean
-        serialized_output:
-          type: string
-
-    GetServicesResponse:
-      type: object
-      properties:
-        service_info:
-          $ref: "#/components/schemas/ServiceInfo"
+        run_finished_event:
+          type: object
+          properties:
+            is_run_successful:
+              type: boolean
+            serialized_output:
+              type: string
+          required:
+            - is_run_successful
+            - serialized_output
+      required:
+        - run_finished_event
 
     ServiceIdentifiers:
       type: object
@@ -684,6 +767,10 @@ components:
           type: string
           description: The shortened uuid of the service
       description: An service identifier is a collection of uuid, name and shortened uuid
+      required:
+        - service_uuid
+        - name
+        - shortened_uuid
 
     ExecCommand:
       type: object
@@ -692,8 +779,9 @@ components:
           type: array
           items:
             type: string
-      description: |-
-        Exec Command
+      description: Exec Command
+      required:
+        - command_args
 
     ExecCommandResult:
       type: object
@@ -704,6 +792,9 @@ components:
         log_output:
           type: string
           description: Assumes UTF-8 encoding
+      required:
+        - exit_code
+        - log_output
 
     WaitForEndpointAvailability:
       type: object
@@ -730,6 +821,8 @@ components:
           type: string
           description: If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
       description: Wait For HTTP Endpoint Availability
+      required:
+        - http_method
 
     FileArtifactReference:
       type: object
@@ -742,6 +835,9 @@ components:
           description: UUID of the files artifact, for use when referencing it in the future
       description: |-
         Files Artifact identifier
+      required:
+        - uuid
+        - name
 
     StoreWebFilesArtifact:
       type: object
@@ -771,14 +867,6 @@ components:
         - source_path
         - name
 
-    InspectFilesArtifactContents:
-      type: object
-      properties:
-        file_descriptions:
-          type: array
-          items:
-            $ref: "#/components/schemas/FileArtifactDescription"
-
     FileArtifactDescription:
       type: object
       properties:
@@ -792,12 +880,9 @@ components:
         text_preview:
           type: string
           description: A bit of text content, if the file allows (similar to UNIX's 'head')
-
-    ConnectServices:
-      type: object
-      properties:
-        connect:
-          $ref: "#/components/schemas/Connect"
+      required:
+        - path
+        - size
 
     RestartPolicy:
       type: string
@@ -830,6 +915,15 @@ components:
             $ref: "#/components/schemas/KurtosisFeatureFlag"
         restart_policy:
           $ref: "#/components/schemas/RestartPolicy"
+      required:
+        - package_id
+        - serialized_script
+        - serialized_params
+        - parallelism
+        - relative_path_to_main_file
+        - main_function_name
+        - experimental_features
+        - restart_policy
 
     TransportProtocol:
       type: string
