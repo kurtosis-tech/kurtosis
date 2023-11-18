@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.31](https://github.com/kurtosis-tech/kurtosis/compare/0.85.30...0.85.31) (2023-11-17)
+
+
+### Bug Fixes
+
+* implement minor emui feedback tweaks ([#1827](https://github.com/kurtosis-tech/kurtosis/issues/1827)) ([8161a34](https://github.com/kurtosis-tech/kurtosis/commit/8161a340a9f4724c885ffecbc61b31b1af9bc3fa))
+
 ## [0.85.30](https://github.com/kurtosis-tech/kurtosis/compare/0.85.29...0.85.30) (2023-11-17)
 
 
