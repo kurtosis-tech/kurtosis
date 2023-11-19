@@ -411,7 +411,7 @@ func restApiServer(
 
 	// Use our validation middleware to check all requests against the
 	// e.Use(middleware.OapiRequestValidator(swagger_enclave))
-	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, enclave_manager)
+	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, enclave_manager, false)
 	if err != nil {
 		// TODO(edgar) fix error handling
 	}

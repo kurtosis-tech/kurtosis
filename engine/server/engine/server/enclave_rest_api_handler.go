@@ -26,7 +26,7 @@ type enclaveRuntime struct {
 	remoteApiContainerClient map[string]kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 }
 
-func NewEnclaveRuntime(ctx context.Context, manager *enclave_manager.EnclaveManager) (*enclaveRuntime, error) {
+func NewEnclaveRuntime(ctx context.Context, manager *enclave_manager.EnclaveManager, connectOnHostMachine bool) (*enclaveRuntime, error) {
 	enclaves, err := manager.GetEnclaves(ctx)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func NewEnclaveRuntime(ctx context.Context, manager *enclave_manager.EnclaveMana
 
 	clients := map[string]kurtosis_core_rpc_api_bindings.ApiContainerServiceClient{}
 	for uuid, info := range enclaves {
-		conn, err := getGrpcClientConn(info)
+		conn, err := getGrpcClientConn(info, connectOnHostMachine)
 		if err != nil {
 			logrus.Errorf("Failed to establish gRPC connection with enclave manager service on enclave %s", uuid)
 			return nil, err
@@ -572,11 +572,13 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 
 // GetGrpcClientConn returns a client conn dialed in to the local port
 // It is the caller's responsibility to call resultClientConn.close()
-func getGrpcClientConn(enclaveInfo *types.EnclaveInfo) (resultClientConn *grpc.ClientConn, resultErr error) {
-	// apiContainerGrpcPort := enclaveInfo.ApiContainerInfo.GrpcPortInsideEnclave
-	// apiContainerIP := enclaveInfo.ApiContainerInfo.ContainerId
-	apiContainerGrpcPort := enclaveInfo.ApiContainerHostMachineInfo.GrpcPortOnHostMachine
-	apiContainerIP := enclaveInfo.ApiContainerHostMachineInfo.IpOnHostMachine
+func getGrpcClientConn(enclaveInfo *types.EnclaveInfo, connectOnHostMachine bool) (resultClientConn *grpc.ClientConn, resultErr error) {
+	apiContainerGrpcPort := enclaveInfo.ApiContainerInfo.GrpcPortInsideEnclave
+	apiContainerIP := enclaveInfo.ApiContainerInfo.BridgeIpAddress
+	if connectOnHostMachine {
+		apiContainerGrpcPort = enclaveInfo.ApiContainerHostMachineInfo.GrpcPortOnHostMachine
+		apiContainerIP = enclaveInfo.ApiContainerHostMachineInfo.IpOnHostMachine
+	}
 	grpcServerAddress := fmt.Sprintf("%v:%v", apiContainerIP, apiContainerGrpcPort)
 	grpcConnection, err := grpc.Dial(grpcServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
