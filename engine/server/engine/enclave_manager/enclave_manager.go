@@ -27,6 +27,8 @@ import (
 const (
 	apiContainerListenGrpcPortNumInsideNetwork = uint16(7443)
 
+	tunnelServerListenPortNumInsideNetwork = uint16(9501)
+
 	getRandomEnclaveIdRetries = uint16(5)
 
 	validNumberOfUuidMatches = 1

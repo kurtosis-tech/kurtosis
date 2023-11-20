@@ -65,6 +65,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	image string,
 	enclaveId enclave.EnclaveUUID,
 	grpcPortNum uint16,
+	tunnelPortNum uint16,
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,

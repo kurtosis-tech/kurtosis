@@ -38,6 +38,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	image string,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcPortNum uint16,
+	tunnelPortNum uint16,
 	// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
