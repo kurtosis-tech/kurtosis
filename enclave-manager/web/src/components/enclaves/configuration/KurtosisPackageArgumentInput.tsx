@@ -35,6 +35,7 @@ export const KurtosisPackageArgumentInput = ({ argument, disabled }: KurtosisPac
         subType1={argument.typeV2?.innerType1}
         subType2={argument.typeV2?.innerType2}
         name={fieldName}
+        placeholder={argument.defaultValue}
         isRequired={argument.isRequired}
       />
     </KurtosisArgumentFormControl>

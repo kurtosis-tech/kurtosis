@@ -170,11 +170,12 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
 
 	if _, err = backend.dockerManager.FetchImageIfMissing(ctx, image); err != nil {
-		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
+		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version. Error:\n%v", image, err)
 	}
 
 	containerId, hostMachinePortBindings, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
+		logrus.Debugf("Error occurred starting the API container. Err:\n%v", err)
 		return nil, stacktrace.Propagate(err, "An error occurred starting the API container")
 	}
 	shouldKillContainer := true

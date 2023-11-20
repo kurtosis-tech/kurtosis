@@ -14,6 +14,7 @@ func (suite *StartosisPackageTestSuite) TestStartosisNoMainBranchRemotePackage_R
 	runResult, _ := suite.RunRemotePackage(ctx, noMainBranchWithRelativeImportRemotePackage)
 
 	t := suite.T()
+	require.NotNil(t, runResult)
 	require.Nil(t, runResult.InterpretationError)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)

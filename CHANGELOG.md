@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.85.31](https://github.com/kurtosis-tech/kurtosis/compare/0.85.30...0.85.31) (2023-11-17)
+
+
+### Bug Fixes
+
+* implement minor emui feedback tweaks ([#1827](https://github.com/kurtosis-tech/kurtosis/issues/1827)) ([8161a34](https://github.com/kurtosis-tech/kurtosis/commit/8161a340a9f4724c885ffecbc61b31b1af9bc3fa))
+
+## [0.85.30](https://github.com/kurtosis-tech/kurtosis/compare/0.85.29...0.85.30) (2023-11-17)
+
+
+### Bug Fixes
+
+* remove monaco max height limit ([#1823](https://github.com/kurtosis-tech/kurtosis/issues/1823)) ([ffe0f43](https://github.com/kurtosis-tech/kurtosis/commit/ffe0f43714cf5a6b1fe0313995fe2998ae856974))
+
+## [0.85.29](https://github.com/kurtosis-tech/kurtosis/compare/0.85.28...0.85.29) (2023-11-17)
+
+
+### Bug Fixes
+
+* check if record is empty ([#1819](https://github.com/kurtosis-tech/kurtosis/issues/1819)) ([392d47b](https://github.com/kurtosis-tech/kurtosis/commit/392d47b7962c9376551da2e0af3ddb32a304cb20))
+
+## [0.85.28](https://github.com/kurtosis-tech/kurtosis/compare/0.85.27...0.85.28) (2023-11-16)
+
+
+### Bug Fixes
+
+* update emui build ([#1814](https://github.com/kurtosis-tech/kurtosis/issues/1814)) ([39d2285](https://github.com/kurtosis-tech/kurtosis/commit/39d228528c61b07827f12280cc3f5e7af4aa16fa))
+
+## [0.85.27](https://github.com/kurtosis-tech/kurtosis/compare/0.85.26...0.85.27) (2023-11-16)
+
+
+### Bug Fixes
+
+* allow building webapp on main ([#1811](https://github.com/kurtosis-tech/kurtosis/issues/1811)) ([1410445](https://github.com/kurtosis-tech/kurtosis/commit/1410445099683124358bd6fe0a012cdecf93e209))
+
+## [0.85.26](https://github.com/kurtosis-tech/kurtosis/compare/0.85.25...0.85.26) (2023-11-16)
+
+
+### Features
+
+* emui improvements ([#1808](https://github.com/kurtosis-tech/kurtosis/issues/1808)) ([4e77667](https://github.com/kurtosis-tech/kurtosis/commit/4e776673fc017a8e2d44f138aa67f057f524ff58))
+
+## [0.85.25](https://github.com/kurtosis-tech/kurtosis/compare/0.85.24...0.85.25) (2023-11-16)
+
+
+### Bug Fixes
+
+* display create enclave error in scrollable box ([#1802](https://github.com/kurtosis-tech/kurtosis/issues/1802)) ([21adc5d](https://github.com/kurtosis-tech/kurtosis/commit/21adc5d70575b0d59980367146a528d1cfe137dc))
+
+## [0.85.24](https://github.com/kurtosis-tech/kurtosis/compare/0.85.23...0.85.24) (2023-11-16)
+
+
+### Features
+
+* generate enclave manager ui in build process and check prettier ([#1717](https://github.com/kurtosis-tech/kurtosis/issues/1717)) ([d6be248](https://github.com/kurtosis-tech/kurtosis/commit/d6be2482cc1af81830e909b8fdbaca104a7b73c3))
+
 ## [0.85.23](https://github.com/kurtosis-tech/kurtosis/compare/0.85.22...0.85.23) (2023-11-15)
 
 

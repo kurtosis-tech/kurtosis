@@ -66,7 +66,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   }, [navigator, location.state, activeIndex, enclave.shortenedUuid]);
 
   return (
-    <Flex direction="column" width={"100%"}>
+    <Flex direction="column" width={"100%"} h={"100%"}>
       <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
         <TabList>
           <Flex justifyContent={"space-between"} width={"100%"}>

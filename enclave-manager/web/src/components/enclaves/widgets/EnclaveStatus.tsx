@@ -1,4 +1,4 @@
-import { Tag } from "@chakra-ui/react";
+import { Tag, Tooltip } from "@chakra-ui/react";
 import { EnclaveContainersStatus } from "enclave-manager-sdk/build/engine_service_pb";
 
 export function enclaveStatusToString(status: EnclaveContainersStatus) {
@@ -12,6 +12,17 @@ export function enclaveStatusToString(status: EnclaveContainersStatus) {
   }
 }
 
+export function enclaveStatusToColorScheme(status: EnclaveContainersStatus) {
+  switch (status) {
+    case EnclaveContainersStatus.EnclaveContainersStatus_RUNNING:
+      return "green";
+    case EnclaveContainersStatus.EnclaveContainersStatus_STOPPED:
+      return "red";
+    case EnclaveContainersStatus.EnclaveContainersStatus_EMPTY:
+      return "gray";
+  }
+}
+
 type EnclaveStatusProps = {
   status: EnclaveContainersStatus;
   variant?: string;
@@ -19,24 +30,13 @@ type EnclaveStatusProps = {
 
 export const EnclaveStatus = ({ status, variant }: EnclaveStatusProps) => {
   const display = enclaveStatusToString(status);
-  switch (status) {
-    case EnclaveContainersStatus.EnclaveContainersStatus_RUNNING:
-      return (
-        <Tag variant={variant} colorScheme={"green"}>
-          {display}
-        </Tag>
-      );
-    case EnclaveContainersStatus.EnclaveContainersStatus_STOPPED:
-      return (
-        <Tag variant={variant} colorScheme={"red"}>
-          {display}
-        </Tag>
-      );
-    case EnclaveContainersStatus.EnclaveContainersStatus_EMPTY:
-      return (
-        <Tag variant={variant} colorScheme={"gray"}>
-          {display}
-        </Tag>
-      );
-  }
+  const colorScheme = enclaveStatusToColorScheme(status);
+
+  return (
+    <Tooltip closeDelay={1000} label={"This is the status of the container running the enclave"}>
+      <Tag variant={variant} colorScheme={colorScheme}>
+        {display}
+      </Tag>
+    </Tooltip>
+  );
 };

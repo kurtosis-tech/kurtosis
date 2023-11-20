@@ -56,6 +56,7 @@ export const LogLine = ({ timestamp, message, status }: LogLineProps) => {
       <Box
         as={"pre"}
         whiteSpace={"pre-wrap"}
+        overflowWrap={"anywhere"}
         fontSize={"xs"}
         lineHeight="2"
         fontWeight={400}
