@@ -26,6 +26,7 @@ import (
 const (
 	// The API container uses gRPC so MUST listen on TCP (no other protocols are supported)
 	apiContainerTransportProtocol = port_spec.TransportProtocol_TCP
+	tunnelServerTransportProtocol = port_spec.TransportProtocol_TCP
 
 	maxWaitForApiContainerAvailabilityRetries         = 10
 	timeBetweenWaitForApiContainerAvailabilityRetries = 1 * time.Second
@@ -115,6 +116,16 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		)
 	}
 
+	privateTunnelPortSpec, err := port_spec.NewPortSpec(tunnelPortNum, tunnelServerTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the API container's private tunnel server port spec object using number '%v' and protocol '%v'",
+			tunnelPortNum,
+			tunnelServerTransportProtocol,
+		)
+	}
+
 	enclaveObjAttrProvider, err := backend.objAttrsProvider.ForEnclave(enclaveUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveUuid)
@@ -133,8 +144,14 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
+	privateTunnelServerDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateTunnelPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the private tunnel server port spec to a Docker port")
+	}
+
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateGrpcDockerPort: docker_manager.NewAutomaticPublishingSpec(),
+		privateGrpcDockerPort:         docker_manager.NewAutomaticPublishingSpec(),
+		privateTunnelServerDockerPort: docker_manager.NewAutomaticPublishingSpec(),
 	}
 
 	bindMounts := map[string]string{
