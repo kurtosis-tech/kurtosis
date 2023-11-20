@@ -12,7 +12,8 @@ const (
 
 	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
 	//  be stored in the port spec label
-	KurtosisInternalContainerGrpcPortSpecId = "grpc"
+	KurtosisInternalContainerGrpcPortSpecId     = "grpc"
+	KurtosisInternalContainerTunnelServerSpecId = "tunnel"
 
 	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
 	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers

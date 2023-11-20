@@ -101,8 +101,18 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
+	privateTunnelPortSpec, err := port_spec.NewPortSpec(tunnelPortNum, consts.KurtosisServersTransportProtocol, consts.HttpApplicationProtocol, noWait)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the API container's private tunnel server port spec object using number '%v' and protocol '%v'",
+			tunnelPortNum,
+			consts.KurtosisServersTransportProtocol.String(),
+		)
+	}
 	privatePortSpecs := map[string]*port_spec.PortSpec{
-		consts.KurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		consts.KurtosisInternalContainerGrpcPortSpecId:     privateGrpcPortSpec,
+		consts.KurtosisInternalContainerTunnelServerSpecId: privateTunnelPortSpec,
 	}
 
 	enclaveAttributesProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
