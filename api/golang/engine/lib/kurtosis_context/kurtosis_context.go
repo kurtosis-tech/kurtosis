@@ -83,17 +83,9 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
-	var portalClient portal_api.KurtosisPortalClientClient
-	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
-	if err == nil {
-		if store.IsRemote(currentContext) {
-			portalClient, err = CreatePortalDaemonClient(portalIsRequired)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
-			}
-		}
-	} else {
-		logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")
+	portalClient, err := CreatePortalDaemonClient(portalIsRequired)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
 	}
 
 	kurtosisContext := &KurtosisContext{
