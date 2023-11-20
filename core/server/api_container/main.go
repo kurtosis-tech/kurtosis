@@ -278,20 +278,9 @@ func startTunnelServer(ctx context.Context, portalServer *KurtosisTunnelServer, 
 		}
 	}
 
-	server, err := chserver.NewServer(&chserver.Config{
-		KeySeed:   "",
-		AuthFile:  "",
-		Auth:      "",
-		Proxy:     "",
-		Socks5:    false,
+	chiselServer, err := chserver.NewServer(&chserver.Config{
 		Reverse:   false, // reverse tunnelling is not exposed through the API yet, turn it off here
 		KeepAlive: 25 * time.Second,
-		TLS: chserver.TLSConfig{
-			CA:      "",
-			Cert:    "",
-			Key:     "",
-			Domains: []string{},
-		},
 	})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating chisel server")
@@ -307,7 +296,7 @@ func startTunnelServer(ctx context.Context, portalServer *KurtosisTunnelServer, 
 	}()
 
 	listeningPortStr := strconv.Itoa(int(listeningPort))
-	if err := server.StartContext(cancellableContext, host, listeningPortStr); err != nil {
+	if err := chiselServer.StartContext(cancellableContext, host, listeningPortStr); err != nil {
 		return stacktrace.Propagate(err, "error running chisel server")
 	}
 	portalServer.killTunnelFunc = func() error {
