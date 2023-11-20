@@ -255,7 +255,7 @@ func runMain() error {
 		mutex:          &sync.Mutex{},
 		killTunnelFunc: nil,
 	}
-	if err := startTunnelServer(ctx, tunnelServer, "0.0.0.0", 9721); err != nil {
+	if err := startTunnelServer(ctx, tunnelServer, "0.0.0.0", serverArgs.TunnelListenPortNum); err != nil {
 		return stacktrace.Propagate(err, "Unable to start server-side tunnel")
 	}
 
@@ -267,7 +267,7 @@ func runMain() error {
 	return nil
 }
 
-func startTunnelServer(ctx context.Context, portalServer *KurtosisTunnelServer, host string, listeningPort uint32) error {
+func startTunnelServer(ctx context.Context, portalServer *KurtosisTunnelServer, host string, listeningPort uint16) error {
 	portalServer.mutex.Lock()
 	defer portalServer.mutex.Unlock()
 
