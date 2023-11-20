@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.32](https://github.com/kurtosis-tech/kurtosis/compare/0.85.31...0.85.32) (2023-11-20)
+
+
+### Features
+
+* emui auth via cookie ([#1783](https://github.com/kurtosis-tech/kurtosis/issues/1783)) ([d5d79d8](https://github.com/kurtosis-tech/kurtosis/commit/d5d79d8c4a67d175d9dc0d842e9edbb6068b8c6c))
+
 ## [0.85.31](https://github.com/kurtosis-tech/kurtosis/compare/0.85.30...0.85.31) (2023-11-17)
 
 
