@@ -1167,7 +1167,10 @@ workflows:
                         "pattern": "https://twitter.com/.*"
                     },
                     {
-                        "pattern": "http://localhost:3000"
+                        "pattern": "http://localhost:.*"
+                    },
+                    {
+                        "pattern": "http://localhost/.*"
                     }
                 ]
             }

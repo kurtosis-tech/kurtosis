@@ -1,3 +1,5 @@
+/*! js-cookie v3.0.5 | MIT */
+
 /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
 
 /*! streamsaver. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */

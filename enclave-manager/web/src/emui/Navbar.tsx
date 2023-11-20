@@ -1,17 +1,16 @@
 import { FiHome } from "react-icons/fi";
+import { PiLinkSimpleBold } from "react-icons/pi";
 import { Link, useLocation } from "react-router-dom";
+import { KURTOSIS_CLOUD_CONNECT_URL } from "../client/constants";
+import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
 import { NavButton, Navigation } from "../components/Navigation";
 
-export type NavbarProps = {
-  baseApplicationUrl: URL;
-};
-
-export const Navbar = ({ baseApplicationUrl }: NavbarProps) => {
+export const Navbar = () => {
   const location = useLocation();
-  // const kurtosisClient = useKurtosisClient();
+  const kurtosisClient = useKurtosisClient();
 
   return (
-    <Navigation baseApplicationUrl={baseApplicationUrl}>
+    <Navigation>
       <Link to={"/"}>
         <NavButton
           label={"View enclaves"}
@@ -19,11 +18,11 @@ export const Navbar = ({ baseApplicationUrl }: NavbarProps) => {
           isActive={location.pathname === "/" || location.pathname.startsWith("/enclave")}
         />
       </Link>
-      {/*{kurtosisClient.isRunningInCloud() && (*/}
-      {/*  <Link to={KURTOSIS_CLOUD_CONNECT_URL}>*/}
-      {/*    <NavButton label={"Link your CLI"} Icon={<PiLinkSimpleBold />} isActive={true} />*/}
-      {/*  </Link>*/}
-      {/*)}*/}
+      {kurtosisClient.isRunningInCloud() && (
+        <Link to={KURTOSIS_CLOUD_CONNECT_URL}>
+          <NavButton label={"Link your CLI"} Icon={<PiLinkSimpleBold />} />
+        </Link>
+      )}
       {/*<Link to={"/catalog"}>*/}
       {/*  <NavButton label={"View catalog"} Icon={<FiPackage />} isActive={location.pathname.startsWith("/catalog")} />*/}
       {/*</Link>*/}
