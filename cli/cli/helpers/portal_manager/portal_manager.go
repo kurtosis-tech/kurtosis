@@ -192,8 +192,7 @@ func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRem
 	}
 	if portalManager.portalClientMaybe == nil {
 		successfullyMappedPorts = localPortToRemotePortMapping
-		// context is local and portal not present. Port mapping doesn't make sense in a local context anyway, return
-		// successfully
+		// context is local and portal not present. Port mapping doesn't make sense in a local context anyway, return successfully
 		logrus.Debug("Context is local, no ports to map via the Portal as they are naturally exposed")
 		return successfullyMappedPorts, failedPorts, nil
 	}
