@@ -3,8 +3,8 @@ import { StarlarkRunResponseLine } from "enclave-manager-sdk/build/api_container
 import { useEffect, useState } from "react";
 import { FiCheck, FiX } from "react-icons/fi";
 import { Location, useLocation, useNavigate } from "react-router-dom";
-import { LogLineProps } from "../../../../components/enclaves/logs/LogLine";
 import { LogViewer } from "../../../../components/enclaves/logs/LogViewer";
+import { LogLineMessage } from "../../../../components/enclaves/logs/types";
 import { isAsyncIterable, stringifyError } from "../../../../utils";
 import { useEmuiAppContext } from "../../../EmuiAppContext";
 import { EnclaveFullInfo } from "../../types";
@@ -19,7 +19,7 @@ type EnclaveLogStage =
 
 const LOG_STARTING_EXECUTION = "Starting execution";
 
-export function starlarkResponseLineToLogLineProps(l: StarlarkRunResponseLine): LogLineProps {
+export function starlarkResponseLineToLogLineMessage(l: StarlarkRunResponseLine): LogLineMessage {
   switch (l.runResponseLine.case) {
     case "instruction":
       return { message: l.runResponseLine.value.executableInstruction };
@@ -47,7 +47,7 @@ export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
   const navigator = useNavigate();
   const location = useLocation() as Location<{ logs: AsyncIterable<StarlarkRunResponseLine> }>;
   const [progress, setProgress] = useState<EnclaveLogStage>({ stage: "waiting" });
-  const [logLines, setLogLines] = useState<LogLineProps[]>([]);
+  const [logLines, setLogLines] = useState<LogLineMessage[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +60,7 @@ export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
             if (cancelled) {
               return;
             }
-            const parsedLine = starlarkResponseLineToLogLineProps(line);
+            const parsedLine = starlarkResponseLineToLogLineMessage(line);
             setLogLines((logLines) => [...logLines, parsedLine]);
             setProgress((oldProgress) => {
               if (line.runResponseLine.case === "progressInfo") {
