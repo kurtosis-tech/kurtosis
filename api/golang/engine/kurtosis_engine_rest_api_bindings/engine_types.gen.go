@@ -27,14 +27,6 @@ const (
 	TEST       EnclaveMode = "TEST"
 )
 
-// Defines values for LogLineOperator.
-const (
-	DOESCONTAINMATCHREGEX    LogLineOperator = "DOES_CONTAIN_MATCH_REGEX"
-	DOESCONTAINTEXT          LogLineOperator = "DOES_CONTAIN_TEXT"
-	DOESNOTCONTAINMATCHREGEX LogLineOperator = "DOES_NOT_CONTAIN_MATCH_REGEX"
-	DOESNOTCONTAINTEXT       LogLineOperator = "DOES_NOT_CONTAIN_TEXT"
-)
-
 // ApiContainerStatus defines model for ApiContainerStatus.
 type ApiContainerStatus string
 
@@ -102,36 +94,6 @@ type EngineInfo struct {
 	EngineVersion string `json:"engine_version"`
 }
 
-// GetServiceLogs defines model for GetServiceLogs.
-type GetServiceLogs struct {
-	ConjunctiveFilters *[]LogLineFilter `json:"conjunctive_filters,omitempty"`
-	FollowLogs         *bool            `json:"follow_logs,omitempty"`
-	NumLogLines        *int             `json:"num_log_lines,omitempty"`
-	ReturnAllLogs      *bool            `json:"return_all_logs,omitempty"`
-	ServiceUuidSet     *[]string        `json:"service_uuid_set,omitempty"`
-}
-
-// LogLine defines model for LogLine.
-type LogLine struct {
-	Line      []string  `json:"line"`
-	Timestamp Timestamp `json:"timestamp"`
-}
-
-// LogLineFilter defines model for LogLineFilter.
-type LogLineFilter struct {
-	Operator    LogLineOperator `json:"operator"`
-	TextPattern string          `json:"text_pattern"`
-}
-
-// LogLineOperator defines model for LogLineOperator.
-type LogLineOperator string
-
-// ServiceLogs defines model for ServiceLogs.
-type ServiceLogs struct {
-	NotFoundServiceUuidSet   *[]string           `json:"not_found_service_uuid_set,omitempty"`
-	ServiceLogsByServiceUuid *map[string]LogLine `json:"service_logs_by_service_uuid,omitempty"`
-}
-
 // Timestamp defines model for Timestamp.
 type Timestamp = time.Time
 
@@ -149,6 +111,3 @@ type DeleteEnclavesParams struct {
 
 // PostEnclavesJSONRequestBody defines body for PostEnclaves for application/json ContentType.
 type PostEnclavesJSONRequestBody = CreateEnclave
-
-// PostEnclavesEnclaveIdentifierLogsJSONRequestBody defines body for PostEnclavesEnclaveIdentifierLogs for application/json ContentType.
-type PostEnclavesEnclaveIdentifierLogsJSONRequestBody = GetServiceLogs

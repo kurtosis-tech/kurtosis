@@ -20,6 +20,7 @@ import (
 	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rest_api_bindings"
 	engineApi "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rest_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
+	loggingApi "github.com/kurtosis-tech/kurtosis/api/golang/logging/kurtosis_logging_api_bindings"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -400,6 +401,30 @@ func restApiServer(
 	}
 	engineApi.RegisterHandlers(e, engineApi.NewStrictHandler(engineRuntime, nil))
 
+	// ============================== Logging API ======================================
+
+	swagger_logging, err := loggingApi.GetSwagger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
+		os.Exit(1)
+	}
+	server.ServeSwaggerUI(e, "/api/specs/logging", server.NewSwaggerUIConfig(swagger_logging))
+	// Use our validation middleware to check all requests against the
+	// e.Use(middleware.OapiRequestValidator(swagger_logging))
+	loggingRuntime := restApi.LoggingRuntime{
+		ImageVersionTag:             serverArgs.ImageVersionTag,
+		EnclaveManager:              enclave_manager,
+		MetricsUserID:               serverArgs.MetricsUserID,
+		DidUserAcceptSendingMetrics: serverArgs.DidUserAcceptSendingMetrics,
+		PerWeekLogsDatabaseClient:   perWeekLogsDatabaseClient,
+		PerFileLogsDatabaseClient:   perFileLogsDatabaseClient,
+		LogFileManager:              logFileManager,
+		MetricsClient:               metricsClient,
+	}
+	// TODO(edgar) add logging Close()
+	// defer loggingRuntime.ShutDown()
+	loggingApi.RegisterHandlers(e, loggingRuntime)
+
 	// ============================== Engine Management API ======================================
 	// OpenAPI schema.
 	swagger_enclave, err := enclaveApi.GetSwagger()
@@ -411,7 +436,7 @@ func restApiServer(
 
 	// Use our validation middleware to check all requests against the
 	// e.Use(middleware.OapiRequestValidator(swagger_enclave))
-	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, enclave_manager, false)
+	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, *enclave_manager, false)
 	if err != nil {
 		// TODO(edgar) fix error handling
 	}

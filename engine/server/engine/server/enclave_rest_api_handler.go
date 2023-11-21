@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
@@ -22,31 +23,60 @@ import (
 )
 
 type enclaveRuntime struct {
-	enclaveManager           *enclave_manager.EnclaveManager
+	enclaveManager           enclave_manager.EnclaveManager
 	remoteApiContainerClient map[string]kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
+	connectOnHostMachine     bool
+	ctx                      context.Context
+	lock                     sync.Mutex
 }
 
-func NewEnclaveRuntime(ctx context.Context, manager *enclave_manager.EnclaveManager, connectOnHostMachine bool) (*enclaveRuntime, error) {
-	enclaves, err := manager.GetEnclaves(ctx)
+func (runtime enclaveRuntime) refreshEnclaveConnections() error {
+	runtime.lock.Lock()
+	defer runtime.lock.Unlock()
+
+	enclaves, err := runtime.enclaveManager.GetEnclaves(runtime.ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	clients := map[string]kurtosis_core_rpc_api_bindings.ApiContainerServiceClient{}
-	for uuid, info := range enclaves {
-		conn, err := getGrpcClientConn(info, connectOnHostMachine)
-		if err != nil {
-			logrus.Errorf("Failed to establish gRPC connection with enclave manager service on enclave %s", uuid)
-			return nil, err
+	// Clean up removed enclaves
+	for uuid := range runtime.remoteApiContainerClient {
+		_, found := enclaves[uuid]
+		if !found {
+			delete(runtime.remoteApiContainerClient, uuid)
 		}
-		logrus.Debugf("Creating gRPC connection with enclave manager service on enclave %s", uuid)
-		apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
-		clients[uuid] = apiContainerClient
 	}
+
+	// Add new enclaves - assuming enclaves properties (API container connection) are immutable
+	for uuid, info := range enclaves {
+		_, found := runtime.remoteApiContainerClient[uuid]
+		if !found {
+			conn, err := getGrpcClientConn(info, runtime.connectOnHostMachine)
+			if err != nil {
+				logrus.Errorf("Failed to establish gRPC connection with enclave manager service on enclave %s", uuid)
+				return err
+			}
+			logrus.Debugf("Creating gRPC connection with enclave manager service on enclave %s", uuid)
+			apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
+			runtime.remoteApiContainerClient[uuid] = apiContainerClient
+		}
+	}
+
+	return nil
+}
+
+func NewEnclaveRuntime(ctx context.Context, manager enclave_manager.EnclaveManager, connectOnHostMachine bool) (*enclaveRuntime, error) {
 
 	runtime := enclaveRuntime{
 		enclaveManager:           manager,
-		remoteApiContainerClient: clients,
+		remoteApiContainerClient: map[string]kurtosis_core_rpc_api_bindings.ApiContainerServiceClient{},
+		connectOnHostMachine:     connectOnHostMachine,
+		ctx:                      ctx,
+	}
+
+	err := runtime.refreshEnclaveConnections()
+	if err != nil {
+		return nil, err
 	}
 
 	return &runtime, nil
@@ -59,9 +89,12 @@ func NewEnclaveRuntime(ctx context.Context, manager *enclave_manager.EnclaveMana
 // (GET /enclaves/{enclave_identifier}/artifacts)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context.Context, request api.GetEnclavesEnclaveIdentifierArtifactsRequestObject) (api.GetEnclavesEnclaveIdentifierArtifactsResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 
-	artifacts, err := apiContainerClient.ListFilesArtifactNamesAndUuids(ctx, &emptypb.Empty{})
+	artifacts, err := (*apiContainerClient).ListFilesArtifactNamesAndUuids(ctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +114,10 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context
 // (POST /enclaves/{enclave_identifier}/artifacts/local-file)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(ctx context.Context, request api.PostEnclavesEnclaveIdentifierArtifactsLocalFileRequestObject) (api.PostEnclavesEnclaveIdentifierArtifactsLocalFileResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
 
 	uploaded_artifacts := map[string]api.FileArtifactReference{}
@@ -93,7 +129,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 		}
 		filename := part.FileName()
 
-		client, err := apiContainerClient.UploadFilesArtifact(ctx)
+		client, err := (*apiContainerClient).UploadFilesArtifact(ctx)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Can't start file upload gRPC call with enclave %s", enclave_identifier)
 		}
@@ -131,14 +167,17 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 // (PUT /enclaves/{enclave_identifier}/artifacts/remote-file)
 func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx context.Context, request api.PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject) (api.PutEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
 
 	storeWebFilesArtifactArgs := kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs{
 		Url:  request.Body.Url,
 		Name: request.Body.Name,
 	}
-	stored_artifact, err := apiContainerClient.StoreWebFilesArtifact(ctx, &storeWebFilesArtifactArgs)
+	stored_artifact, err := (*apiContainerClient).StoreWebFilesArtifact(ctx, &storeWebFilesArtifactArgs)
 	if err != nil {
 		logrus.Errorf("Can't start file upload gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
@@ -155,7 +194,10 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(c
 func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx context.Context, request api.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject) (api.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	service_identifier := request.ServiceIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Storing file artifact from service %s on enclave %s", service_identifier, enclave_identifier)
 
 	storeWebFilesArtifactArgs := kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{
@@ -163,7 +205,7 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsServicesServ
 		SourcePath:        request.Body.SourcePath,
 		Name:              request.Body.Name,
 	}
-	stored_artifact, err := apiContainerClient.StoreFilesArtifactFromService(ctx, &storeWebFilesArtifactArgs)
+	stored_artifact, err := (*apiContainerClient).StoreFilesArtifactFromService(ctx, &storeWebFilesArtifactArgs)
 	if err != nil {
 		logrus.Errorf("Can't start file upload gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
@@ -180,7 +222,10 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsServicesServ
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx context.Context, request api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierRequestObject) (api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	artifact_identifier := request.ArtifactIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Inspecting file artifact %s on enclave %s", artifact_identifier, enclave_identifier)
 
 	inspectFilesArtifactContentsRequest := kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest{
@@ -189,7 +234,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 			FileUuid: artifact_identifier,
 		},
 	}
-	stored_artifact, err := apiContainerClient.InspectFilesArtifactContents(ctx, &inspectFilesArtifactContentsRequest)
+	stored_artifact, err := (*apiContainerClient).InspectFilesArtifactContents(ctx, &inspectFilesArtifactContentsRequest)
 	if err != nil {
 		logrus.Errorf("Can't inspect artifact using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't inspect artifact using gRPC call with enclave %s", enclave_identifier)
@@ -213,13 +258,16 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx context.Context, request api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadRequestObject) (api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	artifact_identifier := request.ArtifactIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Downloading file artifact %s from enclave %s", artifact_identifier, enclave_identifier)
 
 	downloadFilesArtifactArgs := kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
 		Identifier: artifact_identifier,
 	}
-	client, err := apiContainerClient.DownloadFilesArtifact(ctx, &downloadFilesArtifactArgs)
+	client, err := (*apiContainerClient).DownloadFilesArtifact(ctx, &downloadFilesArtifactArgs)
 	if err != nil {
 		logrus.Errorf("Can't start file download gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't start file download gRPC call with enclave %s", enclave_identifier)
@@ -244,14 +292,17 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 // (GET /enclaves/{enclave_identifier}/services)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServices(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesRequestObject) (api.GetEnclavesEnclaveIdentifierServicesResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Getting info about services enclave %s", enclave_identifier)
 
 	service_ids := utils.DerefWith(request.Params.Services, []string{})
 	getServicesArgs := kurtosis_core_rpc_api_bindings.GetServicesArgs{
 		ServiceIdentifiers: utils.NewMapFromList(service_ids, func(x string) bool { return true }),
 	}
-	services, err := apiContainerClient.GetServices(ctx, &getServicesArgs)
+	services, err := (*apiContainerClient).GetServices(ctx, &getServicesArgs)
 	if err != nil {
 		logrus.Errorf("Can't list services using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
@@ -264,10 +315,13 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServices(ctx context.
 // (GET /enclaves/{enclave_identifier}/services/history)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesHistory(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesHistoryRequestObject) (api.GetEnclavesEnclaveIdentifierServicesHistoryResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Listing services from enclave %s", enclave_identifier)
 
-	services, err := apiContainerClient.GetExistingAndHistoricalServiceIdentifiers(ctx, &emptypb.Empty{})
+	services, err := (*apiContainerClient).GetExistingAndHistoricalServiceIdentifiers(ctx, &emptypb.Empty{})
 	if err != nil {
 		logrus.Errorf("Can't list services using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
@@ -287,13 +341,16 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesHistory(ctx c
 // (POST /enclaves/{enclave_identifier}/services/connection)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesConnection(ctx context.Context, request api.PostEnclavesEnclaveIdentifierServicesConnectionRequestObject) (api.PostEnclavesEnclaveIdentifierServicesConnectionResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Listing services from enclave %s", enclave_identifier)
 
 	connectServicesArgs := kurtosis_core_rpc_api_bindings.ConnectServicesArgs{
 		Connect: toGrpcConnect(*request.Body),
 	}
-	_, err := apiContainerClient.ConnectServices(ctx, &connectServicesArgs)
+	_, err = (*apiContainerClient).ConnectServices(ctx, &connectServicesArgs)
 	if err != nil {
 		logrus.Errorf("Can't list services using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
@@ -306,13 +363,16 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesConnection(c
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierRequestObject) (api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	service_identifier := request.ServiceIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
 
 	getServicesArgs := kurtosis_core_rpc_api_bindings.GetServicesArgs{
 		ServiceIdentifiers: map[string]bool{service_identifier: true},
 	}
-	services, err := apiContainerClient.GetServices(ctx, &getServicesArgs)
+	services, err := (*apiContainerClient).GetServices(ctx, &getServicesArgs)
 	if err != nil {
 		logrus.Errorf("Can't list services using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
@@ -331,14 +391,17 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx context.Context, request api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandRequestObject) (api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	service_identifier := request.ServiceIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
 
 	execCommandArgs := kurtosis_core_rpc_api_bindings.ExecCommandArgs{
 		ServiceIdentifier: service_identifier,
 		CommandArgs:       request.Body.CommandArgs,
 	}
-	exec_result, err := apiContainerClient.ExecCommand(ctx, &execCommandArgs)
+	exec_result, err := (*apiContainerClient).ExecCommand(ctx, &execCommandArgs)
 	if err != nil {
 		logrus.Errorf("Can't execute commands using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't execute commands using gRPC call with enclave %s", enclave_identifier)
@@ -356,7 +419,10 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 	enclave_identifier := request.EnclaveIdentifier
 	service_identifier := request.ServiceIdentifier
 	port_number := request.PortNumber
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, errConn := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if errConn != nil {
+		return nil, errConn
+	}
 	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
 
 	endpoint_method := request.Body.HttpMethod
@@ -375,7 +441,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 			RetriesDelayMilliseconds: utils.MapPointer(request.Body.RetriesDelayMilliseconds, castToUInt32),
 			BodyText:                 request.Body.BodyText,
 		}
-		_, err = apiContainerClient.WaitForHttpGetEndpointAvailability(ctx, &waitForHttpGetEndpointAvailabilityArgs)
+		_, err = (*apiContainerClient).WaitForHttpGetEndpointAvailability(ctx, &waitForHttpGetEndpointAvailabilityArgs)
 	case api.POST:
 		waitForHttpPostEndpointAvailabilityArgs := kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs{
 			ServiceIdentifier:        service_identifier,
@@ -386,7 +452,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 			RetriesDelayMilliseconds: utils.MapPointer(request.Body.RetriesDelayMilliseconds, castToUInt32),
 			BodyText:                 request.Body.BodyText,
 		}
-		_, err = apiContainerClient.WaitForHttpPostEndpointAvailability(ctx, &waitForHttpPostEndpointAvailabilityArgs)
+		_, err = (*apiContainerClient).WaitForHttpPostEndpointAvailability(ctx, &waitForHttpPostEndpointAvailabilityArgs)
 	default:
 		return nil, stacktrace.NewError("Undefined method for availability endpoint: %s", endpoint_method)
 	}
@@ -402,10 +468,13 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 // (GET /enclaves/{enclave_identifier}/starlark)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.Context, request api.GetEnclavesEnclaveIdentifierStarlarkRequestObject) (api.GetEnclavesEnclaveIdentifierStarlarkResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Getting info about last Starlark run on enclave %s", enclave_identifier)
 
-	starlark_result, err := apiContainerClient.GetStarlarkRun(ctx, &emptypb.Empty{})
+	starlark_result, err := (*apiContainerClient).GetStarlarkRun(ctx, &emptypb.Empty{})
 	if err != nil {
 		logrus.Errorf("Can't get Starlark info using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't get Starlark info using gRPC call with enclave %s", enclave_identifier)
@@ -430,7 +499,10 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.
 // (POST /enclaves/{enclave_identifier}/starlark/packages)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStarlarkPackagesRequestObject) (api.PostEnclavesEnclaveIdentifierStarlarkPackagesResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Upload Starlark package on enclave %s", enclave_identifier)
 
 	for {
@@ -440,7 +512,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx
 			break
 		}
 		filename := part.FileName()
-		client, err := apiContainerClient.UploadStarlarkPackage(ctx)
+		client, err := (*apiContainerClient).UploadStarlarkPackage(ctx)
 		if err != nil {
 			logrus.Errorf("Can't upload Starlark package using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 			return nil, stacktrace.NewError("Can't upload Starlark package using gRPC call with enclave %s", enclave_identifier)
@@ -473,7 +545,10 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx
 // (POST /enclaves/{enclave_identifier}/starlark/packages/{package_id})
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdRequestObject) (api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Run Starlark package on enclave %s", enclave_identifier)
 
 	package_id := request.PackageId
@@ -500,7 +575,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		CloudUserId:            request.Body.CloudUserId,
 		ImageDownloadMode:      utils.MapPointer(request.Body.ImageDownloadMode, toGrpcImageDownloadMode),
 	}
-	client, err := apiContainerClient.RunStarlarkPackage(ctx, &runStarlarkPackageArgs)
+	client, err := (*apiContainerClient).RunStarlarkPackage(ctx, &runStarlarkPackageArgs)
 	if err != nil {
 		logrus.Errorf("Can't run Starlark package using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't run Starlark package using gRPC call with enclave %s", enclave_identifier)
@@ -523,7 +598,10 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 // (POST /enclaves/{enclave_identifier}/starlark/scripts)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStarlarkScriptsRequestObject) (api.PostEnclavesEnclaveIdentifierStarlarkScriptsResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
+	if err != nil {
+		return nil, err
+	}
 	logrus.Infof("Run Starlark script on enclave %s", enclave_identifier)
 
 	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api.KurtosisFeatureFlag{}), toGrpcFeatureFlag)
@@ -546,7 +624,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		CloudUserId:          request.Body.CloudUserId,
 		ImageDownloadMode:    utils.MapPointer(request.Body.ImageDownloadMode, toGrpcImageDownloadMode),
 	}
-	client, err := apiContainerClient.RunStarlarkScript(ctx, &runStarlarkScriptArgs)
+	client, err := (*apiContainerClient).RunStarlarkScript(ctx, &runStarlarkScriptArgs)
 	if err != nil {
 		logrus.Errorf("Can't run Starlark script using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't run Starlark script using gRPC call with enclave %s", enclave_identifier)
@@ -587,13 +665,19 @@ func getGrpcClientConn(enclaveInfo *types.EnclaveInfo, connectOnHostMachine bool
 	return grpcConnection, nil
 }
 
-func (manager enclaveRuntime) GetGrpcClientForEnclaveUUID(enclave_uuid string) kurtosis_core_rpc_api_bindings.ApiContainerServiceClient {
+func (manager enclaveRuntime) GetGrpcClientForEnclaveUUID(enclave_uuid string) (*kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, error) {
+	err := manager.refreshEnclaveConnections()
+	if err != nil {
+		return nil, err
+	}
+
 	client, found := manager.remoteApiContainerClient[enclave_uuid]
 	if !found {
-		// TODO(edgar): add logic to retry/refresh map
-		panic(fmt.Sprintf("can't find enclave %s", enclave_uuid))
+		err := stacktrace.NewError("Enclave '%s' not found", enclave_uuid)
+		return nil, err
 	}
-	return client
+
+	return &client, nil
 }
 
 func toGrpcConnect(conn api.Connect) kurtosis_core_rpc_api_bindings.Connect {

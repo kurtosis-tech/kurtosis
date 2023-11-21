@@ -40,9 +40,6 @@ type ServerInterface interface {
 	// Get Enclave Info
 	// (GET /enclaves/{enclave_identifier})
 	GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-	// Get Service Logs
-	// (POST /enclaves/{enclave_identifier}/logs)
-	PostEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Stop Enclave
 	// (POST /enclaves/{enclave_identifier}/stop)
 	PostEnclavesEnclaveIdentifierStop(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
@@ -133,22 +130,6 @@ func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifier(ctx echo.Context) 
 	return err
 }
 
-// PostEnclavesEnclaveIdentifierLogs converts echo context to params.
-func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierLogs(ctx echo.Context) error {
-	var err error
-	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier EnclaveIdentifier
-
-	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
-	}
-
-	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostEnclavesEnclaveIdentifierLogs(ctx, enclaveIdentifier)
-	return err
-}
-
 // PostEnclavesEnclaveIdentifierStop converts echo context to params.
 func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStop(ctx echo.Context) error {
 	var err error
@@ -208,7 +189,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/enclaves/historical", wrapper.GetEnclavesHistorical)
 	router.DELETE(baseURL+"/enclaves/:enclave_identifier", wrapper.DeleteEnclavesEnclaveIdentifier)
 	router.GET(baseURL+"/enclaves/:enclave_identifier", wrapper.GetEnclavesEnclaveIdentifier)
-	router.POST(baseURL+"/enclaves/:enclave_identifier/logs", wrapper.PostEnclavesEnclaveIdentifierLogs)
 	router.POST(baseURL+"/enclaves/:enclave_identifier/stop", wrapper.PostEnclavesEnclaveIdentifierStop)
 	router.GET(baseURL+"/engine/info", wrapper.GetEngineInfo)
 
@@ -313,24 +293,6 @@ func (response GetEnclavesEnclaveIdentifier200JSONResponse) VisitGetEnclavesEncl
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostEnclavesEnclaveIdentifierLogsRequestObject struct {
-	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
-	Body              *PostEnclavesEnclaveIdentifierLogsJSONRequestBody
-}
-
-type PostEnclavesEnclaveIdentifierLogsResponseObject interface {
-	VisitPostEnclavesEnclaveIdentifierLogsResponse(w http.ResponseWriter) error
-}
-
-type PostEnclavesEnclaveIdentifierLogs200JSONResponse ServiceLogs
-
-func (response PostEnclavesEnclaveIdentifierLogs200JSONResponse) VisitPostEnclavesEnclaveIdentifierLogsResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
 type PostEnclavesEnclaveIdentifierStopRequestObject struct {
 	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
@@ -383,9 +345,6 @@ type StrictServerInterface interface {
 	// Get Enclave Info
 	// (GET /enclaves/{enclave_identifier})
 	GetEnclavesEnclaveIdentifier(ctx context.Context, request GetEnclavesEnclaveIdentifierRequestObject) (GetEnclavesEnclaveIdentifierResponseObject, error)
-	// Get Service Logs
-	// (POST /enclaves/{enclave_identifier}/logs)
-	PostEnclavesEnclaveIdentifierLogs(ctx context.Context, request PostEnclavesEnclaveIdentifierLogsRequestObject) (PostEnclavesEnclaveIdentifierLogsResponseObject, error)
 	// Stop Enclave
 	// (POST /enclaves/{enclave_identifier}/stop)
 	PostEnclavesEnclaveIdentifierStop(ctx context.Context, request PostEnclavesEnclaveIdentifierStopRequestObject) (PostEnclavesEnclaveIdentifierStopResponseObject, error)
@@ -557,37 +516,6 @@ func (sh *strictHandler) GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveI
 	return nil
 }
 
-// PostEnclavesEnclaveIdentifierLogs operation middleware
-func (sh *strictHandler) PostEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
-	var request PostEnclavesEnclaveIdentifierLogsRequestObject
-
-	request.EnclaveIdentifier = enclaveIdentifier
-
-	var body PostEnclavesEnclaveIdentifierLogsJSONRequestBody
-	if err := ctx.Bind(&body); err != nil {
-		return err
-	}
-	request.Body = &body
-
-	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PostEnclavesEnclaveIdentifierLogs(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierLogsRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostEnclavesEnclaveIdentifierLogs")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		return err
-	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierLogsResponseObject); ok {
-		return validResponse.VisitPostEnclavesEnclaveIdentifierLogsResponse(ctx.Response())
-	} else if response != nil {
-		return fmt.Errorf("Unexpected response type: %T", response)
-	}
-	return nil
-}
-
 // PostEnclavesEnclaveIdentifierStop operation middleware
 func (sh *strictHandler) PostEnclavesEnclaveIdentifierStop(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
 	var request PostEnclavesEnclaveIdentifierStopRequestObject
@@ -639,28 +567,24 @@ func (sh *strictHandler) GetEngineInfo(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

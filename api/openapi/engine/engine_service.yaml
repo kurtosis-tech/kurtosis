@@ -91,25 +91,6 @@ paths:
         '200':
           description: Successful response
 
-  /enclaves/{enclave_identifier}/logs:
-    post:
-      summary: Get Service Logs
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GetServiceLogs'
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServiceLogs'
-
   /enclaves/{enclave_identifier}/stop:
     post:
       summary: Stop Enclave
@@ -277,68 +258,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/EnclaveNameAndUuid'
-
-    GetServiceLogs:
-      type: object
-      properties:
-        service_uuid_set:
-          type: array
-          items:
-            type: string
-        follow_logs:
-          type: boolean
-        conjunctive_filters:
-          type: array
-          items:
-            $ref: '#/components/schemas/LogLineFilter'
-        return_all_logs:
-          type: boolean
-        num_log_lines:
-          type: integer
-
-    ServiceLogs:
-      type: object
-      properties:
-        service_logs_by_service_uuid:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/LogLine'
-        not_found_service_uuid_set:
-          type: array
-          items:
-            type: string
-
-    LogLine:
-      type: object
-      properties:
-        line:
-          type: array
-          items:
-            type: string
-        timestamp:
-          $ref: '#/components/schemas/Timestamp'
-      required:
-        - line
-        - timestamp
-
-    LogLineFilter:
-      type: object
-      properties:
-        operator:
-          $ref: '#/components/schemas/LogLineOperator'
-        text_pattern:
-          type: string
-      required:
-        - operator
-        - text_pattern
-
-    LogLineOperator:
-      type: string
-      enum:
-        - DOES_CONTAIN_TEXT
-        - DOES_NOT_CONTAIN_TEXT
-        - DOES_CONTAIN_MATCH_REGEX
-        - DOES_NOT_CONTAIN_MATCH_REGEX
 
     Timestamp:
       type: string
