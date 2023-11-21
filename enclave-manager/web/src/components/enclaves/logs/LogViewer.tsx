@@ -72,6 +72,8 @@ export const LogViewer = ({
           setCurrentSearchIndex(matches.length > 0 ? 0 : undefined);
         } catch (error: any) {
           setMaybeSearchPattern({ error: stringifyError(error) });
+          setSearchMatchesIndices([]);
+          setCurrentSearchIndex(undefined);
         }
       } else {
         setSearchMatchesIndices([]);
@@ -109,6 +111,7 @@ export const LogViewer = ({
 
   const handleClearSearch = () => {
     setRawSearchTerm("");
+    setMaybeSearchPattern({});
     setSearchMatchesIndices([]);
     setCurrentSearchIndex(undefined);
   };
