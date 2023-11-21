@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.33](https://github.com/kurtosis-tech/kurtosis/compare/0.85.32...0.85.33) (2023-11-20)
+
+
+### Features
+
+* search in service logs ([#1830](https://github.com/kurtosis-tech/kurtosis/issues/1830)) ([7fce5b5](https://github.com/kurtosis-tech/kurtosis/commit/7fce5b59d1060f99f8c2cbd54d7bb8483150310e)), closes [#1791](https://github.com/kurtosis-tech/kurtosis/issues/1791)
+
 ## [0.85.32](https://github.com/kurtosis-tech/kurtosis/compare/0.85.31...0.85.32) (2023-11-20)
 
 
