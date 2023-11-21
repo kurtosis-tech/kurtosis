@@ -1,19 +1,29 @@
-import { Card, Flex, Text } from "@chakra-ui/react";
-import { PropsWithChildren } from "react";
+import { Card, CardBody, CardHeader, Text } from "@chakra-ui/react";
+import { PropsWithChildren, ReactElement } from "react";
 
-type TitledCardProps = PropsWithChildren<{
+type TitledCard = PropsWithChildren<{
   title: string;
+  controls?: ReactElement;
 }>;
 
-export const TitledCard = ({ title, children }: TitledCardProps) => {
+export const TitledCard = ({ title, controls, children }: TitledCard) => {
   return (
-    <Card display={"flex"} flexDirection={"column"} alignItems={"center"} gap={"16px"}>
-      <Flex justifyContent={"center"}>
-        <Text fontSize={"md"} fontWeight={"semibold"}>
+    <Card variant={"titledCard"}>
+      <CardHeader
+        display={"flex"}
+        justifyContent={"flex-start"}
+        alignItems={"center"}
+        width={"100%"}
+        gap={"16px"}
+        borderBottom={"1px solid"}
+        borderBottomColor={"gray.500"}
+      >
+        <Text as={"span"} fontSize={"xs"} fontWeight={"semibold"}>
           {title}
         </Text>
-      </Flex>
-      {children}
+        {controls}
+      </CardHeader>
+      <CardBody>{children}</CardBody>
     </Card>
   );
 };

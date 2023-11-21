@@ -22,7 +22,7 @@ export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
 
   if (!isDefined(enclave.starlarkRun)) {
     return (
-      <Button isLoading={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
+      <Button isLoading={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"sm"}>
         Edit
       </Button>
     );
@@ -31,7 +31,7 @@ export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
   if (enclave.starlarkRun.isErr) {
     return (
       <Tooltip label={"Cannot find previous run config to edit"}>
-        <Button isDisabled={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
+        <Button isDisabled={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"sm"}>
           Edit
         </Button>
       </Tooltip>
@@ -44,7 +44,7 @@ export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
         label={"Edit this enclave. From here you can edit the enclave configuration and update it."}
         openDelay={1000}
       >
-        <Button onClick={() => setShowPackageLoader(true)} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
+        <Button onClick={() => setShowPackageLoader(true)} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"sm"}>
           Edit
         </Button>
       </Tooltip>

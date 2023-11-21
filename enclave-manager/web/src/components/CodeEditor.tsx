@@ -19,7 +19,7 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
       // An initial layout call is needed, else getContentHeight is garbage
       editor.layout();
       const contentHeight = editor.getContentHeight();
-      editor.layout({ width: 500, height: contentHeight });
+      editor.layout({ width: editor.getContentWidth(), height: contentHeight });
       // Unclear why layout must be called twice, but seems to be necessary
       editor.layout();
     }
@@ -27,11 +27,15 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
 
   const handleMount: OnMount = (editor, monaco) => {
     setEditor(editor);
+    const colors: editor.IColors = {};
+    if (isReadOnly) {
+      colors["editor.background"] = "#111111";
+    }
     monaco.editor.defineTheme("kurtosis-theme", {
       base: "vs-dark",
       inherit: true,
       rules: [],
-      colors: {},
+      colors,
     });
     monaco.editor.setTheme("kurtosis-theme");
   };

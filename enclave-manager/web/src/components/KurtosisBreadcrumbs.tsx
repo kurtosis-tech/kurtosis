@@ -1,4 +1,3 @@
-import { ChevronRightIcon } from "@chakra-ui/icons";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,13 +11,15 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
+  Text,
 } from "@chakra-ui/react";
 import { ReactElement, useEffect, useState } from "react";
-import { MdFilterList } from "react-icons/md";
+import { BsCaretDownFill } from "react-icons/bs";
 import { Link, Params, UIMatch, useMatches } from "react-router-dom";
 import { EmuiAppState, useEmuiAppContext } from "../emui/EmuiAppContext";
 import { isDefined } from "../utils";
 import { RemoveFunctions } from "../utils/types";
+import { MAIN_APP_LEFT_PADDING, MAIN_APP_RIGHT_PADDING, MAIN_APP_TOP_PADDING } from "./theme/constants";
 
 type KurtosisBreadcrumbMenuItem = {
   name: string;
@@ -69,8 +70,20 @@ export const KurtosisBreadcrumbs = () => {
   }, [matches, enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave]);
 
   return (
-    <Flex h="40px" p={"4px 0"} alignItems={"center"}>
-      <Breadcrumb variant={"topNavigation"} separator={<ChevronRightIcon h={"20px"} w={"24px"} />}>
+    <Flex
+      h={"76px"}
+      p={`${MAIN_APP_TOP_PADDING} ${MAIN_APP_RIGHT_PADDING} 24px ${MAIN_APP_LEFT_PADDING}`}
+      alignItems={"center"}
+      bg={"gray.850"}
+    >
+      <Breadcrumb
+        variant={"topNavigation"}
+        separator={
+          <Text as={"span"} fontSize={"lg"}>
+            /
+          </Text>
+        }
+      >
         {matchCrumbs.map((crumb, i, arr) => (
           <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
             <KurtosisBreadcrumbItem {...crumb} key={i} isLastItem={i === arr.length - 1} />
@@ -88,12 +101,16 @@ type KurtosisBreadcrumbItemProps = KurtosisBreadcrumb & {
 
 const KurtosisBreadcrumbItem = ({ name, destination, alternatives, isLastItem }: KurtosisBreadcrumbItemProps) => {
   if (isLastItem) {
-    return <BreadcrumbLink>{name}</BreadcrumbLink>;
+    return (
+      <Text fontSize={"xs"} fontWeight={"semibold"} color={"gray.400"} p={"0px 8px"}>
+        {name}
+      </Text>
+    );
   }
 
   const baseLink = (
     <BreadcrumbLink as={Link} to={destination}>
-      <Button variant={"breadcrumb"} size={"sm"}>
+      <Button variant={"breadcrumb"} size={"xs"}>
         {name}
       </Button>
     </BreadcrumbLink>
@@ -109,8 +126,8 @@ const KurtosisBreadcrumbItem = ({ name, destination, alternatives, isLastItem }:
             as={IconButton}
             variant={"breadcrumb"}
             aria-label={"Other options"}
-            icon={<Icon as={MdFilterList} />}
-            size={"sm"}
+            icon={<Icon as={BsCaretDownFill} />}
+            size={"xs"}
           />
           <MenuList>
             {alternatives.map(({ name, destination, icon }) => (

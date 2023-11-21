@@ -28,7 +28,7 @@ export const DeleteEnclavesButton = ({ enclaves }: DeleteEnclavesButtonProps) =>
   return (
     <>
       <Tooltip label={`This will delete ${enclaves.length} enclaves.`} openDelay={1000}>
-        <Button colorScheme={"red"} leftIcon={<FiTrash2 />} onClick={() => setShowModal(true)}>
+        <Button colorScheme={"red"} leftIcon={<FiTrash2 />} onClick={() => setShowModal(true)} size={"sm"}>
           Delete
         </Button>
       </Tooltip>

@@ -6,27 +6,26 @@ const { defineMultiStyleConfig } = createMultiStyleConfigHelpers(tabsAnatomy.key
 // export the component theme
 export const tabsTheme = defineMultiStyleConfig({
   defaultProps: {
-    variant: "soft-rounded",
+    variant: "line",
     colorScheme: "kurtosisGreen",
   },
   variants: {
-    "soft-rounded": (props: StyleFunctionProps) => ({
+    line: (props: StyleFunctionProps) => ({
       root: {
         height: "100%",
       },
+      tablist: {
+        height: "56px",
+        borderColor: "transparent",
+      },
       tab: {
-        fontStyle: "normal",
-        fontWeight: "medium",
-        fontSize: "lg",
+        fontWeight: "md",
+        fontSize: "sm",
         color: "gray.100",
         lineHeight: "28px",
-        _hover: {
-          bg: `gray.700`,
-        },
-        _selected: {
-          fontWeight: "semibold",
-          color: `${props.colorScheme}.400`,
-          bg: `gray.800`,
+        padding: "4px 16px 2px 16px",
+        _active: {
+          bg: "none",
         },
         textTransform: "capitalize",
       },

@@ -1,4 +1,4 @@
-import { Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import { Flex, TabPanel, TabPanels, Tabs, Text } from "@chakra-ui/react";
 import { Location, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { StarlarkRunResponseLine } from "enclave-manager-sdk/build/api_container_service_pb";
@@ -6,7 +6,15 @@ import { FunctionComponent, useEffect, useState } from "react";
 import { EditEnclaveButton } from "../../../components/enclaves/EditEnclaveButton";
 import { DeleteEnclavesButton } from "../../../components/enclaves/widgets/DeleteEnclavesButton";
 import { FeatureNotImplementedModal } from "../../../components/FeatureNotImplementedModal";
+import { HoverLineTabList } from "../../../components/HoverLineTabList";
 import { KurtosisAlert } from "../../../components/KurtosisAlert";
+import {
+  MAIN_APP_LEFT_PADDING,
+  MAIN_APP_MAX_WIDTH,
+  MAIN_APP_MAX_WIDTH_WITHOUT_PADDING,
+  MAIN_APP_RIGHT_PADDING,
+  MAIN_APP_TABPANEL_PADDING,
+} from "../../../components/theme/constants";
 import { isDefined } from "../../../utils";
 import { useFullEnclave } from "../../EmuiAppContext";
 import { EnclaveFullInfo } from "../types";
@@ -66,22 +74,28 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   }, [navigator, location.state, activeIndex, enclave.shortenedUuid]);
 
   return (
-    <Flex direction="column" width={"100%"} h={"100%"}>
+    <Flex direction="column" gap={"24px"} width={"100%"} h={"100%"}>
       <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
-        <TabList>
-          <Flex justifyContent={"space-between"} width={"100%"}>
-            <TabList>
-              {tabs.map((tab) => (
-                <Tab key={tab.path}>{tab.path}</Tab>
-              ))}
-            </TabList>
-            <Flex gap={"8px"} alignItems={"center"}>
+        <Flex width={"100%"} bg={"gray.850"} pl={MAIN_APP_LEFT_PADDING} pr={MAIN_APP_RIGHT_PADDING}>
+          <Flex
+            justifyContent={"space-between"}
+            alignItems={"flex-end"}
+            width={"100%"}
+            maxWidth={MAIN_APP_MAX_WIDTH_WITHOUT_PADDING}
+          >
+            <Flex alignItems={"center"} gap={"8px"}>
+              <Text as={"span"} fontSize={"lg"} fontWeight={"md"} mb={"4px"}>
+                {enclave.name}
+              </Text>
+              <HoverLineTabList tabs={tabs.map(({ path }) => path)} activeTab={activeTab} />
+            </Flex>
+            <Flex gap={"8px"} alignItems={"center"} pb={"16px"}>
               <DeleteEnclavesButton enclaves={[enclave]} />
               <EditEnclaveButton enclave={enclave} />
             </Flex>
           </Flex>
-        </TabList>
-        <TabPanels>
+        </Flex>
+        <TabPanels maxWidth={MAIN_APP_MAX_WIDTH} p={MAIN_APP_TABPANEL_PADDING} w={"100%"} h={"100%"}>
           {tabs.map((tab) => (
             <TabPanel key={tab.path}>
               <tab.element enclave={enclave} />

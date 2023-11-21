@@ -1,7 +1,8 @@
-import { ButtonGroup, Card, Flex, Text } from "@chakra-ui/react";
+import { ButtonGroup } from "@chakra-ui/react";
 import { CodeEditor } from "./CodeEditor";
 import { CopyButton } from "./CopyButton";
 import { DownloadButton } from "./DownloadButton";
+import { TitledCard } from "./TitledCard";
 
 type FileDisplayProps = {
   title: string;
@@ -11,19 +12,21 @@ type FileDisplayProps = {
 
 export const FileDisplay = ({ value, filename, title }: FileDisplayProps) => {
   return (
-    <Flex flexDirection={"column"} gap={"12px"} height={"100%"}>
-      <Flex justifyContent={"space-between"}>
-        <Text fontSize={"sm"} fontWeight={"medium"}>
-          {title}
-        </Text>
-        <ButtonGroup isAttached>
-          <CopyButton contentName={title.toLowerCase()} valueToCopy={value} />
-          <DownloadButton fileName={filename} valueToDownload={value} />
+    <TitledCard
+      title={title}
+      controls={
+        <ButtonGroup>
+          <CopyButton contentName={title.toLowerCase()} valueToCopy={value} isIconButton aria-label={`Copy ${title}`} />
+          <DownloadButton
+            fileName={filename}
+            valueToDownload={value}
+            isIconButton
+            aria-label={`Download ${filename}`}
+          />
         </ButtonGroup>
-      </Flex>
-      <Card height={"100%"}>
-        <CodeEditor text={value} />
-      </Card>
-    </Flex>
+      }
+    >
+      <CodeEditor text={value} />
+    </TitledCard>
   );
 };
