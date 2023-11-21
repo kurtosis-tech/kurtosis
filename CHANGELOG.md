@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.34](https://github.com/kurtosis-tech/kurtosis/compare/0.85.33...0.85.34) (2023-11-21)
+
+
+### Bug Fixes
+
+* display the relevant number in the error message ([#1835](https://github.com/kurtosis-tech/kurtosis/issues/1835)) ([a8c24bc](https://github.com/kurtosis-tech/kurtosis/commit/a8c24bcbeff813217e10a222001ce05c325de03c))
+
 ## [0.85.33](https://github.com/kurtosis-tech/kurtosis/compare/0.85.32...0.85.33) (2023-11-20)
 
 
