@@ -1194,7 +1194,7 @@ func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerIma
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+	doesImageExistLocally, err := manager.isImageAvailableLocally(dockerImage)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
 	}
@@ -1223,7 +1223,7 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+	doesImageExistLocally, err := manager.isImageAvailableLocally(dockerImage)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
 	}
@@ -1344,11 +1344,14 @@ func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (com
 //	INSTANCE HELPER FUNCTIONS
 //
 // =================================================================================================================
-func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (bool, error) {
+func (manager *DockerManager) isImageAvailableLocally(imageName string) (bool, error) {
+	// Own context for checking if the image is locally available because we do not want to cancel this works in case the main context in the request is cancelled
+	// if the fist request fails the image will be ready for following request making the process faster
+	checkImageAvailabilityCtx := context.Background()
 	referenceArg := filters.Arg("reference", imageName)
 	filterArgs := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
-		ctx,
+		checkImageAvailabilityCtx,
 		types.ImageListOptions{
 			All:            true,
 			Filters:        filterArgs,
