@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	listenPort                = 9081
+	listenPort                = 8081
 	grpcServerStopGracePeriod = 5 * time.Second
 	engineHostUrl             = "http://localhost:9710"
 	kurtosisCloudApiHost      = "https://cloud.kurtosis.com"
