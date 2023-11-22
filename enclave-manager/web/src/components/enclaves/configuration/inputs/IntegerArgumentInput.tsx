@@ -1,8 +1,9 @@
 import { Input } from "@chakra-ui/react";
+import { isDefined } from "../../../../utils";
 import { useEnclaveConfigurationFormContext } from "../EnclaveConfigurationForm";
-import { KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
+import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-export const IntegerArgumentInput = (props: Omit<KurtosisArgumentTypeInputProps, "type">) => {
+export const IntegerArgumentInput = (props: KurtosisArgumentTypeInputImplProps) => {
   const { register } = useEnclaveConfigurationFormContext();
 
   return (
@@ -14,8 +15,17 @@ export const IntegerArgumentInput = (props: Omit<KurtosisArgumentTypeInputProps,
           if (isNaN(value)) {
             return "This value should be an integer";
           }
+
+          const propsValidation = props.validate ? props.validate(value) : undefined;
+          if (isDefined(propsValidation)) {
+            return propsValidation;
+          }
         },
       })}
+      placeholder={props.placeholder}
+      width={props.width}
+      size={props.size || "lg"}
+      tabIndex={props.tabIndex}
     />
   );
 };

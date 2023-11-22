@@ -1,7 +1,7 @@
 import { Box } from "@chakra-ui/react";
 import { Editor, OnChange, OnMount } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { isDefined } from "../utils";
 
 type CodeEditorProps = {
@@ -16,8 +16,11 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
 
   const resizeEditorBasedOnContent = () => {
     if (isDefined(editor)) {
-      const contentHeight = Math.min(750, editor.getContentHeight() || 10);
+      // An initial layout call is needed, else getContentHeight is garbage
+      editor.layout();
+      const contentHeight = editor.getContentHeight();
       editor.layout({ width: 500, height: contentHeight });
+      // Unclear why layout must be called twice, but seems to be necessary
       editor.layout();
     }
   };
@@ -33,8 +36,6 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
     monaco.editor.setTheme("kurtosis-theme");
   };
 
-  useEffect(() => resizeEditorBasedOnContent(), [editor]);
-
   const handleChange: OnChange = (value, ev) => {
     if (isDefined(value) && onTextChange) {
       onTextChange(value);
@@ -42,13 +43,18 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
     }
   };
 
+  // Triggering this on every render seems to keep the editor correctly sized
+  // it is unclear why this is the case.
+  resizeEditorBasedOnContent();
+
   return (
-    <Box width={"100%"} minHeight={`${editor?.getLayoutInfo().height || 10}px`}>
+    <Box width={"100%"}>
       <Editor
         onMount={handleMount}
         value={text}
         onChange={handleChange}
         options={{
+          automaticLayout: false, // if this is `true` a ResizeObserver is installed. This causes issues with us managing the container size outside.
           readOnly: isReadOnly,
           lineNumbers: showLineNumbers || (!isDefined(showLineNumbers) && !isReadOnly) ? "on" : "off",
           minimap: { enabled: false },
@@ -65,7 +71,6 @@ export const CodeEditor = ({ text, onTextChange, showLineNumbers }: CodeEditorPr
         }}
         defaultLanguage={"json"}
         theme={"vs-dark"}
-        height={"100%"}
       />
     </Box>
   );

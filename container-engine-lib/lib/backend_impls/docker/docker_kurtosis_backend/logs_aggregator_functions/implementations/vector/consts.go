@@ -28,13 +28,6 @@ const (
 
 	uuidLogsFilepath = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
 
-	// Right now, we store duplicate logs files by service name and service's shortened uuid
-	// This is to enable retrieving logs by name and short uuid after enclaves have been stopped
-	// As right now, when an enclave is stopped all identifier info is lost
-	// TODO: Find a better way to capture or persist identifier info without storing duplicate log files
-	nameLogsFilepath      = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_name }}.json\""
-	shortUUIDLogsFilepath = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_short_uuid }}.json\""
-
 	sourceConfigFileTemplateName = "srcVectorConfigFileTemplate"
 	sinkConfigFileTemplateName   = "sinkVectorConfigFileTemplate"
 

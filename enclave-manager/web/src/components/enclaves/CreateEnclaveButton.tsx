@@ -1,5 +1,5 @@
-import { Button, Menu, MenuButton, MenuItem, MenuList } from "@chakra-ui/react";
-import { FiPackage, FiPlus, FiSettings } from "react-icons/fi";
+import { Button, Menu, MenuButton, Tooltip } from "@chakra-ui/react";
+import { FiPlus } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { KURTOSIS_CREATE_ENCLAVE_URL_ARG } from "../constants";
 
@@ -8,14 +8,17 @@ export const CreateEnclaveButton = () => {
   return (
     <>
       <Menu matchWidth>
-        <MenuButton
-          as={Button}
-          colorScheme={"kurtosisGreen"}
-          leftIcon={<FiPlus />} size={"md"}
-          onClick={() => navigate(`#${KURTOSIS_CREATE_ENCLAVE_URL_ARG}`)}
-        >
-          New Enclave
-        </MenuButton>
+        <Tooltip label={"Create a new enclave"} openDelay={1000}>
+          <MenuButton
+            as={Button}
+            colorScheme={"kurtosisGreen"}
+            leftIcon={<FiPlus />}
+            size={"md"}
+            onClick={() => navigate(`#${KURTOSIS_CREATE_ENCLAVE_URL_ARG}`)}
+          >
+            New Enclave
+          </MenuButton>
+        </Tooltip>
         {/*<MenuList>*/}
         {/*  <MenuItem onClick={() => navigate(`#${KURTOSIS_CREATE_ENCLAVE_URL_ARG}`)} icon={<FiSettings />}>*/}
         {/*    Manual*/}

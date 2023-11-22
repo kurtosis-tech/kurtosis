@@ -50,9 +50,18 @@ export abstract class KurtosisClient {
     this.client = client;
     this.cloudUrl = parentUrl;
     this.baseApplicationUrl = childUrl;
-    console.log("cloudUrl", this.cloudUrl);
-    console.log("baseApplicationUrl", this.baseApplicationUrl);
+    this.getParentRequestedRoute();
   }
+
+  getParentRequestedRoute() {
+    const splits = this.cloudUrl.pathname.split("/enclave-manager");
+    if (splits[1]) {
+      return splits[1];
+    }
+    return undefined;
+  }
+
+  abstract isRunningInCloud(): boolean;
 
   abstract getHeaderOptions(): { headers?: Headers };
 
@@ -161,14 +170,14 @@ export abstract class KurtosisClient {
   async downloadFilesArtifact(enclave: RemoveFunctions<EnclaveInfo>, file: FilesArtifactNameAndUuid) {
     const apicInfo = enclave.apiContainerInfo;
     assertDefined(
-        apicInfo,
-        `Cannot download files artifact because the passed enclave '${enclave.name}' does not have apicInfo`,
+      apicInfo,
+      `Cannot download files artifact because the passed enclave '${enclave.name}' does not have apicInfo`,
     );
     // Not currently using asyncResult as the return type here is an asyncIterable
     const request = new DownloadFilesArtifactRequest({
       apicIpAddress: apicInfo.bridgeIpAddress,
       apicPort: apicInfo.grpcPortInsideEnclave,
-      downloadFilesArtifactsArgs: new DownloadFilesArtifactArgs({ identifier: file.fileUuid})
+      downloadFilesArtifactsArgs: new DownloadFilesArtifactArgs({ identifier: file.fileUuid }),
     });
     return this.client.downloadFilesArtifact(request, this.getHeaderOptions());
   }
