@@ -1346,7 +1346,7 @@ func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (com
 // =================================================================================================================
 func (manager *DockerManager) isImageAvailableLocally(imageName string) (bool, error) {
 	// Own context for checking if the image is locally available because we do not want to cancel this works in case the main context in the request is cancelled
-	// if the fist request fails the image will be ready for following request making the process faster
+	// if the first request fails the image will be ready for following request making the process faster
 	checkImageAvailabilityCtx := context.Background()
 	referenceArg := filters.Arg("reference", imageName)
 	filterArgs := filters.NewArgs(referenceArg)
