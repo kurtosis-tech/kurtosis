@@ -1,13 +1,15 @@
 import { Radio, RadioGroup, Stack, Switch } from "@chakra-ui/react";
 import { useEnclaveConfigurationFormContext } from "../EnclaveConfigurationForm";
-import { KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
+import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-type BooleanArgumentInputProps = Omit<KurtosisArgumentTypeInputProps, "type"> & {
+type BooleanArgumentInputProps = KurtosisArgumentTypeInputImplProps & {
   inputType?: "radio" | "switch";
 };
 
 export const BooleanArgumentInput = ({ inputType, ...props }: BooleanArgumentInputProps) => {
-  const { register } = useEnclaveConfigurationFormContext();
+  const { register, getValues } = useEnclaveConfigurationFormContext();
+
+  const currentDefault = getValues(props.name);
 
   if (inputType === "switch") {
     return (
@@ -22,7 +24,7 @@ export const BooleanArgumentInput = ({ inputType, ...props }: BooleanArgumentInp
     );
   } else {
     return (
-      <RadioGroup>
+      <RadioGroup defaultValue={currentDefault}>
         <Stack direction={"row"}>
           <Radio
             {...register(props.name, {

@@ -1,4 +1,4 @@
-import { forwardRef, PropsWithChildren, useImperativeHandle } from "react";
+import { CSSProperties, forwardRef, PropsWithChildren, useImperativeHandle } from "react";
 import { FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import {
   ArgumentValueType,
@@ -12,6 +12,7 @@ type EnclaveConfigurationFormProps = PropsWithChildren<{
   onSubmit: SubmitHandler<ConfigureEnclaveForm>;
   kurtosisPackage: KurtosisPackage;
   initialValues?: ConfigureEnclaveForm;
+  style?: CSSProperties;
 }>;
 
 export type EnclaveConfigurationFormImperativeAttributes = {
@@ -21,7 +22,7 @@ export type EnclaveConfigurationFormImperativeAttributes = {
 export const EnclaveConfigurationForm = forwardRef<
   EnclaveConfigurationFormImperativeAttributes,
   EnclaveConfigurationFormProps
->(({ children, kurtosisPackage, onSubmit, initialValues }: EnclaveConfigurationFormProps, ref) => {
+>(({ children, kurtosisPackage, onSubmit, initialValues, style }: EnclaveConfigurationFormProps, ref) => {
   const methods = useForm<ConfigureEnclaveForm>({ values: initialValues });
 
   useImperativeHandle(
@@ -53,11 +54,12 @@ export const EnclaveConfigurationForm = forwardRef<
 
       switch (valueType) {
         case ArgumentValueType.DICT:
-          return transformRecordsToObject(value, innerValuetype);
+          if (!isDefined(value)) return {};
+          else return transformRecordsToObject(value, innerValuetype);
         case ArgumentValueType.LIST:
           return value.map((v: any) => transformValue(innerValuetype, v));
         case ArgumentValueType.BOOL:
-          return isStringTrue(value);
+          return isDefined(value) ? isStringTrue(value) : null;
         case ArgumentValueType.INTEGER:
           return isNaN(value) || isNaN(parseFloat(value)) ? null : parseFloat(value);
         case ArgumentValueType.STRING:
@@ -70,6 +72,7 @@ export const EnclaveConfigurationForm = forwardRef<
     };
 
     const newArgs: Record<string, any> = kurtosisPackage.args
+      .filter((arg) => arg.name !== "plan") // plan args needs to be filtered out as it's not an actual arg
       .map((arg): [PackageArg, any] => [
         arg,
         transformValue(
@@ -103,7 +106,9 @@ export const EnclaveConfigurationForm = forwardRef<
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(handleSubmit)}>{children}</form>
+      <form style={style} onSubmit={methods.handleSubmit(handleSubmit)}>
+        {children}
+      </form>
     </FormProvider>
   );
 });

@@ -1,8 +1,12 @@
 import { Flex, IconButton, IconButtonProps, Image, Tooltip } from "@chakra-ui/react";
 import { PropsWithChildren } from "react";
-import { NavbarProps } from "../emui/Navbar";
+import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
 
-export const Navigation = ({ baseApplicationUrl, children }: PropsWithChildren & NavbarProps) => {
+export type NavigationProps = {};
+
+export const Navigation = ({ children }: PropsWithChildren & NavigationProps) => {
+  const kurtosisClient = useKurtosisClient();
+
   return (
     <Flex
       as={"nav"}
@@ -16,7 +20,7 @@ export const Navigation = ({ baseApplicationUrl, children }: PropsWithChildren &
       p={"20px 16px"}
     >
       <Flex width={"40px"} height={"40px"} alignItems={"center"}>
-        <Image src={baseApplicationUrl + "/logo.png"} />
+        <Image src={kurtosisClient.getBaseApplicationUrl() + "/logo.png"} />
       </Flex>
       <Flex flexDirection={"column"} gap={"16px"}>
         {children}

@@ -14,7 +14,7 @@ export const AppLayout = ({ Nav, children }: AppLayoutProps) => {
       <Flex
         as="main"
         w={"100%"}
-        h={"100%"}
+        minH={"calc(100vh - 40px)"}
         justifyContent={"flex-start"}
         p={"20px 40px 20px 112px"}
         className={"app-container"}

@@ -1,15 +1,15 @@
-import { Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
-import { Await, useActionData, useNavigate, useParams, useRouteLoaderData } from "react-router-dom";
+import { Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import { Location, useLocation, useNavigate, useParams } from "react-router-dom";
 
-import { FunctionComponent, Suspense, useEffect, useState } from "react";
+import { StarlarkRunResponseLine } from "enclave-manager-sdk/build/api_container_service_pb";
+import { FunctionComponent, useEffect, useState } from "react";
 import { EditEnclaveButton } from "../../../components/enclaves/EditEnclaveButton";
 import { DeleteEnclavesButton } from "../../../components/enclaves/widgets/DeleteEnclavesButton";
 import { FeatureNotImplementedModal } from "../../../components/FeatureNotImplementedModal";
 import { KurtosisAlert } from "../../../components/KurtosisAlert";
 import { isDefined } from "../../../utils";
+import { useFullEnclave } from "../../EmuiAppContext";
 import { EnclaveFullInfo } from "../types";
-import { RunStarlarkResolvedType } from "./action";
-import { EnclaveLoaderResolved } from "./loader";
 import { EnclaveLogs } from "./logs/EnclaveLogs";
 import { EnclaveOverview } from "./overview/EnclaveOverview";
 
@@ -19,37 +19,14 @@ const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInf
 ];
 
 export const Enclave = () => {
-  const { data } = useRouteLoaderData("enclave") as EnclaveLoaderResolved;
-
-  return (
-    <Suspense
-      fallback={
-        <Flex justifyContent={"center"} p={"20px"}>
-          <Spinner size={"xl"} />
-        </Flex>
-      }
-    >
-      <Await resolve={data} children={(data) => <MaybeEnclaveImpl enclave={data.enclave} />} />
-    </Suspense>
-  );
-};
-
-type MaybeEnclaveImplProps = {
-  enclave: EnclaveLoaderResolved["data"]["enclave"];
-};
-
-const MaybeEnclaveImpl = ({ enclave: enclaveResult }: MaybeEnclaveImplProps) => {
   const { enclaveUUID } = useParams();
+  const enclave = useFullEnclave(enclaveUUID || "unknown");
 
-  if (!isDefined(enclaveResult)) {
-    return <KurtosisAlert message={`Could not find enclave ${enclaveUUID}`} />;
-  }
-
-  if (enclaveResult.isErr) {
+  if (enclave.isErr) {
     return <KurtosisAlert message={"Enclave could not load"} />;
   }
 
-  return <EnclaveImpl enclave={enclaveResult.value} />;
+  return <EnclaveImpl enclave={enclave.value} />;
 };
 
 type EnclaveImplProps = {
@@ -59,7 +36,7 @@ type EnclaveImplProps = {
 const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   const navigator = useNavigate();
   const params = useParams();
-  const actionData = useActionData() as undefined | RunStarlarkResolvedType;
+  const location = useLocation() as Location<{ logs: AsyncIterable<StarlarkRunResponseLine> }>;
   const activeTab = params.activeTab || "overview";
   const activeIndex = tabs.findIndex((tab) => tab.path === activeTab);
 
@@ -69,13 +46,13 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
 
   const handleTabChange = (newTabIndex: number) => {
     const tab = tabs[newTabIndex];
-    if (tab.path === "logs" && !isDefined(actionData)) {
+    if (tab.path === "logs" && !isDefined(location.state?.logs)) {
       setUnavailableModalState({
         isOpen: true,
         featureName: "Enclave Logs",
         issueUrl: "https://github.com/kurtosis-tech/kurtosis/issues/1721",
         message:
-          "Enclave logs are currently only viewable during configuration. Please open a feature request if you’d like these logs to be persisted.",
+          "Enclave logs are currently only viewable during configuration. Please upvote this feature request if you'd like enclave logs to be persisted.",
       });
       return;
     }
@@ -83,13 +60,13 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   };
 
   useEffect(() => {
-    if (isDefined(actionData)) {
-      navigator(`/enclave/${enclave.shortenedUuid}/logs`, { state: actionData, replace: true });
+    if (isDefined(location.state?.logs)) {
+      navigator(`/enclave/${enclave.shortenedUuid}/logs`, { state: location.state, replace: true });
     }
-  }, [navigator, actionData, activeIndex, enclave.shortenedUuid]);
+  }, [navigator, location.state, activeIndex, enclave.shortenedUuid]);
 
   return (
-    <Flex direction="column" width={"100%"}>
+    <Flex direction="column" width={"100%"} h={"100%"}>
       <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
         <TabList>
           <Flex justifyContent={"space-between"} width={"100%"}>

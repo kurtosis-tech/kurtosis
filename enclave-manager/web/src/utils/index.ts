@@ -4,6 +4,10 @@ export function isDefined<T>(it: T | null | undefined): it is T {
   return it !== null && it !== undefined;
 }
 
+export function isNotEmpty(it: string): it is string {
+  return it.length > 0;
+}
+
 export function isStringTrue(value?: string | null) {
   return (value + "").toLowerCase() === "true";
 }
@@ -86,6 +90,14 @@ export async function asyncResult<T>(
   try {
     const r = await (typeof p === "function" ? p() : p);
     return Result.ok<T, string>(r);
+  } catch (e: any) {
+    return Result.err(errorMessage || stringifyError(e));
+  }
+}
+
+export function wrapResult<T>(c: () => T, errorMessage?: string): Result<T, string> {
+  try {
+    return Result.ok(c());
   } catch (e: any) {
     return Result.err(errorMessage || stringifyError(e));
   }

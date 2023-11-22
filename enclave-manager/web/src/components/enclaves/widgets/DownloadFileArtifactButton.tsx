@@ -1,4 +1,3 @@
-import { useToast } from "@chakra-ui/react";
 import { FilesArtifactNameAndUuid } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useState } from "react";
 import streamsaver from "streamsaver";
@@ -13,14 +12,13 @@ type DownloadFileButtonProps = {
 
 export const DownloadFileArtifactButton = ({ file, enclave }: DownloadFileButtonProps) => {
   const kurtosisClient = useKurtosisClient();
-  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDownloadClick = async () => {
     setIsLoading(true);
     // todo: get tgz download instead
     const fileParts = await kurtosisClient.downloadFilesArtifact(enclave, file);
-    const writableStream = streamsaver.createWriteStream(`${enclave.name}-${file.fileName}.tgz`);
+    const writableStream = streamsaver.createWriteStream(`${enclave.name}--${file.fileName}.tgz`);
     const writer = writableStream.getWriter();
 
     for await (const part of fileParts) {

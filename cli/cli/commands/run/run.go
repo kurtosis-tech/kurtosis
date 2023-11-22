@@ -341,7 +341,7 @@ func run(
 
 	if showEnclaveInspect {
 		defer func() {
-			if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), showFullUuids); err != nil {
+			if err = inspect.PrintEnclaveInspect(ctx, kurtosisCtx, enclaveCtx.GetEnclaveName(), showFullUuids); err != nil {
 				logrus.Errorf("An error occurred while printing enclave status and contents:\n%s", err)
 			}
 		}()

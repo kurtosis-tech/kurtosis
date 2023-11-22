@@ -20,10 +20,18 @@ export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
     setKurtosisPackage(kurtosisPackage);
   };
 
+  if (!isDefined(enclave.starlarkRun)) {
+    return (
+      <Button isLoading={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
+        Edit
+      </Button>
+    );
+  }
+
   if (enclave.starlarkRun.isErr) {
     return (
       <Tooltip label={"Cannot find previous run config to edit"}>
-        <Button disabled={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
+        <Button isDisabled={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
           Edit
         </Button>
       </Tooltip>
@@ -32,9 +40,14 @@ export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
 
   return (
     <>
-      <Button onClick={() => setShowPackageLoader(true)} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
-        Edit
-      </Button>
+      <Tooltip
+        label={"Edit this enclave. From here you can edit the enclave configuration and update it."}
+        openDelay={1000}
+      >
+        <Button onClick={() => setShowPackageLoader(true)} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
+          Edit
+        </Button>
+      </Tooltip>
       {showPackageLoader && (
         <PackageLoadingModal packageId={enclave.starlarkRun.value.packageId} onPackageLoaded={handlePackageLoaded} />
       )}
