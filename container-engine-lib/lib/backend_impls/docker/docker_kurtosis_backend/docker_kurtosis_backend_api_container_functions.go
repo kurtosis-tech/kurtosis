@@ -44,6 +44,11 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	customEnvVars map[string]string,
 ) (*api_container.APIContainer, error) {
 	logrus.Debugf("Creating the APIC for enclave '%v'", enclaveUuid)
+	deadlineCtx, ok := ctx.Deadline()
+	logrus.Infof("[LEO-DEBUG] receiving context deadline %v", deadlineCtx)
+	logrus.Infof("[LEO-DEBUG] receiving context deadline ok '%v'", ok)
+	logrus.Infof("[LEO-DEBUG] overwritting the context")
+	ctx = context.Background()
 
 	// Verify no API container already exists in the enclave
 	apiContainersInEnclaveFilters := &api_container.APIContainerFilters{
