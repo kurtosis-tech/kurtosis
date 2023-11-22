@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.85.35](https://github.com/kurtosis-tech/kurtosis/compare/0.85.34...0.85.35) (2023-11-22)
+
+
+### Features
+
+* upgrade golang grpc dependency ([#1840](https://github.com/kurtosis-tech/kurtosis/issues/1840)) ([2377868](https://github.com/kurtosis-tech/kurtosis/commit/2377868363c2bdea6f38478e156269339574622e))
+
+
+### Bug Fixes
+
+* always restart logs aggregator ([#1841](https://github.com/kurtosis-tech/kurtosis/issues/1841)) ([7e6382f](https://github.com/kurtosis-tech/kurtosis/commit/7e6382f0671c3776e31381a12da31f9754222438))
+
 ## [0.85.34](https://github.com/kurtosis-tech/kurtosis/compare/0.85.33...0.85.34) (2023-11-21)
 
 
