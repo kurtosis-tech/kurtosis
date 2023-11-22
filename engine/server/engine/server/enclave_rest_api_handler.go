@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -557,18 +559,18 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 
 	package_id := request.PackageId
 	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api.KurtosisFeatureFlag{}), toGrpcFeatureFlag)
-	jsonString := utils.MapPointer(request.Body.Params, func(v map[string]interface{}) string {
-		jsonBlob, err := json.Marshal(v)
-		if err != nil {
-			panic("Failed to serialize parsed JSON")
-		}
-		return string(jsonBlob)
-	})
+	// The gRPC always expect a JSON object even though it's marked as optional, so we need to default to `{}``
+	jsonParams := utils.DerefWith(request.Body.Params, map[string]interface{}{})
+	jsonBlob, err := json.Marshal(jsonParams)
+	if err != nil {
+		panic("Failed to serialize parameters")
+	}
+	jsonString := string(jsonBlob)
 
 	runStarlarkPackageArgs := kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              package_id,
 		StarlarkPackageContent: nil,
-		SerializedParams:       jsonString,
+		SerializedParams:       &jsonString,
 		DryRun:                 request.Body.DryRun,
 		Parallelism:            request.Body.Parallelism,
 		ClonePackage:           request.Body.ClonePackage,
@@ -585,12 +587,22 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		return nil, stacktrace.NewError("Can't run Starlark package using gRPC call with enclave %s", enclave_identifier)
 	}
 	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
+
+	// TODO: Why the gRPC is not sending the previous hash??? and we need to calc it manually
+	hasher := sha1.New()
+	previousBlockHash := ""
+	blockHash := ""
 	pipeReader := clientStream.PipeReader(
 		package_id,
 		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
-			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
+			blockHash = previousBlockHash
+			hasher.Reset()
+			hasher.Write(dataChunk.Data)
+			previousBlockHash = hex.EncodeToString(hasher.Sum(nil))
+			return dataChunk.Data, blockHash, nil
 		},
 	)
+
 	response := api.PostEnclavesEnclaveIdentifierStarlarkScripts200ApplicationoctetStreamResponse{
 		Body:          pipeReader,
 		ContentLength: 0, // No file size is provided since we are streaming it directly
