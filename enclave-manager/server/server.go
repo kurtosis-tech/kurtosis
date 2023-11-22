@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	listenPort                = 8081
+	listenPort                = 9081
 	grpcServerStopGracePeriod = 5 * time.Second
 	engineHostUrl             = "http://localhost:9710"
 	kurtosisCloudApiHost      = "https://cloud.kurtosis.com"
@@ -254,6 +254,17 @@ func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kur
 }
 
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
+	deadLineTime, ok := ctx.Deadline()
+	logrus.Infof("[LEO-DEBUG] context deadline %v", deadLineTime)
+	logrus.Infof("[LEO-DEBUG] context deadline ok '%v'", ok)
+
+	for name, values := range req.Header() {
+		// Loop over all values for the name.
+		for _, value := range values {
+			logrus.Infof("[LEO-DEBUG] request header '%s' = '%s'", name, value)
+		}
+	}
+
 	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")

@@ -1,6 +1,6 @@
 package main
 
-import server "github.com/kurtosis-tech/kurtosis/enclave-manager"
+import "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 
 const (
 	enforceAuth = false
