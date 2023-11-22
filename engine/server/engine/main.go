@@ -104,6 +104,7 @@ func main() {
 }
 
 func runMain() error {
+	logrus.Infof("[LEO-DEBUG] running main in core server")
 	ctx := context.Background()
 	serverArgs, err := args.GetArgsFromEnv()
 	if err != nil {
