@@ -19,14 +19,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rest_api_bindings"
 	api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rest_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 )
 
 type enclaveRuntime struct {
 	enclaveManager           enclave_manager.EnclaveManager
-	remoteApiContainerClient map[string]kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
+	remoteApiContainerClient map[string]rpc_api.ApiContainerServiceClient
 	connectOnHostMachine     bool
 	ctx                      context.Context
 	lock                     sync.Mutex
@@ -63,7 +62,7 @@ func (runtime enclaveRuntime) refreshEnclaveConnections() error {
 				continue
 			}
 			logrus.Debugf("Creating gRPC connection with enclave manager service on enclave %s", uuid)
-			apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
+			apiContainerClient := rpc_api.NewApiContainerServiceClient(conn)
 			runtime.remoteApiContainerClient[uuid] = apiContainerClient
 		}
 	}
@@ -75,7 +74,7 @@ func NewEnclaveRuntime(ctx context.Context, manager enclave_manager.EnclaveManag
 
 	runtime := enclaveRuntime{
 		enclaveManager:           manager,
-		remoteApiContainerClient: map[string]kurtosis_core_rpc_api_bindings.ApiContainerServiceClient{},
+		remoteApiContainerClient: map[string]rpc_api.ApiContainerServiceClient{},
 		connectOnHostMachine:     connectOnHostMachine,
 		ctx:                      ctx,
 	}
@@ -107,8 +106,8 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context
 
 	results := utils.MapList(
 		artifacts.FileNamesAndUuids,
-		func(x *kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid) kurtosis_core_rest_api_bindings.FileArtifactReference {
-			return kurtosis_core_rest_api_bindings.FileArtifactReference{
+		func(x *rpc_api.FilesArtifactNameAndUuid) api.FileArtifactReference {
+			return api.FileArtifactReference{
 				Name: x.FileName,
 				Uuid: x.FileUuid,
 			}
@@ -139,17 +138,17 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Can't start file upload gRPC call with enclave %s", enclave_identifier)
 		}
-		clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](client)
+		clientStream := grpc_file_streaming.NewClientStream[rpc_api.StreamedDataChunk, rpc_api.UploadFilesArtifactResponse](client)
 
 		response, err := clientStream.SendData(
 			filename,
 			part,
 			0, // Length unknown head of time
-			func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
-				return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+			func(previousChunkHash string, contentChunk []byte) (*rpc_api.StreamedDataChunk, error) {
+				return &rpc_api.StreamedDataChunk{
 					Data:              contentChunk,
 					PreviousChunkHash: previousChunkHash,
-					Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+					Metadata: &rpc_api.DataChunkMetadata{
 						Name: filename,
 					},
 				}, nil
@@ -179,7 +178,7 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(c
 	}
 	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
 
-	storeWebFilesArtifactArgs := kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs{
+	storeWebFilesArtifactArgs := rpc_api.StoreWebFilesArtifactArgs{
 		Url:  request.Body.Url,
 		Name: request.Body.Name,
 	}
@@ -206,7 +205,7 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsServicesServ
 	}
 	logrus.Infof("Storing file artifact from service %s on enclave %s", service_identifier, enclave_identifier)
 
-	storeWebFilesArtifactArgs := kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs{
+	storeWebFilesArtifactArgs := rpc_api.StoreFilesArtifactFromServiceArgs{
 		ServiceIdentifier: service_identifier,
 		SourcePath:        request.Body.SourcePath,
 		Name:              request.Body.Name,
@@ -234,8 +233,8 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 	}
 	logrus.Infof("Inspecting file artifact %s on enclave %s", artifact_identifier, enclave_identifier)
 
-	inspectFilesArtifactContentsRequest := kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest{
-		FileNamesAndUuid: &kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid{
+	inspectFilesArtifactContentsRequest := rpc_api.InspectFilesArtifactContentsRequest{
+		FileNamesAndUuid: &rpc_api.FilesArtifactNameAndUuid{
 			FileName: artifact_identifier,
 			FileUuid: artifact_identifier,
 		},
@@ -248,7 +247,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 
 	artifact_content_list := utils.MapList(
 		stored_artifact.FileDescriptions,
-		func(x *kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) api.FileArtifactDescription {
+		func(x *rpc_api.FileArtifactContentsFileDescription) api.FileArtifactDescription {
 			size := int64(x.Size)
 			return api.FileArtifactDescription{
 				Path:        x.Path,
@@ -270,7 +269,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 	}
 	logrus.Infof("Downloading file artifact %s from enclave %s", artifact_identifier, enclave_identifier)
 
-	downloadFilesArtifactArgs := kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
+	downloadFilesArtifactArgs := rpc_api.DownloadFilesArtifactArgs{
 		Identifier: artifact_identifier,
 	}
 	client, err := (*apiContainerClient).DownloadFilesArtifact(ctx, &downloadFilesArtifactArgs)
@@ -279,10 +278,10 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 		return nil, stacktrace.NewError("Can't start file download gRPC call with enclave %s", enclave_identifier)
 	}
 
-	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
+	clientStream := grpc_file_streaming.NewClientStream[rpc_api.StreamedDataChunk, []byte](client)
 	pipeReader := clientStream.PipeReader(
 		artifact_identifier,
-		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+		func(dataChunk *rpc_api.StreamedDataChunk) ([]byte, string, error) {
 			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
 		},
 	)
@@ -305,7 +304,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServices(ctx context.
 	logrus.Infof("Getting info about services enclave %s", enclave_identifier)
 
 	service_ids := utils.DerefWith(request.Params.Services, []string{})
-	getServicesArgs := kurtosis_core_rpc_api_bindings.GetServicesArgs{
+	getServicesArgs := rpc_api.GetServicesArgs{
 		ServiceIdentifiers: utils.NewMapFromList(service_ids, func(x string) bool { return true }),
 	}
 	services, err := (*apiContainerClient).GetServices(ctx, &getServicesArgs)
@@ -333,7 +332,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesHistory(ctx c
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	response := utils.MapList(services.AllIdentifiers, func(service *kurtosis_core_rpc_api_bindings.ServiceIdentifiers) api.ServiceIdentifiers {
+	response := utils.MapList(services.AllIdentifiers, func(service *rpc_api.ServiceIdentifiers) api.ServiceIdentifiers {
 		return api.ServiceIdentifiers{
 			ServiceUuid:   service.ServiceUuid,
 			ShortenedUuid: service.ShortenedUuid,
@@ -353,7 +352,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesConnection(c
 	}
 	logrus.Infof("Listing services from enclave %s", enclave_identifier)
 
-	connectServicesArgs := kurtosis_core_rpc_api_bindings.ConnectServicesArgs{
+	connectServicesArgs := rpc_api.ConnectServicesArgs{
 		Connect: toGrpcConnect(*request.Body),
 	}
 	_, err = (*apiContainerClient).ConnectServices(ctx, &connectServicesArgs)
@@ -375,7 +374,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 	}
 	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
 
-	getServicesArgs := kurtosis_core_rpc_api_bindings.GetServicesArgs{
+	getServicesArgs := rpc_api.GetServicesArgs{
 		ServiceIdentifiers: map[string]bool{service_identifier: true},
 	}
 	services, err := (*apiContainerClient).GetServices(ctx, &getServicesArgs)
@@ -403,7 +402,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 	}
 	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
 
-	execCommandArgs := kurtosis_core_rpc_api_bindings.ExecCommandArgs{
+	execCommandArgs := rpc_api.ExecCommandArgs{
 		ServiceIdentifier: service_identifier,
 		CommandArgs:       request.Body.CommandArgs,
 	}
@@ -438,7 +437,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 	var err error
 	switch endpoint_method {
 	case api.GET:
-		waitForHttpGetEndpointAvailabilityArgs := kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs{
+		waitForHttpGetEndpointAvailabilityArgs := rpc_api.WaitForHttpGetEndpointAvailabilityArgs{
 			ServiceIdentifier:        service_identifier,
 			Port:                     uint32(port_number),
 			Path:                     request.Body.Path,
@@ -449,7 +448,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 		}
 		_, err = (*apiContainerClient).WaitForHttpGetEndpointAvailability(ctx, &waitForHttpGetEndpointAvailabilityArgs)
 	case api.POST:
-		waitForHttpPostEndpointAvailabilityArgs := kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs{
+		waitForHttpPostEndpointAvailabilityArgs := rpc_api.WaitForHttpPostEndpointAvailabilityArgs{
 			ServiceIdentifier:        service_identifier,
 			Port:                     uint32(port_number),
 			Path:                     request.Body.Path,
@@ -523,17 +522,17 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx
 			logrus.Errorf("Can't upload Starlark package using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 			return nil, stacktrace.NewError("Can't upload Starlark package using gRPC call with enclave %s", enclave_identifier)
 		}
-		clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, emptypb.Empty](client)
+		clientStream := grpc_file_streaming.NewClientStream[rpc_api.StreamedDataChunk, emptypb.Empty](client)
 
 		_, err = clientStream.SendData(
 			filename,
 			part,
 			0, // Length unknown head of time
-			func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
-				return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+			func(previousChunkHash string, contentChunk []byte) (*rpc_api.StreamedDataChunk, error) {
+				return &rpc_api.StreamedDataChunk{
 					Data:              contentChunk,
 					PreviousChunkHash: previousChunkHash,
-					Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+					Metadata: &rpc_api.DataChunkMetadata{
 						Name: filename,
 					},
 				}, nil
@@ -567,7 +566,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	}
 	jsonString := string(jsonBlob)
 
-	runStarlarkPackageArgs := kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
+	runStarlarkPackageArgs := rpc_api.RunStarlarkPackageArgs{
 		PackageId:              package_id,
 		StarlarkPackageContent: nil,
 		SerializedParams:       &jsonString,
@@ -586,7 +585,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		logrus.Errorf("Can't run Starlark package using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't run Starlark package using gRPC call with enclave %s", enclave_identifier)
 	}
-	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
+	clientStream := grpc_file_streaming.NewClientStream[rpc_api.StreamedDataChunk, []byte](client)
 
 	// TODO: Why the gRPC is not sending the previous hash??? and we need to calc it manually
 	hasher := sha1.New()
@@ -594,7 +593,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	blockHash := ""
 	pipeReader := clientStream.PipeReader(
 		package_id,
-		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+		func(dataChunk *rpc_api.StreamedDataChunk) ([]byte, string, error) {
 			blockHash = previousBlockHash
 			hasher.Reset()
 			hasher.Write(dataChunk.Data)
@@ -629,7 +628,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		return string(jsonBlob)
 	})
 
-	runStarlarkScriptArgs := kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
+	runStarlarkScriptArgs := rpc_api.RunStarlarkScriptArgs{
 		SerializedScript:     request.Body.SerializedScript,
 		SerializedParams:     jsonString,
 		DryRun:               request.Body.DryRun,
@@ -645,10 +644,10 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		logrus.Errorf("Can't run Starlark script using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't run Starlark script using gRPC call with enclave %s", enclave_identifier)
 	}
-	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
+	clientStream := grpc_file_streaming.NewClientStream[rpc_api.StreamedDataChunk, []byte](client)
 	pipeReader := clientStream.PipeReader(
 		"__RunStarlarkScript__",
-		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+		func(dataChunk *rpc_api.StreamedDataChunk) ([]byte, string, error) {
 			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
 		},
 	)
@@ -693,7 +692,7 @@ func getGrpcClientConn(enclaveInfo types.EnclaveInfo, connectOnHostMachine bool)
 	return grpcConnection, nil
 }
 
-func (manager enclaveRuntime) GetGrpcClientForEnclaveUUID(enclave_uuid string) (*kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, error) {
+func (manager enclaveRuntime) GetGrpcClientForEnclaveUUID(enclave_uuid string) (*rpc_api.ApiContainerServiceClient, error) {
 	err := manager.refreshEnclaveConnections()
 	if err != nil {
 		return nil, err
@@ -708,57 +707,57 @@ func (manager enclaveRuntime) GetGrpcClientForEnclaveUUID(enclave_uuid string) (
 	return &client, nil
 }
 
-func toGrpcConnect(conn api.Connect) kurtosis_core_rpc_api_bindings.Connect {
+func toGrpcConnect(conn api.Connect) rpc_api.Connect {
 	switch conn {
 	case api.CONNECT:
-		return kurtosis_core_rpc_api_bindings.Connect_CONNECT
+		return rpc_api.Connect_CONNECT
 	case api.NOCONNECT:
-		return kurtosis_core_rpc_api_bindings.Connect_NO_CONNECT
+		return rpc_api.Connect_NO_CONNECT
 	default:
 		panic(fmt.Sprintf("Missing conversion of Connect Enum value: %s", conn))
 	}
 }
 
-func toHttpContainerStatus(status kurtosis_core_rpc_api_bindings.Container_Status) api.ContainerStatus {
+func toHttpContainerStatus(status rpc_api.Container_Status) api.ContainerStatus {
 	switch status {
-	case kurtosis_core_rpc_api_bindings.Container_RUNNING:
+	case rpc_api.Container_RUNNING:
 		return api.ContainerStatusRUNNING
-	case kurtosis_core_rpc_api_bindings.Container_STOPPED:
+	case rpc_api.Container_STOPPED:
 		return api.ContainerStatusSTOPPED
-	case kurtosis_core_rpc_api_bindings.Container_UNKNOWN:
+	case rpc_api.Container_UNKNOWN:
 		return api.ContainerStatusUNKNOWN
 	default:
 		panic(fmt.Sprintf("Missing conversion of Container Status Enum value: %s", status))
 	}
 }
 
-func toHttpTransportProtocol(protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol) api.TransportProtocol {
+func toHttpTransportProtocol(protocol rpc_api.Port_TransportProtocol) api.TransportProtocol {
 	switch protocol {
-	case kurtosis_core_rpc_api_bindings.Port_TCP:
+	case rpc_api.Port_TCP:
 		return api.TCP
-	case kurtosis_core_rpc_api_bindings.Port_UDP:
+	case rpc_api.Port_UDP:
 		return api.UDP
-	case kurtosis_core_rpc_api_bindings.Port_SCTP:
+	case rpc_api.Port_SCTP:
 		return api.SCTP
 	default:
 		panic(fmt.Sprintf("Missing conversion of Transport Protocol Enum value: %s", protocol))
 	}
 }
 
-func toHttpServiceStatus(status kurtosis_core_rpc_api_bindings.ServiceStatus) api.ServiceStatus {
+func toHttpServiceStatus(status rpc_api.ServiceStatus) api.ServiceStatus {
 	switch status {
-	case kurtosis_core_rpc_api_bindings.ServiceStatus_RUNNING:
+	case rpc_api.ServiceStatus_RUNNING:
 		return api.ServiceStatusRUNNING
-	case kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED:
+	case rpc_api.ServiceStatus_STOPPED:
 		return api.ServiceStatusSTOPPED
-	case kurtosis_core_rpc_api_bindings.ServiceStatus_UNKNOWN:
+	case rpc_api.ServiceStatus_UNKNOWN:
 		return api.ServiceStatusUNKNOWN
 	default:
 		panic(fmt.Sprintf("Missing conversion of Service Status Enum value: %s", status))
 	}
 }
 
-func toHttpContainer(container *kurtosis_core_rpc_api_bindings.Container) api.Container {
+func toHttpContainer(container *rpc_api.Container) api.Container {
 	status := toHttpContainerStatus(container.Status)
 	return api.Container{
 		CmdArgs:        container.CmdArgs,
@@ -769,7 +768,7 @@ func toHttpContainer(container *kurtosis_core_rpc_api_bindings.Container) api.Co
 	}
 }
 
-func toHttpPorts(port *kurtosis_core_rpc_api_bindings.Port) api.Port {
+func toHttpPorts(port *rpc_api.Port) api.Port {
 	protocol := toHttpTransportProtocol(port.TransportProtocol)
 	return api.Port{
 		ApplicationProtocol: &port.MaybeApplicationProtocol,
@@ -779,7 +778,7 @@ func toHttpPorts(port *kurtosis_core_rpc_api_bindings.Port) api.Port {
 	}
 }
 
-func toHttpServiceInfo(service *kurtosis_core_rpc_api_bindings.ServiceInfo) api.ServiceInfo {
+func toHttpServiceInfo(service *rpc_api.ServiceInfo) api.ServiceInfo {
 	container := toHttpContainer(service.Container)
 	serviceStatus := toHttpServiceStatus(service.ServiceStatus)
 	publicPorts := utils.MapMapValues(service.MaybePublicPorts, toHttpPorts)
@@ -797,41 +796,41 @@ func toHttpServiceInfo(service *kurtosis_core_rpc_api_bindings.ServiceInfo) api.
 	}
 }
 
-func toHttpFeatureFlag(flag kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag) api.KurtosisFeatureFlag {
+func toHttpFeatureFlag(flag rpc_api.KurtosisFeatureFlag) api.KurtosisFeatureFlag {
 	switch flag {
-	case kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING:
+	case rpc_api.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING:
 		return api.NOINSTRUCTIONSCACHING
 	default:
 		panic(fmt.Sprintf("Missing conversion of Feature Flag Enum value: %s", flag))
 	}
 }
 
-func toHttpRestartPolicy(policy kurtosis_core_rpc_api_bindings.RestartPolicy) api.RestartPolicy {
+func toHttpRestartPolicy(policy rpc_api.RestartPolicy) api.RestartPolicy {
 	switch policy {
-	case kurtosis_core_rpc_api_bindings.RestartPolicy_ALWAYS:
+	case rpc_api.RestartPolicy_ALWAYS:
 		return api.RestartPolicyALWAYS
-	case kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER:
+	case rpc_api.RestartPolicy_NEVER:
 		return api.RestartPolicyNEVER
 	default:
 		panic(fmt.Sprintf("Missing conversion of Restart Policy Enum value: %s", policy))
 	}
 }
 
-func toGrpcFeatureFlag(flag api.KurtosisFeatureFlag) kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag {
+func toGrpcFeatureFlag(flag api.KurtosisFeatureFlag) rpc_api.KurtosisFeatureFlag {
 	switch flag {
 	case api.NOINSTRUCTIONSCACHING:
-		return kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING
+		return rpc_api.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING
 	default:
 		panic(fmt.Sprintf("Missing conversion of Feature Flag Enum value: %s", flag))
 	}
 }
 
-func toGrpcImageDownloadMode(flag api.ImageDownloadMode) kurtosis_core_rpc_api_bindings.ImageDownloadMode {
+func toGrpcImageDownloadMode(flag api.ImageDownloadMode) rpc_api.ImageDownloadMode {
 	switch flag {
 	case api.ImageDownloadModeALWAYS:
-		return kurtosis_core_rpc_api_bindings.ImageDownloadMode_always
+		return rpc_api.ImageDownloadMode_always
 	case api.ImageDownloadModeMISSING:
-		return kurtosis_core_rpc_api_bindings.ImageDownloadMode_missing
+		return rpc_api.ImageDownloadMode_missing
 	default:
 		panic(fmt.Sprintf("Missing conversion of Image Download Mode Enum value: %s", flag))
 	}
