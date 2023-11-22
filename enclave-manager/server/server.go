@@ -263,6 +263,7 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 	}
 	result, err := (*c.engineServiceClient).CreateEnclave(ctx, req)
 	if err != nil {
+		logrus.Infof("[LEO-DEBUG] create enclave error:\n%v", err)
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave from the EM")
 	}
 	resp := &connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse]{
