@@ -1194,7 +1194,7 @@ func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerIma
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	doesImageExistLocally, err := manager.isImageAvailableLocally(dockerImage)
+	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
 	}
@@ -1223,7 +1223,7 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	doesImageExistLocally, err := manager.isImageAvailableLocally(dockerImage)
+	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
 	}
@@ -1344,14 +1344,12 @@ func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (com
 //	INSTANCE HELPER FUNCTIONS
 //
 // =================================================================================================================
-func (manager *DockerManager) isImageAvailableLocally(imageName string) (bool, error) {
-	// Own context for checking if the image is locally available because we do not want to cancel this works in case the main context in the request is cancelled
-	// if the first request fails the image will be ready for following request making the process faster
-	checkImageAvailabilityCtx := context.Background()
+func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (bool, error) {
+
 	referenceArg := filters.Arg("reference", imageName)
 	filterArgs := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
-		checkImageAvailabilityCtx,
+		ctx,
 		types.ImageListOptions{
 			All:            true,
 			Filters:        filterArgs,
@@ -1381,7 +1379,7 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 		return stacktrace.Propagate(err, "An error occurred communicating with docker engine")
 	}
 	logrus.Infof("Pulling image '%s'", imageName)
-	err, retryWithLinuxAmd64 := pullImage(manager.dockerClientNoTimeout, imageName, defaultPlatform)
+	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClientNoTimeout, imageName, defaultPlatform)
 	if err == nil {
 		return nil
 	}
@@ -1390,7 +1388,7 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 	}
 	// we retry with linux/amd64
 	logrus.Debugf("Retrying pulling image '%s' for '%s'", imageName, linuxAmd64)
-	err, _ = pullImage(manager.dockerClientNoTimeout, imageName, linuxAmd64)
+	err, _ = pullImage(context, manager.dockerClientNoTimeout, imageName, linuxAmd64)
 	if err != nil {
 		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
 	}
@@ -1997,12 +1995,9 @@ func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.En
 	return config
 }
 
-func pullImage(dockerClient *client.Client, imageName string, platform string) (error, bool) {
-	// Own context for pulling images because we do not want to cancel this works in case the main context in the request is cancelled
-	// if the fist request fails the image will be ready for following request making the process faster
-	pullImageCtx := context.Background()
+func pullImage(ctx context.Context, dockerClient *client.Client, imageName string, platform string) (error, bool) {
 	logrus.Tracef("Starting pulling '%s' for platform '%s'", imageName, platform)
-	out, err := dockerClient.ImagePull(pullImageCtx, imageName, types.ImagePullOptions{
+	out, err := dockerClient.ImagePull(ctx, imageName, types.ImagePullOptions{
 		All:           false,
 		RegistryAuth:  "",
 		PrivilegeFunc: nil,

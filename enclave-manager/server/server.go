@@ -522,7 +522,7 @@ func RunEnclaveManagerApiServer(enforceAuth bool) error {
 		apiPath,
 	)
 
-	emCors := customCors()
+	emCors := cors.AllowAll()
 	emCors.Log = logrus.StandardLogger()
 
 	if err := apiServer.RunServerUntilInterruptedWithCors(emCors); err != nil {

@@ -169,6 +169,9 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
 
+	logrus.Infof("[LEO-DEBUG] sleep for 15 seconds...")
+	time.Sleep(15 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleep ends")
 	if _, err = backend.dockerManager.FetchImageIfMissing(ctx, image); err != nil {
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version. Error:\n%v", image, err)
 	}
