@@ -562,7 +562,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	})
 
 	runStarlarkPackageArgs := kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
-		PackageId:              request.Body.PackageId,
+		PackageId:              package_id,
 		StarlarkPackageContent: nil,
 		SerializedParams:       jsonString,
 		DryRun:                 request.Body.DryRun,

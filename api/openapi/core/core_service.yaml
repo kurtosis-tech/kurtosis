@@ -502,8 +502,6 @@ components:
     RunStarlarkPackage:
       type: object
       properties:
-        package_id:
-          type: string
         local:
           type: string
           format: byte
@@ -548,8 +546,6 @@ components:
           description: Defaults to empty
         image_download_mode:
           $ref: "#/components/schemas/ImageDownloadMode"
-      required:
-        - package_id
 
     KurtosisFeatureFlag:
       type: string

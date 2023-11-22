@@ -168,7 +168,6 @@ type RunStarlarkPackage struct {
 
 	// MainFunctionName The name of the main function, the default value is "run"
 	MainFunctionName *string `json:"main_function_name,omitempty"`
-	PackageId        string  `json:"package_id"`
 
 	// Parallelism Defaults to 4
 	Parallelism *int32 `json:"parallelism,omitempty"`
