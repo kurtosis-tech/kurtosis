@@ -142,6 +142,7 @@ const (
 type RestartPolicy string
 
 const (
+	RestartAlways    = "always"
 	RestartOnFailure = "on-failure"
 	NoRestart        = ""
 )
