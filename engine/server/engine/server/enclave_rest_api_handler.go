@@ -50,11 +50,15 @@ func (runtime enclaveRuntime) refreshEnclaveConnections() error {
 	// Add new enclaves - assuming enclaves properties (API container connection) are immutable
 	for uuid, info := range enclaves {
 		_, found := runtime.remoteApiContainerClient[uuid]
-		if !found {
-			conn, err := getGrpcClientConn(info, runtime.connectOnHostMachine)
+		if !found && (info != nil) {
+			conn, err := getGrpcClientConn(*info, runtime.connectOnHostMachine)
 			if err != nil {
 				logrus.Errorf("Failed to establish gRPC connection with enclave manager service on enclave %s", uuid)
 				return err
+			}
+			if conn == nil {
+				logrus.Warnf("Unavailable gRPC connection to enclave '%s', skipping it!", uuid)
+				continue
 			}
 			logrus.Debugf("Creating gRPC connection with enclave manager service on enclave %s", uuid)
 			apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
@@ -650,13 +654,25 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 
 // GetGrpcClientConn returns a client conn dialed in to the local port
 // It is the caller's responsibility to call resultClientConn.close()
-func getGrpcClientConn(enclaveInfo *types.EnclaveInfo, connectOnHostMachine bool) (resultClientConn *grpc.ClientConn, resultErr error) {
-	apiContainerGrpcPort := enclaveInfo.ApiContainerInfo.GrpcPortInsideEnclave
-	apiContainerIP := enclaveInfo.ApiContainerInfo.BridgeIpAddress
-	if connectOnHostMachine {
-		apiContainerGrpcPort = enclaveInfo.ApiContainerHostMachineInfo.GrpcPortOnHostMachine
-		apiContainerIP = enclaveInfo.ApiContainerHostMachineInfo.IpOnHostMachine
+func getGrpcClientConn(enclaveInfo types.EnclaveInfo, connectOnHostMachine bool) (resultClientConn *grpc.ClientConn, resultErr error) {
+	enclaveAPIContainerInfo := enclaveInfo.ApiContainerInfo
+	if enclaveAPIContainerInfo == nil {
+		logrus.Infof("No API container info is available for enclave %s", enclaveInfo.EnclaveUuid)
+		return nil, nil
 	}
+	apiContainerGrpcPort := enclaveAPIContainerInfo.GrpcPortInsideEnclave
+	apiContainerIP := enclaveAPIContainerInfo.BridgeIpAddress
+
+	enclaveAPIContainerHostMachineInfo := enclaveInfo.ApiContainerHostMachineInfo
+	if connectOnHostMachine && enclaveAPIContainerHostMachineInfo == nil {
+		logrus.Infof("No API container info is available for enclave %s", enclaveInfo.EnclaveUuid)
+		return nil, nil
+	}
+	if connectOnHostMachine && (enclaveAPIContainerHostMachineInfo != nil) {
+		apiContainerGrpcPort = enclaveAPIContainerHostMachineInfo.GrpcPortOnHostMachine
+		apiContainerIP = enclaveAPIContainerHostMachineInfo.IpOnHostMachine
+	}
+
 	grpcServerAddress := fmt.Sprintf("%v:%v", apiContainerIP, apiContainerGrpcPort)
 	grpcConnection, err := grpc.Dial(grpcServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
