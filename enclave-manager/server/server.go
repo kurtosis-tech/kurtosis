@@ -521,11 +521,30 @@ func RunEnclaveManagerApiServer(enforceAuth bool) error {
 		apiPath,
 	)
 
-	emCors := cors.AllowAll()
+	emCors := customCors()
 	emCors.Log = logrus.StandardLogger()
 
 	if err := apiServer.RunServerUntilInterruptedWithCors(emCors); err != nil {
 		logrus.Error("An error occurred running the server", err)
 	}
 	return nil
+}
+
+func customCors() *cors.Cors {
+	return cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{
+			http.MethodHead,
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+			http.MethodOptions,
+			http.MethodConnect,
+		},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+		MaxAge:           86400,
+	})
 }
