@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path"
@@ -49,7 +50,17 @@ func main() {
 		},
 	})
 
+	err := runMain()
+	if err != nil {
+		logrus.Errorf("An error occurred when running the main function:")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		os.Exit(failureExitCode)
+	}
 	os.Exit(successExitCode)
+}
+
+func runMain() error {
+	panic("not implemented")
 }
 
 func formatFilenameFunctionForLogs(filename string, functionName string) string {
