@@ -188,15 +188,15 @@ export abstract class KurtosisClient {
     productionMode?: boolean,
     apiContainerVersionTag?: string,
   ) {
-    return asyncResult(() => {
-      const request = new CreateEnclaveArgs({
-        enclaveName,
-        apiContainerLogLevel,
-        mode: productionMode ? EnclaveMode.PRODUCTION : EnclaveMode.TEST,
-        apiContainerVersionTag: apiContainerVersionTag || "",
-      });
-      return this.client.createEnclave(request, this.getHeaderOptions());
+    const request = new CreateEnclaveArgs({
+      enclaveName,
+      apiContainerLogLevel,
+      mode: productionMode ? EnclaveMode.PRODUCTION : EnclaveMode.TEST,
+      apiContainerVersionTag: apiContainerVersionTag || "",
     });
+
+    return asyncResult(this.client.createEnclave(request, this.getHeaderOptions()), "KurtosisClient could not create enclave");
+
   }
 
   async runStarlarkPackage(
