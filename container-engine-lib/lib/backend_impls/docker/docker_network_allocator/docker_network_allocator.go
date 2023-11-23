@@ -108,7 +108,8 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			return "", stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
 		}
 
-		networkId, err := provider.dockerManager.CreateNetwork(ctx, networkName, freeNetworkIpAndMask.String(), gatewayIp, labels)
+		createNetworkCtx := context.Background()
+		networkId, err := provider.dockerManager.CreateNetwork(createNetworkCtx, networkName, freeNetworkIpAndMask.String(), gatewayIp, labels)
 		if err == nil {
 			deadlineCtx, ok := ctx.Deadline()
 			logrus.Infof("[LEO-DEBUG] receiving context deadline %v", deadlineCtx)
