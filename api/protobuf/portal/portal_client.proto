@@ -1,0 +1,38 @@
+syntax = "proto3";
+package portal_daemon_api;
+
+// NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
+// taken a hard stance on this being the way it should be done, so we have to do it this way.
+option go_package = "github.com/kurtosis-tech/kurtosis/api/golang/portal/kurtosis_portal_rpc_api_bindings";
+
+service KurtosisPortalDaemon {
+  // To check availability
+  rpc Ping(PortalPing) returns (PortalPong) {}
+
+  rpc ForwardUserServicePort(ForwardUserServicePortArgs) returns (ForwardUserServicePortResponse) {};
+}
+
+message ForwardUserServicePortArgs {
+  string enclave_id = 1;
+
+  string service_id = 2;
+
+  string port_id = 3;
+
+  optional uint32 local_port_number = 4;
+
+  optional bool wait_until_ready = 6;
+}
+
+message ForwardPortResponse {
+}
+
+message ForwardUserServicePortResponse {
+  uint32 local_port_number = 1;
+}
+
+message PortalPing {
+}
+
+message PortalPong {
+}
