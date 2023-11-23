@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	portal_api "github.com/kurtosis-tech/kurtosis/api/golang/portal/kurtosis_portal_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/portal/daemon/server"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/portal/kurtosis_portal_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/portal/daemon/grpc_server"
+	"github.com/kurtosis-tech/kurtosis/portal/daemon/port_forward_manager"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -69,22 +71,28 @@ func main() {
 }
 
 func runDaemon(ctx context.Context) error {
+	kurtosisContext, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
+	}
 
-	portalServer := server.NewPortalServer()
+	portForwardManager := port_forward_manager.NewPortForwardManager(kurtosisContext)
+
+	portalServer := grpc_server.NewPortalServer(portForwardManager)
 	defer portalServer.Close()
 
 	kurtosisPortalDaemonRegistrationFunc := func(grpcServer *grpc.Server) {
-		portal_api.RegisterKurtosisPortalDaemonServer(grpcServer, portalServer)
+		kurtosis_portal_rpc_api_bindings.RegisterKurtosisPortalDaemonServer(grpcServer, portalServer)
 	}
 	portalServerDaemon := minimal_grpc_server.NewMinimalGRPCServer(
-		server.PortalServerGrpcPort,
+		grpc_server.PortalServerGrpcPort,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			kurtosisPortalDaemonRegistrationFunc,
 		},
 	)
 
-	logrus.Infof("Kurtosis Portal Daemon Server running and listening on port %d", server.PortalServerGrpcPort)
+	logrus.Infof("Kurtosis Portal Daemon Server running and listening on port %d", grpc_server.PortalServerGrpcPort)
 	if err := portalServerDaemon.RunUntilStopped(ctx.Done()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the Kurtosis Portal Daemon Server")
 	}
