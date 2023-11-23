@@ -86,10 +86,6 @@ func (service *EngineConnectServerService) GetEngineInfo(context.Context, *conne
 func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	args := connectArgs.Msg
 
-	logrus.Infof("[LEO-DEBUG] sleeping for 40 seconds...")
-	time.Sleep(40 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
-
 	logrus.Infof("[LEO-DEBUG] Track enclave")
 	if trackingErr := service.metricsClient.TrackCreateEnclave(args.GetEnclaveName(), subnetworkDisableBecauseItIsDeprecated); trackingErr != nil {
 		logrus.Warn("An error occurred while logging the create enclave event")
