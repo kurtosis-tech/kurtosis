@@ -770,7 +770,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 					"but found '%v'",
 				namespaceName,
 				enclaveIdStr,
-				len(services),
+				len(servicesForEnclaveId),
 			)
 		}
 		service := servicesForEnclaveId[0]
