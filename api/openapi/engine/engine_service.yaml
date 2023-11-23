@@ -9,6 +9,8 @@ paths:
     get:
       summary: Get Engine Info
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         '200':
           description: Successful response
           content:
@@ -20,6 +22,8 @@ paths:
     get:
       summary: Get Enclaves
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         '200':
           description: Successful response
           content:
@@ -38,6 +42,9 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateEnclave'
       responses:
+
+        default:
+          $ref: '#/components/responses/NotOk'
         '200':
           description: Successful response
           content:
@@ -50,6 +57,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/remove_all'
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         '200':
           description: Successful response
           content:
@@ -61,6 +70,8 @@ paths:
     get:
       summary: Get Historical Enclaves
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         '200':
           description: Successful response
           content:
@@ -76,6 +87,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         '200':
           description: Successful response
           content:
@@ -88,6 +101,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         '200':
           description: Successful response
 
@@ -97,6 +112,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         '200':
           description: Successful response
           content:
@@ -114,6 +131,8 @@ paths:
             schema:
               $ref: '#/components/schemas/EnclaveTargetStatus'
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         '200':
           description: Successful response
 
@@ -124,6 +143,16 @@ paths:
 # =========================================================================================================================
 
 components:
+
+  responses:
+
+    NotOk:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResponseInfo'
+            required: true
 
   parameters:
 
@@ -144,6 +173,28 @@ components:
         type: boolean
 
   schemas:
+
+    ResponseType:
+      type: string
+      enum:
+        - ERROR
+        - INFO
+        - WARNING 
+
+    ResponseInfo:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ResponseType'
+        message:
+          type: string
+        code:
+          type: integer
+          format: uint32
+      required:
+        - type
+        - message
+        - code
 
     EngineInfo:
       type: object

@@ -40,6 +40,13 @@ const (
 	NOINSTRUCTIONSCACHING KurtosisFeatureFlag = "NO_INSTRUCTIONS_CACHING"
 )
 
+// Defines values for ResponseType.
+const (
+	ERROR   ResponseType = "ERROR"
+	INFO    ResponseType = "INFO"
+	WARNING ResponseType = "WARNING"
+)
+
 // Defines values for RestartPolicy.
 const (
 	RestartPolicyALWAYS RestartPolicy = "ALWAYS"
@@ -139,6 +146,16 @@ type Port struct {
 	// WaitTimeout The wait timeout duration in string
 	WaitTimeout *string `json:"wait_timeout,omitempty"`
 }
+
+// ResponseInfo defines model for ResponseInfo.
+type ResponseInfo struct {
+	Code    uint32       `json:"code"`
+	Message string       `json:"message"`
+	Type    ResponseType `json:"type"`
+}
+
+// ResponseType defines model for ResponseType.
+type ResponseType string
 
 // RestartPolicy 0 - NEVER
 // 1 - ALWAYS
@@ -429,6 +446,9 @@ type RetriesDelayMilliseconds = int32
 
 // ServiceIdentifier defines model for service_identifier.
 type ServiceIdentifier = string
+
+// NotOk defines model for NotOk.
+type NotOk = ResponseInfo
 
 // PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartBody defines parameters for PostEnclavesEnclaveIdentifierArtifactsLocalFile.
 type PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartBody = openapi_types.File

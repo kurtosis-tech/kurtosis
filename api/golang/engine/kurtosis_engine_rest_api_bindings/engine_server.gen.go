@@ -214,6 +214,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 }
 
+type NotOkJSONResponse ResponseInfo
+
 type DeleteEnclavesRequestObject struct {
 	Params DeleteEnclavesParams
 }
@@ -231,6 +233,18 @@ func (response DeleteEnclaves200JSONResponse) VisitDeleteEnclavesResponse(w http
 	return json.NewEncoder(w).Encode(response)
 }
 
+type DeleteEnclavesdefaultJSONResponse struct {
+	Body       ResponseInfo
+	StatusCode int
+}
+
+func (response DeleteEnclavesdefaultJSONResponse) VisitDeleteEnclavesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type GetEnclavesRequestObject struct {
 }
 
@@ -245,6 +259,18 @@ func (response GetEnclaves200JSONResponse) VisitGetEnclavesResponse(w http.Respo
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type GetEnclavesdefaultJSONResponse struct {
+	Body       ResponseInfo
+	StatusCode int
+}
+
+func (response GetEnclavesdefaultJSONResponse) VisitGetEnclavesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type PostEnclavesRequestObject struct {
@@ -264,6 +290,18 @@ func (response PostEnclaves200JSONResponse) VisitPostEnclavesResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
+type PostEnclavesdefaultJSONResponse struct {
+	Body       ResponseInfo
+	StatusCode int
+}
+
+func (response PostEnclavesdefaultJSONResponse) VisitPostEnclavesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type GetEnclavesHistoricalRequestObject struct {
 }
 
@@ -280,6 +318,18 @@ func (response GetEnclavesHistorical200JSONResponse) VisitGetEnclavesHistoricalR
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetEnclavesHistoricaldefaultJSONResponse struct {
+	Body       ResponseInfo
+	StatusCode int
+}
+
+func (response GetEnclavesHistoricaldefaultJSONResponse) VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type DeleteEnclavesEnclaveIdentifierRequestObject struct {
 	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
@@ -294,6 +344,18 @@ type DeleteEnclavesEnclaveIdentifier200Response struct {
 func (response DeleteEnclavesEnclaveIdentifier200Response) VisitDeleteEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
 	return nil
+}
+
+type DeleteEnclavesEnclaveIdentifierdefaultJSONResponse struct {
+	Body       ResponseInfo
+	StatusCode int
+}
+
+func (response DeleteEnclavesEnclaveIdentifierdefaultJSONResponse) VisitDeleteEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type GetEnclavesEnclaveIdentifierRequestObject struct {
@@ -313,6 +375,18 @@ func (response GetEnclavesEnclaveIdentifier200JSONResponse) VisitGetEnclavesEncl
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetEnclavesEnclaveIdentifierdefaultJSONResponse struct {
+	Body       ResponseInfo
+	StatusCode int
+}
+
+func (response GetEnclavesEnclaveIdentifierdefaultJSONResponse) VisitGetEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type GetEnclavesEnclaveIdentifierStatusRequestObject struct {
 	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
@@ -328,6 +402,18 @@ func (response GetEnclavesEnclaveIdentifierStatus200JSONResponse) VisitGetEnclav
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type GetEnclavesEnclaveIdentifierStatusdefaultJSONResponse struct {
+	Body       ResponseInfo
+	StatusCode int
+}
+
+func (response GetEnclavesEnclaveIdentifierStatusdefaultJSONResponse) VisitGetEnclavesEnclaveIdentifierStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type PostEnclavesEnclaveIdentifierStatusRequestObject struct {
@@ -347,6 +433,18 @@ func (response PostEnclavesEnclaveIdentifierStatus200Response) VisitPostEnclaves
 	return nil
 }
 
+type PostEnclavesEnclaveIdentifierStatusdefaultJSONResponse struct {
+	Body       ResponseInfo
+	StatusCode int
+}
+
+func (response PostEnclavesEnclaveIdentifierStatusdefaultJSONResponse) VisitPostEnclavesEnclaveIdentifierStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type GetEngineInfoRequestObject struct {
 }
 
@@ -361,6 +459,18 @@ func (response GetEngineInfo200JSONResponse) VisitGetEngineInfoResponse(w http.R
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type GetEngineInfodefaultJSONResponse struct {
+	Body       ResponseInfo
+	StatusCode int
+}
+
+func (response GetEngineInfodefaultJSONResponse) VisitGetEngineInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 // StrictServerInterface represents all server handlers.
@@ -639,25 +749,27 @@ func (sh *strictHandler) GetEngineInfo(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9RXTW/jNhD9K8K0R9V225tu6drI6hDHWNtAiyAQGHFscyGRCkkFMAL/94L6lkXJsrNZ",
-	"tKfA0XDmzZs3w+E7hCJOBEeuFXjvkBBJYtQos1/Iw4i8YcAocs12DKX5L0UVSpZoJjh4sN36c9dRByE1",
-	"cqRO/ltIh5MYHbFz9AGdwhG4wMyZhOgDuGAswLNFcUHia8okUvC0TNEFFR4wJia8PibmlNKS8T2cTsY2",
-	"Fm8YkCjqwvN3TubAyY0cEkUlGjVx5rgjaaQdppwdiVQF8DVFeawRNgJYkLwIESHhcDJY8q8Ze3cJ+yK4",
-	"JoyjXGui04LTNAbvCb5tl0t/eQ8urDePq9ViDi4sH5fB4m9/vVksN/DsnqfqwheJROOiYNPUS4oEpWaY",
-	"+SYJC8IyZBCJfRDhG0YW1twz2zeUigkeaLK3Wpc1ygmxGMSCZh9+lbgDD36Z1rqaFpxMC9wPxtRwVTgR",
-	"L98x1MbJHCM0dVuncUzksZtgXggaNOEEhNMgTRnNLJjGWI0EsiQx3nG6TRmFGg6Rkhzt+Ipzdyu/KuxX",
-	"ofQDCQ+Mo893ogt5L5MwSITUgeDBQSgdxLl5g0bGNe5RmhAsGbBrab7sjyfbGXcg7vO4zOzpvEhG9xiw",
-	"JCCUSlTKqoZaWIxaDWp0jCtGsaxoLym9Zj2ctBDYPAxgcC1ZDpBWMabGdfniYbX5x9rehUO/GoSqW4BS",
-	"+kbxVmp7W7Sa0X1nzyhsRSr8drwM8GIXUHvuNIUZsOLAiNYdasHOcLvRr92Zqmo85M4y+5ttoUa66VOY",
-	"8WWugmxks/ji5N2wGJUmcdKc5b0KunqW/2zR2ZjsqdM5UUV2A7J9KLIvW3izWG/AhdW3x/n2y8Z/XA61",
-	"bvNK6Ui/l6Rx1BRcXGq7DZF71N1RZAZQD/R97+2F2bdyPRhTvpa9DWatRe8ddkLGRIMHlGj8rajQeQhz",
-	"AxToNNOR+ZZjdu5WPrhQoYPZ5PfJzAQRCXKSMPDgz8lsMgM32zmzlKbl+pcvixHqrCgm60wnPgUv30TK",
-	"RUtlx+vF+MneGrXJtLEwnp4NQyoRXOUh/5jNzB+jVOQ6H4lJxMIs+PS7ymmut8yhLjxfmDKu2gvwOg1D",
-	"VGqXRk4JI6uaKnesIlenStZcz6i7nNyjbhDyoZwIpcx8ItGqJbcRE6ecyme6uiXxe9StrBOhLGmvhGrn",
-	"/Zqi0n8JevxhZWyv9ad2U5nny+kTNdTi9RYac/RODd+te2x6YEoLyUKSvUIu6eprbf3BjK95BzT3re47",
-	"4EZh1ak0NNai5r378D2Nn0kd7FcPKcu7u29YXT9SlJbiWGvi8kj5qfn8NxqnMX+cwsslfUzrvfFqQtfl",
-	"RvS/oLW7895KcZGAo6rd+fKg/3TyfvwlYlv/xl8l1xK7thCbq9csZtNyX+sXabVzfqqUqigfaNBs0yyd",
-	"nP4NAAD//5Hsw6MyFQAA",
+	"H4sIAAAAAAAC/9RYXW/qOBP+K9G872W2sOfccddt2R4uCghS7a6qKnLjAXw2sVPbqRZV/PeVE+eLOJDu",
+	"aZHOHeDxfDzzzHiGN4hEkgqOXCuYvEFKJElQo8y/IY9i8ooho8g12zCU5leKKpIs1UxwmMDDw+zW99RO",
+	"SI0cqVd8F9LjJEFPbDy9Q88qAh+YuZMSvQMfjARMXFZ8kPiSMYkUJlpm6IOKdpgQY17vU3NLacn4Fg4H",
+	"I5uIVwxJHHfdm228XIFXCHkkjktv1JV3ixuSxdpjytuQWFUOvmQo97WHDQMOT56FiJFwOBS+qFRwhTl+",
+	"c6EXf5sPkeAauTYfSZrGLCLGvdF3ZXx8a6j8v8QNTOB/ozoto+JUjVZW9YxvRGHsKBMc/0kx0kg9lFLI",
+	"HBt72ei+TtmN4JowjnKtic5sjrMEJo+wepjPZ/M78GEdLJbL6S34MF/Mw+mfs3UwnQfw5B9D78ONRKJx",
+	"arNr+CNFilKzIn6SsjAqTYax2IYxvmLsyKJ/JPuKUjHBQ022TumSM0WCHAKJoHgOUOv3vRE1WFkl4vk7",
+	"RtooucUYDbjrLEmI3HcDLIhBw6Y7IeE0zDJGcwmmMVEDHZmTBK85fcgYhdodIiXZu/2z966Xsyqx34TS",
+	"9yTaMV7wpOPyVqZRmAqpQ8HDnVA6TArxBoyMa9yiNCZYekKuVYNlvT667vgn7D4Ni8wdzrNkdIshS0NC",
+	"qUSlnGyoicWoU6D2jnHFKJYZ7QWlV6wHk5YHLg0nfPAdUZ4ArUJMDavy6f0y+MtZ3lbhrGrMqpuAkvqG",
+	"8U5oe0u0ejP67h5B2LJk9Xa0nMDFTaB232kSM2T2woDSPVWCneb2H/W6lakqx6fUOXp/syzUQDV9DDO6",
+	"zFOQt2yWnO28AUtQaZKkzV7ey6B39/JLk86FZE+ejoGy0Z2g7b2NvizhYLoOwIflanH7cBPMFvNTpdt8",
+	"UjrU7wVpGDQWi3NlFxC5Rd1tRaYB9bi+7X29MD8rx4Mh6WvJu9xsjVUdg5FFfyNkQjRMIGNcf/0CvuNZ",
+	"SFApsnVDWvwwbMALjOxxJLmC2oZfeHYqoMCaLAGfrlaLFfgwm/++AB/+uF7lT4ErBXV9NkOnROMvlrXH",
+	"sJtX0QKomY7NWZFH73o5Ax+qjMH46tersTEiUuQkZTCBr1fjqzH4+V6Qoz4qR/RioI9R55GYxOS1M6Mw",
+	"KaazcvhU+fV6eXl0Q12LjBpD/eHpaHD/Mh5/2Nh+PEQ6Jvd1FkWo1CaLvdINyIXy7aTPQOXxqNgz8nG/",
+	"nFQtOl4FjxlyUHdRvEPdgPCHUCCUMnNE4mWrhgb07fJtOyLzZaC6Q93CKRXKAdRSqDZSLxkq/Zug+w+j",
+	"SnudOrRbgFljD5/I01YmLgN8Ea9XB+zXlT/aMaWFZBHJ98Vz3P1WS/8gRu/Z2JqTcXdjuxh56+AbPG6B",
+	"+db9k+UwvLd2on13s3X8x9PXdC/RGpWWYl/z7nxrvCgCP2s5N/qoZ+2e4+Co3jvenYJ1OVH/FIno7kyX",
+	"S4oN2VPVtnb+ift0uD/++XQtHMMf0c9PxdqRiqJCzKA8Kufn/kKo9qJPpWtl5aJtI98VSrOHfwMAAP//",
+	"wdS4oZgYAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

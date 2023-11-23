@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"sync"
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
@@ -94,9 +95,9 @@ func NewEnclaveRuntime(ctx context.Context, manager enclave_manager.EnclaveManag
 // (GET /enclaves/{enclave_identifier}/artifacts)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context.Context, request api.GetEnclavesEnclaveIdentifierArtifactsRequestObject) (api.GetEnclavesEnclaveIdentifierArtifactsResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.GetEnclavesEnclaveIdentifierArtifactsdefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 
 	artifacts, err := (*apiContainerClient).ListFilesArtifactNamesAndUuids(ctx, &emptypb.Empty{})
@@ -119,9 +120,9 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context
 // (POST /enclaves/{enclave_identifier}/artifacts/local-file)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(ctx context.Context, request api.PostEnclavesEnclaveIdentifierArtifactsLocalFileRequestObject) (api.PostEnclavesEnclaveIdentifierArtifactsLocalFileResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.PostEnclavesEnclaveIdentifierArtifactsLocalFiledefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
 
@@ -172,9 +173,9 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 // (POST /enclaves/{enclave_identifier}/artifacts/remote-file)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx context.Context, request api.PostEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject) (api.PostEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.PostEnclavesEnclaveIdentifierArtifactsRemoteFiledefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
 
@@ -199,9 +200,9 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsRemoteFile(
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx context.Context, request api.PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject) (api.PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	service_identifier := request.ServiceIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierdefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Storing file artifact from service %s on enclave %s", service_identifier, enclave_identifier)
 
@@ -227,9 +228,9 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsServicesSer
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx context.Context, request api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierRequestObject) (api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	artifact_identifier := request.ArtifactIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierdefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Inspecting file artifact %s on enclave %s", artifact_identifier, enclave_identifier)
 
@@ -263,9 +264,9 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx context.Context, request api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadRequestObject) (api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	artifact_identifier := request.ArtifactIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloaddefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Downloading file artifact %s from enclave %s", artifact_identifier, enclave_identifier)
 
@@ -297,9 +298,9 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 // (GET /enclaves/{enclave_identifier}/services)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServices(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesRequestObject) (api.GetEnclavesEnclaveIdentifierServicesResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.GetEnclavesEnclaveIdentifierServicesdefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Getting info about services enclave %s", enclave_identifier)
 
@@ -320,9 +321,9 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServices(ctx context.
 // (GET /enclaves/{enclave_identifier}/services/history)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesHistory(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesHistoryRequestObject) (api.GetEnclavesEnclaveIdentifierServicesHistoryResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.GetEnclavesEnclaveIdentifierServicesHistorydefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Listing services from enclave %s", enclave_identifier)
 
@@ -346,16 +347,16 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesHistory(ctx c
 // (POST /enclaves/{enclave_identifier}/services/connection)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesConnection(ctx context.Context, request api.PostEnclavesEnclaveIdentifierServicesConnectionRequestObject) (api.PostEnclavesEnclaveIdentifierServicesConnectionResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.PostEnclavesEnclaveIdentifierServicesConnectiondefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Listing services from enclave %s", enclave_identifier)
 
 	connectServicesArgs := rpc_api.ConnectServicesArgs{
 		Connect: toGrpcConnect(*request.Body),
 	}
-	_, err = (*apiContainerClient).ConnectServices(ctx, &connectServicesArgs)
+	_, err := (*apiContainerClient).ConnectServices(ctx, &connectServicesArgs)
 	if err != nil {
 		logrus.Errorf("Can't list services using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
@@ -368,9 +369,9 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesConnection(c
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierRequestObject) (api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	service_identifier := request.ServiceIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierdefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
 
@@ -396,9 +397,9 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx context.Context, request api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandRequestObject) (api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	service_identifier := request.ServiceIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommanddefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
 
@@ -473,9 +474,9 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 // (GET /enclaves/{enclave_identifier}/starlark)
 func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.Context, request api.GetEnclavesEnclaveIdentifierStarlarkRequestObject) (api.GetEnclavesEnclaveIdentifierStarlarkResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.GetEnclavesEnclaveIdentifierStarlarkdefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Getting info about last Starlark run on enclave %s", enclave_identifier)
 
@@ -504,9 +505,9 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.
 // (POST /enclaves/{enclave_identifier}/starlark/packages)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStarlarkPackagesRequestObject) (api.PostEnclavesEnclaveIdentifierStarlarkPackagesResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.PostEnclavesEnclaveIdentifierStarlarkPackagesdefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Upload Starlark package on enclave %s", enclave_identifier)
 
@@ -550,9 +551,9 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx
 // (POST /enclaves/{enclave_identifier}/starlark/packages/{package_id})
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdRequestObject) (api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIddefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Run Starlark package on enclave %s", enclave_identifier)
 
@@ -613,9 +614,9 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 // (POST /enclaves/{enclave_identifier}/starlark/scripts)
 func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStarlarkScriptsRequestObject) (api.PostEnclavesEnclaveIdentifierStarlarkScriptsResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
-	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
-	if err != nil {
-		return nil, err
+	apiContainerClient, responseErr := manager.GetApiClientOrResponseError(enclave_identifier)
+	if responseErr != nil {
+		return api.PostEnclavesEnclaveIdentifierStarlarkScriptsdefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
 	logrus.Infof("Run Starlark script on enclave %s", enclave_identifier)
 
@@ -692,6 +693,25 @@ func getGrpcClientConn(enclaveInfo types.EnclaveInfo, connectOnHostMachine bool)
 	return grpcConnection, nil
 }
 
+func (manager enclaveRuntime) GetApiClientOrResponseError(enclave_uuid string) (*rpc_api.ApiContainerServiceClient, *api.ResponseInfo) {
+	client, err := manager.GetGrpcClientForEnclaveUUID(enclave_uuid)
+	if err != nil {
+		return nil, &api.ResponseInfo{
+			Type:    api.ERROR,
+			Message: "Couldn't retrieve connection with enclave",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+	if client == nil {
+		return nil, &api.ResponseInfo{
+			Type:    api.INFO,
+			Message: fmt.Sprintf("enclave '%s' not found", enclave_uuid),
+			Code:    http.StatusNotFound,
+		}
+	}
+	return client, nil
+}
+
 func (manager enclaveRuntime) GetGrpcClientForEnclaveUUID(enclave_uuid string) (*rpc_api.ApiContainerServiceClient, error) {
 	err := manager.refreshEnclaveConnections()
 	if err != nil {
@@ -700,8 +720,7 @@ func (manager enclaveRuntime) GetGrpcClientForEnclaveUUID(enclave_uuid string) (
 
 	client, found := manager.remoteApiContainerClient[enclave_uuid]
 	if !found {
-		err := stacktrace.NewError("Enclave '%s' not found", enclave_uuid)
-		return nil, err
+		return nil, nil
 	}
 
 	return &client, nil

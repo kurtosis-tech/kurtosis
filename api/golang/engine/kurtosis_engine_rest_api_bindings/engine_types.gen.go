@@ -32,6 +32,13 @@ const (
 	STOP EnclaveTargetStatus = "STOP"
 )
 
+// Defines values for ResponseType.
+const (
+	ERROR   ResponseType = "ERROR"
+	INFO    ResponseType = "INFO"
+	WARNING ResponseType = "WARNING"
+)
+
 // ApiContainerStatus defines model for ApiContainerStatus.
 type ApiContainerStatus string
 
@@ -102,6 +109,16 @@ type EngineInfo struct {
 	EngineVersion string `json:"engine_version"`
 }
 
+// ResponseInfo defines model for ResponseInfo.
+type ResponseInfo struct {
+	Code    uint32       `json:"code"`
+	Message string       `json:"message"`
+	Type    ResponseType `json:"type"`
+}
+
+// ResponseType defines model for ResponseType.
+type ResponseType string
+
 // Timestamp defines model for Timestamp.
 type Timestamp = time.Time
 
@@ -110,6 +127,9 @@ type EnclaveIdentifier = string
 
 // RemoveAll defines model for remove_all.
 type RemoveAll = bool
+
+// NotOk defines model for NotOk.
+type NotOk = ResponseInfo
 
 // DeleteEnclavesParams defines parameters for DeleteEnclaves.
 type DeleteEnclavesParams struct {

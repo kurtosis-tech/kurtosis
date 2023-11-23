@@ -13,6 +13,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -28,6 +30,8 @@ paths:
       requestBody:
         $ref: "#/components/requestBodies/fileUploadBody"
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Success
 
@@ -44,6 +48,8 @@ paths:
               $ref: "#/components/schemas/RunStarlarkPackage"
         required: true
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -69,6 +75,8 @@ paths:
               $ref: "#/components/schemas/RunStarlarkScript"
         required: true
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -88,6 +96,8 @@ paths:
         - $ref: '#/components/parameters/enclave_identifier'
         - $ref: '#/components/parameters/service_identifier'
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -101,6 +111,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -122,6 +134,8 @@ paths:
               type: string
           description: Select services to get information
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -145,6 +159,8 @@ paths:
         description: Exec Command
         required: true
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -176,6 +192,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -192,6 +210,8 @@ paths:
         - $ref: '#/components/parameters/artifact_identifier'
       description: Inspect the content of a file artifact
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -208,6 +228,8 @@ paths:
         - $ref: '#/components/parameters/enclave_identifier'
         - $ref: '#/components/parameters/artifact_identifier'
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -224,6 +246,8 @@ paths:
       requestBody:
         $ref: "#/components/requestBodies/fileUploadBody"
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -246,6 +270,8 @@ paths:
         description: Store Web Files Artifact
         required: true
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -266,6 +292,8 @@ paths:
               $ref: "#/components/schemas/StoreFilesArtifactFromService"
         required: true
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
           content:
@@ -285,6 +313,8 @@ paths:
               $ref: "#/components/schemas/Connect"
         required: true
       responses:
+        default:
+          $ref: '#/components/responses/NotOk'
         "200":
           description: Successful request
 
@@ -295,6 +325,16 @@ paths:
 # =========================================================================================================================
 
 components:
+
+  responses:
+
+    NotOk:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ResponseInfo'
+            required: true
 
   parameters:
 
@@ -401,6 +441,28 @@ components:
             format: binary
 
   schemas:
+
+    ResponseType:
+      type: string
+      enum:
+        - ERROR
+        - INFO
+        - WARNING 
+
+    ResponseInfo:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ResponseType'
+        message:
+          type: string
+        code:
+          type: integer
+          format: uint32
+      required:
+        - type
+        - message
+        - code
 
     Port:
       type: object
