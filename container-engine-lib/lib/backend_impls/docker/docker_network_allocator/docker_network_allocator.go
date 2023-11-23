@@ -110,6 +110,13 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 
 		networkId, err := provider.dockerManager.CreateNetwork(ctx, networkName, freeNetworkIpAndMask.String(), gatewayIp, labels)
 		if err == nil {
+			deadlineCtx, ok := ctx.Deadline()
+			logrus.Infof("[LEO-DEBUG] receiving context deadline %v", deadlineCtx)
+			logrus.Infof("[LEO-DEBUG] receiving context deadline ok '%v'", ok)
+			logrus.Infof("[LEO-DEBUG] context: %+v", ctx)
+			logrus.Infof("[LEO-DEBUG] sleeping for 20 seconds...")
+			time.Sleep(20 * time.Second)
+			logrus.Infof("[LEO-DEBUG] sleeping ends")
 			return networkId, nil
 		}
 		logrus.Infof("[LEO-DEBUG] create network return err %v", err)
@@ -143,9 +150,6 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		//  the newly-freed IPs Docker will fail with "pool overlaps with current space"
 		time.Sleep(timeBetweenNetworkCreationRetries)
 	}
-	logrus.Infof("[LEO-DEBUG] sleeping for 20 seconds...")
-	time.Sleep(20 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	return "", stacktrace.NewError(
 		"We couldn't allocate a new network even after retrying %v times with %v between retries",
