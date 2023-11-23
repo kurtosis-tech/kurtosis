@@ -67,6 +67,7 @@
               protoc-gen-connect-go
               protoc-gen-grpc-web
               grpc-tools
+              grpcui
               oapi-codegen
               rustc
               cargo
