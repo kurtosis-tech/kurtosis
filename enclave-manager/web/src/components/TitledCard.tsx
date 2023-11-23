@@ -1,12 +1,12 @@
 import { Card, CardBody, CardHeader, Text } from "@chakra-ui/react";
 import { PropsWithChildren, ReactElement } from "react";
 
-type TitledCard = PropsWithChildren<{
+type TitledCardProps = PropsWithChildren<{
   title: string;
   controls?: ReactElement;
 }>;
 
-export const TitledCard = ({ title, controls, children }: TitledCard) => {
+export const TitledCard = ({ title, controls, children }: TitledCardProps) => {
   return (
     <Card variant={"titledCard"}>
       <CardHeader

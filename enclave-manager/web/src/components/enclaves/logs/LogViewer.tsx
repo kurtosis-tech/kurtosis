@@ -253,7 +253,7 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
         onChangeSearchState((state) => ({ type: "init", rawSearchTerm: state.rawSearchTerm }));
       }
     },
-    [logLines],
+    [logLines, onChangeSearchState],
   );
 
   const debouncedUpdateMatches = useMemo(() => debounce(updateMatches, 100), [updateMatches]);
