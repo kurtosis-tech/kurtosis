@@ -50,6 +50,7 @@ const theme = extendTheme({
     },
     gray: {
       100: "#E3E3E3", // text
+      150: "#A1A3A5",
       200: "#878787",
       250: "#7A7A7A",
       300: "#606770",

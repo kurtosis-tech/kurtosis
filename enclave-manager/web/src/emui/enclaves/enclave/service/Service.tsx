@@ -2,15 +2,9 @@ import { Flex, Spinner, TabPanel, TabPanels, Tabs, Text } from "@chakra-ui/react
 import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { FunctionComponent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { AppPageLayout } from "../../../../components/AppLayout";
 import { HoverLineTabList } from "../../../../components/HoverLineTabList";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
-import {
-  MAIN_APP_LEFT_PADDING,
-  MAIN_APP_MAX_WIDTH,
-  MAIN_APP_MAX_WIDTH_WITHOUT_PADDING,
-  MAIN_APP_RIGHT_PADDING,
-  MAIN_APP_TABPANEL_PADDING,
-} from "../../../../components/theme/constants";
 import { isDefined } from "../../../../utils";
 import { useFullEnclave } from "../../../EmuiAppContext";
 import { EnclaveFullInfo } from "../../types";
@@ -65,26 +59,22 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
   };
 
   return (
-    <Flex w={"100%"} h={"100%"}>
-      <Flex direction="column" gap={"24px"} width={"100%"} h={"100%"}>
-        <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
-          <Flex width={"100%"} bg={"gray.850"} pl={MAIN_APP_LEFT_PADDING} pr={MAIN_APP_RIGHT_PADDING}>
-            <Flex alignItems={"center"} gap={"8px"} maxWidth={MAIN_APP_MAX_WIDTH_WITHOUT_PADDING}>
-              <Text as={"span"} fontSize={"lg"} fontWeight={"md"} mb={"4px"}>
-                {service.name}
-              </Text>
-              <HoverLineTabList tabs={tabs.map(({ path }) => path)} activeTab={activeTab} />
-            </Flex>
-          </Flex>
-          <TabPanels maxWidth={MAIN_APP_MAX_WIDTH} p={MAIN_APP_TABPANEL_PADDING} w={"100%"} h={"100%"}>
-            {tabs.map((tab) => (
-              <TabPanel key={tab.path}>
-                <tab.element enclave={enclave} service={service} />
-              </TabPanel>
-            ))}
-          </TabPanels>
-        </Tabs>
-      </Flex>
-    </Flex>
+    <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
+      <AppPageLayout>
+        <Flex alignItems={"center"} gap={"8px"}>
+          <Text as={"span"} fontSize={"lg"} fontWeight={"md"} mb={"4px"}>
+            {service.name}
+          </Text>
+          <HoverLineTabList tabs={tabs.map(({ path }) => path)} activeTab={activeTab} />
+        </Flex>
+        <TabPanels>
+          {tabs.map((tab) => (
+            <TabPanel key={tab.path}>
+              <tab.element enclave={enclave} service={service} />
+            </TabPanel>
+          ))}
+        </TabPanels>
+      </AppPageLayout>
+    </Tabs>
   );
 };
