@@ -1,17 +1,26 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	portal_api "github.com/kurtosis-tech/kurtosis/api/golang/portal/kurtosis_portal_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/portal/daemon/server"
+	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"os"
 	"path"
 	"runtime"
 	"strings"
+	"time"
 )
 
 const (
 	successExitCode = 0
 	failureExitCode = 1
+
+	grpcServerStopGracePeriod = 5 * time.Second
 
 	forceColors   = true
 	fullTimestamp = true
@@ -22,7 +31,7 @@ const (
 )
 
 func main() {
-	//ctx := context.Background()
+	ctx := context.Background()
 	logrus.SetLevel(logrus.DebugLevel)
 	// This allows the filename & function to be reported
 	logrus.SetReportCaller(logMethodAlongWithLogLine)
@@ -50,7 +59,7 @@ func main() {
 		},
 	})
 
-	err := runMain()
+	err := runDaemon(ctx)
 	if err != nil {
 		logrus.Errorf("An error occurred when running the main function:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
@@ -59,8 +68,27 @@ func main() {
 	os.Exit(successExitCode)
 }
 
-func runMain() error {
-	panic("not implemented")
+func runDaemon(ctx context.Context) error {
+
+	portalServer := server.NewPortalServer()
+	defer portalServer.Close()
+
+	kurtosisPortalDaemonRegistrationFunc := func(grpcServer *grpc.Server) {
+		portal_api.RegisterKurtosisPortalDaemonServer(grpcServer, portalServer)
+	}
+	portalServerDaemon := minimal_grpc_server.NewMinimalGRPCServer(
+		server.PortalServerGrpcPort,
+		grpcServerStopGracePeriod,
+		[]func(*grpc.Server){
+			kurtosisPortalDaemonRegistrationFunc,
+		},
+	)
+
+	logrus.Infof("Kurtosis Portal Daemon Server running and listening on port %d", server.PortalServerGrpcPort)
+	if err := portalServerDaemon.RunUntilStopped(ctx.Done()); err != nil {
+		return stacktrace.Propagate(err, "An error occurred running the Kurtosis Portal Daemon Server")
+	}
+	return nil
 }
 
 func formatFilenameFunctionForLogs(filename string, functionName string) string {
