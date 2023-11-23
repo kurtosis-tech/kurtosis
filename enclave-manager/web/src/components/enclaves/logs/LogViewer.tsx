@@ -8,8 +8,8 @@ import {
   EditablePreview,
   Flex,
   FormControl,
+  FormErrorMessage,
   FormLabel,
-  HStack,
   Input,
   InputGroup,
   InputRightElement,
@@ -21,20 +21,18 @@ import {
 import { debounce, throttle } from "lodash";
 import { ChangeEvent, MutableRefObject, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
-import { isDefined, isNotEmpty, stripAnsi } from "../../../utils";
+import { isDefined, isNotEmpty, stringifyError, stripAnsi } from "../../../utils";
 import { CopyButton } from "../../CopyButton";
 import { DownloadButton } from "../../DownloadButton";
-import { LogLine, LogLineProps, LogLineSearch } from "./LogLine";
+import { LogLine } from "./LogLine";
+import { LogLineMessage } from "./types";
+import { normalizeLogText } from "./utils";
 
 type LogViewerProps = {
-  logLines: LogLineProps[];
+  logLines: LogLineMessage[];
   progressPercent?: number | "indeterminate" | "failed";
   ProgressWidget?: ReactElement;
   logsFileName?: string;
-};
-
-export const normalizeLogText = (rawText: string) => {
-  return rawText.trim();
 };
 
 export const LogViewer = ({
@@ -47,46 +45,87 @@ export const LogViewer = ({
   const [logLines, setLogLines] = useState(propsLogLines);
   const [userIsScrolling, setUserIsScrolling] = useState(false);
   const [automaticScroll, setAutomaticScroll] = useState(true);
-  const throttledSetLogLines = useMemo(() => throttle(setLogLines, 500), []);
 
   const searchRef: MutableRefObject<HTMLInputElement | null> = useRef(null);
-  const [search, setSearch] = useState<LogLineSearch | undefined>(undefined);
   const [rawSearchTerm, setRawSearchTerm] = useState("");
+  const [maybeSearchPattern, setMaybeSearchPattern] = useState<{ pattern?: RegExp; error?: string }>({});
   const [searchMatchesIndices, setSearchMatchesIndices] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState<number | undefined>(undefined);
 
-  useEffect(() => {
-    window.addEventListener("keydown", function (e) {
-      const element = searchRef?.current;
-      if ((e.ctrlKey && e.keyCode === 70) || (e.metaKey && e.keyCode === 70)) {
-        if (element !== document.activeElement) {
-          e.preventDefault();
-          element?.focus();
-        }
-      }
-      // Next search match with cmd/ctrl+G
-      // if ((e.ctrlKey && e.keyCode === 71) || (e.metaKey && e.keyCode === 71)) {
-      //   console.log("NEXT", e.keyCode);
-      //   e.preventDefault();
-      //   nextMatch();
-      // }
+  const throttledSetLogLines = useMemo(() => throttle(setLogLines, 500), []);
 
-      // Clear the search on escape
-      if (e.key === "Escape" || e.keyCode === 27) {
-        if (element === document.activeElement) {
-          e.preventDefault();
-          setSearch(undefined);
-          setRawSearchTerm("");
+  const updateMatches = useCallback(
+    (searchTerm: string) => {
+      if (isNotEmpty(searchTerm)) {
+        try {
+          const pattern = new RegExp(searchTerm, "gi"); // i is case insensitive
+          const matches = logLines
+            .map((line, index) => {
+              if (line?.message && normalizeLogText(line.message).match(pattern)) {
+                return index;
+              }
+              return null;
+            })
+            .filter(isDefined);
+          setMaybeSearchPattern({ pattern });
+          setSearchMatchesIndices(matches);
+          setCurrentSearchIndex(matches.length > 0 ? 0 : undefined);
+        } catch (error: any) {
+          setMaybeSearchPattern({ error: stringifyError(error) });
           setSearchMatchesIndices([]);
           setCurrentSearchIndex(undefined);
         }
+      } else {
+        setSearchMatchesIndices([]);
+        setCurrentSearchIndex(undefined);
       }
-    });
-  }, []);
+    },
+    [logLines],
+  );
 
-  useEffect(() => {
-    throttledSetLogLines(propsLogLines);
-  }, [propsLogLines, throttledSetLogLines]);
+  const debouncedUpdateMatches = useMemo(() => debounce(updateMatches, 100), [updateMatches]);
+
+  const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setRawSearchTerm(e.target.value);
+    debouncedUpdateMatches(e.target.value);
+  };
+
+  const updateSearchIndexBounded = (newIndex: number) => {
+    if (newIndex > searchMatchesIndices.length - 1) {
+      newIndex = 0;
+    }
+    if (newIndex < 0) {
+      newIndex = searchMatchesIndices.length - 1;
+    }
+    setCurrentSearchIndex(newIndex);
+    virtuosoRef.current?.scrollToIndex(searchMatchesIndices[newIndex]);
+  };
+
+  const handlePriorMatchClick = () => {
+    updateSearchIndexBounded(isDefined(currentSearchIndex) ? currentSearchIndex - 1 : 0);
+  };
+
+  const handleNextMatchClick = () => {
+    updateSearchIndexBounded(isDefined(currentSearchIndex) ? currentSearchIndex + 1 : 0);
+  };
+
+  const handleClearSearch = () => {
+    setRawSearchTerm("");
+    setMaybeSearchPattern({});
+    setSearchMatchesIndices([]);
+    setCurrentSearchIndex(undefined);
+  };
+
+  const handleIndexInputChange = (text: string) => {
+    let index = parseInt(text);
+    if (isNaN(index)) {
+      index = 1;
+    }
+    if (index > searchMatchesIndices.length) {
+      index = searchMatchesIndices.length;
+    }
+    updateSearchIndexBounded(index - 1);
+  };
 
   const handleAutomaticScrollChange = (e: ChangeEvent<HTMLInputElement>) => {
     setAutomaticScroll(e.target.checked);
@@ -111,141 +150,95 @@ export const LogViewer = ({
       .join("\n");
   };
 
+  const isIndexSelected = (index: number) => {
+    return isDefined(currentSearchIndex) && searchMatchesIndices[currentSearchIndex] === index;
+  };
+
   useEffect(() => {
-    if (search) findMatches(search);
-  }, [search?.searchTerm, logLines]);
-
-  const updateSearchTerm = (rawText: string) => {
-    setCurrentSearchIndex(undefined);
-    const searchTerm = normalizeLogText(rawText);
-    const logLineSearch: LogLineSearch = {
-      searchTerm: searchTerm,
-      pattern: new RegExp(searchTerm, "gi"), // `i` is invariant case
-    };
-    setSearch(logLineSearch);
-  };
-  const debouncedUpdateSearchTerm = debounce(updateSearchTerm, 100);
-  const debouncedUpdateSearchTermCallback = useCallback(debouncedUpdateSearchTerm, []);
-
-  const hasSearchTerm = () => {
-    if (!search) return false;
-    return isDefined(search.searchTerm) && isNotEmpty(search.searchTerm);
-  };
-
-  const findMatches = (search: LogLineSearch) => {
-    setSearchMatchesIndices([]);
-    if (hasSearchTerm()) {
-      const matches = logLines.flatMap((line, index) => {
-        if (line?.message && normalizeLogText(line.message).match(search.pattern)) {
-          return index;
-        } else {
-          return [];
+    const listener = function (e: KeyboardEvent) {
+      const element = searchRef?.current;
+      if ((e.ctrlKey && e.keyCode === 70) || (e.metaKey && e.keyCode === 70)) {
+        if (element !== document.activeElement) {
+          e.preventDefault();
+          element?.focus();
         }
-      });
-      setSearchMatchesIndices(matches);
-    }
-  };
+      }
+      // Next search match with cmd/ctrl+G
+      // if ((e.ctrlKey && e.keyCode === 71) || (e.metaKey && e.keyCode === 71)) {
+      //   console.log("NEXT", e.keyCode);
+      //   e.preventDefault();
+      //   nextMatch();
+      // }
 
-  const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setRawSearchTerm(e.target.value);
-    debouncedUpdateSearchTermCallback(e.target.value);
-  };
-
-  const priorMatch = () => {
-    if (searchMatchesIndices.length > 0) {
-      const newIndex = isDefined(currentSearchIndex) ? currentSearchIndex - 1 : 0;
-      updateSearchIndexBounded(newIndex);
-    }
-  };
-
-  const nextMatch = () => {
-    if (searchMatchesIndices.length > 0) {
-      const newIndex = isDefined(currentSearchIndex) ? currentSearchIndex + 1 : 0;
-      updateSearchIndexBounded(newIndex);
-    }
-  };
-
-  const updateSearchIndexBounded = (newIndex: number) => {
-    if (newIndex > searchMatchesIndices.length - 1) {
-      newIndex = 0;
-    }
-    if (newIndex < 0) {
-      newIndex = searchMatchesIndices.length - 1;
-    }
-    setCurrentSearchIndex(newIndex);
-    return newIndex;
-  };
+      // Clear the search on escape
+      if (e.key === "Escape" || e.keyCode === 27) {
+        if (element === document.activeElement) {
+          e.preventDefault();
+          setRawSearchTerm("");
+          setSearchMatchesIndices([]);
+          setCurrentSearchIndex(undefined);
+        }
+      }
+    };
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, []);
 
   useEffect(() => {
-    if (virtuosoRef?.current && currentSearchIndex !== undefined && currentSearchIndex >= 0) {
-      virtuosoRef.current.scrollToIndex(searchMatchesIndices[currentSearchIndex]);
-    }
-  }, [currentSearchIndex]);
-
-  const clearSearch = () => {
-    setRawSearchTerm("");
-    setSearch(undefined);
-    setSearchMatchesIndices([]);
-    setCurrentSearchIndex(undefined);
-  };
-
-  const parseMatchIndexRequest = (input: string) => {
-    let parsed = parseInt(input);
-    if (isNaN(parsed) || parsed < 1) return 1;
-    if (parsed > searchMatchesIndices.length) return searchMatchesIndices.length;
-    return parsed;
-  };
-
-  const highlight = (currentSearchIndex: number | undefined, thisIndex: number, searchableIndices: number[]) => {
-    return (
-      currentSearchIndex !== undefined &&
-      searchableIndices.length > 0 &&
-      searchableIndices[currentSearchIndex] === thisIndex
-    );
-  };
+    throttledSetLogLines(propsLogLines);
+  }, [propsLogLines, throttledSetLogLines]);
 
   return (
     <Flex flexDirection={"column"} gap={"32px"} h={"100%"}>
       <Flex flexDirection={"column"} position={"relative"} bg={"gray.800"} h={"100%"}>
         <Box width={"100%"}>
           <Flex m={4}>
-            <Flex width={"40%"}>
-              <InputGroup size="sm">
-                <Input
+            <FormControl isInvalid={isDefined(maybeSearchPattern.error)}>
+              <Flex>
+                <InputGroup size="sm" width={"40%"}>
+                  <Input
+                    size={"sm"}
+                    ref={searchRef}
+                    value={rawSearchTerm}
+                    onChange={handleOnChange}
+                    placeholder={"search"}
+                  />
+                  {rawSearchTerm && (
+                    <InputRightElement>
+                      <SmallCloseIcon onClick={handleClearSearch} />
+                    </InputRightElement>
+                  )}
+                </InputGroup>
+                <Button
                   size={"sm"}
-                  ref={searchRef}
-                  value={rawSearchTerm}
-                  onChange={handleOnChange}
-                  placeholder={"search"}
-                />
-                {rawSearchTerm && (
-                  <InputRightElement>
-                    <SmallCloseIcon onClick={clearSearch} />
-                  </InputRightElement>
-                )}
-              </InputGroup>
-            </Flex>
-            <Button size={"sm"} ml={2} onClick={priorMatch}>
-              Previous
-            </Button>
-            <Button size={"sm"} ml={2} onClick={nextMatch}>
-              Next
-            </Button>
-            {hasSearchTerm() && (
-              <Box ml={2}>
-                <Text align={"left"} color={searchMatchesIndices.length === 0 ? "red" : "kurtosisGreen.400"}>
-                  <HStack alignItems={"center"}>
-                    <>
+                  ml={2}
+                  onClick={handlePriorMatchClick}
+                  isDisabled={searchMatchesIndices.length === 0}
+                  colorScheme={"darkBlue"}
+                >
+                  Previous
+                </Button>
+                <Button
+                  size={"sm"}
+                  ml={2}
+                  onClick={handleNextMatchClick}
+                  isDisabled={searchMatchesIndices.length === 0}
+                  colorScheme={"darkBlue"}
+                >
+                  Next
+                </Button>
+                {rawSearchTerm.length > 0 && (
+                  <Flex ml={2} alignItems={"center"}>
+                    <Text align={"left"} color={searchMatchesIndices.length === 0 ? "red" : "kurtosisGreen.400"}>
                       {searchMatchesIndices.length > 0 && currentSearchIndex !== undefined && (
-                        <>
+                        <span>
                           <Editable
+                            display={"inline"}
                             p={0}
-                            m={0}
+                            m={"0 4px 0 0"}
                             size={"sm"}
                             value={`${currentSearchIndex + 1}`}
-                            onChange={(inputString) =>
-                              updateSearchIndexBounded(parseMatchIndexRequest(inputString) - 1)
-                            }
+                            onChange={handleIndexInputChange}
                           >
                             <Tooltip label="Click to edit" shouldWrapChildren={true}>
                               <EditablePreview />
@@ -253,14 +246,15 @@ export const LogViewer = ({
                             <EditableInput p={1} width={"50px"} />
                           </Editable>
                           <>/ </>
-                        </>
+                        </span>
                       )}
-                      <>{searchMatchesIndices.length} matches</>
-                    </>
-                  </HStack>
-                </Text>
-              </Box>
-            )}
+                      <span>{searchMatchesIndices.length} matches</span>
+                    </Text>
+                  </Flex>
+                )}
+              </Flex>
+              {isDefined(maybeSearchPattern.error) && <FormErrorMessage>{maybeSearchPattern.error}</FormErrorMessage>}
+            </FormControl>
           </Flex>
         </Box>
         {isDefined(ProgressWidget) && (
@@ -291,11 +285,7 @@ export const LogViewer = ({
           style={{ height: "100%" }}
           data={logLines.filter(({ message }) => isDefined(message))}
           itemContent={(index, line) => (
-            <LogLine
-              logLineProps={line}
-              logLineSearch={search}
-              selected={highlight(currentSearchIndex, index, searchMatchesIndices)}
-            />
+            <LogLine {...line} highlightPattern={maybeSearchPattern.pattern} selected={isIndexSelected(index)} />
           )}
         />
         {isDefined(progressPercent) && (

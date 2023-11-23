@@ -15,7 +15,6 @@
     "ansi-to-html": "^0.7.2",
     "enclave-manager-sdk": "file:../api/typescript",
     "framer-motion": "^10.16.4",
-    "has-ansi": "^5.0.1",
     "html-react-parser": "^4.2.2",
     "js-cookie": "^3.0.5",
     "lodash": "^4.17.21",

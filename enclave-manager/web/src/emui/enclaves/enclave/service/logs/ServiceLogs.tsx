@@ -3,12 +3,12 @@ import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb"
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
-import { LogLineProps } from "../../../../../components/enclaves/logs/LogLine";
 import { LogViewer } from "../../../../../components/enclaves/logs/LogViewer";
+import { LogLineMessage } from "../../../../../components/enclaves/logs/types";
 import { isDefined } from "../../../../../utils";
 import { EnclaveFullInfo } from "../../../types";
 
-const serviceLogLineToLogLineProps = (lines: string[], timestamp?: Timestamp): LogLineProps[] => {
+const serviceLogLineToLogLineMessage = (lines: string[], timestamp?: Timestamp): LogLineMessage[] => {
   return lines.map((line) => ({
     message: line,
     timestamp: isDefined(timestamp) ? DateTime.fromJSDate(timestamp?.toDate()) : undefined,
@@ -40,7 +40,7 @@ export async function reTryCatch<R>(
 
 export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
   const kurtosisClient = useKurtosisClient();
-  const [logLines, setLogLines] = useState<LogLineProps[]>([]);
+  const [logLines, setLogLines] = useState<LogLineMessage[]>([]);
 
   useEffect(() => {
     let canceled = false;
@@ -55,7 +55,7 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
           if (canceled) return;
           const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
           if (!isDefined(lineGroupForService)) continue;
-          const parsedLines = serviceLogLineToLogLineProps(lineGroupForService.line, lineGroupForService.timestamp);
+          const parsedLines = serviceLogLineToLogLineMessage(lineGroupForService.line, lineGroupForService.timestamp);
           setLogLines((logLines) => [...logLines, ...parsedLines]);
         }
       } catch (error: any) {
