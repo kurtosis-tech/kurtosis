@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 const (
@@ -120,9 +119,6 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		containerImage,
 		imageVersionTag,
 	)
-	logrus.Infof("[LEO-DEBUG] sleeping for 10 seconds...")
-	time.Sleep(10 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	logrus.Debugf("Launching Kurtosis API container...")
 	apiContainer, err := launcher.kurtosisBackend.CreateAPIContainer(
