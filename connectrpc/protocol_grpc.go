@@ -143,6 +143,8 @@ func (g *grpcHandler) ContentTypes() map[string]struct{} {
 }
 
 func (*grpcHandler) SetTimeout(request *http.Request) (context.Context, context.CancelFunc, error) {
+	logrus.Infof("[LEO-DEBUG] no GRPC timeout")
+	return request.Context(), nil, nil
 	timeout, err := grpcParseTimeout(getHeaderCanonical(request.Header, grpcHeaderTimeout))
 	if err != nil && !errors.Is(err, errNoTimeout) {
 		// Errors here indicate that the client sent an invalid timeout header, so
