@@ -47,7 +47,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	deadlineCtx, ok := ctx.Deadline()
 	logrus.Infof("[LEO-DEBUG] receiving context deadline %v", deadlineCtx)
 	logrus.Infof("[LEO-DEBUG] receiving context deadline ok '%v'", ok)
-	logrus.Infof("[LEO-DEBUG] overwritting the context")
 
 	// Verify no API container already exists in the enclave
 	apiContainersInEnclaveFilters := &api_container.APIContainerFilters{
@@ -173,9 +172,9 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
 
-	logrus.Infof("[LEO-DEBUG] sleeping for 10 seconds...")
-	time.Sleep(10*time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
+	//logrus.Infof("[LEO-DEBUG] sleeping for 10 seconds...")
+	//time.Sleep(10 * time.Second)
+	//logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	if _, err = backend.dockerManager.FetchImageIfMissing(ctx, image); err != nil {
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version. Error:\n%v", image, err)
