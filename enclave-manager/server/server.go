@@ -272,6 +272,7 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 	if !auth {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
+	ctx, _ = context.WithTimeout(context.Background(), time.Second*120)
 	result, err := (*c.engineServiceClient).CreateEnclave(ctx, req)
 	if err != nil {
 		logrus.Infof("[LEO-DEBUG] create enclave error:\n%v", err)
