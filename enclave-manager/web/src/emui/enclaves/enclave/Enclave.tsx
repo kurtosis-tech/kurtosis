@@ -26,7 +26,11 @@ export const Enclave = () => {
   const enclave = useFullEnclave(enclaveUUID || "unknown");
 
   if (enclave.isErr) {
-    return <KurtosisAlert message={"Enclave could not load"} />;
+    return (
+      <AppPageLayout>
+        <KurtosisAlert message={"Enclave could not load"} />
+      </AppPageLayout>
+    );
   }
 
   return <EnclaveImpl enclave={enclave.value} />;

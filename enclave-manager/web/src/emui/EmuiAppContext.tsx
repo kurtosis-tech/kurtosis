@@ -243,6 +243,23 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
   const filesAndArtifacts = filesAndArtifactsByEnclave[enclaveUUID];
   const starlarkRun = starlarkRunsByEnclave[enclaveUUID];
 
+  const result = useMemo<Result<EnclaveFullInfo, string>>(() => {
+    if (!isDefined(enclave)) {
+      return Result.err(`Could not find enclave ${enclaveUUID}`);
+    }
+
+    if (enclaves.isErr) {
+      return enclaves.cast();
+    }
+
+    return Result.ok({
+      ...enclave,
+      services,
+      filesAndArtifacts,
+      starlarkRun,
+    });
+  }, [enclaves, enclave, services, filesAndArtifacts, starlarkRun]);
+
   useEffect(() => {
     if (isDefined(enclave) && !isDefined(services)) {
       refreshServices(enclave);
@@ -261,20 +278,7 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
     }
   }, [starlarkRun, refreshStarlarkRun, enclave]);
 
-  if (enclaves.isErr) {
-    return enclaves.cast();
-  }
-
-  if (!isDefined(enclave)) {
-    return Result.err(`Could not find enclave ${enclaveUUID}`);
-  }
-
-  return Result.ok({
-    ...enclave,
-    services,
-    filesAndArtifacts,
-    starlarkRun,
-  });
+  return result;
 };
 
 export const useFullEnclaves = (): Result<EnclaveFullInfo[], string> => {

@@ -1,10 +1,11 @@
 import { Icon } from "@chakra-ui/react";
-import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
+import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { FiPlus } from "react-icons/fi";
 import { Params, RouteObject } from "react-router-dom";
 import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
 import { RemoveFunctions } from "../../utils/types";
 import { EmuiAppState } from "../EmuiAppContext";
+import { Artifact } from "./enclave/artifact/Artifact";
 import { Enclave } from "./enclave/Enclave";
 import { Service } from "./enclave/service/Service";
 import { EnclaveList } from "./EnclaveList";
@@ -24,7 +25,7 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
         path: "/enclave/:enclaveUUID",
         id: "enclave",
         handle: {
-          crumb: async ({ enclaves: enclavesResult }: RemoveFunctions<EmuiAppState>, params: Params) => {
+          crumb: ({ enclaves: enclavesResult }: RemoveFunctions<EmuiAppState>, params: Params) => {
             const enclaves = enclavesResult.unwrapOr([]);
             const enclave = enclaves.find((enclave) => enclave.shortenedUuid === params.enclaveUUID);
             return {
@@ -33,6 +34,7 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
               alternatives: [
                 ...enclaves
                   .filter((enclave) => enclave.shortenedUuid !== params.enclaveUUID)
+                  .sort((a, b) => a.name.localeCompare(b.name))
                   .map((enclave) => ({
                     name: enclave.name,
                     destination: `/enclave/${enclave.shortenedUuid}`,
@@ -50,7 +52,7 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
           {
             path: "service/:serviceUUID",
             handle: {
-              crumb: async ({ servicesByEnclave }: RemoveFunctions<EmuiAppState>, params: Params) => {
+              crumb: ({ servicesByEnclave }: RemoveFunctions<EmuiAppState>, params: Params) => {
                 const services = Object.values(
                   servicesByEnclave[params.enclaveUUID || ""]?.unwrapOr({
                     serviceInfo: {} as Record<string, ServiceInfo>,
@@ -64,6 +66,7 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
                   destination: `/enclave/${params.enclaveUUID}/service/${params.serviceUUID}`,
                   alternatives: services
                     .filter((service) => service.shortenedUuid !== params.serviceUUID)
+                    .sort((a, b) => a.name.localeCompare(b.name))
                     .map((service) => ({
                       name: service.name,
                       destination: `/enclave/${params.enclaveUUID}/service/${service.shortenedUuid}`,
@@ -95,6 +98,33 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
           },
           {
             path: "file/:fileUUID",
+            element: <Artifact />,
+            handle: {
+              crumb: ({ filesAndArtifactsByEnclave }: RemoveFunctions<EmuiAppState>, params: Params<string>) => {
+                const artifacts = Object.values(
+                  filesAndArtifactsByEnclave[params.enclaveUUID || ""]?.unwrapOr({
+                    fileNamesAndUuids: [] as FilesArtifactNameAndUuid[],
+                  }).fileNamesAndUuids || [],
+                );
+                const artifact = artifacts.find((artifact) => artifact.fileUuid === params.fileUUID);
+                const fileName = artifact?.fileName || "Unknown";
+
+                return [
+                  {
+                    name: fileName,
+                    destination: `/enclave/${params.enclaveUUID}/file/${params.fileUUID}`,
+                    alternatives: artifacts
+                      .filter((artifact) => artifact.fileUuid !== params.fileUUID)
+                      .sort((a, b) => a.fileName.localeCompare(b.fileName))
+                      .map((artifact) => ({
+                        name: artifact.fileName,
+                        destination: `/enclave/${params.enclaveUUID}/file/${artifact.fileUuid}`,
+                      })),
+                  },
+                  { name: "Files", destination: `/enclave/${params.enclaveUUID}/file/${params.fileUUID}` },
+                ];
+              },
+            },
           },
           {
             path: ":activeTab?",

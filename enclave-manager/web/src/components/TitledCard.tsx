@@ -1,14 +1,15 @@
-import { Card, CardBody, CardHeader, Text } from "@chakra-ui/react";
+import { Card, CardBody, CardHeader, CardProps, Text } from "@chakra-ui/react";
 import { PropsWithChildren, ReactElement } from "react";
 
-type TitledCardProps = PropsWithChildren<{
-  title: string;
-  controls?: ReactElement;
-}>;
+type TitledCardProps = CardProps &
+  PropsWithChildren<{
+    title: string;
+    controls?: ReactElement;
+  }>;
 
-export const TitledCard = ({ title, controls, children }: TitledCardProps) => {
+export const TitledCard = ({ title, controls, children, ...cardProps }: TitledCardProps) => {
   return (
-    <Card variant={"titledCard"}>
+    <Card variant={"titledCard"} {...cardProps}>
       <CardHeader
         display={"flex"}
         justifyContent={"flex-start"}
@@ -23,7 +24,7 @@ export const TitledCard = ({ title, controls, children }: TitledCardProps) => {
         </Text>
         {controls}
       </CardHeader>
-      <CardBody>{children}</CardBody>
+      <CardBody overflow={"auto"}>{children}</CardBody>
     </Card>
   );
 };

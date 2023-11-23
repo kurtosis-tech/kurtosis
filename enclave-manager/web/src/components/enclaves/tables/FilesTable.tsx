@@ -1,9 +1,11 @@
+import { Button } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import {
   FilesArtifactNameAndUuid,
   ListFilesArtifactNamesAndUuidsResponse,
 } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { RemoveFunctions } from "../../../utils/types";
 import { DataTable } from "../../DataTable";
@@ -21,12 +23,13 @@ export const FilesTable = ({ filesAndArtifacts, enclave }: FilesTableProps) => {
     () => [
       columnHelper.accessor("fileName", {
         header: "Name",
-        cell: ({ row, getValue }) =>
-          //<Link to={`/enclave/${enclave.shortenedUuid}/file/${row.original.fileUuid}`}>
-          //<Button size={"sm"} variant={"ghost"}>
-          getValue(),
-        //</Button>
-        //</Link>
+        cell: ({ row, getValue }) => (
+          <Link to={`/enclave/${enclave.shortenedUuid}/file/${row.original.fileUuid}`}>
+            <Button size={"sm"} variant={"ghost"}>
+              {getValue()}
+            </Button>
+          </Link>
+        ),
       }),
       columnHelper.display({
         id: "download",

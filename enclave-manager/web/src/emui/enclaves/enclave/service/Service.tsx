@@ -21,22 +21,38 @@ export const Service = () => {
   const enclave = useFullEnclave(enclaveUUID || "unknown");
 
   if (enclave.isErr) {
-    return <KurtosisAlert message={"Enclave could not load"} />;
+    return (
+      <AppPageLayout>
+        <KurtosisAlert message={"Enclave could not load"} />
+      </AppPageLayout>
+    );
   }
 
   if (!isDefined(enclave.value.services)) {
-    return <Spinner />;
+    return (
+      <AppPageLayout>
+        <Spinner />
+      </AppPageLayout>
+    );
   }
 
   if (enclave.value.services.isErr) {
-    return <KurtosisAlert message={"Services for enclave could not load"} />;
+    return (
+      <AppPageLayout>
+        <KurtosisAlert message={"Services for enclave could not load"} />
+      </AppPageLayout>
+    );
   }
 
   const service = Object.values(enclave.value.services.value.serviceInfo).find(
     (service) => service.shortenedUuid === serviceUUID,
   );
   if (!isDefined(service)) {
-    return <KurtosisAlert message={`Could not find service ${serviceUUID}`} />;
+    return (
+      <AppPageLayout>
+        <KurtosisAlert message={`Could not find service ${serviceUUID}`} />
+      </AppPageLayout>
+    );
   }
 
   return <ServiceImpl enclave={enclave.value} service={service} />;

@@ -1,5 +1,7 @@
 import * as CSS from "csstype";
 
+export const BREADCRUMBS_HEIGHT = "76px";
+
 export const MAIN_APP_TOP_PADDING = "24px";
 export const MAIN_APP_BOTTOM_PADDING = "20px";
 export const MAIN_APP_LEFT_PADDING = "112px";

@@ -19,7 +19,12 @@ import { Link, Params, UIMatch, useMatches } from "react-router-dom";
 import { EmuiAppState, useEmuiAppContext } from "../emui/EmuiAppContext";
 import { isDefined } from "../utils";
 import { RemoveFunctions } from "../utils/types";
-import { MAIN_APP_LEFT_PADDING, MAIN_APP_RIGHT_PADDING, MAIN_APP_TOP_PADDING } from "./theme/constants";
+import {
+  BREADCRUMBS_HEIGHT,
+  MAIN_APP_LEFT_PADDING,
+  MAIN_APP_RIGHT_PADDING,
+  MAIN_APP_TOP_PADDING,
+} from "./theme/constants";
 
 type KurtosisBreadcrumbMenuItem = {
   name: string;
@@ -42,36 +47,30 @@ export const KurtosisBreadcrumbs = () => {
       crumb?: (
         state: RemoveFunctions<EmuiAppState>,
         params: Params<string>,
-      ) => KurtosisBreadcrumb | Promise<KurtosisBreadcrumb>;
+      ) => KurtosisBreadcrumb | KurtosisBreadcrumb[];
     }
   >[];
 
   const [matchCrumbs, setMatchCrumbs] = useState<KurtosisBreadcrumb[]>([]);
 
   useEffect(() => {
-    (async () => {
-      setMatchCrumbs(
-        await Promise.all(
-          matches
-            .map((match) =>
-              isDefined(match.handle?.crumb)
-                ? Promise.resolve(
-                    match.handle.crumb(
-                      { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave },
-                      match.params,
-                    ),
-                  )
-                : null,
-            )
-            .filter(isDefined),
-        ),
-      );
-    })();
+    setMatchCrumbs(
+      matches.flatMap((match) => {
+        if (isDefined(match.handle?.crumb)) {
+          const r = match.handle.crumb(
+            { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave },
+            match.params,
+          );
+          return Array.isArray(r) ? r : [r];
+        }
+        return [];
+      }),
+    );
   }, [matches, enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave]);
 
   return (
     <Flex
-      h={"76px"}
+      h={BREADCRUMBS_HEIGHT}
       p={`${MAIN_APP_TOP_PADDING} ${MAIN_APP_RIGHT_PADDING} 24px ${MAIN_APP_LEFT_PADDING}`}
       alignItems={"center"}
       bg={"gray.850"}

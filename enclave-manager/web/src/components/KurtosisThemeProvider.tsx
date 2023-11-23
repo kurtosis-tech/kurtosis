@@ -142,6 +142,15 @@ const theme = extendTheme({
             textTransform: "uppercase",
           };
         },
+        fileTree: (props: StyleFunctionProps) => {
+          const ghost = theme.components.Button.variants!.ghost(props);
+          return {
+            ...ghost,
+            width: "100%",
+            fontWeight: "medium",
+            justifyContent: "flex-start",
+          };
+        },
         breadcrumb: (props: StyleFunctionProps) => {
           const ghost = theme.components.Button.variants!.ghost(props);
           return {
@@ -212,7 +221,7 @@ const theme = extendTheme({
             padding: "12px",
           },
           body: {
-            padding: "16px 20px",
+            padding: "6px 12px",
             height: "100%",
             width: "100%",
           },
