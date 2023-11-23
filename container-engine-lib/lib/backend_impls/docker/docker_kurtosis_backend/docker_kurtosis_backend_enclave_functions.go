@@ -119,10 +119,6 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 	}()
 	logrus.Debugf("Docker network '%v' created successfully with ID '%v'", enclaveUuid, networkId)
 
-	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds...")
-	time.Sleep(30 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
-
 	enclaveDataVolumeNameStr := enclaveDataVolumeAttrs.GetName().GetString()
 	enclaveDataVolumeLabelStrs := map[string]string{}
 	for labelKey, labelValue := range enclaveDataVolumeAttrs.GetLabels() {

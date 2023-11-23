@@ -106,6 +106,10 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			return "", stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
 		}
 
+		logrus.Infof("[LEO-DEBUG] sleeping for 20 seconds...")
+		time.Sleep(20 * time.Second)
+		logrus.Infof("[LEO-DEBUG] sleeping ends")
+
 		networkId, err := provider.dockerManager.CreateNetwork(ctx, networkName, freeNetworkIpAndMask.String(), gatewayIp, labels)
 		if err == nil {
 			return networkId, nil

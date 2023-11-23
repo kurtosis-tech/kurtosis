@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	ConnectHTTPServerLogPrefix = "[Connect-HTTP-ERROR]"
+	ConnectHTTPServerLogPrefix = "[Connect-HTTP]"
 )
 
 type ConnectServer struct {
