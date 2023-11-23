@@ -390,14 +390,10 @@ func restApiServer(
 
 	// We now register our runtime above as the handler for the interface
 	engineRuntime := restApi.EngineRuntime{
-		ImageVersionTag:             serverArgs.ImageVersionTag,
-		EnclaveManager:              enclave_manager,
-		MetricsUserID:               serverArgs.MetricsUserID,
-		DidUserAcceptSendingMetrics: serverArgs.DidUserAcceptSendingMetrics,
-		PerWeekLogsDatabaseClient:   perWeekLogsDatabaseClient,
-		PerFileLogsDatabaseClient:   perFileLogsDatabaseClient,
-		LogFileManager:              logFileManager,
-		MetricsClient:               metricsClient,
+		ImageVersionTag: serverArgs.ImageVersionTag,
+		EnclaveManager:  enclave_manager,
+		LogFileManager:  logFileManager,
+		MetricsClient:   metricsClient,
 	}
 	engineApi.RegisterHandlers(e, engineApi.NewStrictHandler(engineRuntime, nil))
 

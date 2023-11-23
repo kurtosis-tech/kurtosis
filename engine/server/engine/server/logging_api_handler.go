@@ -336,25 +336,6 @@ func fromHttpLogLineFilters(
 	return conjunctiveLogLineFilters, nil
 }
 
-func (service *EngineRuntime) reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	requestedServiceUuids map[user_service.ServiceUUID]bool,
-) ([]string, error) {
-	// doesn't matter which logs client is used here
-	existingServiceUuids, err := service.PerWeekLogsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service UUIDs from the log client for enclave '%v' and for the requested UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
-	}
-
-	notFoundServiceUuidsMap := getNotFoundServiceUuidsAndEmptyServiceLogsMap(requestedServiceUuids, existingServiceUuids)
-	var notFoundServiceUuids []string
-	for service := range notFoundServiceUuidsMap {
-		notFoundServiceUuids = append(notFoundServiceUuids, service)
-	}
-	return notFoundServiceUuids, nil
-}
-
 func newLogsResponseHttp(
 	requestedServiceUuids []user_service.ServiceUUID,
 	serviceLogsByServiceUuid map[user_service.ServiceUUID][]logline.LogLine,
