@@ -5,31 +5,13 @@ set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
 
-set +u
-# Check if it's running inside a nix shell env so there is no need to check versions
-if [ -z "${IN_NIX_SHELL}" ]; then
-    if ! bash "${script_dirpath}/versions_check.sh"; then
-    exit 1
-    fi
-fi
-set -u
 
 
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
-    "scripts/generate-kurtosis-version.sh"
-    "container-engine-lib/scripts/build.sh"
-    "contexts-config-store/scripts/build.sh"
-    "grpc-file-transfer/scripts/build.sh"
-    "name_generator/scripts/build.sh"
-    "api/scripts/build.sh"
-    "metrics-library/scripts/build.sh"
-    "core/scripts/build.sh"
-    "engine/scripts/build.sh"
-    "portal/scripts/build.sh"
-    "cli/scripts/build.sh"
+    "daemon/scripts/build.sh"
 )
 
 

@@ -19,4 +19,5 @@ use (
 	./metrics-library/golang
 	./name_generator
 	connect-server
+	portal/daemon
 )
