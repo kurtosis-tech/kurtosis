@@ -265,13 +265,14 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 		}
 	}
 
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
-	}
-	if !auth {
-		return nil, stacktrace.Propagate(err, "User not authorized")
-	}
+	/*
+		auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+		}
+		if !auth {
+			return nil, stacktrace.Propagate(err, "User not authorized")
+		}*/
 	ctx, _ = context.WithTimeout(context.Background(), time.Second*120)
 	result, err := (*c.engineServiceClient).CreateEnclave(ctx, req)
 	if err != nil {
