@@ -3,13 +3,6 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
-	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
-	"sort"
-	"strings"
-	"sync"
-	"time"
-
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -19,10 +12,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"sort"
+	"strings"
+	"sync"
 )
 
 const (
@@ -138,9 +136,6 @@ func (manager *EnclaveManager) CreateEnclave(
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
-	logrus.Infof("[LEO-DEBUG] sleeping for 10 seconds...")
-	time.Sleep(10 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	var (
 		enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo
