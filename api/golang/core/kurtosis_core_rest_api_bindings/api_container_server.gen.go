@@ -58,8 +58,8 @@ type ServerInterface interface {
 	// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/command)
 	PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error
 
-	// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
-	PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier, portNumber PortNumber) error
+	// (GET /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
+	GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier, portNumber PortNumber, params GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityParams) error
 
 	// (GET /enclaves/{enclave_identifier}/starlark)
 	GetEnclavesEnclaveIdentifierStarlark(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
@@ -304,8 +304,8 @@ func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierServicesServiceIde
 	return err
 }
 
-// PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability converts echo context to params.
-func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context) error {
+// GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
 	var enclaveIdentifier EnclaveIdentifier
@@ -331,8 +331,59 @@ func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierServicesServiceIde
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter port_number: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityParams
+	// ------------- Optional query parameter "http_method" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "http_method", ctx.QueryParams(), &params.HttpMethod)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter http_method: %s", err))
+	}
+
+	// ------------- Optional query parameter "path" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "path", ctx.QueryParams(), &params.Path)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter path: %s", err))
+	}
+
+	// ------------- Optional query parameter "initial_delay_milliseconds" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "initial_delay_milliseconds", ctx.QueryParams(), &params.InitialDelayMilliseconds)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter initial_delay_milliseconds: %s", err))
+	}
+
+	// ------------- Optional query parameter "retries" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "retries", ctx.QueryParams(), &params.Retries)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter retries: %s", err))
+	}
+
+	// ------------- Optional query parameter "retries_delay_milliseconds" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "retries_delay_milliseconds", ctx.QueryParams(), &params.RetriesDelayMilliseconds)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter retries_delay_milliseconds: %s", err))
+	}
+
+	// ------------- Optional query parameter "expected_response" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "expected_response", ctx.QueryParams(), &params.ExpectedResponse)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter expected_response: %s", err))
+	}
+
+	// ------------- Optional query parameter "request_body" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "request_body", ctx.QueryParams(), &params.RequestBody)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter request_body: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx, enclaveIdentifier, serviceIdentifier, portNumber)
+	err = w.Handler.GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx, enclaveIdentifier, serviceIdentifier, portNumber, params)
 	return err
 }
 
@@ -447,7 +498,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/enclaves/:enclave_identifier/services/history", wrapper.GetEnclavesEnclaveIdentifierServicesHistory)
 	router.GET(baseURL+"/enclaves/:enclave_identifier/services/:service_identifier", wrapper.GetEnclavesEnclaveIdentifierServicesServiceIdentifier)
 	router.POST(baseURL+"/enclaves/:enclave_identifier/services/:service_identifier/command", wrapper.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand)
-	router.POST(baseURL+"/enclaves/:enclave_identifier/services/:service_identifier/endpoints/:port_number/availability", wrapper.PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability)
+	router.GET(baseURL+"/enclaves/:enclave_identifier/services/:service_identifier/endpoints/:port_number/availability", wrapper.GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability)
 	router.GET(baseURL+"/enclaves/:enclave_identifier/starlark", wrapper.GetEnclavesEnclaveIdentifierStarlark)
 	router.POST(baseURL+"/enclaves/:enclave_identifier/starlark/packages", wrapper.PostEnclavesEnclaveIdentifierStarlarkPackages)
 	router.POST(baseURL+"/enclaves/:enclave_identifier/starlark/packages/:package_id", wrapper.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId)
@@ -662,21 +713,21 @@ func (response PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand200J
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject struct {
+type GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject struct {
 	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 	ServiceIdentifier ServiceIdentifier `json:"service_identifier"`
 	PortNumber        PortNumber        `json:"port_number"`
-	Body              *PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody
+	Params            GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityParams
 }
 
-type PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject interface {
-	VisitPostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error
+type GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject interface {
+	VisitGetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error
 }
 
-type PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability200Response struct {
+type GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability200Response struct {
 }
 
-func (response PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability200Response) VisitPostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error {
+func (response GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability200Response) VisitGetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
 	return nil
 }
@@ -826,8 +877,8 @@ type StrictServerInterface interface {
 	// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/command)
 	PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx context.Context, request PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandRequestObject) (PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponseObject, error)
 
-	// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
-	PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx context.Context, request PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject) (PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject, error)
+	// (GET /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
+	GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx context.Context, request GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject) (GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject, error)
 
 	// (GET /enclaves/{enclave_identifier}/starlark)
 	GetEnclavesEnclaveIdentifierStarlark(ctx context.Context, request GetEnclavesEnclaveIdentifierStarlarkRequestObject) (GetEnclavesEnclaveIdentifierStarlarkResponseObject, error)
@@ -1166,33 +1217,28 @@ func (sh *strictHandler) PostEnclavesEnclaveIdentifierServicesServiceIdentifierC
 	return nil
 }
 
-// PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability operation middleware
-func (sh *strictHandler) PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier, portNumber PortNumber) error {
-	var request PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject
+// GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability operation middleware
+func (sh *strictHandler) GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier, portNumber PortNumber, params GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityParams) error {
+	var request GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
 	request.ServiceIdentifier = serviceIdentifier
 	request.PortNumber = portNumber
-
-	var body PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody
-	if err := ctx.Bind(&body); err != nil {
-		return err
-	}
-	request.Body = &body
+	request.Params = params
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject))
+		return sh.ssi.GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx.Request().Context(), request.(GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability")
+		handler = middleware(handler, "GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject); ok {
-		return validResponse.VisitPostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject); ok {
+		return validResponse.VisitGetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
@@ -1321,70 +1367,72 @@ func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.C
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"r6149/f/HwAA///JDhHEoVcAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

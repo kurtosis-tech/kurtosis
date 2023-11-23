@@ -23,6 +23,12 @@ const (
 	ContainerStatusUNKNOWN ContainerStatus = "UNKNOWN"
 )
 
+// Defines values for HttpMethodAvailability.
+const (
+	GET  HttpMethodAvailability = "GET"
+	POST HttpMethodAvailability = "POST"
+)
+
 // Defines values for ImageDownloadMode.
 const (
 	ImageDownloadModeALWAYS  ImageDownloadMode = "ALWAYS"
@@ -52,12 +58,6 @@ const (
 	SCTP TransportProtocol = "SCTP"
 	TCP  TransportProtocol = "TCP"
 	UDP  TransportProtocol = "UDP"
-)
-
-// Defines values for WaitForEndpointAvailabilityHttpMethod.
-const (
-	GET  WaitForEndpointAvailabilityHttpMethod = "GET"
-	POST WaitForEndpointAvailabilityHttpMethod = "POST"
 )
 
 // Connect 0 - CONNECT // Best effort port forwarding
@@ -115,6 +115,9 @@ type FileArtifactReference struct {
 	// Uuid UUID of the files artifact, for use when referencing it in the future
 	Uuid string `json:"uuid"`
 }
+
+// HttpMethodAvailability defines model for HttpMethodAvailability.
+type HttpMethodAvailability string
 
 // ImageDownloadMode 0 - ALWAYS
 // 1 - MISSING
@@ -391,39 +394,38 @@ type StoreWebFilesArtifact struct {
 // 2 - UDP
 type TransportProtocol string
 
-// WaitForEndpointAvailability Wait For HTTP Endpoint Availability
-type WaitForEndpointAvailability struct {
-	// BodyText If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-	BodyText   *string                               `json:"body_text,omitempty"`
-	HttpMethod WaitForEndpointAvailabilityHttpMethod `json:"http_method"`
-
-	// InitialDelayMilliseconds The number of milliseconds to wait until executing the first HTTP call
-	InitialDelayMilliseconds *int32 `json:"initial_delay_milliseconds,omitempty"`
-
-	// Path The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-	Path *string `json:"path,omitempty"`
-
-	// Retries Max number of HTTP call attempts that this will execute until giving up and returning an error
-	Retries *int32 `json:"retries,omitempty"`
-
-	// RetriesDelayMilliseconds Number of milliseconds to wait between retries
-	RetriesDelayMilliseconds *int32 `json:"retries_delay_milliseconds,omitempty"`
-}
-
-// WaitForEndpointAvailabilityHttpMethod defines model for WaitForEndpointAvailability.HttpMethod.
-type WaitForEndpointAvailabilityHttpMethod string
-
 // ArtifactIdentifier defines model for artifact_identifier.
 type ArtifactIdentifier = string
 
 // EnclaveIdentifier The package identifier that will be executed
 type EnclaveIdentifier = string
 
+// ExpectedResponse defines model for expected_response.
+type ExpectedResponse = string
+
+// HttpMethod defines model for http_method.
+type HttpMethod = HttpMethodAvailability
+
+// InitialDelayMilliseconds defines model for initial_delay_milliseconds.
+type InitialDelayMilliseconds = int32
+
 // PackageId defines model for package_id.
 type PackageId = string
 
+// Path defines model for path.
+type Path = string
+
 // PortNumber defines model for port_number.
 type PortNumber = int32
+
+// RequestBody defines model for request_body.
+type RequestBody = string
+
+// Retries defines model for retries.
+type Retries = int32
+
+// RetriesDelayMilliseconds defines model for retries_delay_milliseconds.
+type RetriesDelayMilliseconds = int32
 
 // ServiceIdentifier defines model for service_identifier.
 type ServiceIdentifier = string
@@ -435,6 +437,30 @@ type PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartBody = openapi_type
 type GetEnclavesEnclaveIdentifierServicesParams struct {
 	// Services Select services to get information
 	Services *[]string `form:"services,omitempty" json:"services,omitempty"`
+}
+
+// GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityParams defines parameters for GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability.
+type GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityParams struct {
+	// HttpMethod The HTTP method used to check availability. Default is GET.
+	HttpMethod *HttpMethod `form:"http_method,omitempty" json:"http_method,omitempty"`
+
+	// Path The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+	Path *Path `form:"path,omitempty" json:"path,omitempty"`
+
+	// InitialDelayMilliseconds The number of milliseconds to wait until executing the first HTTP call
+	InitialDelayMilliseconds *InitialDelayMilliseconds `form:"initial_delay_milliseconds,omitempty" json:"initial_delay_milliseconds,omitempty"`
+
+	// Retries Max number of HTTP call attempts that this will execute until giving up and returning an error
+	Retries *Retries `form:"retries,omitempty" json:"retries,omitempty"`
+
+	// RetriesDelayMilliseconds Number of milliseconds to wait between retries
+	RetriesDelayMilliseconds *RetriesDelayMilliseconds `form:"retries_delay_milliseconds,omitempty" json:"retries_delay_milliseconds,omitempty"`
+
+	// ExpectedResponse If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+	ExpectedResponse *ExpectedResponse `form:"expected_response,omitempty" json:"expected_response,omitempty"`
+
+	// RequestBody If the http_method is set to POST, this value will be send as the body of the availability request.
+	RequestBody *RequestBody `form:"request_body,omitempty" json:"request_body,omitempty"`
 }
 
 // PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartBody defines parameters for PostEnclavesEnclaveIdentifierStarlarkPackages.
@@ -454,9 +480,6 @@ type PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody = Connect
 
 // PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand for application/json ContentType.
 type PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody = ExecCommand
-
-// PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability for application/json ContentType.
-type PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityJSONRequestBody = WaitForEndpointAvailability
 
 // PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartRequestBody defines body for PostEnclavesEnclaveIdentifierStarlarkPackages for multipart/form-data ContentType.
 type PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartRequestBody = PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartBody

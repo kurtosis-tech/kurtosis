@@ -153,19 +153,19 @@ paths:
                 $ref: "#/components/schemas/ExecCommandResult"
 
   /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability:
-    post:
-      description: Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
+    get:
+      description: Block until the given HTTP endpoint returns available, calling it through a HTTP request
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
         - $ref: '#/components/parameters/service_identifier'
         - $ref: '#/components/parameters/port_number'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/WaitForEndpointAvailability"
-        description: Wait For HTTP Get Endpoint Availability
-        required: true
+        - $ref: '#/components/parameters/http_method'
+        - $ref: '#/components/parameters/path'
+        - $ref: '#/components/parameters/initial_delay_milliseconds'
+        - $ref: '#/components/parameters/retries'
+        - $ref: '#/components/parameters/retries_delay_milliseconds'
+        - $ref: '#/components/parameters/expected_response'
+        - $ref: '#/components/parameters/request_body'
       responses:
         "200":
           description: Success
@@ -322,6 +322,58 @@ components:
         format: int32
       description: The port number to check availability
       required: true
+    
+    http_method:
+      in: query
+      name: http_method
+      description: The HTTP method used to check availability. Default is GET.
+      schema:
+        $ref: "#/components/schemas/HttpMethodAvailability"
+
+    path:
+      in: query
+      name: path
+      description: The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+      schema:
+        type: string
+
+    initial_delay_milliseconds:
+      in: query
+      name: initial_delay_milliseconds 
+      description: The number of milliseconds to wait until executing the first HTTP call
+      schema:
+        type: integer
+        format: int32
+
+    retries:
+      in: query
+      name: retries 
+      description: Max number of HTTP call attempts that this will execute until giving up and returning an error
+      schema:
+        type: integer
+        format: int32
+
+    retries_delay_milliseconds:
+      in: query
+      name: retries_delay_milliseconds 
+      description: Number of milliseconds to wait between retries
+      schema:
+        type: integer
+        format: int32
+  
+    expected_response:
+      in: query
+      name: expected_response 
+      description: If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+      schema:
+        type: string
+    
+    request_body:
+      in: query
+      name: request_body 
+      description: If the http_method is set to POST, this value will be send as the body of the availability request.
+      schema:
+        type: string
   
     artifact_identifier:
       in: path
@@ -367,6 +419,10 @@ components:
         - number
         - transport_protocol
       description: Shared Objects (Used By Multiple Endpoints)
+
+    HttpMethodAvailability:
+      type: string
+      enum: [GET, POST]
 
     Container:
       type: object
@@ -791,34 +847,6 @@ components:
       required:
         - exit_code
         - log_output
-
-    WaitForEndpointAvailability:
-      type: object
-      properties:
-        http_method:
-          type: string
-          enum: [GET, POST]
-        path:
-          type: string
-          description: The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-        initial_delay_milliseconds:
-          type: integer
-          format: int32
-          description: The number of milliseconds to wait until executing the first HTTP call
-        retries:
-          type: integer
-          format: int32
-          description: Max number of HTTP call attempts that this will execute until giving up and returning an error
-        retries_delay_milliseconds:
-          type: integer
-          format: int32
-          description: Number of milliseconds to wait between retries
-        body_text:
-          type: string
-          description: If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-      description: Wait For HTTP Endpoint Availability
-      required:
-        - http_method
 
     FileArtifactReference:
       type: object

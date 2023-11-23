@@ -419,18 +419,17 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 	return api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand200JSONResponse(response), nil
 }
 
-// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
-func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx context.Context, request api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject) (api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject, error) {
+// (GET /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
+func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx context.Context, request api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject) (api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	service_identifier := request.ServiceIdentifier
 	port_number := request.PortNumber
+	endpoint_method := utils.DerefWith(request.Params.HttpMethod, api.GET)
 	apiContainerClient, errConn := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
 	if errConn != nil {
 		return nil, errConn
 	}
 	logrus.Infof("Getting info about service %s from enclave %s", service_identifier, enclave_identifier)
-
-	endpoint_method := request.Body.HttpMethod
 
 	castToUInt32 := func(v int32) uint32 { return uint32(v) }
 
@@ -440,22 +439,23 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 		waitForHttpGetEndpointAvailabilityArgs := rpc_api.WaitForHttpGetEndpointAvailabilityArgs{
 			ServiceIdentifier:        service_identifier,
 			Port:                     uint32(port_number),
-			Path:                     request.Body.Path,
-			InitialDelayMilliseconds: utils.MapPointer(request.Body.InitialDelayMilliseconds, castToUInt32),
-			Retries:                  utils.MapPointer(request.Body.Retries, castToUInt32),
-			RetriesDelayMilliseconds: utils.MapPointer(request.Body.RetriesDelayMilliseconds, castToUInt32),
-			BodyText:                 request.Body.BodyText,
+			Path:                     request.Params.Path,
+			InitialDelayMilliseconds: utils.MapPointer(request.Params.InitialDelayMilliseconds, castToUInt32),
+			Retries:                  utils.MapPointer(request.Params.Retries, castToUInt32),
+			RetriesDelayMilliseconds: utils.MapPointer(request.Params.RetriesDelayMilliseconds, castToUInt32),
+			BodyText:                 request.Params.ExpectedResponse,
 		}
 		_, err = (*apiContainerClient).WaitForHttpGetEndpointAvailability(ctx, &waitForHttpGetEndpointAvailabilityArgs)
 	case api.POST:
 		waitForHttpPostEndpointAvailabilityArgs := rpc_api.WaitForHttpPostEndpointAvailabilityArgs{
 			ServiceIdentifier:        service_identifier,
 			Port:                     uint32(port_number),
-			Path:                     request.Body.Path,
-			InitialDelayMilliseconds: utils.MapPointer(request.Body.InitialDelayMilliseconds, castToUInt32),
-			Retries:                  utils.MapPointer(request.Body.Retries, castToUInt32),
-			RetriesDelayMilliseconds: utils.MapPointer(request.Body.RetriesDelayMilliseconds, castToUInt32),
-			BodyText:                 request.Body.BodyText,
+			Path:                     request.Params.Path,
+			InitialDelayMilliseconds: utils.MapPointer(request.Params.InitialDelayMilliseconds, castToUInt32),
+			Retries:                  utils.MapPointer(request.Params.Retries, castToUInt32),
+			RetriesDelayMilliseconds: utils.MapPointer(request.Params.RetriesDelayMilliseconds, castToUInt32),
+			BodyText:                 request.Params.ExpectedResponse,
+			RequestBody:              request.Params.RequestBody,
 		}
 		_, err = (*apiContainerClient).WaitForHttpPostEndpointAvailability(ctx, &waitForHttpPostEndpointAvailabilityArgs)
 	default:
@@ -466,7 +466,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 		logrus.Errorf("Can't execute commands using gRPC call with enclave %s, error: %s", enclave_identifier, err)
 		return nil, stacktrace.NewError("Can't execute commands using gRPC call with enclave %s", enclave_identifier)
 	}
-	return api.PostEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability200Response{}, nil
+	return api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability200Response{}, nil
 
 }
 
