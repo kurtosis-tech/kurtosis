@@ -37,6 +37,8 @@ const (
 	grpcStreamCancelContextErrorMessage = "rpc error: code = Canceled desc = context canceled"
 
 	validUuidMatchesAllowed = 1
+
+	portalIsRequired = true
 )
 
 var (
@@ -81,7 +83,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
-	portalClient, err := CreatePortalDaemonClient()
+	portalClient, err := CreatePortalDaemonClient(portalIsRequired)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
 	}

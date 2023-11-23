@@ -252,7 +252,7 @@ func (portalManager *PortalManager) StartRequiredVersion(ctx context.Context) er
 }
 
 func (portalManager *PortalManager) instantiateClientIfUnset() error {
-	portalDaemonClientMaybe, err := kurtosis_context.CreatePortalDaemonClient()
+	portalDaemonClientMaybe, err := kurtosis_context.CreatePortalDaemonClient(true)
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to build client to Kurtosis Portal Daemon")
 	}
