@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -137,6 +138,9 @@ func (manager *EnclaveManager) CreateEnclave(
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
+	logrus.Infof("[LEO-DEBUG] sleeping for 10 seconds...")
+	time.Sleep(10 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	var (
 		enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo

@@ -194,6 +194,9 @@ func CreateEngine(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
+	logrus.Infof("[LEO-DEBUG] adding GODEBUG envvar")
+	envVars["GODEBUG"] = "http2debug=2"
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
 		engineAttrs.GetName().GetString(),

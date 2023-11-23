@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type EnclaveCreator struct {
@@ -76,9 +75,6 @@ func (creator *EnclaveCreator) CreateEnclave(
 			}
 		}
 	}()
-	logrus.Infof("[LEO-DEBUG] sleeping for 10 seconds...")
-	time.Sleep(10 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	apiContainer, err := creator.launchApiContainer(setupCtx,
 		apiContainerImageVersionTag,

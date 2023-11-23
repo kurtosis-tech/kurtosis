@@ -89,8 +89,10 @@ export async function asyncResult<T>(
 ): Promise<Result<T, string>> {
   try {
     const r = await (typeof p === "function" ? p() : p);
+    console.log(`[LEO-DEBUG] async result ${r}`)
     return Result.ok<T, string>(r);
   } catch (e: any) {
+    console.log(`[LEO-DEBUG] error from async result: ${e.toString()}`)
     return Result.err(errorMessage || stringifyError(e));
   }
 }
