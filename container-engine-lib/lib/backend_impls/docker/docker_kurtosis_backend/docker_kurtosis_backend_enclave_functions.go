@@ -39,9 +39,6 @@ type matchingNetworkInformation struct {
 }
 
 func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string) (*enclave.Enclave, error) {
-	logrus.Infof("[LEO-DEBUG] sleeping for 10 seconds...")
-	time.Sleep(10 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
