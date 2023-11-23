@@ -23,3 +23,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230706204954-ccb25ca9f130 // indirect
 	google.golang.org/grpc v1.56.2 // indirect
 )
+
+replace connectrpc.com/connect => ../../connectrpc

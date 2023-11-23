@@ -19,5 +19,5 @@ use (
 	./name_generator
 	connect-server
 	./metrics-library/golang
-	enclave-manager/local
+	connectrpc
 )

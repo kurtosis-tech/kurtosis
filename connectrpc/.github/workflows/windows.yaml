@@ -1,0 +1,41 @@
+name: windows
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '15 22 * * *'
+  workflow_dispatch: {} # support manual runs
+permissions:
+  contents: read
+jobs:
+  ci:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        go-version: [1.19.x,1.20.x,1.21.x]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+      - id: go-cache-paths
+        shell: bash
+        run: |
+          echo "go-mod=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
+      - name: Mod Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-connect-ci-go-mod-${{ hashFiles('**/go.sum') }}
+      - name: Test
+        shell: bash
+        run: |
+          go build ./...
+          go test -vet=off -race ./...
