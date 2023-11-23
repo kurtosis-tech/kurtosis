@@ -56,6 +56,9 @@ func (creator *EnclaveCreator) CreateEnclave(
 	// Create Enclave with kurtosisBackend
 
 	logrus.Infof("[LEO-DEBUG] calling create enclave en backend")
+	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds...")
+	time.Sleep(30 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
 	newEnclave, err := creator.kurtosisBackend.CreateEnclave(setupCtx, enclaveUuid, enclaveName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with name `%v` and uuid '%v'", enclaveName, enclaveUuid)
@@ -76,9 +79,6 @@ func (creator *EnclaveCreator) CreateEnclave(
 			}
 		}
 	}()
-	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds...")
-	time.Sleep(30 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	apiContainer, err := creator.launchApiContainer(setupCtx,
 		apiContainerImageVersionTag,
