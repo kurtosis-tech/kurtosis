@@ -176,6 +176,9 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 	map[enclave.EnclaveUUID]*enclave.Enclave,
 	error,
 ) {
+	logrus.Infof("[LEO-DEBUG] sleep for 15 seconds...")
+	time.Sleep(15 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleep ends")
 
 	allMatchingNetworkInfo, err := backend.getMatchingEnclaveNetworkInfo(ctx, filters)
 	if err != nil {
