@@ -164,6 +164,7 @@ func (manager *EnclaveManager) CreateEnclave(
 
 	// TODO(victor.colombo): Extend enclave pool to have warm production enclaves
 	if !isProduction && manager.enclavePool != nil {
+		logrus.Infof("[LEO-DEBUG] entro a la condicion del enclave pool")
 		enclaveInfo, err = manager.enclavePool.GetEnclave(
 			setupCtx,
 			enclaveName,

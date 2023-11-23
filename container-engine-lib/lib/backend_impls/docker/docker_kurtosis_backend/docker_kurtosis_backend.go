@@ -407,6 +407,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	*logs_collector.LogsCollector,
 	error,
 ) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	var logsAggregator *logs_aggregator.LogsAggregator
 	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(ctx, backend.dockerManager)
 	if err != nil {
@@ -450,6 +451,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 
 // If nothing is found returns nil
 func (backend *DockerKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (resultMaybeLogsCollector *logs_collector.LogsCollector, resultErr error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	maybeLogsCollector, err := logs_collector_functions.GetLogsCollectorForEnclave(
 		ctx,
 		enclaveUuid,
@@ -485,6 +487,7 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 //
 // ====================================================================================================
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveUuid(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*types.Network, error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	networkSearchLabels := map[string]string{
 		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
 		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
@@ -510,6 +513,7 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveUuid(ctx context
 
 // Guaranteed to either return an enclave data volume name or throw an error
 func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveUuid(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (string, error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	volumeSearchLabels := map[string]string{
 		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
 		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),

@@ -48,7 +48,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	logrus.Infof("[LEO-DEBUG] receiving context deadline %v", deadlineCtx)
 	logrus.Infof("[LEO-DEBUG] receiving context deadline ok '%v'", ok)
 	logrus.Infof("[LEO-DEBUG] overwritting the context")
-	ctx = context.Background()
 
 	// Verify no API container already exists in the enclave
 	apiContainersInEnclaveFilters := &api_container.APIContainerFilters{
@@ -174,6 +173,10 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
 
+	logrus.Infof("[LEO-DEBUG] sleeping for 10 seconds...")
+	time.Sleep(10*time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
+
 	if _, err = backend.dockerManager.FetchImageIfMissing(ctx, image); err != nil {
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version. Error:\n%v", image, err)
 	}
@@ -241,6 +244,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 }
 
 func (backend *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveUUID]*api_container.APIContainer, error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	matchingApiContainers, err := backend.getMatchingApiContainers(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)

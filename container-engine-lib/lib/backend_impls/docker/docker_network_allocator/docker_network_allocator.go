@@ -67,6 +67,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 	networkName string,
 	labels map[string]string,
 ) (resultNetworkId string, resultErr error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	if !provider.isConstructedViaConstructor {
 		return "", stacktrace.NewError("This instance of Docker network allocator was constructed without the constructor, which means that the rand.Seed won't have been initialized!")
 	}

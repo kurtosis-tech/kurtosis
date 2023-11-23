@@ -54,6 +54,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 	// Create Enclave with kurtosisBackend
 
+	logrus.Infof("[LEO-DEBUG] calling create enclave en backend")
 	newEnclave, err := creator.kurtosisBackend.CreateEnclave(setupCtx, enclaveUuid, enclaveName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with name `%v` and uuid '%v'", enclaveName, enclaveUuid)
@@ -109,6 +110,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 		}
 	}()
 
+	logrus.Infof("[LEO-DEBUG] preparando la respuesta")
 	var apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if apiContainer.GetPublicIPAddress() != nil &&
 		apiContainer.GetPublicGRPCPort() != nil {
@@ -137,6 +139,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 		mode = kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
 	}
 
+	logrus.Infof("[LEO-DEBUG] terminando")
 	newEnclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:        newEnclaveUuidStr,
 		Name:               newEnclave.GetName(),
@@ -180,7 +183,9 @@ func (creator *EnclaveCreator) launchApiContainer(
 	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
 		creator.kurtosisBackend,
 	)
+
 	if apiContainerImageVersionTag != "" {
+		logrus.Infof("[LEO-DEBUG] calling launch api container with custom version")
 		apiContainer, err := apiContainerLauncher.LaunchWithCustomVersion(
 			ctx,
 			apiContainerImageVersionTag,
@@ -201,6 +206,7 @@ func (creator *EnclaveCreator) launchApiContainer(
 		}
 		return apiContainer, nil
 	}
+	logrus.Infof("[LEO-DEBUG] calling launch api container with default version")
 	apiContainer, err := apiContainerLauncher.LaunchWithDefaultVersion(
 		ctx,
 		logLevel,

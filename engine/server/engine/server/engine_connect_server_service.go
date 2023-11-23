@@ -76,6 +76,7 @@ func NewEngineConnectServerService(
 }
 
 func (service *EngineConnectServerService) GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	result := &kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse{
 		EngineVersion: service.imageVersionTag,
 	}
@@ -85,16 +86,8 @@ func (service *EngineConnectServerService) GetEngineInfo(context.Context, *conne
 func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	args := connectArgs.Msg
 
-	logrus.Infof("[LEO-DEBUG] sleep for 20 seconds...")
-	time.Sleep(20 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleep ends")
-	logrus.Infof("[LEO-DEBUG] successfull crate api container")
-	response2 := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
-		EnclaveInfo: nil,
-	}
-	return connect.NewResponse(response2), nil
-
-	if err := service.metricsClient.TrackCreateEnclave(args.GetEnclaveName(), subnetworkDisableBecauseItIsDeprecated); err != nil {
+	logrus.Infof("[LEO-DEBUG] Track enclave")
+	if trackingErr := service.metricsClient.TrackCreateEnclave(args.GetEnclaveName(), subnetworkDisableBecauseItIsDeprecated); trackingErr != nil {
 		logrus.Warn("An error occurred while logging the create enclave event")
 	}
 
@@ -109,6 +102,7 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 		isProduction = true
 	}
 
+	logrus.Infof("[LEO-DEBUG] calling create enclave")
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		service.imageVersionTag,
@@ -129,6 +123,7 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 }
 
 func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	infoForEnclaves, err := service.enclaveManager.GetEnclaves(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
@@ -138,6 +133,7 @@ func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *c
 }
 
 func (service *EngineConnectServerService) GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	allIdentifiers, err := service.enclaveManager.GetExistingAndHistoricalEnclaveIdentifiers()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave identifiers")
@@ -147,6 +143,7 @@ func (service *EngineConnectServerService) GetExistingAndHistoricalEnclaveIdenti
 }
 
 func (service *EngineConnectServerService) StopEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	args := connectArgs.Msg
 	enclaveIdentifier := args.EnclaveIdentifier
 
@@ -162,6 +159,7 @@ func (service *EngineConnectServerService) StopEnclave(ctx context.Context, conn
 }
 
 func (service *EngineConnectServerService) DestroyEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	args := connectArgs.Msg
 	enclaveIdentifier := args.EnclaveIdentifier
 
@@ -176,6 +174,7 @@ func (service *EngineConnectServerService) DestroyEnclave(ctx context.Context, c
 }
 
 func (service *EngineConnectServerService) Clean(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	args := connectArgs.Msg
 	removedEnclaveUuidsAndNames, err := service.enclaveManager.Clean(ctx, args.GetShouldCleanAll())
 	if err != nil {
@@ -191,7 +190,7 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 }
 
 func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], stream *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
-
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	args := connectArgs.Msg
 	enclaveIdentifier := args.GetEnclaveIdentifier()
 	enclaveUuid, err := service.enclaveManager.GetEnclaveUuidForEnclaveIdentifier(context.Background(), enclaveIdentifier)
@@ -297,6 +296,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 }
 
 func (service *EngineConnectServerService) Close() error {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	if err := service.enclaveManager.Close(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred closing the enclave manager")
 	}

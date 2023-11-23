@@ -343,6 +343,7 @@ GetNetworksByLabels
 Gets networks matching the given labels
 */
 func (manager *DockerManager) GetNetworksByLabels(ctx context.Context, labels map[string]string) ([]*docker_manager_types.Network, error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	labelsSearchArgs := getLabelsFilterArgs(networkLabelSearchFilterKey, labels)
 	dockerNetworks, err := manager.getNetworksByFilterArgs(ctx, labelsSearchArgs)
 	if err != nil {
@@ -404,6 +405,7 @@ Args:
 	labels: Labels to attach to the volume object
 */
 func (manager *DockerManager) CreateVolume(context context.Context, volumeName string, labels map[string]string) error {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	volumeConfig := volume.CreateOptions{
 		ClusterVolumeSpec: nil,
 		Driver:            "",
@@ -463,6 +465,7 @@ GetVolumesByLabels
 Gets the volumes matching the given labels
 */
 func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map[string]string) ([]*volume.Volume, error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	labelsFilterArgs := getLabelsFilterArgs(volumeLabelSearchFilterKey, labels)
 	listOptions := volume.ListOptions{Filters: labelsFilterArgs}
 	resp, err := manager.dockerClient.VolumeList(ctx, listOptions)
@@ -516,7 +519,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 	ctx context.Context,
 	args *CreateAndStartContainerArgs,
 ) (string, map[nat.Port]*nat.PortBinding, error) {
-
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	// If the user passed in a Docker image that doesn't have a tag separator (indicating no tag was specified), manually append
 	//  the Docker default tag so that when we search for the image we're searching for a very specific image
 	dockerImage := args.dockerImage
@@ -764,6 +767,7 @@ NOTE: Yes, it's a testament to how poorly-designed the Docker API is that we nee
 	everywhere else in the Docker API uses network ID
 */
 func (manager *DockerManager) GetContainerIP(ctx context.Context, networkName string, containerId string) (string, error) {
+	logrus.Infof("[LEO-DEBUG] solicitado")
 	resp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
