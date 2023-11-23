@@ -31,11 +31,11 @@ type ServerInterface interface {
 	// (POST /enclaves/{enclave_identifier}/artifacts/local-file)
 	PostEnclavesEnclaveIdentifierArtifactsLocalFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 
-	// (PUT /enclaves/{enclave_identifier}/artifacts/remote-file)
-	PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
+	// (POST /enclaves/{enclave_identifier}/artifacts/remote-file)
+	PostEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 
-	// (PUT /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
-	PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error
+	// (POST /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
+	PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error
 
 	// (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier})
 	GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, artifactIdentifier ArtifactIdentifier) error
@@ -111,8 +111,8 @@ func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierArtifactsLocalFile
 	return err
 }
 
-// PutEnclavesEnclaveIdentifierArtifactsRemoteFile converts echo context to params.
-func (w *ServerInterfaceWrapper) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx echo.Context) error {
+// PostEnclavesEnclaveIdentifierArtifactsRemoteFile converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
 	var enclaveIdentifier EnclaveIdentifier
@@ -123,12 +123,12 @@ func (w *ServerInterfaceWrapper) PutEnclavesEnclaveIdentifierArtifactsRemoteFile
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx, enclaveIdentifier)
+	err = w.Handler.PostEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx, enclaveIdentifier)
 	return err
 }
 
-// PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier converts echo context to params.
-func (w *ServerInterfaceWrapper) PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx echo.Context) error {
+// PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
 	var enclaveIdentifier EnclaveIdentifier
@@ -147,7 +147,7 @@ func (w *ServerInterfaceWrapper) PutEnclavesEnclaveIdentifierArtifactsServicesSe
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx, enclaveIdentifier, serviceIdentifier)
+	err = w.Handler.PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx, enclaveIdentifier, serviceIdentifier)
 	return err
 }
 
@@ -438,8 +438,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.GET(baseURL+"/enclaves/:enclave_identifier/artifacts", wrapper.GetEnclavesEnclaveIdentifierArtifacts)
 	router.POST(baseURL+"/enclaves/:enclave_identifier/artifacts/local-file", wrapper.PostEnclavesEnclaveIdentifierArtifactsLocalFile)
-	router.PUT(baseURL+"/enclaves/:enclave_identifier/artifacts/remote-file", wrapper.PutEnclavesEnclaveIdentifierArtifactsRemoteFile)
-	router.PUT(baseURL+"/enclaves/:enclave_identifier/artifacts/services/:service_identifier", wrapper.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier)
+	router.POST(baseURL+"/enclaves/:enclave_identifier/artifacts/remote-file", wrapper.PostEnclavesEnclaveIdentifierArtifactsRemoteFile)
+	router.POST(baseURL+"/enclaves/:enclave_identifier/artifacts/services/:service_identifier", wrapper.PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier)
 	router.GET(baseURL+"/enclaves/:enclave_identifier/artifacts/:artifact_identifier", wrapper.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier)
 	router.GET(baseURL+"/enclaves/:enclave_identifier/artifacts/:artifact_identifier/download", wrapper.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload)
 	router.GET(baseURL+"/enclaves/:enclave_identifier/services", wrapper.GetEnclavesEnclaveIdentifierServices)
@@ -490,37 +490,37 @@ func (response PostEnclavesEnclaveIdentifierArtifactsLocalFile200JSONResponse) V
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject struct {
+type PostEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject struct {
 	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
-	Body              *PutEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody
+	Body              *PostEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody
 }
 
-type PutEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject interface {
-	VisitPutEnclavesEnclaveIdentifierArtifactsRemoteFileResponse(w http.ResponseWriter) error
+type PostEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject interface {
+	VisitPostEnclavesEnclaveIdentifierArtifactsRemoteFileResponse(w http.ResponseWriter) error
 }
 
-type PutEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse FileArtifactReference
+type PostEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse FileArtifactReference
 
-func (response PutEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse) VisitPutEnclavesEnclaveIdentifierArtifactsRemoteFileResponse(w http.ResponseWriter) error {
+func (response PostEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse) VisitPostEnclavesEnclaveIdentifierArtifactsRemoteFileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject struct {
+type PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject struct {
 	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 	ServiceIdentifier ServiceIdentifier `json:"service_identifier"`
-	Body              *PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody
+	Body              *PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody
 }
 
-type PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject interface {
-	VisitPutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error
+type PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject interface {
+	VisitPostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error
 }
 
-type PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier200JSONResponse FileArtifactReference
+type PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier200JSONResponse FileArtifactReference
 
-func (response PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier200JSONResponse) VisitPutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error {
+func (response PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier200JSONResponse) VisitPostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -799,11 +799,11 @@ type StrictServerInterface interface {
 	// (POST /enclaves/{enclave_identifier}/artifacts/local-file)
 	PostEnclavesEnclaveIdentifierArtifactsLocalFile(ctx context.Context, request PostEnclavesEnclaveIdentifierArtifactsLocalFileRequestObject) (PostEnclavesEnclaveIdentifierArtifactsLocalFileResponseObject, error)
 
-	// (PUT /enclaves/{enclave_identifier}/artifacts/remote-file)
-	PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx context.Context, request PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject) (PutEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject, error)
+	// (POST /enclaves/{enclave_identifier}/artifacts/remote-file)
+	PostEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx context.Context, request PostEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject) (PostEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject, error)
 
-	// (PUT /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
-	PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx context.Context, request PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject) (PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject, error)
+	// (POST /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
+	PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx context.Context, request PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject) (PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject, error)
 
 	// (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier})
 	GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx context.Context, request GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierRequestObject) (GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponseObject, error)
@@ -911,63 +911,63 @@ func (sh *strictHandler) PostEnclavesEnclaveIdentifierArtifactsLocalFile(ctx ech
 	return nil
 }
 
-// PutEnclavesEnclaveIdentifierArtifactsRemoteFile operation middleware
-func (sh *strictHandler) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
-	var request PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject
+// PostEnclavesEnclaveIdentifierArtifactsRemoteFile operation middleware
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request PostEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
 
-	var body PutEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody
+	var body PostEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx.Request().Context(), request.(PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject))
+		return sh.ssi.PostEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutEnclavesEnclaveIdentifierArtifactsRemoteFile")
+		handler = middleware(handler, "PostEnclavesEnclaveIdentifierArtifactsRemoteFile")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PutEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject); ok {
-		return validResponse.VisitPutEnclavesEnclaveIdentifierArtifactsRemoteFileResponse(ctx.Response())
+	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject); ok {
+		return validResponse.VisitPostEnclavesEnclaveIdentifierArtifactsRemoteFileResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
 	return nil
 }
 
-// PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier operation middleware
-func (sh *strictHandler) PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error {
-	var request PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject
+// PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier operation middleware
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error {
+	var request PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
 	request.ServiceIdentifier = serviceIdentifier
 
-	var body PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody
+	var body PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
 		return err
 	}
 	request.Body = &body
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx.Request().Context(), request.(PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject))
+		return sh.ssi.PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier")
+		handler = middleware(handler, "PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject); ok {
-		return validResponse.VisitPutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponse(ctx.Response())
+	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject); ok {
+		return validResponse.VisitPostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
@@ -1321,70 +1321,70 @@ func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.C
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

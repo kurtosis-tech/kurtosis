@@ -27,6 +27,11 @@ const (
 	TEST       EnclaveMode = "TEST"
 )
 
+// Defines values for EnclaveTargetStatus.
+const (
+	STOP EnclaveTargetStatus = "STOP"
+)
+
 // ApiContainerStatus defines model for ApiContainerStatus.
 type ApiContainerStatus string
 
@@ -89,6 +94,9 @@ type EnclaveNameAndUuid struct {
 	Uuid string `json:"uuid"`
 }
 
+// EnclaveTargetStatus defines model for EnclaveTargetStatus.
+type EnclaveTargetStatus string
+
 // EngineInfo defines model for EngineInfo.
 type EngineInfo struct {
 	EngineVersion string `json:"engine_version"`
@@ -111,3 +119,6 @@ type DeleteEnclavesParams struct {
 
 // PostEnclavesJSONRequestBody defines body for PostEnclaves for application/json ContentType.
 type PostEnclavesJSONRequestBody = CreateEnclave
+
+// PostEnclavesEnclaveIdentifierStatusJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStatus for application/json ContentType.
+type PostEnclavesEnclaveIdentifierStatusJSONRequestBody = EnclaveTargetStatus

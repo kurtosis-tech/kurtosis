@@ -40,9 +40,12 @@ type ServerInterface interface {
 	// Get Enclave Info
 	// (GET /enclaves/{enclave_identifier})
 	GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-	// Stop Enclave
-	// (POST /enclaves/{enclave_identifier}/stop)
-	PostEnclavesEnclaveIdentifierStop(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
+	// Get enclave status
+	// (GET /enclaves/{enclave_identifier}/status)
+	GetEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
+	// Set enclave status
+	// (POST /enclaves/{enclave_identifier}/status)
+	PostEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Get Engine Info
 	// (GET /engine/info)
 	GetEngineInfo(ctx echo.Context) error
@@ -130,8 +133,8 @@ func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifier(ctx echo.Context) 
 	return err
 }
 
-// PostEnclavesEnclaveIdentifierStop converts echo context to params.
-func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStop(ctx echo.Context) error {
+// GetEnclavesEnclaveIdentifierStatus converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierStatus(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
 	var enclaveIdentifier EnclaveIdentifier
@@ -142,7 +145,23 @@ func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStop(ctx echo.Cont
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostEnclavesEnclaveIdentifierStop(ctx, enclaveIdentifier)
+	err = w.Handler.GetEnclavesEnclaveIdentifierStatus(ctx, enclaveIdentifier)
+	return err
+}
+
+// PostEnclavesEnclaveIdentifierStatus converts echo context to params.
+func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStatus(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.PostEnclavesEnclaveIdentifierStatus(ctx, enclaveIdentifier)
 	return err
 }
 
@@ -189,7 +208,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/enclaves/historical", wrapper.GetEnclavesHistorical)
 	router.DELETE(baseURL+"/enclaves/:enclave_identifier", wrapper.DeleteEnclavesEnclaveIdentifier)
 	router.GET(baseURL+"/enclaves/:enclave_identifier", wrapper.GetEnclavesEnclaveIdentifier)
-	router.POST(baseURL+"/enclaves/:enclave_identifier/stop", wrapper.PostEnclavesEnclaveIdentifierStop)
+	router.GET(baseURL+"/enclaves/:enclave_identifier/status", wrapper.GetEnclavesEnclaveIdentifierStatus)
+	router.POST(baseURL+"/enclaves/:enclave_identifier/status", wrapper.PostEnclavesEnclaveIdentifierStatus)
 	router.GET(baseURL+"/engine/info", wrapper.GetEngineInfo)
 
 }
@@ -293,18 +313,36 @@ func (response GetEnclavesEnclaveIdentifier200JSONResponse) VisitGetEnclavesEncl
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostEnclavesEnclaveIdentifierStopRequestObject struct {
+type GetEnclavesEnclaveIdentifierStatusRequestObject struct {
 	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
 
-type PostEnclavesEnclaveIdentifierStopResponseObject interface {
-	VisitPostEnclavesEnclaveIdentifierStopResponse(w http.ResponseWriter) error
+type GetEnclavesEnclaveIdentifierStatusResponseObject interface {
+	VisitGetEnclavesEnclaveIdentifierStatusResponse(w http.ResponseWriter) error
 }
 
-type PostEnclavesEnclaveIdentifierStop200Response struct {
+type GetEnclavesEnclaveIdentifierStatus200JSONResponse EnclaveContainersStatus
+
+func (response GetEnclavesEnclaveIdentifierStatus200JSONResponse) VisitGetEnclavesEnclaveIdentifierStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
-func (response PostEnclavesEnclaveIdentifierStop200Response) VisitPostEnclavesEnclaveIdentifierStopResponse(w http.ResponseWriter) error {
+type PostEnclavesEnclaveIdentifierStatusRequestObject struct {
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
+	Body              *PostEnclavesEnclaveIdentifierStatusJSONRequestBody
+}
+
+type PostEnclavesEnclaveIdentifierStatusResponseObject interface {
+	VisitPostEnclavesEnclaveIdentifierStatusResponse(w http.ResponseWriter) error
+}
+
+type PostEnclavesEnclaveIdentifierStatus200Response struct {
+}
+
+func (response PostEnclavesEnclaveIdentifierStatus200Response) VisitPostEnclavesEnclaveIdentifierStatusResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
 	return nil
 }
@@ -345,9 +383,12 @@ type StrictServerInterface interface {
 	// Get Enclave Info
 	// (GET /enclaves/{enclave_identifier})
 	GetEnclavesEnclaveIdentifier(ctx context.Context, request GetEnclavesEnclaveIdentifierRequestObject) (GetEnclavesEnclaveIdentifierResponseObject, error)
-	// Stop Enclave
-	// (POST /enclaves/{enclave_identifier}/stop)
-	PostEnclavesEnclaveIdentifierStop(ctx context.Context, request PostEnclavesEnclaveIdentifierStopRequestObject) (PostEnclavesEnclaveIdentifierStopResponseObject, error)
+	// Get enclave status
+	// (GET /enclaves/{enclave_identifier}/status)
+	GetEnclavesEnclaveIdentifierStatus(ctx context.Context, request GetEnclavesEnclaveIdentifierStatusRequestObject) (GetEnclavesEnclaveIdentifierStatusResponseObject, error)
+	// Set enclave status
+	// (POST /enclaves/{enclave_identifier}/status)
+	PostEnclavesEnclaveIdentifierStatus(ctx context.Context, request PostEnclavesEnclaveIdentifierStatusRequestObject) (PostEnclavesEnclaveIdentifierStatusResponseObject, error)
 	// Get Engine Info
 	// (GET /engine/info)
 	GetEngineInfo(ctx context.Context, request GetEngineInfoRequestObject) (GetEngineInfoResponseObject, error)
@@ -516,25 +557,56 @@ func (sh *strictHandler) GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveI
 	return nil
 }
 
-// PostEnclavesEnclaveIdentifierStop operation middleware
-func (sh *strictHandler) PostEnclavesEnclaveIdentifierStop(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
-	var request PostEnclavesEnclaveIdentifierStopRequestObject
+// GetEnclavesEnclaveIdentifierStatus operation middleware
+func (sh *strictHandler) GetEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request GetEnclavesEnclaveIdentifierStatusRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.PostEnclavesEnclaveIdentifierStop(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierStopRequestObject))
+		return sh.ssi.GetEnclavesEnclaveIdentifierStatus(ctx.Request().Context(), request.(GetEnclavesEnclaveIdentifierStatusRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostEnclavesEnclaveIdentifierStop")
+		handler = middleware(handler, "GetEnclavesEnclaveIdentifierStatus")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierStopResponseObject); ok {
-		return validResponse.VisitPostEnclavesEnclaveIdentifierStopResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetEnclavesEnclaveIdentifierStatusResponseObject); ok {
+		return validResponse.VisitGetEnclavesEnclaveIdentifierStatusResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("Unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostEnclavesEnclaveIdentifierStatus operation middleware
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
+	var request PostEnclavesEnclaveIdentifierStatusRequestObject
+
+	request.EnclaveIdentifier = enclaveIdentifier
+
+	var body PostEnclavesEnclaveIdentifierStatusJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostEnclavesEnclaveIdentifierStatus(ctx.Request().Context(), request.(PostEnclavesEnclaveIdentifierStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostEnclavesEnclaveIdentifierStatus")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostEnclavesEnclaveIdentifierStatusResponseObject); ok {
+		return validResponse.VisitPostEnclavesEnclaveIdentifierStatusResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
@@ -567,24 +639,25 @@ func (sh *strictHandler) GetEngineInfo(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"nP4NAAD//5Hsw6MyFQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -234,7 +234,7 @@ paths:
                   $ref: "#/components/schemas/FileArtifactReference"
 
   /enclaves/{enclave_identifier}/artifacts/remote-file:
-    put:
+    post:
       description: Tells the API container to download a files artifact from the web to the Kurtosis File System
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
@@ -254,7 +254,7 @@ paths:
                 $ref: "#/components/schemas/FileArtifactReference"
 
   /enclaves/{enclave_identifier}/artifacts/services/{service_identifier}:
-    put:
+    post:
       description: Tells the API container to copy a files artifact from a service to the Kurtosis File System
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'

@@ -169,8 +169,8 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 	return api.PostEnclavesEnclaveIdentifierArtifactsLocalFile200JSONResponse(uploaded_artifacts), nil
 }
 
-// (PUT /enclaves/{enclave_identifier}/artifacts/remote-file)
-func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx context.Context, request api.PutEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject) (api.PutEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject, error) {
+// (POST /enclaves/{enclave_identifier}/artifacts/remote-file)
+func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx context.Context, request api.PostEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject) (api.PostEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
 	if err != nil {
@@ -192,11 +192,11 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsRemoteFile(c
 		Uuid: stored_artifact.Uuid,
 		Name: request.Body.Name,
 	}
-	return api.PutEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse(artifact_response), nil
+	return api.PostEnclavesEnclaveIdentifierArtifactsRemoteFile200JSONResponse(artifact_response), nil
 }
 
-// (PUT /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
-func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx context.Context, request api.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject) (api.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject, error) {
+// (POST /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
+func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx context.Context, request api.PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject) (api.PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject, error) {
 	enclave_identifier := request.EnclaveIdentifier
 	service_identifier := request.ServiceIdentifier
 	apiContainerClient, err := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
@@ -220,7 +220,7 @@ func (manager *enclaveRuntime) PutEnclavesEnclaveIdentifierArtifactsServicesServ
 		Uuid: stored_artifact.Uuid,
 		Name: request.Body.Name,
 	}
-	return api.PutEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier200JSONResponse(artifact_response), nil
+	return api.PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier200JSONResponse(artifact_response), nil
 }
 
 // (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier})

@@ -142,20 +142,44 @@ func (engine EngineRuntime) GetEnclavesEnclaveIdentifier(ctx context.Context, re
 	return nil, Error{}
 }
 
-// Stop Enclave
-// (POST /enclaves/{enclave_identifier}/stop)
-func (engine EngineRuntime) PostEnclavesEnclaveIdentifierStop(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStopRequestObject) (api.PostEnclavesEnclaveIdentifierStopResponseObject, error) {
+// Get enclave status
+// (GET /enclaves/{enclave_identifier}/status)
+func (engine EngineRuntime) GetEnclavesEnclaveIdentifierStatus(ctx context.Context, request api.GetEnclavesEnclaveIdentifierStatusRequestObject) (api.GetEnclavesEnclaveIdentifierStatusResponseObject, error) {
 	enclaveIdentifier := request.EnclaveIdentifier
-
-	if err := engine.MetricsClient.TrackStopEnclave(enclaveIdentifier); err != nil {
-		logrus.Warnf("An error occurred while logging the stop enclave event for enclave '%v'", enclaveIdentifier)
-	}
-
-	if err := engine.EnclaveManager.StopEnclave(ctx, enclaveIdentifier); err != nil {
+	enclaveList, err := engine.EnclaveManager.GetEnclaves(ctx)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
 	}
+	info, found := enclaveList[enclaveIdentifier]
+	if !found {
+		err := stacktrace.NewError("Enclave not found: '%s'", enclaveIdentifier)
+		return nil, err
+	}
 
-	return api.PostEnclavesEnclaveIdentifierStop200Response{}, nil
+	return api.GetEnclavesEnclaveIdentifierStatus200JSONResponse(toHttpEnclaveContainersStatus(info.EnclaveContainersStatus)), nil
+}
+
+// Set enclave status
+// (POST /enclaves/{enclave_identifier}/status)
+func (engine EngineRuntime) PostEnclavesEnclaveIdentifierStatus(ctx context.Context, request api.PostEnclavesEnclaveIdentifierStatusRequestObject) (api.PostEnclavesEnclaveIdentifierStatusResponseObject, error) {
+	enclaveIdentifier := request.EnclaveIdentifier
+	targetState := request.Body
+
+	switch *targetState {
+	case api.STOP:
+		if err := engine.MetricsClient.TrackStopEnclave(enclaveIdentifier); err != nil {
+			logrus.Warnf("An error occurred while logging the stop enclave event for enclave '%v'", enclaveIdentifier)
+		}
+
+		if err := engine.EnclaveManager.StopEnclave(ctx, enclaveIdentifier); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
+		}
+		return api.PostEnclavesEnclaveIdentifierStatus200Response{}, nil
+	default:
+		err := stacktrace.NewError("Unsupported target state: '%s'", targetState)
+		return nil, err
+	}
+
 }
 
 // Get Engine Info
@@ -250,5 +274,18 @@ func toHttpApiEnclaveNameAndUuid(identifier *types.EnclaveNameAndUuid) api.Encla
 	return api.EnclaveNameAndUuid{
 		Uuid: identifier.Uuid,
 		Name: identifier.Name,
+	}
+}
+
+func toHttpEnclaveContainersStatus(status types.EnclaveContainersStatus) api.EnclaveContainersStatus {
+	switch status {
+	case types.EnclaveContainersStatus_STOPPED:
+		return api.EnclaveContainersStatusSTOPPED
+	case types.EnclaveContainersStatus_RUNNING:
+		return api.EnclaveContainersStatusRUNNING
+	case types.EnclaveContainersStatus_EMPTY:
+		return api.EnclaveContainersStatusEMPTY
+	default:
+		panic(fmt.Sprintf("Undefined mapping of value: %s", status))
 	}
 }

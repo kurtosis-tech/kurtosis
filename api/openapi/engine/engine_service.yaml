@@ -91,11 +91,28 @@ paths:
         '200':
           description: Successful response
 
-  /enclaves/{enclave_identifier}/stop:
-    post:
-      summary: Stop Enclave
+  /enclaves/{enclave_identifier}/status:
+    get:
+      summary: Get enclave status
       parameters:
         - $ref: '#/components/parameters/enclave_identifier'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnclaveContainersStatus'
+    post:
+      summary: Set enclave status
+      parameters:
+        - $ref: '#/components/parameters/enclave_identifier'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnclaveTargetStatus'
       responses:
         '200':
           description: Successful response
@@ -160,6 +177,11 @@ components:
         - RUNNING
         - STOPPED
         - EMPTY
+    
+    EnclaveTargetStatus:
+      type: string
+      enum:
+        - STOP
     
     ApiContainerStatus:
       type: string
