@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type EnclaveCreator struct {
@@ -56,9 +55,6 @@ func (creator *EnclaveCreator) CreateEnclave(
 	// Create Enclave with kurtosisBackend
 
 	logrus.Infof("[LEO-DEBUG] calling create enclave en backend")
-	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds...")
-	time.Sleep(30 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 	newEnclave, err := creator.kurtosisBackend.CreateEnclave(setupCtx, enclaveUuid, enclaveName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with name `%v` and uuid '%v'", enclaveName, enclaveUuid)
