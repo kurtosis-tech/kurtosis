@@ -74,10 +74,12 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 
 	numRetries := 0
 	for numRetries < maxNumNetworkAllocationRetries {
+		logrus.Infof("[LEO-DEBUG] retrying create network %v", numRetries)
 		networks, err := provider.dockerManager.ListNetworks(ctx)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred listing the Docker networks")
 		}
+		logrus.Infof("[LEO-DEBUG] networks %+v", networks)
 
 		usedSubnets := []*net.IPNet{}
 		for _, network := range networks {
@@ -114,6 +116,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		if err == nil {
 			return networkId, nil
 		}
+		logrus.Infof("[LEO-DEBUG] create network return err %v", err)
 
 		// Docker does this weird thing where a newly-deleted network won't show up in DockerClient.ListNetworks, but its IPs
 		//  will still be counted as used for several seconds after deletion. The best we can do here is catch the "overlapping
