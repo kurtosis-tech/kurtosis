@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"math"
 	"net/http"
@@ -148,10 +149,12 @@ func (*grpcHandler) SetTimeout(request *http.Request) (context.Context, context.
 		// the error text is safe to send back.
 		return nil, nil, NewError(CodeInvalidArgument, err)
 	} else if err != nil {
+		logrus.Infof("[LEO-DEBUG] grpc no set timeout")
 		// err wraps errNoTimeout, nothing to do.
 		return request.Context(), nil, nil //nolint:nilerr
 	}
 	ctx, cancel := context.WithTimeout(request.Context(), timeout)
+	logrus.Infof("[LEO-DEBUG] grpc set timeout '%s'", timeout.String())
 	return ctx, cancel, nil
 }
 
