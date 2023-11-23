@@ -108,10 +108,6 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			return "", stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
 		}
 
-		logrus.Infof("[LEO-DEBUG] sleeping for 20 seconds...")
-		time.Sleep(20 * time.Second)
-		logrus.Infof("[LEO-DEBUG] sleeping ends")
-
 		networkId, err := provider.dockerManager.CreateNetwork(ctx, networkName, freeNetworkIpAndMask.String(), gatewayIp, labels)
 		if err == nil {
 			return networkId, nil
@@ -147,6 +143,9 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		//  the newly-freed IPs Docker will fail with "pool overlaps with current space"
 		time.Sleep(timeBetweenNetworkCreationRetries)
 	}
+	logrus.Infof("[LEO-DEBUG] sleeping for 20 seconds...")
+	time.Sleep(20 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	return "", stacktrace.NewError(
 		"We couldn't allocate a new network even after retrying %v times with %v between retries",
