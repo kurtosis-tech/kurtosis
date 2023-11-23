@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	dockerClientTimeout = 30 * time.Second
+	dockerClientTimeout = 300 * time.Second
 	// We use a bridge network because, as of 2020-08-01, we're only running locally; however, this may need to change
 	//  at some point in the future
 	dockerNetworkDriver = "bridge"
