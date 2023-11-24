@@ -204,29 +204,31 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		}
 	}()
 
-	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
-		ctx,
-		backend.dockerManager,
-		containerId,
-		privateGrpcPortSpec,
-		maxWaitForApiContainerAvailabilityRetries,
-		timeBetweenWaitForApiContainerAvailabilityRetries,
-	); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
-	}
+	/*
+		if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
+			ctx,
+			backend.dockerManager,
+			containerId,
+			privateGrpcPortSpec,
+			maxWaitForApiContainerAvailabilityRetries,
+			timeBetweenWaitForApiContainerAvailabilityRetries,
+		); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
+		}
 
-	logrus.Debugf("Checking for the APIC availability in enclave '%v'...", enclaveUuid)
-	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
-		ctx,
-		backend.dockerManager,
-		containerId,
-		privateGrpcPortSpec,
-		maxWaitForApiContainerAvailabilityRetries,
-		timeBetweenWaitForApiContainerAvailabilityRetries,
-	); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
-	}
-	logrus.Debugf("...APIC is available in enclave '%v'", enclaveUuid)
+		logrus.Debugf("Checking for the APIC availability in enclave '%v'...", enclaveUuid)
+		if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
+			ctx,
+			backend.dockerManager,
+			containerId,
+			privateGrpcPortSpec,
+			maxWaitForApiContainerAvailabilityRetries,
+			timeBetweenWaitForApiContainerAvailabilityRetries,
+		); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
+		}
+		logrus.Debugf("...APIC is available in enclave '%v'", enclaveUuid)
+	*/
 
 	bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
 	if err != nil {
