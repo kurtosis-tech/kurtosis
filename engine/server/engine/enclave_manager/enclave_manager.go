@@ -424,21 +424,24 @@ func getEnclaveApiContainerInformation(
 		bridgeIpAddr = apiContainer.GetBridgeNetworkIPAddress().String()
 	}
 	resultApiContainerInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-		ContainerId:           "",
-		IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),
-		GrpcPortInsideEnclave: uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
-		BridgeIpAddress:       bridgeIpAddr,
+		ContainerId:             "",
+		IpInsideEnclave:         apiContainer.GetPrivateIPAddress().String(),
+		GrpcPortInsideEnclave:   uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
+		TunnelPortInsideEnclave: uint32(apiContainer.GetPrivateTunnelPort().GetNumber()),
+		BridgeIpAddress:         bridgeIpAddr,
 	}
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if resultApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
 
 		var apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 		if apiContainer.GetPublicIPAddress() != nil &&
-			apiContainer.GetPublicGRPCPort() != nil {
+			apiContainer.GetPublicGRPCPort() != nil &&
+			apiContainer.GetPublicTunnelPort() != nil {
 
 			apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-				IpOnHostMachine:       apiContainer.GetPublicIPAddress().String(),
-				GrpcPortOnHostMachine: uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
+				IpOnHostMachine:         apiContainer.GetPublicIPAddress().String(),
+				GrpcPortOnHostMachine:   uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
+				TunnelPortOnHostMachine: uint32(apiContainer.GetPublicTunnelPort().GetNumber()),
 			}
 		}
 
