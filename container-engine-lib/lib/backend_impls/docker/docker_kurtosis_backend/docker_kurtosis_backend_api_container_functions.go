@@ -242,10 +242,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 
 	logrus.Debugf("APIC for enclave '%v' successfully created", enclaveUuid)
 
-	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds...")
-	time.Sleep(30 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
-
 	shouldKillContainer = false
 	return result, nil
 }
@@ -454,12 +450,16 @@ func getApiContainerObjectFromContainerInfo(
 		apiContainerStatus = container.ContainerStatus_Stopped
 	}
 
+	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds...")
+	time.Sleep(30 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
+
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec.PortSpec
 	if apiContainerStatus == container.ContainerStatus_Running {
 		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
+			return nil, stacktrace.Propagate(err, "The apic is running, but an error occurred getting the public port spec for the apic's grpc private port spec")
 		}
 		publicGrpcPortSpec = candidatePublicGrpcPortSpec
 		publicIpAddr = publicGrpcPortIpAddr
