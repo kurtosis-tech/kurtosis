@@ -259,6 +259,10 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 		// TODO proxy endpoint for gateway
 	}
 
+	// TODO(omar): can we call service.connectionProvider.ForEnclaveApiContainer here to get ports fwded first
+	// then we can save the local tunnel port here and be done with it
+	// but, will we be able to pass the apiConnection to RunApiContainerGatewayUntilStopped across threads?
+
 	// Start the server in a goroutine
 	// Stop the running gateway
 	gatewayStopFunc := func() {
