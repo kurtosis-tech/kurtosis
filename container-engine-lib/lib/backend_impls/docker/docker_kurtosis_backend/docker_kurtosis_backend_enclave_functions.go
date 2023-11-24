@@ -148,9 +148,6 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 			}
 		}
 	}()
-	logrus.Infof("[LEO-DEBUG] sleeping for 40 seconds")
-	time.Sleep(40 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	// TODO: return production mode for create enclave request as well
 	newEnclave := enclave.NewEnclave(enclaveUuid, enclaveName, enclave.EnclaveStatus_Empty, &creationTime, false)
@@ -167,6 +164,9 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 			}
 		}
 	}()
+	logrus.Infof("[LEO-DEBUG] sleeping for 40 seconds")
+	time.Sleep(40 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	shouldDeleteLogsCollector = false
 	//shouldDeleteNetwork = false
