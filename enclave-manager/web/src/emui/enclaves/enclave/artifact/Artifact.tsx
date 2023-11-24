@@ -1,11 +1,13 @@
-import { Button, Flex, Spinner } from "@chakra-ui/react";
+import { Button, ButtonGroup, Flex, Spinner } from "@chakra-ui/react";
 import { InspectFilesArtifactContentsResponse } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { BiPaintRoll } from "react-icons/bi";
 import { useParams } from "react-router-dom";
 import { Result } from "true-myth";
 import { useKurtosisClient } from "../../../../client/enclaveManager/KurtosisClientContext";
 import { AppPageLayout } from "../../../../components/AppLayout";
 import { CodeEditor, CodeEditorImperativeAttributes } from "../../../../components/CodeEditor";
+import { CopyButton } from "../../../../components/CopyButton";
 import { DownloadButton } from "../../../../components/DownloadButton";
 import { FileTree, FileTreeNode } from "../../../../components/FileTree";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
@@ -144,12 +146,33 @@ const ArtifactImpl = ({ enclave, artifactName, files }: ArtifactImplProps) => {
           title={isDefined(selectedFile) ? selectedFile.path : "Select a file to preview it"}
           controls={
             isDefined(selectedFile) ? (
-              <DownloadButton
-                isIconButton
-                aria-label={"Download this file"}
-                valueToDownload={selectedFile.textPreview}
-                fileName={`${enclave.name}--${artifactName}-${selectedFile.path.replaceAll("/", "-")}`}
-              />
+              <ButtonGroup>
+                <CopyButton
+                  contentName={"File Path"}
+                  isIconButton
+                  aria-label={"Copy this file path"}
+                  valueToCopy={selectedFile.path}
+                />
+                <DownloadButton
+                  isIconButton
+                  aria-label={"Download this file"}
+                  valueToDownload={selectedFile.textPreview}
+                  fileName={`${enclave.name}--${artifactName}-${selectedFile.path.replaceAll("/", "-")}`}
+                />
+              </ButtonGroup>
+            ) : undefined
+          }
+          rightControls={
+            isDefined(selectedFile) ? (
+              <Button
+                leftIcon={<BiPaintRoll />}
+                variant="ghost"
+                size={"sm"}
+                colorScheme={"darkBlue"}
+                onClick={() => codeEditorRef.current?.formatCode()}
+              >
+                Format
+              </Button>
             ) : undefined
           }
           flex={"1"}
@@ -165,7 +188,6 @@ const ArtifactImpl = ({ enclave, artifactName, files }: ArtifactImplProps) => {
               fileName={selectedFilePath[(selectedFilePath?.length || 0) - 1]}
             />
           )}
-          <Button onClick={() => codeEditorRef.current?.formatCode()}>Format</Button>
         </TitledCard>
       </Flex>
     </AppPageLayout>
