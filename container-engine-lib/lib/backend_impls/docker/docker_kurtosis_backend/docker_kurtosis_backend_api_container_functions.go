@@ -38,7 +38,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	image string,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcPortNum uint16,
-	// The dirpath on the API container where the enclave data volume should be mounted
+// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
@@ -450,17 +450,16 @@ func getApiContainerObjectFromContainerInfo(
 		apiContainerStatus = container.ContainerStatus_Stopped
 	}
 
-	time.Sleep(time.Second * 2)
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec.PortSpec
-	if apiContainerStatus == container.ContainerStatus_Running {
+	/*if apiContainerStatus == container.ContainerStatus_Running {
 		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The apic is running, but an error occurred getting the public port spec for the apic's grpc private port spec")
 		}
 		publicGrpcPortSpec = candidatePublicGrpcPortSpec
 		publicIpAddr = publicGrpcPortIpAddr
-	}
+	}*/
 
 	result := api_container.NewAPIContainer(
 		enclave.EnclaveUUID(enclaveId),
