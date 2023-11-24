@@ -85,7 +85,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave data volume attributes for the enclave with ID '%v'", enclaveUuid)
 	}
 
-	enclaveNetworkName := enclaveNetworkAttrs.GetName()
+	//enclaveNetworkName := enclaveNetworkAttrs.GetName()
 	enclaveNetworkDockerObjectLabels := enclaveNetworkAttrs.GetLabels()
 
 	enclaveNetworkLabels := map[string]string{}
@@ -94,30 +94,36 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 		enclaveNetworkLabelValue := dockerLabelValue.GetString()
 		enclaveNetworkLabels[enclaveNetworkLabelKey] = enclaveNetworkLabelValue
 	}
-
-	logrus.Debugf("Creating Docker network for enclave '%v'...", enclaveUuid)
-	networkId, err := backend.dockerNetworkAllocator.CreateNewNetwork(
-		ctx,
-		enclaveNetworkName.GetString(),
-		enclaveNetworkLabels,
-	)
-	if err != nil {
-		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
-		//  that the Context was cancelled as expected, but *the Docker engine will still create the network*!!! We'll
-		//  need to parse the log message for the string "context canceled" and, if found, do another search for
-		//  networks with our network name and delete them
-		return nil, stacktrace.Propagate(err, "An error occurred allocating a new network for enclave '%v'", enclaveUuid)
-	}
-	shouldDeleteNetwork := true
-	defer func() {
-		if shouldDeleteNetwork {
-			if err := backend.dockerManager.RemoveNetwork(teardownCtx, networkId); err != nil {
-				logrus.Errorf("Creating the enclave didn't complete successfully, so we tried to delete network '%v' that we created but an error was thrown:\n%v", networkId, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove network with ID '%v'!!!!!!!", networkId)
-			}
+	/*
+		logrus.Debugf("Creating Docker network for enclave '%v'...", enclaveUuid)
+		networkId, err := backend.dockerNetworkAllocator.CreateNewNetwork(
+			ctx,
+			enclaveNetworkName.GetString(),
+			enclaveNetworkLabels,
+		)
+		if err != nil {
+			// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
+			//  that the Context was cancelled as expected, but *the Docker engine will still create the network*!!! We'll
+			//  need to parse the log message for the string "context canceled" and, if found, do another search for
+			//  networks with our network name and delete them
+			return nil, stacktrace.Propagate(err, "An error occurred allocating a new network for enclave '%v'", enclaveUuid)
 		}
-	}()
-	logrus.Debugf("Docker network '%v' created successfully with ID '%v'", enclaveUuid, networkId)
+		shouldDeleteNetwork := true
+		defer func() {
+			if shouldDeleteNetwork {
+				if err := backend.dockerManager.RemoveNetwork(teardownCtx, networkId); err != nil {
+					logrus.Errorf("Creating the enclave didn't complete successfully, so we tried to delete network '%v' that we created but an error was thrown:\n%v", networkId, err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to manually remove network with ID '%v'!!!!!!!", networkId)
+				}
+			}
+		}()
+		logrus.Debugf("Docker network '%v' created successfully with ID '%v'", enclaveUuid, networkId)
+
+	*/
+
+	logrus.Infof("[LEO-DEBUG] sleeping for 20 seconds...")
+	time.Sleep(20 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	enclaveDataVolumeNameStr := enclaveDataVolumeAttrs.GetName().GetString()
 	enclaveDataVolumeLabelStrs := map[string]string{}
@@ -164,7 +170,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 	}()
 
 	shouldDeleteLogsCollector = false
-	shouldDeleteNetwork = false
+	//shouldDeleteNetwork = false
 	shouldDeleteVolume = false
 	return newEnclave, nil
 }
@@ -412,7 +418,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-// Keyed by network ID
+	// Keyed by network ID
 	map[enclave.EnclaveUUID]*matchingNetworkInformation,
 	error,
 ) {

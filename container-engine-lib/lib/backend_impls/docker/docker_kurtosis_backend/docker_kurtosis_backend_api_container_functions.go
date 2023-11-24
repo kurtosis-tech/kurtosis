@@ -38,7 +38,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	image string,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcPortNum uint16,
-	// The dirpath on the API container where the enclave data volume should be mounted
+// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
@@ -69,10 +69,16 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	// Get the Docker network ID where we'll start the new API container
-	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid)
+	/*enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave UUID '%v'", enclaveUuid)
+	}*/
+
+	networks, err := backend.dockerManager.GetNetworksByName(ctx, "bridge")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave UUID '%v'", enclaveUuid)
 	}
+	enclaveNetwork := networks[0]
 
 	enclaveLogsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
 	if err != nil {

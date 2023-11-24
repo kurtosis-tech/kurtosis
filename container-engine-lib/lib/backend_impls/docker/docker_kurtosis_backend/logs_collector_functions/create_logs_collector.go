@@ -3,7 +3,6 @@ package logs_collector_functions
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
@@ -46,7 +45,12 @@ func CreateLogsCollectorForEnclave(
 		return nil, stacktrace.NewError("Found existing logs collector container(s); cannot start a new one")
 	}
 
-	enclaveNetwork, err := shared_helpers.GetEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid, dockerManager)
+	/*enclaveNetwork, err := shared_helpers.GetEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while retrieving the network id for the enclave '%v'", enclaveUuid)
+	}*/
+
+	enclaveNetwork, err := dockerManager.GetNetworksByName(ctx, "bridge")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while retrieving the network id for the enclave '%v'", enclaveUuid)
 	}
@@ -67,7 +71,7 @@ func CreateLogsCollectorForEnclave(
 		logsCollectorHttpPortNumber,
 		logsCollectorTcpPortId,
 		logsCollectorHttpPortId,
-		enclaveNetwork.GetId(),
+		enclaveNetwork[0].GetId(),
 		objAttrsProvider,
 		dockerManager,
 	)
@@ -91,25 +95,27 @@ func CreateLogsCollectorForEnclave(
 		}
 	}()
 
-	if err = dockerManager.ConnectContainerToNetwork(ctx, enclaveNetwork.GetId(), containerId, autoAssignIpAddressToLogsCollector, emptyAliasForLogsCollector); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while connecting container '%v' to the enclave network '%v'", containerId, enclaveNetwork.GetId())
-	}
-	shouldDisconnectLogsCollectorFromEnclaveNetwork := true
-	defer func() {
-		if shouldDisconnectLogsCollectorFromEnclaveNetwork {
-			err = dockerManager.DisconnectContainerFromNetwork(ctx, containerId, enclaveNetwork.GetId())
-			if err != nil {
-				logrus.Errorf("Tried disconnecting failing logs collector container with ID '%v' from the enclave network '%v' but failed with err:\n'%v'", containerId, enclaveNetwork.GetId(), err)
-			}
+	/*
+		if err = dockerManager.ConnectContainerToNetwork(ctx, enclaveNetwork[0].GetId(), containerId, autoAssignIpAddressToLogsCollector, emptyAliasForLogsCollector); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while connecting container '%v' to the enclave network '%v'", containerId, enclaveNetwork[0].GetId())
 		}
-	}()
+		shouldDisconnectLogsCollectorFromEnclaveNetwork := true
+		defer func() {
+			if shouldDisconnectLogsCollectorFromEnclaveNetwork {
+				err = dockerManager.DisconnectContainerFromNetwork(ctx, containerId, enclaveNetwork[0].GetId())
+				if err != nil {
+					logrus.Errorf("Tried disconnecting failing logs collector container with ID '%v' from the enclave network '%v' but failed with err:\n'%v'", containerId, enclaveNetwork[0].GetId(), err)
+				}
+			}
+		}()
+	*/
 
 	logsCollectorObj, err := getLogsCollectorObjectFromContainerInfo(
 		ctx,
 		containerId,
 		containerLabels,
 		defaultContainerStatusForNewLogsCollectorContainer,
-		enclaveNetwork,
+		enclaveNetwork[0],
 		dockerManager,
 	)
 	if err != nil {
@@ -125,7 +131,7 @@ func CreateLogsCollectorForEnclave(
 	logrus.Debugf("...logs collector is available in enclave '%v'", enclaveUuid)
 	logrus.Debugf("Logs collector successfully created with container ID '%v' for enclave '%v'", containerId, enclaveUuid)
 
-	shouldDisconnectLogsCollectorFromEnclaveNetwork = false
+	//shouldDisconnectLogsCollectorFromEnclaveNetwork = false
 	shouldRemoveLogsCollectorContainerFunc = false
 	return logsCollectorObj, nil
 }

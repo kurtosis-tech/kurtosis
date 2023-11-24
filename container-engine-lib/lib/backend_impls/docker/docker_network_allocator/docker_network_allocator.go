@@ -114,9 +114,6 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			logrus.Infof("[LEO-DEBUG] receiving context deadline %v", deadlineCtx)
 			logrus.Infof("[LEO-DEBUG] receiving context deadline ok '%v'", ok)
 			logrus.Infof("[LEO-DEBUG] context: %+v", ctx)
-			logrus.Infof("[LEO-DEBUG] sleeping for 20 seconds...")
-			time.Sleep(20 * time.Second)
-			logrus.Infof("[LEO-DEBUG] sleeping ends")
 			return networkId, nil
 		}
 		logrus.Infof("[LEO-DEBUG] create network return err %v", err)
