@@ -55,6 +55,10 @@ func (manager *PortForwardManager) ForwardUserServiceToEphemeralPort(ctx context
 	}
 
 	logrus.Debugf("Found service information for (%v, %v, %v): service running at %v:%d in enclave: %v", enclaveId, serviceId, portId, serviceIpAddress, privatePortSpec.GetNumber(), enclave.String())
+
+	localTunnelPort := enclave.GetApiContainerHostMachineInfo().GetTunnelPortOnHostMachine()
+	logrus.Debugf("Local tunnel port for enclave '%v' returned by engine is '%d'", enclaveId, localTunnelPort)
+
 	return 0, nil
 }
 

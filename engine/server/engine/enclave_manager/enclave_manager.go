@@ -425,9 +425,9 @@ func getEnclaveApiContainerInformation(
 	}
 
 	// TODO(omar): this block handles apics created in previous versions that have no tunnel port
-	tunnelPortInsideEnclve := uint32(0)
+	tunnelPortInsideEnclave := uint32(0)
 	if apiContainer.GetPrivateTunnelPort() != nil {
-		tunnelPortInsideEnclve = uint32(apiContainer.GetPublicTunnelPort().GetNumber())
+		tunnelPortInsideEnclave = uint32(apiContainer.GetPrivateTunnelPort().GetNumber())
 	}
 
 	tunnelPortOnHostMachine := uint32(0)
@@ -439,7 +439,7 @@ func getEnclaveApiContainerInformation(
 		ContainerId:             "",
 		IpInsideEnclave:         apiContainer.GetPrivateIPAddress().String(),
 		GrpcPortInsideEnclave:   uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
-		TunnelPortInsideEnclave: tunnelPortInsideEnclve,
+		TunnelPortInsideEnclave: tunnelPortInsideEnclave,
 		BridgeIpAddress:         bridgeIpAddr,
 	}
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
@@ -447,8 +447,7 @@ func getEnclaveApiContainerInformation(
 
 		var apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 		if apiContainer.GetPublicIPAddress() != nil &&
-			apiContainer.GetPublicGRPCPort() != nil &&
-			apiContainer.GetPublicTunnelPort() != nil {
+			apiContainer.GetPublicGRPCPort() != nil {
 
 			apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
 				IpOnHostMachine:         apiContainer.GetPublicIPAddress().String(),

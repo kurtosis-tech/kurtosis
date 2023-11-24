@@ -980,12 +980,16 @@ func getApiContainerObjectsFromKubernetesResources(
 			return nil, stacktrace.Propagate(err, "An error occurred parsing the API container private port specs and validating gRPC and gRPC proxy port existence")
 		}
 		privateGrpcPortSpec := privatePorts[consts.KurtosisInternalContainerGrpcPortSpecId]
+
+		// TODO(omar): may be nil as we don't yet validate
 		privateTunnelPortSpec := privatePorts[consts.KurtosisInternalContainerTunnelServerSpecId]
 
 		// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
 		var publicIpAddr net.IP = nil
 		var publicGrpcPortSpec *port_spec.PortSpec = nil
 		var publicTunnelPortSpec *port_spec.PortSpec = nil
+
+		logrus.Debugf("Discovered the following private ports for enclave '%v': %v", enclaveId, privatePorts)
 
 		apiContainerObj := api_container.NewAPIContainer(
 			enclaveId,
