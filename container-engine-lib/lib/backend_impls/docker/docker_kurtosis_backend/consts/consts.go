@@ -14,6 +14,7 @@ const (
 	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, etc.) which will
 	//  be stored in the port spec label
 	KurtosisInternalContainerGrpcPortId = "grpc"
+	KurtosisInternalTunnelPortId        = "tunnel"
 
 	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported)
 	EngineTransportProtocol = port_spec.TransportProtocol_TCP

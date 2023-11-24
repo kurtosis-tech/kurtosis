@@ -972,24 +972,29 @@ func getApiContainerObjectsFromKubernetesResources(
 			kubernetesService,
 			map[string]bool{
 				consts.KurtosisInternalContainerGrpcPortSpecId: true,
+				consts.KurtosisInternalContainerTunnelServerSpecId: true
 			},
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred parsing the API container private port specs and validating gRPC and gRPC proxy port existence")
 		}
 		privateGrpcPortSpec := privatePorts[consts.KurtosisInternalContainerGrpcPortSpecId]
+		privateTunnelPortSpec := privatePorts[consts.KurtosisInternalContainerTunnelServerSpecId]
 
 		// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
 		var publicIpAddr net.IP = nil
 		var publicGrpcPortSpec *port_spec.PortSpec = nil
+		var publicTunnelPortSpec *port_spec.PortSpec = nil
 
 		apiContainerObj := api_container.NewAPIContainer(
 			enclaveId,
 			status,
 			privateIpAddr,
 			privateGrpcPortSpec,
+			privateTunnelPortSpec,
 			publicIpAddr,
 			publicGrpcPortSpec,
+			publicTunnelPortSpec,
 			nil,
 		)
 
