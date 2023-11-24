@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.24.3
-// source: portal_client.proto
+// source: portal_daemon_service.proto
 
 package kurtosis_portal_rpc_api_bindings
 
@@ -142,5 +142,5 @@ var KurtosisPortalDaemon_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "portal_client.proto",
+	Metadata: "portal_daemon_service.proto",
 }
