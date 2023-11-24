@@ -29,7 +29,7 @@ export const FileTree = ({ nodes, selectedFilePath, onFileSelected, _isChildNode
   return (
     <Flex flexDirection={"column"} pl={_isChildNode ? "22px" : undefined} w={"100%"}>
       {nodes.map((node, i) => (
-        <FileTreeNode
+        <FileTreeNodeComponent
           key={node.name}
           node={node}
           selectedFilePath={
@@ -44,15 +44,15 @@ export const FileTree = ({ nodes, selectedFilePath, onFileSelected, _isChildNode
   );
 };
 
-type FileTreeNodeProps = {
+type FileTreeNodeComponentProps = {
   node: FileTreeNode;
   selectedFilePath?: string[];
   onFileSelected: (selectedFilePath: string[]) => void;
 };
 
-const FileTreeNode = React.memo((props: FileTreeNodeProps) => {
+const FileTreeNodeComponent = React.memo((props: FileTreeNodeComponentProps) => {
   if (isDefined(props.node.childNodes)) {
-    return <DirectoryNode {...(props as FileTreeNodeProps & { node: { childNodes: FileTreeNode[] } })} />;
+    return <DirectoryNode {...(props as FileTreeNodeComponentProps & { node: { childNodes: FileTreeNode[] } })} />;
   } else {
     return <FileNode {...props} />;
   }
@@ -62,7 +62,7 @@ const DirectoryNode = ({
   node,
   selectedFilePath,
   onFileSelected,
-}: FileTreeNodeProps & { node: { childNodes: FileTreeNode[] } }) => {
+}: FileTreeNodeComponentProps & { node: { childNodes: FileTreeNode[] } }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   const childSelectedFilePath = useMemo(
@@ -104,7 +104,7 @@ const DirectoryNode = ({
   );
 };
 
-const FileNode = ({ node, selectedFilePath, onFileSelected }: FileTreeNodeProps) => {
+const FileNode = ({ node, selectedFilePath, onFileSelected }: FileTreeNodeComponentProps) => {
   const isSelected = isDefined(selectedFilePath) && selectedFilePath.length === 1 && selectedFilePath[0] === node.name;
   return (
     <Button

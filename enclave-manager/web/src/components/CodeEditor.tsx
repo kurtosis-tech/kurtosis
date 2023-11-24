@@ -1,7 +1,7 @@
 import { Box } from "@chakra-ui/react";
 import { Editor, OnChange, OnMount } from "@monaco-editor/react";
 import { editor as monacoEditor } from "monaco-editor";
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { assertDefined, isDefined } from "../utils";
 
 type CodeEditorProps = {
@@ -20,7 +20,7 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
     const isReadOnly = !isDefined(onTextChange);
     const [editor, setEditor] = useState<monacoEditor.IStandaloneCodeEditor>();
 
-    const resizeEditorBasedOnContent = () => {
+    const resizeEditorBasedOnContent = useCallback(() => {
       if (isDefined(editor)) {
         // An initial layout call is needed, else getContentHeight is garbage
         editor.layout();
@@ -29,7 +29,7 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
         // Unclear why layout must be called twice, but seems to be necessary
         editor.layout();
       }
-    };
+    }, [editor]);
 
     const handleMount: OnMount = (editor, monaco) => {
       setEditor(editor);
@@ -87,14 +87,14 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
           });
         },
       }),
-      [isReadOnly, editor],
+      [isReadOnly, editor, resizeEditorBasedOnContent],
     );
 
     useEffect(() => {
       // Triggered as the text can change without internal editing. (ie if the
       // controlled prop changes)
       resizeEditorBasedOnContent();
-    }, [text]);
+    }, [text, resizeEditorBasedOnContent]);
 
     // Triggering this on every render seems to keep the editor correctly sized
     // it is unclear why this is the case.

@@ -49,7 +49,7 @@ const ArtifactLoader = ({ enclaveUUID, fileUUID }: ArtifactLoaderProps) => {
         setFilesResult(files);
       }
     })();
-  }, [enclave, fileUUID]);
+  }, [kurtosisClient, enclave, fileUUID]);
 
   if (!isDefined(filesResult)) {
     return (
@@ -103,9 +103,10 @@ const ArtifactImpl = ({ enclave, artifactName, files }: ArtifactImplProps) => {
           let destinationNode = acc;
           let i = 0;
           while (i < filePath.length - 1) {
-            let nextNode = destinationNode.childNodes?.find((node) => node.name === filePath[i]);
+            const filePart = filePath[i];
+            let nextNode = destinationNode.childNodes?.find((node) => node.name === filePart);
             if (!isDefined(nextNode)) {
-              nextNode = { name: filePath[i], childNodes: [] };
+              nextNode = { name: filePart, childNodes: [] };
               destinationNode.childNodes?.push(nextNode);
             }
             destinationNode = nextNode;
