@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -273,9 +274,15 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 		if !auth {
 			return nil, stacktrace.Propagate(err, "User not authorized")
 		}*/
-	ctx = context.Background()
+	//ctx = context.Background()
 	result, err := (*c.engineServiceClient).CreateEnclave(ctx, req)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			logrus.Infof("[LEO-DEBUG] es un context canceled error")
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			logrus.Infof("[LEO-DEBUG] es un context deadline exceded error")
+		}
 		logrus.Infof("[LEO-DEBUG] create enclave error:\n%v", err)
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave from the EM")
 	}
