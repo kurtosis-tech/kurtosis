@@ -38,7 +38,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	image string,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcPortNum uint16,
-// The dirpath on the API container where the enclave data volume should be mounted
+	// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
@@ -241,6 +241,10 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	logrus.Debugf("APIC for enclave '%v' successfully created", enclaveUuid)
+
+	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds...")
+	time.Sleep(30 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	shouldKillContainer = false
 	return result, nil
