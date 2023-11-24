@@ -3,6 +3,8 @@ import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build
 import { FiPlus } from "react-icons/fi";
 import { Params, RouteObject } from "react-router-dom";
 import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
+import { GoToEnclaveOverviewButton } from "../../components/enclaves/GotToEncalaveOverviewButton";
+import { KurtosisBreadcrumbsHandle } from "../../components/KurtosisBreadcrumbs";
 import { RemoveFunctions } from "../../utils/types";
 import { EmuiAppState } from "../EmuiAppContext";
 import { Artifact } from "./enclave/artifact/Artifact";
@@ -10,7 +12,12 @@ import { Enclave } from "./enclave/Enclave";
 import { Service } from "./enclave/service/Service";
 import { EnclaveList } from "./EnclaveList";
 
-export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => [
+type KurtosisRouteObject = RouteObject & {
+  handle: KurtosisBreadcrumbsHandle;
+  children?: KurtosisRouteObject[];
+};
+
+export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObject[] => [
   {
     path: "/enclaves?",
     handle: { crumb: () => ({ name: "Enclaves", destination: "/" }) },
@@ -47,6 +54,7 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
               ],
             };
           },
+          hasTabs: true,
         },
         children: [
           {
@@ -73,6 +81,7 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
                     })),
                 };
               },
+              hasTabs: true,
             },
             children: [
               {
@@ -124,6 +133,10 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): RouteObject[] => 
                   { name: "Files", destination: `/enclave/${params.enclaveUUID}/file/${params.fileUUID}` },
                 ];
               },
+              hasTabs: false,
+              extraControls: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => (
+                <GoToEnclaveOverviewButton enclaveUUID={params.enclaveUUID} />
+              ),
             },
           },
           {

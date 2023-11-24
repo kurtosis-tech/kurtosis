@@ -13,7 +13,7 @@ import {
   MenuList,
   Text,
 } from "@chakra-ui/react";
-import { ReactElement, useEffect, useState } from "react";
+import { ReactElement, useMemo } from "react";
 import { BsCaretDownFill } from "react-icons/bs";
 import { Link, Params, UIMatch, useMatches } from "react-router-dom";
 import { EmuiAppState, useEmuiAppContext } from "../emui/EmuiAppContext";
@@ -22,9 +22,16 @@ import { RemoveFunctions } from "../utils/types";
 import {
   BREADCRUMBS_HEIGHT,
   MAIN_APP_LEFT_PADDING,
+  MAIN_APP_MAX_WIDTH_WITHOUT_PADDING,
   MAIN_APP_RIGHT_PADDING,
   MAIN_APP_TOP_PADDING,
 } from "./theme/constants";
+
+export type KurtosisBreadcrumbsHandle = {
+  crumb?: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => KurtosisBreadcrumb | KurtosisBreadcrumb[];
+  hasTabs?: boolean;
+  extraControls?: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => ReactElement;
+};
 
 type KurtosisBreadcrumbMenuItem = {
   name: string;
@@ -41,20 +48,10 @@ export type KurtosisBreadcrumb = {
 export const KurtosisBreadcrumbs = () => {
   const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave } = useEmuiAppContext();
 
-  const matches = useMatches() as UIMatch<
-    object,
-    {
-      crumb?: (
-        state: RemoveFunctions<EmuiAppState>,
-        params: Params<string>,
-      ) => KurtosisBreadcrumb | KurtosisBreadcrumb[];
-    }
-  >[];
+  const matches = useMatches() as UIMatch<object, KurtosisBreadcrumbsHandle>[];
 
-  const [matchCrumbs, setMatchCrumbs] = useState<KurtosisBreadcrumb[]>([]);
-
-  useEffect(() => {
-    setMatchCrumbs(
+  const matchCrumbs = useMemo(
+    () =>
       matches.flatMap((match) => {
         if (isDefined(match.handle?.crumb)) {
           const r = match.handle.crumb(
@@ -65,31 +62,55 @@ export const KurtosisBreadcrumbs = () => {
         }
         return [];
       }),
-    );
-  }, [matches, enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave]);
+    [matches, enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave],
+  );
+
+  const hasTabs = useMemo(
+    () => matches.reduce((acc, match) => (isDefined(match.handle?.hasTabs) ? match.handle.hasTabs : acc), false),
+    [matches],
+  );
+
+  const extraControls = useMemo(
+    () =>
+      matches
+        .map((match) =>
+          isDefined(match.handle?.extraControls)
+            ? match.handle?.extraControls(
+                { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave },
+                match.params,
+              )
+            : null,
+        )
+        .filter(isDefined),
+    [matches, enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave],
+  );
 
   return (
     <Flex
       h={BREADCRUMBS_HEIGHT}
       p={`${MAIN_APP_TOP_PADDING} ${MAIN_APP_RIGHT_PADDING} 24px ${MAIN_APP_LEFT_PADDING}`}
-      alignItems={"center"}
-      bg={"gray.850"}
+      bg={hasTabs ? "gray.850" : undefined}
     >
-      <Breadcrumb
-        variant={"topNavigation"}
-        separator={
-          <Text as={"span"} fontSize={"lg"}>
-            /
-          </Text>
-        }
-      >
-        {matchCrumbs.map((crumb, i, arr) => (
-          <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
-            <KurtosisBreadcrumbItem {...crumb} key={i} isLastItem={i === arr.length - 1} />
-          </BreadcrumbItem>
-        ))}
-      </Breadcrumb>
-      &nbsp;
+      <Flex w={MAIN_APP_MAX_WIDTH_WITHOUT_PADDING} alignItems={"center"} justifyContent={"space-between"}>
+        <Flex>
+          <Breadcrumb
+            variant={"topNavigation"}
+            separator={
+              <Text as={"span"} fontSize={"lg"}>
+                /
+              </Text>
+            }
+          >
+            {matchCrumbs.map((crumb, i, arr) => (
+              <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
+                <KurtosisBreadcrumbItem {...crumb} key={i} isLastItem={i === arr.length - 1} />
+              </BreadcrumbItem>
+            ))}
+          </Breadcrumb>
+          &nbsp;
+        </Flex>
+        <Flex>{extraControls}</Flex>
+      </Flex>
     </Flex>
   );
 };

@@ -133,6 +133,7 @@ const theme = extendTheme({
         })),
         ghost: defineStyle((props) => ({
           _hover: { bg: "gray.650" },
+          color: props.colorScheme === "gray" ? undefined : `${props.colorScheme}.400`,
         })),
         sortableHeader: (props: StyleFunctionProps) => {
           const ghost = theme.components.Button.variants!.ghost(props);
