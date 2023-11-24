@@ -165,6 +165,10 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 		}
 	}()
 
+	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds...")
+	time.Sleep(30 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
+
 	shouldDeleteLogsCollector = false
 	//shouldDeleteNetwork = false
 	shouldDeleteVolume = false
