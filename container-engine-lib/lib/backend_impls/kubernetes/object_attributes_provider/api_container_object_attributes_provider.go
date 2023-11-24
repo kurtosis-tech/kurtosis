@@ -28,7 +28,9 @@ type KubernetesApiContainerObjectAttributesProvider interface {
 		privateGrpcPortId string,
 		privateGrpcPortSpec *port_spec.PortSpec,
 		privateGrpcProxyPortId string,
-		privateGrpcProxyPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
+		privateGrpcProxyPortSpec *port_spec.PortSpec,
+		privateTunnelPortId string,
+		privateTunnelPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
 	ForApiContainerServiceAccount() (KubernetesObjectAttributes, error)
 	ForApiContainerRole() (KubernetesObjectAttributes, error)
 	ForApiContainerClusterRole() (KubernetesObjectAttributes, error)
@@ -74,6 +76,8 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 	grpcPortSpec *port_spec.PortSpec,
 	grpcProxyPortId string,
 	grpcProxyPortSpec *port_spec.PortSpec,
+	tunnelPortId string,
+	tunnelPortSpec *port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
 	labels, err := provider.getLabelsForApiContainerObject()
 	if err != nil {
@@ -81,7 +85,8 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
-		grpcPortId: grpcPortSpec,
+		grpcPortId:   grpcPortSpec,
+		tunnelPortId: tunnelPortSpec,
 	}
 	serializedPortsSpec, err := kubernetes_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {

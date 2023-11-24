@@ -141,7 +141,9 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		consts.KurtosisInternalContainerGrpcPortSpecId,
 		privateGrpcPortSpec,
 		consts.KurtosisInternalContainerGrpcProxyPortSpecId,
-		nil)
+		nil,
+		consts.KurtosisInternalContainerTunnelServerSpecId,
+		privateTunnelPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
