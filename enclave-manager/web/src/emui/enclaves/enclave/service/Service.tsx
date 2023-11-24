@@ -6,8 +6,8 @@ import { AppPageLayout } from "../../../../components/AppLayout";
 import { HoverLineTabList } from "../../../../components/HoverLineTabList";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
 import { isDefined } from "../../../../utils";
-import { useFullEnclave } from "../../../EmuiAppContext";
 import { EnclaveFullInfo } from "../../types";
+import { useEnclaveFromParams } from "../EnclaveRouteContext";
 import { ServiceLogs } from "./logs/ServiceLogs";
 import { ServiceOverview } from "./overview/ServiceOverview";
 
@@ -17,18 +17,10 @@ const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInf
 ];
 
 export const Service = () => {
-  const { enclaveUUID, serviceUUID } = useParams();
-  const enclave = useFullEnclave(enclaveUUID || "unknown");
+  const { serviceUUID } = useParams();
+  const enclave = useEnclaveFromParams();
 
-  if (enclave.isErr) {
-    return (
-      <AppPageLayout>
-        <KurtosisAlert message={"Enclave could not load"} />
-      </AppPageLayout>
-    );
-  }
-
-  if (!isDefined(enclave.value.services)) {
+  if (!isDefined(enclave.services)) {
     return (
       <AppPageLayout>
         <Spinner />
@@ -36,7 +28,7 @@ export const Service = () => {
     );
   }
 
-  if (enclave.value.services.isErr) {
+  if (enclave.services.isErr) {
     return (
       <AppPageLayout>
         <KurtosisAlert message={"Services for enclave could not load"} />
@@ -44,7 +36,7 @@ export const Service = () => {
     );
   }
 
-  const service = Object.values(enclave.value.services.value.serviceInfo).find(
+  const service = Object.values(enclave.services.value.serviceInfo).find(
     (service) => service.shortenedUuid === serviceUUID,
   );
   if (!isDefined(service)) {
@@ -55,7 +47,7 @@ export const Service = () => {
     );
   }
 
-  return <ServiceImpl enclave={enclave.value} service={service} />;
+  return <ServiceImpl enclave={enclave} service={service} />;
 };
 
 type ServiceImplProps = {

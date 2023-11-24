@@ -1,6 +1,5 @@
 import { SmallCloseIcon } from "@chakra-ui/icons";
 import {
-  Box,
   Button,
   ButtonGroup,
   Editable,
@@ -38,6 +37,7 @@ type LogViewerProps = {
   progressPercent?: number | "indeterminate" | "failed";
   ProgressWidget?: ReactElement;
   logsFileName?: string;
+  searchEnabled?: boolean;
 };
 
 type SearchBaseState = {
@@ -67,6 +67,7 @@ export const LogViewer = ({
   logLines: propsLogLines,
   ProgressWidget,
   logsFileName,
+  searchEnabled,
 }: LogViewerProps) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [logLines, setLogLines] = useState(propsLogLines);
@@ -130,40 +131,27 @@ export const LogViewer = ({
     <Flex
       flexDirection={"column"}
       h={"100%"}
+      w={"100%"}
+      flex={"1"}
       borderRadius={"6px"}
       borderColor={"whiteAlpha.300"}
       borderWidth={"1px"}
       borderStyle={"solid"}
       overflow={"clip"}
     >
-      <SearchControls searchState={searchState} onChangeSearchState={handleSearchStateChange} logLines={logLines} />
-      <Flex flexDirection={"column"} position={"relative"} h={"100%"}>
-        {isDefined(ProgressWidget) && (
-          <Box
-            display={"inline-flex"}
-            alignItems={"center"}
-            justifyContent={"center"}
-            gap={"8px"}
-            position={"absolute"}
-            top={"16px"}
-            right={"16px"}
-            padding={"24px"}
-            h={"48px"}
-            bg={"gray.650"}
-            borderRadius={"8px"}
-            fontSize={"xl"}
-            fontWeight={"semibold"}
-            zIndex={1}
-          >
-            {ProgressWidget}
-          </Box>
+      <Flex width={"100%"} p={"12px"} bg={"gray.850"} gap={"16px"}>
+        {searchEnabled && (
+          <SearchControls searchState={searchState} onChangeSearchState={handleSearchStateChange} logLines={logLines} />
         )}
+        {isDefined(ProgressWidget) && ProgressWidget}
+      </Flex>
+      <Flex flexDirection={"column"} position={"relative"} h={"100%"} flex={"1"}>
         <Virtuoso
           ref={virtuosoRef}
           followOutput={automaticScroll}
           atBottomStateChange={handleBottomStateChange}
           isScrolling={setUserIsScrolling}
-          style={{ height: "100%" }}
+          style={{ height: "100%", flex: "1" }}
           data={logLines.filter(({ message }) => isDefined(message))}
           itemContent={(index, line) => (
             <LogLine
@@ -220,7 +208,7 @@ type SearchControlsProps = {
 
 const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchControlsProps) => {
   const searchRef: MutableRefObject<HTMLInputElement | null> = useRef(null);
-  const [showSeachForm, setShowSearchForm] = useState(false);
+  const [showSearchForm, setShowSearchForm] = useState(false);
 
   const updateMatches = useCallback(
     (searchTerm: string) => {
@@ -339,103 +327,102 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
     return () => window.removeEventListener("keydown", listener);
   }, [onChangeSearchState, searchRef]);
 
-  return (
-    <Flex width={"100%"} p={"12px"} bg={"gray.850"}>
-      {!showSeachForm && (
-        <Button
-          bg={"gray.650"}
-          color={"gray.150"}
-          leftIcon={<FiSearch />}
-          rightIcon={<FindCommand />}
-          variant={"solid"}
-          onClick={() => setShowSearchForm(true)}
-        >
-          Search
-        </Button>
-      )}
-      {showSeachForm && (
-        <FormControl isInvalid={searchState.type === "error"}>
-          <Flex gap={"16px"} alignItems={"center"}>
-            <InputGroup
-              size="md"
-              width={"296px"}
-              bg={"gray.650"}
-              color={"gray.150"}
-              variant={"filled"}
-              borderRadius={"6px"}
-            >
-              <InputLeftElement pointerEvents="none">
-                <Icon as={FiSearch} color="gray.100" />
-              </InputLeftElement>
-              <Input
-                autoFocus
-                ref={searchRef}
-                value={searchState.rawSearchTerm}
-                onChange={handleOnChange}
-                placeholder={"Search"}
-              />
-              {searchState.type !== "init" && (
-                <InputRightElement>
-                  <SmallCloseIcon onClick={handleClearSearch} />
-                </InputRightElement>
-              )}
-            </InputGroup>
-            <ButtonGroup>
-              <Button
-                size={"sm"}
-                ml={2}
-                onClick={handlePriorMatchClick}
-                isDisabled={searchState.type !== "success" || searchState.searchMatchesIndices.length === 0}
-                colorScheme={"darkBlue"}
-                leftIcon={<MdArrowBackIosNew />}
-              >
-                Previous
-              </Button>
-              <Button
-                size={"sm"}
-                ml={2}
-                onClick={handleNextMatchClick}
-                isDisabled={searchState.type !== "success" || searchState.searchMatchesIndices.length === 0}
-                colorScheme={"darkBlue"}
-                rightIcon={<MdArrowForwardIos />}
-              >
-                Next
-              </Button>
-            </ButtonGroup>
-            {searchState.rawSearchTerm.length > 0 && (
-              <Flex ml={2} alignItems={"center"}>
-                {searchState.type === "success" && (
-                  <Text
-                    align={"left"}
-                    color={searchState.searchMatchesIndices.length === 0 ? "red" : "kurtosisGreen.400"}
-                  >
-                    {searchState.searchMatchesIndices.length > 0 && searchState.currentSearchIndex !== undefined && (
-                      <span>
-                        <Editable
-                          display={"inline"}
-                          p={0}
-                          m={"0 4px 0 0"}
-                          size={"sm"}
-                          value={`${searchState.currentSearchIndex + 1}`}
-                          onChange={handleIndexInputChange}
-                        >
-                          <Tooltip label="Click to edit" shouldWrapChildren={true}>
-                            <EditablePreview />
-                          </Tooltip>
-                          <EditableInput p={1} width={"50px"} />
-                        </Editable>
-                        <>/ </>
-                      </span>
-                    )}
-                    <span>{searchState.searchMatchesIndices.length} matches</span>
-                  </Text>
-                )}
-              </Flex>
+  if (!showSearchForm) {
+    return (
+      <Button
+        bg={"gray.650"}
+        color={"gray.150"}
+        leftIcon={<FiSearch />}
+        rightIcon={<FindCommand />}
+        variant={"solid"}
+        onClick={() => setShowSearchForm(true)}
+      >
+        Search
+      </Button>
+    );
+  } else {
+    return (
+      <FormControl isInvalid={searchState.type === "error"}>
+        <Flex gap={"16px"} alignItems={"center"}>
+          <InputGroup
+            size="md"
+            width={"296px"}
+            bg={"gray.650"}
+            color={"gray.150"}
+            variant={"filled"}
+            borderRadius={"6px"}
+          >
+            <InputLeftElement pointerEvents="none">
+              <Icon as={FiSearch} color="gray.100" />
+            </InputLeftElement>
+            <Input
+              autoFocus
+              ref={searchRef}
+              value={searchState.rawSearchTerm}
+              onChange={handleOnChange}
+              placeholder={"Search"}
+            />
+            {searchState.type !== "init" && (
+              <InputRightElement>
+                <SmallCloseIcon onClick={handleClearSearch} />
+              </InputRightElement>
             )}
-          </Flex>
-          {searchState.type === "error" && <FormErrorMessage>{searchState.error}</FormErrorMessage>}
-        </FormControl>
-      )}
-    </Flex>
-  );
+          </InputGroup>
+          <ButtonGroup>
+            <Button
+              size={"sm"}
+              ml={2}
+              onClick={handlePriorMatchClick}
+              isDisabled={searchState.type !== "success" || searchState.searchMatchesIndices.length === 0}
+              colorScheme={"darkBlue"}
+              leftIcon={<MdArrowBackIosNew />}
+            >
+              Previous
+            </Button>
+            <Button
+              size={"sm"}
+              ml={2}
+              onClick={handleNextMatchClick}
+              isDisabled={searchState.type !== "success" || searchState.searchMatchesIndices.length === 0}
+              colorScheme={"darkBlue"}
+              rightIcon={<MdArrowForwardIos />}
+            >
+              Next
+            </Button>
+          </ButtonGroup>
+          {searchState.rawSearchTerm.length > 0 && (
+            <Flex ml={2} alignItems={"center"}>
+              {searchState.type === "success" && (
+                <Text
+                  align={"left"}
+                  color={searchState.searchMatchesIndices.length === 0 ? "red" : "kurtosisGreen.400"}
+                >
+                  {searchState.searchMatchesIndices.length > 0 && searchState.currentSearchIndex !== undefined && (
+                    <span>
+                      <Editable
+                        display={"inline"}
+                        p={0}
+                        m={"0 4px 0 0"}
+                        size={"sm"}
+                        value={`${searchState.currentSearchIndex + 1}`}
+                        onChange={handleIndexInputChange}
+                      >
+                        <Tooltip label="Click to edit" shouldWrapChildren={true}>
+                          <EditablePreview />
+                        </Tooltip>
+                        <EditableInput p={1} width={"50px"} />
+                      </Editable>
+                      <>/ </>
+                    </span>
+                  )}
+                  <span>{searchState.searchMatchesIndices.length} matches</span>
+                </Text>
+              )}
+            </Flex>
+          )}
+        </Flex>
+        {searchState.type === "error" && <FormErrorMessage>{searchState.error}</FormErrorMessage>}
+      </FormControl>
+    );
+  }
 };

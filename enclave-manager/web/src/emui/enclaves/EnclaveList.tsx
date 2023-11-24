@@ -1,4 +1,4 @@
-import { Button, ButtonGroup, Flex } from "@chakra-ui/react";
+import { Button, ButtonGroup, Flex, Text } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import { AppPageLayout } from "../../components/AppLayout";
 import { CreateEnclaveButton } from "../../components/enclaves/CreateEnclaveButton";
@@ -30,20 +30,23 @@ export const EnclaveList = () => {
 
   return (
     <AppPageLayout>
-      <Flex direction="column" gap={"24px"} width={"100%"}>
-        <Flex justifyContent={"flex-end"}>
-          <Flex gap={"24px"} alignItems={"center"}>
-            {selectedEnclaves.length > 0 && (
-              <ButtonGroup isAttached variant={"kurtosisGroupOutline"} size={"sm"}>
-                <Button variant={"kurtosisDisabled"} colorScheme={"gray"}>
-                  {selectedEnclaves.length} selected
-                </Button>
-                <DeleteEnclavesButton enclaves={selectedEnclaves} />
-              </ButtonGroup>
-            )}
-            <CreateEnclaveButton />
-          </Flex>
+      <Flex pl={"6px"} pb={"16px"} alignItems={"center"} justifyContent={"space-between"}>
+        <Text fontSize={"lg"} fontWeight={"medium"}>
+          Enclaves
+        </Text>
+        <Flex gap={"24px"} alignItems={"center"}>
+          {selectedEnclaves.length > 0 && (
+            <ButtonGroup isAttached variant={"kurtosisGroupOutline"} size={"sm"}>
+              <Button variant={"kurtosisDisabled"} colorScheme={"gray"}>
+                {selectedEnclaves.length} selected
+              </Button>
+              <DeleteEnclavesButton enclaves={selectedEnclaves} />
+            </ButtonGroup>
+          )}
+          <CreateEnclaveButton />
         </Flex>
+      </Flex>
+      <Flex direction="column" pt={"24px"} width={"100%"}>
         {enclaves.isOk && (
           <EnclavesTable
             enclavesData={enclaves.value}

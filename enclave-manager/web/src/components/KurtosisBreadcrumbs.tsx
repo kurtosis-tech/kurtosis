@@ -19,18 +19,11 @@ import { Link, Params, UIMatch, useMatches } from "react-router-dom";
 import { EmuiAppState, useEmuiAppContext } from "../emui/EmuiAppContext";
 import { isDefined } from "../utils";
 import { RemoveFunctions } from "../utils/types";
-import {
-  BREADCRUMBS_HEIGHT,
-  MAIN_APP_LEFT_PADDING,
-  MAIN_APP_MAX_WIDTH_WITHOUT_PADDING,
-  MAIN_APP_RIGHT_PADDING,
-  MAIN_APP_TOP_PADDING,
-} from "./theme/constants";
+import { BREADCRUMBS_HEIGHT, MAIN_APP_MAX_WIDTH_WITHOUT_PADDING } from "./theme/constants";
 
 export type KurtosisBreadcrumbsHandle = {
   crumb?: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => KurtosisBreadcrumb | KurtosisBreadcrumb[];
-  hasTabs?: boolean;
-  extraControls?: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => ReactElement;
+  extraControls?: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => ReactElement | null;
 };
 
 type KurtosisBreadcrumbMenuItem = {
@@ -46,7 +39,8 @@ export type KurtosisBreadcrumb = {
 };
 
 export const KurtosisBreadcrumbs = () => {
-  const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave } = useEmuiAppContext();
+  const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave, starlarkRunningInEnclaves } =
+    useEmuiAppContext();
 
   const matches = useMatches() as UIMatch<object, KurtosisBreadcrumbsHandle>[];
 
@@ -55,19 +49,27 @@ export const KurtosisBreadcrumbs = () => {
       matches.flatMap((match) => {
         if (isDefined(match.handle?.crumb)) {
           const r = match.handle.crumb(
-            { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave },
+            {
+              enclaves,
+              filesAndArtifactsByEnclave,
+              starlarkRunsByEnclave,
+              servicesByEnclave,
+              starlarkRunningInEnclaves,
+            },
             match.params,
           );
           return Array.isArray(r) ? r : [r];
         }
         return [];
       }),
-    [matches, enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave],
-  );
-
-  const hasTabs = useMemo(
-    () => matches.reduce((acc, match) => (isDefined(match.handle?.hasTabs) ? match.handle.hasTabs : acc), false),
-    [matches],
+    [
+      matches,
+      enclaves,
+      filesAndArtifactsByEnclave,
+      starlarkRunsByEnclave,
+      servicesByEnclave,
+      starlarkRunningInEnclaves,
+    ],
   );
 
   const extraControls = useMemo(
@@ -76,21 +78,30 @@ export const KurtosisBreadcrumbs = () => {
         .map((match) =>
           isDefined(match.handle?.extraControls)
             ? match.handle?.extraControls(
-                { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave },
+                {
+                  enclaves,
+                  filesAndArtifactsByEnclave,
+                  starlarkRunsByEnclave,
+                  servicesByEnclave,
+                  starlarkRunningInEnclaves,
+                },
                 match.params,
               )
             : null,
         )
         .filter(isDefined),
-    [matches, enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave],
+    [
+      matches,
+      enclaves,
+      filesAndArtifactsByEnclave,
+      starlarkRunsByEnclave,
+      servicesByEnclave,
+      starlarkRunningInEnclaves,
+    ],
   );
 
   return (
-    <Flex
-      h={BREADCRUMBS_HEIGHT}
-      p={`${MAIN_APP_TOP_PADDING} ${MAIN_APP_RIGHT_PADDING} 24px ${MAIN_APP_LEFT_PADDING}`}
-      bg={hasTabs ? "gray.850" : undefined}
-    >
+    <Flex h={BREADCRUMBS_HEIGHT}>
       <Flex w={MAIN_APP_MAX_WIDTH_WITHOUT_PADDING} alignItems={"center"} justifyContent={"space-between"}>
         <Flex>
           <Breadcrumb

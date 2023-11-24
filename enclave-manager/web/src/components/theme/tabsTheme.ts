@@ -12,10 +12,14 @@ export const tabsTheme = defineMultiStyleConfig({
   variants: {
     line: (props: StyleFunctionProps) => ({
       root: {
+        display: "flex",
+        flexDirection: "column",
         height: "100%",
+        width: "100%",
+        flex: "1",
       },
       tablist: {
-        height: "56px",
+        height: "47px",
         borderColor: "transparent",
       },
       tab: {
@@ -30,9 +34,15 @@ export const tabsTheme = defineMultiStyleConfig({
         textTransform: "capitalize",
       },
       tabpanels: {
+        display: "flex",
+        flexDirection: "column",
         height: "100%",
+        flex: "1",
       },
       tabpanel: {
+        display: "flex",
+        flexDirection: "column",
+        flex: "1",
         padding: "32px 0px",
         height: "100%",
       },

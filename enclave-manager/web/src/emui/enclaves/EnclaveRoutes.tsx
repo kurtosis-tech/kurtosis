@@ -1,7 +1,7 @@
 import { Icon } from "@chakra-ui/react";
 import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { FiPlus } from "react-icons/fi";
-import { Params, RouteObject } from "react-router-dom";
+import { Outlet, Params, RouteObject } from "react-router-dom";
 import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
 import { GoToEnclaveOverviewButton } from "../../components/enclaves/GotToEncalaveOverviewButton";
 import { KurtosisBreadcrumbsHandle } from "../../components/KurtosisBreadcrumbs";
@@ -9,11 +9,13 @@ import { RemoveFunctions } from "../../utils/types";
 import { EmuiAppState } from "../EmuiAppContext";
 import { Artifact } from "./enclave/artifact/Artifact";
 import { Enclave } from "./enclave/Enclave";
+import { EnclaveRouteContextProvider } from "./enclave/EnclaveRouteContext";
+import { EnclaveLogs } from "./enclave/logs/EnclaveLogs";
 import { Service } from "./enclave/service/Service";
 import { EnclaveList } from "./EnclaveList";
 
 type KurtosisRouteObject = RouteObject & {
-  handle: KurtosisBreadcrumbsHandle;
+  handle?: KurtosisBreadcrumbsHandle;
   children?: KurtosisRouteObject[];
 };
 
@@ -31,6 +33,11 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObje
       {
         path: "/enclave/:enclaveUUID",
         id: "enclave",
+        element: (
+          <EnclaveRouteContextProvider>
+            <Outlet />
+          </EnclaveRouteContextProvider>
+        ),
         handle: {
           crumb: ({ enclaves: enclavesResult }: RemoveFunctions<EmuiAppState>, params: Params) => {
             const enclaves = enclavesResult.unwrapOr([]);
@@ -137,6 +144,22 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObje
               extraControls: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => (
                 <GoToEnclaveOverviewButton enclaveUUID={params.enclaveUUID} />
               ),
+            },
+          },
+          {
+            path: "logs",
+            id: "enclaveLogs",
+            element: <EnclaveLogs />,
+            handle: {
+              hasTabs: false,
+              extraControls: ({ starlarkRunningInEnclaves }: RemoveFunctions<EmuiAppState>, params: Params<string>) =>
+                starlarkRunningInEnclaves.some((enclave) => enclave.shortenedUuid === params.enclaveUUID) ? null : (
+                  <GoToEnclaveOverviewButton enclaveUUID={params.enclaveUUID} />
+                ),
+              crumb: () => ({
+                name: "Logs",
+                destination: "none",
+              }),
             },
           },
           {

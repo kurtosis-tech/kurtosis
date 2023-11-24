@@ -1,24 +1,19 @@
 import { Flex, TabPanel, TabPanels, Tabs, Text } from "@chakra-ui/react";
-import { Location, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-import { StarlarkRunResponseLine } from "enclave-manager-sdk/build/api_container_service_pb";
-import { FunctionComponent, useEffect, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import { AppPageLayout } from "../../../components/AppLayout";
 import { EditEnclaveButton } from "../../../components/enclaves/EditEnclaveButton";
 import { DeleteEnclavesButton } from "../../../components/enclaves/widgets/DeleteEnclavesButton";
 import { FeatureNotImplementedModal } from "../../../components/FeatureNotImplementedModal";
 import { HoverLineTabList } from "../../../components/HoverLineTabList";
 import { KurtosisAlert } from "../../../components/KurtosisAlert";
-import { MAIN_APP_MAX_WIDTH_WITHOUT_PADDING } from "../../../components/theme/constants";
-import { isDefined } from "../../../utils";
 import { useFullEnclave } from "../../EmuiAppContext";
 import { EnclaveFullInfo } from "../types";
-import { EnclaveLogs } from "./logs/EnclaveLogs";
 import { EnclaveOverview } from "./overview/EnclaveOverview";
 
 const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInfo }> }[] = [
   { path: "overview", element: EnclaveOverview },
-  { path: "logs", element: EnclaveLogs },
 ];
 
 export const Enclave = () => {
@@ -43,7 +38,6 @@ type EnclaveImplProps = {
 const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   const navigator = useNavigate();
   const params = useParams();
-  const location = useLocation() as Location<{ logs: AsyncIterable<StarlarkRunResponseLine> }>;
   const activeTab = params.activeTab || "overview";
   const activeIndex = tabs.findIndex((tab) => tab.path === activeTab);
 
@@ -53,34 +47,13 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
 
   const handleTabChange = (newTabIndex: number) => {
     const tab = tabs[newTabIndex];
-    if (tab.path === "logs" && !isDefined(location.state?.logs)) {
-      setUnavailableModalState({
-        isOpen: true,
-        featureName: "Enclave Logs",
-        issueUrl: "https://github.com/kurtosis-tech/kurtosis/issues/1721",
-        message:
-          "Enclave logs are currently only viewable during configuration. Please upvote this feature request if you'd like enclave logs to be persisted.",
-      });
-      return;
-    }
     navigator(`/enclave/${enclave.shortenedUuid}/${tab.path}`);
   };
-
-  useEffect(() => {
-    if (isDefined(location.state?.logs)) {
-      navigator(`/enclave/${enclave.shortenedUuid}/logs`, { state: location.state, replace: true });
-    }
-  }, [navigator, location.state, activeIndex, enclave.shortenedUuid]);
 
   return (
     <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
       <AppPageLayout>
-        <Flex
-          justifyContent={"space-between"}
-          alignItems={"flex-end"}
-          width={"100%"}
-          maxWidth={MAIN_APP_MAX_WIDTH_WITHOUT_PADDING}
-        >
+        <Flex justifyContent={"space-between"} alignItems={"flex-end"} width={"100%"}>
           <Flex alignItems={"center"} gap={"8px"}>
             <Text as={"span"} fontSize={"lg"} fontWeight={"md"} mb={"4px"}>
               {enclave.name}
