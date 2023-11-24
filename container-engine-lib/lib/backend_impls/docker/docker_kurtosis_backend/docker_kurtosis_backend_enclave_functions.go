@@ -40,10 +40,6 @@ type matchingNetworkInformation struct {
 
 func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string) (*enclave.Enclave, error) {
 
-	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds...")
-	time.Sleep(30 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
-
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
 	searchNetworkLabels := map[string]string{
@@ -125,6 +121,9 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 
 	*/
 
+	logrus.Infof("[LEO-DEBUG] sleeping for 2 mins")
+	time.Sleep(2 * time.Minute)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
 	enclaveDataVolumeNameStr := enclaveDataVolumeAttrs.GetName().GetString()
 	enclaveDataVolumeLabelStrs := map[string]string{}
 	for labelKey, labelValue := range enclaveDataVolumeAttrs.GetLabels() {
