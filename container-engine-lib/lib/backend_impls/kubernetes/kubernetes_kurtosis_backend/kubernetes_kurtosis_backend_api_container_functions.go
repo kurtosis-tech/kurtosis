@@ -971,8 +971,8 @@ func getApiContainerObjectsFromKubernetesResources(
 		privatePorts, err := shared_helpers.GetPrivatePortsAndValidatePortExistence(
 			kubernetesService,
 			map[string]bool{
-				consts.KurtosisInternalContainerGrpcPortSpecId: true,
-				consts.KurtosisInternalContainerTunnelServerSpecId: true
+				consts.KurtosisInternalContainerGrpcPortSpecId:     true,
+				consts.KurtosisInternalContainerTunnelServerSpecId: true,
 			},
 		)
 		if err != nil {
