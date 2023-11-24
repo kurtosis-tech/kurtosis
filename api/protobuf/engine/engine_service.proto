@@ -103,6 +103,8 @@ message EnclaveAPIContainerInfo {
   uint32 grpc_port_inside_enclave = 3;
   // this is the bridge ip address that gets assigned to api container
   string bridge_ip_address = 6;
+  // THe tunnel port inside the enclave network that the API container's tunnel server listens on
+  uint32 tunnel_port_inside_enclave = 4;
 }
 
 // Will only be present if the API container is running
@@ -111,6 +113,8 @@ message EnclaveAPIContainerHostMachineInfo {
   string ip_on_host_machine = 4;
   // The grpc port on the container engine host machine where the API container can be reached
   uint32 grpc_port_on_host_machine = 5;
+  // The tunnel port on the container engine host machine where the API container's tunnel server can be reached
+  uint32 tunnel_port_on_host_machine = 6;
 }
 
 // Enclaves are defined by a network in the container system, which is why there's a bunch of network information here
