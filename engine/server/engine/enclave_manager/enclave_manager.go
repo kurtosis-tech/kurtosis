@@ -21,7 +21,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -231,10 +230,6 @@ func (manager *EnclaveManager) GetEnclaves(
 	for enclaveUuid, enclaveInfo := range enclaves {
 		enclaveMapKeyedWithUuidStr[string(enclaveUuid)] = enclaveInfo
 	}
-
-	logrus.Infof("[LEO-DEBUG] sleeping for 40 seconds")
-	time.Sleep(40 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	return enclaveMapKeyedWithUuidStr, nil
 }
