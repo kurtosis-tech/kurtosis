@@ -78,22 +78,22 @@ func runDaemon(ctx context.Context) error {
 
 	portForwardManager := port_forward_manager.NewPortForwardManager(kurtosisContext)
 
-	portalServer := grpc_server.NewPortalServer(portForwardManager)
-	defer portalServer.Close()
+	portalService := grpc_server.NewPortalService(portForwardManager)
+	defer portalService.Close()
 
 	kurtosisPortalDaemonRegistrationFunc := func(grpcServer *grpc.Server) {
-		kurtosis_portal_rpc_api_bindings.RegisterKurtosisPortalDaemonServer(grpcServer, portalServer)
+		kurtosis_portal_rpc_api_bindings.RegisterKurtosisPortalDaemonServer(grpcServer, portalService)
 	}
-	portalServerDaemon := minimal_grpc_server.NewMinimalGRPCServer(
-		grpc_server.PortalServerGrpcPort,
+	portalServiceDaemon := minimal_grpc_server.NewMinimalGRPCServer(
+		grpc_server.PortalServiceGrpcPort,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			kurtosisPortalDaemonRegistrationFunc,
 		},
 	)
 
-	logrus.Infof("Kurtosis Portal Daemon Server running and listening on port %d", grpc_server.PortalServerGrpcPort)
-	if err := portalServerDaemon.RunUntilStopped(ctx.Done()); err != nil {
+	logrus.Infof("Kurtosis Portal Daemon Server running and listening on port %d", grpc_server.PortalServiceGrpcPort)
+	if err := portalServiceDaemon.RunUntilStopped(ctx.Done()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the Kurtosis Portal Daemon Server")
 	}
 	return nil
