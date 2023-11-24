@@ -18,10 +18,20 @@ func NewPortForwardManager(kurtosisContext *kurtosis_context.KurtosisContext) *P
 	}
 }
 
+// TODO(omar): get enclaves can take a moment so look for a lighter ping that also verifies we've an engine connection
+// or consider an alternative health indicator
 func (manager *PortForwardManager) Ping(ctx context.Context) error {
 	_, err := manager.kurtosis.GetEnclaves(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "Port Forward Manager failed to contact Kurtosis Engine")
 	}
 	return nil
+}
+
+func (manager *PortForwardManager) ForwardUserServiceToEphemeralPort(ctx context.Context, enclaveId string, serviceId string, portId string) (uint16, error) {
+	return 0, nil
+}
+
+func (manager *PortForwardManager) ForwardUserServiceToStaticPort(ctx context.Context, enclaveId string, serviceId string, portId string, localPortNumber uint16) (uint16, error) {
+	return 0, nil
 }

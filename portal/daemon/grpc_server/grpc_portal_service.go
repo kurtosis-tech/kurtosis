@@ -34,8 +34,11 @@ func (service *GrpcPortalService) Ping(ctx context.Context, ping *kurtosis_porta
 }
 
 func (service *GrpcPortalService) ForwardUserServicePort(ctx context.Context, args *kurtosis_portal_rpc_api_bindings.ForwardUserServicePortArgs) (*kurtosis_portal_rpc_api_bindings.ForwardUserServicePortResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	localPort, err := service.portForwardManager.ForwardUserServiceToEphemeralPort(ctx, args.EnclaveId, args.ServiceId, args.PortId)
+	if err != nil {
+		return nil, err
+	}
+	return &kurtosis_portal_rpc_api_bindings.ForwardUserServicePortResponse{LocalPortNumber: uint32(localPort)}, nil
 }
 
 func (service *GrpcPortalService) Close() error {
