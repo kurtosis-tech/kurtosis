@@ -121,9 +121,6 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 
 	*/
 
-	logrus.Infof("[LEO-DEBUG] sleeping for 2 mins")
-	time.Sleep(2 * time.Minute)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 	enclaveDataVolumeNameStr := enclaveDataVolumeAttrs.GetName().GetString()
 	enclaveDataVolumeLabelStrs := map[string]string{}
 	for labelKey, labelValue := range enclaveDataVolumeAttrs.GetLabels() {
@@ -151,6 +148,9 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 			}
 		}
 	}()
+	logrus.Infof("[LEO-DEBUG] sleeping for 40 seconds")
+	time.Sleep(40 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	// TODO: return production mode for create enclave request as well
 	newEnclave := enclave.NewEnclave(enclaveUuid, enclaveName, enclave.EnclaveStatus_Empty, &creationTime, false)
@@ -417,7 +417,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	// Keyed by network ID
+// Keyed by network ID
 	map[enclave.EnclaveUUID]*matchingNetworkInformation,
 	error,
 ) {
