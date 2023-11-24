@@ -971,8 +971,9 @@ func getApiContainerObjectsFromKubernetesResources(
 		privatePorts, err := shared_helpers.GetPrivatePortsAndValidatePortExistence(
 			kubernetesService,
 			map[string]bool{
-				consts.KurtosisInternalContainerGrpcPortSpecId:     true,
-				consts.KurtosisInternalContainerTunnelServerSpecId: true,
+				consts.KurtosisInternalContainerGrpcPortSpecId: true,
+				// TODO(omar): this will break for users with enclaves running prior to upgrading; skipping validation for now as it blocks almost everything (enclave ls, etc)
+				consts.KurtosisInternalContainerTunnelServerSpecId: false,
 			},
 		)
 		if err != nil {
