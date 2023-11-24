@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/api_container_gateway"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"time"
 )
@@ -44,6 +45,7 @@ func RunApiContainerGatewayUntilStopped(connectionProvider *connection.GatewayCo
 		},
 	)
 
+	logrus.Infof("Running grpc server for API container in enclave '%v' on local port %d", enclaveInfo.GetName(), gatewayPort)
 	if err := apiContainerGatewayGrpcServer.RunUntilStopped(gatewayStopChannel); err != nil {
 		return stacktrace.Propagate(err, "Expected to run API container gateway server until stopped, but the server exited with a non-nil error")
 	}
