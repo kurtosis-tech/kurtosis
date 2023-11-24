@@ -82,8 +82,7 @@ func (provider *GatewayConnectionProvider) ForEnclaveApiContainer(enclaveInfo *k
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a port spec describing api container GRPC port on port number'%v', instead a non-nil error was returned", grpcPortUint16)
 	}
 
-	// TODO(omar): lookup tunnel port from APIC API, once it's added
-	var tunnelPortUint16 = uint16(9501)
+	var tunnelPortUint16 = uint16(apiContainerInfo.GetTunnelPortInsideEnclave())
 	apiContainerTunnelPortSpec, err := port_spec.NewPortSpec(tunnelPortUint16, port_spec.TransportProtocol_TCP, httpApplicationProtocol, noWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a port spec describing api container tunnel port on port number'%v', instead a non-nil error was returned", tunnelPortUint16)
@@ -100,6 +99,11 @@ func (provider *GatewayConnectionProvider) ForEnclaveApiContainer(enclaveInfo *k
 	apiContainerConnection, err := newLocalPortToPodPortConnection(provider.config, podPortforwardEndpoint, apiContainerPorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to connect to api container in enclave '%v', instead a non-nil error was returned", enclaveId)
+	}
+
+	// overwrite tunnel host port following port forwarding for enclave
+	if tunnelLocalPortSpec, found := apiContainerConnection.localPorts[tunnelPortIdStr]; found {
+		enclaveInfo.ApiContainerHostMachineInfo.TunnelPortOnHostMachine = uint32(tunnelLocalPortSpec.GetNumber())
 	}
 
 	return apiContainerConnection, nil
