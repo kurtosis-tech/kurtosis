@@ -149,7 +149,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 		}
 	}()
 
-	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds")
+	logrus.Infof("[LEO-DEBUG] sleeping for 60 seconds")
 	time.Sleep(60 * time.Second)
 	logrus.Infof("[LEO-DEBUG] sleeping ends")
 	// TODO: return production mode for create enclave request as well
