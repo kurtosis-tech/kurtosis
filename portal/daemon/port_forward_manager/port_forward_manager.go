@@ -3,12 +3,14 @@ package port_forward_manager
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/port_utils"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"strconv"
 )
 
 const (
-	chiselPortInApicReplaceWithLookupLater = 9501
+	localhostIpString = "127.0.0.1"
 )
 
 type PortForwardManager struct {
@@ -49,19 +51,37 @@ func (manager *PortForwardManager) ForwardUserServiceToEphemeralPort(ctx context
 	}
 
 	serviceIpAddress := serviceContext.GetPrivateIPAddress()
-	privatePortSpec, exists := serviceContext.GetPrivatePorts()[portId]
+	servicePortSpec, exists := serviceContext.GetPrivatePorts()[portId]
 	if !exists {
 		return 0, stacktrace.NewError("Failed to find requested port id '%v' in service '%v' in enclave '%v'.  Available ports are: %v", portId, serviceId, enclaveId, serviceContext.GetPrivatePorts())
 	}
 
-	logrus.Debugf("Found service information for (%v, %v, %v): service running at %v:%d in enclave: %v", enclaveId, serviceId, portId, serviceIpAddress, privatePortSpec.GetNumber(), enclave.String())
+	logrus.Debugf("Found service information for (%v, %v, %v): service running at %v:%d in enclave: %v", enclaveId, serviceId, portId, serviceIpAddress, servicePortSpec.GetNumber(), enclave.String())
 
-	localTunnelPort := enclave.GetApiContainerHostMachineInfo().GetTunnelPortOnHostMachine()
-	logrus.Debugf("Local tunnel port for enclave '%v' returned by engine is '%d'", enclaveId, localTunnelPort)
+	localPortToChiselServer := uint16(enclave.GetApiContainerHostMachineInfo().GetTunnelPortOnHostMachine())
+	chiselServerUri := getLocalChiselServerUri(localPortToChiselServer)
+	logrus.Debugf("Local tunnel port to chisel server for enclave '%v' returned by engine is '%d', will connect using %v", enclaveId, localPortToChiselServer, chiselServerUri)
 
-	return 0, nil
+	localTunnelToServicePort, err := port_utils.GetFreeTcpPort(localhostIpString)
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "Could not allocate a local port for the tunnel")
+	}
+
+	portForward := NewPortForwardTunnel(localTunnelToServicePort.GetNumber(), serviceIpAddress, servicePortSpec.GetNumber(), chiselServerUri)
+
+	logrus.Infof("Opening port forward session on local port %d, to remote service (%v %v %v) at %v:%d", portForward.localPortNumber, enclaveId, serviceId, portId, serviceIpAddress, servicePortSpec.GetNumber())
+	err = portForward.RunAsync()
+	if err != nil {
+		return 0, stacktrace.Propagate(err, "Failed to open a port forward tunnel to chisel server '%v' for remote service at '%v:%d'", chiselServerUri, serviceIpAddress, servicePortSpec.GetNumber())
+	}
+
+	return portForward.localPortNumber, nil
 }
 
 func (manager *PortForwardManager) ForwardUserServiceToStaticPort(ctx context.Context, enclaveId string, serviceId string, portId string, localPortNumber uint16) (uint16, error) {
 	return 0, nil
+}
+
+func getLocalChiselServerUri(localPortToChiselServer uint16) string {
+	return "localhost:" + strconv.Itoa(int(localPortToChiselServer))
 }
