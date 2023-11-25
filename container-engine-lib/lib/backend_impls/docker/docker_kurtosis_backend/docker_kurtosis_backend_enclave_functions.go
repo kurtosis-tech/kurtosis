@@ -149,9 +149,6 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 		}
 	}()
 
-	logrus.Infof("[LEO-DEBUG] sleeping for 40 seconds")
-	time.Sleep(40 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
 	// TODO: return production mode for create enclave request as well
 	newEnclave := enclave.NewEnclave(enclaveUuid, enclaveName, enclave.EnclaveStatus_Empty, &creationTime, false)
 	// TODO the logs collector has a random private ip address in the enclave network that must be tracked
@@ -167,6 +164,9 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 			}
 		}
 	}()
+	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds")
+	time.Sleep(40 * time.Second)
+	logrus.Infof("[LEO-DEBUG] sleeping ends")
 
 	shouldDeleteLogsCollector = false
 	//shouldDeleteNetwork = false
