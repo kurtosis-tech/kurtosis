@@ -228,10 +228,6 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 		)
 	}
 
-	logrus.Infof("[LEO-DEBUG] sleeping for 30 seconds")
-	time.Sleep(30 * time.Second)
-	logrus.Infof("[LEO-DEBUG] sleeping ends")
-
 	return result, nil
 }
 
