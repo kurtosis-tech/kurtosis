@@ -293,7 +293,7 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", noConnectDefault)
 	}
 
-	connectArg, err := flags.GetString(connectFlagKey)
+	connectArgs, err := flags.GetStringSlice(connectFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", connectFlagKey)
 	}
