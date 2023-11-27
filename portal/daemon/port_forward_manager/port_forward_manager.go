@@ -23,7 +23,7 @@ func NewPortForwardManager(kurtosisContext *kurtosis_context.KurtosisContext) *P
 	}
 }
 
-// TODO(omar): get enclaves can take a moment so look for a lighter ping that also verifies we've an engine connection
+// TODO(omar): get enclaves can take a while so look for a lighter ping that also verifies we've an engine connection
 // or consider an alternative health indicator
 func (manager *PortForwardManager) Ping(ctx context.Context) error {
 	_, err := manager.kurtosis.GetEnclaves(ctx)
@@ -34,7 +34,20 @@ func (manager *PortForwardManager) Ping(ctx context.Context) error {
 }
 
 // TODO(omar): make a return struct - see what we end up using to represent port forwards
-func (manager *PortForwardManager) ForwardUserServiceToEphemeralPort(ctx context.Context, enclaveId string, serviceId string, portId string) (uint16, error) {
+func (manager *PortForwardManager) ForwardUserServiceToPort(ctx context.Context, enclaveId string, serviceId string, portId string, requestedLocalPort uint16) (uint16, error) {
+	if requestedLocalPort == 0 {
+		ephemeralLocalPortSpec, err := port_utils.GetFreeTcpPort(localhostIpString)
+		if err != nil {
+			return 0, stacktrace.Propagate(err, "Could not allocate a local port for the tunnel")
+		}
+
+		requestedLocalPort = ephemeralLocalPortSpec.GetNumber()
+	}
+
+	return manager.forwardUserServiceToPort(ctx, enclaveId, serviceId, portId, requestedLocalPort)
+}
+
+func (manager *PortForwardManager) forwardUserServiceToPort(ctx context.Context, enclaveId string, serviceId string, portId string, localPortToBind uint16) (uint16, error) {
 	chiselServerUri, serviceIpAddress, servicePortNumber, err := manager.collectServiceInformation(ctx, enclaveId, serviceId, portId)
 	if err != nil {
 		return 0, stacktrace.Propagate(err, "Failed to enumerate service information for (enclave, service, port), (%v, %v, %v)", enclaveId, serviceId, portId)
@@ -42,12 +55,7 @@ func (manager *PortForwardManager) ForwardUserServiceToEphemeralPort(ctx context
 
 	logrus.Debugf("Connection to chisel server for enclave '%v', will connect using %v, setting up a tunnel to service '%v' running at %v:%d", enclaveId, chiselServerUri, serviceId, serviceIpAddress, servicePortNumber)
 
-	localTunnelToServicePort, err := port_utils.GetFreeTcpPort(localhostIpString)
-	if err != nil {
-		return 0, stacktrace.Propagate(err, "Could not allocate a local port for the tunnel")
-	}
-
-	portForward := NewPortForwardTunnel(localTunnelToServicePort.GetNumber(), serviceIpAddress, servicePortNumber, chiselServerUri)
+	portForward := NewPortForwardTunnel(localPortToBind, serviceIpAddress, servicePortNumber, chiselServerUri)
 
 	logrus.Infof("Opening port forward session on local port %d, to remote service (%v %v %v) at %v:%d", portForward.localPortNumber, enclaveId, serviceId, portId, serviceIpAddress, servicePortNumber)
 	err = portForward.RunAsync()
@@ -56,10 +64,6 @@ func (manager *PortForwardManager) ForwardUserServiceToEphemeralPort(ctx context
 	}
 
 	return portForward.localPortNumber, nil
-}
-
-func (manager *PortForwardManager) ForwardUserServiceToStaticPort(ctx context.Context, enclaveId string, serviceId string, portId string, localPortNumber uint16) (uint16, error) {
-	return 0, nil
 }
 
 func (manager *PortForwardManager) collectServiceInformation(ctx context.Context, enclaveId string, serviceId string, portId string) (string, string, uint16, error) {
