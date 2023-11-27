@@ -97,6 +97,9 @@ const (
 	noConnectFlagKey = "no-connect"
 	noConnectDefault = "false"
 
+	connectFlagKey = "connect"
+	connectFlagDefaultValue = ""
+
 	packageArgsFileFlagKey      = "args-file"
 	packageArgsFileDefaultValue = ""
 
@@ -193,6 +196,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: noConnectDefault,
 		},
 		{
+			Key: connectFlagKey,
+			Usage: "Specify a service and port name and expose their port on your local machine."
+			Type: flags.FlagType_String, flags
+			Default: connectFlagDefaultValue,
+		},
+		{
 			Key:     packageArgsFileFlagKey,
 			Usage:   "The file (JSON/YAML) that will be used to pass in arguments to the Kurtosis package. Can be a URL or file path.",
 			Type:    flags.FlagType_String,
@@ -282,6 +291,11 @@ func run(
 	noConnect, err := flags.GetBool(noConnectFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", noConnectDefault)
+	}
+
+	connectArg, err := flags.GetString(connectFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", connectFlagKey)
 	}
 
 	relativePathToTheMainFile, err := flags.GetString(mainFileFlagKey)
