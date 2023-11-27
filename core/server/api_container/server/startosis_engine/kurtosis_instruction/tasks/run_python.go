@@ -3,7 +3,6 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -23,8 +22,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
-	"io"
-	"os"
 	"path"
 	"strings"
 )
@@ -160,17 +157,6 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	}
 	builtin.run = pythonScript.GoString()
 
-	compressedScript, compressedScriptMd5, scriptCompressionInterpretationErr := getCompressedPythonScriptForUpload(builtin.run)
-	if err != nil {
-		return nil, scriptCompressionInterpretationErr
-	}
-	defer compressedScript.Close()
-	uniqueFilesArtifactName := fmt.Sprintf(scriptArtifactFormat, builtin.name)
-	_, err = builtin.serviceNetwork.UploadFilesArtifact(compressedScript, compressedScriptMd5, uniqueFilesArtifactName)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while storing the python script to disk")
-	}
-
 	if arguments.IsSet(PythonArgumentsArgName) {
 		argsValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, PythonArgumentsArgName)
 		if err != nil {
@@ -217,19 +203,10 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-			filesArtifactMountDirPaths[pythonWorkspace] = uniqueFilesArtifactName
 			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-		}
-	} else {
-		filesArtifactMountDirPaths := map[string]string{}
-		filesArtifactMountDirPaths[pythonWorkspace] = uniqueFilesArtifactName
-		var interpretationErr *startosis_errors.InterpretationError
-		filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
-		if interpretationErr != nil {
-			return nil, interpretationErr
 		}
 	}
 
@@ -377,24 +354,7 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 
 	pythonScriptAbsolutePath := path.Join(pythonWorkspace, pythonScriptFileName)
 	if len(argumentsAsString) > 0 {
-		return fmt.Sprintf("python %s %s", pythonScriptAbsolutePath, argumentsAsString), nil
+		return fmt.Sprintf("python -c '%s' %s", builtin.run, argumentsAsString), nil
 	}
 	return fmt.Sprintf("python %s", pythonScriptAbsolutePath), nil
-}
-
-func getCompressedPythonScriptForUpload(pythonScript string) (io.ReadCloser, []byte, *startosis_errors.InterpretationError) {
-	temporaryPythonScriptDir, err := os.MkdirTemp(defaultTmpDir, temporaryPythonDirectoryPrefix)
-	defer os.Remove(temporaryPythonScriptDir)
-	if err != nil {
-		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while creating a temporary folder to write the python script too")
-	}
-	pythonScriptFilePath := path.Join(temporaryPythonScriptDir, pythonScriptFileName)
-	if err = os.WriteFile(pythonScriptFilePath, []byte(pythonScript), pythonScriptReadPermission); err != nil {
-		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while writing python script to disk")
-	}
-	compressed, _, contentMd5, err := shared_utils.CompressPath(pythonScriptFilePath, enforceMaxSizeLimit)
-	if err != nil {
-		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while compressing the python script")
-	}
-	return compressed, contentMd5, nil
 }
