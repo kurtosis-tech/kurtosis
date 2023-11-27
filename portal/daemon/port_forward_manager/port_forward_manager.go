@@ -35,6 +35,9 @@ func (manager *PortForwardManager) Ping(ctx context.Context) error {
 
 // TODO(omar): make a return struct - see what we end up using to represent port forwards
 func (manager *PortForwardManager) CreateUserServicePortForward(ctx context.Context, enclaveServicePort EnclaveServicePort, requestedLocalPort uint16) (map[EnclaveServicePort]uint16, error) {
+	// TODO(omar): arg validation galore; figure out the scope of the forwarding then execute
+	// might be worth separating the single service (with static port option) from the full ephemeral case
+
 	if requestedLocalPort == 0 {
 		ephemeralLocalPortSpec, err := port_utils.GetFreeTcpPort(localhostIpString)
 		if err != nil {
