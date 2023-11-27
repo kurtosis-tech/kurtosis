@@ -975,7 +975,7 @@ func getApiContainerObjectsFromKubernetesResources(
 			map[string]bool{
 				consts.KurtosisInternalContainerGrpcPortSpecId: true,
 				// TODO(omar): this will break for users with enclaves running prior to upgrading; skipping validation for now as it blocks almost everything (enclave ls, etc)
-				//consts.KurtosisInternalContainerTunnelServerSpecId: true,
+				consts.KurtosisInternalContainerTunnelServerSpecId: true,
 			},
 		)
 		if err != nil {
