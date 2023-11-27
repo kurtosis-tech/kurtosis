@@ -274,7 +274,7 @@ func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValue
 	return validateTasksCommon(validatorEnvironment, builtin.storeSpecList, serviceDirpathsToArtifactIdentifiers, builtin.serviceConfig.GetContainerImageName())
 }
 
-// Execute This is just v0 for run_sh task - we can later improve on it.
+// Execute This is just v0 for run_python task - we can later improve on it.
 //
 //	TODO Create an mechanism for other services to retrieve files from the task container
 //	TODO Make task as its own entity instead of currently shown under services
