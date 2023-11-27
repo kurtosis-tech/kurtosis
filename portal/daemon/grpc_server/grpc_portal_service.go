@@ -33,13 +33,14 @@ func (service *GrpcPortalService) Ping(ctx context.Context, ping *kurtosis_porta
 	return &kurtosis_portal_rpc_api_bindings.PortalPong{}, nil
 }
 
-func (service *GrpcPortalService) ForwardUserServicePort(ctx context.Context, args *kurtosis_portal_rpc_api_bindings.ForwardUserServicePortArgs) (*kurtosis_portal_rpc_api_bindings.ForwardUserServicePortResponse, error) {
-	localPort, err := service.portForwardManager.ForwardUserServiceToPort(ctx, args.GetEnclaveId(), args.GetServiceId(), args.GetPortId(), uint16(args.GetLocalPortNumber()))
+func (service *GrpcPortalService) CreateUserServicePortForward(ctx context.Context, args *kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardArgs) (*kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse, error) {
+	enclaveServicePort := toInternalEnclaveServicePort(args.GetEnclaveServicePortId())
+	localPort, err := service.portForwardManager.ForwardUserServiceToPort(ctx, enclaveServicePort, uint16(args.GetLocalPortNumber()))
 
 	if err != nil {
 		return nil, err
 	}
-	return &kurtosis_portal_rpc_api_bindings.ForwardUserServicePortResponse{LocalPortNumber: uint32(localPort)}, nil
+	return &kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse{LocalPortNumber: uint32(localPort)}, nil
 }
 
 func (service *GrpcPortalService) Close() error {
@@ -49,4 +50,8 @@ func (service *GrpcPortalService) Close() error {
 	// TODO(omar): implement
 
 	return nil
+}
+
+func toInternalEnclaveServicePort(esp *kurtosis_portal_rpc_api_bindings.EnclaveServicePortId) port_forward_manager.EnclaveServicePort {
+	return port_forward_manager.NewEnclaveServicePort(esp.GetEnclaveId(), esp.GetServiceId(), esp.GetPortId())
 }

@@ -34,7 +34,7 @@ func (manager *PortForwardManager) Ping(ctx context.Context) error {
 }
 
 // TODO(omar): make a return struct - see what we end up using to represent port forwards
-func (manager *PortForwardManager) ForwardUserServiceToPort(ctx context.Context, enclaveId string, serviceId string, portId string, requestedLocalPort uint16) (uint16, error) {
+func (manager *PortForwardManager) ForwardUserServiceToPort(ctx context.Context, enclaveServicePort EnclaveServicePort, requestedLocalPort uint16) (uint16, error) {
 	if requestedLocalPort == 0 {
 		ephemeralLocalPortSpec, err := port_utils.GetFreeTcpPort(localhostIpString)
 		if err != nil {
@@ -44,50 +44,55 @@ func (manager *PortForwardManager) ForwardUserServiceToPort(ctx context.Context,
 		requestedLocalPort = ephemeralLocalPortSpec.GetNumber()
 	}
 
-	return manager.forwardUserServiceToPort(ctx, enclaveId, serviceId, portId, requestedLocalPort)
-}
-
-func (manager *PortForwardManager) forwardUserServiceToPort(ctx context.Context, enclaveId string, serviceId string, portId string, localPortToBind uint16) (uint16, error) {
-	chiselServerUri, serviceIpAddress, servicePortNumber, err := manager.collectServiceInformation(ctx, enclaveId, serviceId, portId)
+	portForward, err := manager.createAndOpenPortForwardToUserService(ctx, enclaveServicePort, requestedLocalPort)
 	if err != nil {
-		return 0, stacktrace.Propagate(err, "Failed to enumerate service information for (enclave, service, port), (%v, %v, %v)", enclaveId, serviceId, portId)
-	}
-
-	logrus.Debugf("Connection to chisel server for enclave '%v', will connect using %v, setting up a tunnel to service '%v' running at %v:%d", enclaveId, chiselServerUri, serviceId, serviceIpAddress, servicePortNumber)
-
-	portForward := NewPortForwardTunnel(localPortToBind, serviceIpAddress, servicePortNumber, chiselServerUri)
-
-	logrus.Infof("Opening port forward session on local port %d, to remote service (%v %v %v) at %v:%d", portForward.localPortNumber, enclaveId, serviceId, portId, serviceIpAddress, servicePortNumber)
-	err = portForward.RunAsync()
-	if err != nil {
-		return 0, stacktrace.Propagate(err, "Failed to open a port forward tunnel to chisel server '%v' for remote service at '%v:%d'", chiselServerUri, serviceIpAddress, servicePortNumber)
+		return 0, stacktrace.Propagate(err, "Failed to set up port forward to (enclave, service, port), %v", enclaveServicePort)
 	}
 
 	return portForward.localPortNumber, nil
 }
 
-func (manager *PortForwardManager) collectServiceInformation(ctx context.Context, enclaveId string, serviceId string, portId string) (string, string, uint16, error) {
-	enclave, err := manager.kurtosis.GetEnclave(ctx, enclaveId)
+func (manager *PortForwardManager) createAndOpenPortForwardToUserService(ctx context.Context, enclaveServicePort EnclaveServicePort, localPortToBind uint16) (*PortForwardTunnel, error) {
+	chiselServerUri, serviceIpAddress, servicePortNumber, err := manager.collectServiceInformation(ctx, enclaveServicePort)
 	if err != nil {
-		return "", "", 0, stacktrace.Propagate(err, "Failed to lookup enclave '%v' from Kurtosis Engine", enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to enumerate service information for (enclave, service, port), %v", enclaveServicePort)
 	}
 
-	enclaveContext, err := manager.kurtosis.GetEnclaveContext(ctx, enclaveId)
+	logrus.Debugf("Will connect to chisel server at %v, setting up a tunnel to service %v running at %v:%d", chiselServerUri, enclaveServicePort, serviceIpAddress, servicePortNumber)
+
+	portForward := NewPortForwardTunnel(localPortToBind, serviceIpAddress, servicePortNumber, chiselServerUri)
+
+	logrus.Infof("Opening port forward session on local port %d, to remote service %v at %v:%d", portForward.localPortNumber, enclaveServicePort, serviceIpAddress, servicePortNumber)
+	err = portForward.RunAsync()
 	if err != nil {
-		return "", "", 0, stacktrace.Propagate(err, "Failed to get enclave context for enclave '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to open a port forward tunnel to chisel server '%v' for remote service at '%v:%d'", chiselServerUri, serviceIpAddress, servicePortNumber)
 	}
 
-	serviceContext, err := enclaveContext.GetServiceContext(serviceId)
+	return portForward, nil
+}
+
+func (manager *PortForwardManager) collectServiceInformation(ctx context.Context, enclaveServicePort EnclaveServicePort) (string, string, uint16, error) {
+	enclave, err := manager.kurtosis.GetEnclave(ctx, enclaveServicePort.enclaveId)
 	if err != nil {
-		return "", "", 0, stacktrace.Propagate(err, "Failed to get service context for service '%v' in enclave '%v'", serviceId, enclaveId)
+		return "", "", 0, stacktrace.Propagate(err, "Failed to lookup enclave '%v' from Kurtosis Engine", enclaveServicePort.enclaveId)
+	}
+
+	enclaveContext, err := manager.kurtosis.GetEnclaveContext(ctx, enclaveServicePort.enclaveId)
+	if err != nil {
+		return "", "", 0, stacktrace.Propagate(err, "Failed to get enclave context for enclave '%v'", enclaveServicePort.enclaveId)
+	}
+
+	serviceContext, err := enclaveContext.GetServiceContext(enclaveServicePort.serviceId)
+	if err != nil {
+		return "", "", 0, stacktrace.Propagate(err, "Failed to get service context for service '%v' in enclave '%v'", enclaveServicePort.serviceId, enclaveServicePort.enclaveId)
 	}
 
 	serviceIpAddress := serviceContext.GetPrivateIPAddress()
-	servicePortSpec, exists := serviceContext.GetPrivatePorts()[portId]
+	servicePortSpec, exists := serviceContext.GetPrivatePorts()[enclaveServicePort.portId]
 	if !exists {
-		return "", "", 0, stacktrace.NewError("Failed to find requested port id '%v' in service '%v' in enclave '%v'.  Available ports are: %v", portId, serviceId, enclaveId, serviceContext.GetPrivatePorts())
+		return "", "", 0, stacktrace.NewError("Failed to find requested port id specified %v.  Available ports are: %v", enclaveServicePort, serviceContext.GetPrivatePorts())
 	}
-	logrus.Debugf("Found service information for (%v, %v, %v): service running at %v:%d in enclave: %v", enclaveId, serviceId, portId, serviceIpAddress, servicePortSpec.GetNumber(), enclave.String())
+	logrus.Debugf("Found service information for %v: service running at %v:%d in enclave: %v", enclaveServicePort, serviceIpAddress, servicePortSpec.GetNumber(), enclave.String())
 
 	localPortToChiselServer := uint16(enclave.GetApiContainerHostMachineInfo().GetTunnelPortOnHostMachine())
 	chiselServerUri := getLocalChiselServerUri(localPortToChiselServer)
