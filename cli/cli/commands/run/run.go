@@ -198,7 +198,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		{
 			Key:     connectFlagKey,
 			Usage:   "Specify a service and port name and expose their port on your local machine.",
-			Type:    flags.FlagType_String,
+			Type:    flags.FlagType_StringSlice,
 			Default: connectFlagDefaultValue,
 		},
 		{
