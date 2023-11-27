@@ -41,6 +41,17 @@ type matchingNetworkInformation struct {
 func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string) (*enclave.Enclave, error) {
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
+	logrus.Infof("[LEO-DEBUG] sleeping for 10 seconds")
+	time.Sleep(time.Second * 10)
+	logrus.Infof("[LEO-DEBUG] sleep ends")
+	select {
+	case <-ctx.Done():
+		logrus.Infof("[LEO-DEBUG] context done")
+		logrus.Infof("[LEO-DEBUG] context err: %v", ctx.Err())
+		return nil, ctx.Err()
+	default:
+	}
+
 	searchNetworkLabels := map[string]string{
 		docker_label_key.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),
 		docker_label_key.EnclaveUUIDDockerLabelKey.GetString(): string(enclaveUuid),
