@@ -23,10 +23,14 @@ message EnclaveServicePortId {
   optional string port_id = 3;
 }
 
-message ForwardedServicePortId {
-  EnclaveServicePortId enclaveServicePortId = 1;
+message ForwardedServicePort {
+  string enclave_id = 1;
 
-  uint32 local_port_number = 2;
+  string service_id = 2;
+
+  string port_id = 3;
+
+  uint32 local_port_number = 4;
 }
 
 message CreateUserServicePortForwardArgs {
@@ -36,7 +40,7 @@ message CreateUserServicePortForwardArgs {
 }
 
 message CreateUserServicePortForwardResponse {
-  repeated ForwardedServicePortId forwarded_port_numbers = 1;
+  repeated ForwardedServicePort forwarded_port_numbers = 1;
 }
 
 message RemoveUserServicePortForwardResponse {

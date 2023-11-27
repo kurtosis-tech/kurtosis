@@ -42,26 +42,32 @@ export namespace EnclaveServicePortId {
   }
 }
 
-export class ForwardedServicePortId extends jspb.Message {
-  getEnclaveserviceportid(): EnclaveServicePortId | undefined;
-  setEnclaveserviceportid(value?: EnclaveServicePortId): ForwardedServicePortId;
-  hasEnclaveserviceportid(): boolean;
-  clearEnclaveserviceportid(): ForwardedServicePortId;
+export class ForwardedServicePort extends jspb.Message {
+  getEnclaveId(): string;
+  setEnclaveId(value: string): ForwardedServicePort;
+
+  getServiceId(): string;
+  setServiceId(value: string): ForwardedServicePort;
+
+  getPortId(): string;
+  setPortId(value: string): ForwardedServicePort;
 
   getLocalPortNumber(): number;
-  setLocalPortNumber(value: number): ForwardedServicePortId;
+  setLocalPortNumber(value: number): ForwardedServicePort;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ForwardedServicePortId.AsObject;
-  static toObject(includeInstance: boolean, msg: ForwardedServicePortId): ForwardedServicePortId.AsObject;
-  static serializeBinaryToWriter(message: ForwardedServicePortId, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ForwardedServicePortId;
-  static deserializeBinaryFromReader(message: ForwardedServicePortId, reader: jspb.BinaryReader): ForwardedServicePortId;
+  toObject(includeInstance?: boolean): ForwardedServicePort.AsObject;
+  static toObject(includeInstance: boolean, msg: ForwardedServicePort): ForwardedServicePort.AsObject;
+  static serializeBinaryToWriter(message: ForwardedServicePort, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ForwardedServicePort;
+  static deserializeBinaryFromReader(message: ForwardedServicePort, reader: jspb.BinaryReader): ForwardedServicePort;
 }
 
-export namespace ForwardedServicePortId {
+export namespace ForwardedServicePort {
   export type AsObject = {
-    enclaveserviceportid?: EnclaveServicePortId.AsObject,
+    enclaveId: string,
+    serviceId: string,
+    portId: string,
     localPortNumber: number,
   }
 }
@@ -98,10 +104,10 @@ export namespace CreateUserServicePortForwardArgs {
 }
 
 export class CreateUserServicePortForwardResponse extends jspb.Message {
-  getForwardedPortNumbersList(): Array<ForwardedServicePortId>;
-  setForwardedPortNumbersList(value: Array<ForwardedServicePortId>): CreateUserServicePortForwardResponse;
+  getForwardedPortNumbersList(): Array<ForwardedServicePort>;
+  setForwardedPortNumbersList(value: Array<ForwardedServicePort>): CreateUserServicePortForwardResponse;
   clearForwardedPortNumbersList(): CreateUserServicePortForwardResponse;
-  addForwardedPortNumbers(value?: ForwardedServicePortId, index?: number): ForwardedServicePortId;
+  addForwardedPortNumbers(value?: ForwardedServicePort, index?: number): ForwardedServicePort;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateUserServicePortForwardResponse.AsObject;
@@ -113,7 +119,7 @@ export class CreateUserServicePortForwardResponse extends jspb.Message {
 
 export namespace CreateUserServicePortForwardResponse {
   export type AsObject = {
-    forwardedPortNumbersList: Array<ForwardedServicePortId.AsObject>,
+    forwardedPortNumbersList: Array<ForwardedServicePort.AsObject>,
   }
 }
 

@@ -43,32 +43,42 @@ export declare class EnclaveServicePortId extends Message<EnclaveServicePortId> 
 }
 
 /**
- * @generated from message portal_daemon_api.ForwardedServicePortId
+ * @generated from message portal_daemon_api.ForwardedServicePort
  */
-export declare class ForwardedServicePortId extends Message<ForwardedServicePortId> {
+export declare class ForwardedServicePort extends Message<ForwardedServicePort> {
   /**
-   * @generated from field: portal_daemon_api.EnclaveServicePortId enclaveServicePortId = 1;
+   * @generated from field: string enclave_id = 1;
    */
-  enclaveServicePortId?: EnclaveServicePortId;
+  enclaveId: string;
 
   /**
-   * @generated from field: uint32 local_port_number = 2;
+   * @generated from field: string service_id = 2;
+   */
+  serviceId: string;
+
+  /**
+   * @generated from field: string port_id = 3;
+   */
+  portId: string;
+
+  /**
+   * @generated from field: uint32 local_port_number = 4;
    */
   localPortNumber: number;
 
-  constructor(data?: PartialMessage<ForwardedServicePortId>);
+  constructor(data?: PartialMessage<ForwardedServicePort>);
 
   static readonly runtime: typeof proto3;
-  static readonly typeName = "portal_daemon_api.ForwardedServicePortId";
+  static readonly typeName = "portal_daemon_api.ForwardedServicePort";
   static readonly fields: FieldList;
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ForwardedServicePortId;
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ForwardedServicePort;
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ForwardedServicePortId;
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ForwardedServicePort;
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ForwardedServicePortId;
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ForwardedServicePort;
 
-  static equals(a: ForwardedServicePortId | PlainMessage<ForwardedServicePortId> | undefined, b: ForwardedServicePortId | PlainMessage<ForwardedServicePortId> | undefined): boolean;
+  static equals(a: ForwardedServicePort | PlainMessage<ForwardedServicePort> | undefined, b: ForwardedServicePort | PlainMessage<ForwardedServicePort> | undefined): boolean;
 }
 
 /**
@@ -105,9 +115,9 @@ export declare class CreateUserServicePortForwardArgs extends Message<CreateUser
  */
 export declare class CreateUserServicePortForwardResponse extends Message<CreateUserServicePortForwardResponse> {
   /**
-   * @generated from field: repeated portal_daemon_api.ForwardedServicePortId forwarded_port_numbers = 1;
+   * @generated from field: repeated portal_daemon_api.ForwardedServicePort forwarded_port_numbers = 1;
    */
-  forwardedPortNumbers: ForwardedServicePortId[];
+  forwardedPortNumbers: ForwardedServicePort[];
 
   constructor(data?: PartialMessage<CreateUserServicePortForwardResponse>);
 
