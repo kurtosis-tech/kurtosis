@@ -49,15 +49,19 @@ func processStringFlag(
 func processStringSliceFlag(
 	flagKey string,
 	shorthand string,
-	defaultValues []string,
+	defaultValueStr string,
 	usage string,
 	cobraFlagSet *flag.FlagSet,
 ) error {
-	// No validation, same reason as plain strings above
+
+	if defaultValueStr != "" {
+		return stacktrace.NewError("Default values not supported for string slice flags; please use an empty string")
+	}
+
 	cobraFlagSet.StringSliceP(
 		flagKey,
 		shorthand,
-		defaultValues,
+		[]string{},
 		usage,
 	)
 	return nil
