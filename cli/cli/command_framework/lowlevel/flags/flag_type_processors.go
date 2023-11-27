@@ -23,9 +23,10 @@ type flagTypeProcessor func(
 
 // Completeness enforced via unit test
 var AllFlagTypeProcessors = map[FlagType]flagTypeProcessor{
-	FlagType_String: processStringFlag,
-	FlagType_Uint32: processUint32Flag,
-	FlagType_Bool:   processBoolFlag,
+	FlagType_String:      processStringFlag,
+	FlagType_StringSlice: processStringSliceFlag,
+	FlagType_Uint32:      processUint32Flag,
+	FlagType_Bool:        processBoolFlag,
 }
 
 func processStringFlag(
@@ -40,6 +41,23 @@ func processStringFlag(
 		flagKey,
 		shorthand,
 		defaultValueStr,
+		usage,
+	)
+	return nil
+}
+
+func processStringSliceFlag(
+	flagKey string,
+	shorthand string,
+	defaultValues []string,
+	usage string,
+	cobraFlagSet *flag.FlagSet,
+) error {
+	// No validation, same reason as plain strings above
+	cobraFlagSet.StringSliceP(
+		flagKey,
+		shorthand,
+		defaultValues,
 		usage,
 	)
 	return nil
