@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ForwardUserServicePortArgs, ForwardUserServicePortResponse, PortalPing, PortalPong } from "./portal_daemon_service_pb.js";
+import { CreateUserServicePortForwardArgs, CreateUserServicePortForwardResponse, EnclaveServicePortId, PortalPing, PortalPong, RemoveUserServicePortForwardResponse } from "./portal_daemon_service_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -24,12 +24,21 @@ export const KurtosisPortalDaemon = {
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc portal_daemon_api.KurtosisPortalDaemon.ForwardUserServicePort
+     * @generated from rpc portal_daemon_api.KurtosisPortalDaemon.CreateUserServicePortForward
      */
-    forwardUserServicePort: {
-      name: "ForwardUserServicePort",
-      I: ForwardUserServicePortArgs,
-      O: ForwardUserServicePortResponse,
+    createUserServicePortForward: {
+      name: "CreateUserServicePortForward",
+      I: CreateUserServicePortForwardArgs,
+      O: CreateUserServicePortForwardResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc portal_daemon_api.KurtosisPortalDaemon.RemoveUserServicePortForward
+     */
+    removeUserServicePortForward: {
+      name: "RemoveUserServicePortForward",
+      I: EnclaveServicePortId,
+      O: RemoveUserServicePortForwardResponse,
       kind: MethodKind.Unary,
     },
   }

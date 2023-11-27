@@ -15,12 +15,19 @@ export class KurtosisPortalDaemonClient {
                response: portal_daemon_service_pb.PortalPong) => void
   ): grpcWeb.ClientReadableStream<portal_daemon_service_pb.PortalPong>;
 
-  forwardUserServicePort(
-    request: portal_daemon_service_pb.ForwardUserServicePortArgs,
+  createUserServicePortForward(
+    request: portal_daemon_service_pb.CreateUserServicePortForwardArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: portal_daemon_service_pb.ForwardUserServicePortResponse) => void
-  ): grpcWeb.ClientReadableStream<portal_daemon_service_pb.ForwardUserServicePortResponse>;
+               response: portal_daemon_service_pb.CreateUserServicePortForwardResponse) => void
+  ): grpcWeb.ClientReadableStream<portal_daemon_service_pb.CreateUserServicePortForwardResponse>;
+
+  removeUserServicePortForward(
+    request: portal_daemon_service_pb.EnclaveServicePortId,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: portal_daemon_service_pb.RemoveUserServicePortForwardResponse) => void
+  ): grpcWeb.ClientReadableStream<portal_daemon_service_pb.RemoveUserServicePortForwardResponse>;
 
 }
 
@@ -34,10 +41,15 @@ export class KurtosisPortalDaemonPromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<portal_daemon_service_pb.PortalPong>;
 
-  forwardUserServicePort(
-    request: portal_daemon_service_pb.ForwardUserServicePortArgs,
+  createUserServicePortForward(
+    request: portal_daemon_service_pb.CreateUserServicePortForwardArgs,
     metadata?: grpcWeb.Metadata
-  ): Promise<portal_daemon_service_pb.ForwardUserServicePortResponse>;
+  ): Promise<portal_daemon_service_pb.CreateUserServicePortForwardResponse>;
+
+  removeUserServicePortForward(
+    request: portal_daemon_service_pb.EnclaveServicePortId,
+    metadata?: grpcWeb.Metadata
+  ): Promise<portal_daemon_service_pb.RemoveUserServicePortForwardResponse>;
 
 }
 

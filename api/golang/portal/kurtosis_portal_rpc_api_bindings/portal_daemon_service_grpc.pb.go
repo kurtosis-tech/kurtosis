@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	KurtosisPortalDaemon_Ping_FullMethodName                   = "/portal_daemon_api.KurtosisPortalDaemon/Ping"
-	KurtosisPortalDaemon_ForwardUserServicePort_FullMethodName = "/portal_daemon_api.KurtosisPortalDaemon/ForwardUserServicePort"
+	KurtosisPortalDaemon_Ping_FullMethodName                         = "/portal_daemon_api.KurtosisPortalDaemon/Ping"
+	KurtosisPortalDaemon_CreateUserServicePortForward_FullMethodName = "/portal_daemon_api.KurtosisPortalDaemon/CreateUserServicePortForward"
+	KurtosisPortalDaemon_RemoveUserServicePortForward_FullMethodName = "/portal_daemon_api.KurtosisPortalDaemon/RemoveUserServicePortForward"
 )
 
 // KurtosisPortalDaemonClient is the client API for KurtosisPortalDaemon service.
@@ -29,7 +30,8 @@ const (
 type KurtosisPortalDaemonClient interface {
 	// To check availability
 	Ping(ctx context.Context, in *PortalPing, opts ...grpc.CallOption) (*PortalPong, error)
-	ForwardUserServicePort(ctx context.Context, in *ForwardUserServicePortArgs, opts ...grpc.CallOption) (*ForwardUserServicePortResponse, error)
+	CreateUserServicePortForward(ctx context.Context, in *CreateUserServicePortForwardArgs, opts ...grpc.CallOption) (*CreateUserServicePortForwardResponse, error)
+	RemoveUserServicePortForward(ctx context.Context, in *EnclaveServicePortId, opts ...grpc.CallOption) (*RemoveUserServicePortForwardResponse, error)
 }
 
 type kurtosisPortalDaemonClient struct {
@@ -49,9 +51,18 @@ func (c *kurtosisPortalDaemonClient) Ping(ctx context.Context, in *PortalPing, o
 	return out, nil
 }
 
-func (c *kurtosisPortalDaemonClient) ForwardUserServicePort(ctx context.Context, in *ForwardUserServicePortArgs, opts ...grpc.CallOption) (*ForwardUserServicePortResponse, error) {
-	out := new(ForwardUserServicePortResponse)
-	err := c.cc.Invoke(ctx, KurtosisPortalDaemon_ForwardUserServicePort_FullMethodName, in, out, opts...)
+func (c *kurtosisPortalDaemonClient) CreateUserServicePortForward(ctx context.Context, in *CreateUserServicePortForwardArgs, opts ...grpc.CallOption) (*CreateUserServicePortForwardResponse, error) {
+	out := new(CreateUserServicePortForwardResponse)
+	err := c.cc.Invoke(ctx, KurtosisPortalDaemon_CreateUserServicePortForward_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisPortalDaemonClient) RemoveUserServicePortForward(ctx context.Context, in *EnclaveServicePortId, opts ...grpc.CallOption) (*RemoveUserServicePortForwardResponse, error) {
+	out := new(RemoveUserServicePortForwardResponse)
+	err := c.cc.Invoke(ctx, KurtosisPortalDaemon_RemoveUserServicePortForward_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +75,8 @@ func (c *kurtosisPortalDaemonClient) ForwardUserServicePort(ctx context.Context,
 type KurtosisPortalDaemonServer interface {
 	// To check availability
 	Ping(context.Context, *PortalPing) (*PortalPong, error)
-	ForwardUserServicePort(context.Context, *ForwardUserServicePortArgs) (*ForwardUserServicePortResponse, error)
+	CreateUserServicePortForward(context.Context, *CreateUserServicePortForwardArgs) (*CreateUserServicePortForwardResponse, error)
+	RemoveUserServicePortForward(context.Context, *EnclaveServicePortId) (*RemoveUserServicePortForwardResponse, error)
 }
 
 // UnimplementedKurtosisPortalDaemonServer should be embedded to have forward compatible implementations.
@@ -74,8 +86,11 @@ type UnimplementedKurtosisPortalDaemonServer struct {
 func (UnimplementedKurtosisPortalDaemonServer) Ping(context.Context, *PortalPing) (*PortalPong, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedKurtosisPortalDaemonServer) ForwardUserServicePort(context.Context, *ForwardUserServicePortArgs) (*ForwardUserServicePortResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ForwardUserServicePort not implemented")
+func (UnimplementedKurtosisPortalDaemonServer) CreateUserServicePortForward(context.Context, *CreateUserServicePortForwardArgs) (*CreateUserServicePortForwardResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUserServicePortForward not implemented")
+}
+func (UnimplementedKurtosisPortalDaemonServer) RemoveUserServicePortForward(context.Context, *EnclaveServicePortId) (*RemoveUserServicePortForwardResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveUserServicePortForward not implemented")
 }
 
 // UnsafeKurtosisPortalDaemonServer may be embedded to opt out of forward compatibility for this service.
@@ -107,20 +122,38 @@ func _KurtosisPortalDaemon_Ping_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KurtosisPortalDaemon_ForwardUserServicePort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ForwardUserServicePortArgs)
+func _KurtosisPortalDaemon_CreateUserServicePortForward_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateUserServicePortForwardArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KurtosisPortalDaemonServer).ForwardUserServicePort(ctx, in)
+		return srv.(KurtosisPortalDaemonServer).CreateUserServicePortForward(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: KurtosisPortalDaemon_ForwardUserServicePort_FullMethodName,
+		FullMethod: KurtosisPortalDaemon_CreateUserServicePortForward_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisPortalDaemonServer).ForwardUserServicePort(ctx, req.(*ForwardUserServicePortArgs))
+		return srv.(KurtosisPortalDaemonServer).CreateUserServicePortForward(ctx, req.(*CreateUserServicePortForwardArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisPortalDaemon_RemoveUserServicePortForward_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnclaveServicePortId)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisPortalDaemonServer).RemoveUserServicePortForward(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisPortalDaemon_RemoveUserServicePortForward_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisPortalDaemonServer).RemoveUserServicePortForward(ctx, req.(*EnclaveServicePortId))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -137,8 +170,12 @@ var KurtosisPortalDaemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _KurtosisPortalDaemon_Ping_Handler,
 		},
 		{
-			MethodName: "ForwardUserServicePort",
-			Handler:    _KurtosisPortalDaemon_ForwardUserServicePort_Handler,
+			MethodName: "CreateUserServicePortForward",
+			Handler:    _KurtosisPortalDaemon_CreateUserServicePortForward_Handler,
+		},
+		{
+			MethodName: "RemoveUserServicePortForward",
+			Handler:    _KurtosisPortalDaemon_RemoveUserServicePortForward_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -7,85 +7,140 @@ import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialM
 import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
- * @generated from message portal_daemon_api.ForwardUserServicePortArgs
+ * may specify a specific port, or an entire enclave's worth of services and ports
+ *
+ * @generated from message portal_daemon_api.EnclaveServicePortId
  */
-export declare class ForwardUserServicePortArgs extends Message<ForwardUserServicePortArgs> {
+export declare class EnclaveServicePortId extends Message<EnclaveServicePortId> {
   /**
    * @generated from field: string enclave_id = 1;
    */
   enclaveId: string;
 
   /**
-   * @generated from field: string service_id = 2;
+   * @generated from field: optional string service_id = 2;
    */
-  serviceId: string;
+  serviceId?: string;
 
   /**
-   * @generated from field: string port_id = 3;
+   * @generated from field: optional string port_id = 3;
    */
-  portId: string;
+  portId?: string;
 
-  /**
-   * @generated from field: optional uint32 local_port_number = 4;
-   */
-  localPortNumber?: number;
-
-  constructor(data?: PartialMessage<ForwardUserServicePortArgs>);
+  constructor(data?: PartialMessage<EnclaveServicePortId>);
 
   static readonly runtime: typeof proto3;
-  static readonly typeName = "portal_daemon_api.ForwardUserServicePortArgs";
+  static readonly typeName = "portal_daemon_api.EnclaveServicePortId";
   static readonly fields: FieldList;
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ForwardUserServicePortArgs;
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): EnclaveServicePortId;
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ForwardUserServicePortArgs;
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): EnclaveServicePortId;
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ForwardUserServicePortArgs;
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): EnclaveServicePortId;
 
-  static equals(a: ForwardUserServicePortArgs | PlainMessage<ForwardUserServicePortArgs> | undefined, b: ForwardUserServicePortArgs | PlainMessage<ForwardUserServicePortArgs> | undefined): boolean;
+  static equals(a: EnclaveServicePortId | PlainMessage<EnclaveServicePortId> | undefined, b: EnclaveServicePortId | PlainMessage<EnclaveServicePortId> | undefined): boolean;
 }
 
 /**
- * @generated from message portal_daemon_api.ForwardPortResponse
+ * @generated from message portal_daemon_api.ForwardedServicePortId
  */
-export declare class ForwardPortResponse extends Message<ForwardPortResponse> {
-  constructor(data?: PartialMessage<ForwardPortResponse>);
-
-  static readonly runtime: typeof proto3;
-  static readonly typeName = "portal_daemon_api.ForwardPortResponse";
-  static readonly fields: FieldList;
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ForwardPortResponse;
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ForwardPortResponse;
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ForwardPortResponse;
-
-  static equals(a: ForwardPortResponse | PlainMessage<ForwardPortResponse> | undefined, b: ForwardPortResponse | PlainMessage<ForwardPortResponse> | undefined): boolean;
-}
-
-/**
- * @generated from message portal_daemon_api.ForwardUserServicePortResponse
- */
-export declare class ForwardUserServicePortResponse extends Message<ForwardUserServicePortResponse> {
+export declare class ForwardedServicePortId extends Message<ForwardedServicePortId> {
   /**
-   * @generated from field: uint32 local_port_number = 1;
+   * @generated from field: portal_daemon_api.EnclaveServicePortId enclaveServicePortId = 1;
+   */
+  enclaveServicePortId?: EnclaveServicePortId;
+
+  /**
+   * @generated from field: uint32 local_port_number = 2;
    */
   localPortNumber: number;
 
-  constructor(data?: PartialMessage<ForwardUserServicePortResponse>);
+  constructor(data?: PartialMessage<ForwardedServicePortId>);
 
   static readonly runtime: typeof proto3;
-  static readonly typeName = "portal_daemon_api.ForwardUserServicePortResponse";
+  static readonly typeName = "portal_daemon_api.ForwardedServicePortId";
   static readonly fields: FieldList;
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ForwardUserServicePortResponse;
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ForwardedServicePortId;
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ForwardUserServicePortResponse;
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ForwardedServicePortId;
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ForwardUserServicePortResponse;
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ForwardedServicePortId;
 
-  static equals(a: ForwardUserServicePortResponse | PlainMessage<ForwardUserServicePortResponse> | undefined, b: ForwardUserServicePortResponse | PlainMessage<ForwardUserServicePortResponse> | undefined): boolean;
+  static equals(a: ForwardedServicePortId | PlainMessage<ForwardedServicePortId> | undefined, b: ForwardedServicePortId | PlainMessage<ForwardedServicePortId> | undefined): boolean;
+}
+
+/**
+ * @generated from message portal_daemon_api.CreateUserServicePortForwardArgs
+ */
+export declare class CreateUserServicePortForwardArgs extends Message<CreateUserServicePortForwardArgs> {
+  /**
+   * @generated from field: portal_daemon_api.EnclaveServicePortId enclaveServicePortId = 1;
+   */
+  enclaveServicePortId?: EnclaveServicePortId;
+
+  /**
+   * @generated from field: optional uint32 local_port_number = 2;
+   */
+  localPortNumber?: number;
+
+  constructor(data?: PartialMessage<CreateUserServicePortForwardArgs>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "portal_daemon_api.CreateUserServicePortForwardArgs";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateUserServicePortForwardArgs;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateUserServicePortForwardArgs;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateUserServicePortForwardArgs;
+
+  static equals(a: CreateUserServicePortForwardArgs | PlainMessage<CreateUserServicePortForwardArgs> | undefined, b: CreateUserServicePortForwardArgs | PlainMessage<CreateUserServicePortForwardArgs> | undefined): boolean;
+}
+
+/**
+ * @generated from message portal_daemon_api.CreateUserServicePortForwardResponse
+ */
+export declare class CreateUserServicePortForwardResponse extends Message<CreateUserServicePortForwardResponse> {
+  /**
+   * @generated from field: repeated portal_daemon_api.ForwardedServicePortId forwarded_port_numbers = 1;
+   */
+  forwardedPortNumbers: ForwardedServicePortId[];
+
+  constructor(data?: PartialMessage<CreateUserServicePortForwardResponse>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "portal_daemon_api.CreateUserServicePortForwardResponse";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateUserServicePortForwardResponse;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CreateUserServicePortForwardResponse;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CreateUserServicePortForwardResponse;
+
+  static equals(a: CreateUserServicePortForwardResponse | PlainMessage<CreateUserServicePortForwardResponse> | undefined, b: CreateUserServicePortForwardResponse | PlainMessage<CreateUserServicePortForwardResponse> | undefined): boolean;
+}
+
+/**
+ * @generated from message portal_daemon_api.RemoveUserServicePortForwardResponse
+ */
+export declare class RemoveUserServicePortForwardResponse extends Message<RemoveUserServicePortForwardResponse> {
+  constructor(data?: PartialMessage<RemoveUserServicePortForwardResponse>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "portal_daemon_api.RemoveUserServicePortForwardResponse";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RemoveUserServicePortForwardResponse;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RemoveUserServicePortForwardResponse;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RemoveUserServicePortForwardResponse;
+
+  static equals(a: RemoveUserServicePortForwardResponse | PlainMessage<RemoveUserServicePortForwardResponse> | undefined, b: RemoveUserServicePortForwardResponse | PlainMessage<RemoveUserServicePortForwardResponse> | undefined): boolean;
 }
 
 /**

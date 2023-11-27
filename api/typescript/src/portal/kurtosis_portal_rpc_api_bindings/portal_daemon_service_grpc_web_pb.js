@@ -138,61 +138,122 @@ proto.portal_daemon_api.KurtosisPortalDaemonPromiseClient.prototype.ping =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.portal_daemon_api.ForwardUserServicePortArgs,
- *   !proto.portal_daemon_api.ForwardUserServicePortResponse>}
+ *   !proto.portal_daemon_api.CreateUserServicePortForwardArgs,
+ *   !proto.portal_daemon_api.CreateUserServicePortForwardResponse>}
  */
-const methodDescriptor_KurtosisPortalDaemon_ForwardUserServicePort = new grpc.web.MethodDescriptor(
-  '/portal_daemon_api.KurtosisPortalDaemon/ForwardUserServicePort',
+const methodDescriptor_KurtosisPortalDaemon_CreateUserServicePortForward = new grpc.web.MethodDescriptor(
+  '/portal_daemon_api.KurtosisPortalDaemon/CreateUserServicePortForward',
   grpc.web.MethodType.UNARY,
-  proto.portal_daemon_api.ForwardUserServicePortArgs,
-  proto.portal_daemon_api.ForwardUserServicePortResponse,
+  proto.portal_daemon_api.CreateUserServicePortForwardArgs,
+  proto.portal_daemon_api.CreateUserServicePortForwardResponse,
   /**
-   * @param {!proto.portal_daemon_api.ForwardUserServicePortArgs} request
+   * @param {!proto.portal_daemon_api.CreateUserServicePortForwardArgs} request
    * @return {!Uint8Array}
    */
   function(request) {
     return request.serializeBinary();
   },
-  proto.portal_daemon_api.ForwardUserServicePortResponse.deserializeBinary
+  proto.portal_daemon_api.CreateUserServicePortForwardResponse.deserializeBinary
 );
 
 
 /**
- * @param {!proto.portal_daemon_api.ForwardUserServicePortArgs} request The
+ * @param {!proto.portal_daemon_api.CreateUserServicePortForwardArgs} request The
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.portal_daemon_api.ForwardUserServicePortResponse)}
+ * @param {function(?grpc.web.RpcError, ?proto.portal_daemon_api.CreateUserServicePortForwardResponse)}
  *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.portal_daemon_api.ForwardUserServicePortResponse>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.portal_daemon_api.CreateUserServicePortForwardResponse>|undefined}
  *     The XHR Node Readable Stream
  */
-proto.portal_daemon_api.KurtosisPortalDaemonClient.prototype.forwardUserServicePort =
+proto.portal_daemon_api.KurtosisPortalDaemonClient.prototype.createUserServicePortForward =
     function(request, metadata, callback) {
   return this.client_.rpcCall(this.hostname_ +
-      '/portal_daemon_api.KurtosisPortalDaemon/ForwardUserServicePort',
+      '/portal_daemon_api.KurtosisPortalDaemon/CreateUserServicePortForward',
       request,
       metadata || {},
-      methodDescriptor_KurtosisPortalDaemon_ForwardUserServicePort,
+      methodDescriptor_KurtosisPortalDaemon_CreateUserServicePortForward,
       callback);
 };
 
 
 /**
- * @param {!proto.portal_daemon_api.ForwardUserServicePortArgs} request The
+ * @param {!proto.portal_daemon_api.CreateUserServicePortForwardArgs} request The
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.portal_daemon_api.ForwardUserServicePortResponse>}
+ * @return {!Promise<!proto.portal_daemon_api.CreateUserServicePortForwardResponse>}
  *     Promise that resolves to the response
  */
-proto.portal_daemon_api.KurtosisPortalDaemonPromiseClient.prototype.forwardUserServicePort =
+proto.portal_daemon_api.KurtosisPortalDaemonPromiseClient.prototype.createUserServicePortForward =
     function(request, metadata) {
   return this.client_.unaryCall(this.hostname_ +
-      '/portal_daemon_api.KurtosisPortalDaemon/ForwardUserServicePort',
+      '/portal_daemon_api.KurtosisPortalDaemon/CreateUserServicePortForward',
       request,
       metadata || {},
-      methodDescriptor_KurtosisPortalDaemon_ForwardUserServicePort);
+      methodDescriptor_KurtosisPortalDaemon_CreateUserServicePortForward);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.portal_daemon_api.EnclaveServicePortId,
+ *   !proto.portal_daemon_api.RemoveUserServicePortForwardResponse>}
+ */
+const methodDescriptor_KurtosisPortalDaemon_RemoveUserServicePortForward = new grpc.web.MethodDescriptor(
+  '/portal_daemon_api.KurtosisPortalDaemon/RemoveUserServicePortForward',
+  grpc.web.MethodType.UNARY,
+  proto.portal_daemon_api.EnclaveServicePortId,
+  proto.portal_daemon_api.RemoveUserServicePortForwardResponse,
+  /**
+   * @param {!proto.portal_daemon_api.EnclaveServicePortId} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.portal_daemon_api.RemoveUserServicePortForwardResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.portal_daemon_api.EnclaveServicePortId} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.portal_daemon_api.RemoveUserServicePortForwardResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.portal_daemon_api.RemoveUserServicePortForwardResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.portal_daemon_api.KurtosisPortalDaemonClient.prototype.removeUserServicePortForward =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/portal_daemon_api.KurtosisPortalDaemon/RemoveUserServicePortForward',
+      request,
+      metadata || {},
+      methodDescriptor_KurtosisPortalDaemon_RemoveUserServicePortForward,
+      callback);
+};
+
+
+/**
+ * @param {!proto.portal_daemon_api.EnclaveServicePortId} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.portal_daemon_api.RemoveUserServicePortForwardResponse>}
+ *     Promise that resolves to the response
+ */
+proto.portal_daemon_api.KurtosisPortalDaemonPromiseClient.prototype.removeUserServicePortForward =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/portal_daemon_api.KurtosisPortalDaemon/RemoveUserServicePortForward',
+      request,
+      metadata || {},
+      methodDescriptor_KurtosisPortalDaemon_RemoveUserServicePortForward);
 };
 
 

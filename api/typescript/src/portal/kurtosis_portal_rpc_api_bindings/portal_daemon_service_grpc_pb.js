@@ -4,26 +4,37 @@
 var grpc = require('@grpc/grpc-js');
 var portal_daemon_service_pb = require('./portal_daemon_service_pb.js');
 
-function serialize_portal_daemon_api_ForwardUserServicePortArgs(arg) {
-  if (!(arg instanceof portal_daemon_service_pb.ForwardUserServicePortArgs)) {
-    throw new Error('Expected argument of type portal_daemon_api.ForwardUserServicePortArgs');
+function serialize_portal_daemon_api_CreateUserServicePortForwardArgs(arg) {
+  if (!(arg instanceof portal_daemon_service_pb.CreateUserServicePortForwardArgs)) {
+    throw new Error('Expected argument of type portal_daemon_api.CreateUserServicePortForwardArgs');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_portal_daemon_api_ForwardUserServicePortArgs(buffer_arg) {
-  return portal_daemon_service_pb.ForwardUserServicePortArgs.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_portal_daemon_api_CreateUserServicePortForwardArgs(buffer_arg) {
+  return portal_daemon_service_pb.CreateUserServicePortForwardArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_portal_daemon_api_ForwardUserServicePortResponse(arg) {
-  if (!(arg instanceof portal_daemon_service_pb.ForwardUserServicePortResponse)) {
-    throw new Error('Expected argument of type portal_daemon_api.ForwardUserServicePortResponse');
+function serialize_portal_daemon_api_CreateUserServicePortForwardResponse(arg) {
+  if (!(arg instanceof portal_daemon_service_pb.CreateUserServicePortForwardResponse)) {
+    throw new Error('Expected argument of type portal_daemon_api.CreateUserServicePortForwardResponse');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_portal_daemon_api_ForwardUserServicePortResponse(buffer_arg) {
-  return portal_daemon_service_pb.ForwardUserServicePortResponse.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_portal_daemon_api_CreateUserServicePortForwardResponse(buffer_arg) {
+  return portal_daemon_service_pb.CreateUserServicePortForwardResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_portal_daemon_api_EnclaveServicePortId(arg) {
+  if (!(arg instanceof portal_daemon_service_pb.EnclaveServicePortId)) {
+    throw new Error('Expected argument of type portal_daemon_api.EnclaveServicePortId');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_portal_daemon_api_EnclaveServicePortId(buffer_arg) {
+  return portal_daemon_service_pb.EnclaveServicePortId.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_portal_daemon_api_PortalPing(arg) {
@@ -48,6 +59,17 @@ function deserialize_portal_daemon_api_PortalPong(buffer_arg) {
   return portal_daemon_service_pb.PortalPong.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_portal_daemon_api_RemoveUserServicePortForwardResponse(arg) {
+  if (!(arg instanceof portal_daemon_service_pb.RemoveUserServicePortForwardResponse)) {
+    throw new Error('Expected argument of type portal_daemon_api.RemoveUserServicePortForwardResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_portal_daemon_api_RemoveUserServicePortForwardResponse(buffer_arg) {
+  return portal_daemon_service_pb.RemoveUserServicePortForwardResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 
 var KurtosisPortalDaemonService = exports.KurtosisPortalDaemonService = {
   // To check availability
@@ -62,16 +84,27 @@ ping: {
     responseSerialize: serialize_portal_daemon_api_PortalPong,
     responseDeserialize: deserialize_portal_daemon_api_PortalPong,
   },
-  forwardUserServicePort: {
-    path: '/portal_daemon_api.KurtosisPortalDaemon/ForwardUserServicePort',
+  createUserServicePortForward: {
+    path: '/portal_daemon_api.KurtosisPortalDaemon/CreateUserServicePortForward',
     requestStream: false,
     responseStream: false,
-    requestType: portal_daemon_service_pb.ForwardUserServicePortArgs,
-    responseType: portal_daemon_service_pb.ForwardUserServicePortResponse,
-    requestSerialize: serialize_portal_daemon_api_ForwardUserServicePortArgs,
-    requestDeserialize: deserialize_portal_daemon_api_ForwardUserServicePortArgs,
-    responseSerialize: serialize_portal_daemon_api_ForwardUserServicePortResponse,
-    responseDeserialize: deserialize_portal_daemon_api_ForwardUserServicePortResponse,
+    requestType: portal_daemon_service_pb.CreateUserServicePortForwardArgs,
+    responseType: portal_daemon_service_pb.CreateUserServicePortForwardResponse,
+    requestSerialize: serialize_portal_daemon_api_CreateUserServicePortForwardArgs,
+    requestDeserialize: deserialize_portal_daemon_api_CreateUserServicePortForwardArgs,
+    responseSerialize: serialize_portal_daemon_api_CreateUserServicePortForwardResponse,
+    responseDeserialize: deserialize_portal_daemon_api_CreateUserServicePortForwardResponse,
+  },
+  removeUserServicePortForward: {
+    path: '/portal_daemon_api.KurtosisPortalDaemon/RemoveUserServicePortForward',
+    requestStream: false,
+    responseStream: false,
+    requestType: portal_daemon_service_pb.EnclaveServicePortId,
+    responseType: portal_daemon_service_pb.RemoveUserServicePortForwardResponse,
+    requestSerialize: serialize_portal_daemon_api_EnclaveServicePortId,
+    requestDeserialize: deserialize_portal_daemon_api_EnclaveServicePortId,
+    responseSerialize: serialize_portal_daemon_api_RemoveUserServicePortForwardResponse,
+    responseDeserialize: deserialize_portal_daemon_api_RemoveUserServicePortForwardResponse,
   },
 };
 

@@ -36,16 +36,20 @@ const (
 	// KurtosisPortalDaemonPingProcedure is the fully-qualified name of the KurtosisPortalDaemon's Ping
 	// RPC.
 	KurtosisPortalDaemonPingProcedure = "/portal_daemon_api.KurtosisPortalDaemon/Ping"
-	// KurtosisPortalDaemonForwardUserServicePortProcedure is the fully-qualified name of the
-	// KurtosisPortalDaemon's ForwardUserServicePort RPC.
-	KurtosisPortalDaemonForwardUserServicePortProcedure = "/portal_daemon_api.KurtosisPortalDaemon/ForwardUserServicePort"
+	// KurtosisPortalDaemonCreateUserServicePortForwardProcedure is the fully-qualified name of the
+	// KurtosisPortalDaemon's CreateUserServicePortForward RPC.
+	KurtosisPortalDaemonCreateUserServicePortForwardProcedure = "/portal_daemon_api.KurtosisPortalDaemon/CreateUserServicePortForward"
+	// KurtosisPortalDaemonRemoveUserServicePortForwardProcedure is the fully-qualified name of the
+	// KurtosisPortalDaemon's RemoveUserServicePortForward RPC.
+	KurtosisPortalDaemonRemoveUserServicePortForwardProcedure = "/portal_daemon_api.KurtosisPortalDaemon/RemoveUserServicePortForward"
 )
 
 // KurtosisPortalDaemonClient is a client for the portal_daemon_api.KurtosisPortalDaemon service.
 type KurtosisPortalDaemonClient interface {
 	// To check availability
 	Ping(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.PortalPing]) (*connect.Response[kurtosis_portal_rpc_api_bindings.PortalPong], error)
-	ForwardUserServicePort(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.ForwardUserServicePortArgs]) (*connect.Response[kurtosis_portal_rpc_api_bindings.ForwardUserServicePortResponse], error)
+	CreateUserServicePortForward(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardArgs]) (*connect.Response[kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse], error)
+	RemoveUserServicePortForward(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.EnclaveServicePortId]) (*connect.Response[kurtosis_portal_rpc_api_bindings.RemoveUserServicePortForwardResponse], error)
 }
 
 // NewKurtosisPortalDaemonClient constructs a client for the portal_daemon_api.KurtosisPortalDaemon
@@ -63,9 +67,14 @@ func NewKurtosisPortalDaemonClient(httpClient connect.HTTPClient, baseURL string
 			baseURL+KurtosisPortalDaemonPingProcedure,
 			opts...,
 		),
-		forwardUserServicePort: connect.NewClient[kurtosis_portal_rpc_api_bindings.ForwardUserServicePortArgs, kurtosis_portal_rpc_api_bindings.ForwardUserServicePortResponse](
+		createUserServicePortForward: connect.NewClient[kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardArgs, kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse](
 			httpClient,
-			baseURL+KurtosisPortalDaemonForwardUserServicePortProcedure,
+			baseURL+KurtosisPortalDaemonCreateUserServicePortForwardProcedure,
+			opts...,
+		),
+		removeUserServicePortForward: connect.NewClient[kurtosis_portal_rpc_api_bindings.EnclaveServicePortId, kurtosis_portal_rpc_api_bindings.RemoveUserServicePortForwardResponse](
+			httpClient,
+			baseURL+KurtosisPortalDaemonRemoveUserServicePortForwardProcedure,
 			opts...,
 		),
 	}
@@ -73,8 +82,9 @@ func NewKurtosisPortalDaemonClient(httpClient connect.HTTPClient, baseURL string
 
 // kurtosisPortalDaemonClient implements KurtosisPortalDaemonClient.
 type kurtosisPortalDaemonClient struct {
-	ping                   *connect.Client[kurtosis_portal_rpc_api_bindings.PortalPing, kurtosis_portal_rpc_api_bindings.PortalPong]
-	forwardUserServicePort *connect.Client[kurtosis_portal_rpc_api_bindings.ForwardUserServicePortArgs, kurtosis_portal_rpc_api_bindings.ForwardUserServicePortResponse]
+	ping                         *connect.Client[kurtosis_portal_rpc_api_bindings.PortalPing, kurtosis_portal_rpc_api_bindings.PortalPong]
+	createUserServicePortForward *connect.Client[kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardArgs, kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse]
+	removeUserServicePortForward *connect.Client[kurtosis_portal_rpc_api_bindings.EnclaveServicePortId, kurtosis_portal_rpc_api_bindings.RemoveUserServicePortForwardResponse]
 }
 
 // Ping calls portal_daemon_api.KurtosisPortalDaemon.Ping.
@@ -82,9 +92,16 @@ func (c *kurtosisPortalDaemonClient) Ping(ctx context.Context, req *connect.Requ
 	return c.ping.CallUnary(ctx, req)
 }
 
-// ForwardUserServicePort calls portal_daemon_api.KurtosisPortalDaemon.ForwardUserServicePort.
-func (c *kurtosisPortalDaemonClient) ForwardUserServicePort(ctx context.Context, req *connect.Request[kurtosis_portal_rpc_api_bindings.ForwardUserServicePortArgs]) (*connect.Response[kurtosis_portal_rpc_api_bindings.ForwardUserServicePortResponse], error) {
-	return c.forwardUserServicePort.CallUnary(ctx, req)
+// CreateUserServicePortForward calls
+// portal_daemon_api.KurtosisPortalDaemon.CreateUserServicePortForward.
+func (c *kurtosisPortalDaemonClient) CreateUserServicePortForward(ctx context.Context, req *connect.Request[kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardArgs]) (*connect.Response[kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse], error) {
+	return c.createUserServicePortForward.CallUnary(ctx, req)
+}
+
+// RemoveUserServicePortForward calls
+// portal_daemon_api.KurtosisPortalDaemon.RemoveUserServicePortForward.
+func (c *kurtosisPortalDaemonClient) RemoveUserServicePortForward(ctx context.Context, req *connect.Request[kurtosis_portal_rpc_api_bindings.EnclaveServicePortId]) (*connect.Response[kurtosis_portal_rpc_api_bindings.RemoveUserServicePortForwardResponse], error) {
+	return c.removeUserServicePortForward.CallUnary(ctx, req)
 }
 
 // KurtosisPortalDaemonHandler is an implementation of the portal_daemon_api.KurtosisPortalDaemon
@@ -92,7 +109,8 @@ func (c *kurtosisPortalDaemonClient) ForwardUserServicePort(ctx context.Context,
 type KurtosisPortalDaemonHandler interface {
 	// To check availability
 	Ping(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.PortalPing]) (*connect.Response[kurtosis_portal_rpc_api_bindings.PortalPong], error)
-	ForwardUserServicePort(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.ForwardUserServicePortArgs]) (*connect.Response[kurtosis_portal_rpc_api_bindings.ForwardUserServicePortResponse], error)
+	CreateUserServicePortForward(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardArgs]) (*connect.Response[kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse], error)
+	RemoveUserServicePortForward(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.EnclaveServicePortId]) (*connect.Response[kurtosis_portal_rpc_api_bindings.RemoveUserServicePortForwardResponse], error)
 }
 
 // NewKurtosisPortalDaemonHandler builds an HTTP handler from the service implementation. It returns
@@ -106,17 +124,24 @@ func NewKurtosisPortalDaemonHandler(svc KurtosisPortalDaemonHandler, opts ...con
 		svc.Ping,
 		opts...,
 	)
-	kurtosisPortalDaemonForwardUserServicePortHandler := connect.NewUnaryHandler(
-		KurtosisPortalDaemonForwardUserServicePortProcedure,
-		svc.ForwardUserServicePort,
+	kurtosisPortalDaemonCreateUserServicePortForwardHandler := connect.NewUnaryHandler(
+		KurtosisPortalDaemonCreateUserServicePortForwardProcedure,
+		svc.CreateUserServicePortForward,
+		opts...,
+	)
+	kurtosisPortalDaemonRemoveUserServicePortForwardHandler := connect.NewUnaryHandler(
+		KurtosisPortalDaemonRemoveUserServicePortForwardProcedure,
+		svc.RemoveUserServicePortForward,
 		opts...,
 	)
 	return "/portal_daemon_api.KurtosisPortalDaemon/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisPortalDaemonPingProcedure:
 			kurtosisPortalDaemonPingHandler.ServeHTTP(w, r)
-		case KurtosisPortalDaemonForwardUserServicePortProcedure:
-			kurtosisPortalDaemonForwardUserServicePortHandler.ServeHTTP(w, r)
+		case KurtosisPortalDaemonCreateUserServicePortForwardProcedure:
+			kurtosisPortalDaemonCreateUserServicePortForwardHandler.ServeHTTP(w, r)
+		case KurtosisPortalDaemonRemoveUserServicePortForwardProcedure:
+			kurtosisPortalDaemonRemoveUserServicePortForwardHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -130,6 +155,10 @@ func (UnimplementedKurtosisPortalDaemonHandler) Ping(context.Context, *connect.R
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("portal_daemon_api.KurtosisPortalDaemon.Ping is not implemented"))
 }
 
-func (UnimplementedKurtosisPortalDaemonHandler) ForwardUserServicePort(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.ForwardUserServicePortArgs]) (*connect.Response[kurtosis_portal_rpc_api_bindings.ForwardUserServicePortResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("portal_daemon_api.KurtosisPortalDaemon.ForwardUserServicePort is not implemented"))
+func (UnimplementedKurtosisPortalDaemonHandler) CreateUserServicePortForward(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardArgs]) (*connect.Response[kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("portal_daemon_api.KurtosisPortalDaemon.CreateUserServicePortForward is not implemented"))
+}
+
+func (UnimplementedKurtosisPortalDaemonHandler) RemoveUserServicePortForward(context.Context, *connect.Request[kurtosis_portal_rpc_api_bindings.EnclaveServicePortId]) (*connect.Response[kurtosis_portal_rpc_api_bindings.RemoveUserServicePortForwardResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("portal_daemon_api.KurtosisPortalDaemon.RemoveUserServicePortForward is not implemented"))
 }

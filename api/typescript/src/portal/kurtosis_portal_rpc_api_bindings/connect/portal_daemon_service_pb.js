@@ -6,34 +6,57 @@
 import { proto3 } from "@bufbuild/protobuf";
 
 /**
- * @generated from message portal_daemon_api.ForwardUserServicePortArgs
+ * may specify a specific port, or an entire enclave's worth of services and ports
+ *
+ * @generated from message portal_daemon_api.EnclaveServicePortId
  */
-export const ForwardUserServicePortArgs = proto3.makeMessageType(
-  "portal_daemon_api.ForwardUserServicePortArgs",
+export const EnclaveServicePortId = proto3.makeMessageType(
+  "portal_daemon_api.EnclaveServicePortId",
   () => [
     { no: 1, name: "enclave_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "service_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "port_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "local_port_number", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 2, name: "service_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 3, name: "port_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 
 /**
- * @generated from message portal_daemon_api.ForwardPortResponse
+ * @generated from message portal_daemon_api.ForwardedServicePortId
  */
-export const ForwardPortResponse = proto3.makeMessageType(
-  "portal_daemon_api.ForwardPortResponse",
-  [],
-);
-
-/**
- * @generated from message portal_daemon_api.ForwardUserServicePortResponse
- */
-export const ForwardUserServicePortResponse = proto3.makeMessageType(
-  "portal_daemon_api.ForwardUserServicePortResponse",
+export const ForwardedServicePortId = proto3.makeMessageType(
+  "portal_daemon_api.ForwardedServicePortId",
   () => [
-    { no: 1, name: "local_port_number", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 1, name: "enclaveServicePortId", kind: "message", T: EnclaveServicePortId },
+    { no: 2, name: "local_port_number", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
   ],
+);
+
+/**
+ * @generated from message portal_daemon_api.CreateUserServicePortForwardArgs
+ */
+export const CreateUserServicePortForwardArgs = proto3.makeMessageType(
+  "portal_daemon_api.CreateUserServicePortForwardArgs",
+  () => [
+    { no: 1, name: "enclaveServicePortId", kind: "message", T: EnclaveServicePortId },
+    { no: 2, name: "local_port_number", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+  ],
+);
+
+/**
+ * @generated from message portal_daemon_api.CreateUserServicePortForwardResponse
+ */
+export const CreateUserServicePortForwardResponse = proto3.makeMessageType(
+  "portal_daemon_api.CreateUserServicePortForwardResponse",
+  () => [
+    { no: 1, name: "forwarded_port_numbers", kind: "message", T: ForwardedServicePortId, repeated: true },
+  ],
+);
+
+/**
+ * @generated from message portal_daemon_api.RemoveUserServicePortForwardResponse
+ */
+export const RemoveUserServicePortForwardResponse = proto3.makeMessageType(
+  "portal_daemon_api.RemoveUserServicePortForwardResponse",
+  [],
 );
 
 /**

@@ -2,72 +2,132 @@ import * as jspb from 'google-protobuf'
 
 
 
-export class ForwardUserServicePortArgs extends jspb.Message {
+export class EnclaveServicePortId extends jspb.Message {
   getEnclaveId(): string;
-  setEnclaveId(value: string): ForwardUserServicePortArgs;
+  setEnclaveId(value: string): EnclaveServicePortId;
 
   getServiceId(): string;
-  setServiceId(value: string): ForwardUserServicePortArgs;
+  setServiceId(value: string): EnclaveServicePortId;
+  hasServiceId(): boolean;
+  clearServiceId(): EnclaveServicePortId;
 
   getPortId(): string;
-  setPortId(value: string): ForwardUserServicePortArgs;
-
-  getLocalPortNumber(): number;
-  setLocalPortNumber(value: number): ForwardUserServicePortArgs;
-  hasLocalPortNumber(): boolean;
-  clearLocalPortNumber(): ForwardUserServicePortArgs;
+  setPortId(value: string): EnclaveServicePortId;
+  hasPortId(): boolean;
+  clearPortId(): EnclaveServicePortId;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ForwardUserServicePortArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: ForwardUserServicePortArgs): ForwardUserServicePortArgs.AsObject;
-  static serializeBinaryToWriter(message: ForwardUserServicePortArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ForwardUserServicePortArgs;
-  static deserializeBinaryFromReader(message: ForwardUserServicePortArgs, reader: jspb.BinaryReader): ForwardUserServicePortArgs;
+  toObject(includeInstance?: boolean): EnclaveServicePortId.AsObject;
+  static toObject(includeInstance: boolean, msg: EnclaveServicePortId): EnclaveServicePortId.AsObject;
+  static serializeBinaryToWriter(message: EnclaveServicePortId, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): EnclaveServicePortId;
+  static deserializeBinaryFromReader(message: EnclaveServicePortId, reader: jspb.BinaryReader): EnclaveServicePortId;
 }
 
-export namespace ForwardUserServicePortArgs {
+export namespace EnclaveServicePortId {
   export type AsObject = {
     enclaveId: string,
-    serviceId: string,
-    portId: string,
+    serviceId?: string,
+    portId?: string,
+  }
+
+  export enum ServiceIdCase { 
+    _SERVICE_ID_NOT_SET = 0,
+    SERVICE_ID = 2,
+  }
+
+  export enum PortIdCase { 
+    _PORT_ID_NOT_SET = 0,
+    PORT_ID = 3,
+  }
+}
+
+export class ForwardedServicePortId extends jspb.Message {
+  getEnclaveserviceportid(): EnclaveServicePortId | undefined;
+  setEnclaveserviceportid(value?: EnclaveServicePortId): ForwardedServicePortId;
+  hasEnclaveserviceportid(): boolean;
+  clearEnclaveserviceportid(): ForwardedServicePortId;
+
+  getLocalPortNumber(): number;
+  setLocalPortNumber(value: number): ForwardedServicePortId;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ForwardedServicePortId.AsObject;
+  static toObject(includeInstance: boolean, msg: ForwardedServicePortId): ForwardedServicePortId.AsObject;
+  static serializeBinaryToWriter(message: ForwardedServicePortId, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ForwardedServicePortId;
+  static deserializeBinaryFromReader(message: ForwardedServicePortId, reader: jspb.BinaryReader): ForwardedServicePortId;
+}
+
+export namespace ForwardedServicePortId {
+  export type AsObject = {
+    enclaveserviceportid?: EnclaveServicePortId.AsObject,
+    localPortNumber: number,
+  }
+}
+
+export class CreateUserServicePortForwardArgs extends jspb.Message {
+  getEnclaveserviceportid(): EnclaveServicePortId | undefined;
+  setEnclaveserviceportid(value?: EnclaveServicePortId): CreateUserServicePortForwardArgs;
+  hasEnclaveserviceportid(): boolean;
+  clearEnclaveserviceportid(): CreateUserServicePortForwardArgs;
+
+  getLocalPortNumber(): number;
+  setLocalPortNumber(value: number): CreateUserServicePortForwardArgs;
+  hasLocalPortNumber(): boolean;
+  clearLocalPortNumber(): CreateUserServicePortForwardArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CreateUserServicePortForwardArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: CreateUserServicePortForwardArgs): CreateUserServicePortForwardArgs.AsObject;
+  static serializeBinaryToWriter(message: CreateUserServicePortForwardArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CreateUserServicePortForwardArgs;
+  static deserializeBinaryFromReader(message: CreateUserServicePortForwardArgs, reader: jspb.BinaryReader): CreateUserServicePortForwardArgs;
+}
+
+export namespace CreateUserServicePortForwardArgs {
+  export type AsObject = {
+    enclaveserviceportid?: EnclaveServicePortId.AsObject,
     localPortNumber?: number,
   }
 
   export enum LocalPortNumberCase { 
     _LOCAL_PORT_NUMBER_NOT_SET = 0,
-    LOCAL_PORT_NUMBER = 4,
+    LOCAL_PORT_NUMBER = 2,
   }
 }
 
-export class ForwardPortResponse extends jspb.Message {
+export class CreateUserServicePortForwardResponse extends jspb.Message {
+  getForwardedPortNumbersList(): Array<ForwardedServicePortId>;
+  setForwardedPortNumbersList(value: Array<ForwardedServicePortId>): CreateUserServicePortForwardResponse;
+  clearForwardedPortNumbersList(): CreateUserServicePortForwardResponse;
+  addForwardedPortNumbers(value?: ForwardedServicePortId, index?: number): ForwardedServicePortId;
+
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ForwardPortResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: ForwardPortResponse): ForwardPortResponse.AsObject;
-  static serializeBinaryToWriter(message: ForwardPortResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ForwardPortResponse;
-  static deserializeBinaryFromReader(message: ForwardPortResponse, reader: jspb.BinaryReader): ForwardPortResponse;
+  toObject(includeInstance?: boolean): CreateUserServicePortForwardResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: CreateUserServicePortForwardResponse): CreateUserServicePortForwardResponse.AsObject;
+  static serializeBinaryToWriter(message: CreateUserServicePortForwardResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CreateUserServicePortForwardResponse;
+  static deserializeBinaryFromReader(message: CreateUserServicePortForwardResponse, reader: jspb.BinaryReader): CreateUserServicePortForwardResponse;
 }
 
-export namespace ForwardPortResponse {
+export namespace CreateUserServicePortForwardResponse {
   export type AsObject = {
+    forwardedPortNumbersList: Array<ForwardedServicePortId.AsObject>,
   }
 }
 
-export class ForwardUserServicePortResponse extends jspb.Message {
-  getLocalPortNumber(): number;
-  setLocalPortNumber(value: number): ForwardUserServicePortResponse;
-
+export class RemoveUserServicePortForwardResponse extends jspb.Message {
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ForwardUserServicePortResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: ForwardUserServicePortResponse): ForwardUserServicePortResponse.AsObject;
-  static serializeBinaryToWriter(message: ForwardUserServicePortResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ForwardUserServicePortResponse;
-  static deserializeBinaryFromReader(message: ForwardUserServicePortResponse, reader: jspb.BinaryReader): ForwardUserServicePortResponse;
+  toObject(includeInstance?: boolean): RemoveUserServicePortForwardResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: RemoveUserServicePortForwardResponse): RemoveUserServicePortForwardResponse.AsObject;
+  static serializeBinaryToWriter(message: RemoveUserServicePortForwardResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RemoveUserServicePortForwardResponse;
+  static deserializeBinaryFromReader(message: RemoveUserServicePortForwardResponse, reader: jspb.BinaryReader): RemoveUserServicePortForwardResponse;
 }
 
-export namespace ForwardUserServicePortResponse {
+export namespace RemoveUserServicePortForwardResponse {
   export type AsObject = {
-    localPortNumber: number,
   }
 }
 

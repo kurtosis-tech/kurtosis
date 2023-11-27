@@ -9,24 +9,38 @@ service KurtosisPortalDaemon {
   // To check availability
   rpc Ping(PortalPing) returns (PortalPong) {}
 
-  rpc ForwardUserServicePort(ForwardUserServicePortArgs) returns (ForwardUserServicePortResponse) {};
+  rpc CreateUserServicePortForward(CreateUserServicePortForwardArgs) returns (CreateUserServicePortForwardResponse) {};
+
+  rpc RemoveUserServicePortForward(EnclaveServicePortId) returns (RemoveUserServicePortForwardResponse) {};
 }
 
-message ForwardUserServicePortArgs {
+// may specify a specific port, or an entire enclave's worth of services and ports
+message EnclaveServicePortId {
   string enclave_id = 1;
 
-  string service_id = 2;
+  optional string service_id = 2;
 
-  string port_id = 3;
-
-  optional uint32 local_port_number = 4;
+  optional string port_id = 3;
 }
 
-message ForwardPortResponse {
+message ForwardedServicePortId {
+  EnclaveServicePortId enclaveServicePortId = 1;
+
+  uint32 local_port_number = 2;
 }
 
-message ForwardUserServicePortResponse {
-  uint32 local_port_number = 1;
+message CreateUserServicePortForwardArgs {
+  EnclaveServicePortId enclaveServicePortId = 1;
+
+  optional uint32 local_port_number = 2;
+}
+
+message CreateUserServicePortForwardResponse {
+  repeated ForwardedServicePortId forwarded_port_numbers = 1;
+}
+
+message RemoveUserServicePortForwardResponse {
+
 }
 
 message PortalPing {
