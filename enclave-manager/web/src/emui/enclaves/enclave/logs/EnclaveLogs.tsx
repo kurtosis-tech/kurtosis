@@ -1,13 +1,16 @@
-import { CircularProgress, Icon } from "@chakra-ui/react";
+import { ButtonGroup, CircularProgress, Flex, Icon, Tag } from "@chakra-ui/react";
 import { StarlarkRunResponseLine } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useEffect, useState } from "react";
 import { FiCheck, FiX } from "react-icons/fi";
 import { Location, useLocation, useNavigate } from "react-router-dom";
-import { LogLineProps } from "../../../../components/enclaves/logs/LogLine";
+import { AppPageLayout } from "../../../../components/AppLayout";
+import { EditEnclaveButton } from "../../../../components/enclaves/EditEnclaveButton";
 import { LogViewer } from "../../../../components/enclaves/logs/LogViewer";
+import { LogLineMessage } from "../../../../components/enclaves/logs/types";
+import { DeleteEnclavesButton } from "../../../../components/enclaves/widgets/DeleteEnclavesButton";
 import { isAsyncIterable, stringifyError } from "../../../../utils";
 import { useEmuiAppContext } from "../../../EmuiAppContext";
-import { EnclaveFullInfo } from "../../types";
+import { useEnclaveFromParams } from "../EnclaveRouteContext";
 
 // These are the stages we want to catch and handle in the UI
 type EnclaveLogStage =
@@ -19,7 +22,7 @@ type EnclaveLogStage =
 
 const LOG_STARTING_EXECUTION = "Starting execution";
 
-export function starlarkResponseLineToLogLineProps(l: StarlarkRunResponseLine): LogLineProps {
+export function starlarkResponseLineToLogLineMessage(l: StarlarkRunResponseLine): LogLineMessage {
   switch (l.runResponseLine.case) {
     case "instruction":
       return { message: l.runResponseLine.value.executableInstruction };
@@ -38,16 +41,14 @@ export function starlarkResponseLineToLogLineProps(l: StarlarkRunResponseLine): 
   }
 }
 
-type EnclaveLogsProps = {
-  enclave: EnclaveFullInfo;
-};
-
-export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
-  const { refreshServices, refreshFilesAndArtifacts, refreshStarlarkRun } = useEmuiAppContext();
+export const EnclaveLogs = () => {
+  const enclave = useEnclaveFromParams();
+  const { refreshServices, refreshFilesAndArtifacts, refreshStarlarkRun, updateStarlarkFinishedInEnclave } =
+    useEmuiAppContext();
   const navigator = useNavigate();
   const location = useLocation() as Location<{ logs: AsyncIterable<StarlarkRunResponseLine> }>;
   const [progress, setProgress] = useState<EnclaveLogStage>({ stage: "waiting" });
-  const [logLines, setLogLines] = useState<LogLineProps[]>([]);
+  const [logLines, setLogLines] = useState<LogLineMessage[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +61,7 @@ export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
             if (cancelled) {
               return;
             }
-            const parsedLine = starlarkResponseLineToLogLineProps(line);
+            const parsedLine = starlarkResponseLineToLogLineMessage(line);
             setLogLines((logLines) => [...logLines, parsedLine]);
             setProgress((oldProgress) => {
               if (line.runResponseLine.case === "progressInfo") {
@@ -98,6 +99,8 @@ export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
           }
           setLogLines((logLines) => [...logLines, { message: `Error: ${stringifyError(error)}`, status: "error" }]);
           await Promise.all([refreshStarlarkRun(enclave), refreshServices(enclave), refreshFilesAndArtifacts(enclave)]);
+        } finally {
+          updateStarlarkFinishedInEnclave(enclave);
         }
       } else {
         navigator(`/enclave/${enclave.shortenedUuid}/overview`);
@@ -121,12 +124,22 @@ export const EnclaveLogs = ({ enclave }: EnclaveLogsProps) => {
       : 0;
 
   return (
-    <LogViewer
-      logLines={logLines}
-      progressPercent={progressPercent}
-      ProgressWidget={<ProgressSummary progress={progress} />}
-      logsFileName={`${enclave.name.replaceAll(/\s+/g, "_")}-logs.txt`}
-    />
+    <AppPageLayout>
+      <LogViewer
+        logLines={logLines}
+        progressPercent={progressPercent}
+        ProgressWidget={
+          <Flex justifyContent={"space-between"} alignItems={"center"} width={"100%"}>
+            <ProgressSummary progress={progress} />
+            <ButtonGroup>
+              <DeleteEnclavesButton enclaves={[enclave]} variant={"ghost"} size={"md"} />
+              <EditEnclaveButton enclave={enclave} variant={"ghost"} size={"md"} />
+            </ButtonGroup>
+          </Flex>
+        }
+        logsFileName={`${enclave.name.replaceAll(/\s+/g, "_")}-logs.txt`}
+      />
+    </AppPageLayout>
   );
 };
 
@@ -136,35 +149,37 @@ type ProgressSummaryProps = {
 
 const ProgressSummary = ({ progress }: ProgressSummaryProps) => {
   return (
-    <>
-      {progress.stage === "waiting" && "Waiting"}
-      {progress.stage === "validating" && "Validating"}
-      {progress.stage === "executing" && (
-        <>
-          <CircularProgress
-            size={"18px"}
-            value={(100 * progress.step + 1) / (progress.totalSteps + 1)}
-            color={"kurtosisGreen.400"}
-          />
-          <span>
-            {progress.step} / {progress.totalSteps}
-          </span>
-        </>
-      )}
-      {progress.stage === "done" && (
-        <>
-          <Icon as={FiCheck} size={"18px"} color={"kurtosisGreen.400"} />
-          <span>
-            {progress.totalSteps} / {progress.totalSteps}
-          </span>
-        </>
-      )}
-      {progress.stage === "failed" && (
-        <>
-          <Icon as={FiX} size={"18px"} color={"red.400"} />
-          <span>Failed</span>
-        </>
-      )}
-    </>
+    <Tag
+      p={"0 10px"}
+      h={"40px"}
+      colorScheme={progress.stage === "done" ? "green" : progress.stage === "failed" ? "red" : "blue"}
+    >
+      <Flex gap={"8px"} alignItems={"center"}>
+        {progress.stage === "waiting" && "Waiting"}
+        {progress.stage === "validating" && "Validating"}
+        {progress.stage === "executing" && (
+          <>
+            <CircularProgress size={"18px"} value={(100 * progress.step + 1) / (progress.totalSteps + 1)} />
+            <span>
+              {progress.step} / {progress.totalSteps}
+            </span>
+          </>
+        )}
+        {progress.stage === "done" && (
+          <>
+            <Icon as={FiCheck} size={"18px"} />
+            <span>
+              {progress.totalSteps} / {progress.totalSteps}
+            </span>
+          </>
+        )}
+        {progress.stage === "failed" && (
+          <>
+            <Icon as={FiX} size={"18px"} />
+            <span>Failed</span>
+          </>
+        )}
+      </Flex>
+    </Tag>
   );
 };

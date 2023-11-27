@@ -1,4 +1,3 @@
-import { ChevronRightIcon } from "@chakra-ui/icons";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,13 +11,20 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
+  Text,
 } from "@chakra-ui/react";
-import { ReactElement, useEffect, useState } from "react";
-import { MdFilterList } from "react-icons/md";
+import { ReactElement, useMemo } from "react";
+import { BsCaretDownFill } from "react-icons/bs";
 import { Link, Params, UIMatch, useMatches } from "react-router-dom";
 import { EmuiAppState, useEmuiAppContext } from "../emui/EmuiAppContext";
 import { isDefined } from "../utils";
 import { RemoveFunctions } from "../utils/types";
+import { BREADCRUMBS_HEIGHT, MAIN_APP_MAX_WIDTH_WITHOUT_PADDING } from "./theme/constants";
+
+export type KurtosisBreadcrumbsHandle = {
+  crumb?: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => KurtosisBreadcrumb | KurtosisBreadcrumb[];
+  extraControls?: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => ReactElement | null;
+};
 
 type KurtosisBreadcrumbMenuItem = {
   name: string;
@@ -33,51 +39,89 @@ export type KurtosisBreadcrumb = {
 };
 
 export const KurtosisBreadcrumbs = () => {
-  const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave } = useEmuiAppContext();
+  const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave, starlarkRunningInEnclaves } =
+    useEmuiAppContext();
 
-  const matches = useMatches() as UIMatch<
-    object,
-    {
-      crumb?: (
-        state: RemoveFunctions<EmuiAppState>,
-        params: Params<string>,
-      ) => KurtosisBreadcrumb | Promise<KurtosisBreadcrumb>;
-    }
-  >[];
+  const matches = useMatches() as UIMatch<object, KurtosisBreadcrumbsHandle>[];
 
-  const [matchCrumbs, setMatchCrumbs] = useState<KurtosisBreadcrumb[]>([]);
+  const matchCrumbs = useMemo(
+    () =>
+      matches.flatMap((match) => {
+        if (isDefined(match.handle?.crumb)) {
+          const r = match.handle.crumb(
+            {
+              enclaves,
+              filesAndArtifactsByEnclave,
+              starlarkRunsByEnclave,
+              servicesByEnclave,
+              starlarkRunningInEnclaves,
+            },
+            match.params,
+          );
+          return Array.isArray(r) ? r : [r];
+        }
+        return [];
+      }),
+    [
+      matches,
+      enclaves,
+      filesAndArtifactsByEnclave,
+      starlarkRunsByEnclave,
+      servicesByEnclave,
+      starlarkRunningInEnclaves,
+    ],
+  );
 
-  useEffect(() => {
-    (async () => {
-      setMatchCrumbs(
-        await Promise.all(
-          matches
-            .map((match) =>
-              isDefined(match.handle?.crumb)
-                ? Promise.resolve(
-                    match.handle.crumb(
-                      { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave },
-                      match.params,
-                    ),
-                  )
-                : null,
-            )
-            .filter(isDefined),
-        ),
-      );
-    })();
-  }, [matches, enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave]);
+  const extraControls = useMemo(
+    () =>
+      matches
+        .map((match) =>
+          isDefined(match.handle?.extraControls)
+            ? match.handle?.extraControls(
+                {
+                  enclaves,
+                  filesAndArtifactsByEnclave,
+                  starlarkRunsByEnclave,
+                  servicesByEnclave,
+                  starlarkRunningInEnclaves,
+                },
+                match.params,
+              )
+            : null,
+        )
+        .filter(isDefined),
+    [
+      matches,
+      enclaves,
+      filesAndArtifactsByEnclave,
+      starlarkRunsByEnclave,
+      servicesByEnclave,
+      starlarkRunningInEnclaves,
+    ],
+  );
 
   return (
-    <Flex h="40px" p={"4px 0"} alignItems={"center"}>
-      <Breadcrumb variant={"topNavigation"} separator={<ChevronRightIcon h={"20px"} w={"24px"} />}>
-        {matchCrumbs.map((crumb, i, arr) => (
-          <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
-            <KurtosisBreadcrumbItem {...crumb} key={i} isLastItem={i === arr.length - 1} />
-          </BreadcrumbItem>
-        ))}
-      </Breadcrumb>
-      &nbsp;
+    <Flex h={BREADCRUMBS_HEIGHT}>
+      <Flex w={MAIN_APP_MAX_WIDTH_WITHOUT_PADDING} alignItems={"center"} justifyContent={"space-between"}>
+        <Flex>
+          <Breadcrumb
+            variant={"topNavigation"}
+            separator={
+              <Text as={"span"} fontSize={"lg"}>
+                /
+              </Text>
+            }
+          >
+            {matchCrumbs.map((crumb, i, arr) => (
+              <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
+                <KurtosisBreadcrumbItem {...crumb} key={i} isLastItem={i === arr.length - 1} />
+              </BreadcrumbItem>
+            ))}
+          </Breadcrumb>
+          &nbsp;
+        </Flex>
+        <Flex>{extraControls}</Flex>
+      </Flex>
     </Flex>
   );
 };
@@ -88,12 +132,16 @@ type KurtosisBreadcrumbItemProps = KurtosisBreadcrumb & {
 
 const KurtosisBreadcrumbItem = ({ name, destination, alternatives, isLastItem }: KurtosisBreadcrumbItemProps) => {
   if (isLastItem) {
-    return <BreadcrumbLink>{name}</BreadcrumbLink>;
+    return (
+      <Text fontSize={"xs"} fontWeight={"semibold"} color={"gray.400"} p={"0px 8px"}>
+        {name}
+      </Text>
+    );
   }
 
   const baseLink = (
     <BreadcrumbLink as={Link} to={destination}>
-      <Button variant={"breadcrumb"} size={"sm"}>
+      <Button variant={"breadcrumb"} size={"xs"}>
         {name}
       </Button>
     </BreadcrumbLink>
@@ -109,8 +157,8 @@ const KurtosisBreadcrumbItem = ({ name, destination, alternatives, isLastItem }:
             as={IconButton}
             variant={"breadcrumb"}
             aria-label={"Other options"}
-            icon={<Icon as={MdFilterList} />}
-            size={"sm"}
+            icon={<Icon as={BsCaretDownFill} />}
+            size={"xs"}
           />
           <MenuList>
             {alternatives.map(({ name, destination, icon }) => (
