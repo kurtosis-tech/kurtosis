@@ -57,7 +57,7 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
   };
 
   return (
-    <Flex direction="column" width={"100%"}>
+    <Flex direction="column" width={"100%"} h={"100%"}>
       <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
         <TabList>
           <TabList>

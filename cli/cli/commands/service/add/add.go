@@ -87,7 +87,7 @@ const (
 
 	portMappingSeparatorForLogs = ", "
 
-	defaultPortWaitTimeoutStr = "15s"
+	defaultPortWaitTimeoutStr = "30s"
 )
 
 var (

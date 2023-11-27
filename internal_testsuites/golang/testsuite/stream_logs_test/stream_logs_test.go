@@ -61,8 +61,6 @@ type serviceLogsRequestInfoAndExpectedResults struct {
 }
 
 func TestStreamLogs(t *testing.T) {
-	// TODO remove this call after 17-11-2023
-	test_helpers.SkipFlakyTest(t, testName)
 
 	ctx := context.Background()
 

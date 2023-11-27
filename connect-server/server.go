@@ -8,11 +8,16 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+)
+
+const (
+	ConnectHTTPServerLogPrefix = "[Connect-HTTP-ERROR]"
 )
 
 type ConnectServer struct {
@@ -59,8 +64,9 @@ func (server *ConnectServer) RunServerUntilStopped(
 	mux.Handle(server.path, server.handler)
 
 	httpServer := http.Server{
-		Addr:    fmt.Sprintf(":%v", server.listenPort),
-		Handler: cors.Handler(h2c.NewHandler(mux, &http2.Server{})),
+		Addr:     fmt.Sprintf(":%v", server.listenPort),
+		Handler:  cors.Handler(h2c.NewHandler(mux, &http2.Server{})),
+		ErrorLog: log.New(logrus.StandardLogger().Out, ConnectHTTPServerLogPrefix, log.Ldate|log.Ltime|log.Lshortfile),
 	}
 
 	go func() {
