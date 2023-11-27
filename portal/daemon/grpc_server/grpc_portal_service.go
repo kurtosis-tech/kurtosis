@@ -63,7 +63,11 @@ func toGrpcPortMappingResponse(localPortMappings map[port_forward_manager.Enclav
 
 func (service *GrpcPortalService) RemoveUserServicePortForward(ctx context.Context, args *kurtosis_portal_rpc_api_bindings.EnclaveServicePortId) (*kurtosis_portal_rpc_api_bindings.RemoveUserServicePortForwardResponse, error) {
 	enclaveServicePort := toInternalEnclaveServicePort(args)
-	service.portForwardManager.RemoveUserServicePortForward(ctx, enclaveServicePort)
+	err := service.portForwardManager.RemoveUserServicePortForward(ctx, enclaveServicePort)
+	if err != nil {
+		return nil, err
+	}
+
 	return &kurtosis_portal_rpc_api_bindings.RemoveUserServicePortForwardResponse{}, nil
 }
 
