@@ -1,9 +1,9 @@
 module github.com/kurtosis-tech/kurtosis/enclave-manager
 
-go 1.19
+go 1.21
 
 require (
-	connectrpc.com/connect v1.11.1
+	connectrpc.com/connect v1.12.0
 	github.com/kurtosis-tech/kurtosis/api/golang v0.82.7
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230828153722-32770ca96513
 	github.com/kurtosis-tech/kurtosis/connect-server v0.0.0-20230828153722-32770ca96513
