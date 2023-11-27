@@ -28,6 +28,8 @@ const (
 	DiscordCmdStr           = "discord"
 	DocsCmdStr              = "docs"
 	EnclaveCmdStr           = "enclave"
+	EnclaveConnectCmdStr    = "connect"
+	EnclaveDisconnectCmdStr = "disconnect"
 	EnclaveInspectCmdStr    = "inspect"
 	EnclaveLsCmdStr         = "ls"
 	EnclaveAddCmdStr        = "add"

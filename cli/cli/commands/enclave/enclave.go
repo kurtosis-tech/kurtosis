@@ -8,6 +8,7 @@ package enclave
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/add"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/connect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/dump"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/ls"
@@ -31,4 +32,5 @@ func init() {
 	EnclaveCmd.AddCommand(stop.EnclaveStopCmd.MustGetCobraCommand())
 	EnclaveCmd.AddCommand(rm.EnclaveRmCmd.MustGetCobraCommand())
 	EnclaveCmd.AddCommand(dump.EnclaveDumpCmd.MustGetCobraCommand())
+	EnclaveCmd.AddCommand(connect.EnclaveConnectCmd.MustGetCobraCommand())
 }
