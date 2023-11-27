@@ -22,7 +22,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
-	"path"
 	"strings"
 )
 
@@ -352,9 +351,8 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	}
 	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, spaceDelimiter)
 
-	pythonScriptAbsolutePath := path.Join(pythonWorkspace, pythonScriptFileName)
 	if len(argumentsAsString) > 0 {
 		return fmt.Sprintf("python -c '%s' %s", builtin.run, argumentsAsString), nil
 	}
-	return fmt.Sprintf("python %s", pythonScriptAbsolutePath), nil
+	return fmt.Sprintf("python -c '%s'", builtin.run), nil
 }
