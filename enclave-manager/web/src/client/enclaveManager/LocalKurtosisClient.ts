@@ -20,4 +20,8 @@ export class LocalKurtosisClient extends KurtosisClient {
   getHeaderOptions() {
     return {};
   }
+
+  isRunningInCloud(): boolean {
+    return false;
+  }
 }

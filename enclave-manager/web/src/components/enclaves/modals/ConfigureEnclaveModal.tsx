@@ -175,7 +175,7 @@ export const ConfigureEnclaveModal = ({
       return;
     }
 
-    let apicInfo = existingEnclave?.apiContainerInfo;
+    let enclave = existingEnclave;
     let enclaveUUID = existingEnclave?.shortenedUuid;
     if (!isDefined(existingEnclave)) {
       setIsLoading(true);
@@ -190,12 +190,12 @@ export const ConfigureEnclaveModal = ({
         setError(`Did not receive enclave info when running createEnclave`);
         return;
       }
-      apicInfo = newEnclave.value.enclaveInfo.apiContainerInfo;
+      enclave = newEnclave.value.enclaveInfo;
       enclaveUUID = newEnclave.value.enclaveInfo.shortenedUuid;
     }
 
-    if (!isDefined(apicInfo)) {
-      setError(`Cannot trigger starlark run as apic info cannot be found`);
+    if (!isDefined(enclave)) {
+      setError(`Cannot trigger starlark run as enclave info cannot be found`);
       return;
     }
 
@@ -215,9 +215,13 @@ export const ConfigureEnclaveModal = ({
     }
     console.log("submissionData for runStarlarkPackage", submissionData);
 
-    const logsIterator = await runStarlarkPackage(apicInfo, kurtosisPackage.name, submissionData);
-    navigator(`/enclave/${enclaveUUID}/logs`, { state: { logs: logsIterator } });
-    onClose();
+    try {
+      const logsIterator = await runStarlarkPackage(enclave, kurtosisPackage.name, submissionData);
+      navigator(`/enclave/${enclaveUUID}/logs`, { state: { logs: logsIterator } });
+      onClose();
+    } catch (error: any) {
+      setError(stringifyError(error));
+    }
   };
 
   return (
@@ -278,7 +282,7 @@ export const ConfigureEnclaveModal = ({
                   <CopyButton contentName={"url"} valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
                 </Tooltip>
               </Flex>
-              <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"string"}>
+              <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"text"}>
                 <StringArgumentInput
                   name={"enclaveName"}
                   disabled={isDefined(existingEnclave)}
@@ -287,6 +291,7 @@ export const ConfigureEnclaveModal = ({
                       return `The enclave name must match ${allowedEnclaveNamePattern}`;
                     }
                   }}
+                  tabIndex={1}
                 />
               </KurtosisArgumentFormControl>
               {kurtosisPackage.args.map((arg, i) => (

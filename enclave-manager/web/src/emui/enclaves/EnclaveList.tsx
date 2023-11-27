@@ -1,5 +1,6 @@
-import { Button, ButtonGroup, Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import { Button, ButtonGroup, Flex, Text } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
+import { AppPageLayout } from "../../components/AppLayout";
 import { CreateEnclaveButton } from "../../components/enclaves/CreateEnclaveButton";
 import { EnclavesTable } from "../../components/enclaves/tables/EnclavesTable";
 import { DeleteEnclavesButton } from "../../components/enclaves/widgets/DeleteEnclavesButton";
@@ -28,37 +29,33 @@ export const EnclaveList = () => {
   }, [enclavesKey]);
 
   return (
-    <Flex direction="column">
-      <Tabs variant={"soft-rounded"} colorScheme={"kurtosisGreen"}>
-        <Flex justifyContent={"space-between"}>
-          <TabList>
-            <Tab>Enclaves</Tab>
-          </TabList>
-          <Flex gap={"24px"} alignItems={"center"}>
-            {selectedEnclaves.length > 0 && (
-              <ButtonGroup isAttached variant={"kurtosisGroupOutline"} size={"sm"}>
-                <Button variant={"kurtosisDisabled"} colorScheme={"gray"}>
-                  {selectedEnclaves.length} selected
-                </Button>
-                <DeleteEnclavesButton enclaves={selectedEnclaves} />
-              </ButtonGroup>
-            )}
-            <CreateEnclaveButton />
-          </Flex>
+    <AppPageLayout>
+      <Flex pl={"6px"} pb={"16px"} alignItems={"center"} justifyContent={"space-between"}>
+        <Text fontSize={"lg"} fontWeight={"medium"}>
+          Enclaves
+        </Text>
+        <Flex gap={"24px"} alignItems={"center"}>
+          {selectedEnclaves.length > 0 && (
+            <ButtonGroup isAttached variant={"kurtosisGroupOutline"} size={"sm"}>
+              <Button variant={"kurtosisDisabled"} colorScheme={"gray"}>
+                {selectedEnclaves.length} selected
+              </Button>
+              <DeleteEnclavesButton enclaves={selectedEnclaves} />
+            </ButtonGroup>
+          )}
+          <CreateEnclaveButton />
         </Flex>
-        <TabPanels>
-          <TabPanel>
-            {enclaves.isOk && (
-              <EnclavesTable
-                enclavesData={enclaves.value}
-                selection={selectedEnclaves}
-                onSelectionChange={setSelectedEnclaves}
-              />
-            )}
-            {enclaves.isErr && <KurtosisAlert message={enclaves.error} />}
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
-    </Flex>
+      </Flex>
+      <Flex direction="column" pt={"24px"} width={"100%"}>
+        {enclaves.isOk && (
+          <EnclavesTable
+            enclavesData={enclaves.value}
+            selection={selectedEnclaves}
+            onSelectionChange={setSelectedEnclaves}
+          />
+        )}
+        {enclaves.isErr && <KurtosisAlert message={enclaves.error} />}
+      </Flex>
+    </AppPageLayout>
   );
 };

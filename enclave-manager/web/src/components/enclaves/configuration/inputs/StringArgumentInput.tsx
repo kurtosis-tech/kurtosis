@@ -11,6 +11,7 @@ export const StringArgumentInput = (props: KurtosisArgumentTypeInputImplProps) =
       placeholder={props.placeholder}
       width={props.width}
       size={props.size || "lg"}
+      tabIndex={props.tabIndex}
     />
   );
 };

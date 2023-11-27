@@ -38,7 +38,6 @@ export const ListArgumentInput = ({ valueType, ...otherProps }: ListArgumentInpu
     <Flex flexDirection={"column"} gap={"10px"}>
       <ButtonGroup isAttached>
         <CopyButton
-          size={"sm"}
           contentName={"value"}
           valueToCopy={() => JSON.stringify(getValues(otherProps.name).map(({ value }: { value: any }) => value))}
         />

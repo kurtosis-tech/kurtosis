@@ -40,7 +40,6 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
       <ButtonGroup isAttached>
         <CopyButton
           contentName={"value"}
-          size={"sm"}
           valueToCopy={() =>
             JSON.stringify(
               getValues(otherProps.name).reduce(
@@ -50,7 +49,7 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
             )
           }
         />
-        <PasteButton size="sm" onValuePasted={handleValuePaste} />
+        <PasteButton onValuePasted={handleValuePaste} />
       </ButtonGroup>
       {fields.map((field, i) => (
         <Flex key={i} gap={"10px"}>

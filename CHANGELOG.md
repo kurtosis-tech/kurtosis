@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.85.35](https://github.com/kurtosis-tech/kurtosis/compare/0.85.34...0.85.35) (2023-11-22)
+
+
+### Features
+
+* upgrade golang grpc dependency ([#1840](https://github.com/kurtosis-tech/kurtosis/issues/1840)) ([2377868](https://github.com/kurtosis-tech/kurtosis/commit/2377868363c2bdea6f38478e156269339574622e))
+
+
+### Bug Fixes
+
+* always restart logs aggregator ([#1841](https://github.com/kurtosis-tech/kurtosis/issues/1841)) ([7e6382f](https://github.com/kurtosis-tech/kurtosis/commit/7e6382f0671c3776e31381a12da31f9754222438))
+
+## [0.85.34](https://github.com/kurtosis-tech/kurtosis/compare/0.85.33...0.85.34) (2023-11-21)
+
+
+### Bug Fixes
+
+* display the relevant number in the error message ([#1835](https://github.com/kurtosis-tech/kurtosis/issues/1835)) ([a8c24bc](https://github.com/kurtosis-tech/kurtosis/commit/a8c24bcbeff813217e10a222001ce05c325de03c))
+
+## [0.85.33](https://github.com/kurtosis-tech/kurtosis/compare/0.85.32...0.85.33) (2023-11-20)
+
+
+### Features
+
+* search in service logs ([#1830](https://github.com/kurtosis-tech/kurtosis/issues/1830)) ([7fce5b5](https://github.com/kurtosis-tech/kurtosis/commit/7fce5b59d1060f99f8c2cbd54d7bb8483150310e)), closes [#1791](https://github.com/kurtosis-tech/kurtosis/issues/1791)
+
+## [0.85.32](https://github.com/kurtosis-tech/kurtosis/compare/0.85.31...0.85.32) (2023-11-20)
+
+
+### Features
+
+* emui auth via cookie ([#1783](https://github.com/kurtosis-tech/kurtosis/issues/1783)) ([d5d79d8](https://github.com/kurtosis-tech/kurtosis/commit/d5d79d8c4a67d175d9dc0d842e9edbb6068b8c6c))
+
+## [0.85.31](https://github.com/kurtosis-tech/kurtosis/compare/0.85.30...0.85.31) (2023-11-17)
+
+
+### Bug Fixes
+
+* implement minor emui feedback tweaks ([#1827](https://github.com/kurtosis-tech/kurtosis/issues/1827)) ([8161a34](https://github.com/kurtosis-tech/kurtosis/commit/8161a340a9f4724c885ffecbc61b31b1af9bc3fa))
+
+## [0.85.30](https://github.com/kurtosis-tech/kurtosis/compare/0.85.29...0.85.30) (2023-11-17)
+
+
+### Bug Fixes
+
+* remove monaco max height limit ([#1823](https://github.com/kurtosis-tech/kurtosis/issues/1823)) ([ffe0f43](https://github.com/kurtosis-tech/kurtosis/commit/ffe0f43714cf5a6b1fe0313995fe2998ae856974))
+
 ## [0.85.29](https://github.com/kurtosis-tech/kurtosis/compare/0.85.28...0.85.29) (2023-11-17)
 
 

@@ -50,6 +50,7 @@ const theme = extendTheme({
     },
     gray: {
       100: "#E3E3E3", // text
+      150: "#A1A3A5",
       200: "#878787",
       250: "#7A7A7A",
       300: "#606770",
@@ -59,6 +60,7 @@ const theme = extendTheme({
       650: "#292929",
       700: "#1E1E1E",
       800: "#1D1D1D", // selected background
+      850: "#1B1B1D",
       900: "#111111", // ui background
     },
   },
@@ -77,6 +79,7 @@ const theme = extendTheme({
       },
       "nav.primaryNav": {
         bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "black")(props),
+        zIndex: "1",
       },
       main: {
         color: "gray.100",
@@ -130,6 +133,7 @@ const theme = extendTheme({
         })),
         ghost: defineStyle((props) => ({
           _hover: { bg: "gray.650" },
+          color: props.colorScheme === "gray" ? undefined : `${props.colorScheme}.400`,
         })),
         sortableHeader: (props: StyleFunctionProps) => {
           const ghost = theme.components.Button.variants!.ghost(props);
@@ -139,12 +143,20 @@ const theme = extendTheme({
             textTransform: "uppercase",
           };
         },
+        fileTree: (props: StyleFunctionProps) => {
+          const ghost = theme.components.Button.variants!.ghost(props);
+          return {
+            ...ghost,
+            width: "100%",
+            fontWeight: "medium",
+            justifyContent: "flex-start",
+          };
+        },
         breadcrumb: (props: StyleFunctionProps) => {
           const ghost = theme.components.Button.variants!.ghost(props);
           return {
             ...ghost,
             color: "gray.100",
-            fontWeight: "normal",
           };
         },
         nav: {
@@ -177,11 +189,43 @@ const theme = extendTheme({
       },
     },
     Card: {
-      baseStyle: {
-        container: {
-          bg: "gray.800",
-          borderRadius: "8px",
-          padding: "16px",
+      variants: {
+        valueCard: {
+          container: {
+            bg: "gray.800",
+            borderRadius: "8px",
+            padding: "16px",
+            gap: "16px",
+          },
+          header: {
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            padding: "0px",
+          },
+          body: {
+            padding: "0px",
+          },
+        },
+        titledCard: {
+          container: {
+            height: "100%",
+            bgColor: "none",
+            borderColor: "gray.500",
+            borderStyle: "solid",
+            borderWidth: "1px",
+            borderRadius: "6px",
+            overflow: "clip",
+          },
+          header: {
+            bg: "gray.850",
+            padding: "12px",
+          },
+          body: {
+            padding: "6px 12px",
+            height: "100%",
+            width: "100%",
+          },
         },
       },
     },
@@ -237,15 +281,24 @@ const theme = extendTheme({
         },
       })),
     },
-
     Table: {
       variants: {
         simple: {
+          tr: {
+            _notLast: {
+              borderBottom: "1px solid",
+              borderColor: "whiteAlpha.300",
+            },
+          },
           th: {
             color: "gray.100",
-            borderBottom: "1px solid",
-            borderColor: "gray.500",
+            backgroundColor: "gray.850",
             textTransform: "uppercase",
+            borderBottom: "1px solid",
+            borderColor: "whiteAlpha.300",
+          },
+          td: {
+            borderBottom: "none",
           },
         },
       },

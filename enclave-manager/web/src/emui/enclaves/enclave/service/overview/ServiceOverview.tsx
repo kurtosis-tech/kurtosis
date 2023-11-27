@@ -7,7 +7,7 @@ import { ServiceStatusTag } from "../../../../../components/enclaves/widgets/Ser
 import { FileDisplay } from "../../../../../components/FileDisplay";
 import { KurtosisAlert } from "../../../../../components/KurtosisAlert";
 import { FLEX_STANDARD_GAP } from "../../../../../components/theme/constants";
-import { TitledCard } from "../../../../../components/TitledCard";
+import { TitledBox } from "../../../../../components/TitledBox";
 import { ValueCard } from "../../../../../components/ValueCard";
 import { isDefined } from "../../../../../utils";
 import { EnclaveFullInfo } from "../../../types";
@@ -42,13 +42,13 @@ export const ServiceOverview = ({ service, enclave }: ServiceOverviewProps) => {
           />
         </GridItem>
       </Grid>
-      <TitledCard title={"Ports"}>
+      <TitledBox title={"Ports"}>
         <PortsTable
           privatePorts={service.privatePorts}
           publicPorts={service.maybePublicPorts}
           publicIp={service.maybePublicIpAddr}
         />
-      </TitledCard>
+      </TitledBox>
       {isDefined(service.container) && (
         <ContainerOverview serviceName={service.name} enclaveName={enclave.name} container={service.container} />
       )}
@@ -71,27 +71,24 @@ const ContainerOverview = ({ enclaveName, container, serviceName }: ContainerOve
   const entrypointJson = useMemo(() => JSON.stringify(container.entrypointArgs, undefined, 4), [container]);
 
   return (
-    <Flex flexDirection={"column"} gap={"32px"}>
-      <Text fontSize={"md"} fontWeight={"semibold"}>
-        Detailed Info
-      </Text>
-      <Grid gridColumnGap={"32px"} gridTemplateColumns={"1fr 1fr"}>
-        <GridItem display={"flex"} flexDirection={"column"} gap={"16px"}>
+    <TitledBox title={"Detailed Info"}>
+      <Grid gridColumnGap={"32px"} gridTemplateColumns={"1fr 1fr"} width={"100%"}>
+        <GridItem display={"flex"} flexDirection={"column"} gap={"16px"} height={"100%"}>
           <FileDisplay
             value={entrypointJson}
-            title={"Entrypoint"}
-            filename={`${enclaveName}-${serviceName}-entrypoint.json`}
+            title={"ENTRYPOINT"}
+            filename={`${enclaveName}--${serviceName}-entrypoint.json`}
           />
-          <FileDisplay value={cmdJson} title={"CMD"} filename={`${enclaveName}-${serviceName}-cmd.json`} />
+          <FileDisplay value={cmdJson} title={"CMD"} filename={`${enclaveName}--${serviceName}-cmd.json`} />
         </GridItem>
         <GridItem>
           <FileDisplay
             value={environmentJson}
-            title={"Environment"}
-            filename={`${enclaveName}-${serviceName}-env.json`}
+            title={"ENVIRONMENT"}
+            filename={`${enclaveName}--${serviceName}-env.json`}
           />
         </GridItem>
       </Grid>
-    </Flex>
+    </TitledBox>
   );
 };
