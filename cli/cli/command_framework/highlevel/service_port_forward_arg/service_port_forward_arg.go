@@ -14,15 +14,14 @@ const (
 )
 
 func NewServicePortForwardArg(
-	servicePortForwardDefinition string,
+	servicePortForwardArgKey string,
 	enclaveIdentifierArgKey string,
 ) *args.ArgConfig {
 
-	validate := getValidationFunc(servicePortForwardDefinition, isGreedy)
+	validate := getValidationFunc(servicePortForwardArgKey, isGreedy)
 
 	return &args.ArgConfig{
-		// TODO(omar): check format of this key, as this def would be e.g. web.http=80 ; maybe we need to parse first
-		Key:                   servicePortForwardDefinition,
+		Key:                   servicePortForwardArgKey,
 		IsOptional:            isOptional,
 		DefaultValue:          "",
 		IsGreedy:              isGreedy,
@@ -31,7 +30,7 @@ func NewServicePortForwardArg(
 	}
 }
 
-func getValidationFunc(servicePortForwardDefinition string, isGreedy bool) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
+func getValidationFunc(servicePortForwardArgKey string, isGreedy bool) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 		return nil
 	}
@@ -67,6 +66,7 @@ func getServicePortCompletions(enclaveIdentifierArgKey string) func(ctx context.
 
 		servicePortCompletions := []string{}
 
+		// TODO(omar): runs quite slowly, but other tab-completes do too
 		for serviceName := range services {
 			serviceId := string(serviceName)
 			serviceContext, err := enclaveContext.GetServiceContext(serviceId)
