@@ -188,9 +188,8 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 
 // Execute This is just v0 for run_sh task - we can later improve on it.
 //
-//		TODO: stop the container as soon as task completed.
-//	  Create an mechanism for other services to retrieve files from the task container
-//	  Make task as its own entity instead of currently shown under services
+//	TODO Create an mechanism for other services to retrieve files from the task container
+//	Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
 	if err != nil {
@@ -232,6 +231,11 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 			return "", stacktrace.Propagate(err, "error occurred while copying files from  a task")
 		}
 	}
+
+	if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
+		return "", stacktrace.Propagate(err, "attempted to remove the temporary task container but failed")
+	}
+
 	return instructionResult, err
 }
 
