@@ -193,13 +193,16 @@ func (g *grpcHandler) NewConn(
 	if responseCompression != compressionIdentity {
 		header[grpcHeaderCompression] = []string{responseCompression}
 	}
+	logrus.Infof("[LEO-DEBUG] header %+v", header)
 
 	codecName := grpcCodecFromContentType(g.web, getHeaderCanonical(request.Header, headerContentType))
+	logrus.Infof("[LEO-DEBUG] code name %s", codecName)
 	codec := g.Codecs.Get(codecName) // handler.go guarantees this is not nil
 	protocolName := ProtocolGRPC
 	if g.web {
 		protocolName = ProtocolGRPCWeb
 	}
+	logrus.Infof("[LEO-DEBUG] protocol name %s", protocolName)
 	conn := wrapHandlerConnWithCodedErrors(&grpcHandlerConn{
 		spec: g.Spec,
 		peer: Peer{
@@ -235,6 +238,7 @@ func (g *grpcHandler) NewConn(
 		},
 	})
 	if failed != nil {
+		logrus.Infof("[LEO-DEBUG] failed %+v", failed)
 		// Negotiation failed, so we can't establish a stream.
 		_ = conn.Close(failed)
 		return nil, false

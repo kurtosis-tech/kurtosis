@@ -274,7 +274,7 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 		if !auth {
 			return nil, stacktrace.Propagate(err, "User not authorized")
 		}*/
-	ctx = context.Background()
+	//ctx = context.Background()
 	result, err := (*c.engineServiceClient).CreateEnclave(ctx, req)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {

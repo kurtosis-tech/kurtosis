@@ -176,18 +176,24 @@ func (h *connectHandler) NewConn(
 		failed = checkServerStreamsCanFlush(h.Spec, responseWriter)
 	}
 	if failed == nil && request.Method == http.MethodGet {
+		logrus.Infof("[LEO-DEBUG] check server stream not failed an method is GET")
 		version := query.Get(connectUnaryConnectQueryParameter)
 		if version == "" && h.RequireConnectProtocolHeader {
+			logrus.Infof("[LEO-DEBUG] version == '' and require protocol header")
 			failed = errorf(CodeInvalidArgument, "missing required query parameter: set %s to %q", connectUnaryConnectQueryParameter, connectUnaryConnectQueryValue)
 		} else if version != "" && version != connectUnaryConnectQueryValue {
+			logrus.Infof("[LEO-DEBUG] version == v1")
 			failed = errorf(CodeInvalidArgument, "%s must be %q: got %q", connectUnaryConnectQueryParameter, connectUnaryConnectQueryValue, version)
 		}
 	}
 	if failed == nil && request.Method == http.MethodPost {
+		logrus.Infof("[LEO-DEBUG] check server stream not failed an method is POST")
 		version := getHeaderCanonical(request.Header, connectHeaderProtocolVersion)
 		if version == "" && h.RequireConnectProtocolHeader {
+			logrus.Infof("[LEO-DEBUG] version == '' and require protocol header")
 			failed = errorf(CodeInvalidArgument, "missing required header: set %s to %q", connectHeaderProtocolVersion, connectProtocolVersion)
 		} else if version != "" && version != connectProtocolVersion {
+			logrus.Infof("[LEO-DEBUG] version == v1")
 			failed = errorf(CodeInvalidArgument, "%s must be %q: got %q", connectHeaderProtocolVersion, connectProtocolVersion, version)
 		}
 	}
@@ -216,12 +222,14 @@ func (h *connectHandler) NewConn(
 			contentType,
 		)
 	}
+	logrus.Infof("[LEO-DEBUG] codec name '%s'", codecName)
 
 	codec := h.Codecs.Get(codecName)
 	// The codec can be nil in the GET request case; that's okay: when failed
 	// is non-nil, codec is never used.
 	if failed == nil && codec == nil {
 		failed = errorf(CodeInvalidArgument, "invalid message encoding: %q", codecName)
+		logrus.Infof("[LEO-DEBUG] failed '%+v'", failed)
 	}
 
 	// Write any remaining headers here:
@@ -253,6 +261,7 @@ func (h *connectHandler) NewConn(
 		Query:    query,
 	}
 	if h.Spec.StreamType == StreamTypeUnary {
+		logrus.Infof("[LEO-DEBUG] connect unary handler conn")
 		conn = &connectUnaryHandlerConn{
 			spec:           h.Spec,
 			peer:           peer,
@@ -278,6 +287,7 @@ func (h *connectHandler) NewConn(
 			responseTrailer: make(http.Header),
 		}
 	} else {
+		logrus.Infof("[LEO-DEBUG] connect streaming handler conn")
 		conn = &connectStreamingHandlerConn{
 			spec:           h.Spec,
 			peer:           peer,
@@ -308,6 +318,7 @@ func (h *connectHandler) NewConn(
 	conn = wrapHandlerConnWithCodedErrors(conn)
 
 	if failed != nil {
+		logrus.Infof("[LEO-DEBUG] failed %+v", failed)
 		// Negotiation failed, so we can't establish a stream.
 		_ = conn.Close(failed)
 		return nil, false
