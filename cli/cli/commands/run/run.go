@@ -97,7 +97,7 @@ const (
 	noConnectFlagKey = "no-connect"
 	noConnectDefault = "false"
 
-	connectFlagKey = "connect"
+	connectFlagKey          = "connect"
 	connectFlagDefaultValue = ""
 
 	packageArgsFileFlagKey      = "args-file"
@@ -196,9 +196,9 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: noConnectDefault,
 		},
 		{
-			Key: connectFlagKey,
-			Usage: "Specify a service and port name and expose their port on your local machine."
-			Type: flags.FlagType_String, flags
+			Key:     connectFlagKey,
+			Usage:   "Specify a service and port name and expose their port on your local machine.",
+			Type:    flags.FlagType_String,
 			Default: connectFlagDefaultValue,
 		},
 		{
@@ -293,7 +293,8 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", noConnectDefault)
 	}
 
-	connectArgs, err := flags.GetStringSlice(connectFlagKey)
+	// TODO(omar): wire up
+	_, err = flags.GetStringSlice(connectFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", connectFlagKey)
 	}
