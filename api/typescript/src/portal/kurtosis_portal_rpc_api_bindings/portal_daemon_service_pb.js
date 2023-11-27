@@ -166,8 +166,7 @@ proto.portal_daemon_api.ForwardUserServicePortArgs.toObject = function(includeIn
     enclaveId: jspb.Message.getFieldWithDefault(msg, 1, ""),
     serviceId: jspb.Message.getFieldWithDefault(msg, 2, ""),
     portId: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    localPortNumber: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    waitUntilReady: jspb.Message.getBooleanFieldWithDefault(msg, 6, false)
+    localPortNumber: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
   if (includeInstance) {
@@ -219,10 +218,6 @@ proto.portal_daemon_api.ForwardUserServicePortArgs.deserializeBinaryFromReader =
     case 4:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setLocalPortNumber(value);
-      break;
-    case 6:
-      var value = /** @type {boolean} */ (reader.readBool());
-      msg.setWaitUntilReady(value);
       break;
     default:
       reader.skipField();
@@ -278,13 +273,6 @@ proto.portal_daemon_api.ForwardUserServicePortArgs.serializeBinaryToWriter = fun
   if (f != null) {
     writer.writeUint32(
       4,
-      f
-    );
-  }
-  f = /** @type {boolean} */ (jspb.Message.getField(message, 6));
-  if (f != null) {
-    writer.writeBool(
-      6,
       f
     );
   }
@@ -378,42 +366,6 @@ proto.portal_daemon_api.ForwardUserServicePortArgs.prototype.clearLocalPortNumbe
  */
 proto.portal_daemon_api.ForwardUserServicePortArgs.prototype.hasLocalPortNumber = function() {
   return jspb.Message.getField(this, 4) != null;
-};
-
-
-/**
- * optional bool wait_until_ready = 6;
- * @return {boolean}
- */
-proto.portal_daemon_api.ForwardUserServicePortArgs.prototype.getWaitUntilReady = function() {
-  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 6, false));
-};
-
-
-/**
- * @param {boolean} value
- * @return {!proto.portal_daemon_api.ForwardUserServicePortArgs} returns this
- */
-proto.portal_daemon_api.ForwardUserServicePortArgs.prototype.setWaitUntilReady = function(value) {
-  return jspb.Message.setField(this, 6, value);
-};
-
-
-/**
- * Clears the field making it undefined.
- * @return {!proto.portal_daemon_api.ForwardUserServicePortArgs} returns this
- */
-proto.portal_daemon_api.ForwardUserServicePortArgs.prototype.clearWaitUntilReady = function() {
-  return jspb.Message.setField(this, 6, undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
-proto.portal_daemon_api.ForwardUserServicePortArgs.prototype.hasWaitUntilReady = function() {
-  return jspb.Message.getField(this, 6) != null;
 };
 
 

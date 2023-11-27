@@ -30,11 +30,6 @@ export declare class ForwardUserServicePortArgs extends Message<ForwardUserServi
    */
   localPortNumber?: number;
 
-  /**
-   * @generated from field: optional bool wait_until_ready = 6;
-   */
-  waitUntilReady?: boolean;
-
   constructor(data?: PartialMessage<ForwardUserServicePortArgs>);
 
   static readonly runtime: typeof proto3;

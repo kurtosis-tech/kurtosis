@@ -15,7 +15,6 @@ export const ForwardUserServicePortArgs = proto3.makeMessageType(
     { no: 2, name: "service_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "port_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "local_port_number", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
-    { no: 6, name: "wait_until_ready", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 

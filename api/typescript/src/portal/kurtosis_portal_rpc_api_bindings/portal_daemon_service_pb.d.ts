@@ -17,11 +17,6 @@ export class ForwardUserServicePortArgs extends jspb.Message {
   hasLocalPortNumber(): boolean;
   clearLocalPortNumber(): ForwardUserServicePortArgs;
 
-  getWaitUntilReady(): boolean;
-  setWaitUntilReady(value: boolean): ForwardUserServicePortArgs;
-  hasWaitUntilReady(): boolean;
-  clearWaitUntilReady(): ForwardUserServicePortArgs;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ForwardUserServicePortArgs.AsObject;
   static toObject(includeInstance: boolean, msg: ForwardUserServicePortArgs): ForwardUserServicePortArgs.AsObject;
@@ -36,17 +31,11 @@ export namespace ForwardUserServicePortArgs {
     serviceId: string,
     portId: string,
     localPortNumber?: number,
-    waitUntilReady?: boolean,
   }
 
   export enum LocalPortNumberCase { 
     _LOCAL_PORT_NUMBER_NOT_SET = 0,
     LOCAL_PORT_NUMBER = 4,
-  }
-
-  export enum WaitUntilReadyCase { 
-    _WAIT_UNTIL_READY_NOT_SET = 0,
-    WAIT_UNTIL_READY = 6,
   }
 }
 
