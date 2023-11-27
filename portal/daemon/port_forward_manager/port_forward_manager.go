@@ -34,11 +34,11 @@ func (manager *PortForwardManager) Ping(ctx context.Context) error {
 }
 
 // TODO(omar): make a return struct - see what we end up using to represent port forwards
-func (manager *PortForwardManager) ForwardUserServiceToPort(ctx context.Context, enclaveServicePort EnclaveServicePort, requestedLocalPort uint16) (uint16, error) {
+func (manager *PortForwardManager) CreateUserServicePortForward(ctx context.Context, enclaveServicePort EnclaveServicePort, requestedLocalPort uint16) (map[EnclaveServicePort]uint16, error) {
 	if requestedLocalPort == 0 {
 		ephemeralLocalPortSpec, err := port_utils.GetFreeTcpPort(localhostIpString)
 		if err != nil {
-			return 0, stacktrace.Propagate(err, "Could not allocate a local port for the tunnel")
+			return nil, stacktrace.Propagate(err, "Could not allocate a local port for the tunnel")
 		}
 
 		requestedLocalPort = ephemeralLocalPortSpec.GetNumber()
@@ -46,10 +46,14 @@ func (manager *PortForwardManager) ForwardUserServiceToPort(ctx context.Context,
 
 	portForward, err := manager.createAndOpenPortForwardToUserService(ctx, enclaveServicePort, requestedLocalPort)
 	if err != nil {
-		return 0, stacktrace.Propagate(err, "Failed to set up port forward to (enclave, service, port), %v", enclaveServicePort)
+		return nil, stacktrace.Propagate(err, "Failed to set up port forward to (enclave, service, port), %v", enclaveServicePort)
 	}
 
-	return portForward.localPortNumber, nil
+	return map[EnclaveServicePort]uint16{enclaveServicePort: portForward.localPortNumber}, nil
+}
+
+func (manager *PortForwardManager) RemoveUserServicePortForward(ctx context.Context, enclaveServicePort EnclaveServicePort) error {
+	panic("implement me")
 }
 
 func (manager *PortForwardManager) createAndOpenPortForwardToUserService(ctx context.Context, enclaveServicePort EnclaveServicePort, localPortToBind uint16) (*PortForwardTunnel, error) {

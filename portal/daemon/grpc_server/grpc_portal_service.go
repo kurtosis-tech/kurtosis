@@ -35,12 +35,36 @@ func (service *GrpcPortalService) Ping(ctx context.Context, ping *kurtosis_porta
 
 func (service *GrpcPortalService) CreateUserServicePortForward(ctx context.Context, args *kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardArgs) (*kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse, error) {
 	enclaveServicePort := toInternalEnclaveServicePort(args.GetEnclaveServicePortId())
-	localPort, err := service.portForwardManager.ForwardUserServiceToPort(ctx, enclaveServicePort, uint16(args.GetLocalPortNumber()))
+	localPortMappings, err := service.portForwardManager.CreateUserServicePortForward(ctx, enclaveServicePort, uint16(args.GetLocalPortNumber()))
 
 	if err != nil {
 		return nil, err
 	}
-	return &kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse{LocalPortNumber: uint32(localPort)}, nil
+
+	return toGrpcPortMappingResponse(localPortMappings), nil
+}
+
+func toGrpcPortMappingResponse(localPortMappings map[port_forward_manager.EnclaveServicePort]uint16) *kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse {
+	var portForwards = []*kurtosis_portal_rpc_api_bindings.ForwardedServicePort{}
+
+	for esp, localPortNumber := range localPortMappings {
+		portForward := kurtosis_portal_rpc_api_bindings.ForwardedServicePort{
+			EnclaveId:       esp.EnclaveId(),
+			ServiceId:       esp.ServiceId(),
+			PortId:          esp.PortId(),
+			LocalPortNumber: uint32(localPortNumber),
+		}
+
+		portForwards = append(portForwards, &portForward)
+	}
+
+	return &kurtosis_portal_rpc_api_bindings.CreateUserServicePortForwardResponse{ForwardedPortNumbers: portForwards}
+}
+
+func (service *GrpcPortalService) RemoveUserServicePortForward(ctx context.Context, args *kurtosis_portal_rpc_api_bindings.EnclaveServicePortId) (*kurtosis_portal_rpc_api_bindings.RemoveUserServicePortForwardResponse, error) {
+	enclaveServicePort := toInternalEnclaveServicePort(args)
+	service.portForwardManager.RemoveUserServicePortForward(ctx, enclaveServicePort)
+	return &kurtosis_portal_rpc_api_bindings.RemoveUserServicePortForwardResponse{}, nil
 }
 
 func (service *GrpcPortalService) Close() error {

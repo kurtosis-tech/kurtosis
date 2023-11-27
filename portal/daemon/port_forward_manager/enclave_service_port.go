@@ -17,3 +17,15 @@ func NewEnclaveServicePort(enclaveId string, serviceId string, portId string) En
 func (esp EnclaveServicePort) String() string {
 	return "(" + esp.enclaveId + ", " + esp.serviceId + ", " + esp.portId + ")"
 }
+
+func (esp EnclaveServicePort) EnclaveId() string {
+	return esp.enclaveId
+}
+
+func (esp EnclaveServicePort) ServiceId() string {
+	return esp.serviceId
+}
+
+func (esp EnclaveServicePort) PortId() string {
+	return esp.portId
+}
