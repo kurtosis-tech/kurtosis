@@ -429,6 +429,7 @@ func (enclaveCtx *EnclaveContext) GetAllFilesArtifactNamesAndUuids(ctx context.C
 }
 
 // Docs available at https://docs.kurtosis.com/sdk#connectservices
+// Deprecated: currently a no-op that we're removing
 func (enclaveCtx *EnclaveContext) ConnectServices(ctx context.Context, connect kurtosis_core_rpc_api_bindings.Connect) error {
 	args := binding_constructors.NewConnectServicesArgs(connect)
 	_, err := enclaveCtx.client.ConnectServices(ctx, args)

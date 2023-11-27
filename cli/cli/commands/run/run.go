@@ -355,11 +355,6 @@ func run(
 	var cancelFunc context.CancelFunc
 	var errRunningKurtosis error
 
-	connect := kurtosis_core_rpc_api_bindings.Connect_CONNECT
-	if noConnect {
-		connect = kurtosis_core_rpc_api_bindings.Connect_NO_CONNECT
-	}
-
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
 	if isRemotePackage {
 		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
@@ -393,10 +388,6 @@ func run(
 
 	errRunningKurtosis = ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
 
-	if err = enclaveCtx.ConnectServices(ctx, connect); err != nil {
-		logrus.Warnf("An error occurred configuring the user services port forwarding\nError was: %v", err)
-	}
-
 	servicesInEnclavePostRun, servicesInEnclaveError := enclaveCtx.GetServices()
 	if servicesInEnclaveError != nil {
 		logrus.Warn("Tried getting number of services in the enclave to log metrics but failed")
@@ -426,7 +417,7 @@ func run(
 		return nil
 	}
 
-	if connect == kurtosis_core_rpc_api_bindings.Connect_NO_CONNECT {
+	if noConnect {
 		logrus.Info("Not forwarding user service ports locally as requested")
 		return nil
 	}
