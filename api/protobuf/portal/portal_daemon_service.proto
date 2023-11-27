@@ -20,8 +20,6 @@ message ForwardUserServicePortArgs {
   string port_id = 3;
 
   optional uint32 local_port_number = 4;
-
-  optional bool wait_until_ready = 6;
 }
 
 message ForwardPortResponse {
