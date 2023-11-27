@@ -6,11 +6,7 @@ import {
   ListFilesArtifactNamesAndUuidsResponse,
   StarlarkRunResponseLine,
 } from "enclave-manager-sdk/build/api_container_service_pb";
-import {
-  CreateEnclaveResponse,
-  EnclaveAPIContainerInfo,
-  EnclaveInfo,
-} from "enclave-manager-sdk/build/engine_service_pb";
+import { CreateEnclaveResponse, EnclaveInfo } from "enclave-manager-sdk/build/engine_service_pb";
 import {
   createContext,
   PropsWithChildren,
@@ -23,7 +19,7 @@ import {
 } from "react";
 import { Result } from "true-myth";
 import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
-import { isDefined } from "../utils";
+import { assertDefined, isDefined } from "../utils";
 import { RemoveFunctions } from "../utils/types";
 import { EnclaveFullInfo } from "./enclaves/types";
 
@@ -32,6 +28,7 @@ export type EmuiAppState = {
   servicesByEnclave: Record<string, Result<GetServicesResponse, string>>;
   filesAndArtifactsByEnclave: Record<string, Result<ListFilesArtifactNamesAndUuidsResponse, string>>;
   starlarkRunsByEnclave: Record<string, Result<GetStarlarkRunResponse, string>>;
+  starlarkRunningInEnclaves: RemoveFunctions<EnclaveInfo>[];
 
   // Methods
   refreshEnclaves: () => Promise<Result<RemoveFunctions<EnclaveInfo>[], string>>;
@@ -48,25 +45,14 @@ export type EmuiAppState = {
   ) => Promise<Result<CreateEnclaveResponse, string>>;
   destroyEnclaves: (enclaveUUIDs: string[]) => Promise<Result<Empty, string>[]>;
   runStarlarkPackage: (
-    apicInfo: RemoveFunctions<EnclaveAPIContainerInfo>,
+    enclave: RemoveFunctions<EnclaveInfo>,
     packageId: string,
     args: Record<string, any>,
   ) => Promise<AsyncIterable<StarlarkRunResponseLine>>;
+  updateStarlarkFinishedInEnclave: (enclave: RemoveFunctions<EnclaveInfo>) => void;
 };
 
-const EmuiAppContext = createContext<EmuiAppState>({
-  enclaves: Result.err("Enclaves not initialised, call refreshEnclaves"),
-  servicesByEnclave: {},
-  filesAndArtifactsByEnclave: {},
-  starlarkRunsByEnclave: {},
-  refreshEnclaves: () => null as any,
-  refreshServices: () => null as any,
-  refreshFilesAndArtifacts: () => null as any,
-  refreshStarlarkRun: () => null as any,
-  createEnclave: () => null as any,
-  destroyEnclaves: () => null as any,
-  runStarlarkPackage: () => null as any,
-});
+const EmuiAppContext = createContext<EmuiAppState>(null as any);
 
 export const EmuiAppContextProvider = ({ children }: PropsWithChildren) => {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -76,6 +62,7 @@ export const EmuiAppContextProvider = ({ children }: PropsWithChildren) => {
     servicesByEnclave: {},
     filesAndArtifactsByEnclave: {},
     starlarkRunsByEnclave: {},
+    starlarkRunningInEnclaves: [],
   });
   const kurtosisClient = useKurtosisClient();
 
@@ -178,13 +165,23 @@ export const EmuiAppContextProvider = ({ children }: PropsWithChildren) => {
   );
 
   const runStarlarkPackage = useCallback(
-    async (apicInfo: RemoveFunctions<EnclaveAPIContainerInfo>, packageId: string, args: Record<string, any>) => {
-      const resp = await kurtosisClient.runStarlarkPackage(apicInfo, packageId, args);
-      // TODO: Proxy lines to build optimistic ui
+    async (enclave: RemoveFunctions<EnclaveInfo>, packageId: string, args: Record<string, any>) => {
+      setState((state) => ({ ...state, starlarkRunningInEnclaves: [...state.starlarkRunningInEnclaves, enclave] }));
+      assertDefined(enclave.apiContainerInfo, `apic info not defined in enclave ${enclave.name}`);
+      const resp = await kurtosisClient.runStarlarkPackage(enclave.apiContainerInfo, packageId, args);
       return resp;
     },
     [kurtosisClient],
   );
+
+  const updateStarlarkFinishedInEnclave = useCallback((enclave: RemoveFunctions<EnclaveInfo>) => {
+    setState((state) => ({
+      ...state,
+      starlarkRunningInEnclaves: state.starlarkRunningInEnclaves.filter(
+        (runningEnclave) => runningEnclave.enclaveUuid !== enclave.enclaveUuid,
+      ),
+    }));
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -215,6 +212,7 @@ export const EmuiAppContextProvider = ({ children }: PropsWithChildren) => {
         createEnclave,
         destroyEnclaves,
         runStarlarkPackage,
+        updateStarlarkFinishedInEnclave,
       }}
     >
       {children}
@@ -243,6 +241,23 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
   const filesAndArtifacts = filesAndArtifactsByEnclave[enclaveUUID];
   const starlarkRun = starlarkRunsByEnclave[enclaveUUID];
 
+  const result = useMemo<Result<EnclaveFullInfo, string>>(() => {
+    if (!isDefined(enclave)) {
+      return Result.err(`Could not find enclave ${enclaveUUID}`);
+    }
+
+    if (enclaves.isErr) {
+      return enclaves.cast();
+    }
+
+    return Result.ok({
+      ...enclave,
+      services,
+      filesAndArtifacts,
+      starlarkRun,
+    });
+  }, [enclaveUUID, enclaves, enclave, services, filesAndArtifacts, starlarkRun]);
+
   useEffect(() => {
     if (isDefined(enclave) && !isDefined(services)) {
       refreshServices(enclave);
@@ -261,20 +276,7 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
     }
   }, [starlarkRun, refreshStarlarkRun, enclave]);
 
-  if (enclaves.isErr) {
-    return enclaves.cast();
-  }
-
-  if (!isDefined(enclave)) {
-    return Result.err(`Could not find enclave ${enclaveUUID}`);
-  }
-
-  return Result.ok({
-    ...enclave,
-    services,
-    filesAndArtifacts,
-    starlarkRun,
-  });
+  return result;
 };
 
 export const useFullEnclaves = (): Result<EnclaveFullInfo[], string> => {

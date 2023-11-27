@@ -11,7 +11,6 @@ import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
 import { catalogRoutes } from "./catalog/CatalogRoutes";
 import { EmuiAppContextProvider } from "./EmuiAppContext";
 import { enclaveRoutes } from "./enclaves/EnclaveRoutes";
-import { Navbar } from "./Navbar";
 
 const logLogo = (t: string) => console.log(`%c ${t}`, "background: black; color: #00C223");
 logLogo(`                                                                               
@@ -60,7 +59,7 @@ const KurtosisRouter = () => {
         [
           {
             element: (
-              <AppLayout Nav={<Navbar />}>
+              <AppLayout>
                 <Outlet />
                 <CreateEnclave />
               </AppLayout>
