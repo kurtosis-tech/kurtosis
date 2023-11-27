@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.85.36](https://github.com/kurtosis-tech/kurtosis/compare/0.85.35...0.85.36) (2023-11-27)
+
+
+### Features
+
+* emui enhancements ([#1847](https://github.com/kurtosis-tech/kurtosis/issues/1847)) ([633ba42](https://github.com/kurtosis-tech/kurtosis/commit/633ba428c9c2ca9acd860ec97b1b37af3eed28b3))
+
+
+### Bug Fixes
+
+* make run_python not create additional files artifact ([#1851](https://github.com/kurtosis-tech/kurtosis/issues/1851)) ([82d0058](https://github.com/kurtosis-tech/kurtosis/commit/82d005817af05c46e67fd7c19946af4cc13135c9))
+* only print image banner if image arch is non empty string and different ([#1854](https://github.com/kurtosis-tech/kurtosis/issues/1854)) ([75b8c84](https://github.com/kurtosis-tech/kurtosis/commit/75b8c844243a55bdf5ddbd653e229e64ac555e0b))
+* tasks remove containers after they are done ([#1850](https://github.com/kurtosis-tech/kurtosis/issues/1850)) ([179c541](https://github.com/kurtosis-tech/kurtosis/commit/179c54121277b6d9d757a7170e4ec86e72115225))
+
 ## [0.85.35](https://github.com/kurtosis-tech/kurtosis/compare/0.85.34...0.85.35) (2023-11-22)
 
 
