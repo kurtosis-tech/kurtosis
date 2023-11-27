@@ -37,17 +37,7 @@ const (
 
 	pipInstallCmd = "pip install"
 
-	pythonScriptFileName = "main.py"
-	pythonWorkspace      = "/tmp/python"
-
-	defaultTmpDir                  = ""
-	pythonScriptReadPermission     = 0644
-	enforceMaxSizeLimit            = true
-	temporaryPythonDirectoryPrefix = "run-python-*"
-
 	successfulPipRunExitCode = 0
-
-	scriptArtifactFormat = "%v-python-script"
 )
 
 func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
