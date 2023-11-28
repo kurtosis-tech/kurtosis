@@ -1,33 +1,31 @@
 import { Box, Flex } from "@chakra-ui/react";
-import { Suspense } from "react";
-import { Await, useLoaderData } from "react-router-dom";
+import { AppPageLayout } from "../../components/AppLayout";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
-import { CatalogLoaderResolved } from "./loader";
+import { PageTitle } from "../../components/PageTitle";
+import { usePackageCatalog } from "./CatalogContext";
 
 export const Catalog = () => {
-  const { catalog } = useLoaderData() as CatalogLoaderResolved;
+  const catalog = usePackageCatalog();
+  console.log(catalog);
 
-  return (
-    <Suspense>
-      <Await resolve={catalog} children={(catalog) => <CatalogImpl catalog={catalog} />} />
-    </Suspense>
-  );
-};
-
-type CatalogImplProps = {
-  catalog: CatalogLoaderResolved["catalog"];
-};
-
-const CatalogImpl = ({ catalog }: CatalogImplProps) => {
   if (catalog.isErr) {
-    return <KurtosisAlert message={catalog.error} />;
+    return (
+      <AppPageLayout>
+        <KurtosisAlert message={catalog.error} />
+      </AppPageLayout>
+    );
   }
 
   return (
-    <Flex flexDirection={"column"}>
-      {catalog.value.map((kurtosisPackage) => (
-        <Box key={kurtosisPackage.url}>{kurtosisPackage.name}</Box>
-      ))}
-    </Flex>
+    <AppPageLayout>
+      <Flex p={"17px 0"}>
+        <PageTitle>Package Catalog</PageTitle>
+      </Flex>
+      <Flex flexDirection={"column"}>
+        {catalog.value.packages.map((kurtosisPackage) => (
+          <Box key={kurtosisPackage.url}>{kurtosisPackage.name}</Box>
+        ))}
+      </Flex>
+    </AppPageLayout>
   );
 };
