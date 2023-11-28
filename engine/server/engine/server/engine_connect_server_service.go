@@ -105,7 +105,7 @@ func toGrpcContainerStatus(status types.ContainerStatus) kurtosis_engine_rpc_api
 	}
 }
 
-func toGrpcEnclaveAPIContainerInfo(info *types.EnclaveAPIContainerInfo) kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo {
+func toGrpcEnclaveAPIContainerInfo(info types.EnclaveAPIContainerInfo) kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo {
 	return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
 		ContainerId:           info.ContainerId,
 		IpInsideEnclave:       info.IpInsideEnclave,
@@ -114,15 +114,15 @@ func toGrpcEnclaveAPIContainerInfo(info *types.EnclaveAPIContainerInfo) kurtosis
 	}
 }
 
-func toGrpcApiContainerHostMachineInfo(info *types.EnclaveAPIContainerHostMachineInfo) kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo {
+func toGrpcApiContainerHostMachineInfo(info types.EnclaveAPIContainerHostMachineInfo) kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo {
 	return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
 		IpOnHostMachine:       info.IpOnHostMachine,
 		GrpcPortOnHostMachine: info.GrpcPortOnHostMachine,
 	}
 }
 
-func toGrpcTimestamp(timestamp *time.Time) *timestamppb.Timestamp {
-	return timestamppb.New(*timestamp)
+func toGrpcTimestamp(timestamp time.Time) *timestamppb.Timestamp {
+	return timestamppb.New(timestamp)
 }
 
 func toGrpcEnclaveMode(mode types.EnclaveMode) kurtosis_engine_rpc_api_bindings.EnclaveMode {
@@ -137,45 +137,34 @@ func toGrpcEnclaveMode(mode types.EnclaveMode) kurtosis_engine_rpc_api_bindings.
 }
 
 func toGrpcEnclaveInfo(info types.EnclaveInfo) kurtosis_engine_rpc_api_bindings.EnclaveInfo {
-	containerInfo := toGrpcEnclaveAPIContainerInfo(info.ApiContainerInfo)
-	apiHostMachine := toGrpcApiContainerHostMachineInfo(info.ApiContainerHostMachineInfo)
+	containerInfo := utils.MapPointer(info.ApiContainerInfo, toGrpcEnclaveAPIContainerInfo)
+	apiHostMachine := utils.MapPointer(info.ApiContainerHostMachineInfo, toGrpcApiContainerHostMachineInfo)
 	return kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:                 info.EnclaveUuid,
 		ShortenedUuid:               info.ShortenedUuid,
 		Name:                        info.Name,
 		ContainersStatus:            toGrpcEnclaveContainersStatus(info.EnclaveContainersStatus),
 		ApiContainerStatus:          toGrpcContainerStatus(info.ApiContainerStatus),
-		ApiContainerInfo:            &containerInfo,
-		ApiContainerHostMachineInfo: &apiHostMachine,
-		CreationTime:                toGrpcTimestamp(&info.CreationTime),
+		ApiContainerInfo:            containerInfo,
+		ApiContainerHostMachineInfo: apiHostMachine,
+		CreationTime:                toGrpcTimestamp(info.CreationTime),
 		Mode:                        toGrpcEnclaveMode(info.Mode),
 	}
 }
 
-func toGrpcEnclaveInfos(infos map[string]*types.EnclaveInfo) map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo {
-	info_map := make(map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo)
-	for key, info := range infos {
-		grpc_info := toGrpcEnclaveInfo(*info)
-		info_map[key] = &grpc_info
-	}
-	return info_map
-}
-
-func toGrpcEnclaveIdentifiers(identifier *types.EnclaveIdentifiers) *kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers {
-	ident := kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{
+func toGrpcEnclaveIdentifiers(identifier types.EnclaveIdentifiers) kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers {
+	return kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{
 		EnclaveUuid:   identifier.EnclaveUuid,
 		Name:          identifier.Name,
 		ShortenedUuid: identifier.ShortenedUuid,
 	}
-	return &ident
 }
 
-func toGrpcEnclaveNameAndUuid(identifier *types.EnclaveNameAndUuid) *kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid {
-	ident := kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid{
+func toGrpcEnclaveNameAndUuid(identifier types.EnclaveNameAndUuid) kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid {
+	return kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid{
 		Uuid: identifier.Uuid,
 		Name: identifier.Name,
 	}
-	return &ident
 }
 
 func (service *EngineConnectServerService) GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
@@ -228,7 +217,12 @@ func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *c
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
 	}
-	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{EnclaveInfo: toGrpcEnclaveInfos(infoForEnclaves)}
+	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{
+		EnclaveInfo: utils.MapMapValues(
+			infoForEnclaves,
+			func(info *types.EnclaveInfo) *kurtosis_engine_rpc_api_bindings.EnclaveInfo {
+				return utils.MapPointer(info, toGrpcEnclaveInfo)
+			})}
 	return connect.NewResponse(response), nil
 }
 
@@ -237,7 +231,12 @@ func (service *EngineConnectServerService) GetExistingAndHistoricalEnclaveIdenti
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave identifiers")
 	}
-	response := &kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse{AllIdentifiers: utils.MapList(allIdentifiers, toGrpcEnclaveIdentifiers)}
+	response := &kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse{
+		AllIdentifiers: utils.MapList(
+			allIdentifiers,
+			func(identifier *types.EnclaveIdentifiers) *kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers {
+				return utils.MapPointer(identifier, toGrpcEnclaveIdentifiers)
+			})}
 	return connect.NewResponse(response), nil
 }
 
@@ -281,7 +280,13 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 			return nil, stacktrace.Propagate(err, "An error occurred removing all logs.")
 		}
 	}
-	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveNameAndUuids: utils.MapList(removedEnclaveUuidsAndNames, toGrpcEnclaveNameAndUuid)}
+	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{
+		RemovedEnclaveNameAndUuids: utils.MapList(
+			removedEnclaveUuidsAndNames,
+			func(identifier *types.EnclaveNameAndUuid) *kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid {
+				return utils.MapPointer(identifier, toGrpcEnclaveNameAndUuid)
+			},
+		)}
 	return connect.NewResponse(response), nil
 }
 
