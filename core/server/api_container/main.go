@@ -64,6 +64,8 @@ const (
 	emptyFunctionName         = ""
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
+
+	chiselServerKeepAliveTime = 25 * time.Second
 )
 
 func main() {
@@ -279,8 +281,20 @@ func startTunnelServer(ctx context.Context, portalServer *KurtosisTunnelServer, 
 	}
 
 	chiselServer, err := chserver.NewServer(&chserver.Config{
+		KeySeed:   "",
+		KeyFile:   "",
+		AuthFile:  "",
+		Auth:      "",
+		Proxy:     "",
+		Socks5:    false,
 		Reverse:   false, // reverse tunnelling is not exposed through the API yet, turn it off here
-		KeepAlive: 25 * time.Second,
+		KeepAlive: chiselServerKeepAliveTime,
+		TLS: chserver.TLSConfig{
+			CA:      "",
+			Cert:    "",
+			Key:     "",
+			Domains: []string{},
+		},
 	})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating chisel server")
