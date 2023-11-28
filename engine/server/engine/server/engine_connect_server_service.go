@@ -22,10 +22,6 @@ const (
 	subnetworkDisableBecauseItIsDeprecated = false
 )
 
-var (
-	logRetentionFeatureReleaseTime = time.Date(2023, 9, 7, 13, 0, 0, 0, time.UTC)
-)
-
 type EngineConnectServerService struct {
 	// The version tag of the engine server image, so it can report its own version
 	imageVersionTag string
@@ -38,14 +34,8 @@ type EngineConnectServerService struct {
 	// User consent to send metrics
 	didUserAcceptSendingMetrics bool
 
-	// The clients for consuming container logs from the logs' database server
-
-	// per week pulls logs from enclaves created post log retention feature
-	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient
-
-	// per file pulls logs from enclaves created pre log retention feature
-	// TODO: remove once users are fully migrated to log retention/new log schema
-	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient
+	// The client for consuming container logs from the logs database
+	logsDatabaseClient centralized_logs.LogsDatabaseClient
 
 	logFileManager *log_file_manager.LogFileManager
 
@@ -57,8 +47,7 @@ func NewEngineConnectServerService(
 	enclaveManager *enclave_manager.EnclaveManager,
 	metricsUserId string,
 	didUserAcceptSendingMetrics bool,
-	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient,
-	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient,
+	logsDatabaseClient centralized_logs.LogsDatabaseClient,
 	logFileManager *log_file_manager.LogFileManager,
 	metricsClient metrics_client.MetricsClient,
 ) *EngineConnectServerService {
@@ -67,8 +56,7 @@ func NewEngineConnectServerService(
 		enclaveManager:              enclaveManager,
 		metricsUserID:               metricsUserId,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
-		perWeekLogsDatabaseClient:   perWeekLogsDatabaseClient,
-		perFileLogsDatabaseClient:   perFileLogsDatabaseClient,
+		logsDatabaseClient:          logsDatabaseClient,
 		logFileManager:              logFileManager,
 		metricsClient:               metricsClient,
 	}
@@ -205,7 +193,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		requestedServiceUuids[serviceUuid] = true
 	}
 
-	if service.perWeekLogsDatabaseClient == nil || service.perFileLogsDatabaseClient == nil {
+	if service.logsDatabaseClient == nil {
 		return stacktrace.NewError("It's not possible to return service logs because there is no logs database client; this is bug in Kurtosis")
 	}
 
@@ -225,14 +213,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		return stacktrace.Propagate(err, "An error occurred creating the conjunctive log line filters from the GRPC's conjunctive log line filters '%+v'", args.GetConjunctiveFilters())
 	}
 
-	// get enclave creation time to determine strategy to pull logs
-	enclaveCreationTime, err := service.getEnclaveCreationTime(ctx, enclaveUuid)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while trying to get the enclave creation time to determine how to pull logs.")
-	}
-	logsDatabaseClient := service.getLogsDatabaseClient(enclaveCreationTime)
-
-	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(
+	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(
 		contextWithCancel,
 		enclaveUuid,
 		requestedServiceUuids,
@@ -300,8 +281,7 @@ func (service *EngineConnectServerService) reportAnyMissingUuidsAndGetNotFoundUu
 	requestedServiceUuids map[user_service.ServiceUUID]bool,
 	stream *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) (map[string]bool, error) {
-	// doesn't matter which logs client is used here
-	existingServiceUuids, err := service.perWeekLogsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
+	existingServiceUuids, err := service.logsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service UUIDs from the log client for enclave '%v' and for the requested UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
 	}
@@ -421,15 +401,6 @@ func newConjunctiveLogLineFiltersFromGRPCLogLineFilters(
 	}
 
 	return conjunctiveLogLineFilters, nil
-}
-
-// If the enclave was created prior to log retention, return the per file logs client
-func (service *EngineConnectServerService) getLogsDatabaseClient(enclaveCreationTime time.Time) centralized_logs.LogsDatabaseClient {
-	if enclaveCreationTime.After(logRetentionFeatureReleaseTime) {
-		return service.perWeekLogsDatabaseClient
-	} else {
-		return service.perFileLogsDatabaseClient
-	}
 }
 
 func (service *EngineConnectServerService) getEnclaveCreationTime(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (time.Time, error) {
