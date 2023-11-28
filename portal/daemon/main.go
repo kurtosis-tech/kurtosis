@@ -76,7 +76,8 @@ func runDaemon(ctx context.Context) error {
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	portForwardManager := port_forward_manager.NewPortForwardManager(kurtosisContext)
+	serviceEnumerator := port_forward_manager.NewServiceEnumerator(kurtosisContext)
+	portForwardManager := port_forward_manager.NewPortForwardManager(serviceEnumerator)
 
 	portalService := grpc_server.NewPortalService(portForwardManager)
 	defer portalService.Close()
