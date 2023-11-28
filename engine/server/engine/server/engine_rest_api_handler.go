@@ -26,13 +26,6 @@ type EngineRuntime struct {
 	MetricsClient metrics_client.MetricsClient
 }
 
-type Error struct {
-}
-
-func (error Error) Error() string {
-	return "Not Implemented :("
-}
-
 // Delete Enclaves
 // (DELETE /enclaves)
 func (engine EngineRuntime) DeleteEnclaves(ctx context.Context, request api.DeleteEnclavesRequestObject) (api.DeleteEnclavesResponseObject, error) {
@@ -123,7 +116,17 @@ func (engine EngineRuntime) DeleteEnclavesEnclaveIdentifier(ctx context.Context,
 // Get Enclave Info
 // (GET /enclaves/{enclave_identifier})
 func (engine EngineRuntime) GetEnclavesEnclaveIdentifier(ctx context.Context, request api.GetEnclavesEnclaveIdentifierRequestObject) (api.GetEnclavesEnclaveIdentifierResponseObject, error) {
-	return nil, Error{}
+	infoForEnclaves, err := engine.EnclaveManager.GetEnclaves(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
+	}
+	info, found := infoForEnclaves[request.EnclaveIdentifier]
+	if !found {
+		notFoundErr := stacktrace.NewError("Enclave '%s' not found.", request.EnclaveIdentifier)
+		return nil, notFoundErr
+	}
+	response := toHttpApiEnclaveInfo(*info)
+	return api.GetEnclavesEnclaveIdentifier200JSONResponse(response), nil
 }
 
 // Get enclave status
