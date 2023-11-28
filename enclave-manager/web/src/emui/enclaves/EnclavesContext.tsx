@@ -18,12 +18,12 @@ import {
   useState,
 } from "react";
 import { Result } from "true-myth";
-import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
-import { assertDefined, isDefined } from "../utils";
-import { RemoveFunctions } from "../utils/types";
-import { EnclaveFullInfo } from "./enclaves/types";
+import { useKurtosisClient } from "../../client/enclaveManager/KurtosisClientContext";
+import { assertDefined, isDefined } from "../../utils";
+import { RemoveFunctions } from "../../utils/types";
+import { EnclaveFullInfo } from "./types";
 
-export type EmuiAppState = {
+export type EnclavesState = {
   enclaves: Result<RemoveFunctions<EnclaveInfo>[], string>;
   servicesByEnclave: Record<string, Result<GetServicesResponse, string>>;
   filesAndArtifactsByEnclave: Record<string, Result<ListFilesArtifactNamesAndUuidsResponse, string>>;
@@ -52,12 +52,12 @@ export type EmuiAppState = {
   updateStarlarkFinishedInEnclave: (enclave: RemoveFunctions<EnclaveInfo>) => void;
 };
 
-const EmuiAppContext = createContext<EmuiAppState>(null as any);
+const EnclavesContext = createContext<EnclavesState>(null as any);
 
-export const EmuiAppContextProvider = ({ children }: PropsWithChildren) => {
+export const EnclavesContextProvider = ({ children }: PropsWithChildren) => {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  const [state, setState] = useState<RemoveFunctions<EmuiAppState>>({
+  const [state, setState] = useState<RemoveFunctions<EnclavesState>>({
     enclaves: Result.err("Enclaves not initialised, call refreshEnclaves"),
     servicesByEnclave: {},
     filesAndArtifactsByEnclave: {},
@@ -202,7 +202,7 @@ export const EmuiAppContextProvider = ({ children }: PropsWithChildren) => {
   }
 
   return (
-    <EmuiAppContext.Provider
+    <EnclavesContext.Provider
       value={{
         ...state,
         refreshEnclaves,
@@ -216,12 +216,12 @@ export const EmuiAppContextProvider = ({ children }: PropsWithChildren) => {
       }}
     >
       {children}
-    </EmuiAppContext.Provider>
+    </EnclavesContext.Provider>
   );
 };
 
-export const useEmuiAppContext = () => {
-  return useContext(EmuiAppContext);
+export const useEnclavesContext = () => {
+  return useContext(EnclavesContext);
 };
 
 export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, string> => {
@@ -233,7 +233,7 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
     refreshServices,
     refreshStarlarkRun,
     refreshFilesAndArtifacts,
-  } = useEmuiAppContext();
+  } = useEnclavesContext();
 
   const enclave = enclaves.isOk ? enclaves.value.find((enclave) => enclave.shortenedUuid === enclaveUUID) : null;
 
@@ -288,7 +288,7 @@ export const useFullEnclaves = (): Result<EnclaveFullInfo[], string> => {
     refreshServices,
     refreshStarlarkRun,
     refreshFilesAndArtifacts,
-  } = useEmuiAppContext();
+  } = useEnclavesContext();
 
   // This hook can trigger a lot of requests to refresh data. To avoid creating waterfalls
   // of effects this refreshId along with cache values are used to restrict changes to the

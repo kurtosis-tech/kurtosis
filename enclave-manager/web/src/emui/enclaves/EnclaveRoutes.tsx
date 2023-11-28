@@ -1,34 +1,28 @@
 import { Icon } from "@chakra-ui/react";
 import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { FiPlus } from "react-icons/fi";
-import { Outlet, Params, RouteObject } from "react-router-dom";
-import { KurtosisClient } from "../../client/enclaveManager/KurtosisClient";
+import { Outlet, Params } from "react-router-dom";
 import { GoToEnclaveOverviewButton } from "../../components/enclaves/GotToEncalaveOverviewButton";
-import { KurtosisBreadcrumbsHandle } from "../../components/KurtosisBreadcrumbs";
 import { RemoveFunctions } from "../../utils/types";
-import { EmuiAppState } from "../EmuiAppContext";
+import { KurtosisEnclavesRouteObject } from "../types";
 import { Artifact } from "./enclave/artifact/Artifact";
 import { Enclave } from "./enclave/Enclave";
 import { EnclaveRouteContextProvider } from "./enclave/EnclaveRouteContext";
 import { EnclaveLogs } from "./enclave/logs/EnclaveLogs";
 import { Service } from "./enclave/service/Service";
 import { EnclaveList } from "./EnclaveList";
+import { EnclavesState } from "./EnclavesContext";
 
-type KurtosisRouteObject = RouteObject & {
-  handle?: KurtosisBreadcrumbsHandle;
-  children?: KurtosisRouteObject[];
-};
-
-export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObject[] => [
+export const enclaveRoutes = (): KurtosisEnclavesRouteObject[] => [
   {
     path: "/enclaves?",
-    handle: { crumb: () => ({ name: "Enclaves", destination: "/" }) },
+    handle: { type: "enclavesHandle" as "enclavesHandle", crumb: () => ({ name: "Enclaves", destination: "/" }) },
     id: "enclaves",
     element: <EnclaveList />,
   },
   {
     path: "/enclave",
-    handle: { crumb: () => ({ name: "Enclaves", destination: "/" }) },
+    handle: { type: "enclavesHandle" as "enclavesHandle", crumb: () => ({ name: "Enclaves", destination: "/" }) },
     children: [
       {
         path: "/enclave/:enclaveUUID",
@@ -39,7 +33,8 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObje
           </EnclaveRouteContextProvider>
         ),
         handle: {
-          crumb: ({ enclaves: enclavesResult }: RemoveFunctions<EmuiAppState>, params: Params) => {
+          type: "enclavesHandle" as "enclavesHandle",
+          crumb: ({ enclaves: enclavesResult }: RemoveFunctions<EnclavesState>, params: Params) => {
             const enclaves = enclavesResult.unwrapOr([]);
             const enclave = enclaves.find((enclave) => enclave.shortenedUuid === params.enclaveUUID);
             return {
@@ -67,7 +62,8 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObje
           {
             path: "service/:serviceUUID",
             handle: {
-              crumb: ({ servicesByEnclave }: RemoveFunctions<EmuiAppState>, params: Params) => {
+              type: "enclavesHandle" as "enclavesHandle",
+              crumb: ({ servicesByEnclave }: RemoveFunctions<EnclavesState>, params: Params) => {
                 const services = Object.values(
                   servicesByEnclave[params.enclaveUUID || ""]?.unwrapOr({
                     serviceInfo: {} as Record<string, ServiceInfo>,
@@ -96,7 +92,8 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObje
                 id: "serviceActiveTab",
                 element: <Service />,
                 handle: {
-                  crumb: (data: RemoveFunctions<EmuiAppState>, params: Params<string>) => {
+                  type: "enclavesHandle" as "enclavesHandle",
+                  crumb: (data: RemoveFunctions<EnclavesState>, params: Params<string>) => {
                     const activeTab = params.activeTab;
 
                     let routeName = activeTab?.toLowerCase() === "logs" ? "Logs" : "Overview";
@@ -116,7 +113,8 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObje
             path: "file/:fileUUID",
             element: <Artifact />,
             handle: {
-              crumb: ({ filesAndArtifactsByEnclave }: RemoveFunctions<EmuiAppState>, params: Params<string>) => {
+              type: "enclavesHandle" as "enclavesHandle",
+              crumb: ({ filesAndArtifactsByEnclave }: RemoveFunctions<EnclavesState>, params: Params<string>) => {
                 const artifacts = Object.values(
                   filesAndArtifactsByEnclave[params.enclaveUUID || ""]?.unwrapOr({
                     fileNamesAndUuids: [] as FilesArtifactNameAndUuid[],
@@ -141,7 +139,7 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObje
                 ];
               },
               hasTabs: false,
-              extraControls: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => (
+              extraControls: (state: RemoveFunctions<EnclavesState>, params: Params<string>) => (
                 <GoToEnclaveOverviewButton enclaveUUID={params.enclaveUUID} />
               ),
             },
@@ -151,8 +149,9 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObje
             id: "enclaveLogs",
             element: <EnclaveLogs />,
             handle: {
+              type: "enclavesHandle" as "enclavesHandle",
               hasTabs: false,
-              extraControls: ({ starlarkRunningInEnclaves }: RemoveFunctions<EmuiAppState>, params: Params<string>) =>
+              extraControls: ({ starlarkRunningInEnclaves }: RemoveFunctions<EnclavesState>, params: Params<string>) =>
                 starlarkRunningInEnclaves.some((enclave) => enclave.shortenedUuid === params.enclaveUUID) ? null : (
                   <GoToEnclaveOverviewButton enclaveUUID={params.enclaveUUID} />
                 ),
@@ -167,7 +166,8 @@ export const enclaveRoutes = (kurtosisClient: KurtosisClient): KurtosisRouteObje
             id: "enclaveActiveTab",
             element: <Enclave />,
             handle: {
-              crumb: (data: RemoveFunctions<EmuiAppState>, params: Params<string>) => {
+              type: "enclavesHandle" as "enclavesHandle",
+              crumb: (data: RemoveFunctions<EnclavesState>, params: Params<string>) => {
                 const activeTab = params.activeTab;
 
                 let routeName =
