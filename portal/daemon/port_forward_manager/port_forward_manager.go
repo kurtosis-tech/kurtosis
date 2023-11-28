@@ -78,8 +78,16 @@ func (manager *PortForwardManager) CreateUserServicePortForward(ctx context.Cont
 	return allBoundPorts, nil
 }
 
+// RemoveUserServicePortForward
+// here we only stop a single session at a time, so require all of enclaveId, serviceId, portId, to be specified
 func (manager *PortForwardManager) RemoveUserServicePortForward(ctx context.Context, enclaveServicePort EnclaveServicePort) error {
-	panic("implement me")
+	if err := validateRemoveUserServicePortForwardArgs(enclaveServicePort); err != nil {
+		return stacktrace.Propagate(err, "Validation failed for arguments")
+	}
+
+	manager.tunnelSessionTracker.StopForwardingPort(enclaveServicePort)
+
+	return nil
 }
 
 func (manager *PortForwardManager) createAndOpenEphemeralPortForwardsToUserServices(serviceInterfaceDetails []*ServiceInterfaceDetail) (map[EnclaveServicePort]uint16, error) {
@@ -121,6 +129,14 @@ func validateCreateUserServicePortForwardArgs(enclaveServicePort EnclaveServiceP
 		}
 	}
 
+	return nil
+}
+
+// Removal only works for specific service/ports, so make sure all fields are populated
+func validateRemoveUserServicePortForwardArgs(enclaveServicePort EnclaveServicePort) error {
+	if enclaveServicePort.EnclaveId() == "" || enclaveServicePort.ServiceId() == "" || enclaveServicePort.PortId() == "" {
+		return stacktrace.NewError("All of enclaveId, serviceId, and portId, must be specified for removal of a port forward: %v", enclaveServicePort)
+	}
 	return nil
 }
 

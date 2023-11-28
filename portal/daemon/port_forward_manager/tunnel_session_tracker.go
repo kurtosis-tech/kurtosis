@@ -8,13 +8,12 @@ import (
 // TODO(omar): there will be some complexity in cases where ephemeral port binds are upgraded to static
 
 type TunnelSessionTracker struct {
-	// TODO(omar): hash key here probably needs sorting / verifying, due to the pointer it carries
-	activePortForwards map[*ServiceInterfaceDetail]*PortForwardTunnel
+	activePortForwards map[EnclaveServicePort]*PortForwardTunnel
 }
 
 func NewTunnelSessionTracker() *TunnelSessionTracker {
 	return &TunnelSessionTracker{
-		map[*ServiceInterfaceDetail]*PortForwardTunnel{},
+		map[EnclaveServicePort]*PortForwardTunnel{},
 	}
 }
 
@@ -34,19 +33,20 @@ func (tracker *TunnelSessionTracker) CreateAndOpenPortForward(serviceInterfaceDe
 	}
 	// TODO(omar): do we need to wait until port is fully open?
 
-	tracker.addPortForward(serviceInterfaceDetail, portForward)
+	tracker.addPortForward(serviceInterfaceDetail.enclaveServicePort, portForward)
 	return portForward.localPortNumber, nil
 }
 
-func (tracker *TunnelSessionTracker) StopForwardingPort(serviceInterfaceDetail *ServiceInterfaceDetail) {
+func (tracker *TunnelSessionTracker) StopForwardingPort(enclaveServicePort EnclaveServicePort) {
 	// TODO(omar): i don't think we care about stopping sessions that have been removed right now
 	// this depends on where we go wrt to monitoring and cleaning up dead sessions, so I'll see how that
 	// evolves prior to doing anything here
-	portForward, _ := tracker.activePortForwards[serviceInterfaceDetail]
-
-	portForward.Close()
+	portForward, found := tracker.activePortForwards[enclaveServicePort]
+	if found {
+		portForward.Close()
+	}
 }
 
-func (tracker *TunnelSessionTracker) addPortForward(serviceInterfaceDetail *ServiceInterfaceDetail, portForward *PortForwardTunnel) {
-	tracker.activePortForwards[serviceInterfaceDetail] = portForward
+func (tracker *TunnelSessionTracker) addPortForward(enclaveServicePort EnclaveServicePort, portForward *PortForwardTunnel) {
+	tracker.activePortForwards[enclaveServicePort] = portForward
 }
