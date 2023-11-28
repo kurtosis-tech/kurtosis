@@ -98,7 +98,7 @@ export const PortsTable = ({ privatePorts, publicPorts, publicIp }: PortsTablePr
     <DataTable
       columns={columns}
       data={getPortTableRows(privatePorts, publicPorts, publicIp)}
-      defaultSorting={[{ id: "number", desc: true }]}
+      defaultSorting={[{ id: "port", desc: true }]}
     />
   );
 };
