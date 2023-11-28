@@ -86,6 +86,14 @@ func (tunnel *PortForwardTunnel) getChiselClient(remoteTunnelString string) (*ch
 
 		DialContext: nil,
 		Verbose:     true,
+
+		TLS: chclient.TLSConfig{
+			SkipVerify: true,
+			CA:         "",
+			Cert:       "",
+			Key:        "",
+			ServerName: "",
+		},
 	}
 
 	return chclient.NewClient(chiselClientConfig)
