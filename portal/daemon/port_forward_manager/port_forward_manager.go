@@ -117,6 +117,10 @@ func validateCreateUserServicePortForwardArgs(enclaveServicePort EnclaveServiceP
 		return stacktrace.NewError("EnclaveId is always required but we received an empty string")
 	}
 
+	if enclaveServicePort.ServiceId() == "" && enclaveServicePort.PortId() != "" {
+		return stacktrace.NewError("PortId (%v) was specified without a corresponding ServiceId", enclaveServicePort.PortId())
+	}
+
 	if requestedLocalPort != 0 {
 		if enclaveServicePort.ServiceId() == "" || enclaveServicePort.PortId() == "" {
 			return stacktrace.NewError("A static port '%d' was requested, but enclaveId, serviceId, and portId were not all specified: %v", requestedLocalPort, enclaveServicePort)
