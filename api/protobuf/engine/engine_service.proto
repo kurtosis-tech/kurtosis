@@ -103,7 +103,7 @@ message EnclaveAPIContainerInfo {
   uint32 grpc_port_inside_enclave = 3;
   // this is the bridge ip address that gets assigned to api container
   string bridge_ip_address = 6;
-  // THe tunnel port inside the enclave network that the API container's tunnel server listens on
+  // The tunnel port inside the enclave network that the API container's tunnel server listens on
   uint32 tunnel_port_inside_enclave = 4;
 }
 
