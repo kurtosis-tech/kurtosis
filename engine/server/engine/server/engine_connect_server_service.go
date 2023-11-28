@@ -15,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"time"
 )
 
 const (
@@ -401,22 +400,4 @@ func newConjunctiveLogLineFiltersFromGRPCLogLineFilters(
 	}
 
 	return conjunctiveLogLineFilters, nil
-}
-
-func (service *EngineConnectServerService) getEnclaveCreationTime(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (time.Time, error) {
-	enclaves, err := service.enclaveManager.GetEnclaves(ctx)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	enclaveObj, found := enclaves[string(enclaveUuid)]
-	if !found {
-		return time.Time{}, stacktrace.NewError("Engine could not find enclave '%v'", enclaveUuid)
-	}
-
-	timestamp := enclaveObj.GetCreationTime()
-	if timestamp == nil {
-		return time.Time{}, stacktrace.NewError("An error occurred getting the creation time for enclave '%v'. This is a bug in Kurtosis", enclaveUuid)
-	}
-	return timestamp.AsTime(), nil
 }
