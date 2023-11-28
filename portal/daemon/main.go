@@ -77,7 +77,8 @@ func runDaemon(ctx context.Context) error {
 	}
 
 	serviceEnumerator := port_forward_manager.NewServiceEnumerator(kurtosisContext)
-	portForwardManager := port_forward_manager.NewPortForwardManager(serviceEnumerator)
+	tunnelSessionTracker := port_forward_manager.NewTunnelSessionTracker()
+	portForwardManager := port_forward_manager.NewPortForwardManager(serviceEnumerator, tunnelSessionTracker)
 
 	portalService := grpc_server.NewPortalService(portForwardManager)
 	defer portalService.Close()

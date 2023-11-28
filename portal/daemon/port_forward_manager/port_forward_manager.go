@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/port_utils"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"strconv"
 )
 
@@ -13,12 +12,17 @@ const (
 )
 
 type PortForwardManager struct {
+	// gets relevant service information from Kurtosis
 	serviceEnumerator *ServiceEnumerator
+
+	// tracks active port forwarding tunnels and manages their lifecycle
+	tunnelSessionTracker *TunnelSessionTracker
 }
 
-func NewPortForwardManager(serviceEnumerator *ServiceEnumerator) *PortForwardManager {
+func NewPortForwardManager(serviceEnumerator *ServiceEnumerator, tracker *TunnelSessionTracker) *PortForwardManager {
 	return &PortForwardManager{
-		serviceEnumerator: serviceEnumerator,
+		serviceEnumerator:    serviceEnumerator,
+		tunnelSessionTracker: tracker,
 	}
 }
 
@@ -53,13 +57,13 @@ func (manager *PortForwardManager) CreateUserServicePortForward(ctx context.Cont
 		}
 
 		sid := serviceInterfaceDetails[0]
-		portForward, err := manager.createAndOpenPortForwardToUserService(sid, requestedLocalPort)
+		boundPortNumber, err := manager.tunnelSessionTracker.CreateAndOpenPortForward(sid, requestedLocalPort)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to open static port %d for service %v", requestedLocalPort, sid)
 		}
 
 		// use the enclave/server/port stored in service details, as this will be fully populated
-		allBoundPorts[sid.enclaveServicePort] = portForward.localPortNumber
+		allBoundPorts[sid.enclaveServicePort] = boundPortNumber
 	} else {
 		boundPorts, err := manager.createAndOpenEphemeralPortForwardsToUserServices(serviceInterfaceDetails)
 		if err != nil {
@@ -88,25 +92,15 @@ func (manager *PortForwardManager) createAndOpenEphemeralPortForwardsToUserServi
 		}
 
 		ephemeralLocalPort := ephemeralLocalPortSpec.GetNumber()
-		portForward, err := manager.createAndOpenPortForwardToUserService(sid, ephemeralLocalPort)
+		boundPortNumber, err := manager.tunnelSessionTracker.CreateAndOpenPortForward(sid, ephemeralLocalPort)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to open ephemeral port %d for service %v", ephemeralLocalPort, sid)
 		}
 
-		allBoundPorts[sid.enclaveServicePort] = portForward.localPortNumber
+		allBoundPorts[sid.enclaveServicePort] = boundPortNumber
 	}
 
 	return allBoundPorts, nil
-}
-
-func (manager *PortForwardManager) createAndOpenPortForwardToUserService(serviceInterfaceDetail *ServiceInterfaceDetail, localPortToBind uint16) (*PortForwardTunnel, error) {
-	portForward := NewPortForwardTunnel(localPortToBind, serviceInterfaceDetail)
-	logrus.Infof("Opening port forward session on local port %d, to remote service %v", portForward.localPortNumber, serviceInterfaceDetail)
-	err := portForward.RunAsync()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to open a port forward tunnel to remote service %v", serviceInterfaceDetail)
-	}
-	return portForward, nil
 }
 
 // Check for two modes of operation:
