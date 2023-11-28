@@ -81,8 +81,6 @@ export const ConfigureEnclaveModal = ({
               return isDefined(value) ? `${value}` : "";
             case ArgumentValueType.STRING:
               return value || "";
-            case ArgumentValueType.JSON:
-              return isDefined(value) ? JSON.stringify(value) : "{}";
             case ArgumentValueType.LIST:
               assertDefined(innerType1, `Cannot parse a list argument type without knowing innerType1`);
               return isDefined(value) ? value.map((v: any) => convertArgValue(innerType1, v)) : [];
@@ -177,7 +175,7 @@ export const ConfigureEnclaveModal = ({
       return;
     }
 
-    let apicInfo = existingEnclave?.apiContainerInfo;
+    let enclave = existingEnclave;
     let enclaveUUID = existingEnclave?.shortenedUuid;
     if (!isDefined(existingEnclave)) {
       setIsLoading(true);
@@ -192,12 +190,12 @@ export const ConfigureEnclaveModal = ({
         setError(`Did not receive enclave info when running createEnclave`);
         return;
       }
-      apicInfo = newEnclave.value.enclaveInfo.apiContainerInfo;
+      enclave = newEnclave.value.enclaveInfo;
       enclaveUUID = newEnclave.value.enclaveInfo.shortenedUuid;
     }
 
-    if (!isDefined(apicInfo)) {
-      setError(`Cannot trigger starlark run as apic info cannot be found`);
+    if (!isDefined(enclave)) {
+      setError(`Cannot trigger starlark run as enclave info cannot be found`);
       return;
     }
 
@@ -217,9 +215,13 @@ export const ConfigureEnclaveModal = ({
     }
     console.log("submissionData for runStarlarkPackage", submissionData);
 
-    const logsIterator = await runStarlarkPackage(apicInfo, kurtosisPackage.name, submissionData);
-    navigator(`/enclave/${enclaveUUID}/logs`, { state: { logs: logsIterator } });
-    onClose();
+    try {
+      const logsIterator = await runStarlarkPackage(enclave, kurtosisPackage.name, submissionData);
+      navigator(`/enclave/${enclaveUUID}/logs`, { state: { logs: logsIterator } });
+      onClose();
+    } catch (error: any) {
+      setError(stringifyError(error));
+    }
   };
 
   return (

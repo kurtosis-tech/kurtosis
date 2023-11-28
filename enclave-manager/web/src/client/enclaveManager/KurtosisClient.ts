@@ -151,7 +151,7 @@ export abstract class KurtosisClient {
     }, `KurtosisClient could not listFilesArtifactNamesAndUuids for ${enclave.name}`);
   }
 
-  async inspectFilesArtifactContents(enclave: RemoveFunctions<EnclaveInfo>, file: FilesArtifactNameAndUuid) {
+  async inspectFilesArtifactContents(enclave: RemoveFunctions<EnclaveInfo>, fileUuid: string) {
     return await asyncResult(() => {
       const apicInfo = enclave.apiContainerInfo;
       assertDefined(
@@ -161,7 +161,7 @@ export abstract class KurtosisClient {
       const request = new InspectFilesArtifactContentsRequest({
         apicIpAddress: apicInfo.bridgeIpAddress,
         apicPort: apicInfo.grpcPortInsideEnclave,
-        fileNamesAndUuid: file,
+        fileNamesAndUuid: { fileUuid },
       });
       return this.client.inspectFilesArtifactContents(request, this.getHeaderOptions());
     }, `KurtosisClient could not inspectFilesArtifactContents for ${enclave.name}`);

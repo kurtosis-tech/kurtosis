@@ -13,7 +13,7 @@ export const CreateEnclaveButton = () => {
             as={Button}
             colorScheme={"kurtosisGreen"}
             leftIcon={<FiPlus />}
-            size={"md"}
+            size={"sm"}
             onClick={() => navigate(`#${KURTOSIS_CREATE_ENCLAVE_URL_ARG}`)}
           >
             New Enclave

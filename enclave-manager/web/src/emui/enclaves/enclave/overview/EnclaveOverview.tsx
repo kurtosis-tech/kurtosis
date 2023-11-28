@@ -6,7 +6,7 @@ import { EnclaveStatus } from "../../../../components/enclaves/widgets/EnclaveSt
 import { FormatDateTime } from "../../../../components/FormatDateTime";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
 import { FLEX_STANDARD_GAP } from "../../../../components/theme/constants";
-import { TitledCard } from "../../../../components/TitledCard";
+import { TitledBox } from "../../../../components/TitledBox";
 import { ValueCard } from "../../../../components/ValueCard";
 import { isDefined } from "../../../../utils";
 import { EnclaveFullInfo } from "../../types";
@@ -47,14 +47,14 @@ export const EnclaveOverview = ({ enclave }: EnclaveOverviewProps) => {
           />
         </GridItem>
       </Grid>
-      <TitledCard title={"Services"}>
+      <TitledBox title={"Services"}>
         {!isDefined(enclave.services) && <Spinner />}
         {isDefined(enclave.services) && enclave.services.isOk && (
           <ServicesTable servicesResponse={enclave.services.value} enclaveShortUUID={enclave.shortenedUuid} />
         )}
         {isDefined(enclave.services) && enclave.services.isErr && <KurtosisAlert message={enclave.services.error} />}
-      </TitledCard>
-      <TitledCard title={"Files Artifacts"}>
+      </TitledBox>
+      <TitledBox title={"Files Artifacts"}>
         {!isDefined(enclave.filesAndArtifacts) && <Spinner />}
         {isDefined(enclave.filesAndArtifacts) && enclave.filesAndArtifacts.isOk && (
           <FilesTable filesAndArtifacts={enclave.filesAndArtifacts.value} enclave={enclave} />
@@ -62,7 +62,7 @@ export const EnclaveOverview = ({ enclave }: EnclaveOverviewProps) => {
         {isDefined(enclave.filesAndArtifacts) && enclave.filesAndArtifacts.isErr && (
           <KurtosisAlert message={enclave.filesAndArtifacts.error} />
         )}
-      </TitledCard>
+      </TitledBox>
     </Flex>
   );
 };

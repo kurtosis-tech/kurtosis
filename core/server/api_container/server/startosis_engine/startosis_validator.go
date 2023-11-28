@@ -32,6 +32,8 @@ const (
 	containerImageArchitectureMsgLineFormat = "> %s - %s"
 
 	linebreak = "\n"
+
+	emptyImageArchitecture = ""
 )
 
 type StartosisValidator struct {
@@ -221,15 +223,17 @@ func sendContainerImageSummaryInfoMsg(
 			pulledFromStr = containerDownloadedImagesMsgFromRemote
 		}
 
+		imageLine := fmt.Sprintf(containerDownloadedImagesMsgLineFormat, image, pulledFromStr)
+		imageLines = append(imageLines, imageLine)
+
 		architecture := validatedImage.GetArchitecture()
 
-		if architecture != runtime.GOARCH {
+		if architecture == emptyImageArchitecture {
+			logrus.Debugf("Couldn't fetch image architecture for '%v'; this is expected on k8s backend but not docker", image)
+		} else if architecture != runtime.GOARCH {
 			imageWithIncorrectArchLine := fmt.Sprintf(containerImageArchitectureMsgLineFormat, image, architecture)
 			imagesWithIncorrectArchLines = append(imagesWithIncorrectArchLines, imageWithIncorrectArchLine)
 		}
-
-		imageLine := fmt.Sprintf(containerDownloadedImagesMsgLineFormat, image, pulledFromStr)
-		imageLines = append(imageLines, imageLine)
 	}
 
 	msgLines := []string{containerDownloadedImagesMsgHeader}
