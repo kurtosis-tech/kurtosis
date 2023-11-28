@@ -35,8 +35,9 @@ func (manager *PortForwardManager) Ping(ctx context.Context) error {
 
 // TODO(omar): make a return struct - see what we end up using to represent port forwards
 func (manager *PortForwardManager) CreateUserServicePortForward(ctx context.Context, enclaveServicePort EnclaveServicePort, requestedLocalPort uint16) (map[EnclaveServicePort]uint16, error) {
-	// TODO(omar): arg validation galore; figure out the scope of the forwarding then execute
-	// might be worth separating the single service (with static port option) from the full ephemeral case
+	if err := validateCreateUserServicePortForwardArgs(enclaveServicePort, requestedLocalPort); err != nil {
+		return nil, stacktrace.Propagate(err, "Validation failed for arguments")
+	}
 
 	if requestedLocalPort == 0 {
 		ephemeralLocalPortSpec, err := port_utils.GetFreeTcpPort(localhostIpString)
@@ -104,6 +105,23 @@ func (manager *PortForwardManager) collectServiceInformation(ctx context.Context
 	localPortToChiselServer := uint16(enclave.GetApiContainerHostMachineInfo().GetTunnelPortOnHostMachine())
 	chiselServerUri := getLocalChiselServerUri(localPortToChiselServer)
 	return chiselServerUri, serviceIpAddress, servicePortSpec.GetNumber(), nil
+}
+
+// Check for two modes of operation:
+// 1. where a local port is requested, we need all of (enclaveId, serviceId, portId) to be specified; this has to target one service
+// 2. if no local port is requested, we need at least enclaveId, and will target as many services as possible within the given context
+func validateCreateUserServicePortForwardArgs(enclaveServicePort EnclaveServicePort, requestedLocalPort uint16) error {
+	if enclaveServicePort.EnclaveId() == "" {
+		return stacktrace.NewError("EnclaveId is always required but we received an empty string")
+	}
+
+	if requestedLocalPort != 0 {
+		if enclaveServicePort.ServiceId() == "" || enclaveServicePort.PortId() == "" {
+			return stacktrace.NewError("A static port '%d' was requested, but enclaveId, serviceId, and portId were not all specified: %v", requestedLocalPort, enclaveServicePort)
+		}
+	}
+
+	return nil
 }
 
 func getLocalChiselServerUri(localPortToChiselServer uint16) string {
