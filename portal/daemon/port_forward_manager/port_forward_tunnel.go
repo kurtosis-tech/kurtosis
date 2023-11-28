@@ -3,6 +3,7 @@ package port_forward_manager
 import (
 	"context"
 	chclient "github.com/jpillora/chisel/client"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"strconv"
 	"strings"
@@ -17,10 +18,10 @@ const (
 )
 
 type PortForwardTunnel struct {
-	localPortNumber   uint16
-	remoteServiceIp   string
-	remoteServicePort uint16
-	chiselServerUri   string
+	localPortNumber       uint16
+	remoteServiceIp       string
+	remoteServicePortSpec *services.PortSpec
+	chiselServerUri       string
 
 	context    context.Context
 	cancelFunc context.CancelFunc
@@ -31,7 +32,7 @@ func NewPortForwardTunnel(localPortNumber uint16, sid *ServiceInterfaceDetail) *
 	return &PortForwardTunnel{
 		localPortNumber,
 		sid.serviceIpAddress,
-		sid.servicePortSpec.GetNumber(),
+		sid.servicePortSpec,
 		sid.chiselServerUri,
 
 		ctx,
@@ -40,14 +41,14 @@ func NewPortForwardTunnel(localPortNumber uint16, sid *ServiceInterfaceDetail) *
 }
 
 // TODO(omar): lifecycle, locking, more error handling, etc
-func (session *PortForwardTunnel) RunAsync() error {
-	remoteTunnelString := session.getRemoteTunnelString()
-	chiselClient, err := session.getChiselClient(remoteTunnelString)
+func (tunnel *PortForwardTunnel) RunAsync() error {
+	remoteTunnelString := tunnel.getRemoteTunnelString()
+	chiselClient, err := tunnel.getChiselClient(remoteTunnelString)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create chisel tunnel to chisel server '%v' with remote spec '%v'", session.chiselServerUri, remoteTunnelString)
+		return stacktrace.Propagate(err, "Failed to create chisel tunnel to chisel server '%v' with remote spec '%v'", tunnel.chiselServerUri, remoteTunnelString)
 	}
 
-	if err := chiselClient.Start(session.context); err != nil {
+	if err := chiselClient.Start(tunnel.context); err != nil {
 		return stacktrace.Propagate(err, "Unable to start Chisel client for remote: '%s'", remoteTunnelString)
 	}
 	return nil
@@ -57,9 +58,16 @@ func (tunnel *PortForwardTunnel) getRemoteTunnelString() string {
 	remoteSpec := []string{
 		strconv.Itoa(int(tunnel.localPortNumber)),
 		tunnel.remoteServiceIp,
-		strconv.Itoa(int(tunnel.remoteServicePort)),
+		strconv.Itoa(int(tunnel.remoteServicePortSpec.GetNumber())),
 	}
-	return strings.Join(remoteSpec, remoteSeparatorString)
+
+	remoteString := strings.Join(remoteSpec, remoteSeparatorString)
+
+	if tunnel.remoteServicePortSpec.GetTransportProtocol() == services.TransportProtocol_UDP {
+		remoteString = remoteString + "/udp"
+	}
+
+	return remoteString
 }
 
 func (tunnel *PortForwardTunnel) getChiselClient(remoteTunnelString string) (*chclient.Client, error) {
