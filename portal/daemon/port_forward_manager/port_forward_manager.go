@@ -39,40 +39,73 @@ func (manager *PortForwardManager) CreateUserServicePortForward(ctx context.Cont
 		return nil, stacktrace.Propagate(err, "Validation failed for arguments")
 	}
 
-	if requestedLocalPort == 0 {
-		ephemeralLocalPortSpec, err := port_utils.GetFreeTcpPort(localhostIpString)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not allocate a local port for the tunnel")
+	serviceInterfaceDetails, err := manager.serviceEnumerator.CollectServiceInformation(ctx, enclaveServicePort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to enumerate service information for (enclave, service, port), %v", enclaveServicePort)
+	}
+
+	allBoundPorts := map[EnclaveServicePort]uint16{}
+
+	if requestedLocalPort != 0 {
+		if len(serviceInterfaceDetails) != 1 {
+			return nil, stacktrace.NewError("Creating a static binding for service %v, to local port %v. "+
+				"Expected to find a single matching service but instead found %d", enclaveServicePort, requestedLocalPort, len(serviceInterfaceDetails))
 		}
 
-		requestedLocalPort = ephemeralLocalPortSpec.GetNumber()
+		sid := serviceInterfaceDetails[0]
+		portForward, err := manager.createAndOpenPortForwardToUserService(sid, requestedLocalPort)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to open static port %d for service %v", requestedLocalPort, sid)
+		}
+
+		// use the enclave/server/port stored in service details, as this will be fully populated
+		allBoundPorts[sid.enclaveServicePort] = portForward.localPortNumber
+	} else {
+		boundPorts, err := manager.createAndOpenEphemeralPortForwardsToUserServices(serviceInterfaceDetails)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to open ephemeral ports for requested services %v", serviceInterfaceDetails)
+		}
+
+		for esp, port := range boundPorts {
+			allBoundPorts[esp] = port
+		}
 	}
 
-	portForward, err := manager.createAndOpenPortForwardToUserService(ctx, enclaveServicePort, requestedLocalPort)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to set up port forward to (enclave, service, port), %v", enclaveServicePort)
-	}
-
-	return map[EnclaveServicePort]uint16{enclaveServicePort: portForward.localPortNumber}, nil
+	return allBoundPorts, nil
 }
 
 func (manager *PortForwardManager) RemoveUserServicePortForward(ctx context.Context, enclaveServicePort EnclaveServicePort) error {
 	panic("implement me")
 }
 
-func (manager *PortForwardManager) createAndOpenPortForwardToUserService(ctx context.Context, enclaveServicePort EnclaveServicePort, localPortToBind uint16) (*PortForwardTunnel, error) {
-	serviceInterfaceDetail, err := manager.serviceEnumerator.collectServiceInformation(ctx, enclaveServicePort)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to enumerate service information for (enclave, service, port), %v", enclaveServicePort)
+func (manager *PortForwardManager) createAndOpenEphemeralPortForwardsToUserServices(serviceInterfaceDetails []*ServiceInterfaceDetail) (map[EnclaveServicePort]uint16, error) {
+	allBoundPorts := map[EnclaveServicePort]uint16{}
+
+	for _, sid := range serviceInterfaceDetails {
+		ephemeralLocalPortSpec, err := port_utils.GetFreeTcpPort(localhostIpString)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Could not allocate a local port for the tunnel")
+		}
+
+		ephemeralLocalPort := ephemeralLocalPortSpec.GetNumber()
+		portForward, err := manager.createAndOpenPortForwardToUserService(sid, ephemeralLocalPort)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to open ephemeral port %d for service %v", ephemeralLocalPort, sid)
+		}
+
+		allBoundPorts[sid.enclaveServicePort] = portForward.localPortNumber
 	}
 
+	return allBoundPorts, nil
+}
+
+func (manager *PortForwardManager) createAndOpenPortForwardToUserService(serviceInterfaceDetail *ServiceInterfaceDetail, localPortToBind uint16) (*PortForwardTunnel, error) {
 	portForward := NewPortForwardTunnel(localPortToBind, serviceInterfaceDetail)
 	logrus.Infof("Opening port forward session on local port %d, to remote service %v", portForward.localPortNumber, serviceInterfaceDetail)
-	err = portForward.RunAsync()
+	err := portForward.RunAsync()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to open a port forward tunnel to remote service %v", serviceInterfaceDetail)
 	}
-
 	return portForward, nil
 }
 
