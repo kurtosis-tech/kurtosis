@@ -13,10 +13,10 @@ const (
 )
 
 type PortForwardManager struct {
-	serviceEnumerator ServiceEnumerator
+	serviceEnumerator *ServiceEnumerator
 }
 
-func NewPortForwardManager(serviceEnumerator ServiceEnumerator) *PortForwardManager {
+func NewPortForwardManager(serviceEnumerator *ServiceEnumerator) *PortForwardManager {
 	return &PortForwardManager{
 		serviceEnumerator: serviceEnumerator,
 	}
@@ -61,19 +61,16 @@ func (manager *PortForwardManager) RemoveUserServicePortForward(ctx context.Cont
 }
 
 func (manager *PortForwardManager) createAndOpenPortForwardToUserService(ctx context.Context, enclaveServicePort EnclaveServicePort, localPortToBind uint16) (*PortForwardTunnel, error) {
-	chiselServerUri, serviceIpAddress, servicePortNumber, err := manager.serviceEnumerator.collectServiceInformation(ctx, enclaveServicePort)
+	serviceInterfaceDetail, err := manager.serviceEnumerator.collectServiceInformation(ctx, enclaveServicePort)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to enumerate service information for (enclave, service, port), %v", enclaveServicePort)
 	}
 
-	logrus.Debugf("Will connect to chisel server at %v, setting up a tunnel to service %v running at %v:%d", chiselServerUri, enclaveServicePort, serviceIpAddress, servicePortNumber)
-
-	portForward := NewPortForwardTunnel(localPortToBind, serviceIpAddress, servicePortNumber, chiselServerUri)
-
-	logrus.Infof("Opening port forward session on local port %d, to remote service %v at %v:%d", portForward.localPortNumber, enclaveServicePort, serviceIpAddress, servicePortNumber)
+	portForward := NewPortForwardTunnel(localPortToBind, serviceInterfaceDetail)
+	logrus.Infof("Opening port forward session on local port %d, to remote service %v", portForward.localPortNumber, serviceInterfaceDetail)
 	err = portForward.RunAsync()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to open a port forward tunnel to chisel server '%v' for remote service at '%v:%d'", chiselServerUri, serviceIpAddress, servicePortNumber)
+		return nil, stacktrace.Propagate(err, "Failed to open a port forward tunnel to remote service %v", serviceInterfaceDetail)
 	}
 
 	return portForward, nil

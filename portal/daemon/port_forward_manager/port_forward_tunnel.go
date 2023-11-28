@@ -26,13 +26,13 @@ type PortForwardTunnel struct {
 	cancelFunc context.CancelFunc
 }
 
-func NewPortForwardTunnel(localPortNumber uint16, remoteServiceIp string, remoteServicePort uint16, chiselServerUri string) *PortForwardTunnel {
+func NewPortForwardTunnel(localPortNumber uint16, sid *ServiceInterfaceDetail) *PortForwardTunnel {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	return &PortForwardTunnel{
 		localPortNumber,
-		remoteServiceIp,
-		remoteServicePort,
-		chiselServerUri,
+		sid.serviceIpAddress,
+		sid.servicePortSpec.GetNumber(),
+		sid.chiselServerUri,
 
 		ctx,
 		cancelFunc,

@@ -17,32 +17,37 @@ func NewServiceEnumerator(kurtosisContext *kurtosis_context.KurtosisContext) *Se
 	}
 }
 
-func (enumerator *ServiceEnumerator) collectServiceInformation(ctx context.Context, enclaveServicePort EnclaveServicePort) (string, string, uint16, error) {
+func (enumerator *ServiceEnumerator) findSingleService(ctx context.Context, esp EnclaveServicePort) error {
+	return nil
+}
+
+func (enumerator *ServiceEnumerator) collectServiceInformation(ctx context.Context, enclaveServicePort EnclaveServicePort) (*ServiceInterfaceDetail, error) {
 	enclave, err := enumerator.kurtosis.GetEnclave(ctx, enclaveServicePort.enclaveId)
 	if err != nil {
-		return "", "", 0, stacktrace.Propagate(err, "Failed to lookup enclave '%v' from Kurtosis Engine", enclaveServicePort.enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to lookup enclave '%v' from Kurtosis Engine", enclaveServicePort.enclaveId)
 	}
 
 	enclaveContext, err := enumerator.kurtosis.GetEnclaveContext(ctx, enclaveServicePort.enclaveId)
 	if err != nil {
-		return "", "", 0, stacktrace.Propagate(err, "Failed to get enclave context for enclave '%v'", enclaveServicePort.enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to get enclave context for enclave '%v'", enclaveServicePort.enclaveId)
 	}
 
 	serviceContext, err := enclaveContext.GetServiceContext(enclaveServicePort.serviceId)
 	if err != nil {
-		return "", "", 0, stacktrace.Propagate(err, "Failed to get service context for service '%v' in enclave '%v'", enclaveServicePort.serviceId, enclaveServicePort.enclaveId)
+		return nil, stacktrace.Propagate(err, "Failed to get service context for service '%v' in enclave '%v'", enclaveServicePort.serviceId, enclaveServicePort.enclaveId)
 	}
 
 	serviceIpAddress := serviceContext.GetPrivateIPAddress()
 	servicePortSpec, exists := serviceContext.GetPrivatePorts()[enclaveServicePort.portId]
 	if !exists {
-		return "", "", 0, stacktrace.NewError("Failed to find requested port id specified %v.  Available ports are: %v", enclaveServicePort, serviceContext.GetPrivatePorts())
+		return nil, stacktrace.NewError("Failed to find requested port id specified %v.  Available ports are: %v", enclaveServicePort, serviceContext.GetPrivatePorts())
 	}
 	logrus.Debugf("Found service information for %v: service running at %v:%d in enclave: %v", enclaveServicePort, serviceIpAddress, servicePortSpec.GetNumber(), enclave.String())
 
 	localPortToChiselServer := uint16(enclave.GetApiContainerHostMachineInfo().GetTunnelPortOnHostMachine())
 	chiselServerUri := getLocalChiselServerUri(localPortToChiselServer)
-	return chiselServerUri, serviceIpAddress, servicePortSpec.GetNumber(), nil
+
+	return NewServiceDetail(enclaveServicePort, chiselServerUri, serviceIpAddress, servicePortSpec), nil
 }
 
 // TODO(omar): get enclaves can take a while so look for a lighter ping that also verifies we've an engine connection
