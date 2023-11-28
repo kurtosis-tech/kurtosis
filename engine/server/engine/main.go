@@ -20,7 +20,7 @@ import (
 	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rest_api_bindings"
 	engineApi "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rest_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
-	loggingApi "github.com/kurtosis-tech/kurtosis/api/golang/logging/kurtosis_logging_api_bindings"
+	loggingApi "github.com/kurtosis-tech/kurtosis/api/golang/websocket/kurtosis_websocket_api_bindings"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -399,15 +399,15 @@ func restApiServer(
 
 	// ============================== Logging API ======================================
 
-	swagger_logging, err := loggingApi.GetSwagger()
+	swagger_websocket, err := loggingApi.GetSwagger()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
 		os.Exit(1)
 	}
-	server.ServeSwaggerUI(e, "/api/specs/logging", server.NewSwaggerUIConfig(swagger_logging))
+	server.ServeSwaggerUI(e, "/api/specs/websocket", server.NewSwaggerUIConfig(swagger_websocket))
 	// Use our validation middleware to check all requests against the
-	// e.Use(middleware.OapiRequestValidator(swagger_logging))
-	loggingRuntime := restApi.LoggingRuntime{
+	// e.Use(middleware.OapiRequestValidator(swagger_websocket))
+	webSocketRuntime := restApi.WebSocketRuntime{
 		ImageVersionTag:             serverArgs.ImageVersionTag,
 		EnclaveManager:              enclave_manager,
 		MetricsUserID:               serverArgs.MetricsUserID,
@@ -418,8 +418,8 @@ func restApiServer(
 		MetricsClient:               metricsClient,
 	}
 	// TODO(edgar) add logging Close()
-	// defer loggingRuntime.ShutDown()
-	loggingApi.RegisterHandlers(e, loggingRuntime)
+	// defer webSocketRuntime.ShutDown()
+	loggingApi.RegisterHandlers(e, webSocketRuntime)
 
 	// ============================== Engine Management API ======================================
 	// OpenAPI schema.

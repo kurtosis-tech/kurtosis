@@ -1,0 +1,4 @@
+package: kurtosis_websocket_api_bindings
+generate:
+  models: true
+output: api/golang/websocket/kurtosis_websocket_api_bindings/websocket_types.gen.go

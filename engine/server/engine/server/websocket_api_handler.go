@@ -20,10 +20,10 @@ import (
 	"golang.org/x/exp/slices"
 	"golang.org/x/net/websocket"
 
-	api "github.com/kurtosis-tech/kurtosis/api/golang/logging/kurtosis_logging_api_bindings"
+	api "github.com/kurtosis-tech/kurtosis/api/golang/websocket/kurtosis_websocket_api_bindings"
 )
 
-type LoggingRuntime struct {
+type WebSocketRuntime struct {
 	// The version tag of the engine server image, so it can report its own version
 	ImageVersionTag string
 
@@ -62,7 +62,7 @@ type LogStreamer struct {
 	notFoundServiceUuids         []string
 }
 
-func (engine LoggingRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier api.EnclaveIdentifier, params api.GetEnclavesEnclaveIdentifierLogsParams) error {
+func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier api.EnclaveIdentifier, params api.GetEnclavesEnclaveIdentifierLogsParams) error {
 	streamer, err := engine.getLogStreamer(
 		ctx,
 		enclaveIdentifier,
@@ -85,7 +85,7 @@ func (engine LoggingRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, 
 
 }
 
-func (engine LoggingRuntime) GetEnclavesEnclaveIdentifierServicesServiceUuidLogs(ctx echo.Context, enclaveIdentifier api.EnclaveIdentifier, serviceUuid api.ServiceUuid, params api.GetEnclavesEnclaveIdentifierServicesServiceUuidLogsParams) error {
+func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceUuidLogs(ctx echo.Context, enclaveIdentifier api.EnclaveIdentifier, serviceUuid api.ServiceUuid, params api.GetEnclavesEnclaveIdentifierServicesServiceUuidLogsParams) error {
 	serviceUuidStrSet := []user_service.ServiceUUID{user_service.ServiceUUID(serviceUuid)}
 	streamer, err := engine.getLogStreamer(
 		ctx,
@@ -108,7 +108,7 @@ func (engine LoggingRuntime) GetEnclavesEnclaveIdentifierServicesServiceUuidLogs
 	}
 }
 
-func (engine LoggingRuntime) getLogStreamer(
+func (engine WebSocketRuntime) getLogStreamer(
 	ctx echo.Context,
 	enclaveIdentifier api.EnclaveIdentifier,
 	serviceUuidList []user_service.ServiceUUID,
@@ -266,7 +266,7 @@ func (streamer LogStreamer) streamHTTP(ctx echo.Context) error {
 // ============================================== Helper Functions =============================================================================
 // =============================================================================================================================================
 
-func (service *LoggingRuntime) reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(
+func (service *WebSocketRuntime) reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	requestedServiceUuids map[user_service.ServiceUUID]bool,
@@ -286,7 +286,7 @@ func (service *LoggingRuntime) reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(
 }
 
 // If the enclave was created prior to log retention, return the per file logs client
-func (service *LoggingRuntime) getLogsDatabaseClient(enclaveCreationTime time.Time) centralized_logs.LogsDatabaseClient {
+func (service *WebSocketRuntime) getLogsDatabaseClient(enclaveCreationTime time.Time) centralized_logs.LogsDatabaseClient {
 	if enclaveCreationTime.After(logRetentionFeatureReleaseTime) {
 		return service.PerWeekLogsDatabaseClient
 	} else {
@@ -294,7 +294,7 @@ func (service *LoggingRuntime) getLogsDatabaseClient(enclaveCreationTime time.Ti
 	}
 }
 
-func (service *LoggingRuntime) getEnclaveCreationTime(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (time.Time, error) {
+func (service *WebSocketRuntime) getEnclaveCreationTime(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (time.Time, error) {
 	enclaves, err := service.EnclaveManager.GetEnclaves(ctx)
 	if err != nil {
 		return time.Time{}, err

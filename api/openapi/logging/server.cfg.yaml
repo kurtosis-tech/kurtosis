@@ -1,6 +1,0 @@
-package: kurtosis_logging_api_bindings
-generate:
-  embedded-spec: true
-  echo-server: true
-  strict-server: false
-output: api/golang/logging/kurtosis_logging_api_bindings/logging_server.gen.go
