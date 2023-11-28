@@ -31,7 +31,7 @@ func (manager *PortForwardManager) Ping(ctx context.Context) error {
 // 1. requestedLocalPort is specified: this will target only one (enclaveId, serviceId, portId), so all must be specified
 // 2. requestedLocalPort is unspecified (0): we will bind all services to ephemeral local ports.  The list of services depends
 // upon what's specified:
-//   - (enclaveId): finds all services and ports within the enclave and binds them
+//   - (enclaveId, ): finds all services and ports within the enclave and binds them
 //   - (enclaveId, serviceId): finds all ports in the given service and binds them
 //   - (enclaveId, serviceId, portId): finds a specific service/port and binds that (similar to case 1 but ephemeral)
 func (manager *PortForwardManager) CreateUserServicePortForward(ctx context.Context, enclaveServicePort EnclaveServicePort, requestedLocalPort uint16) (map[EnclaveServicePort]uint16, error) {
