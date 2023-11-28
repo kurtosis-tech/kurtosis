@@ -536,6 +536,7 @@ func getPrivateTunnelContainerPorts(containerLabels map[string]string) (
 		return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", serializedPortSpecs)
 	}
 
+	// TODO(omar): look at this from a continuity perspective; old enclaves won't have a tunnel port post-upgrade
 	tunnelPortSpec, foundTunnelPort := portSpecs[consts.KurtosisInternalTunnelPortId]
 	if !foundTunnelPort {
 		return nil, stacktrace.NewError("No tunnel server port with ID '%v' found in port specs", consts.KurtosisInternalTunnelPortId)
