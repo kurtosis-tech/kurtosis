@@ -13,3 +13,17 @@ export const FindCommand = (props: TextProps) => {
     </Text>
   );
 };
+
+export const OmniboxCommand = (props: TextProps) => {
+  let text = "^K";
+
+  if (navigator.userAgent.indexOf("Mac") > -1) {
+    text = "⌘K";
+  }
+
+  return (
+    <Text as={"span"} {...props}>
+      {text}
+    </Text>
+  );
+};

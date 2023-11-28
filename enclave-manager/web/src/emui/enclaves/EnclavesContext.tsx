@@ -54,11 +54,15 @@ export type EnclavesState = {
 
 const EnclavesContext = createContext<EnclavesState>(null as any);
 
-export const EnclavesContextProvider = ({ children }: PropsWithChildren) => {
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
+type EnclavesContextProviderProps = PropsWithChildren<{
+  skipInitialLoad?: boolean;
+}>;
+
+export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesContextProviderProps) => {
+  const [isInitialLoading, setIsInitialLoading] = useState(!skipInitialLoad);
 
   const [state, setState] = useState<RemoveFunctions<EnclavesState>>({
-    enclaves: Result.err("Enclaves not initialised, call refreshEnclaves"),
+    enclaves: skipInitialLoad ? Result.ok([]) : Result.err("Enclaves not initialised, call refreshEnclaves"),
     servicesByEnclave: {},
     filesAndArtifactsByEnclave: {},
     starlarkRunsByEnclave: {},
@@ -185,10 +189,12 @@ export const EnclavesContextProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     (async () => {
-      await refreshEnclaves();
-      setIsInitialLoading(false);
+      if (isInitialLoading) {
+        await refreshEnclaves();
+        setIsInitialLoading(false);
+      }
     })();
-  }, [refreshEnclaves]);
+  }, [refreshEnclaves, isInitialLoading]);
 
   if (isInitialLoading) {
     return (

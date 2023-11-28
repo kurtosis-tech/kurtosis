@@ -56,7 +56,6 @@ const KurtosisRouter = () => {
             element: (
               <AppLayout>
                 <Outlet />
-                <CreateEnclave />
               </AppLayout>
             ),
             children: [
@@ -65,6 +64,7 @@ const KurtosisRouter = () => {
                 element: (
                   <EnclavesContextProvider>
                     <Outlet />
+                    <CreateEnclave />
                   </EnclavesContextProvider>
                 ),
                 children: enclaveRoutes(),
