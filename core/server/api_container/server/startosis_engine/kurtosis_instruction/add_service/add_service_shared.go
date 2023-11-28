@@ -71,7 +71,7 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	}
 
 	if validatorEnvironment.DoesServiceNameExist(serviceName) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
-		return startosis_errors.NewValidationError("There was an error validating '%s' as service '%s' was created inside this package. Adding the same service twice in the same package is not allowed", AddServiceBuiltinName, serviceName)
+		return startosis_errors.NewValidationError("There was an error validating '%s' as service with the name '%s' already exists inside the package. Adding two different services with the same name isn't allowed; we recommend prefixing/suffixing the two service names or using two different names entirely.", AddServiceBuiltinName, serviceName)
 	}
 	if serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, artifactName := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
