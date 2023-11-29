@@ -61,7 +61,6 @@ func (runtime enclaveRuntime) refreshEnclaveConnections() error {
 				logrus.Warnf("Unavailable gRPC connection to enclave '%s', skipping it!", uuid)
 				continue
 			}
-			logrus.Debugf("Creating gRPC connection with enclave manager service on enclave %s", uuid)
 			apiContainerClient := rpc_api.NewApiContainerServiceClient(conn)
 			runtime.remoteApiContainerClient[uuid] = apiContainerClient
 		}
@@ -566,6 +565,8 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	}
 	jsonString := string(jsonBlob)
 
+	isRemote := utils.DerefWith(request.Body.Remote, false)
+	logrus.Infof("Executing Starlark package `%s` with remote %t", package_id, isRemote)
 	runStarlarkPackageArgs := rpc_api.RunStarlarkPackageArgs{
 		PackageId:              package_id,
 		StarlarkPackageContent: nil,
@@ -581,7 +582,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		ImageDownloadMode:      utils.MapPointer(request.Body.ImageDownloadMode, toGrpcImageDownloadMode),
 	}
 
-	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
 	stream, err := (*apiContainerClient).RunStarlarkPackage(ctxWithCancel, &runStarlarkPackageArgs)
 	if err != nil {
 		cancelCtxFunc()
@@ -592,9 +593,11 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	asyncLogs := NewAsyncStarlarkLogs(cancelCtxFunc)
 	go asyncLogs.RunAsyncStarlarkLogs(stream)
 
-	var response api_type.StarlarkRunResponse
-	response.FromStarlarkRunLogs(utils.MapList(asyncLogs.WaitAndConsumeAll(), toHttpApiStarlarkRunResponseLine))
+	logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), toHttpApiStarlarkRunResponseLine)
+	var sync_logs api_type.StarlarkRunResponse_StarlarkExecutionLogs
+	sync_logs.FromStarlarkRunLogs(logs)
 
+	response := api_type.StarlarkRunResponse{StarlarkExecutionLogs: &sync_logs}
 	return api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200JSONResponse(response), nil
 }
 
@@ -612,7 +615,9 @@ func NewAsyncStarlarkLogs(cancelCtxFunc context.CancelFunc) AsyncStarlarkLogs {
 }
 
 func (async AsyncStarlarkLogs) RunAsyncStarlarkLogs(stream grpc.ClientStream) {
+	logrus.Debugf("Asynchronously reading the stream of Starlark execution logs")
 	defer func() {
+		logrus.Debugf("Streaming of Starlark execution logs is done, cleaning up resources")
 		close(async.starlarkRunResponseLineChan)
 		async.cancelCtxFunc()
 	}()
@@ -669,7 +674,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		ImageDownloadMode:    utils.MapPointer(request.Body.ImageDownloadMode, toGrpcImageDownloadMode),
 	}
 
-	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
 	stream, err := (*apiContainerClient).RunStarlarkScript(ctxWithCancel, &runStarlarkScriptArgs)
 	if err != nil {
 		cancelCtxFunc()
@@ -680,9 +685,11 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 	asyncLogs := NewAsyncStarlarkLogs(cancelCtxFunc)
 	go asyncLogs.RunAsyncStarlarkLogs(stream)
 
-	var response api_type.StarlarkRunResponse
-	response.FromStarlarkRunLogs(utils.MapList(asyncLogs.WaitAndConsumeAll(), toHttpApiStarlarkRunResponseLine))
+	logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), toHttpApiStarlarkRunResponseLine)
+	var sync_logs api_type.StarlarkRunResponse_StarlarkExecutionLogs
+	sync_logs.FromStarlarkRunLogs(logs)
 
+	response := api_type.StarlarkRunResponse{StarlarkExecutionLogs: &sync_logs}
 	return api.PostEnclavesEnclaveIdentifierStarlarkScripts200JSONResponse(response), nil
 }
 
@@ -716,6 +723,7 @@ func getGrpcClientConn(enclaveInfo types.EnclaveInfo, connectOnHostMachine bool)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create a GRPC client connection on address '%v', but a non-nil error was returned", grpcServerAddress)
 	}
+	logrus.Debugf("Creating gRPC connection with enclave manager service on enclave %s on %s", enclaveInfo.EnclaveUuid, grpcServerAddress)
 	return grpcConnection, nil
 }
 

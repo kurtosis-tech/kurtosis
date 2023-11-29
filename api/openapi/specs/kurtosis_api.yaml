@@ -793,8 +793,13 @@ components:
           type: string
         api_container_log_level:
           type: string
+          description: Enclave log level, defaults to INFO
         mode:
           $ref: '#/components/schemas/EnclaveMode'
+          description: Enclave mode, defaults to TEST
+      required:
+        - enclave_name
+        - api_container_version_tag
     
     EnclaveMode:
       type: string
@@ -1342,9 +1347,12 @@ components:
         - async_starlark_execution_logs
 
     StarlarkRunResponse:
-      oneOf:
-        - $ref: "#/components/schemas/AsyncStarlarkExecutionLogs"
-        - $ref: "#/components/schemas/StarlarkRunLogs"
+      type: object
+      properties:
+       starlark_execution_logs: 
+        oneOf:
+          - $ref: "#/components/schemas/AsyncStarlarkExecutionLogs"
+          - $ref: "#/components/schemas/StarlarkRunLogs"
                   
     ServiceIdentifiers:
       type: object

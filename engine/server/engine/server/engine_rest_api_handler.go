@@ -57,27 +57,31 @@ func (engine EngineRuntime) GetEnclaves(ctx context.Context, request api.GetEncl
 // Create Enclave
 // (POST /enclaves)
 func (engine EngineRuntime) PostEnclaves(ctx context.Context, request api.PostEnclavesRequestObject) (api.PostEnclavesResponseObject, error) {
-	if err := engine.MetricsClient.TrackCreateEnclave(*request.Body.EnclaveName, subnetworkDisableBecauseItIsDeprecated); err != nil {
+	enclave_mode := utils.DerefWith(request.Body.Mode, api_type.TEST)
+	enclave_name := request.Body.EnclaveName
+	apic_version_tag := request.Body.ApiContainerVersionTag
+
+	if err := engine.MetricsClient.TrackCreateEnclave(enclave_name, subnetworkDisableBecauseItIsDeprecated); err != nil {
 		logrus.Warn("An error occurred while logging the create enclave event")
 	}
 
 	logrus.Debugf("request: %+v", request)
-	apiContainerLogLevel, err := logrus.ParseLevel(*request.Body.ApiContainerLogLevel)
+	apiContainerLogLevel, err := logrus.ParseLevel(utils.DerefWith(request.Body.ApiContainerLogLevel, "INFO"))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", request.Body.ApiContainerLogLevel)
 	}
 
 	isProduction := false
-	if *request.Body.Mode == api_type.PRODUCTION {
+	if enclave_mode == api_type.PRODUCTION {
 		isProduction = true
 	}
 
 	enclaveInfo, err := engine.EnclaveManager.CreateEnclave(
 		ctx,
 		engine.ImageVersionTag,
-		*request.Body.ApiContainerVersionTag,
+		apic_version_tag,
 		apiContainerLogLevel,
-		*request.Body.EnclaveName,
+		enclave_name,
 		isProduction,
 	)
 	if err != nil {

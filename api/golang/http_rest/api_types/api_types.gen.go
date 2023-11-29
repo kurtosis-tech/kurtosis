@@ -136,9 +136,10 @@ type ContainerStatus string
 
 // CreateEnclave defines model for CreateEnclave.
 type CreateEnclave struct {
+	// ApiContainerLogLevel Enclave log level, defaults to INFO
 	ApiContainerLogLevel   *string      `json:"api_container_log_level,omitempty"`
-	ApiContainerVersionTag *string      `json:"api_container_version_tag,omitempty"`
-	EnclaveName            *string      `json:"enclave_name,omitempty"`
+	ApiContainerVersionTag string       `json:"api_container_version_tag"`
+	EnclaveName            string       `json:"enclave_name"`
 	Mode                   *EnclaveMode `json:"mode,omitempty"`
 }
 
@@ -507,6 +508,11 @@ type StarlarkRunProgress struct {
 
 // StarlarkRunResponse defines model for StarlarkRunResponse.
 type StarlarkRunResponse struct {
+	StarlarkExecutionLogs *StarlarkRunResponse_StarlarkExecutionLogs `json:"starlark_execution_logs,omitempty"`
+}
+
+// StarlarkRunResponse_StarlarkExecutionLogs defines model for StarlarkRunResponse.StarlarkExecutionLogs.
+type StarlarkRunResponse_StarlarkExecutionLogs struct {
 	union json.RawMessage
 }
 
@@ -807,22 +813,22 @@ func (t *StarlarkError_Error) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// AsAsyncStarlarkExecutionLogs returns the union data inside the StarlarkRunResponse as a AsyncStarlarkExecutionLogs
-func (t StarlarkRunResponse) AsAsyncStarlarkExecutionLogs() (AsyncStarlarkExecutionLogs, error) {
+// AsAsyncStarlarkExecutionLogs returns the union data inside the StarlarkRunResponse_StarlarkExecutionLogs as a AsyncStarlarkExecutionLogs
+func (t StarlarkRunResponse_StarlarkExecutionLogs) AsAsyncStarlarkExecutionLogs() (AsyncStarlarkExecutionLogs, error) {
 	var body AsyncStarlarkExecutionLogs
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromAsyncStarlarkExecutionLogs overwrites any union data inside the StarlarkRunResponse as the provided AsyncStarlarkExecutionLogs
-func (t *StarlarkRunResponse) FromAsyncStarlarkExecutionLogs(v AsyncStarlarkExecutionLogs) error {
+// FromAsyncStarlarkExecutionLogs overwrites any union data inside the StarlarkRunResponse_StarlarkExecutionLogs as the provided AsyncStarlarkExecutionLogs
+func (t *StarlarkRunResponse_StarlarkExecutionLogs) FromAsyncStarlarkExecutionLogs(v AsyncStarlarkExecutionLogs) error {
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeAsyncStarlarkExecutionLogs performs a merge with any union data inside the StarlarkRunResponse, using the provided AsyncStarlarkExecutionLogs
-func (t *StarlarkRunResponse) MergeAsyncStarlarkExecutionLogs(v AsyncStarlarkExecutionLogs) error {
+// MergeAsyncStarlarkExecutionLogs performs a merge with any union data inside the StarlarkRunResponse_StarlarkExecutionLogs, using the provided AsyncStarlarkExecutionLogs
+func (t *StarlarkRunResponse_StarlarkExecutionLogs) MergeAsyncStarlarkExecutionLogs(v AsyncStarlarkExecutionLogs) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -833,22 +839,22 @@ func (t *StarlarkRunResponse) MergeAsyncStarlarkExecutionLogs(v AsyncStarlarkExe
 	return err
 }
 
-// AsStarlarkRunLogs returns the union data inside the StarlarkRunResponse as a StarlarkRunLogs
-func (t StarlarkRunResponse) AsStarlarkRunLogs() (StarlarkRunLogs, error) {
+// AsStarlarkRunLogs returns the union data inside the StarlarkRunResponse_StarlarkExecutionLogs as a StarlarkRunLogs
+func (t StarlarkRunResponse_StarlarkExecutionLogs) AsStarlarkRunLogs() (StarlarkRunLogs, error) {
 	var body StarlarkRunLogs
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromStarlarkRunLogs overwrites any union data inside the StarlarkRunResponse as the provided StarlarkRunLogs
-func (t *StarlarkRunResponse) FromStarlarkRunLogs(v StarlarkRunLogs) error {
+// FromStarlarkRunLogs overwrites any union data inside the StarlarkRunResponse_StarlarkExecutionLogs as the provided StarlarkRunLogs
+func (t *StarlarkRunResponse_StarlarkExecutionLogs) FromStarlarkRunLogs(v StarlarkRunLogs) error {
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeStarlarkRunLogs performs a merge with any union data inside the StarlarkRunResponse, using the provided StarlarkRunLogs
-func (t *StarlarkRunResponse) MergeStarlarkRunLogs(v StarlarkRunLogs) error {
+// MergeStarlarkRunLogs performs a merge with any union data inside the StarlarkRunResponse_StarlarkExecutionLogs, using the provided StarlarkRunLogs
+func (t *StarlarkRunResponse_StarlarkExecutionLogs) MergeStarlarkRunLogs(v StarlarkRunLogs) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -859,12 +865,12 @@ func (t *StarlarkRunResponse) MergeStarlarkRunLogs(v StarlarkRunLogs) error {
 	return err
 }
 
-func (t StarlarkRunResponse) MarshalJSON() ([]byte, error) {
+func (t StarlarkRunResponse_StarlarkExecutionLogs) MarshalJSON() ([]byte, error) {
 	b, err := t.union.MarshalJSON()
 	return b, err
 }
 
-func (t *StarlarkRunResponse) UnmarshalJSON(b []byte) error {
+func (t *StarlarkRunResponse_StarlarkExecutionLogs) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
