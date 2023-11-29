@@ -15,41 +15,21 @@ import (
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
-	externalRef0 "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
+	. "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 	"github.com/labstack/echo/v4"
 )
-
-// NotOk defines model for NotOk.
-type NotOk = externalRef0.ResponseInfo
-
-// GetEnclavesEnclaveIdentifierLogsParams defines parameters for GetEnclavesEnclaveIdentifierLogs.
-type GetEnclavesEnclaveIdentifierLogsParams struct {
-	ServiceUuidSet     externalRef0.ServiceUuidSet      `form:"service_uuid_set" json:"service_uuid_set"`
-	FollowLogs         *externalRef0.FollowLogs         `form:"follow_logs,omitempty" json:"follow_logs,omitempty"`
-	ConjunctiveFilters *externalRef0.ConjunctiveFilters `form:"conjunctive_filters,omitempty" json:"conjunctive_filters,omitempty"`
-	ReturnAllLogs      *externalRef0.ReturnAllLogs      `form:"return_all_logs,omitempty" json:"return_all_logs,omitempty"`
-	NumLogLines        *externalRef0.NumLogLines        `form:"num_log_lines,omitempty" json:"num_log_lines,omitempty"`
-}
-
-// GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams defines parameters for GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs.
-type GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams struct {
-	FollowLogs         *externalRef0.FollowLogs         `form:"follow_logs,omitempty" json:"follow_logs,omitempty"`
-	ConjunctiveFilters *externalRef0.ConjunctiveFilters `form:"conjunctive_filters,omitempty" json:"conjunctive_filters,omitempty"`
-	ReturnAllLogs      *externalRef0.ReturnAllLogs      `form:"return_all_logs,omitempty" json:"return_all_logs,omitempty"`
-	NumLogLines        *externalRef0.NumLogLines        `form:"num_log_lines,omitempty" json:"num_log_lines,omitempty"`
-}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Get Service Logs
 	// (GET /enclaves/{enclave_identifier}/logs)
-	GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, params GetEnclavesEnclaveIdentifierLogsParams) error
+	GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, params GetEnclavesEnclaveIdentifierLogsParams) error
 	// Get Service Logs
 	// (GET /enclaves/{enclave_identifier}/services/{service_identifier}/logs)
-	GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, serviceIdentifier externalRef0.ServiceIdentifier, params GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams) error
+	GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier, params GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams) error
 
 	// (GET /enclaves/{enclave_identifier}/starlark/executions/{starlark_execution_uuid}/logs)
-	GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, starlarkExecutionUuid externalRef0.StarlarkExecutionUuid) error
+	GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, starlarkExecutionUuid StarlarkExecutionUuid) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -61,7 +41,7 @@ type ServerInterfaceWrapper struct {
 func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier externalRef0.EnclaveIdentifier
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -114,7 +94,7 @@ func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierLogs(ctx echo.Conte
 func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier externalRef0.EnclaveIdentifier
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -122,7 +102,7 @@ func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierServicesServiceIden
 	}
 
 	// ------------- Path parameter "service_identifier" -------------
-	var serviceIdentifier externalRef0.ServiceIdentifier
+	var serviceIdentifier ServiceIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "service_identifier", runtime.ParamLocationPath, ctx.Param("service_identifier"), &serviceIdentifier)
 	if err != nil {
@@ -168,7 +148,7 @@ func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierServicesServiceIden
 func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier externalRef0.EnclaveIdentifier
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -176,7 +156,7 @@ func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierStarlarkExecutionsS
 	}
 
 	// ------------- Path parameter "starlark_execution_uuid" -------------
-	var starlarkExecutionUuid externalRef0.StarlarkExecutionUuid
+	var starlarkExecutionUuid StarlarkExecutionUuid
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "starlark_execution_uuid", runtime.ParamLocationPath, ctx.Param("starlark_execution_uuid"), &starlarkExecutionUuid)
 	if err != nil {
@@ -225,22 +205,35 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"4/HvAAAA//+SqAa/FyMAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
@@ -280,14 +273,6 @@ func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
 		res[pathToFile] = rawSpec
 	}
 
-	pathPrefix := path.Dir(pathToFile)
-
-	for rawPath, rawFunc := range externalRef0.PathToRawSpec(path.Join(pathPrefix, "./api_types.yaml")) {
-		if _, ok := res[rawPath]; ok {
-			// it is not possible to compare functions in golang, so always overwrite the old value
-		}
-		res[rawPath] = rawFunc
-	}
 	return res
 }
 

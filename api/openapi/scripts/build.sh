@@ -6,9 +6,9 @@ script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 api_root_dirpath="$(dirname "${script_dirpath}")"
 
 echo "Generating data models for REST API "
-oapi-codegen --config="$api_root_dirpath/generators/api_types.cfg.yaml" "$api_root_dirpath/specs/api_types.yaml"
+oapi-codegen --config="$api_root_dirpath/generators/api_types.cfg.yaml" "$api_root_dirpath/specs/kurtosis_api.yaml"
 
 echo "Generating server code for REST API "
-oapi-codegen --config="$api_root_dirpath/generators/engine_server.cfg.yaml" "$api_root_dirpath/specs/engine_service.yaml"
-oapi-codegen --config="$api_root_dirpath/generators/core_server.cfg.yaml" "$api_root_dirpath/specs/core_service.yaml"
-oapi-codegen --config="$api_root_dirpath/generators/websocket_server.cfg.yaml" "$api_root_dirpath/specs/websocket_service.yaml"
+oapi-codegen --config="$api_root_dirpath/generators/engine_server.cfg.yaml" "$api_root_dirpath/specs/kurtosis_api.yaml"
+oapi-codegen --config="$api_root_dirpath/generators/core_server.cfg.yaml" "$api_root_dirpath/specs/kurtosis_api.yaml"
+oapi-codegen --config="$api_root_dirpath/generators/websocket_server.cfg.yaml" "$api_root_dirpath/specs/kurtosis_api.yaml"

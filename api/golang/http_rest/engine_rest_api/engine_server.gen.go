@@ -17,24 +17,9 @@ import (
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
-	externalRef0 "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
+	. "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 	"github.com/labstack/echo/v4"
 )
-
-// NotOk defines model for NotOk.
-type NotOk = externalRef0.ResponseInfo
-
-// DeleteEnclavesParams defines parameters for DeleteEnclaves.
-type DeleteEnclavesParams struct {
-	// RemoveAll If true, remove all enclaves. Default is false
-	RemoveAll *externalRef0.RemoveAll `form:"remove_all,omitempty" json:"remove_all,omitempty"`
-}
-
-// PostEnclavesJSONRequestBody defines body for PostEnclaves for application/json ContentType.
-type PostEnclavesJSONRequestBody = externalRef0.CreateEnclave
-
-// PostEnclavesEnclaveIdentifierStatusJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStatus for application/json ContentType.
-type PostEnclavesEnclaveIdentifierStatusJSONRequestBody = externalRef0.EnclaveTargetStatus
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -52,16 +37,16 @@ type ServerInterface interface {
 	GetEnclavesHistorical(ctx echo.Context) error
 	// Destroy Enclave
 	// (DELETE /enclaves/{enclave_identifier})
-	DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error
+	DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Get Enclave Info
 	// (GET /enclaves/{enclave_identifier})
-	GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error
+	GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Get enclave status
 	// (GET /enclaves/{enclave_identifier}/status)
-	GetEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error
+	GetEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Set enclave status
 	// (POST /enclaves/{enclave_identifier}/status)
-	PostEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error
+	PostEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Get Engine Info
 	// (GET /engine/info)
 	GetEngineInfo(ctx echo.Context) error
@@ -121,7 +106,7 @@ func (w *ServerInterfaceWrapper) GetEnclavesHistorical(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteEnclavesEnclaveIdentifier(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier externalRef0.EnclaveIdentifier
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -137,7 +122,7 @@ func (w *ServerInterfaceWrapper) DeleteEnclavesEnclaveIdentifier(ctx echo.Contex
 func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifier(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier externalRef0.EnclaveIdentifier
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -153,7 +138,7 @@ func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifier(ctx echo.Context) 
 func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierStatus(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier externalRef0.EnclaveIdentifier
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -169,7 +154,7 @@ func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierStatus(ctx echo.Con
 func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStatus(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "enclave_identifier" -------------
-	var enclaveIdentifier externalRef0.EnclaveIdentifier
+	var enclaveIdentifier EnclaveIdentifier
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
 	if err != nil {
@@ -230,7 +215,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 }
 
-type NotOkJSONResponse externalRef0.ResponseInfo
+type NotOkJSONResponse ResponseInfo
 
 type DeleteEnclavesRequestObject struct {
 	Params DeleteEnclavesParams
@@ -240,7 +225,7 @@ type DeleteEnclavesResponseObject interface {
 	VisitDeleteEnclavesResponse(w http.ResponseWriter) error
 }
 
-type DeleteEnclaves200JSONResponse externalRef0.DeletionSummary
+type DeleteEnclaves200JSONResponse DeletionSummary
 
 func (response DeleteEnclaves200JSONResponse) VisitDeleteEnclavesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -250,7 +235,7 @@ func (response DeleteEnclaves200JSONResponse) VisitDeleteEnclavesResponse(w http
 }
 
 type DeleteEnclavesdefaultJSONResponse struct {
-	Body       externalRef0.ResponseInfo
+	Body       ResponseInfo
 	StatusCode int
 }
 
@@ -268,7 +253,7 @@ type GetEnclavesResponseObject interface {
 	VisitGetEnclavesResponse(w http.ResponseWriter) error
 }
 
-type GetEnclaves200JSONResponse map[string]externalRef0.EnclaveInfo
+type GetEnclaves200JSONResponse map[string]EnclaveInfo
 
 func (response GetEnclaves200JSONResponse) VisitGetEnclavesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -278,7 +263,7 @@ func (response GetEnclaves200JSONResponse) VisitGetEnclavesResponse(w http.Respo
 }
 
 type GetEnclavesdefaultJSONResponse struct {
-	Body       externalRef0.ResponseInfo
+	Body       ResponseInfo
 	StatusCode int
 }
 
@@ -297,7 +282,7 @@ type PostEnclavesResponseObject interface {
 	VisitPostEnclavesResponse(w http.ResponseWriter) error
 }
 
-type PostEnclaves200JSONResponse externalRef0.EnclaveInfo
+type PostEnclaves200JSONResponse EnclaveInfo
 
 func (response PostEnclaves200JSONResponse) VisitPostEnclavesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -307,7 +292,7 @@ func (response PostEnclaves200JSONResponse) VisitPostEnclavesResponse(w http.Res
 }
 
 type PostEnclavesdefaultJSONResponse struct {
-	Body       externalRef0.ResponseInfo
+	Body       ResponseInfo
 	StatusCode int
 }
 
@@ -325,7 +310,7 @@ type GetEnclavesHistoricalResponseObject interface {
 	VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error
 }
 
-type GetEnclavesHistorical200JSONResponse []externalRef0.EnclaveIdentifiers
+type GetEnclavesHistorical200JSONResponse []EnclaveIdentifiers
 
 func (response GetEnclavesHistorical200JSONResponse) VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -335,7 +320,7 @@ func (response GetEnclavesHistorical200JSONResponse) VisitGetEnclavesHistoricalR
 }
 
 type GetEnclavesHistoricaldefaultJSONResponse struct {
-	Body       externalRef0.ResponseInfo
+	Body       ResponseInfo
 	StatusCode int
 }
 
@@ -347,7 +332,7 @@ func (response GetEnclavesHistoricaldefaultJSONResponse) VisitGetEnclavesHistori
 }
 
 type DeleteEnclavesEnclaveIdentifierRequestObject struct {
-	EnclaveIdentifier externalRef0.EnclaveIdentifier `json:"enclave_identifier"`
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
 
 type DeleteEnclavesEnclaveIdentifierResponseObject interface {
@@ -363,7 +348,7 @@ func (response DeleteEnclavesEnclaveIdentifier200Response) VisitDeleteEnclavesEn
 }
 
 type DeleteEnclavesEnclaveIdentifierdefaultJSONResponse struct {
-	Body       externalRef0.ResponseInfo
+	Body       ResponseInfo
 	StatusCode int
 }
 
@@ -375,14 +360,14 @@ func (response DeleteEnclavesEnclaveIdentifierdefaultJSONResponse) VisitDeleteEn
 }
 
 type GetEnclavesEnclaveIdentifierRequestObject struct {
-	EnclaveIdentifier externalRef0.EnclaveIdentifier `json:"enclave_identifier"`
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
 
 type GetEnclavesEnclaveIdentifierResponseObject interface {
 	VisitGetEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error
 }
 
-type GetEnclavesEnclaveIdentifier200JSONResponse externalRef0.EnclaveInfo
+type GetEnclavesEnclaveIdentifier200JSONResponse EnclaveInfo
 
 func (response GetEnclavesEnclaveIdentifier200JSONResponse) VisitGetEnclavesEnclaveIdentifierResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -392,7 +377,7 @@ func (response GetEnclavesEnclaveIdentifier200JSONResponse) VisitGetEnclavesEncl
 }
 
 type GetEnclavesEnclaveIdentifierdefaultJSONResponse struct {
-	Body       externalRef0.ResponseInfo
+	Body       ResponseInfo
 	StatusCode int
 }
 
@@ -404,14 +389,14 @@ func (response GetEnclavesEnclaveIdentifierdefaultJSONResponse) VisitGetEnclaves
 }
 
 type GetEnclavesEnclaveIdentifierStatusRequestObject struct {
-	EnclaveIdentifier externalRef0.EnclaveIdentifier `json:"enclave_identifier"`
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 }
 
 type GetEnclavesEnclaveIdentifierStatusResponseObject interface {
 	VisitGetEnclavesEnclaveIdentifierStatusResponse(w http.ResponseWriter) error
 }
 
-type GetEnclavesEnclaveIdentifierStatus200JSONResponse externalRef0.EnclaveContainersStatus
+type GetEnclavesEnclaveIdentifierStatus200JSONResponse EnclaveContainersStatus
 
 func (response GetEnclavesEnclaveIdentifierStatus200JSONResponse) VisitGetEnclavesEnclaveIdentifierStatusResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -421,7 +406,7 @@ func (response GetEnclavesEnclaveIdentifierStatus200JSONResponse) VisitGetEnclav
 }
 
 type GetEnclavesEnclaveIdentifierStatusdefaultJSONResponse struct {
-	Body       externalRef0.ResponseInfo
+	Body       ResponseInfo
 	StatusCode int
 }
 
@@ -433,7 +418,7 @@ func (response GetEnclavesEnclaveIdentifierStatusdefaultJSONResponse) VisitGetEn
 }
 
 type PostEnclavesEnclaveIdentifierStatusRequestObject struct {
-	EnclaveIdentifier externalRef0.EnclaveIdentifier `json:"enclave_identifier"`
+	EnclaveIdentifier EnclaveIdentifier `json:"enclave_identifier"`
 	Body              *PostEnclavesEnclaveIdentifierStatusJSONRequestBody
 }
 
@@ -450,7 +435,7 @@ func (response PostEnclavesEnclaveIdentifierStatus200Response) VisitPostEnclaves
 }
 
 type PostEnclavesEnclaveIdentifierStatusdefaultJSONResponse struct {
-	Body       externalRef0.ResponseInfo
+	Body       ResponseInfo
 	StatusCode int
 }
 
@@ -468,7 +453,7 @@ type GetEngineInfoResponseObject interface {
 	VisitGetEngineInfoResponse(w http.ResponseWriter) error
 }
 
-type GetEngineInfo200JSONResponse externalRef0.EngineInfo
+type GetEngineInfo200JSONResponse EngineInfo
 
 func (response GetEngineInfo200JSONResponse) VisitGetEngineInfoResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -478,7 +463,7 @@ func (response GetEngineInfo200JSONResponse) VisitGetEngineInfoResponse(w http.R
 }
 
 type GetEngineInfodefaultJSONResponse struct {
-	Body       externalRef0.ResponseInfo
+	Body       ResponseInfo
 	StatusCode int
 }
 
@@ -634,7 +619,7 @@ func (sh *strictHandler) GetEnclavesHistorical(ctx echo.Context) error {
 }
 
 // DeleteEnclavesEnclaveIdentifier operation middleware
-func (sh *strictHandler) DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error {
+func (sh *strictHandler) DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
 	var request DeleteEnclavesEnclaveIdentifierRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
@@ -659,7 +644,7 @@ func (sh *strictHandler) DeleteEnclavesEnclaveIdentifier(ctx echo.Context, encla
 }
 
 // GetEnclavesEnclaveIdentifier operation middleware
-func (sh *strictHandler) GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error {
+func (sh *strictHandler) GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
 	var request GetEnclavesEnclaveIdentifierRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
@@ -684,7 +669,7 @@ func (sh *strictHandler) GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveI
 }
 
 // GetEnclavesEnclaveIdentifierStatus operation middleware
-func (sh *strictHandler) GetEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error {
+func (sh *strictHandler) GetEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
 	var request GetEnclavesEnclaveIdentifierStatusRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
@@ -709,7 +694,7 @@ func (sh *strictHandler) GetEnclavesEnclaveIdentifierStatus(ctx echo.Context, en
 }
 
 // PostEnclavesEnclaveIdentifierStatus operation middleware
-func (sh *strictHandler) PostEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error {
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error {
 	var request PostEnclavesEnclaveIdentifierStatusRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
@@ -765,24 +750,30 @@ func (sh *strictHandler) GetEngineInfo(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9RXTW/bOBD9K8TsHoXI2958yzZB6kNSo04OiyAQWGlssyuRCjkK1gj03xekvi2qdtrY",
-	"QG+2NJyPN/OGT68QqyxXEiUZmL9CzjXPkFC7fyjjlL9gJBKUJNYCtX2aoIm1yEkoCXN4eFhcBcxslSaU",
-	"mLDqv9JM8gyZWjPaIqsdQQDCnsk5bSEAawFzX5QAND4XQmMCc9IFBmDiLWbchqddbk8Z0kJuoCytbaZe",
-	"MOJpOk5vsWbOAauMGE/TJhtzwa5wzYuUmDBszVPTJvhcoN51GfYCeDL5plSKXEJZ5WJyJQ06/O4UffnX",
-	"/oiVJJRkf/I8T0XMbXrhd2NzfO25/FPjGubwR9i1JazemvBr7Xoh16oKttcJif/lGBMmDLVW2mFTH7a+",
-	"P2nkhNd1K2yztcpRk6iS5bmIbJ5cSNRRqjZRii+YeiAP9mxfUBuhZER847VuGlyh6THIVIKHqq/zvrWm",
-	"trDaifr2HWOyTq4wRYvEqsgyrnfjAqsuJlE/nYjLJCoKkTgLQZiZIxO54xleyuShEAl06XCt+c6fX33u",
-	"UwObWRGnouZZkcH8Eb4+3N0t7m4ggNX9l+Xy+goCuL5d3v8DT8EYtdrhoqWNGdfc1GpL9EI/2ZOW0VNn",
-	"yz5JH4eRar8jL0/TuLipPjCUW2Uoyni8FRIjUR84oleXy0UL+2dl6LZyURFpf5p/0q/fmWl7/CN3l7lo",
-	"/dRTUQbQejFHupmaMOvLct9xVGQHqXYvMjTEs7xP3skJejN5zz10PiQn+rQPVF3dD8b2nusN0pjKlsAT",
-	"rN00o+dhq33X7NNjyh/Y+9IcXBqjgHHdu7XSGSeYQyEkffwArSMhCTeoXZ/RGL7x9616cNz1dW9t9ytx",
-	"DroYQZXZuCB7riEoCUrtuwpRdrlcQAAtdjC7+OtiZpNTOUqeC5jDx4vZxQwCpz9c/WEjBSrhkCK5MixE",
-	"bgoWCcyri6W5N4073omkR3/RnUnYEw/l055A+DCbvZs82L//PAphVcQxGrMuUtakAc7IqaCpAG3GYaVn",
-	"nKxoLtkaHdbCUwawQRqjeIPUg/CXUOBJIuwrni4H03zEBmq2tGesTg/VDdIAp1wZD1BLZYZIPRdo6G+V",
-	"7N5tVIZKsByS0crl8oRzOujEeYCv6mVdwUHH/HArDCktYu6k7qHZ/dxZ/yJGbxGbfY03FptnG96u+N4c",
-	"D8B8HX/Mlcfv1lG1b162nm/JqaV7jtVoSKtdN3eHV+NZEfhd6dzbo6yOe2gGw05Bv7kFq0Yb/haNGKv/",
-	"8zWlLpmZ9rvj8BV3crjf//r0Sf/jL9HTt2LlaUXFECuUw0Y/TxOh/UI56bi2Uc66Nty3QhO2/D8AAP//",
-	"ZD3EVgAVAAA=",
+	"H4sIAAAAAAAC/9RY227bOBN+FYH/f6lG2fbOd9nG2xqL2IbtYHdRBAIjjm22FKmSVLaG4XdfUKIsyaIU",
+	"yXUM9E6HOX5z4Az3KBJxIjhwrdBojxIscQwaZPYGPGL4BUJKgGu6piDNVwIqkjTRVHA0Qo+Pk3vfU1sh",
+	"NXAgXv4upMdxDJ5Ye3oLnhWEfEQNT4L1FvnIUKCRS4uPJHxPqQSCRlqm4CMVbSHGRr3eJYZLaUn5Bh0O",
+	"hjYWLxBixprmTdZeJsDLiTzMWGGNuvHuYY1Tpj2qvDVm6mjg9xTkrrSwosBhybMQDDBHh9wWlQiuIMNv",
+	"KvTsm3mIBNfAtXnEScJohI15wVdlbNxXRP5fwhqN0P+CMixB/lcFCyt6wtciV3YSCQ4/Eog0EA+kFDLD",
+	"xjIb2XcJ/Si4xpSDXGqsUxvjNEajL2jxOJ1Opp+Qj5ar2Xw+vkc+ms6m4fjvyXI1nq7Qk38KvY8+SsAa",
+	"xja6Jn+kSEBqmvuPExpGhcqQiU3I4AWYI4r+Ce0LSEUFDzXeOKmLnMkD5CCIBYHXALV2PxhSg5UVIp6/",
+	"QqSNkHtgYMBdpnGM5a7pYJ4YJKyaE2JOwjSlJKOgGmLV05ApjuGOk8eUElSag6XEO7d9lu9uPjkG9rNQ",
+	"+gFHW8rzPGmYvJFJFCZC6lDwcCuUDuOcvAIj5Ro2II0KmnTQ1WqwqNcvLh6/Q+9TP8/c7jxLSjYQ0iTE",
+	"hEhQypkNZWJR4iQoraNcUQJFRFtBaSVrwaRmgUtChw2+w8sO0I6IqX5VPn6Yr/5xlrcVODk2ZtUMQJH6",
+	"JuOd0LaW6PHMaOM9gbCmycptSOnAxZ1A9b5TTcyQWoYepdtVgo3mdqZctzB1jHGXOEfvr5aF6immLcOM",
+	"LHMUZC2bxq923hWNQWkcJ9Ve3ppBg3v5tZPOhWRLnE6Bst51pO2D9b4o4dV4uUI+mi9m948fV5PZtKt0",
+	"q0dKI/VbQeoHjcXitbJbYbkB3WxFpgG1mL5pPb0g+1eMB33CV6N3mVkbqxoKI4v+WsgYazRCKeX6w3vk",
+	"O46FGJTCGzek+Yd+A97K0J56kgkodfi5ZV0OrazKAvDxYjFbIB9Npn/MkI/+ultkR4ErBGV9Vl0nWMM7",
+	"m7WnsJtT0QKoqWbm35+p1EJR5S3Gy5V3N58gHx0Dh25vfru5NbpEAhwnFI3Qh5vbm1vkZ+tBBn5QTOr5",
+	"XM9AZw6Z+GQlNCFolA9pxQyqMvZyh/niRrwkCSqz/eHpZH5/f3t7sen9dJZ0DPDLNIpAqXXKvMIMlBFl",
+	"S0qbgqPFQb5uZFN/MbBadLwKPBpvVFka6MlMP6CbuH4CXeH6KVwwIdT8wmxeK64eDb049E6y/DrgfQL9",
+	"CnKJUA7o5kLVsfuegtK/C7K7WDrVN69DvVuYjffwhrlci811QpH7W0TDFYyDX/aLYEuVFpJGOFs2X8vv",
+	"zyX1T6I2ZN2rjtXNde9qCV4635nrNXj3zTubQ/8e3fB/cNN2XBm1Ne9rtFilpdh15ebrLfaqmPyqTaDS",
+	"j71M7zl5GmCp6RpH2YXnAOqAiQizd2tqhptBjGbE0HAOpwL5QiNDZ59OCm6IrH3xeGkZARH/ciYw6SWM",
+	"iU0/4AvfBxEHkeAcojwHh/DlB8ZuGNPZUemUYOohxpxcQBJwkghqCmufXSzxNH7OIvqCKcPPlFF9AZcH",
+	"xFRjybD8Nog4gB8QpSakRr39GB4/Ziv4GTYECY6+4Q2cyRXs7VNIyWGYiLxN9tZr9+bBJ8iyuHH4Jc6R",
+	"5p3S9c4U67J3vKM5a9J/8wBcfotwXdH03yXePjjLXsHJq8i8BMUdRHuxHO+W3jSlj1quOhkZre2D0eHw",
+	"XwAAAP//wQWlse4dAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
@@ -822,14 +813,6 @@ func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
 		res[pathToFile] = rawSpec
 	}
 
-	pathPrefix := path.Dir(pathToFile)
-
-	for rawPath, rawFunc := range externalRef0.PathToRawSpec(path.Join(pathPrefix, "./api_types.yaml")) {
-		if _, ok := res[rawPath]; ok {
-			// it is not possible to compare functions in golang, so always overwrite the old value
-		}
-		res[rawPath] = rawFunc
-	}
 	return res
 }
 

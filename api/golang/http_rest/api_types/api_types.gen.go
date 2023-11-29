@@ -4,18 +4,11 @@
 package api_types
 
 import (
-	"bytes"
-	"compress/gzip"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"net/url"
-	"path"
-	"strings"
 	"time"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
-	"github.com/getkin/kin-openapi/openapi3"
+	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 )
 
 // Defines values for ApiContainerStatus.
@@ -622,6 +615,110 @@ type ServiceUuidSet = []string
 // StarlarkExecutionUuid defines model for starlark_execution_uuid.
 type StarlarkExecutionUuid = string
 
+// NotOk defines model for NotOk.
+type NotOk = ResponseInfo
+
+// DeleteEnclavesParams defines parameters for DeleteEnclaves.
+type DeleteEnclavesParams struct {
+	// RemoveAll If true, remove all enclaves. Default is false
+	RemoveAll *RemoveAll `form:"remove_all,omitempty" json:"remove_all,omitempty"`
+}
+
+// PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartBody defines parameters for PostEnclavesEnclaveIdentifierArtifactsLocalFile.
+type PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartBody = openapi_types.File
+
+// GetEnclavesEnclaveIdentifierLogsParams defines parameters for GetEnclavesEnclaveIdentifierLogs.
+type GetEnclavesEnclaveIdentifierLogsParams struct {
+	ServiceUuidSet     ServiceUuidSet      `form:"service_uuid_set" json:"service_uuid_set"`
+	FollowLogs         *FollowLogs         `form:"follow_logs,omitempty" json:"follow_logs,omitempty"`
+	ConjunctiveFilters *ConjunctiveFilters `form:"conjunctive_filters,omitempty" json:"conjunctive_filters,omitempty"`
+	ReturnAllLogs      *ReturnAllLogs      `form:"return_all_logs,omitempty" json:"return_all_logs,omitempty"`
+	NumLogLines        *NumLogLines        `form:"num_log_lines,omitempty" json:"num_log_lines,omitempty"`
+}
+
+// GetEnclavesEnclaveIdentifierServicesParams defines parameters for GetEnclavesEnclaveIdentifierServices.
+type GetEnclavesEnclaveIdentifierServicesParams struct {
+	// Services Select services to get information
+	Services *[]string `form:"services,omitempty" json:"services,omitempty"`
+}
+
+// GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityParams defines parameters for GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability.
+type GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityParams struct {
+	// HttpMethod The HTTP method used to check availability. Default is GET.
+	HttpMethod *HttpMethod `form:"http_method,omitempty" json:"http_method,omitempty"`
+
+	// Path The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+	Path *Path `form:"path,omitempty" json:"path,omitempty"`
+
+	// InitialDelayMilliseconds The number of milliseconds to wait until executing the first HTTP call
+	InitialDelayMilliseconds *InitialDelayMilliseconds `form:"initial_delay_milliseconds,omitempty" json:"initial_delay_milliseconds,omitempty"`
+
+	// Retries Max number of HTTP call attempts that this will execute until giving up and returning an error
+	Retries *Retries `form:"retries,omitempty" json:"retries,omitempty"`
+
+	// RetriesDelayMilliseconds Number of milliseconds to wait between retries
+	RetriesDelayMilliseconds *RetriesDelayMilliseconds `form:"retries_delay_milliseconds,omitempty" json:"retries_delay_milliseconds,omitempty"`
+
+	// ExpectedResponse If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+	ExpectedResponse *ExpectedResponse `form:"expected_response,omitempty" json:"expected_response,omitempty"`
+
+	// RequestBody If the http_method is set to POST, this value will be send as the body of the availability request.
+	RequestBody *RequestBody `form:"request_body,omitempty" json:"request_body,omitempty"`
+}
+
+// GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams defines parameters for GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs.
+type GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams struct {
+	FollowLogs         *FollowLogs         `form:"follow_logs,omitempty" json:"follow_logs,omitempty"`
+	ConjunctiveFilters *ConjunctiveFilters `form:"conjunctive_filters,omitempty" json:"conjunctive_filters,omitempty"`
+	ReturnAllLogs      *ReturnAllLogs      `form:"return_all_logs,omitempty" json:"return_all_logs,omitempty"`
+	NumLogLines        *NumLogLines        `form:"num_log_lines,omitempty" json:"num_log_lines,omitempty"`
+}
+
+// PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartBody defines parameters for PostEnclavesEnclaveIdentifierStarlarkPackages.
+type PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartBody = openapi_types.File
+
+// PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdParams defines parameters for PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId.
+type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdParams struct {
+	// RetrieveLogsAsync If false, block http response until all logs are available. Default is true
+	RetrieveLogsAsync *RetrieveLogsAsync `form:"retrieve_logs_async,omitempty" json:"retrieve_logs_async,omitempty"`
+}
+
+// PostEnclavesEnclaveIdentifierStarlarkScriptsParams defines parameters for PostEnclavesEnclaveIdentifierStarlarkScripts.
+type PostEnclavesEnclaveIdentifierStarlarkScriptsParams struct {
+	// RetrieveLogsAsync If false, block http response until all logs are available. Default is true
+	RetrieveLogsAsync *RetrieveLogsAsync `form:"retrieve_logs_async,omitempty" json:"retrieve_logs_async,omitempty"`
+}
+
+// PostEnclavesJSONRequestBody defines body for PostEnclaves for application/json ContentType.
+type PostEnclavesJSONRequestBody = CreateEnclave
+
+// PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartRequestBody defines body for PostEnclavesEnclaveIdentifierArtifactsLocalFile for multipart/form-data ContentType.
+type PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartRequestBody = PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartBody
+
+// PostEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody defines body for PostEnclavesEnclaveIdentifierArtifactsRemoteFile for application/json ContentType.
+type PostEnclavesEnclaveIdentifierArtifactsRemoteFileJSONRequestBody = StoreWebFilesArtifact
+
+// PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody defines body for PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier for application/json ContentType.
+type PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierJSONRequestBody = StoreFilesArtifactFromService
+
+// PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesConnection for application/json ContentType.
+type PostEnclavesEnclaveIdentifierServicesConnectionJSONRequestBody = Connect
+
+// PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody defines body for PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand for application/json ContentType.
+type PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandJSONRequestBody = ExecCommand
+
+// PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartRequestBody defines body for PostEnclavesEnclaveIdentifierStarlarkPackages for multipart/form-data ContentType.
+type PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartRequestBody = PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartBody
+
+// PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId for application/json ContentType.
+type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody = RunStarlarkPackage
+
+// PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStarlarkScripts for application/json ContentType.
+type PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody = RunStarlarkScript
+
+// PostEnclavesEnclaveIdentifierStatusJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStatus for application/json ContentType.
+type PostEnclavesEnclaveIdentifierStatusJSONRequestBody = EnclaveTargetStatus
+
 // AsStarlarkInterpretationError returns the union data inside the StarlarkError_Error as a StarlarkInterpretationError
 func (t StarlarkError_Error) AsStarlarkInterpretationError() (StarlarkInterpretationError, error) {
 	var body StarlarkInterpretationError
@@ -962,148 +1059,4 @@ func (t StarlarkRunResponseLine) MarshalJSON() ([]byte, error) {
 func (t *StarlarkRunResponseLine) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
-}
-
-// Base64 encoded, gzipped, json marshaled Swagger object
-var swaggerSpec = []string{
-
-	"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",
-	"AAD//6YRv9ydSQAA",
-}
-
-// GetSwagger returns the content of the embedded swagger specification file
-// or error if failed to decode
-func decodeSpec() ([]byte, error) {
-	zipped, err := base64.StdEncoding.DecodeString(strings.Join(swaggerSpec, ""))
-	if err != nil {
-		return nil, fmt.Errorf("error base64 decoding spec: %s", err)
-	}
-	zr, err := gzip.NewReader(bytes.NewReader(zipped))
-	if err != nil {
-		return nil, fmt.Errorf("error decompressing spec: %s", err)
-	}
-	var buf bytes.Buffer
-	_, err = buf.ReadFrom(zr)
-	if err != nil {
-		return nil, fmt.Errorf("error decompressing spec: %s", err)
-	}
-
-	return buf.Bytes(), nil
-}
-
-var rawSpec = decodeSpecCached()
-
-// a naive cached of a decoded swagger spec
-func decodeSpecCached() func() ([]byte, error) {
-	data, err := decodeSpec()
-	return func() ([]byte, error) {
-		return data, err
-	}
-}
-
-// Constructs a synthetic filesystem for resolving external references when loading openapi specifications.
-func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
-	var res = make(map[string]func() ([]byte, error))
-	if len(pathToFile) > 0 {
-		res[pathToFile] = rawSpec
-	}
-
-	return res
-}
-
-// GetSwagger returns the Swagger specification corresponding to the generated code
-// in this file. The external references of Swagger specification are resolved.
-// The logic of resolving external references is tightly connected to "import-mapping" feature.
-// Externally referenced files must be embedded in the corresponding golang packages.
-// Urls can be supported but this task was out of the scope.
-func GetSwagger() (swagger *openapi3.T, err error) {
-	var resolvePath = PathToRawSpec("")
-
-	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-	loader.ReadFromURIFunc = func(loader *openapi3.Loader, url *url.URL) ([]byte, error) {
-		var pathToFile = url.String()
-		pathToFile = path.Clean(pathToFile)
-		getSpec, ok := resolvePath[pathToFile]
-		if !ok {
-			err1 := fmt.Errorf("path not found: %s", pathToFile)
-			return nil, err1
-		}
-		return getSpec()
-	}
-	var specData []byte
-	specData, err = rawSpec()
-	if err != nil {
-		return
-	}
-	swagger, err = loader.LoadFromData(specData)
-	if err != nil {
-		return
-	}
-	return
 }

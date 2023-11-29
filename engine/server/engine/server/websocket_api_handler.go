@@ -21,7 +21,6 @@ import (
 	"golang.org/x/net/websocket"
 
 	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
-	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/websocket_api"
 )
 
 type WebSocketRuntime struct {
@@ -63,7 +62,7 @@ type LogStreamer struct {
 	notFoundServiceUuids         []string
 }
 
-func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, params api.GetEnclavesEnclaveIdentifierLogsParams) error {
+func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, params api_type.GetEnclavesEnclaveIdentifierLogsParams) error {
 	streamer, err := engine.getLogStreamer(
 		ctx,
 		enclaveIdentifier,
@@ -86,7 +85,7 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context
 
 }
 
-func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, serviceIdentifier api_type.ServiceIdentifier, params api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams) error {
+func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, serviceIdentifier api_type.ServiceIdentifier, params api_type.GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams) error {
 	serviceUuidStrSet := []user_service.ServiceUUID{user_service.ServiceUUID(serviceIdentifier)}
 	streamer, err := engine.getLogStreamer(
 		ctx,
