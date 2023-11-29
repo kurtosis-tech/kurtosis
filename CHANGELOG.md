@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.37](https://github.com/kurtosis-tech/kurtosis/compare/0.85.36...0.85.37) (2023-11-29)
+
+
+### Features
+
+* emui catalog overview ([#1865](https://github.com/kurtosis-tech/kurtosis/issues/1865)) ([2f118d9](https://github.com/kurtosis-tech/kurtosis/commit/2f118d92da40f2f5933c5d8f58a5a08c29b96c9a))
+
 ## [0.85.36](https://github.com/kurtosis-tech/kurtosis/compare/0.85.35...0.85.36) (2023-11-27)
 
 
