@@ -529,7 +529,9 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 }
 
 // Return Traefik labels
-// Including the labels required to route traffic to the user service ports based on the Host header
+// Including the labels required to route traffic to the user service ports based on the Host header:
+// <port number>-<service short uuid>-<enclave short uuid>
+// The Traefik service name format is: <enclave short uuid>-<service short uuid>-<port number>
 // With the following input:
 //   Enclave short UUID: 65d2fb6d6732
 //   Service short UUID: 3771c85af16a
