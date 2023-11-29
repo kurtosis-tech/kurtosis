@@ -322,6 +322,7 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 	return kurtosisBackend, nil
 }
 
+// if cluster is docker, return logs client for centralized logging, otherwise use logs db of kurtosis backend which uses k8s logs under the hood
 func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosisBackend backend_interface.KurtosisBackend) centralized_logs.LogsDatabaseClient {
 	var logsDatabaseClient centralized_logs.LogsDatabaseClient
 	switch kurtosisBackendType {
