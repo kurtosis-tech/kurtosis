@@ -1,322 +1,10 @@
 openapi: 3.0.0
 
 info:
-  title: Enclave API
-  description: API to manipulate the enclaves
+  title: API Types
   version: 0.1.0
 
-paths:
-
-  /enclaves/{enclave_identifier}/starlark:
-    get:
-      description: Get last Starlark run
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StarlarkDescription"
-
-  /enclaves/{enclave_identifier}/starlark/packages:
-    post:
-      description: Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-      requestBody:
-        $ref: "#/components/requestBodies/fileUploadBody"
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Success
-
-  /enclaves/{enclave_identifier}/starlark/packages/{package_id}:
-    post:
-      description: Executes a Starlark script on the user's behalf
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/package_id'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RunStarlarkPackage"
-        required: true
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/StarlarkRunResponseLine"
-
-  /enclaves/{enclave_identifier}/starlark/scripts:
-    post:
-      description: Executes a Starlark script on the user's behalf
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RunStarlarkScript"
-        required: true
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/StarlarkRunResponseLine"
-
-  /enclaves/{enclave_identifier}/services/{service_identifier}:
-    get:
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/service_identifier'
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServiceInfo"
-
-  /enclaves/{enclave_identifier}/services/history:
-    get:
-      description: Returns information about all existing & historical services
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ServiceIdentifiers"
-
-  /enclaves/{enclave_identifier}/services:
-    get:
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - in: query
-          name: services
-          schema:
-            type: array
-            items:
-              type: string
-          description: Select services to get information
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/ServiceInfo"
-
-  /enclaves/{enclave_identifier}/services/{service_identifier}/command:
-    post:
-      description: Executes the given command inside a running container
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/service_identifier'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ExecCommand"
-        description: Exec Command
-        required: true
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ExecCommandResult"
-
-  /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability:
-    get:
-      description: Block until the given HTTP endpoint returns available, calling it through a HTTP request
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/service_identifier'
-        - $ref: '#/components/parameters/port_number'
-        - $ref: '#/components/parameters/http_method'
-        - $ref: '#/components/parameters/path'
-        - $ref: '#/components/parameters/initial_delay_milliseconds'
-        - $ref: '#/components/parameters/retries'
-        - $ref: '#/components/parameters/retries_delay_milliseconds'
-        - $ref: '#/components/parameters/expected_response'
-        - $ref: '#/components/parameters/request_body'
-      responses:
-        "200":
-          description: Success
-
-  /enclaves/{enclave_identifier}/artifacts:
-    get:
-      description: List all files artifacts
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/FileArtifactReference"
-
-  /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}:
-    get:
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/artifact_identifier'
-      description: Inspect the content of a file artifact
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/FileArtifactDescription"
-
-  /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download:
-    get:
-      description: Downloads a files artifact from the Kurtosis File System
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/artifact_identifier'
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-
-  /enclaves/{enclave_identifier}/artifacts/local-file:
-    post:
-      description: Uploads a files artifact to the Kurtosis File System
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-      requestBody:
-        $ref: "#/components/requestBodies/fileUploadBody"
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/FileArtifactReference"
-
-  /enclaves/{enclave_identifier}/artifacts/remote-file:
-    post:
-      description: Tells the API container to download a files artifact from the web to the Kurtosis File System
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/StoreWebFilesArtifact"
-        description: Store Web Files Artifact
-        required: true
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FileArtifactReference"
-
-  /enclaves/{enclave_identifier}/artifacts/services/{service_identifier}:
-    post:
-      description: Tells the API container to copy a files artifact from a service to the Kurtosis File System
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/service_identifier'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/StoreFilesArtifactFromService"
-        required: true
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FileArtifactReference"
-
-  /enclaves/{enclave_identifier}/services/connection:
-    post:
-      description: User services port forwarding
-      parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Connect"
-        required: true
-      responses:
-        default:
-          $ref: '#/components/responses/NotOk'
-        "200":
-          description: Successful request
+paths: {} # Specs for types only
 
 # =========================================================================================================================
 # =========================================================================================================================
@@ -326,26 +14,25 @@ paths:
 
 components:
 
-  responses:
+  requestBodies:
 
-    NotOk:
-      description: Unexpected error
+    fileUploadBody:
       content:
-        application/json:
+        multipart/form-data:
           schema:
-            $ref: '#/components/schemas/ResponseInfo'
-            required: true
+            type: string
+            format: binary
 
   parameters:
 
     enclave_identifier:
-      in: path
       name: enclave_identifier
+      in: path
+      required: true
+      description: UUID, shortened UUID, or name of the enclave
       schema:
         type: string
-        description: The package identifier that will be executed
-      required: true
-
+    
     service_identifier:
       in: path
       name: service_identifier
@@ -353,7 +40,24 @@ components:
         type: string
       description: The service identifier of the container that the command should be executed in
       required: true
+
+    service_uuid_set:
+      name: service_uuid_set
+      in: query
+      required: true
+      schema:
+        type: array
+        items:
+          type: string
         
+    remove_all:
+      name: remove_all
+      in: query
+      required: false
+      description: If true, remove all enclaves. Default is false
+      schema:
+        type: boolean
+
     port_number:
       in: path
       name: port_number
@@ -431,14 +135,35 @@ components:
       description: The package identifier that will be executed
       required: true
 
-  requestBodies:
+    follow_logs:
+      name: follow_logs
+      in: query
+      required: false
+      schema:
+        type: boolean
 
-    fileUploadBody:
-      content:
-        multipart/form-data:
-          schema:
-            type: string
-            format: binary
+    conjunctive_filters:
+      name: conjunctive_filters
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/LogLineFilter"
+
+    return_all_logs:
+      name: return_all_logs
+      in: query
+      required: false
+      schema:
+        type: boolean
+
+    num_log_lines:
+      name: num_log_lines
+      in: query
+      required: false
+      schema:
+        type: integer
 
   schemas:
 
@@ -463,6 +188,146 @@ components:
         - type
         - message
         - code
+
+    EngineInfo:
+      type: object
+      properties:
+        engine_version:
+          type: string
+      required:
+        - engine_version
+
+    CreateEnclave:
+      type: object
+      properties:
+        enclave_name:
+          type: string
+        api_container_version_tag:
+          type: string
+        api_container_log_level:
+          type: string
+        mode:
+          $ref: '#/components/schemas/EnclaveMode'
+    
+    EnclaveMode:
+      type: string
+      enum:
+        - TEST
+        - PRODUCTION
+    
+    EnclaveContainersStatus:
+      type: string
+      enum:
+        - RUNNING
+        - STOPPED
+        - EMPTY
+    
+    EnclaveTargetStatus:
+      type: string
+      enum:
+        - STOP
+    
+    ApiContainerStatus:
+      type: string
+      enum:
+        - RUNNING
+        - STOPPED
+        - NON_EXISTENT
+
+    EnclaveInfo:
+      type: object
+      properties:
+        enclave_uuid:
+          type: string
+        name:
+          type: string
+        shortened_uuid:
+          type: string
+        containers_status:
+          $ref: '#/components/schemas/EnclaveContainersStatus'
+        api_container_status:
+          $ref: '#/components/schemas/ApiContainerStatus'
+        api_container_info:
+          $ref: '#/components/schemas/EnclaveAPIContainerInfo'
+        api_container_host_machine_info:
+          $ref: '#/components/schemas/EnclaveAPIContainerHostMachineInfo'
+        creation_time:
+          $ref: '#/components/schemas/Timestamp'
+        mode:
+          $ref: '#/components/schemas/EnclaveMode'
+      required:
+        - enclave_uuid
+        - name
+        - shortened_uuid
+        - containers_status
+        - api_container_status
+        - creation_time
+        - mode
+
+    EnclaveAPIContainerInfo:
+      type: object
+      properties:
+        container_id:
+          type: string
+        ip_inside_enclave:
+          type: string
+        grpc_port_inside_enclave:
+          type: integer
+        bridge_ip_address:
+          type: string
+      required:
+        - container_id
+        - ip_inside_enclave
+        - grpc_port_inside_enclave
+        - bridge_ip_address
+
+    EnclaveAPIContainerHostMachineInfo:
+      type: object
+      properties:
+        ip_on_host_machine:
+          type: string
+        grpc_port_on_host_machine:
+          type: integer
+      required:
+        - ip_on_host_machine
+        - grpc_port_on_host_machine
+
+    EnclaveIdentifiers:
+      type: object
+      properties:
+        enclave_uuid:
+          type: string
+        name:
+          type: string
+        shortened_uuid:
+          type: string
+      required:    
+        - enclave_uuid
+        - name
+        - shortened_uuid
+
+    EnclaveNameAndUuid:
+      type: object
+      properties:
+        name:
+          type: string
+        uuid:
+          type: string
+      required:    
+        - name
+        - uuid
+
+    DeletionSummary:
+      type: object
+      properties:
+        removed_enclave_name_and_uuids:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnclaveNameAndUuid'
+
+    Timestamp:
+      type: string
+      format: date-time
 
     Port:
       type: object
@@ -1032,3 +897,47 @@ components:
         0 - STOPPED 
         1 - RUNNING 
         2 - UNKNOWN
+
+    ServiceLogs:
+      type: object
+      properties:
+        service_logs_by_service_uuid:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/LogLine"
+        not_found_service_uuid_set:
+          type: array
+          items:
+            type: string
+
+    LogLine:
+      type: object
+      properties:
+        line:
+          type: array
+          items:
+            type: string
+        timestamp:
+          $ref: "#/components/schemas/Timestamp"
+      required:
+        - line
+        - timestamp
+
+    LogLineFilter:
+      type: object
+      properties:
+        operator:
+          $ref: "#/components/schemas/LogLineOperator"
+        text_pattern:
+          type: string
+      required:
+        - operator
+        - text_pattern
+
+    LogLineOperator:
+      type: string
+      enum:
+        - DOES_CONTAIN_TEXT
+        - DOES_NOT_CONTAIN_TEXT
+        - DOES_CONTAIN_MATCH_REGEX
+        - DOES_NOT_CONTAIN_MATCH_REGEX

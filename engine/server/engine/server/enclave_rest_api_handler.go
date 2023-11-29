@@ -20,8 +20,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rest_api_bindings"
 	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
+	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/core_rest_api"
 )
 
 type enclaveRuntime struct {
@@ -107,8 +108,8 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifacts(ctx context
 
 	results := utils.MapList(
 		artifacts.FileNamesAndUuids,
-		func(x *rpc_api.FilesArtifactNameAndUuid) api.FileArtifactReference {
-			return api.FileArtifactReference{
+		func(x *rpc_api.FilesArtifactNameAndUuid) api_type.FileArtifactReference {
+			return api_type.FileArtifactReference{
 				Name: x.FileName,
 				Uuid: x.FileUuid,
 			}
@@ -126,7 +127,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 	}
 	logrus.Infof("Uploading file artifact to enclave %s", enclave_identifier)
 
-	uploaded_artifacts := map[string]api.FileArtifactReference{}
+	uploaded_artifacts := map[string]api_type.FileArtifactReference{}
 	for {
 		// Get next part (file) from the the multipart POST request
 		part, err := request.Body.NextPart()
@@ -159,7 +160,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 		// The response is nil when a file artifact with the same has already been uploaded
 		// TODO (edgar) Is this the expected behavior? If so, we should be explicit about it.
 		if response != nil {
-			artifact_response := api.FileArtifactReference{
+			artifact_response := api_type.FileArtifactReference{
 				Name: response.Name,
 				Uuid: response.Uuid,
 			}
@@ -189,7 +190,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsRemoteFile(
 		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
 	}
 
-	artifact_response := api.FileArtifactReference{
+	artifact_response := api_type.FileArtifactReference{
 		Uuid: stored_artifact.Uuid,
 		Name: request.Body.Name,
 	}
@@ -217,7 +218,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsServicesSer
 		return nil, stacktrace.NewError("Can't start file upload gRPC call with enclave %s", enclave_identifier)
 	}
 
-	artifact_response := api.FileArtifactReference{
+	artifact_response := api_type.FileArtifactReference{
 		Uuid: stored_artifact.Uuid,
 		Name: request.Body.Name,
 	}
@@ -248,9 +249,9 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 
 	artifact_content_list := utils.MapList(
 		stored_artifact.FileDescriptions,
-		func(x *rpc_api.FileArtifactContentsFileDescription) api.FileArtifactDescription {
+		func(x *rpc_api.FileArtifactContentsFileDescription) api_type.FileArtifactDescription {
 			size := int64(x.Size)
-			return api.FileArtifactDescription{
+			return api_type.FileArtifactDescription{
 				Path:        x.Path,
 				Size:        size,
 				TextPreview: x.TextPreview,
@@ -333,8 +334,8 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesHistory(ctx c
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	response := utils.MapList(services.AllIdentifiers, func(service *rpc_api.ServiceIdentifiers) api.ServiceIdentifiers {
-		return api.ServiceIdentifiers{
+	response := utils.MapList(services.AllIdentifiers, func(service *rpc_api.ServiceIdentifiers) api_type.ServiceIdentifiers {
+		return api_type.ServiceIdentifiers{
 			ServiceUuid:   service.ServiceUuid,
 			ShortenedUuid: service.ShortenedUuid,
 			Name:          service.Name,
@@ -413,7 +414,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesServiceIdent
 		return nil, stacktrace.NewError("Can't execute commands using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	response := api.ExecCommandResult{
+	response := api_type.ExecCommandResult{
 		ExitCode:  exec_result.ExitCode,
 		LogOutput: exec_result.LogOutput,
 	}
@@ -425,7 +426,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 	enclave_identifier := request.EnclaveIdentifier
 	service_identifier := request.ServiceIdentifier
 	port_number := request.PortNumber
-	endpoint_method := utils.DerefWith(request.Params.HttpMethod, api.GET)
+	endpoint_method := utils.DerefWith(request.Params.HttpMethod, api_type.GET)
 	apiContainerClient, errConn := manager.GetGrpcClientForEnclaveUUID(enclave_identifier)
 	if errConn != nil {
 		return nil, errConn
@@ -436,7 +437,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 
 	var err error
 	switch endpoint_method {
-	case api.GET:
+	case api_type.GET:
 		waitForHttpGetEndpointAvailabilityArgs := rpc_api.WaitForHttpGetEndpointAvailabilityArgs{
 			ServiceIdentifier:        service_identifier,
 			Port:                     uint32(port_number),
@@ -447,7 +448,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 			BodyText:                 request.Params.ExpectedResponse,
 		}
 		_, err = (*apiContainerClient).WaitForHttpGetEndpointAvailability(ctx, &waitForHttpGetEndpointAvailabilityArgs)
-	case api.POST:
+	case api_type.POST:
 		waitForHttpPostEndpointAvailabilityArgs := rpc_api.WaitForHttpPostEndpointAvailabilityArgs{
 			ServiceIdentifier:        service_identifier,
 			Port:                     uint32(port_number),
@@ -488,7 +489,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.
 
 	flags := utils.MapList(starlark_result.ExperimentalFeatures, toHttpFeatureFlag)
 	policy := toHttpRestartPolicy(starlark_result.RestartPolicy)
-	response := api.StarlarkDescription{
+	response := api_type.StarlarkDescription{
 		ExperimentalFeatures:   flags,
 		MainFunctionName:       starlark_result.MainFunctionName,
 		PackageId:              starlark_result.PackageId,
@@ -558,7 +559,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	logrus.Infof("Run Starlark package on enclave %s", enclave_identifier)
 
 	package_id := request.PackageId
-	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api.KurtosisFeatureFlag{}), toGrpcFeatureFlag)
+	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api_type.KurtosisFeatureFlag{}), toGrpcFeatureFlag)
 	// The gRPC always expect a JSON object even though it's marked as optional, so we need to default to `{}``
 	jsonParams := utils.DerefWith(request.Body.Params, map[string]interface{}{})
 	jsonBlob, err := json.Marshal(jsonParams)
@@ -620,7 +621,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 	}
 	logrus.Infof("Run Starlark script on enclave %s", enclave_identifier)
 
-	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api.KurtosisFeatureFlag{}), toGrpcFeatureFlag)
+	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api_type.KurtosisFeatureFlag{}), toGrpcFeatureFlag)
 	jsonString := utils.MapPointer(request.Body.Params, func(v map[string]interface{}) string {
 		jsonBlob, err := json.Marshal(v)
 		if err != nil {
@@ -693,18 +694,18 @@ func getGrpcClientConn(enclaveInfo types.EnclaveInfo, connectOnHostMachine bool)
 	return grpcConnection, nil
 }
 
-func (manager enclaveRuntime) GetApiClientOrResponseError(enclave_uuid string) (*rpc_api.ApiContainerServiceClient, *api.ResponseInfo) {
+func (manager enclaveRuntime) GetApiClientOrResponseError(enclave_uuid string) (*rpc_api.ApiContainerServiceClient, *api_type.ResponseInfo) {
 	client, err := manager.GetGrpcClientForEnclaveUUID(enclave_uuid)
 	if err != nil {
-		return nil, &api.ResponseInfo{
-			Type:    api.ERROR,
+		return nil, &api_type.ResponseInfo{
+			Type:    api_type.ERROR,
 			Message: "Couldn't retrieve connection with enclave",
 			Code:    http.StatusInternalServerError,
 		}
 	}
 	if client == nil {
-		return nil, &api.ResponseInfo{
-			Type:    api.INFO,
+		return nil, &api_type.ResponseInfo{
+			Type:    api_type.INFO,
 			Message: fmt.Sprintf("enclave '%s' not found", enclave_uuid),
 			Code:    http.StatusNotFound,
 		}
@@ -726,59 +727,59 @@ func (manager enclaveRuntime) GetGrpcClientForEnclaveUUID(enclave_uuid string) (
 	return &client, nil
 }
 
-func toGrpcConnect(conn api.Connect) rpc_api.Connect {
+func toGrpcConnect(conn api_type.Connect) rpc_api.Connect {
 	switch conn {
-	case api.CONNECT:
+	case api_type.CONNECT:
 		return rpc_api.Connect_CONNECT
-	case api.NOCONNECT:
+	case api_type.NOCONNECT:
 		return rpc_api.Connect_NO_CONNECT
 	default:
 		panic(fmt.Sprintf("Missing conversion of Connect Enum value: %s", conn))
 	}
 }
 
-func toHttpContainerStatus(status rpc_api.Container_Status) api.ContainerStatus {
+func toHttpContainerStatus(status rpc_api.Container_Status) api_type.ContainerStatus {
 	switch status {
 	case rpc_api.Container_RUNNING:
-		return api.ContainerStatusRUNNING
+		return api_type.ContainerStatusRUNNING
 	case rpc_api.Container_STOPPED:
-		return api.ContainerStatusSTOPPED
+		return api_type.ContainerStatusSTOPPED
 	case rpc_api.Container_UNKNOWN:
-		return api.ContainerStatusUNKNOWN
+		return api_type.ContainerStatusUNKNOWN
 	default:
 		panic(fmt.Sprintf("Missing conversion of Container Status Enum value: %s", status))
 	}
 }
 
-func toHttpTransportProtocol(protocol rpc_api.Port_TransportProtocol) api.TransportProtocol {
+func toHttpTransportProtocol(protocol rpc_api.Port_TransportProtocol) api_type.TransportProtocol {
 	switch protocol {
 	case rpc_api.Port_TCP:
-		return api.TCP
+		return api_type.TCP
 	case rpc_api.Port_UDP:
-		return api.UDP
+		return api_type.UDP
 	case rpc_api.Port_SCTP:
-		return api.SCTP
+		return api_type.SCTP
 	default:
 		panic(fmt.Sprintf("Missing conversion of Transport Protocol Enum value: %s", protocol))
 	}
 }
 
-func toHttpServiceStatus(status rpc_api.ServiceStatus) api.ServiceStatus {
+func toHttpServiceStatus(status rpc_api.ServiceStatus) api_type.ServiceStatus {
 	switch status {
 	case rpc_api.ServiceStatus_RUNNING:
-		return api.ServiceStatusRUNNING
+		return api_type.ServiceStatusRUNNING
 	case rpc_api.ServiceStatus_STOPPED:
-		return api.ServiceStatusSTOPPED
+		return api_type.ServiceStatusSTOPPED
 	case rpc_api.ServiceStatus_UNKNOWN:
-		return api.ServiceStatusUNKNOWN
+		return api_type.ServiceStatusUNKNOWN
 	default:
 		panic(fmt.Sprintf("Missing conversion of Service Status Enum value: %s", status))
 	}
 }
 
-func toHttpContainer(container *rpc_api.Container) api.Container {
+func toHttpContainer(container *rpc_api.Container) api_type.Container {
 	status := toHttpContainerStatus(container.Status)
-	return api.Container{
+	return api_type.Container{
 		CmdArgs:        container.CmdArgs,
 		EntrypointArgs: container.EntrypointArgs,
 		EnvVars:        container.EnvVars,
@@ -787,9 +788,9 @@ func toHttpContainer(container *rpc_api.Container) api.Container {
 	}
 }
 
-func toHttpPorts(port *rpc_api.Port) api.Port {
+func toHttpPorts(port *rpc_api.Port) api_type.Port {
 	protocol := toHttpTransportProtocol(port.TransportProtocol)
-	return api.Port{
+	return api_type.Port{
 		ApplicationProtocol: &port.MaybeApplicationProtocol,
 		WaitTimeout:         &port.MaybeWaitTimeout,
 		Number:              int32(port.Number),
@@ -797,12 +798,12 @@ func toHttpPorts(port *rpc_api.Port) api.Port {
 	}
 }
 
-func toHttpServiceInfo(service *rpc_api.ServiceInfo) api.ServiceInfo {
+func toHttpServiceInfo(service *rpc_api.ServiceInfo) api_type.ServiceInfo {
 	container := toHttpContainer(service.Container)
 	serviceStatus := toHttpServiceStatus(service.ServiceStatus)
 	publicPorts := utils.MapMapValues(service.MaybePublicPorts, toHttpPorts)
 	privatePorts := utils.MapMapValues(service.PrivatePorts, toHttpPorts)
-	return api.ServiceInfo{
+	return api_type.ServiceInfo{
 		Container:     container,
 		PublicIpAddr:  &service.MaybePublicIpAddr,
 		PublicPorts:   &publicPorts,
@@ -815,40 +816,40 @@ func toHttpServiceInfo(service *rpc_api.ServiceInfo) api.ServiceInfo {
 	}
 }
 
-func toHttpFeatureFlag(flag rpc_api.KurtosisFeatureFlag) api.KurtosisFeatureFlag {
+func toHttpFeatureFlag(flag rpc_api.KurtosisFeatureFlag) api_type.KurtosisFeatureFlag {
 	switch flag {
 	case rpc_api.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING:
-		return api.NOINSTRUCTIONSCACHING
+		return api_type.NOINSTRUCTIONSCACHING
 	default:
 		panic(fmt.Sprintf("Missing conversion of Feature Flag Enum value: %s", flag))
 	}
 }
 
-func toHttpRestartPolicy(policy rpc_api.RestartPolicy) api.RestartPolicy {
+func toHttpRestartPolicy(policy rpc_api.RestartPolicy) api_type.RestartPolicy {
 	switch policy {
 	case rpc_api.RestartPolicy_ALWAYS:
-		return api.RestartPolicyALWAYS
+		return api_type.RestartPolicyALWAYS
 	case rpc_api.RestartPolicy_NEVER:
-		return api.RestartPolicyNEVER
+		return api_type.RestartPolicyNEVER
 	default:
 		panic(fmt.Sprintf("Missing conversion of Restart Policy Enum value: %s", policy))
 	}
 }
 
-func toGrpcFeatureFlag(flag api.KurtosisFeatureFlag) rpc_api.KurtosisFeatureFlag {
+func toGrpcFeatureFlag(flag api_type.KurtosisFeatureFlag) rpc_api.KurtosisFeatureFlag {
 	switch flag {
-	case api.NOINSTRUCTIONSCACHING:
+	case api_type.NOINSTRUCTIONSCACHING:
 		return rpc_api.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING
 	default:
 		panic(fmt.Sprintf("Missing conversion of Feature Flag Enum value: %s", flag))
 	}
 }
 
-func toGrpcImageDownloadMode(flag api.ImageDownloadMode) rpc_api.ImageDownloadMode {
+func toGrpcImageDownloadMode(flag api_type.ImageDownloadMode) rpc_api.ImageDownloadMode {
 	switch flag {
-	case api.ImageDownloadModeALWAYS:
+	case api_type.ImageDownloadModeALWAYS:
 		return rpc_api.ImageDownloadMode_always
-	case api.ImageDownloadModeMISSING:
+	case api_type.ImageDownloadModeMISSING:
 		return rpc_api.ImageDownloadMode_missing
 	default:
 		panic(fmt.Sprintf("Missing conversion of Image Download Mode Enum value: %s", flag))

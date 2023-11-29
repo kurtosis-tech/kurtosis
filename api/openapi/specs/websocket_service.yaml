@@ -1,0 +1,42 @@
+openapi: 3.0.0
+
+info:
+  title: Websocket API
+  version: 0.1.0
+
+paths:
+  /enclaves/{enclave_identifier}/logs:
+    get:
+      summary: Get Service Logs
+      parameters:
+        - $ref: "./api_types.yaml#/components/parameters/enclave_identifier"
+        - $ref: "./api_types.yaml#/components/parameters/service_uuid_set"
+        - $ref: "./api_types.yaml#/components/parameters/follow_logs"
+        - $ref: "./api_types.yaml#/components/parameters/conjunctive_filters"
+        - $ref: "./api_types.yaml#/components/parameters/return_all_logs"
+        - $ref: "./api_types.yaml#/components/parameters/num_log_lines"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "./api_types.yaml#/components/schemas/ServiceLogs"
+
+  /enclaves/{enclave_identifier}/services/{service_identifier}/logs:
+    get:
+      summary: Get Service Logs
+      parameters:
+        - $ref: "./api_types.yaml#/components/parameters/enclave_identifier"
+        - $ref: "./api_types.yaml#/components/parameters/service_identifier"
+        - $ref: "./api_types.yaml#/components/parameters/follow_logs"
+        - $ref: "./api_types.yaml#/components/parameters/conjunctive_filters"
+        - $ref: "./api_types.yaml#/components/parameters/return_all_logs"
+        - $ref: "./api_types.yaml#/components/parameters/num_log_lines"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "./api_types.yaml#/components/schemas/ServiceLogs"

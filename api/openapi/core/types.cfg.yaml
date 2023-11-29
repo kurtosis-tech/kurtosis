@@ -1,4 +1,0 @@
-package: kurtosis_core_rest_api_bindings
-generate:
-  models: true
-output: api/golang/core/kurtosis_core_rest_api_bindings/api_container_types.gen.go

@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rest_api_bindings"
-	engineApi "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rest_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
-	loggingApi "github.com/kurtosis-tech/kurtosis/api/golang/websocket/kurtosis_websocket_api_bindings"
+	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/core_rest_api"
+	engineApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/engine_rest_api"
+	loggingApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/websocket_api"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"

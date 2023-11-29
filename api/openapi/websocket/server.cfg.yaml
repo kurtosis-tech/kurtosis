@@ -1,6 +1,0 @@
-package: kurtosis_websocket_api_bindings
-generate:
-  embedded-spec: true
-  echo-server: true
-  strict-server: false
-output: api/golang/websocket/kurtosis_websocket_api_bindings/websocket_server.gen.go

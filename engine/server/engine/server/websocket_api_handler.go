@@ -20,7 +20,8 @@ import (
 	"golang.org/x/exp/slices"
 	"golang.org/x/net/websocket"
 
-	api "github.com/kurtosis-tech/kurtosis/api/golang/websocket/kurtosis_websocket_api_bindings"
+	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
+	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/websocket_api"
 )
 
 type WebSocketRuntime struct {
@@ -62,7 +63,7 @@ type LogStreamer struct {
 	notFoundServiceUuids         []string
 }
 
-func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier api.EnclaveIdentifier, params api.GetEnclavesEnclaveIdentifierLogsParams) error {
+func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, params api.GetEnclavesEnclaveIdentifierLogsParams) error {
 	streamer, err := engine.getLogStreamer(
 		ctx,
 		enclaveIdentifier,
@@ -85,8 +86,8 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context
 
 }
 
-func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceUuidLogs(ctx echo.Context, enclaveIdentifier api.EnclaveIdentifier, serviceUuid api.ServiceUuid, params api.GetEnclavesEnclaveIdentifierServicesServiceUuidLogsParams) error {
-	serviceUuidStrSet := []user_service.ServiceUUID{user_service.ServiceUUID(serviceUuid)}
+func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, serviceIdentifier api_type.ServiceIdentifier, params api.GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams) error {
+	serviceUuidStrSet := []user_service.ServiceUUID{user_service.ServiceUUID(serviceIdentifier)}
 	streamer, err := engine.getLogStreamer(
 		ctx,
 		enclaveIdentifier,
@@ -110,12 +111,12 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceUuidLo
 
 func (engine WebSocketRuntime) getLogStreamer(
 	ctx echo.Context,
-	enclaveIdentifier api.EnclaveIdentifier,
+	enclaveIdentifier api_type.EnclaveIdentifier,
 	serviceUuidList []user_service.ServiceUUID,
 	maybeShouldFollowLogs *bool,
 	maybeShouldReturnAllLogs *bool,
 	maybeNumLogLines *uint32,
-	maybeFilters *[]api.LogLineFilter,
+	maybeFilters *[]api_type.LogLineFilter,
 ) (*LogStreamer, error) {
 	enclaveUuid, err := engine.EnclaveManager.GetEnclaveUuidForEnclaveIdentifier(context.Background(), enclaveIdentifier)
 	if err != nil {
@@ -127,7 +128,7 @@ func (engine WebSocketRuntime) getLogStreamer(
 	shouldFollowLogs := utils.DerefWith(maybeShouldFollowLogs, false)
 	shouldReturnAllLogs := utils.DerefWith(maybeShouldReturnAllLogs, false)
 	numLogLines := utils.DerefWith(maybeNumLogLines, 100)
-	filters := utils.DerefWith(maybeFilters, []api.LogLineFilter{})
+	filters := utils.DerefWith(maybeFilters, []api_type.LogLineFilter{})
 	context := ctx.Request().Context()
 
 	for _, serviceUuidStr := range serviceUuidList {
@@ -310,7 +311,7 @@ func (service *WebSocketRuntime) getEnclaveCreationTime(ctx context.Context, enc
 }
 
 func fromHttpLogLineFilters(
-	logLineFilters []api.LogLineFilter,
+	logLineFilters []api_type.LogLineFilter,
 ) (logline.ConjunctiveLogLineFilters, error) {
 	var conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters
 
@@ -319,13 +320,13 @@ func fromHttpLogLineFilters(
 		operator := logLineFilter.Operator
 		filterTextPattern := logLineFilter.TextPattern
 		switch operator {
-		case api.DOESCONTAINTEXT:
+		case api_type.DOESCONTAINTEXT:
 			filter = logline.NewDoesContainTextLogLineFilter(filterTextPattern)
-		case api.DOESNOTCONTAINTEXT:
+		case api_type.DOESNOTCONTAINTEXT:
 			filter = logline.NewDoesNotContainTextLogLineFilter(filterTextPattern)
-		case api.DOESCONTAINMATCHREGEX:
+		case api_type.DOESCONTAINMATCHREGEX:
 			filter = logline.NewDoesContainMatchRegexLogLineFilter(filterTextPattern)
-		case api.DOESNOTCONTAINMATCHREGEX:
+		case api_type.DOESNOTCONTAINMATCHREGEX:
 			filter = logline.NewDoesNotContainMatchRegexLogLineFilter(filterTextPattern)
 		default:
 			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in GRPC filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
@@ -340,8 +341,8 @@ func newLogsResponseHttp(
 	requestedServiceUuids []user_service.ServiceUUID,
 	serviceLogsByServiceUuid map[user_service.ServiceUUID][]logline.LogLine,
 	initialNotFoundServiceUuids []string,
-) *api.ServiceLogs {
-	serviceLogLinesByUuid := make(map[string]api.LogLine, len(serviceLogsByServiceUuid))
+) *api_type.ServiceLogs {
+	serviceLogLinesByUuid := make(map[string]api_type.LogLine, len(serviceLogsByServiceUuid))
 	notFoundServiceUuids := make([]string, len(initialNotFoundServiceUuids))
 	for _, serviceUuid := range requestedServiceUuids {
 		serviceUuidStr := string(serviceUuid)
@@ -354,7 +355,7 @@ func newLogsResponseHttp(
 
 		// there is no new log lines but is a found UUID, so it has to be included in the service logs map
 		if !found && !isInNotFoundUuidList {
-			serviceLogLinesByUuid[serviceUuidStr] = api.LogLine{
+			serviceLogLinesByUuid[serviceUuidStr] = api_type.LogLine{
 				Line:      []string{},
 				Timestamp: time.Now(),
 			}
@@ -364,14 +365,14 @@ func newLogsResponseHttp(
 		serviceLogLinesByUuid[serviceUuidStr] = logLines
 	}
 
-	response := &api.ServiceLogs{
+	response := &api_type.ServiceLogs{
 		NotFoundServiceUuidSet:   &notFoundServiceUuids,
 		ServiceLogsByServiceUuid: &serviceLogLinesByUuid,
 	}
 	return response
 }
 
-func newHttpBindingsLogLineFromLogLines(logLines []logline.LogLine) api.LogLine {
+func newHttpBindingsLogLineFromLogLines(logLines []logline.LogLine) api_type.LogLine {
 	logLinesStr := make([]string, len(logLines))
 	var logTimestamp time.Time
 
@@ -380,6 +381,6 @@ func newHttpBindingsLogLineFromLogLines(logLines []logline.LogLine) api.LogLine 
 		logTimestamp = logLine.GetTimestamp()
 	}
 
-	return api.LogLine{Line: logLinesStr, Timestamp: logTimestamp}
+	return api_type.LogLine{Line: logLinesStr, Timestamp: logTimestamp}
 
 }

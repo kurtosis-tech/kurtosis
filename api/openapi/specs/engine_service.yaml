@@ -1,0 +1,149 @@
+openapi: 3.0.0
+
+info:
+  title: Engine API
+  version: 0.1.0
+
+paths:
+  /engine/info:
+    get:
+      summary: Get Engine Info
+      responses:
+        default:
+          $ref: '#/components/responses/NotOk'
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: './api_types.yaml#/components/schemas/EngineInfo'
+
+  /enclaves:
+    get:
+      summary: Get Enclaves
+      responses:
+        default:
+          $ref: '#/components/responses/NotOk'
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: './api_types.yaml#/components/schemas/EnclaveInfo'
+                
+    post:
+      summary: Create Enclave
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './api_types.yaml#/components/schemas/CreateEnclave'
+      responses:
+
+        default:
+          $ref: '#/components/responses/NotOk'
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: './api_types.yaml#/components/schemas/EnclaveInfo'
+                
+    delete:
+      summary: Delete Enclaves
+      parameters:
+        - $ref: './api_types.yaml#/components/parameters/remove_all'
+      responses:
+        default:
+          $ref: '#/components/responses/NotOk'
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: './api_types.yaml#/components/schemas/DeletionSummary'
+                
+  /enclaves/historical:
+    get:
+      summary: Get Historical Enclaves
+      responses:
+        default:
+          $ref: '#/components/responses/NotOk'
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: './api_types.yaml#/components/schemas/EnclaveIdentifiers'
+
+  /enclaves/{enclave_identifier}:
+    get:
+      summary: Get Enclave Info
+      parameters:
+        - $ref: './api_types.yaml#/components/parameters/enclave_identifier'
+      responses:
+        default:
+          $ref: '#/components/responses/NotOk'
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: './api_types.yaml#/components/schemas/EnclaveInfo'
+
+    delete:
+      summary: Destroy Enclave
+      parameters:
+        - $ref: './api_types.yaml#/components/parameters/enclave_identifier'
+      responses:
+        default:
+          $ref: '#/components/responses/NotOk'
+        '200':
+          description: Successful response
+
+  /enclaves/{enclave_identifier}/status:
+    get:
+      summary: Get enclave status
+      parameters:
+        - $ref: './api_types.yaml#/components/parameters/enclave_identifier'
+      responses:
+        default:
+          $ref: '#/components/responses/NotOk'
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: './api_types.yaml#/components/schemas/EnclaveContainersStatus'
+    post:
+      summary: Set enclave status
+      parameters:
+        - $ref: './api_types.yaml#/components/parameters/enclave_identifier'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './api_types.yaml#/components/schemas/EnclaveTargetStatus'
+      responses:
+        default:
+          $ref: '#/components/responses/NotOk'
+        '200':
+          description: Successful response
+
+components:
+
+  responses:
+
+    NotOk:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: './api_types.yaml#/components/schemas/ResponseInfo'
+            required: true
