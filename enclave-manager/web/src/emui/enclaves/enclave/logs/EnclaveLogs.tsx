@@ -9,7 +9,7 @@ import { LogViewer } from "../../../../components/enclaves/logs/LogViewer";
 import { LogLineMessage } from "../../../../components/enclaves/logs/types";
 import { DeleteEnclavesButton } from "../../../../components/enclaves/widgets/DeleteEnclavesButton";
 import { isAsyncIterable, stringifyError } from "../../../../utils";
-import { useEmuiAppContext } from "../../../EmuiAppContext";
+import { useEnclavesContext } from "../../EnclavesContext";
 import { useEnclaveFromParams } from "../EnclaveRouteContext";
 
 // These are the stages we want to catch and handle in the UI
@@ -44,7 +44,7 @@ export function starlarkResponseLineToLogLineMessage(l: StarlarkRunResponseLine)
 export const EnclaveLogs = () => {
   const enclave = useEnclaveFromParams();
   const { refreshServices, refreshFilesAndArtifacts, refreshStarlarkRun, updateStarlarkFinishedInEnclave } =
-    useEmuiAppContext();
+    useEnclavesContext();
   const navigator = useNavigate();
   const location = useLocation() as Location<{ logs: AsyncIterable<StarlarkRunResponseLine> }>;
   const [progress, setProgress] = useState<EnclaveLogStage>({ stage: "waiting" });

@@ -1,11 +1,12 @@
-import { Button, ButtonGroup, Flex, Text } from "@chakra-ui/react";
+import { Button, ButtonGroup, Flex } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import { AppPageLayout } from "../../components/AppLayout";
 import { CreateEnclaveButton } from "../../components/enclaves/CreateEnclaveButton";
 import { EnclavesTable } from "../../components/enclaves/tables/EnclavesTable";
 import { DeleteEnclavesButton } from "../../components/enclaves/widgets/DeleteEnclavesButton";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
-import { useFullEnclaves } from "../EmuiAppContext";
+import { PageTitle } from "../../components/PageTitle";
+import { useFullEnclaves } from "./EnclavesContext";
 import { EnclaveFullInfo } from "./types";
 
 export const EnclaveList = () => {
@@ -31,9 +32,7 @@ export const EnclaveList = () => {
   return (
     <AppPageLayout>
       <Flex pl={"6px"} pb={"16px"} alignItems={"center"} justifyContent={"space-between"}>
-        <Text fontSize={"lg"} fontWeight={"medium"}>
-          Enclaves
-        </Text>
+        <PageTitle>Enclaves</PageTitle>
         <Flex gap={"24px"} alignItems={"center"}>
           {selectedEnclaves.length > 0 && (
             <ButtonGroup isAttached variant={"kurtosisGroupOutline"} size={"sm"}>

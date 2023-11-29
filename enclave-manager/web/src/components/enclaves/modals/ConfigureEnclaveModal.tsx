@@ -19,7 +19,7 @@ import { SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
 import { ArgumentValueType, KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { useEmuiAppContext } from "../../../emui/EmuiAppContext";
+import { useEnclavesContext } from "../../../emui/enclaves/EnclavesContext";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { assertDefined, isDefined, stringifyError } from "../../../utils";
 import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../../constants";
@@ -51,7 +51,7 @@ export const ConfigureEnclaveModal = ({
   existingEnclave,
 }: ConfigureEnclaveModalProps) => {
   const kurtosisClient = useKurtosisClient();
-  const { createEnclave, runStarlarkPackage } = useEmuiAppContext();
+  const { createEnclave, runStarlarkPackage } = useEnclavesContext();
   const navigator = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();

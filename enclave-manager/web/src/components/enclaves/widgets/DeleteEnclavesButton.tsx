@@ -2,7 +2,7 @@ import { Button, ButtonProps, Tooltip } from "@chakra-ui/react";
 import { useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { useEmuiAppContext } from "../../../emui/EmuiAppContext";
+import { useEnclavesContext } from "../../../emui/enclaves/EnclavesContext";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { KurtosisAlertModal } from "../../KurtosisAlertModal";
 
@@ -11,7 +11,7 @@ type DeleteEnclavesButtonProps = ButtonProps & {
 };
 
 export const DeleteEnclavesButton = ({ enclaves, ...buttonProps }: DeleteEnclavesButtonProps) => {
-  const { destroyEnclaves } = useEmuiAppContext();
+  const { destroyEnclaves } = useEnclavesContext();
   const navigator = useNavigate();
 
   const [showModal, setShowModal] = useState(false);

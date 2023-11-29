@@ -1,16 +1,14 @@
 import { useMemo } from "react";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import { KurtosisClientProvider, useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
-import {
-  KurtosisPackageIndexerProvider,
-  useKurtosisPackageIndexerClient,
-} from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
+import { KurtosisPackageIndexerProvider } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { AppLayout } from "../components/AppLayout";
 import { CreateEnclave } from "../components/enclaves/CreateEnclave";
 import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
+import { CatalogContextProvider } from "./catalog/CatalogContext";
 import { catalogRoutes } from "./catalog/CatalogRoutes";
-import { EmuiAppContextProvider } from "./EmuiAppContext";
 import { enclaveRoutes } from "./enclaves/EnclaveRoutes";
+import { EnclavesContextProvider } from "./enclaves/EnclavesContext";
 
 const logLogo = (t: string) => console.log(`%c ${t}`, "background: black; color: #00C223");
 logLogo(`                                                                               
@@ -40,9 +38,7 @@ export const EmuiApp = () => {
     <KurtosisThemeProvider>
       <KurtosisPackageIndexerProvider>
         <KurtosisClientProvider>
-          <EmuiAppContextProvider>
-            <KurtosisRouter />
-          </EmuiAppContextProvider>
+          <KurtosisRouter />
         </KurtosisClientProvider>
       </KurtosisPackageIndexerProvider>
     </KurtosisThemeProvider>
@@ -51,7 +47,6 @@ export const EmuiApp = () => {
 
 const KurtosisRouter = () => {
   const kurtosisClient = useKurtosisClient();
-  const kurtosisIndexerClient = useKurtosisPackageIndexerClient();
 
   const router = useMemo(
     () =>
@@ -61,12 +56,28 @@ const KurtosisRouter = () => {
             element: (
               <AppLayout>
                 <Outlet />
-                <CreateEnclave />
               </AppLayout>
             ),
             children: [
-              { path: "/", children: enclaveRoutes(kurtosisClient) },
-              { path: "/catalog", children: catalogRoutes(kurtosisIndexerClient) },
+              {
+                path: "/",
+                element: (
+                  <EnclavesContextProvider>
+                    <Outlet />
+                    <CreateEnclave />
+                  </EnclavesContextProvider>
+                ),
+                children: enclaveRoutes(),
+              },
+              {
+                path: "/catalog",
+                element: (
+                  <CatalogContextProvider>
+                    <Outlet />
+                  </CatalogContextProvider>
+                ),
+                children: catalogRoutes(),
+              },
             ],
           },
         ],
@@ -74,7 +85,7 @@ const KurtosisRouter = () => {
           basename: kurtosisClient.getBaseApplicationUrl().pathname,
         },
       ),
-    [kurtosisClient, kurtosisIndexerClient],
+    [kurtosisClient],
   );
 
   return <RouterProvider router={router} />;

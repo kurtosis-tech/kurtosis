@@ -16,15 +16,27 @@ import {
 import { ReactElement, useMemo } from "react";
 import { BsCaretDownFill } from "react-icons/bs";
 import { Link, Params, UIMatch, useMatches } from "react-router-dom";
-import { EmuiAppState, useEmuiAppContext } from "../emui/EmuiAppContext";
+import { EnclavesState, useEnclavesContext } from "../emui/enclaves/EnclavesContext";
 import { isDefined } from "../utils";
 import { RemoveFunctions } from "../utils/types";
 import { BREADCRUMBS_HEIGHT, MAIN_APP_MAX_WIDTH_WITHOUT_PADDING } from "./theme/constants";
 
-export type KurtosisBreadcrumbsHandle = {
-  crumb?: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => KurtosisBreadcrumb | KurtosisBreadcrumb[];
-  extraControls?: (state: RemoveFunctions<EmuiAppState>, params: Params<string>) => ReactElement | null;
+type KurtosisBaseBreadcrumbsHandle = {
+  type: string;
 };
+
+export type KurtosisEnclavesBreadcrumbsHandle = KurtosisBaseBreadcrumbsHandle & {
+  type: "enclavesHandle";
+  crumb?: (state: RemoveFunctions<EnclavesState>, params: Params<string>) => KurtosisBreadcrumb | KurtosisBreadcrumb[];
+  extraControls?: (state: RemoveFunctions<EnclavesState>, params: Params<string>) => ReactElement | null;
+};
+
+export type KurtosisCatalogBreadcrumbsHandle = {
+  type: "catalogHandle";
+  crumb?: () => KurtosisBreadcrumb | KurtosisBreadcrumb[];
+};
+
+export type KurtosisBreadcrumbsHandle = KurtosisEnclavesBreadcrumbsHandle | KurtosisCatalogBreadcrumbsHandle;
 
 type KurtosisBreadcrumbMenuItem = {
   name: string;
@@ -39,10 +51,41 @@ export type KurtosisBreadcrumb = {
 };
 
 export const KurtosisBreadcrumbs = () => {
-  const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave, starlarkRunningInEnclaves } =
-    useEmuiAppContext();
-
   const matches = useMatches() as UIMatch<object, KurtosisBreadcrumbsHandle>[];
+
+  const handlers = new Set(matches.map((match) => match.handle?.type).filter(isDefined));
+  if (handlers.size === 0) {
+    throw Error(`Currently routes with no breadcrumb handles are not supported`);
+  }
+  if (handlers.size > 1) {
+    throw Error(`Routes with multiple breadcrumb handles are not supported.`);
+  }
+  const handleType = [...handlers][0];
+  const isEnclavesMatches = (
+    matches: UIMatch<object, KurtosisBreadcrumbsHandle>[],
+    onlyType: KurtosisBreadcrumbsHandle["type"],
+  ): matches is UIMatch<object, KurtosisEnclavesBreadcrumbsHandle>[] => onlyType === "enclavesHandle";
+  const isCatalogMatches = (
+    matches: UIMatch<object, KurtosisBreadcrumbsHandle>[],
+    onlyType: KurtosisBreadcrumbsHandle["type"],
+  ): matches is UIMatch<object, KurtosisCatalogBreadcrumbsHandle>[] => onlyType === "catalogHandle";
+  if (isEnclavesMatches(matches, handleType)) {
+    return <KurtosisEnclavesBreadcrumbs matches={matches} />;
+  }
+  if (isCatalogMatches(matches, handleType)) {
+    return <KurtosisCatalogBreadcrumbs matches={matches} />;
+  }
+
+  throw new Error(`Unable to handle breadcrumbs of type ${handleType}`);
+};
+
+type KurtosisEnclavesBreadcrumbsProps = {
+  matches: UIMatch<object, KurtosisEnclavesBreadcrumbsHandle>[];
+};
+
+const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcrumbsProps) => {
+  const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave, starlarkRunningInEnclaves } =
+    useEnclavesContext();
 
   const matchCrumbs = useMemo(
     () =>
@@ -100,6 +143,35 @@ export const KurtosisBreadcrumbs = () => {
     ],
   );
 
+  return <KurtosisBreadcrumbsImpl matchCrumbs={matchCrumbs} extraControls={extraControls} />;
+};
+
+type KurtosisCatalogBreadcrumbsProps = {
+  matches: UIMatch<object, KurtosisCatalogBreadcrumbsHandle>[];
+};
+
+const KurtosisCatalogBreadcrumbs = ({ matches }: KurtosisCatalogBreadcrumbsProps) => {
+  const matchCrumbs = useMemo(
+    () =>
+      matches.flatMap((match) => {
+        if (isDefined(match.handle?.crumb)) {
+          const r = match.handle.crumb();
+          return Array.isArray(r) ? r : [r];
+        }
+        return [];
+      }),
+    [matches],
+  );
+
+  return <KurtosisBreadcrumbsImpl matchCrumbs={matchCrumbs} />;
+};
+
+type KurtosisBreadcrumbsImplProps = {
+  matchCrumbs: KurtosisBreadcrumb[];
+  extraControls?: ReactElement[];
+};
+
+const KurtosisBreadcrumbsImpl = ({ matchCrumbs, extraControls }: KurtosisBreadcrumbsImplProps) => {
   return (
     <Flex h={BREADCRUMBS_HEIGHT}>
       <Flex w={MAIN_APP_MAX_WIDTH_WITHOUT_PADDING} alignItems={"center"} justifyContent={"space-between"}>
