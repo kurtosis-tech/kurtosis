@@ -1,14 +1,10 @@
-import { RouteObject } from "react-router-dom";
-
-import { KurtosisPackageIndexerClient } from "../../client/packageIndexer/KurtosisPackageIndexerClient";
+import { KurtosisCatalogRouteObject } from "../types";
 import { Catalog } from "./Catalog";
-import { catalogLoader } from "./loader";
 
-export const catalogRoutes = (kurtosisIndexerClient: KurtosisPackageIndexerClient): RouteObject[] => [
+export const catalogRoutes = (): KurtosisCatalogRouteObject[] => [
   {
     path: "/catalog",
-    handle: { crumb: () => ({ name: "Catalog", destination: "/catalog" }) },
-    loader: catalogLoader(kurtosisIndexerClient),
+    handle: { type: "catalogHandle" as "catalogHandle", crumb: () => ({ name: "Catalog", destination: "/catalog" }) },
     id: "catalog",
     element: <Catalog />,
   },

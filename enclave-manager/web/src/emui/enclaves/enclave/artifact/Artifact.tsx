@@ -13,7 +13,7 @@ import { FileTree, FileTreeNode } from "../../../../components/FileTree";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
 import { TitledCard } from "../../../../components/TitledCard";
 import { isDefined } from "../../../../utils";
-import { useFullEnclave } from "../../../EmuiAppContext";
+import { useFullEnclave } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 
 export const Artifact = () => {
