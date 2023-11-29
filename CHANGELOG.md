@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.38](https://github.com/kurtosis-tech/kurtosis/compare/0.85.37...0.85.38) (2023-11-29)
+
+
+### Bug Fixes
+
+* support logs db for k8s ([#1864](https://github.com/kurtosis-tech/kurtosis/issues/1864)) ([8afa9c7](https://github.com/kurtosis-tech/kurtosis/commit/8afa9c7a7fcd7d7370e2d9740fb4e8e7bc6fe463))
+
 ## [0.85.37](https://github.com/kurtosis-tech/kurtosis/compare/0.85.36...0.85.37) (2023-11-29)
 
 
