@@ -50,6 +50,12 @@ func ValidateUserCustomLabelKey(str string) error {
 	return nil
 }
 
+// CreateNewDockerUserCustomLabelKey creates a Traefik Docker label with the Traefik label key prefix
+func CreateNewDockerTraefikLabelKey(str string) (*DockerLabelKey, error) {
+	labelKeyStr := traefikLabelKeyPrefixStr + str
+	return createNewDockerLabelKey(labelKeyStr)
+}
+
 func createNewDockerLabelKey(str string) (*DockerLabelKey, error) {
 	if err := validate(str); err != nil {
 		return nil, stacktrace.NewError("Label key string '%v' is not valid", str)
