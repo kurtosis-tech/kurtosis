@@ -41,6 +41,7 @@ paths:
       parameters:
         - $ref: './api_types.yaml#/components/parameters/enclave_identifier'
         - $ref: './api_types.yaml#/components/parameters/package_id'
+        - $ref: './api_types.yaml#/components/parameters/retrieve_logs_async'
       requestBody:
         content:
           application/json:
@@ -53,21 +54,16 @@ paths:
         "200":
           description: Successful request
           content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "./api_types.yaml#/components/schemas/StarlarkRunResponseLine"
+                $ref: "./api_types.yaml#/components/schemas/StarlarkRunResponse"
 
   /enclaves/{enclave_identifier}/starlark/scripts:
     post:
       description: Executes a Starlark script on the user's behalf
       parameters:
         - $ref: './api_types.yaml#/components/parameters/enclave_identifier'
+        - $ref: './api_types.yaml#/components/parameters/retrieve_logs_async'
       requestBody:
         content:
           application/json:
@@ -80,15 +76,9 @@ paths:
         "200":
           description: Successful request
           content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "./api_types.yaml#/components/schemas/StarlarkRunResponseLine"
+                $ref: "./api_types.yaml#/components/schemas/StarlarkRunResponse"
 
   /enclaves/{enclave_identifier}/services/{service_identifier}:
     get:

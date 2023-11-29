@@ -41,6 +41,14 @@ components:
       description: The service identifier of the container that the command should be executed in
       required: true
 
+    starlark_execution_uuid:
+      name: starlark_execution_uuid
+      in: path
+      schema:
+        type: string
+      description: The unique identifier to track the execution of a Starlark script or package
+      required: true
+
     service_uuid_set:
       name: service_uuid_set
       in: query
@@ -49,6 +57,14 @@ components:
         type: array
         items:
           type: string
+
+    retrieve_logs_async:
+      name: retrieve_logs_async
+      in: query
+      required: false
+      description: If false, block http response until all logs are available. Default is true
+      schema:
+        type: boolean
         
     remove_all:
       name: remove_all
@@ -537,6 +553,13 @@ components:
       description: |-
         0 - NO_INSTRUCTIONS_CACHING
 
+    StarlarkRunLogs:
+      type: array
+      items:
+        $ref: "#/components/schemas/StarlarkRunResponseLine"
+      description: |-
+        Starlark Execution Logs
+
     StarlarkRunResponseLine:
       oneOf: 
         - $ref: "#/components/schemas/StarlarkInstruction"
@@ -729,10 +752,29 @@ components:
               type: string
           required:
             - is_run_successful
-            - serialized_output
       required:
         - run_finished_event
 
+    AsyncStarlarkExecutionLogs:
+      type: object
+      properties:
+        async_starlark_execution_logs: 
+          type: object
+          properties:
+            starlark_execution_uuid:
+              type: string
+          description: Execution UUID to asynchronously retrieve the execution logs
+          required:
+            - starlark_execution_uuid
+      description: Use it to asynchronously retrieve the execution logs via Websockets or http streaming 
+      required:
+        - async_starlark_execution_logs
+
+    StarlarkRunResponse:
+      oneOf:
+        - $ref: "#/components/schemas/AsyncStarlarkExecutionLogs"
+        - $ref: "#/components/schemas/StarlarkRunLogs"
+                  
     ServiceIdentifiers:
       type: object
       properties:

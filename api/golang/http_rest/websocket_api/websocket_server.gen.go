@@ -19,6 +19,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// NotOk defines model for NotOk.
+type NotOk = externalRef0.ResponseInfo
+
 // GetEnclavesEnclaveIdentifierLogsParams defines parameters for GetEnclavesEnclaveIdentifierLogs.
 type GetEnclavesEnclaveIdentifierLogsParams struct {
 	ServiceUuidSet     externalRef0.ServiceUuidSet      `form:"service_uuid_set" json:"service_uuid_set"`
@@ -44,6 +47,9 @@ type ServerInterface interface {
 	// Get Service Logs
 	// (GET /enclaves/{enclave_identifier}/services/{service_identifier}/logs)
 	GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, serviceIdentifier externalRef0.ServiceIdentifier, params GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams) error
+
+	// (GET /enclaves/{enclave_identifier}/starlark/executions/{starlark_execution_uuid}/logs)
+	GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, starlarkExecutionUuid externalRef0.StarlarkExecutionUuid) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -158,6 +164,30 @@ func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierServicesServiceIden
 	return err
 }
 
+// GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "enclave_identifier" -------------
+	var enclaveIdentifier externalRef0.EnclaveIdentifier
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "enclave_identifier", runtime.ParamLocationPath, ctx.Param("enclave_identifier"), &enclaveIdentifier)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
+	}
+
+	// ------------- Path parameter "starlark_execution_uuid" -------------
+	var starlarkExecutionUuid externalRef0.StarlarkExecutionUuid
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "starlark_execution_uuid", runtime.ParamLocationPath, ctx.Param("starlark_execution_uuid"), &starlarkExecutionUuid)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter starlark_execution_uuid: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs(ctx, enclaveIdentifier, starlarkExecutionUuid)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -188,23 +218,29 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.GET(baseURL+"/enclaves/:enclave_identifier/logs", wrapper.GetEnclavesEnclaveIdentifierLogs)
 	router.GET(baseURL+"/enclaves/:enclave_identifier/services/:service_identifier/logs", wrapper.GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs)
+	router.GET(baseURL+"/enclaves/:enclave_identifier/starlark/executions/:starlark_execution_uuid/logs", wrapper.GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs)
 
 }
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xVTYvbMBD9K0Lt0cRpe/Ot0A8COSxslx5KMYo8TrSVR15plDYE//ciWdk4iTfrpZRe",
-	"ejJ2Zt68mfdmsufSNK1BQHK82PNWWNEAgY1v0uC9R0lqC2Wt9OGzQl7wBw92xzOOogFejIZm3MkNNCLm",
-	"EDQx+bWFmhf8VX4snPdhLl+a9VIhfIr5vMs47doALqwVO951GQeUWmyhVBUgqVqBDZgVOGlVS8oEZnd3",
-	"iw8ZcxtjCRAq1r8bywJVZmpGG2AJiGd9N62gzbGZkSoZt/DglYWKF2Q9DHtLLB1ZhetIszZam5+lNusn",
-	"BzYMGQFbGaNBYERD34S4UiuEJ/FOg0YQFRKsw1i70At5i6XQ+irH87BneDqwWyWvi/NlAyzFsWPcQRVp",
-	"kIRCsIw2gtKnphFYBT29rtgKGPwC6QkqpnBcvhEeL5PvAOC9qkoH9NR8LuKulXncgLN6Fy7vDlkx+rav",
-	"sUwytda0YEn1RkBDZW08huojlCdWPDYcVC5XuxO0ACCqSgUBhb45qT9hmQflzOoeJMUJn3/pgpC1iWQV",
-	"6fDbV1g5I38Asfc3C57xLVjXe2g+ezObB1zTAopW8YK/m81nc55FI0Rmedphl+8vt7nLD65f95MKPYnQ",
-	"4KLiBf8M9DFlp+fiMXXZ78HwTn4bn8MxJB+5J132bNaFpBNyhldlQvjY1Z6Qdn4XJqScnqfue9gU1xp0",
-	"vZHezufpD4cAoySibbWSUZT83gXd94Nluma84cZEZ51eoFsvJThXe80OFPql900j7K7XnyUQllCy5wyV",
-	"xHL5/vL6/IHdEg2Xnv/Uhy/L+u/Ev+PErvsdAAD//xARwii0CQAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

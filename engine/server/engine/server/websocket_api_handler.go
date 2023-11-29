@@ -109,6 +109,11 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 	}
 }
 
+// (GET /enclaves/{enclave_identifier}/starlark/executions/{starlark_execution_uuid}/logs)
+func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, starlarkExecutionUuid api_type.StarlarkExecutionUuid) error {
+	return nil
+}
+
 func (engine WebSocketRuntime) getLogStreamer(
 	ctx echo.Context,
 	enclaveIdentifier api_type.EnclaveIdentifier,

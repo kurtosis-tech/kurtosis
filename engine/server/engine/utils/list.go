@@ -19,3 +19,13 @@ func MapListStopOnError[T, U any](data []T, f func(T) (U, error)) ([]U, error) {
 	}
 	return res, nil
 }
+
+func FilterListNils[T any](data []*T) []T {
+	filterList := make([]T, len(data))
+	for _, elem := range data {
+		if elem != nil {
+			filterList = append(filterList, *elem)
+		}
+	}
+	return filterList
+}

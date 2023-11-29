@@ -63,6 +63,18 @@ type GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAva
 // PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartBody defines parameters for PostEnclavesEnclaveIdentifierStarlarkPackages.
 type PostEnclavesEnclaveIdentifierStarlarkPackagesMultipartBody = openapi_types.File
 
+// PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdParams defines parameters for PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId.
+type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdParams struct {
+	// RetrieveLogsAsync If false, block http response until all logs are available. Default is true
+	RetrieveLogsAsync *externalRef0.RetrieveLogsAsync `form:"retrieve_logs_async,omitempty" json:"retrieve_logs_async,omitempty"`
+}
+
+// PostEnclavesEnclaveIdentifierStarlarkScriptsParams defines parameters for PostEnclavesEnclaveIdentifierStarlarkScripts.
+type PostEnclavesEnclaveIdentifierStarlarkScriptsParams struct {
+	// RetrieveLogsAsync If false, block http response until all logs are available. Default is true
+	RetrieveLogsAsync *externalRef0.RetrieveLogsAsync `form:"retrieve_logs_async,omitempty" json:"retrieve_logs_async,omitempty"`
+}
+
 // PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartRequestBody defines body for PostEnclavesEnclaveIdentifierArtifactsLocalFile for multipart/form-data ContentType.
 type PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartRequestBody = PostEnclavesEnclaveIdentifierArtifactsLocalFileMultipartBody
 
@@ -133,10 +145,10 @@ type ServerInterface interface {
 	PostEnclavesEnclaveIdentifierStarlarkPackages(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error
 
 	// (POST /enclaves/{enclave_identifier}/starlark/packages/{package_id})
-	PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, packageId externalRef0.PackageId) error
+	PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, packageId externalRef0.PackageId, params PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdParams) error
 
 	// (POST /enclaves/{enclave_identifier}/starlark/scripts)
-	PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error
+	PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, params PostEnclavesEnclaveIdentifierStarlarkScriptsParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -503,8 +515,17 @@ func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStarlarkPackagesPa
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter package_id: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdParams
+	// ------------- Optional query parameter "retrieve_logs_async" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "retrieve_logs_async", ctx.QueryParams(), &params.RetrieveLogsAsync)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter retrieve_logs_async: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx, enclaveIdentifier, packageId)
+	err = w.Handler.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx, enclaveIdentifier, packageId, params)
 	return err
 }
 
@@ -519,8 +540,17 @@ func (w *ServerInterfaceWrapper) PostEnclavesEnclaveIdentifierStarlarkScripts(ct
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter enclave_identifier: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostEnclavesEnclaveIdentifierStarlarkScriptsParams
+	// ------------- Optional query parameter "retrieve_logs_async" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "retrieve_logs_async", ctx.QueryParams(), &params.RetrieveLogsAsync)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter retrieve_logs_async: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostEnclavesEnclaveIdentifierStarlarkScripts(ctx, enclaveIdentifier)
+	err = w.Handler.PostEnclavesEnclaveIdentifierStarlarkScripts(ctx, enclaveIdentifier, params)
 	return err
 }
 
@@ -992,6 +1022,7 @@ func (response PostEnclavesEnclaveIdentifierStarlarkPackagesdefaultJSONResponse)
 type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdRequestObject struct {
 	EnclaveIdentifier externalRef0.EnclaveIdentifier `json:"enclave_identifier"`
 	PackageId         externalRef0.PackageId         `json:"package_id"`
+	Params            PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdParams
 	Body              *PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody
 }
 
@@ -999,32 +1030,13 @@ type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponseObject interf
 	VisitPostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error
 }
 
-type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200JSONResponse []externalRef0.StarlarkRunResponseLine
+type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200JSONResponse externalRef0.StarlarkRunResponse
 
 func (response PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200JSONResponse) VisitPostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
-}
-
-type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200ApplicationoctetStreamResponse struct {
-	Body          io.Reader
-	ContentLength int64
-}
-
-func (response PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200ApplicationoctetStreamResponse) VisitPostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/octet-stream")
-	if response.ContentLength != 0 {
-		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
-	}
-	w.WriteHeader(200)
-
-	if closer, ok := response.Body.(io.ReadCloser); ok {
-		defer closer.Close()
-	}
-	_, err := io.Copy(w, response.Body)
-	return err
 }
 
 type PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIddefaultJSONResponse struct {
@@ -1041,6 +1053,7 @@ func (response PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIddefaultJSON
 
 type PostEnclavesEnclaveIdentifierStarlarkScriptsRequestObject struct {
 	EnclaveIdentifier externalRef0.EnclaveIdentifier `json:"enclave_identifier"`
+	Params            PostEnclavesEnclaveIdentifierStarlarkScriptsParams
 	Body              *PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody
 }
 
@@ -1048,32 +1061,13 @@ type PostEnclavesEnclaveIdentifierStarlarkScriptsResponseObject interface {
 	VisitPostEnclavesEnclaveIdentifierStarlarkScriptsResponse(w http.ResponseWriter) error
 }
 
-type PostEnclavesEnclaveIdentifierStarlarkScripts200JSONResponse []externalRef0.StarlarkRunResponseLine
+type PostEnclavesEnclaveIdentifierStarlarkScripts200JSONResponse externalRef0.StarlarkRunResponse
 
 func (response PostEnclavesEnclaveIdentifierStarlarkScripts200JSONResponse) VisitPostEnclavesEnclaveIdentifierStarlarkScriptsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
-}
-
-type PostEnclavesEnclaveIdentifierStarlarkScripts200ApplicationoctetStreamResponse struct {
-	Body          io.Reader
-	ContentLength int64
-}
-
-func (response PostEnclavesEnclaveIdentifierStarlarkScripts200ApplicationoctetStreamResponse) VisitPostEnclavesEnclaveIdentifierStarlarkScriptsResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/octet-stream")
-	if response.ContentLength != 0 {
-		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
-	}
-	w.WriteHeader(200)
-
-	if closer, ok := response.Body.(io.ReadCloser); ok {
-		defer closer.Close()
-	}
-	_, err := io.Copy(w, response.Body)
-	return err
 }
 
 type PostEnclavesEnclaveIdentifierStarlarkScriptsdefaultJSONResponse struct {
@@ -1549,11 +1543,12 @@ func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkPackages(ctx echo.
 }
 
 // PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId operation middleware
-func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, packageId externalRef0.PackageId) error {
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, packageId externalRef0.PackageId, params PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdParams) error {
 	var request PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
 	request.PackageId = packageId
+	request.Params = params
 
 	var body PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
@@ -1581,10 +1576,11 @@ func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(
 }
 
 // PostEnclavesEnclaveIdentifierStarlarkScripts operation middleware
-func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier) error {
+func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.Context, enclaveIdentifier externalRef0.EnclaveIdentifier, params PostEnclavesEnclaveIdentifierStarlarkScriptsParams) error {
 	var request PostEnclavesEnclaveIdentifierStarlarkScriptsRequestObject
 
 	request.EnclaveIdentifier = enclaveIdentifier
+	request.Params = params
 
 	var body PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
@@ -1614,60 +1610,60 @@ func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.C
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

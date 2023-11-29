@@ -2,8 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -582,34 +580,63 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		CloudUserId:            request.Body.CloudUserId,
 		ImageDownloadMode:      utils.MapPointer(request.Body.ImageDownloadMode, toGrpcImageDownloadMode),
 	}
-	client, err := (*apiContainerClient).RunStarlarkPackage(ctx, &runStarlarkPackageArgs)
+
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	stream, err := (*apiContainerClient).RunStarlarkPackage(ctxWithCancel, &runStarlarkPackageArgs)
 	if err != nil {
+		cancelCtxFunc()
 		logrus.Errorf("Can't run Starlark package using gRPC call with enclave %s, error: %s", enclave_identifier, err)
-		return nil, stacktrace.NewError("Can't run Starlark package using gRPC call with enclave %s", enclave_identifier)
-	}
-	clientStream := grpc_file_streaming.NewClientStream[rpc_api.StreamedDataChunk, []byte](client)
-
-	// TODO: Why the gRPC is not sending the previous hash??? and we need to calc it manually
-	hasher := sha1.New()
-	previousBlockHash := ""
-	blockHash := ""
-	pipeReader := clientStream.PipeReader(
-		package_id,
-		func(dataChunk *rpc_api.StreamedDataChunk) ([]byte, string, error) {
-			blockHash = previousBlockHash
-			hasher.Reset()
-			hasher.Write(dataChunk.Data)
-			previousBlockHash = hex.EncodeToString(hasher.Sum(nil))
-			return dataChunk.Data, blockHash, nil
-		},
-	)
-
-	response := api.PostEnclavesEnclaveIdentifierStarlarkScripts200ApplicationoctetStreamResponse{
-		Body:          pipeReader,
-		ContentLength: 0, // No file size is provided since we are streaming it directly
+		return nil, stacktrace.Propagate(err, "Can't run Starlark package using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	return api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200ApplicationoctetStreamResponse(response), nil
+	asyncLogs := NewAsyncStarlarkLogs(cancelCtxFunc)
+	go asyncLogs.RunAsyncStarlarkLogs(stream)
+
+	var response api_type.StarlarkRunResponse
+	response.FromStarlarkRunLogs(utils.MapList(asyncLogs.WaitAndConsumeAll(), toHttpApiStarlarkRunResponseLine))
+
+	return api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200JSONResponse(response), nil
+}
+
+type AsyncStarlarkLogs struct {
+	cancelCtxFunc               context.CancelFunc
+	starlarkRunResponseLineChan chan *rpc_api.StarlarkRunResponseLine
+}
+
+func NewAsyncStarlarkLogs(cancelCtxFunc context.CancelFunc) AsyncStarlarkLogs {
+	starlarkResponseLineChan := make(chan *rpc_api.StarlarkRunResponseLine)
+	return AsyncStarlarkLogs{
+		cancelCtxFunc:               cancelCtxFunc,
+		starlarkRunResponseLineChan: starlarkResponseLineChan,
+	}
+}
+
+func (async AsyncStarlarkLogs) RunAsyncStarlarkLogs(stream grpc.ClientStream) {
+	defer func() {
+		close(async.starlarkRunResponseLineChan)
+		async.cancelCtxFunc()
+	}()
+	for {
+		responseLine := new(rpc_api.StarlarkRunResponseLine)
+		err := stream.RecvMsg(responseLine)
+		if err == io.EOF {
+			logrus.Debugf("Successfully reached the end of the response stream. Closing.")
+			return
+		}
+		if err != nil {
+			logrus.Errorf("Unexpected error happened reading the stream. Client might have cancelled the stream\n%v", err.Error())
+			return
+		}
+		async.starlarkRunResponseLineChan <- responseLine
+	}
+}
+
+func (async AsyncStarlarkLogs) WaitAndConsumeAll() []rpc_api.StarlarkRunResponseLine {
+	var logs []rpc_api.StarlarkRunResponseLine
+	for elem := range async.starlarkRunResponseLineChan {
+		logs = append(logs, *elem)
+	}
+	return logs
 }
 
 // (POST /enclaves/{enclave_identifier}/starlark/scripts)
@@ -641,24 +668,22 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		CloudUserId:          request.Body.CloudUserId,
 		ImageDownloadMode:    utils.MapPointer(request.Body.ImageDownloadMode, toGrpcImageDownloadMode),
 	}
-	client, err := (*apiContainerClient).RunStarlarkScript(ctx, &runStarlarkScriptArgs)
+
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	stream, err := (*apiContainerClient).RunStarlarkScript(ctxWithCancel, &runStarlarkScriptArgs)
 	if err != nil {
-		logrus.Errorf("Can't run Starlark script using gRPC call with enclave %s, error: %s", enclave_identifier, err)
-		return nil, stacktrace.NewError("Can't run Starlark script using gRPC call with enclave %s", enclave_identifier)
-	}
-	clientStream := grpc_file_streaming.NewClientStream[rpc_api.StreamedDataChunk, []byte](client)
-	pipeReader := clientStream.PipeReader(
-		"__RunStarlarkScript__",
-		func(dataChunk *rpc_api.StreamedDataChunk) ([]byte, string, error) {
-			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
-		},
-	)
-	response := api.PostEnclavesEnclaveIdentifierStarlarkScripts200ApplicationoctetStreamResponse{
-		Body:          pipeReader,
-		ContentLength: 0, // No file size is provided since we are streaming it directly
+		cancelCtxFunc()
+		logrus.Errorf("Can't run Starlark package using gRPC call with enclave %s, error: %s", enclave_identifier, err)
+		return nil, stacktrace.Propagate(err, "Can't run Starlark script package using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	return api.PostEnclavesEnclaveIdentifierStarlarkScripts200ApplicationoctetStreamResponse(response), nil
+	asyncLogs := NewAsyncStarlarkLogs(cancelCtxFunc)
+	go asyncLogs.RunAsyncStarlarkLogs(stream)
+
+	var response api_type.StarlarkRunResponse
+	response.FromStarlarkRunLogs(utils.MapList(asyncLogs.WaitAndConsumeAll(), toHttpApiStarlarkRunResponseLine))
+
+	return api.PostEnclavesEnclaveIdentifierStarlarkScripts200JSONResponse(response), nil
 }
 
 // ===============================================================================================================
@@ -853,5 +878,111 @@ func toGrpcImageDownloadMode(flag api_type.ImageDownloadMode) rpc_api.ImageDownl
 		return rpc_api.ImageDownloadMode_missing
 	default:
 		panic(fmt.Sprintf("Missing conversion of Image Download Mode Enum value: %s", flag))
+	}
+}
+
+func toHttpApiStarlarkRunResponseLine(line rpc_api.StarlarkRunResponseLine) api_type.StarlarkRunResponseLine {
+	if runError := line.GetError(); runError != nil {
+		var http_type api_type.StarlarkRunResponseLine
+		http_type.FromStarlarkError(toHttpStarlarkError(*runError))
+		return http_type
+	}
+
+	if runInfo := line.GetInfo(); runInfo != nil {
+		var http_type api_type.StarlarkRunResponseLine
+		http_type.FromStarlarkInfo(toHttpStarlarkInfo(*runInfo))
+		return http_type
+	}
+
+	if runInstruction := line.GetInstruction(); runInstruction != nil {
+		var http_type api_type.StarlarkRunResponseLine
+		http_type.FromStarlarkInstruction(toHttpStarlarkInstruction(*runInstruction))
+		return http_type
+	}
+
+	if runInstructionResult := line.GetInstructionResult(); runInstructionResult != nil {
+		var http_type api_type.StarlarkRunResponseLine
+		http_type.FromStarlarkInstructionResult(toHttpStarlarkInstructionResult(*runInstructionResult))
+		return http_type
+	}
+
+	if runProgressInfo := line.GetProgressInfo(); runProgressInfo != nil {
+		var http_type api_type.StarlarkRunResponseLine
+		http_type.FromStarlarkRunProgress(toHttpStarlarkProgressInfo(*runProgressInfo))
+		return http_type
+	}
+
+	if runWarning := line.GetWarning(); runWarning != nil {
+		var http_type api_type.StarlarkRunResponseLine
+		http_type.FromStarlarkWarning(toHttpStarlarkWarning(*runWarning))
+		return http_type
+	}
+
+	if runFinishedEvent := line.GetRunFinishedEvent(); runFinishedEvent != nil {
+		var http_type api_type.StarlarkRunResponseLine
+		http_type.FromStarlarkRunFinishedEvent(toHttpStarlarkRunFinishedEvent(*runFinishedEvent))
+		return http_type
+	}
+
+	return api_type.StarlarkRunResponseLine{}
+}
+
+func toHttpStarlarkError(rpc_value rpc_api.StarlarkError) api_type.StarlarkError {
+	return api_type.StarlarkError{
+		// Error: rpc_value.Error,
+	}
+
+}
+func toHttpStarlarkInfo(rpc_value rpc_api.StarlarkInfo) api_type.StarlarkInfo {
+	var info api_type.StarlarkInfo
+	info.Info.Instruction.InfoMessage = ""
+	return info
+}
+
+func toHttpStarlarkInstruction(rpc_value rpc_api.StarlarkInstruction) api_type.StarlarkInstruction {
+	return api_type.StarlarkInstruction{
+		Arguments: utils.MapList(
+			utils.FilterListNils(rpc_value.Arguments),
+			toHttpStarlarkInstructionArgument,
+		),
+	}
+}
+
+func toHttpStarlarkInstructionResult(rpc_value rpc_api.StarlarkInstructionResult) api_type.StarlarkInstructionResult {
+	var instructionResult api_type.StarlarkInstructionResult
+	instructionResult.InstructionResult.SerializedInstructionResult = rpc_value.SerializedInstructionResult
+	return instructionResult
+}
+
+func toHttpStarlarkProgressInfo(rpc_value rpc_api.StarlarkRunProgress) api_type.StarlarkRunProgress {
+	var progress api_type.StarlarkRunProgress
+	progress.ProgressInfo.CurrentStepInfo = rpc_value.CurrentStepInfo
+	progress.ProgressInfo.CurrentStepNumber = int32(rpc_value.CurrentStepNumber)
+	progress.ProgressInfo.TotalSteps = int32(rpc_value.TotalSteps)
+	return progress
+}
+
+func toHttpStarlarkWarning(rpc_value rpc_api.StarlarkWarning) api_type.StarlarkWarning {
+	var warning api_type.StarlarkWarning
+	warning.Warning.WarningMessage = rpc_value.WarningMessage
+	return warning
+}
+
+func toHttpStarlarkRunResponseLine(rpc_value rpc_api.StarlarkRunResponseLine) api_type.StarlarkRunResponseLine {
+	return api_type.StarlarkRunResponseLine{}
+
+}
+func toHttpStarlarkRunFinishedEvent(rpc_value rpc_api.StarlarkRunFinishedEvent) api_type.StarlarkRunFinishedEvent {
+	var event api_type.StarlarkRunFinishedEvent
+	event.RunFinishedEvent.IsRunSuccessful = rpc_value.IsRunSuccessful
+	event.RunFinishedEvent.SerializedOutput = rpc_value.SerializedOutput
+	return event
+}
+
+func toHttpStarlarkInstructionArgument(rpc_value rpc_api.StarlarkInstructionArg) api_type.StarlarkInstructionArgument {
+	return api_type.StarlarkInstructionArgument{
+		ArgName:            rpc_value.ArgName,
+		IsRepresentative:   rpc_value.IsRepresentative,
+		SerializedArgValue: rpc_value.SerializedArgValue,
 	}
 }

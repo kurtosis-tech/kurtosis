@@ -40,3 +40,33 @@ paths:
             application/json:
               schema:
                 $ref: "./api_types.yaml#/components/schemas/ServiceLogs"
+
+  /enclaves/{enclave_identifier}/starlark/executions/{starlark_execution_uuid}/logs:
+    get:
+      description: Executes a Starlark script on the user's behalf
+      parameters:
+        - $ref: './api_types.yaml#/components/parameters/enclave_identifier'
+        - $ref: './api_types.yaml#/components/parameters/starlark_execution_uuid'
+      responses:
+        default:
+          $ref: '#/components/responses/NotOk'
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "./api_types.yaml#/components/schemas/StarlarkRunResponseLine"
+
+components:
+
+  responses:
+
+    NotOk:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: './api_types.yaml#/components/schemas/ResponseInfo'
+            required: true
