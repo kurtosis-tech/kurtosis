@@ -1,4 +1,4 @@
-import { Flex, TabPanel, TabPanels, Tabs, Text } from "@chakra-ui/react";
+import { Flex, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { FunctionComponent, useState } from "react";
@@ -8,7 +8,8 @@ import { DeleteEnclavesButton } from "../../../components/enclaves/widgets/Delet
 import { FeatureNotImplementedModal } from "../../../components/FeatureNotImplementedModal";
 import { HoverLineTabList } from "../../../components/HoverLineTabList";
 import { KurtosisAlert } from "../../../components/KurtosisAlert";
-import { useFullEnclave } from "../../EmuiAppContext";
+import { PageTitle } from "../../../components/PageTitle";
+import { useFullEnclave } from "../EnclavesContext";
 import { EnclaveFullInfo } from "../types";
 import { EnclaveOverview } from "./overview/EnclaveOverview";
 
@@ -55,9 +56,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
       <AppPageLayout>
         <Flex justifyContent={"space-between"} alignItems={"flex-end"} width={"100%"}>
           <Flex alignItems={"center"} gap={"8px"}>
-            <Text as={"span"} fontSize={"lg"} fontWeight={"md"} mb={"4px"}>
-              {enclave.name}
-            </Text>
+            <PageTitle>{enclave.name}</PageTitle>
             <HoverLineTabList tabs={tabs.map(({ path }) => path)} activeTab={activeTab} />
           </Flex>
           <Flex gap={"8px"} alignItems={"center"} pb={"16px"}>

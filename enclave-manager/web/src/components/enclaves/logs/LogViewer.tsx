@@ -185,6 +185,7 @@ export const LogViewer = ({
             isDisabled={logLines.length === 0}
             isIconButton
             aria-label={"Copy logs"}
+            color={"gray.100"}
           />
           <DownloadButton
             valueToDownload={getLogsValue}
@@ -193,6 +194,7 @@ export const LogViewer = ({
             isDisabled={logLines.length === 0}
             isIconButton
             aria-label={"Download logs"}
+            color={"gray.100"}
           />
         </ButtonGroup>
       </Flex>

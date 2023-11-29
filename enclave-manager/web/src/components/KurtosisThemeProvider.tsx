@@ -36,6 +36,7 @@ const theme = extendTheme({
   },
   colors: {
     kurtosisGreen: {
+      50: "#00371E",
       100: "#005e11",
       200: "#008c19",
       300: "#00bb22",
@@ -126,8 +127,8 @@ const theme = extendTheme({
           };
         },
         solid: defineStyle((props) => ({
-          _hover: { bg: "gray.700" },
-          _active: { bg: "gray.700" },
+          _hover: { bg: "gray.600" },
+          _active: { bg: "gray.600" },
           color: `${props.colorScheme}.400`,
           bg: "gray.700",
         })),

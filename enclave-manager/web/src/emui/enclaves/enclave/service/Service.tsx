@@ -1,10 +1,11 @@
-import { Flex, Spinner, TabPanel, TabPanels, Tabs, Text } from "@chakra-ui/react";
+import { Flex, Spinner, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { FunctionComponent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppPageLayout } from "../../../../components/AppLayout";
 import { HoverLineTabList } from "../../../../components/HoverLineTabList";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
+import { PageTitle } from "../../../../components/PageTitle";
 import { isDefined } from "../../../../utils";
 import { EnclaveFullInfo } from "../../types";
 import { useEnclaveFromParams } from "../EnclaveRouteContext";
@@ -70,9 +71,7 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
     <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
       <AppPageLayout>
         <Flex alignItems={"center"} gap={"8px"}>
-          <Text as={"span"} fontSize={"lg"} fontWeight={"md"} mb={"4px"}>
-            {service.name}
-          </Text>
+          <PageTitle>{service.name}</PageTitle>
           <HoverLineTabList tabs={tabs.map(({ path }) => path)} activeTab={activeTab} />
         </Flex>
         <TabPanels>
