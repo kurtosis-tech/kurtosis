@@ -253,7 +253,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 		}
 		labels[dockerLabelKey] = dockerLabelValue
 	}
-	
+
 	traefikLabels, err := provider.getTraefikLabelsForEnclaveObject(serviceUuidStr, privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting traefik labels for enclave object with UUID '%v'", serviceUuid)
@@ -570,7 +570,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEn
 				return nil, stacktrace.Propagate(err, "An error occurred creating the traefik rule label value with value '%v'", ruleValue)
 			}
 			labels[ruleLabelKey] = ruleLabelValue
-			
+	
 			// Service name
 			serviceKeySuffix := fmt.Sprintf("http.routers.%s.service", servicePortStr)
 			serviceLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(serviceKeySuffix)

@@ -44,7 +44,7 @@ const (
 	logsServiceNameDockerLabelKey      = "service_name"
 
 	// Traefik label keys
-	traefikLabelKeyPrefixStr  = "traefik."
+	traefikLabelKeyPrefixStr = "traefik."
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
