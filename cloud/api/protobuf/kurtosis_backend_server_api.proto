@@ -7,7 +7,9 @@ option go_package = "github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis
 import "google/protobuf/empty.proto";
 
 service KurtosisCloudBackendServer {
-  rpc IsAvailable (google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc IsAvailable (google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  };
   rpc CreateCloudInstance(CreateCloudInstanceConfigArgs) returns (CreateCloudInstanceConfigResponse) {};
   rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
