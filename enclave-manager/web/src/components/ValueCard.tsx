@@ -19,8 +19,12 @@ export const ValueCard = ({ title, value, copyEnabled, copyValue }: ValueCardPro
         </Text>
         {copyEnabled && (
           <CopyButton
+            isIconButton
+            aria-label={"Copy this value"}
             valueToCopy={isDefined(copyValue) ? copyValue : typeof value === "string" ? value : null}
             contentName={title}
+            color={"gray.400"}
+            colorScheme={"gray"}
           />
         )}
       </CardHeader>
