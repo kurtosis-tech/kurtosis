@@ -87,7 +87,8 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 		isAvailable: connect.NewClient[emptypb.Empty, emptypb.Empty](
 			httpClient,
 			baseURL+KurtosisCloudBackendServerIsAvailableProcedure,
-			opts...,
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 		createCloudInstance: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse](
 			httpClient,
@@ -205,7 +206,8 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 	kurtosisCloudBackendServerIsAvailableHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerIsAvailableProcedure,
 		svc.IsAvailable,
-		opts...,
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	kurtosisCloudBackendServerCreateCloudInstanceHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerCreateCloudInstanceProcedure,
