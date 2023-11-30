@@ -6,14 +6,14 @@ import { useKurtosisPackageIndexerClient } from "../../client/packageIndexer/Kur
 import { isDefined } from "../../utils";
 import { loadSavedPackageNames, storeSavedPackages } from "./storage";
 
-export type CatalogsState = {
+export type CatalogState = {
   catalog: Result<GetPackagesResponse, string>;
   savedPackages: KurtosisPackage[];
   refreshCatalog: () => Promise<Result<GetPackagesResponse, string>>;
   togglePackageSaved: (kurtosisPackage: KurtosisPackage) => void;
 };
 
-const CatalogContext = createContext<CatalogsState>(null as any);
+const CatalogContext = createContext<CatalogState>(null as any);
 
 export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
   const packageIndexerClient = useKurtosisPackageIndexerClient();

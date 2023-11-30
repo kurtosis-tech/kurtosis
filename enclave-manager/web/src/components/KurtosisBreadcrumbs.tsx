@@ -16,6 +16,7 @@ import {
 import { ReactElement, useMemo } from "react";
 import { BsCaretDownFill } from "react-icons/bs";
 import { Link, Params, UIMatch, useMatches } from "react-router-dom";
+import { CatalogState, useCatalogContext } from "../emui/catalog/CatalogContext";
 import { EnclavesState, useEnclavesContext } from "../emui/enclaves/EnclavesContext";
 import { isDefined } from "../utils";
 import { RemoveFunctions } from "../utils/types";
@@ -33,7 +34,7 @@ export type KurtosisEnclavesBreadcrumbsHandle = KurtosisBaseBreadcrumbsHandle & 
 
 export type KurtosisCatalogBreadcrumbsHandle = {
   type: "catalogHandle";
-  crumb?: () => KurtosisBreadcrumb | KurtosisBreadcrumb[];
+  crumb?: (state: RemoveFunctions<CatalogState>, params: Params<string>) => KurtosisBreadcrumb | KurtosisBreadcrumb[];
 };
 
 export type KurtosisBreadcrumbsHandle = KurtosisEnclavesBreadcrumbsHandle | KurtosisCatalogBreadcrumbsHandle;
@@ -151,16 +152,18 @@ type KurtosisCatalogBreadcrumbsProps = {
 };
 
 const KurtosisCatalogBreadcrumbs = ({ matches }: KurtosisCatalogBreadcrumbsProps) => {
+  const { catalog, savedPackages } = useCatalogContext();
+
   const matchCrumbs = useMemo(
     () =>
       matches.flatMap((match) => {
         if (isDefined(match.handle?.crumb)) {
-          const r = match.handle.crumb();
+          const r = match.handle.crumb({ catalog, savedPackages }, match.params);
           return Array.isArray(r) ? r : [r];
         }
         return [];
       }),
-    [matches],
+    [matches, catalog, savedPackages],
   );
 
   return <KurtosisBreadcrumbsImpl matchCrumbs={matchCrumbs} />;
@@ -173,32 +176,36 @@ type KurtosisBreadcrumbsImplProps = {
 
 const KurtosisBreadcrumbsImpl = ({ matchCrumbs, extraControls }: KurtosisBreadcrumbsImplProps) => {
   return (
-    <Flex h={BREADCRUMBS_HEIGHT}>
-      <Flex w={MAIN_APP_MAX_WIDTH_WITHOUT_PADDING} alignItems={"center"} justifyContent={"space-between"}>
-        <Flex>
-          <Breadcrumb
-            variant={"topNavigation"}
-            separator={
-              <Text as={"span"} fontSize={"lg"}>
-                /
-              </Text>
-            }
-          >
-            <BreadcrumbItem>
-              <Text fontSize={"xs"} fontWeight={"semibold"} p={"0px 8px"}>
-                Kurtosis
-              </Text>
+    <Flex
+      flex={"none"}
+      h={BREADCRUMBS_HEIGHT}
+      w={MAIN_APP_MAX_WIDTH_WITHOUT_PADDING}
+      alignItems={"center"}
+      justifyContent={"space-between"}
+    >
+      <Flex>
+        <Breadcrumb
+          variant={"topNavigation"}
+          separator={
+            <Text as={"span"} fontSize={"lg"}>
+              /
+            </Text>
+          }
+        >
+          <BreadcrumbItem>
+            <Text fontSize={"xs"} fontWeight={"semibold"} p={"0px 8px"}>
+              Kurtosis
+            </Text>
+          </BreadcrumbItem>
+          {matchCrumbs.map((crumb, i, arr) => (
+            <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
+              <KurtosisBreadcrumbItem {...crumb} key={i} isLastItem={i === arr.length - 1} />
             </BreadcrumbItem>
-            {matchCrumbs.map((crumb, i, arr) => (
-              <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
-                <KurtosisBreadcrumbItem {...crumb} key={i} isLastItem={i === arr.length - 1} />
-              </BreadcrumbItem>
-            ))}
-          </Breadcrumb>
-          &nbsp;
-        </Flex>
-        <Flex>{extraControls}</Flex>
+          ))}
+        </Breadcrumb>
+        &nbsp;
       </Flex>
+      <Flex>{extraControls}</Flex>
     </Flex>
   );
 };

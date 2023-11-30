@@ -19,7 +19,10 @@ export const RunKurtosisPackageButton = ({ kurtosisPackage, ...buttonProps }: Ru
         variant={"solidOutline"}
         colorScheme={"kurtosisGreen"}
         leftIcon={<FiPlay />}
-        onClick={() => setIsConfiguringEnclave(true)}
+        onClick={(e) => {
+          e.preventDefault();
+          setIsConfiguringEnclave(true);
+        }}
         isActive={isConfiguringEnclave}
         isLoading={isConfiguringEnclave}
         loadingText={"Configuring"}

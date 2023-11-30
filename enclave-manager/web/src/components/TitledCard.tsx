@@ -4,13 +4,21 @@ import { PropsWithChildren, ReactElement } from "react";
 type TitledCardProps = CardProps &
   PropsWithChildren<{
     title: string;
+    fillContainer?: boolean;
     controls?: ReactElement;
     rightControls?: ReactElement;
   }>;
 
-export const TitledCard = ({ title, controls, rightControls, children, ...cardProps }: TitledCardProps) => {
+export const TitledCard = ({
+  title,
+  fillContainer,
+  controls,
+  rightControls,
+  children,
+  ...cardProps
+}: TitledCardProps) => {
   return (
-    <Card variant={"titledCard"} {...cardProps}>
+    <Card variant={"titledCard"} overflow={fillContainer ? "clip" : undefined} {...cardProps}>
       <CardHeader
         display={"flex"}
         justifyContent={"space-between"}
@@ -28,7 +36,7 @@ export const TitledCard = ({ title, controls, rightControls, children, ...cardPr
         </Flex>
         <Flex>{rightControls}</Flex>
       </CardHeader>
-      <CardBody overflow={"auto"}>{children}</CardBody>
+      <CardBody overflow={fillContainer ? "auto" : undefined}>{children}</CardBody>
     </Card>
   );
 };

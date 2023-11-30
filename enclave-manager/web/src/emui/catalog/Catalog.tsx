@@ -115,7 +115,6 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
         )}
         {!isSearching && (
           <>
-            {" "}
             {savedPackages.length > 0 && (
               <Box as={"section"} pb="32px" borderColor={"whiteAlpha.300"} borderBottomWidth={"1px"}>
                 <Card>

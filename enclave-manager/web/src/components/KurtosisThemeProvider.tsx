@@ -220,13 +220,11 @@ const theme = extendTheme({
         },
         titledCard: {
           container: {
-            height: "100%",
             bgColor: "none",
             borderColor: "gray.500",
             borderStyle: "solid",
             borderWidth: "1px",
             borderRadius: "6px",
-            overflow: "clip",
           },
           header: {
             bg: "gray.850",
