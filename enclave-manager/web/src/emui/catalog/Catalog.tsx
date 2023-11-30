@@ -14,7 +14,7 @@ import {
   InputRightElement,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { MdBookmarkAdded } from "react-icons/md";
 import { GetPackagesResponse, KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
@@ -23,6 +23,8 @@ import { KurtosisPackageCardGrid } from "../../components/catalog/KurtosisPackag
 import { OmniboxCommand } from "../../components/KeyboardCommands";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { PageTitle } from "../../components/PageTitle";
+import { useKeyboardAction } from "../../components/useKeyboardAction";
+import { isDefined } from "../../utils";
 import { useCatalogContext } from "./CatalogContext";
 
 export const Catalog = () => {
@@ -49,31 +51,27 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const isSearching = searchTerm.length > 0;
   const filteredCatalog = useMemo(
-    () => catalog.packages.filter((kurtosisPackage) => kurtosisPackage.name.toLowerCase().indexOf(searchTerm) > 0),
+    () => catalog.packages.filter((kurtosisPackage) => kurtosisPackage.name.toLowerCase().indexOf(searchTerm) > -1),
     [searchTerm, catalog],
   );
 
-  useEffect(() => {
-    const listener = function (e: KeyboardEvent) {
-      const element = searchRef?.current;
-      if ((e.ctrlKey && e.keyCode === 75) || (e.metaKey && e.keyCode === 75)) {
-        if (element !== document.activeElement) {
-          e.preventDefault();
-          element?.focus();
-        }
-      }
-
-      // Clear the search on escape
-      if (e.key === "Escape" || e.keyCode === 27) {
-        if (element === document.activeElement) {
-          e.preventDefault();
-          setSearchTerm("");
-        }
-      }
-    };
-    window.addEventListener("keydown", listener);
-    return () => window.removeEventListener("keydown", listener);
-  }, [searchRef]);
+  useKeyboardAction(
+    useMemo(
+      () => ({
+        omniFind: () => {
+          if (isDefined(searchRef.current) && searchRef.current !== document.activeElement) {
+            searchRef.current.focus();
+          }
+        },
+        escape: () => {
+          if (isDefined(searchRef.current) && searchRef.current === document.activeElement) {
+            setSearchTerm("");
+          }
+        },
+      }),
+      [searchRef],
+    ),
+  );
 
   return (
     <AppPageLayout>
