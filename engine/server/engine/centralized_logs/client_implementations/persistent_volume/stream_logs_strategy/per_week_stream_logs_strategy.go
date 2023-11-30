@@ -296,8 +296,7 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	// First decode the line
 	var jsonLog JsonLog
 	if err := json.Unmarshal([]byte(jsonLogLineStr), &jsonLog); err != nil {
-		logrus.Warnf("An error occurred parsing the json log string: %v. Skipping sending this log line.", jsonLogLineStr)
-		return nil
+		return stacktrace.Propagate(err, "An error occurred parsing the json log string: %v.", jsonLogLineStr)
 	}
 
 	// Then extract the actual log message using the vectors log field
@@ -372,12 +371,25 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 	}
 
 	for logLine := range logTail.Lines {
+		if logLine.Err != nil {
+			return stacktrace.Propagate(logLine.Err, "hpcloud/tail encountered an error with the following log line: %v", logLine.Text)
+		}
+		if !isValidJsonString(logLine.Text) {
+			// if tail package fails to parse a valid new line, fail fast
+			return stacktrace.NewError("hpcloud/tail returned the following incomplete line: '%v' that was not valid json.\nThis is a bug in tailing package!", logLine.Text)
+		}
+
 		err = strategy.sendJsonLogLine(logLine.Text, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
 		}
 	}
 	return nil
+}
+
+func isValidJsonString(line string) bool {
+	var jsonLog JsonLog
+	return json.Unmarshal([]byte(line), &jsonLog) == nil
 }
 
 // Converts a string in UTC format to a time.Time, returns error if no time is found or time is incorrectly formatted
