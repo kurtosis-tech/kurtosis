@@ -184,6 +184,11 @@ const KurtosisBreadcrumbsImpl = ({ matchCrumbs, extraControls }: KurtosisBreadcr
               </Text>
             }
           >
+            <BreadcrumbItem>
+              <Text fontSize={"xs"} fontWeight={"semibold"} p={"0px 8px"}>
+                Kurtosis
+              </Text>
+            </BreadcrumbItem>
             {matchCrumbs.map((crumb, i, arr) => (
               <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
                 <KurtosisBreadcrumbItem {...crumb} key={i} isLastItem={i === arr.length - 1} />
@@ -205,7 +210,7 @@ type KurtosisBreadcrumbItemProps = KurtosisBreadcrumb & {
 const KurtosisBreadcrumbItem = ({ name, destination, alternatives, isLastItem }: KurtosisBreadcrumbItemProps) => {
   if (isLastItem) {
     return (
-      <Text fontSize={"xs"} fontWeight={"semibold"} color={"gray.400"} p={"0px 8px"}>
+      <Text fontSize={"xs"} fontWeight={"semibold"} p={"2px 8px"} borderRadius={"6px"} bg={"gray.650"}>
         {name}
       </Text>
     );
