@@ -1,5 +1,5 @@
 import { Flex, Icon, Image, Text } from "@chakra-ui/react";
-import { IoStarSharp } from "react-icons/io5";
+import { IoStar } from "react-icons/io5";
 import { useKurtosisClient } from "../../client/enclaveManager/KurtosisClientContext";
 import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { isDefined } from "../../utils";
@@ -48,7 +48,7 @@ export const KurtosisPackageCard = ({ kurtosisPackage }: KurtosisPackageCardProp
             <Flex gap={"4px"} alignItems={"center"}>
               {kurtosisPackage.stars > 0 && (
                 <>
-                  <Icon color="gray.500" as={IoStarSharp} />
+                  <Icon color="gray.500" as={IoStar} />
                   <Text as={"span"}>{kurtosisPackage.stars.toString()}</Text>
                 </>
               )}
