@@ -9,6 +9,8 @@ import (
 	"sync"
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
@@ -29,6 +31,7 @@ type enclaveRuntime struct {
 	connectOnHostMachine     bool
 	ctx                      context.Context
 	lock                     sync.Mutex
+	asyncStarlarkLogs        streaming.StreamerPool[rpc_api.StarlarkRunResponseLine]
 }
 
 func (runtime enclaveRuntime) refreshEnclaveConnections() error {
@@ -69,13 +72,14 @@ func (runtime enclaveRuntime) refreshEnclaveConnections() error {
 	return nil
 }
 
-func NewEnclaveRuntime(ctx context.Context, manager enclave_manager.EnclaveManager, connectOnHostMachine bool) (*enclaveRuntime, error) {
+func NewEnclaveRuntime(ctx context.Context, manager enclave_manager.EnclaveManager, asyncStarlarkLogs streaming.StreamerPool[rpc_api.StarlarkRunResponseLine], connectOnHostMachine bool) (*enclaveRuntime, error) {
 
 	runtime := enclaveRuntime{
 		enclaveManager:           manager,
 		remoteApiContainerClient: map[string]rpc_api.ApiContainerServiceClient{},
 		connectOnHostMachine:     connectOnHostMachine,
 		ctx:                      ctx,
+		asyncStarlarkLogs:        asyncStarlarkLogs,
 	}
 
 	err := runtime.refreshEnclaveConnections()
@@ -590,58 +594,24 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		return nil, stacktrace.Propagate(err, "Can't run Starlark package using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	asyncLogs := NewAsyncStarlarkLogs(cancelCtxFunc)
-	go asyncLogs.RunAsyncStarlarkLogs(stream)
+	asyncLogs := streaming.NewAsyncStarlarkLogs(cancelCtxFunc)
+	go asyncLogs.AttachStream(stream)
 
-	logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), toHttpApiStarlarkRunResponseLine)
+	isAsyncRetrieval := utils.DerefWith(request.Params.RetrieveLogsAsync, true)
 	var sync_logs api_type.StarlarkRunResponse_StarlarkExecutionLogs
-	sync_logs.FromStarlarkRunLogs(logs)
+
+	if !isAsyncRetrieval {
+		logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), to_http.ToHttpApiStarlarkRunResponseLine)
+		sync_logs.FromStarlarkRunLogs(logs)
+	} else {
+		async_uuid := manager.asyncStarlarkLogs.Add(asyncLogs)
+		var async_logs api_type.AsyncStarlarkExecutionLogs
+		async_logs.AsyncStarlarkExecutionLogs.StarlarkExecutionUuid = string(async_uuid)
+		sync_logs.FromAsyncStarlarkExecutionLogs(async_logs)
+	}
 
 	response := api_type.StarlarkRunResponse{StarlarkExecutionLogs: &sync_logs}
 	return api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId200JSONResponse(response), nil
-}
-
-type AsyncStarlarkLogs struct {
-	cancelCtxFunc               context.CancelFunc
-	starlarkRunResponseLineChan chan *rpc_api.StarlarkRunResponseLine
-}
-
-func NewAsyncStarlarkLogs(cancelCtxFunc context.CancelFunc) AsyncStarlarkLogs {
-	starlarkResponseLineChan := make(chan *rpc_api.StarlarkRunResponseLine)
-	return AsyncStarlarkLogs{
-		cancelCtxFunc:               cancelCtxFunc,
-		starlarkRunResponseLineChan: starlarkResponseLineChan,
-	}
-}
-
-func (async AsyncStarlarkLogs) RunAsyncStarlarkLogs(stream grpc.ClientStream) {
-	logrus.Debugf("Asynchronously reading the stream of Starlark execution logs")
-	defer func() {
-		logrus.Debugf("Streaming of Starlark execution logs is done, cleaning up resources")
-		close(async.starlarkRunResponseLineChan)
-		async.cancelCtxFunc()
-	}()
-	for {
-		responseLine := new(rpc_api.StarlarkRunResponseLine)
-		err := stream.RecvMsg(responseLine)
-		if err == io.EOF {
-			logrus.Debugf("Successfully reached the end of the response stream. Closing.")
-			return
-		}
-		if err != nil {
-			logrus.Errorf("Unexpected error happened reading the stream. Client might have cancelled the stream\n%v", err.Error())
-			return
-		}
-		async.starlarkRunResponseLineChan <- responseLine
-	}
-}
-
-func (async AsyncStarlarkLogs) WaitAndConsumeAll() []rpc_api.StarlarkRunResponseLine {
-	var logs []rpc_api.StarlarkRunResponseLine
-	for elem := range async.starlarkRunResponseLineChan {
-		logs = append(logs, *elem)
-	}
-	return logs
 }
 
 // (POST /enclaves/{enclave_identifier}/starlark/scripts)
@@ -682,10 +652,10 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		return nil, stacktrace.Propagate(err, "Can't run Starlark script package using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	asyncLogs := NewAsyncStarlarkLogs(cancelCtxFunc)
-	go asyncLogs.RunAsyncStarlarkLogs(stream)
+	asyncLogs := streaming.NewAsyncStarlarkLogs(cancelCtxFunc)
+	go asyncLogs.AttachStream(stream)
 
-	logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), toHttpApiStarlarkRunResponseLine)
+	logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), to_http.ToHttpApiStarlarkRunResponseLine)
 	var sync_logs api_type.StarlarkRunResponse_StarlarkExecutionLogs
 	sync_logs.FromStarlarkRunLogs(logs)
 
@@ -886,111 +856,5 @@ func toGrpcImageDownloadMode(flag api_type.ImageDownloadMode) rpc_api.ImageDownl
 		return rpc_api.ImageDownloadMode_missing
 	default:
 		panic(fmt.Sprintf("Missing conversion of Image Download Mode Enum value: %s", flag))
-	}
-}
-
-func toHttpApiStarlarkRunResponseLine(line rpc_api.StarlarkRunResponseLine) api_type.StarlarkRunResponseLine {
-	if runError := line.GetError(); runError != nil {
-		var http_type api_type.StarlarkRunResponseLine
-		http_type.FromStarlarkError(toHttpStarlarkError(*runError))
-		return http_type
-	}
-
-	if runInfo := line.GetInfo(); runInfo != nil {
-		var http_type api_type.StarlarkRunResponseLine
-		http_type.FromStarlarkInfo(toHttpStarlarkInfo(*runInfo))
-		return http_type
-	}
-
-	if runInstruction := line.GetInstruction(); runInstruction != nil {
-		var http_type api_type.StarlarkRunResponseLine
-		http_type.FromStarlarkInstruction(toHttpStarlarkInstruction(*runInstruction))
-		return http_type
-	}
-
-	if runInstructionResult := line.GetInstructionResult(); runInstructionResult != nil {
-		var http_type api_type.StarlarkRunResponseLine
-		http_type.FromStarlarkInstructionResult(toHttpStarlarkInstructionResult(*runInstructionResult))
-		return http_type
-	}
-
-	if runProgressInfo := line.GetProgressInfo(); runProgressInfo != nil {
-		var http_type api_type.StarlarkRunResponseLine
-		http_type.FromStarlarkRunProgress(toHttpStarlarkProgressInfo(*runProgressInfo))
-		return http_type
-	}
-
-	if runWarning := line.GetWarning(); runWarning != nil {
-		var http_type api_type.StarlarkRunResponseLine
-		http_type.FromStarlarkWarning(toHttpStarlarkWarning(*runWarning))
-		return http_type
-	}
-
-	if runFinishedEvent := line.GetRunFinishedEvent(); runFinishedEvent != nil {
-		var http_type api_type.StarlarkRunResponseLine
-		http_type.FromStarlarkRunFinishedEvent(toHttpStarlarkRunFinishedEvent(*runFinishedEvent))
-		return http_type
-	}
-
-	return api_type.StarlarkRunResponseLine{}
-}
-
-func toHttpStarlarkError(rpc_value rpc_api.StarlarkError) api_type.StarlarkError {
-	return api_type.StarlarkError{
-		// Error: rpc_value.Error,
-	}
-
-}
-func toHttpStarlarkInfo(rpc_value rpc_api.StarlarkInfo) api_type.StarlarkInfo {
-	var info api_type.StarlarkInfo
-	info.Info.Instruction.InfoMessage = ""
-	return info
-}
-
-func toHttpStarlarkInstruction(rpc_value rpc_api.StarlarkInstruction) api_type.StarlarkInstruction {
-	return api_type.StarlarkInstruction{
-		Arguments: utils.MapList(
-			utils.FilterListNils(rpc_value.Arguments),
-			toHttpStarlarkInstructionArgument,
-		),
-	}
-}
-
-func toHttpStarlarkInstructionResult(rpc_value rpc_api.StarlarkInstructionResult) api_type.StarlarkInstructionResult {
-	var instructionResult api_type.StarlarkInstructionResult
-	instructionResult.InstructionResult.SerializedInstructionResult = rpc_value.SerializedInstructionResult
-	return instructionResult
-}
-
-func toHttpStarlarkProgressInfo(rpc_value rpc_api.StarlarkRunProgress) api_type.StarlarkRunProgress {
-	var progress api_type.StarlarkRunProgress
-	progress.ProgressInfo.CurrentStepInfo = rpc_value.CurrentStepInfo
-	progress.ProgressInfo.CurrentStepNumber = int32(rpc_value.CurrentStepNumber)
-	progress.ProgressInfo.TotalSteps = int32(rpc_value.TotalSteps)
-	return progress
-}
-
-func toHttpStarlarkWarning(rpc_value rpc_api.StarlarkWarning) api_type.StarlarkWarning {
-	var warning api_type.StarlarkWarning
-	warning.Warning.WarningMessage = rpc_value.WarningMessage
-	return warning
-}
-
-func toHttpStarlarkRunResponseLine(rpc_value rpc_api.StarlarkRunResponseLine) api_type.StarlarkRunResponseLine {
-	return api_type.StarlarkRunResponseLine{}
-
-}
-func toHttpStarlarkRunFinishedEvent(rpc_value rpc_api.StarlarkRunFinishedEvent) api_type.StarlarkRunFinishedEvent {
-	var event api_type.StarlarkRunFinishedEvent
-	event.RunFinishedEvent.IsRunSuccessful = rpc_value.IsRunSuccessful
-	event.RunFinishedEvent.SerializedOutput = rpc_value.SerializedOutput
-	return event
-}
-
-func toHttpStarlarkInstructionArgument(rpc_value rpc_api.StarlarkInstructionArg) api_type.StarlarkInstructionArgument {
-	return api_type.StarlarkInstructionArgument{
-		ArgName:            rpc_value.ArgName,
-		IsRepresentative:   rpc_value.IsRepresentative,
-		SerializedArgValue: rpc_value.SerializedArgValue,
 	}
 }

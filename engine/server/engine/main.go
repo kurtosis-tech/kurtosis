@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/core_rest_api"
 	engineApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/engine_rest_api"
@@ -40,6 +41,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	restApi "github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
@@ -369,6 +371,9 @@ func restApiServer(
 	logFileManager *log_file_manager.LogFileManager,
 	metricsClient metrics_client.MetricsClient,
 ) {
+
+	asyncStarlarkLogs := streaming.NewStreamerPool[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]()
+
 	logrus.Info("Running REST API server...")
 
 	// This is how you set up a basic Echo router
@@ -416,6 +421,7 @@ func restApiServer(
 		PerFileLogsDatabaseClient:   perFileLogsDatabaseClient,
 		LogFileManager:              logFileManager,
 		MetricsClient:               metricsClient,
+		AsyncStarlarkLogs:           asyncStarlarkLogs,
 	}
 	// TODO(edgar) add logging Close()
 	// defer webSocketRuntime.ShutDown()
@@ -432,7 +438,7 @@ func restApiServer(
 
 	// Use our validation middleware to check all requests against the
 	// e.Use(middleware.OapiRequestValidator(swagger_enclave))
-	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, *enclave_manager, false)
+	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, *enclave_manager, asyncStarlarkLogs, true)
 	if err != nil {
 		// TODO(edgar) fix error handling
 	}

@@ -12,6 +12,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
@@ -20,6 +22,7 @@ import (
 	"golang.org/x/exp/slices"
 	"golang.org/x/net/websocket"
 
+	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 )
 
@@ -46,7 +49,8 @@ type WebSocketRuntime struct {
 
 	LogFileManager *log_file_manager.LogFileManager
 
-	MetricsClient metrics_client.MetricsClient
+	MetricsClient     metrics_client.MetricsClient
+	AsyncStarlarkLogs streaming.StreamerPool[rpc_api.StarlarkRunResponseLine]
 }
 
 func sendErrorCode(ctx echo.Context, code int, message string) error {
@@ -110,6 +114,35 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 
 // (GET /enclaves/{enclave_identifier}/starlark/executions/{starlark_execution_uuid}/logs)
 func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, starlarkExecutionUuid api_type.StarlarkExecutionUuid) error {
+	async_log_uuid := string(starlarkExecutionUuid)
+
+	if ctx.IsWebSocket() {
+		logrus.Infof("Starting log stream using Websocket for streamer UUUID: %s", starlarkExecutionUuid)
+		websocket.Handler(func(ws *websocket.Conn) {
+			defer ws.Close()
+			found, _ := engine.AsyncStarlarkLogs.Consume(streaming.StreamerUUID(async_log_uuid), func(logline *rpc_api.StarlarkRunResponseLine) {
+				println(logline.String())
+				err := websocket.JSON.Send(ws, utils.MapPointer(logline, to_http.ToHttpApiStarlarkRunResponseLine))
+				if err != nil {
+					ctx.Logger().Error(err)
+				}
+			})
+			println(found)
+		}).ServeHTTP(ctx.Response(), ctx.Request())
+	} else {
+		logrus.Infof("Starting log stream using plain HTTP for streamer UUUID: %s", starlarkExecutionUuid)
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		ctx.Response().WriteHeader(http.StatusOK)
+		enc := json.NewEncoder(ctx.Response())
+		found, _ := engine.AsyncStarlarkLogs.Consume(streaming.StreamerUUID(async_log_uuid), func(logline *rpc_api.StarlarkRunResponseLine) {
+			if err := enc.Encode(utils.MapPointer(logline, to_http.ToHttpApiStarlarkRunResponseLine)); err != nil {
+				return //TODO handle error on Consume call
+			}
+			ctx.Response().Flush()
+		})
+		println(found)
+	}
+
 	return nil
 }
 
