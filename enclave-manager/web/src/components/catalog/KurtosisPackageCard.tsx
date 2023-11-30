@@ -29,8 +29,14 @@ export const KurtosisPackageCard = ({ kurtosisPackage }: KurtosisPackageCardProp
       justifyContent={"center"}
       alignItems={"center"}
     >
-      <Flex h={"80px"} gap={"16px"}>
-        <Image bg={"black"} src={`${client.getBaseApplicationUrl()}/logo.png`} borderRadius={"6px"} />
+      <Flex h={"80px"} gap={"16px"} width={"100%"}>
+        <Image
+          h={"80px"}
+          w={"80px"}
+          bg={"black"}
+          src={`${client.getBaseApplicationUrl()}/logo.png`}
+          borderRadius={"6px"}
+        />
         <Flex flexDirection={"column"} flex={"1"} justifyContent={"space-between"}>
           <Text noOfLines={2} fontSize={"lg"} textTransform={"capitalize"}>
             {name}
