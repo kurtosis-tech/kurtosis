@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.85.39](https://github.com/kurtosis-tech/kurtosis/compare/0.85.38...0.85.39) (2023-11-30)
+
+
+### Features
+
+* emui package details page ([#1873](https://github.com/kurtosis-tech/kurtosis/issues/1873)) ([e2b75b2](https://github.com/kurtosis-tech/kurtosis/commit/e2b75b25d597ddfc49f0ebec1de5e2f7ca840281))
+* User service ports Traefik Docker labels ([#1871](https://github.com/kurtosis-tech/kurtosis/issues/1871)) ([d18f20e](https://github.com/kurtosis-tech/kurtosis/commit/d18f20eee93d94739ea9bf497fc5d6780452d57d))
+
+
+### Bug Fixes
+
+* move log collector creation logic ([#1870](https://github.com/kurtosis-tech/kurtosis/issues/1870)) ([b695e27](https://github.com/kurtosis-tech/kurtosis/commit/b695e27742c653b635183c4db04e739b182eaec6))
+* service name collision error message ([#1863](https://github.com/kurtosis-tech/kurtosis/issues/1863)) ([164b316](https://github.com/kurtosis-tech/kurtosis/commit/164b316d335e128668c9ca8b9f9eb74b22efe9ce))
+* Update custom Nix dev deps to work on also linux  ([#1862](https://github.com/kurtosis-tech/kurtosis/issues/1862)) ([d11cd37](https://github.com/kurtosis-tech/kurtosis/commit/d11cd37d5b733114937dd3d4e874255a03c1399d))
+
 ## [0.85.38](https://github.com/kurtosis-tech/kurtosis/compare/0.85.37...0.85.38) (2023-11-29)
 
 
