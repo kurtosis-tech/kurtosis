@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -45,6 +46,7 @@ type EnclavePool struct {
 // 3- Will start a subroutine in charge of filling the pool
 func CreateEnclavePool(
 	kurtosisBackend backend_interface.KurtosisBackend,
+
 	enclaveCreator *EnclaveCreator,
 	poolSize uint8,
 	engineVersion string,
@@ -289,6 +291,7 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_en
 		pool.isCI,
 		pool.cloudUserID,
 		pool.cloudInstanceID,
+		args.KurtosisBackendType_Kubernetes, // enclave pool only available for k8s
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
