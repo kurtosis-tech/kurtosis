@@ -106,6 +106,16 @@ const theme = extendTheme({
           color: `${props.colorScheme}.400`,
           borderColor: "gray.300",
         }),
+        solidOutline: (props: StyleFunctionProps) => {
+          const outline = theme.components.Button.variants!.outline(props);
+          return {
+            ...outline,
+            _hover: { bg: `${props.colorScheme}.400`, color: "gray.900" },
+            _active: { bg: `${props.colorScheme}.400`, color: "gray.900" },
+            color: `${props.colorScheme}.400`,
+            borderColor: `${props.colorScheme}.400`,
+          };
+        },
         kurtosisGroupOutline: (props: StyleFunctionProps) => {
           const outline = theme.components.Button.variants!.outline(props);
           return {
