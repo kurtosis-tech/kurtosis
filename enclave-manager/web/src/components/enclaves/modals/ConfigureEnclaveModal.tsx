@@ -25,6 +25,7 @@ import { assertDefined, isDefined, stringifyError } from "../../../utils";
 import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../../constants";
 import { CopyButton } from "../../CopyButton";
 import { KurtosisAlert } from "../../KurtosisAlert";
+import { PackageSourceButton } from "../../PackageSourceButton";
 import {
   EnclaveConfigurationForm,
   EnclaveConfigurationFormImperativeAttributes,
@@ -35,7 +36,6 @@ import { KurtosisArgumentFormControl } from "../configuration/KurtosisArgumentFo
 import { KurtosisPackageArgumentInput } from "../configuration/KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../configuration/types";
 import { allowedEnclaveNamePattern, isEnclaveNameAllowed } from "../utils";
-import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
 
 type ConfigureEnclaveModalProps = {
   isOpen: boolean;
@@ -254,7 +254,7 @@ export const ConfigureEnclaveModal = ({
           <ModalBody flex="0 1 auto" p={"0px"} display={"flex"} flexDirection={"column"}>
             <Flex flex={"0"} fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
               <Text>Configuring</Text>
-              <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
+              <PackageSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
             </Flex>
             {isDefined(error) && (
               <KurtosisAlert flex={"1 0 auto"} message={"Could not execute configuration"} details={error} />
