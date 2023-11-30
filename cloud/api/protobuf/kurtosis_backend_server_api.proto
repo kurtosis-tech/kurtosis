@@ -47,9 +47,8 @@ message CreateCloudInstanceConfigResponse {
 }
 
 message GetCloudInstanceConfigArgs {
-  optional string api_key = 1;
-  optional string instance_id = 2;
-  optional string instance_short_id = 3;
+  string api_key = 1;
+  string instance_id = 2;
 }
 
 message LaunchResult {
