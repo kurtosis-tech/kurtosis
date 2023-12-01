@@ -13,6 +13,8 @@ type CodeEditorProps = {
 
 export type CodeEditorImperativeAttributes = {
   formatCode: () => Promise<void>;
+  setText: (text: string) => void;
+  setLanguage: (language: string) => void;
 };
 
 export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorProps>(
@@ -57,34 +59,52 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
       ref,
       () => ({
         formatCode: async () => {
-          console.log("formatting");
           if (!isDefined(editor)) {
             // do nothing
-            console.log("no editor");
             return;
           }
-          return new Promise((resolve) => {
-            const listenerDisposer = editor.onDidChangeConfiguration((event) => {
-              console.log("listener called", event);
-              if (event.hasChanged(89 /* ID of the readonly option */)) {
-                console.log("running format");
-                const formatAction = editor.getAction("editor.action.formatDocument");
-                assertDefined(formatAction, `Format action is not defined`);
-                formatAction.run().then(() => {
-                  listenerDisposer.dispose();
-                  editor.updateOptions({
-                    readOnly: isReadOnly,
+          if (isReadOnly) {
+            return new Promise((resolve) => {
+              const listenerDisposer = editor.onDidChangeConfiguration((event) => {
+                if (event.hasChanged(89 /* ID of the readonly option */)) {
+                  const formatAction = editor.getAction("editor.action.formatDocument");
+                  assertDefined(formatAction, `Format action is not defined`);
+                  formatAction.run().then(() => {
+                    listenerDisposer.dispose();
+                    editor.updateOptions({
+                      readOnly: isReadOnly,
+                    });
+                    resizeEditorBasedOnContent();
+                    resolve();
                   });
-                  resizeEditorBasedOnContent();
-                  resolve();
-                });
-              }
+                }
+              });
+              editor.updateOptions({
+                readOnly: false,
+              });
             });
-            console.log("disablin read only");
-            editor.updateOptions({
-              readOnly: false,
-            });
-          });
+          } else {
+            const formatAction = editor.getAction("editor.action.formatDocument");
+            console.log(editor.getModel()?.getLanguageId());
+            assertDefined(formatAction, `Format action is not defined`);
+            return formatAction.run();
+          }
+        },
+        setText: (text: string) => {
+          if (!isDefined(editor)) {
+            return;
+          }
+          editor.setValue(text);
+        },
+        setLanguage: (language: string) => {
+          if (!isDefined(editor)) {
+            return;
+          }
+          const model = editor.getModel();
+          if (!isDefined(model)) {
+            return;
+          }
+          monacoEditor.setModelLanguage(model, language);
         },
       }),
       [isReadOnly, editor, resizeEditorBasedOnContent],

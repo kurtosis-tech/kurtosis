@@ -28,7 +28,8 @@
     "react-scripts": "5.0.1",
     "react-virtuoso": "^4.6.2",
     "streamsaver": "^2.0.6",
-    "true-myth": "^7.1.0"
+    "true-myth": "^7.1.0",
+    "yaml": "^2.3.4"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",

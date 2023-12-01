@@ -1,5 +1,6 @@
 import { CSSProperties, forwardRef, PropsWithChildren, useImperativeHandle } from "react";
 import { FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
+import YAML from "yaml";
 import {
   ArgumentValueType,
   KurtosisPackage,
@@ -65,7 +66,7 @@ export const EnclaveConfigurationForm = forwardRef<
         case ArgumentValueType.STRING:
           return value;
         case ArgumentValueType.JSON:
-          return JSON.parse(value);
+          return YAML.parse(value);
         default:
           return value;
       }
