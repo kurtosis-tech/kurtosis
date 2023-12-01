@@ -26,14 +26,18 @@ import { MdArrowBackIosNew, MdArrowForwardIos } from "react-icons/md";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { isDefined, isNotEmpty, stringifyError, stripAnsi } from "../../../utils";
 import { CopyButton } from "../../CopyButton";
-import { DownloadButton } from "../../DownloadButton";
+import { DownloadLogsButton } from "../../DownloadLogsButton";
 import { FindCommand } from "../../KeyboardCommands";
 import { LogLine } from "./LogLine";
 import { LogLineMessage } from "./types";
 import { normalizeLogText } from "./utils";
+import {EnclaveFullInfo} from "../../../emui/enclaves/types";
+import {ServiceInfo} from "enclave-manager-sdk/build/api_container_service_pb";
 
 type LogViewerProps = {
   logLines: LogLineMessage[];
+  enclave:EnclaveFullInfo,
+  service?:ServiceInfo,
   progressPercent?: number | "indeterminate" | "failed";
   ProgressWidget?: ReactElement;
   logsFileName?: string;
@@ -65,6 +69,8 @@ type SearchState = SearchInitState | SearchErrorState | SearchSuccessState;
 export const LogViewer = ({
   progressPercent,
   logLines: propsLogLines,
+  enclave,
+  service,
   ProgressWidget,
   logsFileName,
   searchEnabled,
@@ -109,10 +115,10 @@ export const LogViewer = ({
 
   const getLogsValue = () => {
     return logLines
-      .map(({ message }) => message)
-      .filter(isDefined)
-      .map(stripAnsi)
-      .join("\n");
+        .map(({ message }) => message)
+        .filter(isDefined)
+        .map(stripAnsi)
+        .join("\n");
   };
 
   const isIndexSelected = (index: number) => {
@@ -179,22 +185,19 @@ export const LogViewer = ({
         </FormControl>
         <ButtonGroup>
           <CopyButton
-            contentName={"logs"}
-            valueToCopy={getLogsValue}
-            size={"sm"}
-            isDisabled={logLines.length === 0}
-            isIconButton
-            aria-label={"Copy logs"}
-            color={"gray.100"}
+              contentName={"logs"}
+              valueToCopy={getLogsValue}
+              size={"sm"}
+              isDisabled={logLines.length === 0}
+              isIconButton
+              aria-label={"Copy logs"}
+              color={"gray.100"}
           />
-          <DownloadButton
-            valueToDownload={getLogsValue}
-            size={"sm"}
-            fileName={logsFileName || `logs.txt`}
-            isDisabled={logLines.length === 0}
-            isIconButton
-            aria-label={"Download logs"}
-            color={"gray.100"}
+          <DownloadLogsButton
+            logsFileName={logsFileName || "logs.txt"}
+            enclave={enclave}
+            service={service}
+            logsToDownload={logLines}
           />
         </ButtonGroup>
       </Flex>

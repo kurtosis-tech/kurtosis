@@ -127,6 +127,7 @@ export const EnclaveLogs = () => {
     <AppPageLayout>
       <LogViewer
         logLines={logLines}
+        enclave={enclave}
         progressPercent={progressPercent}
         ProgressWidget={
           <Flex justifyContent={"space-between"} alignItems={"center"} width={"100%"}>
