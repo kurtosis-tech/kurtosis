@@ -54,11 +54,37 @@ func ToHttpApiStarlarkRunResponseLine(line rpc_api.StarlarkRunResponseLine) api_
 }
 
 func ToHttpStarlarkError(rpc_value rpc_api.StarlarkError) api_type.StarlarkError {
-	return api_type.StarlarkError{
-		// Error: rpc_value.Error,
+	var http_type api_type.StarlarkError
+	if runError := rpc_value.GetExecutionError(); runError != nil {
+		http_type.Error.FromStarlarkExecutionError(ToHttpStarlarkExecutionError(*runError))
 	}
-
+	if runError := rpc_value.GetInterpretationError(); runError != nil {
+		http_type.Error.FromStarlarkInterpretationError(ToHttpStarlarkInterpretationError(*runError))
+	}
+	if runError := rpc_value.GetValidationError(); runError != nil {
+		http_type.Error.FromStarlarkValidationError(ToHttpStarlarkValidationError(*runError))
+	}
+	return http_type
 }
+
+func ToHttpStarlarkExecutionError(rpc_value rpc_api.StarlarkExecutionError) api_type.StarlarkExecutionError {
+	var http_type api_type.StarlarkExecutionError
+	http_type.ExecutionError.ErrorMessage = rpc_value.ErrorMessage
+	return http_type
+}
+
+func ToHttpStarlarkInterpretationError(rpc_value rpc_api.StarlarkInterpretationError) api_type.StarlarkInterpretationError {
+	var http_type api_type.StarlarkInterpretationError
+	http_type.InterpretationError.ErrorMessage = rpc_value.ErrorMessage
+	return http_type
+}
+
+func ToHttpStarlarkValidationError(rpc_value rpc_api.StarlarkValidationError) api_type.StarlarkValidationError {
+	var http_type api_type.StarlarkValidationError
+	http_type.ValidationError.ErrorMessage = rpc_value.ErrorMessage
+	return http_type
+}
+
 func ToHttpStarlarkInfo(rpc_value rpc_api.StarlarkInfo) api_type.StarlarkInfo {
 	var info api_type.StarlarkInfo
 	info.Info.Instruction.InfoMessage = ""
