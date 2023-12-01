@@ -1,6 +1,6 @@
 import { Box } from "@chakra-ui/react";
-import { Editor, OnChange, OnMount } from "@monaco-editor/react";
-import { editor as monacoEditor } from "monaco-editor";
+import { Editor, Monaco, OnChange, OnMount } from "@monaco-editor/react";
+import { type editor as monacoEditor } from "monaco-editor";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { assertDefined, isDefined } from "../utils";
 
@@ -20,6 +20,7 @@ export type CodeEditorImperativeAttributes = {
 export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorProps>(
   ({ text, fileName, onTextChange, showLineNumbers }, ref) => {
     const isReadOnly = !isDefined(onTextChange);
+    const [monaco, setMonaco] = useState<Monaco>();
     const [editor, setEditor] = useState<monacoEditor.IStandaloneCodeEditor>();
 
     const resizeEditorBasedOnContent = useCallback(() => {
@@ -34,6 +35,7 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
     }, [editor]);
 
     const handleMount: OnMount = (editor, monaco) => {
+      setMonaco(monaco);
       setEditor(editor);
       const colors: monacoEditor.IColors = {};
       if (isReadOnly) {
@@ -97,14 +99,14 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
           editor.setValue(text);
         },
         setLanguage: (language: string) => {
-          if (!isDefined(editor)) {
+          if (!isDefined(editor) || !isDefined(monaco)) {
             return;
           }
           const model = editor.getModel();
           if (!isDefined(model)) {
             return;
           }
-          monacoEditor.setModelLanguage(model, language);
+          monaco.editor.setModelLanguage(model, language);
         },
       }),
       [isReadOnly, editor, resizeEditorBasedOnContent],
