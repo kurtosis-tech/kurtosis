@@ -71,7 +71,7 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context
 			Message: "Failed to create log stream",
 			Type:    api_type.ERROR,
 		}
-		replyWithResponseInfo(ctx, errInfo)
+		writeResponseInfo(ctx, errInfo)
 		return nil
 	}
 
@@ -110,7 +110,7 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 			Message: "Failed to create log stream",
 			Type:    api_type.ERROR,
 		}
-		replyWithResponseInfo(ctx, errInfo)
+		writeResponseInfo(ctx, errInfo)
 		return nil
 	}
 
@@ -131,10 +131,10 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierStarlarkExecutionsSta
 
 	if ctx.IsWebSocket() {
 		logrus.Infof("Starting log stream using Websocket for streamer UUUID: %s", starlarkExecutionUuid)
-		streamWithWebsocket(ctx, engine.AsyncStarlarkLogs, async_log_uuid)
+		streamStarlarkLogsWithWebsocket(ctx, engine.AsyncStarlarkLogs, async_log_uuid)
 	} else {
 		logrus.Infof("Starting log stream using plain HTTP for streamer UUUID: %s", starlarkExecutionUuid)
-		streamWithHTTP(ctx, engine.AsyncStarlarkLogs, async_log_uuid)
+		streamStarlarkLogsWithHTTP(ctx, engine.AsyncStarlarkLogs, async_log_uuid)
 	}
 
 	return nil
@@ -144,14 +144,14 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierStarlarkExecutionsSta
 // ============================================== Helper Functions =============================================================================
 // =============================================================================================================================================
 
-func replyWithResponseInfo(ctx echo.Context, response api_type.ResponseInfo) {
+func writeResponseInfo(ctx echo.Context, response api_type.ResponseInfo) {
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	enc := json.NewEncoder(ctx.Response())
 	ctx.Response().WriteHeader(int(response.Code))
 	enc.Encode(response)
 }
 
-func streamWithWebsocket[T any](ctx echo.Context, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
+func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
 	notFoundErr := api_type.ResponseInfo{
 		Type:    api_type.INFO,
 		Message: fmt.Sprintf("Log streaming '%s' not found. Either it has been consumed or has expired.", streamerUUID),
@@ -159,7 +159,8 @@ func streamWithWebsocket[T any](ctx echo.Context, streamerPool streaming.Streame
 	}
 	inPool := streamerPool.Contains(streamerUUID)
 	if !inPool {
-		replyWithResponseInfo(ctx, notFoundErr)
+		writeResponseInfo(ctx, notFoundErr)
+		return
 	}
 
 	websocket.Handler(func(ws *websocket.Conn) {
@@ -188,7 +189,7 @@ func streamWithWebsocket[T any](ctx echo.Context, streamerPool streaming.Streame
 	}).ServeHTTP(ctx.Response(), ctx.Request())
 }
 
-func streamWithHTTP[T any](ctx echo.Context, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
+func streamStarlarkLogsWithHTTP[T any](ctx echo.Context, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
 	notFoundErr := api_type.ResponseInfo{
 		Type:    api_type.INFO,
 		Message: fmt.Sprintf("Log streaming '%s' not found. Either it has been consumed or has expired.", streamerUUID),
@@ -196,7 +197,8 @@ func streamWithHTTP[T any](ctx echo.Context, streamerPool streaming.StreamerPool
 	}
 	inPool := streamerPool.Contains(streamerUUID)
 	if !inPool {
-		replyWithResponseInfo(ctx, notFoundErr)
+		writeResponseInfo(ctx, notFoundErr)
+		return
 	}
 
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
