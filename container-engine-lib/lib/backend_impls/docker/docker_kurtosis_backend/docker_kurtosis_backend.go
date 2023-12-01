@@ -12,6 +12,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions/implementations/traefik"
 	user_service_functions "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -27,6 +29,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
@@ -466,6 +469,41 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 
 	if err := logs_collector_functions.DestroyLogsCollector(ctx, enclaveUuid, backend.dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
+	}
+
+	return nil
+}
+
+func (backend *DockerKurtosisBackend) CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
+	reverseProxyContainer := traefik.NewTraefikReverseProxyContainer() //Declaring the implementation
+
+	reverseProxy, _, err := reverse_proxy_functions.CreateReverseProxy(
+		ctx,
+		reverseProxyContainer,
+		backend.dockerManager,
+		backend.objAttrsProvider,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator using the logs aggregator container '%+v'.", reverseProxyContainer)
+	}
+	return reverseProxy, nil
+}
+
+func (backend *DockerKurtosisBackend) GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
+	maybeReverseProxy, err := reverse_proxy_functions.GetReverseProxy(
+		ctx,
+		backend.dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator")
+	}
+
+	return maybeReverseProxy, nil
+}
+
+func (backend *DockerKurtosisBackend) DestroyReverseProxy(ctx context.Context) error {
+	if err := reverse_proxy_functions.DestroyReverseProxy(ctx, backend.dockerManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs aggregator")
 	}
 
 	return nil

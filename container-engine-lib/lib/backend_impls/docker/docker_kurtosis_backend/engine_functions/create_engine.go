@@ -3,10 +3,14 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions/implementations/traefik"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -17,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 const (
@@ -108,6 +111,24 @@ func CreateEngine(
 		}
 	}()
 	logrus.Infof("Centralized logs components started.")
+
+	reverseProxyContainer := traefik.NewTraefikReverseProxyContainer()
+	_, removeReverseProxyFunc, err := reverse_proxy_functions.CreateReverseProxy(
+		ctx,
+		reverseProxyContainer,
+		dockerManager,
+		objAttrsProvider)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"An error occurred attempting to create reverse proxy for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
+	}
+	shouldRemoveReverseProxy := true
+	defer func() {
+		if shouldRemoveReverseProxy {
+			removeReverseProxyFunc()
+		}
+	}()
+	logrus.Infof("Reverse proxy started.")
 
 	enclaveManagerUIPortSpec, err := port_spec.NewPortSpec(uint16(enclaveManagerUIPort), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
@@ -248,6 +269,7 @@ func CreateEngine(
 	}
 
 	shouldRemoveLogsAggregator = false
+	shouldRemoveReverseProxy = false
 	shouldKillEngineContainer = false
 	return result, nil
 }
