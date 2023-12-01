@@ -109,7 +109,7 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
           monaco.editor.setModelLanguage(model, language);
         },
       }),
-      [isReadOnly, editor, resizeEditorBasedOnContent],
+      [isReadOnly, editor, monaco, resizeEditorBasedOnContent],
     );
 
     useEffect(() => {
