@@ -124,7 +124,7 @@ export const EnclaveLogs = () => {
       : 0;
 
   return (
-    <AppPageLayout>
+    <AppPageLayout preventPageScroll>
       <LogViewer
         logLines={logLines}
         progressPercent={progressPercent}
