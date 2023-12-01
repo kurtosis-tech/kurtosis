@@ -376,7 +376,7 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 		}
 		if !isValidJsonString(logLine.Text) {
 			// if tail package fails to parse a valid new line, fail fast
-			return stacktrace.NewError("hpcloud/tail returned the following incomplete line: '%v' that was not valid json.\nThis is a bug in tailing package!", logLine.Text)
+			return stacktrace.NewError("hpcloud/tail returned the following incomplete line: '%v' that was not valid json.\nThis is potentially a bug in tailing package.", logLine.Text)
 		}
 
 		err = strategy.sendJsonLogLine(logLine.Text, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
