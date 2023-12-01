@@ -65,7 +65,6 @@ func (async *asyncStarlarkLogs) AttachStream(stream grpc.ClientStream) {
 			logrus.Debugf("Resources have been closed before consuming all the upstream data")
 			return
 		case async.starlarkRunResponseLineChan <- responseLine:
-			println("> next ")
 		}
 	}
 }

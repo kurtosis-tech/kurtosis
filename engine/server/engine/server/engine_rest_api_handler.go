@@ -2,10 +2,10 @@ package server
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
@@ -39,7 +39,7 @@ func (engine EngineRuntime) DeleteEnclaves(ctx context.Context, request api.Dele
 			return nil, stacktrace.Propagate(err, "An error occurred removing all logs.")
 		}
 	}
-	removedApiResponse := utils.MapList(removedEnclaveUuidsAndNames, toHttpApiEnclaveNameAndUuid)
+	removedApiResponse := utils.MapList(removedEnclaveUuidsAndNames, to_http.ToHttpEnclaveNameAndUuid)
 	return api.DeleteEnclaves200JSONResponse(api_type.DeletionSummary{RemovedEnclaveNameAndUuids: &removedApiResponse}), nil
 }
 
@@ -50,7 +50,7 @@ func (engine EngineRuntime) GetEnclaves(ctx context.Context, request api.GetEncl
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
 	}
-	response := utils.MapMapValues(infoForEnclaves, func(enclave *types.EnclaveInfo) api_type.EnclaveInfo { return toHttpApiEnclaveInfo(*enclave) })
+	response := utils.MapMapValues(infoForEnclaves, func(enclave *types.EnclaveInfo) api_type.EnclaveInfo { return to_http.ToHttpEnclaveInfo(*enclave) })
 	return api.GetEnclaves200JSONResponse(response), nil
 }
 
@@ -88,7 +88,7 @@ func (engine EngineRuntime) PostEnclaves(ctx context.Context, request api.PostEn
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", request.Body.EnclaveName)
 	}
 
-	response := toHttpApiEnclaveInfo(*enclaveInfo)
+	response := to_http.ToHttpEnclaveInfo(*enclaveInfo)
 	return api.PostEnclaves200JSONResponse(response), nil
 }
 
@@ -99,7 +99,7 @@ func (engine EngineRuntime) GetEnclavesHistorical(ctx context.Context, request a
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave identifiers")
 	}
-	identifiers_map_api := utils.MapList(allIdentifiers, toHttpApiEnclaveIdentifiers)
+	identifiers_map_api := utils.MapList(allIdentifiers, to_http.ToHttpEnclaveIdentifiers)
 	return api.GetEnclavesHistorical200JSONResponse(identifiers_map_api), nil
 }
 
@@ -130,7 +130,7 @@ func (engine EngineRuntime) GetEnclavesEnclaveIdentifier(ctx context.Context, re
 		notFoundErr := stacktrace.NewError("Enclave '%s' not found.", request.EnclaveIdentifier)
 		return nil, notFoundErr
 	}
-	response := toHttpApiEnclaveInfo(*info)
+	response := to_http.ToHttpEnclaveInfo(*info)
 	return api.GetEnclavesEnclaveIdentifier200JSONResponse(response), nil
 }
 
@@ -148,7 +148,7 @@ func (engine EngineRuntime) GetEnclavesEnclaveIdentifierStatus(ctx context.Conte
 		return nil, err
 	}
 
-	return api.GetEnclavesEnclaveIdentifierStatus200JSONResponse(toHttpEnclaveContainersStatus(info.EnclaveContainersStatus)), nil
+	return api.GetEnclavesEnclaveIdentifierStatus200JSONResponse(to_http.ToHttpEnclaveContainersStatus(info.EnclaveContainersStatus)), nil
 }
 
 // Set enclave status
@@ -171,7 +171,6 @@ func (engine EngineRuntime) PostEnclavesEnclaveIdentifierStatus(ctx context.Cont
 		err := stacktrace.NewError("Unsupported target state: '%s'", string(*targetState))
 		return nil, err
 	}
-
 }
 
 // Get Engine Info
@@ -179,105 +178,4 @@ func (engine EngineRuntime) PostEnclavesEnclaveIdentifierStatus(ctx context.Cont
 func (engine EngineRuntime) GetEngineInfo(ctx context.Context, request api.GetEngineInfoRequestObject) (api.GetEngineInfoResponseObject, error) {
 	result := api_type.EngineInfo{EngineVersion: engine.ImageVersionTag}
 	return api.GetEngineInfo200JSONResponse(result), nil
-}
-
-// =============================================================================================================================================
-// ============================================== Helper Functions =============================================================================
-// =============================================================================================================================================
-
-func toHttpApiEnclaveContainersStatus(status types.EnclaveContainersStatus) api_type.EnclaveContainersStatus {
-	switch status {
-	case types.EnclaveContainersStatus_EMPTY:
-		return api_type.EnclaveContainersStatusEMPTY
-	case types.EnclaveContainersStatus_STOPPED:
-		return api_type.EnclaveContainersStatusSTOPPED
-	case types.EnclaveContainersStatus_RUNNING:
-		return api_type.EnclaveContainersStatusRUNNING
-	default:
-		panic(fmt.Sprintf("Undefined mapping of value: %s", status))
-	}
-}
-
-func toHttpApiContainerStatus(status types.ContainerStatus) api_type.ApiContainerStatus {
-	switch status {
-	case types.ContainerStatus_NONEXISTENT:
-		return api_type.ApiContainerStatusNONEXISTENT
-	case types.ContainerStatus_STOPPED:
-		return api_type.ApiContainerStatusSTOPPED
-	case types.ContainerStatus_RUNNING:
-		return api_type.ApiContainerStatusRUNNING
-	default:
-		panic(fmt.Sprintf("Undefined mapping of value: %s", status))
-	}
-}
-
-func toHttpApiEnclaveAPIContainerInfo(info types.EnclaveAPIContainerInfo) api_type.EnclaveAPIContainerInfo {
-	port := int(info.GrpcPortInsideEnclave)
-	return api_type.EnclaveAPIContainerInfo{
-		ContainerId:           info.ContainerId,
-		IpInsideEnclave:       info.IpInsideEnclave,
-		GrpcPortInsideEnclave: port,
-		BridgeIpAddress:       info.BridgeIpAddress,
-	}
-}
-
-func toHttpApiApiContainerHostMachineInfo(info types.EnclaveAPIContainerHostMachineInfo) api_type.EnclaveAPIContainerHostMachineInfo {
-	port := int(info.GrpcPortOnHostMachine)
-	return api_type.EnclaveAPIContainerHostMachineInfo{
-		IpOnHostMachine:       info.IpOnHostMachine,
-		GrpcPortOnHostMachine: port,
-	}
-}
-
-func toHttpApiEnclaveMode(mode types.EnclaveMode) api_type.EnclaveMode {
-	switch mode {
-	case types.EnclaveMode_PRODUCTION:
-		return api_type.PRODUCTION
-	case types.EnclaveMode_TEST:
-		return api_type.TEST
-	default:
-		panic(fmt.Sprintf("Undefined mapping of value: %s", mode))
-	}
-}
-
-func toHttpApiEnclaveInfo(info types.EnclaveInfo) api_type.EnclaveInfo {
-	return api_type.EnclaveInfo{
-		EnclaveUuid:                 info.EnclaveUuid,
-		ShortenedUuid:               info.ShortenedUuid,
-		Name:                        info.Name,
-		ContainersStatus:            toHttpApiEnclaveContainersStatus(info.EnclaveContainersStatus),
-		ApiContainerStatus:          toHttpApiContainerStatus(info.ApiContainerStatus),
-		ApiContainerInfo:            utils.MapPointer(info.ApiContainerInfo, toHttpApiEnclaveAPIContainerInfo),
-		ApiContainerHostMachineInfo: utils.MapPointer(info.ApiContainerHostMachineInfo, toHttpApiApiContainerHostMachineInfo),
-		CreationTime:                info.CreationTime,
-		Mode:                        toHttpApiEnclaveMode(info.Mode),
-	}
-}
-
-func toHttpApiEnclaveIdentifiers(identifier *types.EnclaveIdentifiers) api_type.EnclaveIdentifiers {
-	return api_type.EnclaveIdentifiers{
-		EnclaveUuid:   identifier.EnclaveUuid,
-		Name:          identifier.Name,
-		ShortenedUuid: identifier.ShortenedUuid,
-	}
-}
-
-func toHttpApiEnclaveNameAndUuid(identifier *types.EnclaveNameAndUuid) api_type.EnclaveNameAndUuid {
-	return api_type.EnclaveNameAndUuid{
-		Uuid: identifier.Uuid,
-		Name: identifier.Name,
-	}
-}
-
-func toHttpEnclaveContainersStatus(status types.EnclaveContainersStatus) api_type.EnclaveContainersStatus {
-	switch status {
-	case types.EnclaveContainersStatus_STOPPED:
-		return api_type.EnclaveContainersStatusSTOPPED
-	case types.EnclaveContainersStatus_RUNNING:
-		return api_type.EnclaveContainersStatusRUNNING
-	case types.EnclaveContainersStatus_EMPTY:
-		return api_type.EnclaveContainersStatusEMPTY
-	default:
-		panic(fmt.Sprintf("Undefined mapping of value: %s", status))
-	}
 }

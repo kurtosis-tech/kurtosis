@@ -19,7 +19,7 @@ type Streamer[T any] interface {
 }
 
 type StreamerPool[T any] struct {
-	pool expirable.LRU[StreamerUUID, *asyncStarlarkLogs]
+	pool *expirable.LRU[StreamerUUID, *asyncStarlarkLogs]
 }
 
 type StreamerUUID string
@@ -42,8 +42,12 @@ func NewStreamerPool[T any](pool_size uint, expires_after time.Duration) Streame
 	)
 
 	return StreamerPool[T]{
-		pool: *pool,
+		pool: pool,
 	}
+}
+
+func (streamerPool StreamerPool[T]) Contains(uuid StreamerUUID) bool {
+	return streamerPool.pool.Contains(uuid)
 }
 
 func (streamerPool StreamerPool[T]) Add(streamer *asyncStarlarkLogs) StreamerUUID {
@@ -59,6 +63,8 @@ func (streamerPool StreamerPool[T]) Consume(uuid StreamerUUID, consumer func(*ku
 		return false, nil
 	}
 
+	// Mark for consumption so it doesn't get evicted (closed) when removed from
+	// from the LRU cache. It'll be closed after the consumption is done (see below)
 	streamer.MarkForConsumption()
 	removed := streamerPool.pool.Remove(uuid)
 

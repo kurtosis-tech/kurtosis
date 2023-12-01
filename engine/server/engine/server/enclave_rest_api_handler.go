@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_grpc"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
@@ -316,7 +317,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServices(ctx context.
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	mapped_services := utils.MapMapValues(services.ServiceInfo, toHttpServiceInfo)
+	mapped_services := utils.MapMapValues(services.ServiceInfo, to_http.ToHttpServiceInfo)
 	return api.GetEnclavesEnclaveIdentifierServices200JSONResponse(mapped_services), nil
 }
 
@@ -356,7 +357,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierServicesConnection(c
 	logrus.Infof("Listing services from enclave %s", enclave_identifier)
 
 	connectServicesArgs := rpc_api.ConnectServicesArgs{
-		Connect: toGrpcConnect(*request.Body),
+		Connect: to_grpc.ToGrpcConnect(*request.Body),
 	}
 	_, err := (*apiContainerClient).ConnectServices(ctx, &connectServicesArgs)
 	if err != nil {
@@ -386,7 +387,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 		return nil, stacktrace.NewError("Can't  list services using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	mapped_services := utils.MapMapValues(services.ServiceInfo, toHttpServiceInfo)
+	mapped_services := utils.MapMapValues(services.ServiceInfo, to_http.ToHttpServiceInfo)
 	selected_service, found := mapped_services[service_identifier]
 	if !found {
 		// TODO(edgar) add 404 return
@@ -488,8 +489,8 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierStarlark(ctx context.
 		return nil, stacktrace.NewError("Can't get Starlark info using gRPC call with enclave %s", enclave_identifier)
 	}
 
-	flags := utils.MapList(starlark_result.ExperimentalFeatures, toHttpFeatureFlag)
-	policy := toHttpRestartPolicy(starlark_result.RestartPolicy)
+	flags := utils.MapList(starlark_result.ExperimentalFeatures, to_http.ToHttpFeatureFlag)
+	policy := to_http.ToHttpRestartPolicy(starlark_result.RestartPolicy)
 	response := api_type.StarlarkDescription{
 		ExperimentalFeatures:   flags,
 		MainFunctionName:       starlark_result.MainFunctionName,
@@ -560,7 +561,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	logrus.Infof("Run Starlark package on enclave %s", enclave_identifier)
 
 	package_id := request.PackageId
-	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api_type.KurtosisFeatureFlag{}), toGrpcFeatureFlag)
+	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api_type.KurtosisFeatureFlag{}), to_grpc.ToGrpcFeatureFlag)
 	// The gRPC always expect a JSON object even though it's marked as optional, so we need to default to `{}``
 	jsonParams := utils.DerefWith(request.Body.Params, map[string]interface{}{})
 	jsonBlob, err := json.Marshal(jsonParams)
@@ -583,7 +584,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		ExperimentalFeatures:   flags,
 		CloudInstanceId:        request.Body.CloudInstanceId,
 		CloudUserId:            request.Body.CloudUserId,
-		ImageDownloadMode:      utils.MapPointer(request.Body.ImageDownloadMode, toGrpcImageDownloadMode),
+		ImageDownloadMode:      utils.MapPointer(request.Body.ImageDownloadMode, to_grpc.ToGrpcImageDownloadMode),
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
@@ -623,7 +624,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 	}
 	logrus.Infof("Run Starlark script on enclave %s", enclave_identifier)
 
-	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api_type.KurtosisFeatureFlag{}), toGrpcFeatureFlag)
+	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api_type.KurtosisFeatureFlag{}), to_grpc.ToGrpcFeatureFlag)
 	jsonString := utils.MapPointer(request.Body.Params, func(v map[string]interface{}) string {
 		jsonBlob, err := json.Marshal(v)
 		if err != nil {
@@ -641,7 +642,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		ExperimentalFeatures: flags,
 		CloudInstanceId:      request.Body.CloudInstanceId,
 		CloudUserId:          request.Body.CloudUserId,
-		ImageDownloadMode:    utils.MapPointer(request.Body.ImageDownloadMode, toGrpcImageDownloadMode),
+		ImageDownloadMode:    utils.MapPointer(request.Body.ImageDownloadMode, to_grpc.ToGrpcImageDownloadMode),
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
@@ -728,133 +729,4 @@ func (manager enclaveRuntime) GetGrpcClientForEnclaveUUID(enclave_uuid string) (
 	}
 
 	return &client, nil
-}
-
-func toGrpcConnect(conn api_type.Connect) rpc_api.Connect {
-	switch conn {
-	case api_type.CONNECT:
-		return rpc_api.Connect_CONNECT
-	case api_type.NOCONNECT:
-		return rpc_api.Connect_NO_CONNECT
-	default:
-		panic(fmt.Sprintf("Missing conversion of Connect Enum value: %s", conn))
-	}
-}
-
-func toHttpContainerStatus(status rpc_api.Container_Status) api_type.ContainerStatus {
-	switch status {
-	case rpc_api.Container_RUNNING:
-		return api_type.ContainerStatusRUNNING
-	case rpc_api.Container_STOPPED:
-		return api_type.ContainerStatusSTOPPED
-	case rpc_api.Container_UNKNOWN:
-		return api_type.ContainerStatusUNKNOWN
-	default:
-		panic(fmt.Sprintf("Missing conversion of Container Status Enum value: %s", status))
-	}
-}
-
-func toHttpTransportProtocol(protocol rpc_api.Port_TransportProtocol) api_type.TransportProtocol {
-	switch protocol {
-	case rpc_api.Port_TCP:
-		return api_type.TCP
-	case rpc_api.Port_UDP:
-		return api_type.UDP
-	case rpc_api.Port_SCTP:
-		return api_type.SCTP
-	default:
-		panic(fmt.Sprintf("Missing conversion of Transport Protocol Enum value: %s", protocol))
-	}
-}
-
-func toHttpServiceStatus(status rpc_api.ServiceStatus) api_type.ServiceStatus {
-	switch status {
-	case rpc_api.ServiceStatus_RUNNING:
-		return api_type.ServiceStatusRUNNING
-	case rpc_api.ServiceStatus_STOPPED:
-		return api_type.ServiceStatusSTOPPED
-	case rpc_api.ServiceStatus_UNKNOWN:
-		return api_type.ServiceStatusUNKNOWN
-	default:
-		panic(fmt.Sprintf("Missing conversion of Service Status Enum value: %s", status))
-	}
-}
-
-func toHttpContainer(container *rpc_api.Container) api_type.Container {
-	status := toHttpContainerStatus(container.Status)
-	return api_type.Container{
-		CmdArgs:        container.CmdArgs,
-		EntrypointArgs: container.EntrypointArgs,
-		EnvVars:        container.EnvVars,
-		ImageName:      container.ImageName,
-		Status:         status,
-	}
-}
-
-func toHttpPorts(port *rpc_api.Port) api_type.Port {
-	protocol := toHttpTransportProtocol(port.TransportProtocol)
-	return api_type.Port{
-		ApplicationProtocol: &port.MaybeApplicationProtocol,
-		WaitTimeout:         &port.MaybeWaitTimeout,
-		Number:              int32(port.Number),
-		TransportProtocol:   protocol,
-	}
-}
-
-func toHttpServiceInfo(service *rpc_api.ServiceInfo) api_type.ServiceInfo {
-	container := toHttpContainer(service.Container)
-	serviceStatus := toHttpServiceStatus(service.ServiceStatus)
-	publicPorts := utils.MapMapValues(service.MaybePublicPorts, toHttpPorts)
-	privatePorts := utils.MapMapValues(service.PrivatePorts, toHttpPorts)
-	return api_type.ServiceInfo{
-		Container:     container,
-		PublicIpAddr:  &service.MaybePublicIpAddr,
-		PublicPorts:   &publicPorts,
-		Name:          service.Name,
-		PrivateIpAddr: service.PrivateIpAddr,
-		PrivatePorts:  privatePorts,
-		ServiceStatus: serviceStatus,
-		ServiceUuid:   service.ServiceUuid,
-		ShortenedUuid: service.ShortenedUuid,
-	}
-}
-
-func toHttpFeatureFlag(flag rpc_api.KurtosisFeatureFlag) api_type.KurtosisFeatureFlag {
-	switch flag {
-	case rpc_api.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING:
-		return api_type.NOINSTRUCTIONSCACHING
-	default:
-		panic(fmt.Sprintf("Missing conversion of Feature Flag Enum value: %s", flag))
-	}
-}
-
-func toHttpRestartPolicy(policy rpc_api.RestartPolicy) api_type.RestartPolicy {
-	switch policy {
-	case rpc_api.RestartPolicy_ALWAYS:
-		return api_type.RestartPolicyALWAYS
-	case rpc_api.RestartPolicy_NEVER:
-		return api_type.RestartPolicyNEVER
-	default:
-		panic(fmt.Sprintf("Missing conversion of Restart Policy Enum value: %s", policy))
-	}
-}
-
-func toGrpcFeatureFlag(flag api_type.KurtosisFeatureFlag) rpc_api.KurtosisFeatureFlag {
-	switch flag {
-	case api_type.NOINSTRUCTIONSCACHING:
-		return rpc_api.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING
-	default:
-		panic(fmt.Sprintf("Missing conversion of Feature Flag Enum value: %s", flag))
-	}
-}
-
-func toGrpcImageDownloadMode(flag api_type.ImageDownloadMode) rpc_api.ImageDownloadMode {
-	switch flag {
-	case api_type.ImageDownloadModeALWAYS:
-		return rpc_api.ImageDownloadMode_always
-	case api_type.ImageDownloadModeMISSING:
-		return rpc_api.ImageDownloadMode_missing
-	default:
-		panic(fmt.Sprintf("Missing conversion of Image Download Mode Enum value: %s", flag))
-	}
 }

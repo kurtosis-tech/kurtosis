@@ -1,25 +1,20 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/mapping/to_http"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 	"golang.org/x/net/websocket"
 
 	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -53,23 +48,13 @@ type WebSocketRuntime struct {
 	AsyncStarlarkLogs streaming.StreamerPool[*rpc_api.StarlarkRunResponseLine]
 }
 
-func sendErrorCode(ctx echo.Context, code int, message string) error {
-	err := ctx.JSON(code, message)
-	return err
-}
-
-type LogStreamer struct {
-	serviceLogsByServiceUuidChan chan map[user_service.ServiceUUID][]logline.LogLine
-	errChan                      chan error
-	cancelCtxFunc                func()
-	requestedServiceUuids        []user_service.ServiceUUID
-	notFoundServiceUuids         []string
-}
-
 func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, params api_type.GetEnclavesEnclaveIdentifierLogsParams) error {
-	streamer, err := engine.getLogStreamer(
-		ctx,
+	streamer, err := streaming.NewServiceLogStreamer(
+		ctx.Request().Context(),
+		engine.EnclaveManager,
 		enclaveIdentifier,
+		engine.PerWeekLogsDatabaseClient,
+		engine.PerFileLogsDatabaseClient,
 		utils.MapList(params.ServiceUuidSet, func(x string) user_service.ServiceUUID { return user_service.ServiceUUID(x) }),
 		params.FollowLogs,
 		params.ReturnAllLogs,
@@ -77,23 +62,38 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context
 		params.ConjunctiveFilters,
 	)
 	if err != nil {
-		logrus.Error(err)
-		return sendErrorCode(ctx, http.StatusInternalServerError, "Failed to setup log streaming")
+		logrus.WithFields(logrus.Fields{
+			"enclave_identifier": enclaveIdentifier,
+			"parameters":         params,
+		}).Error("Failed to create log stream")
+		errInfo := api_type.ResponseInfo{
+			Code:    http.StatusInternalServerError,
+			Message: "Failed to create log stream",
+			Type:    api_type.ERROR,
+		}
+		replyWithResponseInfo(ctx, errInfo)
+		return nil
 	}
 
 	if ctx.IsWebSocket() {
-		return streamer.streamWithWebsocket(ctx)
+		logrus.Infof("Starting log stream using Websocket")
+		streamServiceLogsWithWebsocket(ctx, *streamer)
 	} else {
-		return streamer.streamHTTP(ctx)
+		logrus.Infof("Starting log stream using plain HTTP")
+		streamServiceLogsWithHTTP(ctx, *streamer)
 	}
+	return nil
 
 }
 
 func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, serviceIdentifier api_type.ServiceIdentifier, params api_type.GetEnclavesEnclaveIdentifierServicesServiceIdentifierLogsParams) error {
 	serviceUuidStrSet := []user_service.ServiceUUID{user_service.ServiceUUID(serviceIdentifier)}
-	streamer, err := engine.getLogStreamer(
-		ctx,
+	streamer, err := streaming.NewServiceLogStreamer(
+		ctx.Request().Context(),
+		engine.EnclaveManager,
 		enclaveIdentifier,
+		engine.PerWeekLogsDatabaseClient,
+		engine.PerFileLogsDatabaseClient,
 		serviceUuidStrSet,
 		params.FollowLogs,
 		params.ReturnAllLogs,
@@ -101,325 +101,172 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 		params.ConjunctiveFilters,
 	)
 	if err != nil {
-		logrus.Error(err)
-		return sendErrorCode(ctx, http.StatusInternalServerError, "Failed to setup log streaming")
+		logrus.WithFields(logrus.Fields{
+			"enclave_identifier": enclaveIdentifier,
+			"parameters":         params,
+		}).Error("Failed to create log stream")
+		errInfo := api_type.ResponseInfo{
+			Code:    http.StatusInternalServerError,
+			Message: "Failed to create log stream",
+			Type:    api_type.ERROR,
+		}
+		replyWithResponseInfo(ctx, errInfo)
+		return nil
 	}
 
 	if ctx.IsWebSocket() {
-		return streamer.streamWithWebsocket(ctx)
+		logrus.Infof("Starting log stream using Websocket")
+		streamServiceLogsWithWebsocket(ctx, *streamer)
 	} else {
-		return streamer.streamHTTP(ctx)
+		logrus.Infof("Starting log stream using plain HTTP")
+		streamServiceLogsWithHTTP(ctx, *streamer)
 	}
+
+	return nil
 }
 
 // (GET /enclaves/{enclave_identifier}/starlark/executions/{starlark_execution_uuid}/logs)
 func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, starlarkExecutionUuid api_type.StarlarkExecutionUuid) error {
-	async_log_uuid := string(starlarkExecutionUuid)
+	async_log_uuid := streaming.StreamerUUID(starlarkExecutionUuid)
 
 	if ctx.IsWebSocket() {
 		logrus.Infof("Starting log stream using Websocket for streamer UUUID: %s", starlarkExecutionUuid)
-		websocket.Handler(func(ws *websocket.Conn) {
-			defer ws.Close()
-			found, _ := engine.AsyncStarlarkLogs.Consume(streaming.StreamerUUID(async_log_uuid), func(logline *rpc_api.StarlarkRunResponseLine) error {
-				println(logline.String())
-				err := websocket.JSON.Send(ws, utils.MapPointer(logline, to_http.ToHttpApiStarlarkRunResponseLine))
-				if err != nil {
-					ctx.Logger().Error(err)
-				}
-				return nil
-			})
-			println(found)
-		}).ServeHTTP(ctx.Response(), ctx.Request())
+		streamWithWebsocket(ctx, engine.AsyncStarlarkLogs, async_log_uuid)
 	} else {
 		logrus.Infof("Starting log stream using plain HTTP for streamer UUUID: %s", starlarkExecutionUuid)
-		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		ctx.Response().WriteHeader(http.StatusOK)
-		enc := json.NewEncoder(ctx.Response())
-		found, _ := engine.AsyncStarlarkLogs.Consume(streaming.StreamerUUID(async_log_uuid), func(logline *rpc_api.StarlarkRunResponseLine) error {
-			if err := enc.Encode(utils.MapPointer(logline, to_http.ToHttpApiStarlarkRunResponseLine)); err != nil {
-				return err
-			}
-			ctx.Response().Flush()
-			return nil
-		})
-		println(found)
+		streamWithHTTP(ctx, engine.AsyncStarlarkLogs, async_log_uuid)
 	}
 
 	return nil
-}
-
-func (engine WebSocketRuntime) getLogStreamer(
-	ctx echo.Context,
-	enclaveIdentifier api_type.EnclaveIdentifier,
-	serviceUuidList []user_service.ServiceUUID,
-	maybeShouldFollowLogs *bool,
-	maybeShouldReturnAllLogs *bool,
-	maybeNumLogLines *uint32,
-	maybeFilters *[]api_type.LogLineFilter,
-) (*LogStreamer, error) {
-	enclaveUuid, err := engine.EnclaveManager.GetEnclaveUuidForEnclaveIdentifier(context.Background(), enclaveIdentifier)
-	if err != nil {
-		logrus.Errorf("An error occurred while fetching uuid for enclave '%v'. This could happen if the enclave has been deleted. Treating it as UUID", enclaveIdentifier)
-		return nil, err
-	}
-
-	requestedServiceUuids := make(map[user_service.ServiceUUID]bool, len(serviceUuidList))
-	shouldFollowLogs := utils.DerefWith(maybeShouldFollowLogs, false)
-	shouldReturnAllLogs := utils.DerefWith(maybeShouldReturnAllLogs, false)
-	numLogLines := utils.DerefWith(maybeNumLogLines, 100)
-	filters := utils.DerefWith(maybeFilters, []api_type.LogLineFilter{})
-	context := ctx.Request().Context()
-
-	for _, serviceUuidStr := range serviceUuidList {
-		serviceUuid := user_service.ServiceUUID(serviceUuidStr)
-		requestedServiceUuids[serviceUuid] = true
-	}
-
-	if engine.PerWeekLogsDatabaseClient == nil || engine.PerFileLogsDatabaseClient == nil {
-		return nil, stacktrace.NewError("It's not possible to return service logs because there is no logs database client; this is bug in Kurtosis")
-	}
-
-	var (
-		serviceLogsByServiceUuidChan chan map[user_service.ServiceUUID][]logline.LogLine
-		errChan                      chan error
-		cancelCtxFunc                func()
-	)
-
-	notFoundServiceUuids, err := engine.reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(context, enclaveUuid, requestedServiceUuids)
-	if err != nil {
-		return nil, err
-	}
-
-	conjunctiveLogLineFilters, err := fromHttpLogLineFilters(filters)
-	if err != nil {
-		return nil, err
-	}
-
-	// get enclave creation time to determine strategy to pull logs
-	enclaveCreationTime, err := engine.getEnclaveCreationTime(context, enclaveUuid)
-	if err != nil {
-		return nil, err
-	}
-	logsDatabaseClient := engine.getLogsDatabaseClient(enclaveCreationTime)
-
-	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(
-		context,
-		enclaveUuid,
-		requestedServiceUuids,
-		conjunctiveLogLineFilters,
-		shouldFollowLogs,
-		shouldReturnAllLogs,
-		uint32(numLogLines))
-	if err != nil {
-		return nil, err
-	}
-
-	return &LogStreamer{
-		serviceLogsByServiceUuidChan: serviceLogsByServiceUuidChan,
-		errChan:                      errChan,
-		cancelCtxFunc:                cancelCtxFunc,
-		notFoundServiceUuids:         notFoundServiceUuids,
-		requestedServiceUuids:        serviceUuidList,
-	}, nil
-}
-
-func (streamer LogStreamer) close() {
-	streamer.cancelCtxFunc()
-}
-
-func (streamer LogStreamer) streamWithWebsocket(ctx echo.Context) error {
-	defer streamer.close()
-
-	logrus.Debugf("Starting log stream using Websocket on services: %s", streamer.requestedServiceUuids)
-	websocket.Handler(func(ws *websocket.Conn) {
-		defer ws.Close()
-
-		for {
-			select {
-			//stream case
-			case serviceLogsByServiceUuid, isChanOpen := <-streamer.serviceLogsByServiceUuidChan:
-				//If the channel is closed means that the logs database client won't continue sending streams
-				if !isChanOpen {
-					logrus.Debug("Exiting the stream loop after receiving a close signal from the service logs by service UUID channel")
-					return
-				}
-
-				getServiceLogsResponse := newLogsResponseHttp(streamer.requestedServiceUuids, serviceLogsByServiceUuid, streamer.notFoundServiceUuids)
-				err := websocket.JSON.Send(ws, getServiceLogsResponse)
-				if err != nil {
-					ctx.Logger().Error(err)
-				}
-
-			//error from logs database case
-			case err, isChanOpen := <-streamer.errChan:
-				if isChanOpen {
-					logrus.Error(err)
-					logrus.Debug("Exiting the stream because an error from the logs database client was received through the error chan.")
-					return
-				}
-				logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
-				return
-			}
-		}
-	}).ServeHTTP(ctx.Response(), ctx.Request())
-	return nil
-}
-
-func (streamer LogStreamer) streamHTTP(ctx echo.Context) error {
-	defer streamer.close()
-
-	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	ctx.Response().WriteHeader(http.StatusOK)
-	enc := json.NewEncoder(ctx.Response())
-
-	logrus.Debugf("Starting log stream using HTTP on services: %s", streamer.requestedServiceUuids)
-	for {
-		select {
-		//stream case
-		case serviceLogsByServiceUuid, isChanOpen := <-streamer.serviceLogsByServiceUuidChan:
-			//If the channel is closed means that the logs database client won't continue sending streams
-			if !isChanOpen {
-				logrus.Debug("Exiting the stream loop after receiving a close signal from the service logs by service UUID channel")
-				return nil
-			}
-
-			getServiceLogsResponse := newLogsResponseHttp(streamer.requestedServiceUuids, serviceLogsByServiceUuid, streamer.notFoundServiceUuids)
-			if err := enc.Encode(getServiceLogsResponse); err != nil {
-				return err
-			}
-			ctx.Response().Flush()
-
-		//error from logs database case
-		case err, isChanOpen := <-streamer.errChan:
-			if isChanOpen {
-				logrus.Error(err)
-				logrus.Debug("Exiting the stream because an error from the logs database client was received through the error chan.")
-				return nil
-			}
-			logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
-			return nil
-		}
-	}
 }
 
 // =============================================================================================================================================
 // ============================================== Helper Functions =============================================================================
 // =============================================================================================================================================
 
-func (service *WebSocketRuntime) reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	requestedServiceUuids map[user_service.ServiceUUID]bool,
-) ([]string, error) {
-	// doesn't matter which logs client is used here
-	existingServiceUuids, err := service.PerWeekLogsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service UUIDs from the log client for enclave '%v' and for the requested UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
-	}
-
-	notFoundServiceUuidsMap := getNotFoundServiceUuidsAndEmptyServiceLogsMap(requestedServiceUuids, existingServiceUuids)
-	var notFoundServiceUuids []string
-	for service := range notFoundServiceUuidsMap {
-		notFoundServiceUuids = append(notFoundServiceUuids, service)
-	}
-	return notFoundServiceUuids, nil
+func replyWithResponseInfo(ctx echo.Context, response api_type.ResponseInfo) {
+	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	enc := json.NewEncoder(ctx.Response())
+	ctx.Response().WriteHeader(int(response.Code))
+	enc.Encode(response)
 }
 
-// If the enclave was created prior to log retention, return the per file logs client
-func (service *WebSocketRuntime) getLogsDatabaseClient(enclaveCreationTime time.Time) centralized_logs.LogsDatabaseClient {
-	if enclaveCreationTime.After(logRetentionFeatureReleaseTime) {
-		return service.PerWeekLogsDatabaseClient
-	} else {
-		return service.PerFileLogsDatabaseClient
+func streamWithWebsocket[T any](ctx echo.Context, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
+	notFoundErr := api_type.ResponseInfo{
+		Type:    api_type.INFO,
+		Message: fmt.Sprintf("Log streaming '%s' not found. Either it has been consumed or has expired.", streamerUUID),
+		Code:    http.StatusNotFound,
 	}
-}
-
-func (service *WebSocketRuntime) getEnclaveCreationTime(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (time.Time, error) {
-	enclaves, err := service.EnclaveManager.GetEnclaves(ctx)
-	if err != nil {
-		return time.Time{}, err
+	inPool := streamerPool.Contains(streamerUUID)
+	if !inPool {
+		replyWithResponseInfo(ctx, notFoundErr)
 	}
 
-	enclaveObj, found := enclaves[string(enclaveUuid)]
-	if !found {
-		return time.Time{}, stacktrace.NewError("Engine could not find enclave '%v'", enclaveUuid)
-	}
-
-	timestamp := enclaveObj.CreationTime
-	return timestamp, nil
-}
-
-func fromHttpLogLineFilters(
-	logLineFilters []api_type.LogLineFilter,
-) (logline.ConjunctiveLogLineFilters, error) {
-	var conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters
-
-	for _, logLineFilter := range logLineFilters {
-		var filter *logline.LogLineFilter
-		operator := logLineFilter.Operator
-		filterTextPattern := logLineFilter.TextPattern
-		switch operator {
-		case api_type.DOESCONTAINTEXT:
-			filter = logline.NewDoesContainTextLogLineFilter(filterTextPattern)
-		case api_type.DOESNOTCONTAINTEXT:
-			filter = logline.NewDoesNotContainTextLogLineFilter(filterTextPattern)
-		case api_type.DOESCONTAINMATCHREGEX:
-			filter = logline.NewDoesContainMatchRegexLogLineFilter(filterTextPattern)
-		case api_type.DOESNOTCONTAINMATCHREGEX:
-			filter = logline.NewDoesNotContainMatchRegexLogLineFilter(filterTextPattern)
-		default:
-			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in GRPC filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
-		}
-		conjunctiveLogLineFilters = append(conjunctiveLogLineFilters, *filter)
-	}
-
-	return conjunctiveLogLineFilters, nil
-}
-
-func newLogsResponseHttp(
-	requestedServiceUuids []user_service.ServiceUUID,
-	serviceLogsByServiceUuid map[user_service.ServiceUUID][]logline.LogLine,
-	initialNotFoundServiceUuids []string,
-) *api_type.ServiceLogs {
-	serviceLogLinesByUuid := make(map[string]api_type.LogLine, len(serviceLogsByServiceUuid))
-	notFoundServiceUuids := make([]string, len(initialNotFoundServiceUuids))
-	for _, serviceUuid := range requestedServiceUuids {
-		serviceUuidStr := string(serviceUuid)
-		isInNotFoundUuidList := slices.Contains(initialNotFoundServiceUuids, serviceUuidStr)
-		serviceLogLines, found := serviceLogsByServiceUuid[serviceUuid]
-		// should continue in the not-found-UUID list
-		if !found && isInNotFoundUuidList {
-			notFoundServiceUuids = append(notFoundServiceUuids, serviceUuidStr)
-		}
-
-		// there is no new log lines but is a found UUID, so it has to be included in the service logs map
-		if !found && !isInNotFoundUuidList {
-			serviceLogLinesByUuid[serviceUuidStr] = api_type.LogLine{
-				Line:      []string{},
-				Timestamp: time.Now(),
+	websocket.Handler(func(ws *websocket.Conn) {
+		defer ws.Close()
+		found, err := streamerPool.Consume(streaming.StreamerUUID(streamerUUID), func(logline *rpc_api.StarlarkRunResponseLine) error {
+			err := websocket.JSON.Send(ws, utils.MapPointer(logline, to_http.ToHttpApiStarlarkRunResponseLine))
+			if err != nil {
+				return err
 			}
+			return nil
+		})
+
+		if !found {
+			websocket.JSON.Send(ws, notFoundErr)
 		}
 
-		logLines := newHttpBindingsLogLineFromLogLines(serviceLogLines)
-		serviceLogLinesByUuid[serviceUuidStr] = logLines
-	}
-
-	response := &api_type.ServiceLogs{
-		NotFoundServiceUuidSet:   &notFoundServiceUuids,
-		ServiceLogsByServiceUuid: &serviceLogLinesByUuid,
-	}
-	return response
+		if err != nil {
+			logrus.Errorf("Failed to stream all data %s", err)
+			streamingErr := api_type.ResponseInfo{
+				Type:    api_type.ERROR,
+				Message: fmt.Sprintf("Log streaming '%s' failed while sending the data", streamerUUID),
+				Code:    http.StatusInternalServerError,
+			}
+			websocket.JSON.Send(ws, streamingErr)
+		}
+	}).ServeHTTP(ctx.Response(), ctx.Request())
 }
 
-func newHttpBindingsLogLineFromLogLines(logLines []logline.LogLine) api_type.LogLine {
-	logLinesStr := make([]string, len(logLines))
-	var logTimestamp time.Time
-
-	for logLineIndex, logLine := range logLines {
-		logLinesStr[logLineIndex] = logLine.GetContent()
-		logTimestamp = logLine.GetTimestamp()
+func streamWithHTTP[T any](ctx echo.Context, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
+	notFoundErr := api_type.ResponseInfo{
+		Type:    api_type.INFO,
+		Message: fmt.Sprintf("Log streaming '%s' not found. Either it has been consumed or has expired.", streamerUUID),
+		Code:    http.StatusNotFound,
+	}
+	inPool := streamerPool.Contains(streamerUUID)
+	if !inPool {
+		replyWithResponseInfo(ctx, notFoundErr)
 	}
 
-	return api_type.LogLine{Line: logLinesStr, Timestamp: logTimestamp}
+	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	enc := json.NewEncoder(ctx.Response())
+	ctx.Response().WriteHeader(http.StatusOK)
+	found, err := streamerPool.Consume(streaming.StreamerUUID(streamerUUID), func(logline *rpc_api.StarlarkRunResponseLine) error {
+		if err := enc.Encode(utils.MapPointer(logline, to_http.ToHttpApiStarlarkRunResponseLine)); err != nil {
+			return err
+		}
+		ctx.Response().Flush()
+		return nil
+	})
 
+	if !found {
+		enc.Encode(notFoundErr)
+	}
+
+	if err != nil {
+		logrus.Errorf("Failed to stream all data %s", err)
+		streamingErr := api_type.ResponseInfo{
+			Type:    api_type.ERROR,
+			Message: fmt.Sprintf("Log streaming '%s' failed while sending the data", streamerUUID),
+			Code:    http.StatusInternalServerError,
+		}
+		enc.Encode(streamingErr)
+	}
+}
+
+func streamServiceLogsWithWebsocket(ctx echo.Context, streamer streaming.ServiceLogStreamer) {
+	websocket.Handler(func(ws *websocket.Conn) {
+		defer ws.Close()
+		err := streamer.Consume(func(logline *api_type.ServiceLogs) error {
+			err := websocket.JSON.Send(ws, logline)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+
+		if err != nil {
+			logrus.Errorf("Failed to stream all data %s", err)
+			streamingErr := api_type.ResponseInfo{
+				Type:    api_type.ERROR,
+				Message: fmt.Sprintf("Log streaming failed while sending the data"),
+				Code:    http.StatusInternalServerError,
+			}
+			websocket.JSON.Send(ws, streamingErr)
+		}
+	}).ServeHTTP(ctx.Response(), ctx.Request())
+}
+
+func streamServiceLogsWithHTTP(ctx echo.Context, streamer streaming.ServiceLogStreamer) {
+	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	enc := json.NewEncoder(ctx.Response())
+	ctx.Response().WriteHeader(http.StatusOK)
+	err := streamer.Consume(func(logline *api_type.ServiceLogs) error {
+		if err := enc.Encode(logline); err != nil {
+			return err
+		}
+		ctx.Response().Flush()
+		return nil
+	})
+
+	if err != nil {
+		logrus.Errorf("Failed to stream all data %s", err)
+		streamingErr := api_type.ResponseInfo{
+			Type:    api_type.ERROR,
+			Message: fmt.Sprintf("Log streaming failed while sending the data"),
+			Code:    http.StatusInternalServerError,
+		}
+		enc.Encode(streamingErr)
+	}
 }
