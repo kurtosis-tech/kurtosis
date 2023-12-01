@@ -60,7 +60,7 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
   // TS cannot infer that children is an array if numberOfChildren === 2
   if (numberOfChildren === 2 && Array.isArray(children)) {
     return (
-      <Flex flexDirection={"column"} width={"100%"} h={preventPageScroll ? `100vh` : "100%"}>
+      <Flex flexDirection={"column"} width={"100%"} h={preventPageScroll ? `100vh` : "100%"} flex={"1"}>
         <Box width={"100%"} bg={"gray.850"}>
           <Box width={"100%"} pl={MAIN_APP_LEFT_PADDING} pr={MAIN_APP_RIGHT_PADDING} maxW={MAIN_APP_MAX_WIDTH}>
             <KurtosisBreadcrumbs />
