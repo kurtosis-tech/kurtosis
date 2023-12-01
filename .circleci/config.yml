@@ -878,9 +878,9 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run:
-                name: "Verify only the engine container and logs aggregator remains after the clean"
+                name: "Verify only the engine, logs aggregator and reverse proxy remain after the clean"
                 command: |
-                  if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 2 ]; then
+                  if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 3 ]; then
                     docker container ls -a
                     false
                   fi
