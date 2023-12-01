@@ -185,7 +185,11 @@ func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
 		default:
 			jsonLogStr, err := getCompleteJsonLogString(logsReader)
 			if isValidJsonEnding(jsonLogStr) {
-				if err = strategy.sendJsonLogLine(jsonLogStr, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+				jsonLog, err := convertStringToJson(jsonLogStr)
+				if err != nil {
+					return stacktrace.Propagate(err, "An error occurred converting the json log string '%v' into json.", jsonLogStr)
+				}
+				if err = strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 					return err
 				}
 			}
@@ -241,7 +245,11 @@ func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
 	}
 
 	for _, jsonLogStr := range tailLogLines {
-		if err := strategy.sendJsonLogLine(jsonLogStr, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+		jsonLog, err := convertStringToJson(jsonLogStr)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred converting the json log string '%v' into json.", jsonLogStr)
+		}
+		if err := strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 			return err
 		}
 	}
@@ -285,7 +293,7 @@ func isValidJsonEnding(line string) bool {
 }
 
 func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
-	jsonLogLineStr string,
+	jsonLog JsonLog,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
@@ -293,16 +301,10 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	// eg. {"container_type":"api-container", "container_id":"8f8558ba", "container_name":"/kurtosis-api--ffd",
 	// "log":"hi","timestamp":"2023-08-14T14:57:49Z"}
 
-	// First decode the line
-	var jsonLog JsonLog
-	if err := json.Unmarshal([]byte(jsonLogLineStr), &jsonLog); err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the json log string: %v.", jsonLogLineStr)
-	}
-
 	// Then extract the actual log message using the vectors log field
 	logMsgStr, found := jsonLog[volume_consts.LogLabel]
 	if !found {
-		return stacktrace.NewError("An error retrieving the log field '%v' from json log string: %v\n", volume_consts.LogLabel, jsonLogLineStr)
+		return stacktrace.NewError("An error retrieving the log field '%v' from json log: %v\n", volume_consts.LogLabel, jsonLog)
 	}
 
 	// Extract the timestamp using vectors timestamp field
@@ -374,12 +376,12 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 		if logLine.Err != nil {
 			return stacktrace.Propagate(logLine.Err, "hpcloud/tail encountered an error with the following log line: %v", logLine.Text)
 		}
-		if !isValidJsonString(logLine.Text) {
+		jsonLog, err := convertStringToJson(logLine.Text)
+		if err != nil {
 			// if tail package fails to parse a valid new line, fail fast
-			return stacktrace.NewError("hpcloud/tail returned the following incomplete line: '%v' that was not valid json.\nThis is potentially a bug in tailing package.", logLine.Text)
+			return stacktrace.NewError("hpcloud/tail returned the following line: '%v' that was not valid json.\nThis is potentially a bug in tailing package.", logLine.Text)
 		}
-
-		err = strategy.sendJsonLogLine(logLine.Text, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
+		err = strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
 		}
@@ -387,9 +389,12 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 	return nil
 }
 
-func isValidJsonString(line string) bool {
+func convertStringToJson(line string) (JsonLog, error) {
 	var jsonLog JsonLog
-	return json.Unmarshal([]byte(line), &jsonLog) == nil
+	if err := json.Unmarshal([]byte(line), &jsonLog); err != nil {
+		return nil, err
+	}
+	return jsonLog, nil
 }
 
 // Converts a string in UTC format to a time.Time, returns error if no time is found or time is incorrectly formatted
