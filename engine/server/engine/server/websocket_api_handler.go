@@ -50,7 +50,7 @@ type WebSocketRuntime struct {
 	LogFileManager *log_file_manager.LogFileManager
 
 	MetricsClient     metrics_client.MetricsClient
-	AsyncStarlarkLogs streaming.StreamerPool[rpc_api.StarlarkRunResponseLine]
+	AsyncStarlarkLogs streaming.StreamerPool[*rpc_api.StarlarkRunResponseLine]
 }
 
 func sendErrorCode(ctx echo.Context, code int, message string) error {
@@ -120,12 +120,13 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierStarlarkExecutionsSta
 		logrus.Infof("Starting log stream using Websocket for streamer UUUID: %s", starlarkExecutionUuid)
 		websocket.Handler(func(ws *websocket.Conn) {
 			defer ws.Close()
-			found, _ := engine.AsyncStarlarkLogs.Consume(streaming.StreamerUUID(async_log_uuid), func(logline *rpc_api.StarlarkRunResponseLine) {
+			found, _ := engine.AsyncStarlarkLogs.Consume(streaming.StreamerUUID(async_log_uuid), func(logline *rpc_api.StarlarkRunResponseLine) error {
 				println(logline.String())
 				err := websocket.JSON.Send(ws, utils.MapPointer(logline, to_http.ToHttpApiStarlarkRunResponseLine))
 				if err != nil {
 					ctx.Logger().Error(err)
 				}
+				return nil
 			})
 			println(found)
 		}).ServeHTTP(ctx.Response(), ctx.Request())
@@ -134,11 +135,12 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierStarlarkExecutionsSta
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		ctx.Response().WriteHeader(http.StatusOK)
 		enc := json.NewEncoder(ctx.Response())
-		found, _ := engine.AsyncStarlarkLogs.Consume(streaming.StreamerUUID(async_log_uuid), func(logline *rpc_api.StarlarkRunResponseLine) {
+		found, _ := engine.AsyncStarlarkLogs.Consume(streaming.StreamerUUID(async_log_uuid), func(logline *rpc_api.StarlarkRunResponseLine) error {
 			if err := enc.Encode(utils.MapPointer(logline, to_http.ToHttpApiStarlarkRunResponseLine)); err != nil {
-				return //TODO handle error on Consume call
+				return err
 			}
 			ctx.Response().Flush()
+			return nil
 		})
 		println(found)
 	}

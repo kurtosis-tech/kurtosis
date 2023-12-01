@@ -73,6 +73,9 @@ const (
 	shouldFlushMetricsClientQueueOnEachEvent = false
 
 	restAPIPortAddr uint16 = 9779
+
+	streamerPoolSize       = 1000
+	streamerExpirationTime = time.Hour * 24
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -372,7 +375,7 @@ func restApiServer(
 	metricsClient metrics_client.MetricsClient,
 ) {
 
-	asyncStarlarkLogs := streaming.NewStreamerPool[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]()
+	asyncStarlarkLogs := streaming.NewStreamerPool[*kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamerPoolSize, streamerExpirationTime)
 
 	logrus.Info("Running REST API server...")
 

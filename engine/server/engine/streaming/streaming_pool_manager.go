@@ -1,47 +1,73 @@
 package streaming
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	"google.golang.org/grpc"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/sirupsen/logrus"
+
+	"github.com/hashicorp/golang-lru/v2/expirable"
 )
 
 type Streamer[T any] interface {
 	Close()
-	AttachStream(stream grpc.ClientStream)
 	WaitAndConsumeAll() []T
-	Consume(consumer func(*T))
+	Consume(consumer func(T) error) error
+	MarkForConsumption()
+	IsMarkedForConsumption() bool
 }
 
 type StreamerPool[T any] struct {
-	pool map[string]Streamer[T]
+	pool expirable.LRU[StreamerUUID, *asyncStarlarkLogs]
 }
 
 type StreamerUUID string
 
-func NewStreamerPool[T any]() StreamerPool[T] {
+func NewStreamerPool[T any](pool_size uint, expires_after time.Duration) StreamerPool[T] {
+
+	pool := expirable.NewLRU(
+		int(pool_size),
+		func(uuid StreamerUUID, streamer *asyncStarlarkLogs) {
+			logrus.Infof("Removing async log uuid %s from pool.", uuid)
+			if streamer.IsMarkedForConsumption() {
+				// Skipping pool exit eviction because stream is still begin consumed. Context should
+				// be cancel after consumption is done.
+				logrus.Debugf("Async log uuid %s is marked for consumption, skipping pool exit eviction", uuid)
+				return
+			}
+			streamer.Close()
+		},
+		expires_after,
+	)
+
 	return StreamerPool[T]{
-		pool: make(map[string]Streamer[T]),
+		pool: *pool,
 	}
 }
 
-func (pool StreamerPool[T]) Add(streamer Streamer[T]) StreamerUUID {
+func (streamerPool StreamerPool[T]) Add(streamer *asyncStarlarkLogs) StreamerUUID {
 	id := uuid.New()
-	id_str := id.String()
-	pool.pool[id_str] = streamer
-	println("Size: %d", len(pool.pool))
-	return StreamerUUID(id_str)
+	id_str := StreamerUUID(id.String())
+	streamerPool.pool.Add(id_str, streamer)
+	return id_str
 }
 
-func (pool StreamerPool[T]) Consume(uuid StreamerUUID, consumer func(*T)) (bool, error) {
-	println("Size: %d", len(pool.pool))
-	streamer, found := pool.pool[string(uuid)]
+func (streamerPool StreamerPool[T]) Consume(uuid StreamerUUID, consumer func(*kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) error) (bool, error) {
+	streamer, found := streamerPool.pool.Get(uuid)
 	if !found {
 		return false, nil
-	} else {
-		delete(pool.pool, string(uuid))
 	}
 
-	streamer.Consume(consumer)
+	streamer.MarkForConsumption()
+	removed := streamerPool.pool.Remove(uuid)
+
+	if removed {
+		defer streamer.Close()
+		if err := streamer.Consume(consumer); err != nil {
+			return true, err
+		}
+	}
 
 	return true, nil
 }

@@ -31,7 +31,7 @@ type enclaveRuntime struct {
 	connectOnHostMachine     bool
 	ctx                      context.Context
 	lock                     sync.Mutex
-	asyncStarlarkLogs        streaming.StreamerPool[rpc_api.StarlarkRunResponseLine]
+	asyncStarlarkLogs        streaming.StreamerPool[*rpc_api.StarlarkRunResponseLine]
 }
 
 func (runtime enclaveRuntime) refreshEnclaveConnections() error {
@@ -72,7 +72,7 @@ func (runtime enclaveRuntime) refreshEnclaveConnections() error {
 	return nil
 }
 
-func NewEnclaveRuntime(ctx context.Context, manager enclave_manager.EnclaveManager, asyncStarlarkLogs streaming.StreamerPool[rpc_api.StarlarkRunResponseLine], connectOnHostMachine bool) (*enclaveRuntime, error) {
+func NewEnclaveRuntime(ctx context.Context, manager enclave_manager.EnclaveManager, asyncStarlarkLogs streaming.StreamerPool[*rpc_api.StarlarkRunResponseLine], connectOnHostMachine bool) (*enclaveRuntime, error) {
 
 	runtime := enclaveRuntime{
 		enclaveManager:           manager,
@@ -604,7 +604,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), to_http.ToHttpApiStarlarkRunResponseLine)
 		sync_logs.FromStarlarkRunLogs(logs)
 	} else {
-		async_uuid := manager.asyncStarlarkLogs.Add(asyncLogs)
+		async_uuid := manager.asyncStarlarkLogs.Add(&asyncLogs)
 		var async_logs api_type.AsyncStarlarkExecutionLogs
 		async_logs.AsyncStarlarkExecutionLogs.StarlarkExecutionUuid = string(async_uuid)
 		sync_logs.FromAsyncStarlarkExecutionLogs(async_logs)

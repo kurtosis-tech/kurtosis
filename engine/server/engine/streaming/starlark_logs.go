@@ -11,29 +11,43 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 )
 
-type AsyncStarlarkLogs struct {
+type asyncStarlarkLogs struct {
+	ctx                         context.Context
 	cancelCtxFunc               context.CancelFunc
 	starlarkRunResponseLineChan chan *rpc_api.StarlarkRunResponseLine
+	markedForConsumption        bool
 }
 
-func NewAsyncStarlarkLogs(cancelCtxFunc context.CancelFunc) AsyncStarlarkLogs {
+func NewAsyncStarlarkLogs(cancelCtxFunc context.CancelFunc) asyncStarlarkLogs {
+	ctx, cancel := context.WithCancel(context.Background())
 	starlarkResponseLineChan := make(chan *rpc_api.StarlarkRunResponseLine)
-	return AsyncStarlarkLogs{
-		cancelCtxFunc:               cancelCtxFunc,
+	markedForConsumption := false
+	return asyncStarlarkLogs{
+		ctx:                         ctx,
+		cancelCtxFunc:               cancel,
 		starlarkRunResponseLineChan: starlarkResponseLineChan,
+		markedForConsumption:        markedForConsumption,
 	}
 }
 
-func (async AsyncStarlarkLogs) Close() {
+func (async *asyncStarlarkLogs) MarkForConsumption() {
+	markedForConsumption := true
+	async.markedForConsumption = markedForConsumption
+}
+
+func (async *asyncStarlarkLogs) IsMarkedForConsumption() bool {
+	return async.markedForConsumption
+}
+
+func (async *asyncStarlarkLogs) Close() {
 	logrus.Debugf("Streaming of Starlark execution logs is done, cleaning up resources")
-	close(async.starlarkRunResponseLineChan)
 	async.cancelCtxFunc()
 }
 
-func (async AsyncStarlarkLogs) AttachStream(stream grpc.ClientStream) {
+func (async *asyncStarlarkLogs) AttachStream(stream grpc.ClientStream) {
 	logrus.Debugf("Asynchronously reading the stream of Starlark execution logs")
 	defer func() {
-		async.Close()
+		close(async.starlarkRunResponseLineChan)
 	}()
 	for {
 		responseLine := new(rpc_api.StarlarkRunResponseLine)
@@ -46,22 +60,30 @@ func (async AsyncStarlarkLogs) AttachStream(stream grpc.ClientStream) {
 			logrus.Errorf("Unexpected error happened reading the stream. Client might have cancelled the stream\n%v", err.Error())
 			return
 		}
-		async.starlarkRunResponseLineChan <- responseLine
+		select {
+		case <-async.ctx.Done():
+			logrus.Debugf("Resources have been closed before consuming all the upstream data")
+			return
+		case async.starlarkRunResponseLineChan <- responseLine:
+			println("> next ")
+		}
 	}
 }
 
-func (async AsyncStarlarkLogs) WaitAndConsumeAll() []rpc_api.StarlarkRunResponseLine {
+func (async *asyncStarlarkLogs) WaitAndConsumeAll() []rpc_api.StarlarkRunResponseLine {
 	var logs []*rpc_api.StarlarkRunResponseLine
-	async.Consume(func(elem *rpc_api.StarlarkRunResponseLine) {
+	async.Consume(func(elem *rpc_api.StarlarkRunResponseLine) error {
 		if elem != nil {
 			logs = append(logs, elem)
 		}
+		return nil
 	})
 	return utils.FilterListNils(logs)
 }
 
-func (async AsyncStarlarkLogs) Consume(consumer func(*rpc_api.StarlarkRunResponseLine)) {
+func (async *asyncStarlarkLogs) Consume(consumer func(*rpc_api.StarlarkRunResponseLine) error) error {
 	for elem := range async.starlarkRunResponseLineChan {
 		consumer(elem)
 	}
+	return nil
 }
