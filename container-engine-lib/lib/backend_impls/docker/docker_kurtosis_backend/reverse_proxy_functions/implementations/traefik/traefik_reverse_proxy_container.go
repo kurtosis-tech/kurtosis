@@ -23,7 +23,7 @@ func (traefikContainer *traefikReverseProxyContainer) CreateAndStart(
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
 ) (string, map[string]string, func(), error) {
-	traefikContainerConfigProviderObj := createTraefikContainerConfigProvider(httpPort, dashboardPort)
+	traefikContainerConfigProviderObj := createTraefikContainerConfigProvider(httpPort, dashboardPort, targetNetworkId)
 
 	reverseProxyAttrs, err := objAttrsProvider.ForReverseProxy()
 	if err != nil {
@@ -35,7 +35,7 @@ func (traefikContainer *traefikReverseProxyContainer) CreateAndStart(
 		containerLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	createAndStartArgs, err := traefikContainerConfigProviderObj.GetContainerArgs(containerName, containerLabelStrs, targetNetworkId)
+	createAndStartArgs, err := traefikContainerConfigProviderObj.GetContainerArgs(containerName, containerLabelStrs, httpPort, dashboardPort, targetNetworkId)
 	if err != nil {
 		return "", nil, nil, err
 	}

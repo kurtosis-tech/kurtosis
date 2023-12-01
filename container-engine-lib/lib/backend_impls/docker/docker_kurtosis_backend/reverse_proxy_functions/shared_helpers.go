@@ -100,6 +100,8 @@ func getReverseProxyObjectFromContainerInfo(
 	reverseProxyObj := reverse_proxy.NewReverseProxy(
 		reverseProxyStatus,
 		privateIpAddr,
+		defaultReverseProxyHttpPortNum,
+		defaultReverseProxyDashboardPortNum,
 	)
 
 	return reverseProxyObj, nil

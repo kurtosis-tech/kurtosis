@@ -12,16 +12,24 @@ type ReverseProxy struct {
 	// This will be nil if the container is not running
 	maybePrivateIpAddr net.IP
 
-	// PortNum that container will listen for logs on
-	logsListeningPortNum uint16
+	// HTTP port
+	httpPort uint16
+
+	// Dashboard port
+	dashboardPort uint16
 }
 
 func NewReverseProxy(
 	status container.ContainerStatus,
-	maybePrivateIpAddr net.IP) *ReverseProxy {
+	maybePrivateIpAddr net.IP,
+	httpPort uint16,
+	dashboardPort uint16) *ReverseProxy {
 	return &ReverseProxy{
 		status:               status,
-		maybePrivateIpAddr:   maybePrivateIpAddr}
+		maybePrivateIpAddr:   maybePrivateIpAddr,
+		httpPort:             httpPort,
+		dashboardPort:        dashboardPort,
+	}
 }
 
 func (reverseProxy *ReverseProxy) GetStatus() container.ContainerStatus {
@@ -32,7 +40,10 @@ func (reverseProxy *ReverseProxy) GetMaybePrivateIpAddr() net.IP {
 	return reverseProxy.maybePrivateIpAddr
 }
 
-// Returns port number that logs aggregator listens for logs on
-func (reverseProxy *ReverseProxy) GetListeningPortNum() uint16 {
-	return reverseProxy.logsListeningPortNum
+func (reverseProxy *ReverseProxy) GetHttpPort() uint16 {
+	return reverseProxy.httpPort
+}
+
+func (reverseProxy *ReverseProxy) GetDashboardPort() uint16 {
+	return reverseProxy.dashboardPort
 }
