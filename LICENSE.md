@@ -14,7 +14,7 @@ you may not use the Licensed Work for an Environment Orchestration Service.
 
 Change Date:          2027-11-30
 
-Change License:       AGPLv3 (GNU Affero General Public License Version 3)
+Change License:       Apache 2.0 (Apache License, Version 2.0)
 
 For information about alternative licensing arrangements for the Software,
 please visit: https://kurtosis.com/
