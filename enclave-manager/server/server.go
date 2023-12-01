@@ -44,7 +44,7 @@ type WebServer struct {
 	engineServiceClient *kurtosis_engine_rpc_api_bindingsconnect.EngineServiceClient
 	enforceAuth         bool
 	instanceConfig      *kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
-	apiKey              *string
+	apiKeyMap           map[string]*string
 }
 
 func NewWebserver(enforceAuth bool) (*WebServer, error) {
@@ -57,6 +57,7 @@ func NewWebserver(enforceAuth bool) (*WebServer, error) {
 		enforceAuth:         enforceAuth,
 		instanceConfigMutex: &sync.RWMutex{},
 		apiKeyMutex:         &sync.RWMutex{},
+		apiKeyMap:           map[string]*string{},
 	}, nil
 }
 
@@ -468,21 +469,21 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
-	request := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]{
-		Msg: &kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest{
-			AccessToken: jwtToken,
-		},
-	}
 
-	if c.apiKey != nil {
+	if c.apiKeyMap[jwtToken] != nil {
 		return &Authentication{
-			ApiKey:   *c.apiKey,
+			ApiKey:   *c.apiKeyMap[jwtToken],
 			JwtToken: jwtToken,
 		}, nil
 	} else {
 		c.apiKeyMutex.Lock()
 		defer c.apiKeyMutex.Unlock()
 
+		request := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]{
+			Msg: &kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest{
+				AccessToken: jwtToken,
+			},
+		}
 		result, err := (*client).GetOrCreateApiKey(ctx, request)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to get the API key")
@@ -494,7 +495,7 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 		}
 
 		if len(result.Msg.ApiKey) > 0 {
-			c.apiKey = &result.Msg.ApiKey
+			c.apiKeyMap[jwtToken] = &result.Msg.ApiKey
 			return &Authentication{
 				ApiKey:   result.Msg.ApiKey,
 				JwtToken: jwtToken,
