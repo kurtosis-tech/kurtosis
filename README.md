@@ -33,7 +33,7 @@ Check out an introductory demo video here:
 
 How do I get going?
 ===================
-To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install). _Note that we're working on a cloud-hosted version of Kurtosis that doesn't require any local installation; if this is interesting to you then let us know [here](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H) and we'll let you know when it's available._
+To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install) or visit [Kurtosis Cloud][https://cloud.kurtosis.com/] to provision a remote host.
 
 Then, run the [Redis voting app Kurtosis package](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app):
 
