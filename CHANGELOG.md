@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.85.40](https://github.com/kurtosis-tech/kurtosis/compare/0.85.39...0.85.40) (2023-12-02)
+
+
+### Features
+
+* change change license to Apache 2.0 ([#1884](https://github.com/kurtosis-tech/kurtosis/issues/1884)) ([64084d8](https://github.com/kurtosis-tech/kurtosis/commit/64084d8e7ce18ebb86b05d17035db90971c2f867))
+
+
+### Bug Fixes
+
+* cache bug ([#1885](https://github.com/kurtosis-tech/kurtosis/issues/1885)) ([82e46e2](https://github.com/kurtosis-tech/kurtosis/commit/82e46e249006e85b4f71824798370968d8ee7731))
+* change tail package ([#1874](https://github.com/kurtosis-tech/kurtosis/issues/1874)) ([f4e87ec](https://github.com/kurtosis-tech/kurtosis/commit/f4e87ec6757219b089ca3b7d2692bc15c42f8fd1))
+
 ## [0.85.39](https://github.com/kurtosis-tech/kurtosis/compare/0.85.38...0.85.39) (2023-11-30)
 
 
