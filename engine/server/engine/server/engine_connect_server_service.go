@@ -79,13 +79,13 @@ func NewEngineConnectServerService(
 	return service
 }
 
-func toGrpcEnclaveContainersStatus(status types.EnclaveContainersStatus) kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus {
+func toGrpcEnclaveStatus(status types.EnclaveStatus) kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus {
 	switch status {
-	case types.EnclaveContainersStatus_EMPTY:
+	case types.EnclaveStatus_EMPTY:
 		return kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_EMPTY
-	case types.EnclaveContainersStatus_STOPPED:
+	case types.EnclaveStatus_STOPPED:
 		return kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_STOPPED
-	case types.EnclaveContainersStatus_RUNNING:
+	case types.EnclaveStatus_RUNNING:
 		return kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING
 	default:
 		panic(fmt.Sprintf("Undefined mapping of value: %s", status))
@@ -143,7 +143,7 @@ func toGrpcEnclaveInfo(info types.EnclaveInfo) kurtosis_engine_rpc_api_bindings.
 		EnclaveUuid:                 info.EnclaveUuid,
 		ShortenedUuid:               info.ShortenedUuid,
 		Name:                        info.Name,
-		ContainersStatus:            toGrpcEnclaveContainersStatus(info.EnclaveContainersStatus),
+		ContainersStatus:            toGrpcEnclaveStatus(info.EnclaveStatus),
 		ApiContainerStatus:          toGrpcContainerStatus(info.ApiContainerStatus),
 		ApiContainerInfo:            containerInfo,
 		ApiContainerHostMachineInfo: apiHostMachine,

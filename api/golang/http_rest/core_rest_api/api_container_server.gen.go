@@ -25,52 +25,52 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-
+	// List all files artifacts
 	// (GET /enclaves/{enclave_identifier}/artifacts)
 	GetEnclavesEnclaveIdentifierArtifacts(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-
+	// Uploads local file artifact to the Kurtosis File System
 	// (POST /enclaves/{enclave_identifier}/artifacts/local-file)
 	PostEnclavesEnclaveIdentifierArtifactsLocalFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-
+	// Add remote file to Kurtosis File System
 	// (POST /enclaves/{enclave_identifier}/artifacts/remote-file)
 	PostEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-
+	// Add service's file to Kurtosis File System
 	// (POST /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
 	PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error
-
+	// Inspect the content of a file artifact
 	// (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier})
 	GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, artifactIdentifier ArtifactIdentifier) error
-
+	// Downloads a files artifact from the Kurtosis File System
 	// (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download)
 	GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, artifactIdentifier ArtifactIdentifier) error
-
+	// Returns detailed information about alls services within the enclave
 	// (GET /enclaves/{enclave_identifier}/services)
 	GetEnclavesEnclaveIdentifierServices(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, params GetEnclavesEnclaveIdentifierServicesParams) error
-
+	// User services port forwarding
 	// (POST /enclaves/{enclave_identifier}/services/connection)
 	PostEnclavesEnclaveIdentifierServicesConnection(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-
+	// Returns information about all existing & historical services
 	// (GET /enclaves/{enclave_identifier}/services/history)
 	GetEnclavesEnclaveIdentifierServicesHistory(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-
+	// Returns detailed information about a specific service
 	// (GET /enclaves/{enclave_identifier}/services/{service_identifier})
 	GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error
-
+	// Executes the given command inside a running service's container
 	// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/command)
 	PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier) error
-
+	// Check for service availability
 	// (GET /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
 	GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, serviceIdentifier ServiceIdentifier, portNumber PortNumber, params GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityParams) error
-
+	// Get last Starlark run
 	// (GET /enclaves/{enclave_identifier}/starlark)
 	GetEnclavesEnclaveIdentifierStarlark(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-
+	// Uploads a Starlark package
 	// (POST /enclaves/{enclave_identifier}/starlark/packages)
 	PostEnclavesEnclaveIdentifierStarlarkPackages(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-
+	// Executes a Starlark package on the user's behalf
 	// (POST /enclaves/{enclave_identifier}/starlark/packages/{package_id})
 	PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, packageId PackageId, params PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdParams) error
-
+	// Executes a Starlark script on the user's behalf
 	// (POST /enclaves/{enclave_identifier}/starlark/scripts)
 	PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.Context, enclaveIdentifier EnclaveIdentifier, params PostEnclavesEnclaveIdentifierStarlarkScriptsParams) error
 }
@@ -1008,52 +1008,52 @@ func (response PostEnclavesEnclaveIdentifierStarlarkScriptsdefaultJSONResponse) 
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-
+	// List all files artifacts
 	// (GET /enclaves/{enclave_identifier}/artifacts)
 	GetEnclavesEnclaveIdentifierArtifacts(ctx context.Context, request GetEnclavesEnclaveIdentifierArtifactsRequestObject) (GetEnclavesEnclaveIdentifierArtifactsResponseObject, error)
-
+	// Uploads local file artifact to the Kurtosis File System
 	// (POST /enclaves/{enclave_identifier}/artifacts/local-file)
 	PostEnclavesEnclaveIdentifierArtifactsLocalFile(ctx context.Context, request PostEnclavesEnclaveIdentifierArtifactsLocalFileRequestObject) (PostEnclavesEnclaveIdentifierArtifactsLocalFileResponseObject, error)
-
+	// Add remote file to Kurtosis File System
 	// (POST /enclaves/{enclave_identifier}/artifacts/remote-file)
 	PostEnclavesEnclaveIdentifierArtifactsRemoteFile(ctx context.Context, request PostEnclavesEnclaveIdentifierArtifactsRemoteFileRequestObject) (PostEnclavesEnclaveIdentifierArtifactsRemoteFileResponseObject, error)
-
+	// Add service's file to Kurtosis File System
 	// (POST /enclaves/{enclave_identifier}/artifacts/services/{service_identifier})
 	PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifier(ctx context.Context, request PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierRequestObject) (PostEnclavesEnclaveIdentifierArtifactsServicesServiceIdentifierResponseObject, error)
-
+	// Inspect the content of a file artifact
 	// (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier})
 	GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifier(ctx context.Context, request GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierRequestObject) (GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierResponseObject, error)
-
+	// Downloads a files artifact from the Kurtosis File System
 	// (GET /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download)
 	GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload(ctx context.Context, request GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadRequestObject) (GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownloadResponseObject, error)
-
+	// Returns detailed information about alls services within the enclave
 	// (GET /enclaves/{enclave_identifier}/services)
 	GetEnclavesEnclaveIdentifierServices(ctx context.Context, request GetEnclavesEnclaveIdentifierServicesRequestObject) (GetEnclavesEnclaveIdentifierServicesResponseObject, error)
-
+	// User services port forwarding
 	// (POST /enclaves/{enclave_identifier}/services/connection)
 	PostEnclavesEnclaveIdentifierServicesConnection(ctx context.Context, request PostEnclavesEnclaveIdentifierServicesConnectionRequestObject) (PostEnclavesEnclaveIdentifierServicesConnectionResponseObject, error)
-
+	// Returns information about all existing & historical services
 	// (GET /enclaves/{enclave_identifier}/services/history)
 	GetEnclavesEnclaveIdentifierServicesHistory(ctx context.Context, request GetEnclavesEnclaveIdentifierServicesHistoryRequestObject) (GetEnclavesEnclaveIdentifierServicesHistoryResponseObject, error)
-
+	// Returns detailed information about a specific service
 	// (GET /enclaves/{enclave_identifier}/services/{service_identifier})
 	GetEnclavesEnclaveIdentifierServicesServiceIdentifier(ctx context.Context, request GetEnclavesEnclaveIdentifierServicesServiceIdentifierRequestObject) (GetEnclavesEnclaveIdentifierServicesServiceIdentifierResponseObject, error)
-
+	// Executes the given command inside a running service's container
 	// (POST /enclaves/{enclave_identifier}/services/{service_identifier}/command)
 	PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommand(ctx context.Context, request PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandRequestObject) (PostEnclavesEnclaveIdentifierServicesServiceIdentifierCommandResponseObject, error)
-
+	// Check for service availability
 	// (GET /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability)
 	GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailability(ctx context.Context, request GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityRequestObject) (GetEnclavesEnclaveIdentifierServicesServiceIdentifierEndpointsPortNumberAvailabilityResponseObject, error)
-
+	// Get last Starlark run
 	// (GET /enclaves/{enclave_identifier}/starlark)
 	GetEnclavesEnclaveIdentifierStarlark(ctx context.Context, request GetEnclavesEnclaveIdentifierStarlarkRequestObject) (GetEnclavesEnclaveIdentifierStarlarkResponseObject, error)
-
+	// Uploads a Starlark package
 	// (POST /enclaves/{enclave_identifier}/starlark/packages)
 	PostEnclavesEnclaveIdentifierStarlarkPackages(ctx context.Context, request PostEnclavesEnclaveIdentifierStarlarkPackagesRequestObject) (PostEnclavesEnclaveIdentifierStarlarkPackagesResponseObject, error)
-
+	// Executes a Starlark package on the user's behalf
 	// (POST /enclaves/{enclave_identifier}/starlark/packages/{package_id})
 	PostEnclavesEnclaveIdentifierStarlarkPackagesPackageId(ctx context.Context, request PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdRequestObject) (PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIdResponseObject, error)
-
+	// Executes a Starlark script on the user's behalf
 	// (POST /enclaves/{enclave_identifier}/starlark/scripts)
 	PostEnclavesEnclaveIdentifierStarlarkScripts(ctx context.Context, request PostEnclavesEnclaveIdentifierStarlarkScriptsRequestObject) (PostEnclavesEnclaveIdentifierStarlarkScriptsResponseObject, error)
 }
@@ -1534,76 +1534,80 @@ func (sh *strictHandler) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx echo.C
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

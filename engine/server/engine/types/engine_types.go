@@ -4,13 +4,13 @@ import (
 	"time"
 )
 
-// Defines values for EnclaveContainersStatus.
-type EnclaveContainersStatus string
+// Defines values for EnclaveStatus.
+type EnclaveStatus string
 
 const (
-	EnclaveContainersStatus_RUNNING EnclaveContainersStatus = "RUNNING"
-	EnclaveContainersStatus_STOPPED EnclaveContainersStatus = "STOPPED"
-	EnclaveContainersStatus_EMPTY   EnclaveContainersStatus = "EMPTY"
+	EnclaveStatus_RUNNING EnclaveStatus = "RUNNING"
+	EnclaveStatus_STOPPED EnclaveStatus = "STOPPED"
+	EnclaveStatus_EMPTY   EnclaveStatus = "EMPTY"
 )
 
 // Defines values for ContainerStatus.
@@ -64,7 +64,7 @@ type EnclaveInfo struct {
 	ApiContainerHostMachineInfo *EnclaveAPIContainerHostMachineInfo
 	ApiContainerInfo            *EnclaveAPIContainerInfo
 	ApiContainerStatus          ContainerStatus
-	EnclaveContainersStatus     EnclaveContainersStatus
+	EnclaveStatus               EnclaveStatus
 	CreationTime                Timestamp
 	EnclaveUuid                 string
 	Mode                        EnclaveMode

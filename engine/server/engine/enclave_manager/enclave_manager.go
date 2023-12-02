@@ -583,9 +583,9 @@ func getEnclaveInfoForEnclave(ctx context.Context, kurtosisBackend backend_inter
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get information on the API container of enclave '%v', instead an error occurred.", enclaveUuid)
 	}
-	enclaveContainersStatus, err := getEnclaveContainersStatusFromEnclaveStatus(enclave.GetStatus())
+	enclaveStatus, err := getEnclaveStatusFromEnclaveStatus(enclave.GetStatus())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get EnclaveContainersStatus from the enclave status of enclave '%v', but an error occurred", enclaveUuid)
+		return nil, stacktrace.Propagate(err, "Expected to be able to get EnclaveStatus from the enclave status of enclave '%v', but an error occurred", enclaveUuid)
 	}
 
 	creationTimestamp, err := getEnclaveCreationTimestamp(enclave)
@@ -604,7 +604,7 @@ func getEnclaveInfoForEnclave(ctx context.Context, kurtosisBackend backend_inter
 		EnclaveUuid:                 enclaveUuidStr,
 		ShortenedUuid:               uuid_generator.ShortenedUUIDString(enclaveUuidStr),
 		Name:                        enclaveName,
-		EnclaveContainersStatus:     enclaveContainersStatus,
+		EnclaveStatus:               enclaveStatus,
 		ApiContainerStatus:          apiContainerStatus,
 		ApiContainerInfo:            apiContainerInfo,
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
@@ -661,16 +661,16 @@ func getFirstApiContainerFromMap(apiContainerMap map[enclave.EnclaveUUID]*api_co
 	return firstApiContainerFound
 }
 
-func getEnclaveContainersStatusFromEnclaveStatus(status enclave.EnclaveStatus) (types.EnclaveContainersStatus, error) {
+func getEnclaveStatusFromEnclaveStatus(status enclave.EnclaveStatus) (types.EnclaveStatus, error) {
 	switch status {
 	case enclave.EnclaveStatus_Empty:
-		return types.EnclaveContainersStatus_EMPTY, nil
+		return types.EnclaveStatus_EMPTY, nil
 	case enclave.EnclaveStatus_Stopped:
-		return types.EnclaveContainersStatus_STOPPED, nil
+		return types.EnclaveStatus_STOPPED, nil
 	case enclave.EnclaveStatus_Running:
-		return types.EnclaveContainersStatus_RUNNING, nil
+		return types.EnclaveStatus_RUNNING, nil
 	default:
-		// EnclaveContainersStatus is of type string, cannot convert nil to sting returning ""
+		// EnclaveStatus is of type string, cannot convert nil to sting returning ""
 		return "", stacktrace.NewError("Unrecognized enclave status '%v'; this is a bug in Kurtosis", status.String())
 	}
 }

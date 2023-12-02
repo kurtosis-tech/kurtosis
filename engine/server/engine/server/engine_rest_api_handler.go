@@ -92,15 +92,15 @@ func (engine EngineRuntime) PostEnclaves(ctx context.Context, request api.PostEn
 	return api.PostEnclaves200JSONResponse(response), nil
 }
 
-// Get Historical Enclaves
-// (GET /enclaves/historical)
-func (engine EngineRuntime) GetEnclavesHistorical(ctx context.Context, request api.GetEnclavesHistoricalRequestObject) (api.GetEnclavesHistoricalResponseObject, error) {
+// Get History Enclaves
+// (GET /enclaves/history)
+func (engine EngineRuntime) GetEnclavesHistory(ctx context.Context, request api.GetEnclavesHistoryRequestObject) (api.GetEnclavesHistoryResponseObject, error) {
 	allIdentifiers, err := engine.EnclaveManager.GetExistingAndHistoricalEnclaveIdentifiers()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave identifiers")
 	}
 	identifiers_map_api := utils.MapList(allIdentifiers, to_http.ToHttpEnclaveIdentifiers)
-	return api.GetEnclavesHistorical200JSONResponse(identifiers_map_api), nil
+	return api.GetEnclavesHistory200JSONResponse(identifiers_map_api), nil
 }
 
 // Destroy Enclave
@@ -148,7 +148,7 @@ func (engine EngineRuntime) GetEnclavesEnclaveIdentifierStatus(ctx context.Conte
 		return nil, err
 	}
 
-	return api.GetEnclavesEnclaveIdentifierStatus200JSONResponse(to_http.ToHttpEnclaveContainersStatus(info.EnclaveContainersStatus)), nil
+	return api.GetEnclavesEnclaveIdentifierStatus200JSONResponse(to_http.ToHttpEnclaveStatus(info.EnclaveStatus)), nil
 }
 
 // Set enclave status

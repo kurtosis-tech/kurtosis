@@ -1,7 +1,7 @@
 openapi: 3.0.0
 
 info:
-  title: Kurtosis REST API
+  title: Kurtosis RESTful API
   version: 0.1.0
 
 paths:
@@ -15,7 +15,7 @@ paths:
     get:
       tags:
         - engine
-      summary: Get Engine Info
+      summary: Get engine info
       responses:
         default:
           $ref: "#/components/responses/NotOk"
@@ -30,7 +30,7 @@ paths:
     get:
       tags:
         - engine
-      summary: Get Enclaves
+      summary: List enclaves
       responses:
         default:
           $ref: "#/components/responses/NotOk"
@@ -46,7 +46,7 @@ paths:
     post:
       tags:
         - engine
-      summary: Create Enclave
+      summary: Create enclave
       requestBody:
         required: true
         content:
@@ -66,7 +66,9 @@ paths:
     delete:
       tags:
         - engine
-      summary: Delete Enclaves
+      summary: Delete enclaves
+      description: |-
+        Delete stopped enclaves. TO delete all the enclaves use the query parameter `remove_all` 
       parameters:
         - $ref: "#/components/parameters/remove_all"
       responses:
@@ -79,11 +81,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/DeletionSummary"
 
-  /enclaves/historical:
+  /enclaves/history:
     get:
       tags:
         - engine
-      summary: Get Historical Enclaves
+      summary: List all enclave identifiers
       responses:
         default:
           $ref: "#/components/responses/NotOk"
@@ -100,7 +102,7 @@ paths:
     get:
       tags:
         - engine
-      summary: Get Enclave Info
+      summary: Get enclave detailed info
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
       responses:
@@ -116,7 +118,7 @@ paths:
     delete:
       tags:
         - engine
-      summary: Destroy Enclave
+      summary: Destroy enclave
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
       responses:
@@ -140,7 +142,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EnclaveContainersStatus"
+                $ref: "#/components/schemas/EnclaveStatus"
     post:
       tags:
         - engine
@@ -169,7 +171,7 @@ paths:
     get:
       tags:
         - enclave
-      description: Get last Starlark run
+      summary: Get last Starlark run
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
       responses:
@@ -186,7 +188,9 @@ paths:
     post:
       tags:
         - enclave
-      description: Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
+      summary: Uploads a Starlark package
+      description: |-
+        Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
       requestBody:
@@ -201,7 +205,12 @@ paths:
     post:
       tags:
         - enclave
-      description: Executes a Starlark script on the user's behalf
+      summary: Executes a Starlark package on the user's behalf
+      description: |-
+        The endpoint will trigger the execution and deployment of a Starlark package. By default, it'll
+        return an async logs resource using `starlark_execution_uuid` that can be used to retrieve the logs
+        via streaming. It's also possible to block the call and wait for the execution to complete using the
+        query parameter `retrieve_logs_async`.
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - $ref: "#/components/parameters/package_id"
@@ -226,7 +235,12 @@ paths:
     post:
       tags:
         - enclave
-      description: Executes a Starlark script on the user's behalf
+      summary: Executes a Starlark script on the user's behalf
+      description: |-
+        The endpoint will trigger the execution and deployment of a Starlark file. By default, it'll
+        return an async logs resource using `starlark_execution_uuid` that can be used to retrieve the logs
+        via streaming. It's also possible to block the call and wait for the execution to complete using the
+        query parameter `retrieve_logs_async`.
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - $ref: "#/components/parameters/retrieve_logs_async"
@@ -250,6 +264,7 @@ paths:
     get:
       tags:
         - enclave
+      summary: Returns detailed information about a specific service 
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - $ref: "#/components/parameters/service_identifier"
@@ -267,7 +282,7 @@ paths:
     get:
       tags:
         - enclave
-      description: Returns information about all existing & historical services
+      summary: Returns information about all existing & historical services
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
       responses:
@@ -286,6 +301,7 @@ paths:
     get:
       tags:
         - enclave
+      summary: Returns detailed information about alls services within the enclave 
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - in: query
@@ -311,7 +327,7 @@ paths:
     post:
       tags:
         - enclave
-      description: Executes the given command inside a running container
+      summary: Executes the given command inside a running service's container
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - $ref: "#/components/parameters/service_identifier"
@@ -336,6 +352,7 @@ paths:
     get:
       tags:
         - enclave
+      summary: Check for service availability
       description: Block until the given HTTP endpoint returns available, calling it through a HTTP request
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
@@ -356,7 +373,7 @@ paths:
     get:
       tags:
         - enclave
-      description: List all files artifacts
+      summary: List all files artifacts
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
       responses:
@@ -378,7 +395,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - $ref: "#/components/parameters/artifact_identifier"
-      description: Inspect the content of a file artifact
+      summary: Inspect the content of a file artifact
       responses:
         default:
           $ref: "#/components/responses/NotOk"
@@ -395,7 +412,7 @@ paths:
     get:
       tags:
         - enclave
-      description: Downloads a files artifact from the Kurtosis File System
+      summary: Downloads a files artifact from the Kurtosis File System
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - $ref: "#/components/parameters/artifact_identifier"
@@ -414,7 +431,7 @@ paths:
     post:
       tags:
         - enclave
-      description: Uploads a files artifact to the Kurtosis File System
+      summary: Uploads local file artifact to the Kurtosis File System
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
       requestBody:
@@ -435,6 +452,7 @@ paths:
     post:
       tags:
         - enclave
+      summary: Add remote file to Kurtosis File System 
       description: Tells the API container to download a files artifact from the web to the Kurtosis File System
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
@@ -459,6 +477,7 @@ paths:
     post:
       tags:
         - enclave
+      summary: Add service's file to Kurtosis File System 
       description: Tells the API container to copy a files artifact from a service to the Kurtosis File System
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
@@ -483,7 +502,7 @@ paths:
     post:
       tags:
         - enclave
-      description: User services port forwarding
+      summary: User services port forwarding
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
       requestBody:
@@ -508,9 +527,9 @@ paths:
     get:
       tags:
         - streaming
-      summary: Get enclave logs
+      summary: Get enclave's services logs
       description: |-
-        Get enclave logs. This endpoint can stream the logs by either starting
+        Get multiple enclave services logs concurrently. This endpoint can stream the logs by either starting
         a Websocket connection (recommended) or legacy HTTP streaming.
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
@@ -648,7 +667,7 @@ components:
       name: remove_all
       in: query
       required: false
-      description: If true, remove all enclaves. Default is false
+      description: If true, remove all enclaves. Otherwise only remove stopped enclaves. Default is false
       schema:
         type: boolean
 
@@ -813,7 +832,7 @@ components:
         - TEST
         - PRODUCTION
 
-    EnclaveContainersStatus:
+    EnclaveStatus:
       type: string
       enum:
         - RUNNING
@@ -842,7 +861,7 @@ components:
         shortened_uuid:
           type: string
         containers_status:
-          $ref: "#/components/schemas/EnclaveContainersStatus"
+          $ref: "#/components/schemas/EnclaveStatus"
         api_container_status:
           $ref: "#/components/schemas/ApiContainerStatus"
         api_container_info:

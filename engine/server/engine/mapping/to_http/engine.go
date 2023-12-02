@@ -15,14 +15,14 @@ func warnUnmatchedValue[T any](value T) {
 	logrus.Warnf("Unmatched gRPC %T to Http mapping, returning empty value", value)
 }
 
-func ToHttpEnclaveContainersStatus(status types.EnclaveContainersStatus) api_type.EnclaveContainersStatus {
+func ToHttpEnclaveStatus(status types.EnclaveStatus) api_type.EnclaveStatus {
 	switch status {
-	case types.EnclaveContainersStatus_EMPTY:
-		return api_type.EnclaveContainersStatusEMPTY
-	case types.EnclaveContainersStatus_STOPPED:
-		return api_type.EnclaveContainersStatusSTOPPED
-	case types.EnclaveContainersStatus_RUNNING:
-		return api_type.EnclaveContainersStatusRUNNING
+	case types.EnclaveStatus_EMPTY:
+		return api_type.EnclaveStatusEMPTY
+	case types.EnclaveStatus_STOPPED:
+		return api_type.EnclaveStatusSTOPPED
+	case types.EnclaveStatus_RUNNING:
+		return api_type.EnclaveStatusRUNNING
 	default:
 		warnUnmatchedValue(status)
 		panic(fmt.Sprintf("Undefined mapping of value: %s", status))
@@ -78,7 +78,7 @@ func ToHttpEnclaveInfo(info types.EnclaveInfo) api_type.EnclaveInfo {
 		EnclaveUuid:                 info.EnclaveUuid,
 		ShortenedUuid:               info.ShortenedUuid,
 		Name:                        info.Name,
-		ContainersStatus:            ToHttpEnclaveContainersStatus(info.EnclaveContainersStatus),
+		ContainersStatus:            ToHttpEnclaveStatus(info.EnclaveStatus),
 		ApiContainerStatus:          ToHttpApiContainerStatus(info.ApiContainerStatus),
 		ApiContainerInfo:            utils.MapPointer(info.ApiContainerInfo, ToHttpEnclaveAPIContainerInfo),
 		ApiContainerHostMachineInfo: utils.MapPointer(info.ApiContainerHostMachineInfo, ToHttpApiContainerHostMachineInfo),

@@ -139,11 +139,11 @@ func (creator *EnclaveCreator) CreateEnclave(
 	}
 
 	newEnclaveInfo := &types.EnclaveInfo{
-		EnclaveUuid:             newEnclaveUuidStr,
-		Name:                    newEnclave.GetName(),
-		ShortenedUuid:           shortenedUuid,
-		EnclaveContainersStatus: types.EnclaveContainersStatus_RUNNING,
-		ApiContainerStatus:      types.ContainerStatus_RUNNING,
+		EnclaveUuid:        newEnclaveUuidStr,
+		Name:               newEnclave.GetName(),
+		ShortenedUuid:      shortenedUuid,
+		EnclaveStatus:      types.EnclaveStatus_RUNNING,
+		ApiContainerStatus: types.ContainerStatus_RUNNING,
 		ApiContainerInfo: &types.EnclaveAPIContainerInfo{
 			ContainerId:           "",
 			IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),

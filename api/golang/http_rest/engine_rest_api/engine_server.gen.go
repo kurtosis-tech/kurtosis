@@ -23,22 +23,22 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Delete Enclaves
+	// Delete enclaves
 	// (DELETE /enclaves)
 	DeleteEnclaves(ctx echo.Context, params DeleteEnclavesParams) error
-	// Get Enclaves
+	// List enclaves
 	// (GET /enclaves)
 	GetEnclaves(ctx echo.Context) error
-	// Create Enclave
+	// Create enclave
 	// (POST /enclaves)
 	PostEnclaves(ctx echo.Context) error
-	// Get Historical Enclaves
-	// (GET /enclaves/historical)
-	GetEnclavesHistorical(ctx echo.Context) error
-	// Destroy Enclave
+	// List all enclave identifiers
+	// (GET /enclaves/history)
+	GetEnclavesHistory(ctx echo.Context) error
+	// Destroy enclave
 	// (DELETE /enclaves/{enclave_identifier})
 	DeleteEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-	// Get Enclave Info
+	// Get enclave detailed info
 	// (GET /enclaves/{enclave_identifier})
 	GetEnclavesEnclaveIdentifier(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
 	// Get enclave status
@@ -47,7 +47,7 @@ type ServerInterface interface {
 	// Set enclave status
 	// (POST /enclaves/{enclave_identifier}/status)
 	PostEnclavesEnclaveIdentifierStatus(ctx echo.Context, enclaveIdentifier EnclaveIdentifier) error
-	// Get Engine Info
+	// Get engine info
 	// (GET /engine/info)
 	GetEngineInfo(ctx echo.Context) error
 }
@@ -93,12 +93,12 @@ func (w *ServerInterfaceWrapper) PostEnclaves(ctx echo.Context) error {
 	return err
 }
 
-// GetEnclavesHistorical converts echo context to params.
-func (w *ServerInterfaceWrapper) GetEnclavesHistorical(ctx echo.Context) error {
+// GetEnclavesHistory converts echo context to params.
+func (w *ServerInterfaceWrapper) GetEnclavesHistory(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetEnclavesHistorical(ctx)
+	err = w.Handler.GetEnclavesHistory(ctx)
 	return err
 }
 
@@ -206,7 +206,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/enclaves", wrapper.DeleteEnclaves)
 	router.GET(baseURL+"/enclaves", wrapper.GetEnclaves)
 	router.POST(baseURL+"/enclaves", wrapper.PostEnclaves)
-	router.GET(baseURL+"/enclaves/historical", wrapper.GetEnclavesHistorical)
+	router.GET(baseURL+"/enclaves/history", wrapper.GetEnclavesHistory)
 	router.DELETE(baseURL+"/enclaves/:enclave_identifier", wrapper.DeleteEnclavesEnclaveIdentifier)
 	router.GET(baseURL+"/enclaves/:enclave_identifier", wrapper.GetEnclavesEnclaveIdentifier)
 	router.GET(baseURL+"/enclaves/:enclave_identifier/status", wrapper.GetEnclavesEnclaveIdentifierStatus)
@@ -303,28 +303,28 @@ func (response PostEnclavesdefaultJSONResponse) VisitPostEnclavesResponse(w http
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type GetEnclavesHistoricalRequestObject struct {
+type GetEnclavesHistoryRequestObject struct {
 }
 
-type GetEnclavesHistoricalResponseObject interface {
-	VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error
+type GetEnclavesHistoryResponseObject interface {
+	VisitGetEnclavesHistoryResponse(w http.ResponseWriter) error
 }
 
-type GetEnclavesHistorical200JSONResponse []EnclaveIdentifiers
+type GetEnclavesHistory200JSONResponse []EnclaveIdentifiers
 
-func (response GetEnclavesHistorical200JSONResponse) VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error {
+func (response GetEnclavesHistory200JSONResponse) VisitGetEnclavesHistoryResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetEnclavesHistoricaldefaultJSONResponse struct {
+type GetEnclavesHistorydefaultJSONResponse struct {
 	Body       ResponseInfo
 	StatusCode int
 }
 
-func (response GetEnclavesHistoricaldefaultJSONResponse) VisitGetEnclavesHistoricalResponse(w http.ResponseWriter) error {
+func (response GetEnclavesHistorydefaultJSONResponse) VisitGetEnclavesHistoryResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -396,7 +396,7 @@ type GetEnclavesEnclaveIdentifierStatusResponseObject interface {
 	VisitGetEnclavesEnclaveIdentifierStatusResponse(w http.ResponseWriter) error
 }
 
-type GetEnclavesEnclaveIdentifierStatus200JSONResponse EnclaveContainersStatus
+type GetEnclavesEnclaveIdentifierStatus200JSONResponse EnclaveStatus
 
 func (response GetEnclavesEnclaveIdentifierStatus200JSONResponse) VisitGetEnclavesEnclaveIdentifierStatusResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -476,22 +476,22 @@ func (response GetEngineInfodefaultJSONResponse) VisitGetEngineInfoResponse(w ht
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-	// Delete Enclaves
+	// Delete enclaves
 	// (DELETE /enclaves)
 	DeleteEnclaves(ctx context.Context, request DeleteEnclavesRequestObject) (DeleteEnclavesResponseObject, error)
-	// Get Enclaves
+	// List enclaves
 	// (GET /enclaves)
 	GetEnclaves(ctx context.Context, request GetEnclavesRequestObject) (GetEnclavesResponseObject, error)
-	// Create Enclave
+	// Create enclave
 	// (POST /enclaves)
 	PostEnclaves(ctx context.Context, request PostEnclavesRequestObject) (PostEnclavesResponseObject, error)
-	// Get Historical Enclaves
-	// (GET /enclaves/historical)
-	GetEnclavesHistorical(ctx context.Context, request GetEnclavesHistoricalRequestObject) (GetEnclavesHistoricalResponseObject, error)
-	// Destroy Enclave
+	// List all enclave identifiers
+	// (GET /enclaves/history)
+	GetEnclavesHistory(ctx context.Context, request GetEnclavesHistoryRequestObject) (GetEnclavesHistoryResponseObject, error)
+	// Destroy enclave
 	// (DELETE /enclaves/{enclave_identifier})
 	DeleteEnclavesEnclaveIdentifier(ctx context.Context, request DeleteEnclavesEnclaveIdentifierRequestObject) (DeleteEnclavesEnclaveIdentifierResponseObject, error)
-	// Get Enclave Info
+	// Get enclave detailed info
 	// (GET /enclaves/{enclave_identifier})
 	GetEnclavesEnclaveIdentifier(ctx context.Context, request GetEnclavesEnclaveIdentifierRequestObject) (GetEnclavesEnclaveIdentifierResponseObject, error)
 	// Get enclave status
@@ -500,7 +500,7 @@ type StrictServerInterface interface {
 	// Set enclave status
 	// (POST /enclaves/{enclave_identifier}/status)
 	PostEnclavesEnclaveIdentifierStatus(ctx context.Context, request PostEnclavesEnclaveIdentifierStatusRequestObject) (PostEnclavesEnclaveIdentifierStatusResponseObject, error)
-	// Get Engine Info
+	// Get engine info
 	// (GET /engine/info)
 	GetEngineInfo(ctx context.Context, request GetEngineInfoRequestObject) (GetEngineInfoResponseObject, error)
 }
@@ -595,23 +595,23 @@ func (sh *strictHandler) PostEnclaves(ctx echo.Context) error {
 	return nil
 }
 
-// GetEnclavesHistorical operation middleware
-func (sh *strictHandler) GetEnclavesHistorical(ctx echo.Context) error {
-	var request GetEnclavesHistoricalRequestObject
+// GetEnclavesHistory operation middleware
+func (sh *strictHandler) GetEnclavesHistory(ctx echo.Context) error {
+	var request GetEnclavesHistoryRequestObject
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetEnclavesHistorical(ctx.Request().Context(), request.(GetEnclavesHistoricalRequestObject))
+		return sh.ssi.GetEnclavesHistory(ctx.Request().Context(), request.(GetEnclavesHistoryRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetEnclavesHistorical")
+		handler = middleware(handler, "GetEnclavesHistory")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetEnclavesHistoricalResponseObject); ok {
-		return validResponse.VisitGetEnclavesHistoricalResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetEnclavesHistoryResponseObject); ok {
+		return validResponse.VisitGetEnclavesHistoryResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("Unexpected response type: %T", response)
 	}
@@ -750,30 +750,31 @@ func (sh *strictHandler) GetEngineInfo(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

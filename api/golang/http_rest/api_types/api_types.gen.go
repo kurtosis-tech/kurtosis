@@ -31,17 +31,17 @@ const (
 	ContainerStatusUNKNOWN ContainerStatus = "UNKNOWN"
 )
 
-// Defines values for EnclaveContainersStatus.
-const (
-	EnclaveContainersStatusEMPTY   EnclaveContainersStatus = "EMPTY"
-	EnclaveContainersStatusRUNNING EnclaveContainersStatus = "RUNNING"
-	EnclaveContainersStatusSTOPPED EnclaveContainersStatus = "STOPPED"
-)
-
 // Defines values for EnclaveMode.
 const (
 	PRODUCTION EnclaveMode = "PRODUCTION"
 	TEST       EnclaveMode = "TEST"
+)
+
+// Defines values for EnclaveStatus.
+const (
+	EnclaveStatusEMPTY   EnclaveStatus = "EMPTY"
+	EnclaveStatusRUNNING EnclaveStatus = "RUNNING"
+	EnclaveStatusSTOPPED EnclaveStatus = "STOPPED"
 )
 
 // Defines values for EnclaveTargetStatus.
@@ -162,9 +162,6 @@ type EnclaveAPIContainerInfo struct {
 	IpInsideEnclave       string `json:"ip_inside_enclave"`
 }
 
-// EnclaveContainersStatus defines model for EnclaveContainersStatus.
-type EnclaveContainersStatus string
-
 // EnclaveIdentifiers defines model for EnclaveIdentifiers.
 type EnclaveIdentifiers struct {
 	EnclaveUuid   string `json:"enclave_uuid"`
@@ -177,7 +174,7 @@ type EnclaveInfo struct {
 	ApiContainerHostMachineInfo *EnclaveAPIContainerHostMachineInfo `json:"api_container_host_machine_info,omitempty"`
 	ApiContainerInfo            *EnclaveAPIContainerInfo            `json:"api_container_info,omitempty"`
 	ApiContainerStatus          ApiContainerStatus                  `json:"api_container_status"`
-	ContainersStatus            EnclaveContainersStatus             `json:"containers_status"`
+	ContainersStatus            EnclaveStatus                       `json:"containers_status"`
 	CreationTime                Timestamp                           `json:"creation_time"`
 	EnclaveUuid                 string                              `json:"enclave_uuid"`
 	Mode                        EnclaveMode                         `json:"mode"`
@@ -193,6 +190,9 @@ type EnclaveNameAndUuid struct {
 	Name string `json:"name"`
 	Uuid string `json:"uuid"`
 }
+
+// EnclaveStatus defines model for EnclaveStatus.
+type EnclaveStatus string
 
 // EnclaveTargetStatus defines model for EnclaveTargetStatus.
 type EnclaveTargetStatus string
@@ -620,7 +620,7 @@ type NotOk = ResponseInfo
 
 // DeleteEnclavesParams defines parameters for DeleteEnclaves.
 type DeleteEnclavesParams struct {
-	// RemoveAll If true, remove all enclaves. Default is false
+	// RemoveAll If true, remove all enclaves. Otherwise only remove stopped enclaves. Default is false
 	RemoveAll *RemoveAll `form:"remove_all,omitempty" json:"remove_all,omitempty"`
 }
 
