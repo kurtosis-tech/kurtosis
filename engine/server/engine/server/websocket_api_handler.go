@@ -44,7 +44,9 @@ type WebSocketRuntime struct {
 
 	LogFileManager *log_file_manager.LogFileManager
 
-	MetricsClient     metrics_client.MetricsClient
+	MetricsClient metrics_client.MetricsClient
+
+	// Pool of Starlark log streamers create by package/script runs
 	AsyncStarlarkLogs streaming.StreamerPool[*rpc_api.StarlarkRunResponseLine]
 }
 

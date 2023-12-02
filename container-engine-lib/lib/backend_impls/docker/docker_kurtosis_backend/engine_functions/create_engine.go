@@ -140,7 +140,7 @@ func CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the Enclave Manager UI's http port spec object using number '%v' and protocol '%v'",
+			"An error occurred creating the REST API server's http port spec object using number '%v' and protocol '%v'",
 			restAPIPort,
 			consts.EngineTransportProtocol.String(),
 		)

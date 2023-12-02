@@ -77,3 +77,7 @@ func (streamerPool StreamerPool[T]) Consume(uuid StreamerUUID, consumer func(*ku
 
 	return true, nil
 }
+
+func (streamerPool StreamerPool[T]) Clean() {
+	streamerPool.pool.Purge()
+}
