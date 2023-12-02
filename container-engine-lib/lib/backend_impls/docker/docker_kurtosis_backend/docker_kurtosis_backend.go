@@ -509,6 +509,22 @@ func (backend *DockerKurtosisBackend) DestroyReverseProxy(ctx context.Context) e
 	return nil
 }
 
+func (backend *DockerKurtosisBackend) ConnectReverseProxyToNetwork(ctx context.Context, networkId string) error {
+	if err := reverse_proxy_functions.ConnectReverseProxyToNetwork(ctx, backend.dockerManager, networkId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred connecting the reverse proxy to the network with ID '%v'", networkId)
+	}
+
+	return nil
+}
+
+func (backend *DockerKurtosisBackend) DisconnectReverseProxyFromNetwork(ctx context.Context, networkId string) error {
+	if err := reverse_proxy_functions.DisconnectReverseProxyFromNetwork(ctx, backend.dockerManager, networkId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred disconnecting the reverse proxy from the network with ID '%v'", networkId)
+	}
+
+	return nil
+}
+
 func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
