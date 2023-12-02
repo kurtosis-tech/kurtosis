@@ -1,70 +1,84 @@
 package to_http
 
 import (
+	"reflect"
+
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
+	"github.com/sirupsen/logrus"
 
 	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 )
 
-func ToHttpApiStarlarkRunResponseLine(line rpc_api.StarlarkRunResponseLine) api_type.StarlarkRunResponseLine {
-	if runError := line.GetError(); runError != nil {
-		var http_type api_type.StarlarkRunResponseLine
-		http_type.FromStarlarkError(ToHttpStarlarkError(*runError))
-		return http_type
+func ToHttpStarlarkRunResponseLine(rpc_value rpc_api.StarlarkRunResponseLine) *api_type.StarlarkRunResponseLine {
+	var http_type api_type.StarlarkRunResponseLine
+	if runError := rpc_value.GetError(); runError != nil {
+		if value := ToHttpStarlarkError(*runError); value != nil {
+			http_type.FromStarlarkError(*value)
+			return &http_type
+		}
+		return nil
 	}
 
-	if runInfo := line.GetInfo(); runInfo != nil {
-		var http_type api_type.StarlarkRunResponseLine
+	if runInfo := rpc_value.GetInfo(); runInfo != nil {
 		http_type.FromStarlarkInfo(ToHttpStarlarkInfo(*runInfo))
-		return http_type
+		return &http_type
 	}
 
-	if runInstruction := line.GetInstruction(); runInstruction != nil {
-		var http_type api_type.StarlarkRunResponseLine
+	if runInstruction := rpc_value.GetInstruction(); runInstruction != nil {
 		http_type.FromStarlarkInstruction(ToHttpStarlarkInstruction(*runInstruction))
-		return http_type
+		return &http_type
 	}
 
-	if runInstructionResult := line.GetInstructionResult(); runInstructionResult != nil {
-		var http_type api_type.StarlarkRunResponseLine
+	if runInstructionResult := rpc_value.GetInstructionResult(); runInstructionResult != nil {
 		http_type.FromStarlarkInstructionResult(ToHttpStarlarkInstructionResult(*runInstructionResult))
-		return http_type
+		return &http_type
 	}
 
-	if runProgressInfo := line.GetProgressInfo(); runProgressInfo != nil {
-		var http_type api_type.StarlarkRunResponseLine
+	if runProgressInfo := rpc_value.GetProgressInfo(); runProgressInfo != nil {
 		http_type.FromStarlarkRunProgress(ToHttpStarlarkProgressInfo(*runProgressInfo))
-		return http_type
+		return &http_type
 	}
 
-	if runWarning := line.GetWarning(); runWarning != nil {
-		var http_type api_type.StarlarkRunResponseLine
+	if runWarning := rpc_value.GetWarning(); runWarning != nil {
 		http_type.FromStarlarkWarning(ToHttpStarlarkWarning(*runWarning))
-		return http_type
+		return &http_type
 	}
 
-	if runFinishedEvent := line.GetRunFinishedEvent(); runFinishedEvent != nil {
-		var http_type api_type.StarlarkRunResponseLine
+	if runFinishedEvent := rpc_value.GetRunFinishedEvent(); runFinishedEvent != nil {
 		http_type.FromStarlarkRunFinishedEvent(ToHttpStarlarkRunFinishedEvent(*runFinishedEvent))
-		return http_type
+		return &http_type
 	}
 
-	return api_type.StarlarkRunResponseLine{}
+	logrus.WithFields(logrus.Fields{
+		"type":  reflect.TypeOf(rpc_value).Name(),
+		"value": rpc_value.String(),
+	}).Warnf("Unmatched gRPC to Http mapping, returning empty value")
+	return nil
 }
 
-func ToHttpStarlarkError(rpc_value rpc_api.StarlarkError) api_type.StarlarkError {
+func ToHttpStarlarkError(rpc_value rpc_api.StarlarkError) *api_type.StarlarkError {
 	var http_type api_type.StarlarkError
 	if runError := rpc_value.GetExecutionError(); runError != nil {
 		http_type.Error.FromStarlarkExecutionError(ToHttpStarlarkExecutionError(*runError))
+		return &http_type
 	}
+
 	if runError := rpc_value.GetInterpretationError(); runError != nil {
 		http_type.Error.FromStarlarkInterpretationError(ToHttpStarlarkInterpretationError(*runError))
+		return &http_type
 	}
+
 	if runError := rpc_value.GetValidationError(); runError != nil {
 		http_type.Error.FromStarlarkValidationError(ToHttpStarlarkValidationError(*runError))
+		return &http_type
 	}
-	return http_type
+
+	logrus.WithFields(logrus.Fields{
+		"type":  reflect.TypeOf(rpc_value).Name(),
+		"value": rpc_value.String(),
+	}).Warnf("Unmatched gRPC to Http mapping, returning empty value")
+	return nil
 }
 
 func ToHttpStarlarkExecutionError(rpc_value rpc_api.StarlarkExecutionError) api_type.StarlarkExecutionError {
@@ -120,10 +134,6 @@ func ToHttpStarlarkWarning(rpc_value rpc_api.StarlarkWarning) api_type.StarlarkW
 	return warning
 }
 
-func ToHttpStarlarkRunResponseLine(rpc_value rpc_api.StarlarkRunResponseLine) api_type.StarlarkRunResponseLine {
-	return api_type.StarlarkRunResponseLine{}
-
-}
 func ToHttpStarlarkRunFinishedEvent(rpc_value rpc_api.StarlarkRunFinishedEvent) api_type.StarlarkRunFinishedEvent {
 	var event api_type.StarlarkRunFinishedEvent
 	event.RunFinishedEvent.IsRunSuccessful = rpc_value.IsRunSuccessful

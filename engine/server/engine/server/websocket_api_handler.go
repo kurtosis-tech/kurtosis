@@ -166,7 +166,7 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool strea
 	websocket.Handler(func(ws *websocket.Conn) {
 		defer ws.Close()
 		found, err := streamerPool.Consume(streaming.StreamerUUID(streamerUUID), func(logline *rpc_api.StarlarkRunResponseLine) error {
-			err := websocket.JSON.Send(ws, utils.MapPointer(logline, to_http.ToHttpApiStarlarkRunResponseLine))
+			err := websocket.JSON.Send(ws, utils.MapPointer(logline, to_http.ToHttpStarlarkRunResponseLine))
 			if err != nil {
 				return err
 			}
@@ -205,7 +205,7 @@ func streamStarlarkLogsWithHTTP[T any](ctx echo.Context, streamerPool streaming.
 	enc := json.NewEncoder(ctx.Response())
 	ctx.Response().WriteHeader(http.StatusOK)
 	found, err := streamerPool.Consume(streaming.StreamerUUID(streamerUUID), func(logline *rpc_api.StarlarkRunResponseLine) error {
-		if err := enc.Encode(utils.MapPointer(logline, to_http.ToHttpApiStarlarkRunResponseLine)); err != nil {
+		if err := enc.Encode(utils.MapPointer(logline, to_http.ToHttpStarlarkRunResponseLine)); err != nil {
 			return err
 		}
 		ctx.Response().Flush()

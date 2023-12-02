@@ -5,10 +5,15 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
+	"github.com/sirupsen/logrus"
 
 	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
 )
+
+func warnUnmatchedValue[T any](value T) {
+	logrus.Warnf("Unmatched gRPC %T to Http mapping, returning empty value", value)
+}
 
 func ToHttpEnclaveContainersStatus(status types.EnclaveContainersStatus) api_type.EnclaveContainersStatus {
 	switch status {
@@ -19,6 +24,7 @@ func ToHttpEnclaveContainersStatus(status types.EnclaveContainersStatus) api_typ
 	case types.EnclaveContainersStatus_RUNNING:
 		return api_type.EnclaveContainersStatusRUNNING
 	default:
+		warnUnmatchedValue(status)
 		panic(fmt.Sprintf("Undefined mapping of value: %s", status))
 	}
 }
@@ -32,6 +38,7 @@ func ToHttpApiContainerStatus(status types.ContainerStatus) api_type.ApiContaine
 	case types.ContainerStatus_RUNNING:
 		return api_type.ApiContainerStatusRUNNING
 	default:
+		warnUnmatchedValue(status)
 		panic(fmt.Sprintf("Undefined mapping of value: %s", status))
 	}
 }
@@ -61,6 +68,7 @@ func ToHttpEnclaveMode(mode types.EnclaveMode) api_type.EnclaveMode {
 	case types.EnclaveMode_TEST:
 		return api_type.TEST
 	default:
+		warnUnmatchedValue(mode)
 		panic(fmt.Sprintf("Undefined mapping of value: %s", mode))
 	}
 }
@@ -103,6 +111,7 @@ func ToHttpContainerStatus(status rpc_api.Container_Status) api_type.ContainerSt
 	case rpc_api.Container_UNKNOWN:
 		return api_type.ContainerStatusUNKNOWN
 	default:
+		warnUnmatchedValue(status)
 		panic(fmt.Sprintf("Missing conversion of Container Status Enum value: %s", status))
 	}
 }
@@ -116,6 +125,7 @@ func ToHttpTransportProtocol(protocol rpc_api.Port_TransportProtocol) api_type.T
 	case rpc_api.Port_SCTP:
 		return api_type.SCTP
 	default:
+		warnUnmatchedValue(protocol)
 		panic(fmt.Sprintf("Missing conversion of Transport Protocol Enum value: %s", protocol))
 	}
 }
@@ -129,6 +139,7 @@ func ToHttpServiceStatus(status rpc_api.ServiceStatus) api_type.ServiceStatus {
 	case rpc_api.ServiceStatus_UNKNOWN:
 		return api_type.ServiceStatusUNKNOWN
 	default:
+		warnUnmatchedValue(status)
 		panic(fmt.Sprintf("Missing conversion of Service Status Enum value: %s", status))
 	}
 }
@@ -177,6 +188,7 @@ func ToHttpFeatureFlag(flag rpc_api.KurtosisFeatureFlag) api_type.KurtosisFeatur
 	case rpc_api.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING:
 		return api_type.NOINSTRUCTIONSCACHING
 	default:
+		warnUnmatchedValue(flag)
 		panic(fmt.Sprintf("Missing conversion of Feature Flag Enum value: %s", flag))
 	}
 }
@@ -188,6 +200,7 @@ func ToHttpRestartPolicy(policy rpc_api.RestartPolicy) api_type.RestartPolicy {
 	case rpc_api.RestartPolicy_NEVER:
 		return api_type.RestartPolicyNEVER
 	default:
+		warnUnmatchedValue(policy)
 		panic(fmt.Sprintf("Missing conversion of Restart Policy Enum value: %s", policy))
 	}
 }

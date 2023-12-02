@@ -602,8 +602,8 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	var sync_logs api_type.StarlarkRunResponse_StarlarkExecutionLogs
 
 	if !isAsyncRetrieval {
-		logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), to_http.ToHttpApiStarlarkRunResponseLine)
-		sync_logs.FromStarlarkRunLogs(logs)
+		logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), to_http.ToHttpStarlarkRunResponseLine)
+		sync_logs.FromStarlarkRunLogs(utils.FilterListNils(logs))
 	} else {
 		async_uuid := manager.asyncStarlarkLogs.Add(&asyncLogs)
 		var async_logs api_type.AsyncStarlarkExecutionLogs
@@ -656,9 +656,9 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 	asyncLogs := streaming.NewAsyncStarlarkLogs(cancelCtxFunc)
 	go asyncLogs.AttachStream(stream)
 
-	logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), to_http.ToHttpApiStarlarkRunResponseLine)
+	logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), to_http.ToHttpStarlarkRunResponseLine)
 	var sync_logs api_type.StarlarkRunResponse_StarlarkExecutionLogs
-	sync_logs.FromStarlarkRunLogs(logs)
+	sync_logs.FromStarlarkRunLogs(utils.FilterListNils(logs))
 
 	response := api_type.StarlarkRunResponse{StarlarkExecutionLogs: &sync_logs}
 	return api.PostEnclavesEnclaveIdentifierStarlarkScripts200JSONResponse(response), nil
