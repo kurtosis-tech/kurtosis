@@ -75,7 +75,7 @@ const (
 	restAPIPortAddr uint16 = 9779
 
 	streamerPoolSize       = 1000
-	streamerExpirationTime = time.Hour * 24
+	streamerExpirationTime = time.Hour * 2
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here

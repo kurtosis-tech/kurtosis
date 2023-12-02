@@ -558,7 +558,6 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	if responseErr != nil {
 		return api.PostEnclavesEnclaveIdentifierStarlarkPackagesPackageIddefaultJSONResponse{Body: *responseErr, StatusCode: int(responseErr.Code)}, nil
 	}
-	logrus.Infof("Run Starlark package on enclave %s", enclave_identifier)
 
 	package_id := request.PackageId
 	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api_type.KurtosisFeatureFlag{}), to_grpc.ToGrpcFeatureFlag)
@@ -570,11 +569,9 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	}
 	jsonString := string(jsonBlob)
 
-	isRemote := utils.DerefWith(request.Body.Remote, false)
-	logrus.Infof("Executing Starlark package `%s` with remote %t", package_id, isRemote)
+	logrus.Infof("Executing Starlark package `%s`", package_id)
 	runStarlarkPackageArgs := rpc_api.RunStarlarkPackageArgs{
 		PackageId:              package_id,
-		StarlarkPackageContent: nil,
 		SerializedParams:       &jsonString,
 		DryRun:                 request.Body.DryRun,
 		Parallelism:            request.Body.Parallelism,
@@ -585,6 +582,10 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		CloudInstanceId:        request.Body.CloudInstanceId,
 		CloudUserId:            request.Body.CloudUserId,
 		ImageDownloadMode:      utils.MapPointer(request.Body.ImageDownloadMode, to_grpc.ToGrpcImageDownloadMode),
+		// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
+		// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
+		// clone_package below
+		StarlarkPackageContent: nil,
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())

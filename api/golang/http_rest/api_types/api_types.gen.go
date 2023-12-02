@@ -311,9 +311,6 @@ type RunStarlarkPackage struct {
 	// 1 - MISSING
 	ImageDownloadMode *ImageDownloadMode `json:"image_download_mode,omitempty"`
 
-	// Local the payload of the local module
-	Local *[]byte `json:"local,omitempty"`
-
 	// MainFunctionName The name of the main function, the default value is "run"
 	MainFunctionName *string `json:"main_function_name,omitempty"`
 
@@ -325,9 +322,6 @@ type RunStarlarkPackage struct {
 
 	// RelativePathToMainFile The relative main file filepath, the default value is the "main.star" file in the root of a package
 	RelativePathToMainFile *string `json:"relative_path_to_main_file,omitempty"`
-
-	// Remote just a flag to indicate the module must be cloned inside the API
-	Remote *bool `json:"remote,omitempty"`
 }
 
 // RunStarlarkScript defines model for RunStarlarkScript.

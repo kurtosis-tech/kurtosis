@@ -5,13 +5,12 @@ info:
   version: 0.1.0
 
 paths:
+  # =========================================================================================================================
+  # =========================================================================================================================
+  # > > > > > > > > > > > > > > > > > > > > > > > >  Engine API  < < < < < < < < < < < < < < < < < < < < < < < < < < < < < <
+  # =========================================================================================================================
+  # =========================================================================================================================
 
-  # =========================================================================================================================
-  # =========================================================================================================================
-  # > > > > > > > > > > > > > > > > > > > > > > > >  Engine API  < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < 
-  # =========================================================================================================================
-  # =========================================================================================================================
-  
   /engine/info:
     get:
       tags:
@@ -19,13 +18,13 @@ paths:
       summary: Get Engine Info
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
-        '200':
+          $ref: "#/components/responses/NotOk"
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EngineInfo'
+                $ref: "#/components/schemas/EngineInfo"
 
   /enclaves:
     get:
@@ -34,16 +33,16 @@ paths:
       summary: Get Enclaves
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
-        '200':
+          $ref: "#/components/responses/NotOk"
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
                 type: object
                 additionalProperties:
-                  $ref: '#/components/schemas/EnclaveInfo'
-                
+                  $ref: "#/components/schemas/EnclaveInfo"
+
     post:
       tags:
         - engine
@@ -53,34 +52,33 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateEnclave'
+              $ref: "#/components/schemas/CreateEnclave"
       responses:
-
         default:
-          $ref: '#/components/responses/NotOk'
-        '200':
+          $ref: "#/components/responses/NotOk"
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnclaveInfo'
-                
+                $ref: "#/components/schemas/EnclaveInfo"
+
     delete:
       tags:
         - engine
       summary: Delete Enclaves
       parameters:
-        - $ref: '#/components/parameters/remove_all'
+        - $ref: "#/components/parameters/remove_all"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
-        '200':
+          $ref: "#/components/responses/NotOk"
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeletionSummary'
-                
+                $ref: "#/components/schemas/DeletionSummary"
+
   /enclaves/historical:
     get:
       tags:
@@ -88,15 +86,15 @@ paths:
       summary: Get Historical Enclaves
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
-        '200':
+          $ref: "#/components/responses/NotOk"
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/EnclaveIdentifiers'
+                  $ref: "#/components/schemas/EnclaveIdentifiers"
 
   /enclaves/{enclave_identifier}:
     get:
@@ -104,27 +102,27 @@ paths:
         - engine
       summary: Get Enclave Info
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
-        '200':
+          $ref: "#/components/responses/NotOk"
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnclaveInfo'
+                $ref: "#/components/schemas/EnclaveInfo"
 
     delete:
       tags:
         - engine
       summary: Destroy Enclave
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
-        '200':
+          $ref: "#/components/responses/NotOk"
+        "200":
           description: Successful response
 
   /enclaves/{enclave_identifier}/status:
@@ -133,50 +131,50 @@ paths:
         - engine
       summary: Get enclave status
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
-        '200':
+          $ref: "#/components/responses/NotOk"
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EnclaveContainersStatus'
+                $ref: "#/components/schemas/EnclaveContainersStatus"
     post:
       tags:
         - engine
       summary: Set enclave status
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EnclaveTargetStatus'
+              $ref: "#/components/schemas/EnclaveTargetStatus"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
-        '200':
+          $ref: "#/components/responses/NotOk"
+        "200":
           description: Successful response
 
   # =========================================================================================================================
   # =========================================================================================================================
-  # > > > > > > > > > > > > > > > > > > > > > > > >  Enclave API  < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < 
+  # > > > > > > > > > > > > > > > > > > > > > > > >  Enclave API  < < < < < < < < < < < < < < < < < < < < < < < < < < < < < <
   # =========================================================================================================================
   # =========================================================================================================================
-  
+
   /enclaves/{enclave_identifier}/starlark:
     get:
       tags:
         - enclave
       description: Get last Starlark run
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -190,12 +188,12 @@ paths:
         - enclave
       description: Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       requestBody:
         $ref: "#/components/requestBodies/fileUploadBody"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Success
 
@@ -205,9 +203,9 @@ paths:
         - enclave
       description: Executes a Starlark script on the user's behalf
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/package_id'
-        - $ref: '#/components/parameters/retrieve_logs_async'
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/package_id"
+        - $ref: "#/components/parameters/retrieve_logs_async"
       requestBody:
         content:
           application/json:
@@ -216,7 +214,7 @@ paths:
         required: true
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -230,8 +228,8 @@ paths:
         - enclave
       description: Executes a Starlark script on the user's behalf
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/retrieve_logs_async'
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/retrieve_logs_async"
       requestBody:
         content:
           application/json:
@@ -240,7 +238,7 @@ paths:
         required: true
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -253,11 +251,11 @@ paths:
       tags:
         - enclave
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/service_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/service_identifier"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -271,10 +269,10 @@ paths:
         - enclave
       description: Returns information about all existing & historical services
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -289,7 +287,7 @@ paths:
       tags:
         - enclave
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
         - in: query
           name: services
           schema:
@@ -299,7 +297,7 @@ paths:
           description: Select services to get information
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -315,8 +313,8 @@ paths:
         - enclave
       description: Executes the given command inside a running container
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/service_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/service_identifier"
       requestBody:
         content:
           application/json:
@@ -326,7 +324,7 @@ paths:
         required: true
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -340,16 +338,16 @@ paths:
         - enclave
       description: Block until the given HTTP endpoint returns available, calling it through a HTTP request
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/service_identifier'
-        - $ref: '#/components/parameters/port_number'
-        - $ref: '#/components/parameters/http_method'
-        - $ref: '#/components/parameters/path'
-        - $ref: '#/components/parameters/initial_delay_milliseconds'
-        - $ref: '#/components/parameters/retries'
-        - $ref: '#/components/parameters/retries_delay_milliseconds'
-        - $ref: '#/components/parameters/expected_response'
-        - $ref: '#/components/parameters/request_body'
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/service_identifier"
+        - $ref: "#/components/parameters/port_number"
+        - $ref: "#/components/parameters/http_method"
+        - $ref: "#/components/parameters/path"
+        - $ref: "#/components/parameters/initial_delay_milliseconds"
+        - $ref: "#/components/parameters/retries"
+        - $ref: "#/components/parameters/retries_delay_milliseconds"
+        - $ref: "#/components/parameters/expected_response"
+        - $ref: "#/components/parameters/request_body"
       responses:
         "200":
           description: Success
@@ -360,10 +358,10 @@ paths:
         - enclave
       description: List all files artifacts
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -378,12 +376,12 @@ paths:
       tags:
         - enclave
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/artifact_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/artifact_identifier"
       description: Inspect the content of a file artifact
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -399,11 +397,11 @@ paths:
         - enclave
       description: Downloads a files artifact from the Kurtosis File System
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/artifact_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/artifact_identifier"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -418,12 +416,12 @@ paths:
         - enclave
       description: Uploads a files artifact to the Kurtosis File System
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       requestBody:
         $ref: "#/components/requestBodies/fileUploadBody"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -439,7 +437,7 @@ paths:
         - enclave
       description: Tells the API container to download a files artifact from the web to the Kurtosis File System
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       requestBody:
         content:
           application/json:
@@ -449,7 +447,7 @@ paths:
         required: true
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -463,8 +461,8 @@ paths:
         - enclave
       description: Tells the API container to copy a files artifact from a service to the Kurtosis File System
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/service_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/service_identifier"
       requestBody:
         content:
           application/json:
@@ -473,7 +471,7 @@ paths:
         required: true
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -487,7 +485,7 @@ paths:
         - enclave
       description: User services port forwarding
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
+        - $ref: "#/components/parameters/enclave_identifier"
       requestBody:
         content:
           application/json:
@@ -496,7 +494,7 @@ paths:
         required: true
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
 
@@ -510,7 +508,10 @@ paths:
     get:
       tags:
         - streaming
-      summary: Get Service Logs
+      summary: Get enclave logs
+      description: |-
+        Get enclave logs. This endpoint can stream the logs by either starting
+        a Websocket connection (recommended) or legacy HTTP streaming.
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - $ref: "#/components/parameters/service_uuid_set"
@@ -519,6 +520,8 @@ paths:
         - $ref: "#/components/parameters/return_all_logs"
         - $ref: "#/components/parameters/num_log_lines"
       responses:
+        default:
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful response
           content:
@@ -530,7 +533,10 @@ paths:
     get:
       tags:
         - streaming
-      summary: Get Service Logs
+      summary: Get service logs
+      description: |-
+        Get service logs. This endpoint can stream the logs by either starting
+        a Websocket connection (recommended) or legacy HTTP streaming.
       parameters:
         - $ref: "#/components/parameters/enclave_identifier"
         - $ref: "#/components/parameters/service_identifier"
@@ -539,6 +545,8 @@ paths:
         - $ref: "#/components/parameters/return_all_logs"
         - $ref: "#/components/parameters/num_log_lines"
       responses:
+        default:
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful response
           content:
@@ -546,17 +554,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/ServiceLogs"
 
-  /enclaves/{enclave_identifier}/starlark/executions/{starlark_execution_uuid}/logs:
+  /starlark/executions/{starlark_execution_uuid}/logs:
     get:
       tags:
         - streaming
-      description: Executes a Starlark script on the user's behalf
+      summary: Get Starlark execution logs
+      description: |-
+        Stream the logs of an Starlark execution that were initiated using `retrieve_logs_async`.
+        The async logs can be consumed only once and expire after consumption or 2 hours after creation.
+        This endpoint can stream the logs by either starting a Websocket connection (recommended) or
+        legacy HTTP streaming.
       parameters:
-        - $ref: '#/components/parameters/enclave_identifier'
-        - $ref: '#/components/parameters/starlark_execution_uuid'
+        - $ref: "#/components/parameters/starlark_execution_uuid"
       responses:
         default:
-          $ref: '#/components/responses/NotOk'
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Successful request
           content:
@@ -566,27 +578,23 @@ paths:
                 items:
                   $ref: "#/components/schemas/StarlarkRunResponseLine"
 
-
 # =========================================================================================================================
 # =========================================================================================================================
-# > > > > > > > > > > > > > > > > > > > > > > > > Data Models < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < 
+# > > > > > > > > > > > > > > > > > > > > > > > > Data Models < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < <
 # =========================================================================================================================
 # =========================================================================================================================
 
 components:
-
   responses:
-
     NotOk:
       description: Unexpected error
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ResponseInfo'
+            $ref: "#/components/schemas/ResponseInfo"
             required: true
 
   requestBodies:
-
     fileUploadBody:
       content:
         multipart/form-data:
@@ -595,7 +603,6 @@ components:
             format: binary
 
   parameters:
-
     enclave_identifier:
       name: enclave_identifier
       in: path
@@ -603,7 +610,7 @@ components:
       description: UUID, shortened UUID, or name of the enclave
       schema:
         type: string
-    
+
     service_identifier:
       in: path
       name: service_identifier
@@ -636,7 +643,7 @@ components:
       description: If false, block http response until all logs are available. Default is true
       schema:
         type: boolean
-        
+
     remove_all:
       name: remove_all
       in: query
@@ -653,7 +660,7 @@ components:
         format: int32
       description: The port number to check availability
       required: true
-    
+
     http_method:
       in: query
       name: http_method
@@ -670,7 +677,7 @@ components:
 
     initial_delay_milliseconds:
       in: query
-      name: initial_delay_milliseconds 
+      name: initial_delay_milliseconds
       description: The number of milliseconds to wait until executing the first HTTP call
       schema:
         type: integer
@@ -678,7 +685,7 @@ components:
 
     retries:
       in: query
-      name: retries 
+      name: retries
       description: Max number of HTTP call attempts that this will execute until giving up and returning an error
       schema:
         type: integer
@@ -686,26 +693,26 @@ components:
 
     retries_delay_milliseconds:
       in: query
-      name: retries_delay_milliseconds 
+      name: retries_delay_milliseconds
       description: Number of milliseconds to wait between retries
       schema:
         type: integer
         format: int32
-  
+
     expected_response:
       in: query
-      name: expected_response 
+      name: expected_response
       description: If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
       schema:
         type: string
-    
+
     request_body:
       in: query
-      name: request_body 
+      name: request_body
       description: If the http_method is set to POST, this value will be send as the body of the availability request.
       schema:
         type: string
-  
+
     artifact_identifier:
       in: path
       name: artifact_identifier
@@ -713,7 +720,7 @@ components:
         type: string
       description: The artifact name or uuid
       required: true
-        
+
     package_id:
       in: path
       name: package_id
@@ -753,19 +760,18 @@ components:
         type: integer
 
   schemas:
-
     ResponseType:
       type: string
       enum:
         - ERROR
         - INFO
-        - WARNING 
+        - WARNING
 
     ResponseInfo:
       type: object
       properties:
         type:
-          $ref: '#/components/schemas/ResponseType'
+          $ref: "#/components/schemas/ResponseType"
         message:
           type: string
         code:
@@ -795,30 +801,30 @@ components:
           type: string
           description: Enclave log level, defaults to INFO
         mode:
-          $ref: '#/components/schemas/EnclaveMode'
+          $ref: "#/components/schemas/EnclaveMode"
           description: Enclave mode, defaults to TEST
       required:
         - enclave_name
         - api_container_version_tag
-    
+
     EnclaveMode:
       type: string
       enum:
         - TEST
         - PRODUCTION
-    
+
     EnclaveContainersStatus:
       type: string
       enum:
         - RUNNING
         - STOPPED
         - EMPTY
-    
+
     EnclaveTargetStatus:
       type: string
       enum:
         - STOP
-    
+
     ApiContainerStatus:
       type: string
       enum:
@@ -836,17 +842,17 @@ components:
         shortened_uuid:
           type: string
         containers_status:
-          $ref: '#/components/schemas/EnclaveContainersStatus'
+          $ref: "#/components/schemas/EnclaveContainersStatus"
         api_container_status:
-          $ref: '#/components/schemas/ApiContainerStatus'
+          $ref: "#/components/schemas/ApiContainerStatus"
         api_container_info:
-          $ref: '#/components/schemas/EnclaveAPIContainerInfo'
+          $ref: "#/components/schemas/EnclaveAPIContainerInfo"
         api_container_host_machine_info:
-          $ref: '#/components/schemas/EnclaveAPIContainerHostMachineInfo'
+          $ref: "#/components/schemas/EnclaveAPIContainerHostMachineInfo"
         creation_time:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         mode:
-          $ref: '#/components/schemas/EnclaveMode'
+          $ref: "#/components/schemas/EnclaveMode"
       required:
         - enclave_uuid
         - name
@@ -893,7 +899,7 @@ components:
           type: string
         shortened_uuid:
           type: string
-      required:    
+      required:
         - enclave_uuid
         - name
         - shortened_uuid
@@ -905,7 +911,7 @@ components:
           type: string
         uuid:
           type: string
-      required:    
+      required:
         - name
         - uuid
 
@@ -915,7 +921,7 @@ components:
         removed_enclave_name_and_uuids:
           type: array
           items:
-            $ref: '#/components/schemas/EnclaveNameAndUuid'
+            $ref: "#/components/schemas/EnclaveNameAndUuid"
 
     Timestamp:
       type: string
@@ -1077,13 +1083,6 @@ components:
     RunStarlarkPackage:
       type: object
       properties:
-        local:
-          type: string
-          format: byte
-          description: the payload of the local module
-        remote:
-          type: boolean
-          description: just a flag to indicate the module must be cloned inside the API
         params:
           type: object
           additionalProperties: true
@@ -1137,7 +1136,7 @@ components:
         Starlark Execution Logs
 
     StarlarkRunResponseLine:
-      oneOf: 
+      oneOf:
         - $ref: "#/components/schemas/StarlarkInstruction"
         - $ref: "#/components/schemas/StarlarkError"
         - $ref: "#/components/schemas/StarlarkRunProgress"
@@ -1248,9 +1247,9 @@ components:
       properties:
         error:
           oneOf:
-              - $ref: "#/components/schemas/StarlarkInterpretationError"
-              - $ref: "#/components/schemas/StarlarkValidationError"
-              - $ref: "#/components/schemas/StarlarkExecutionError"
+            - $ref: "#/components/schemas/StarlarkInterpretationError"
+            - $ref: "#/components/schemas/StarlarkValidationError"
+            - $ref: "#/components/schemas/StarlarkExecutionError"
       required:
         - error
 
@@ -1334,7 +1333,7 @@ components:
     AsyncStarlarkExecutionLogs:
       type: object
       properties:
-        async_starlark_execution_logs: 
+        async_starlark_execution_logs:
           type: object
           properties:
             starlark_execution_uuid:
@@ -1342,18 +1341,18 @@ components:
           description: Execution UUID to asynchronously retrieve the execution logs
           required:
             - starlark_execution_uuid
-      description: Use it to asynchronously retrieve the execution logs via Websockets or http streaming 
+      description: Use it to asynchronously retrieve the execution logs via Websockets or http streaming
       required:
         - async_starlark_execution_logs
 
     StarlarkRunResponse:
       type: object
       properties:
-       starlark_execution_logs: 
-        oneOf:
-          - $ref: "#/components/schemas/AsyncStarlarkExecutionLogs"
-          - $ref: "#/components/schemas/StarlarkRunLogs"
-                  
+        starlark_execution_logs:
+          oneOf:
+            - $ref: "#/components/schemas/AsyncStarlarkExecutionLogs"
+            - $ref: "#/components/schemas/StarlarkRunLogs"
+
     ServiceIdentifiers:
       type: object
       properties:

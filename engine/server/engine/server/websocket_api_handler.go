@@ -125,8 +125,8 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 	return nil
 }
 
-// (GET /enclaves/{enclave_identifier}/starlark/executions/{starlark_execution_uuid}/logs)
-func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, starlarkExecutionUuid api_type.StarlarkExecutionUuid) error {
+// (GET /starlark/executions/{starlark_execution_uuid}/logs)
+func (engine WebSocketRuntime) GetStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context, starlarkExecutionUuid api_type.StarlarkExecutionUuid) error {
 	async_log_uuid := streaming.StreamerUUID(starlarkExecutionUuid)
 
 	if ctx.IsWebSocket() {
