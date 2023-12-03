@@ -28,6 +28,7 @@ import { isDefined, isNotEmpty, stringifyError, stripAnsi } from "../../../utils
 import { CopyButton } from "../../CopyButton";
 import { DownloadButton } from "../../DownloadButton";
 import { FindCommand } from "../../KeyboardCommands";
+import { useKeyboardAction } from "../../useKeyboardAction";
 import { LogLine } from "./LogLine";
 import { LogLineMessage } from "./types";
 import { normalizeLogText } from "./utils";
@@ -253,38 +254,41 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
     debouncedUpdateMatches(e.target.value);
   };
 
-  const updateSearchIndexBounded = (newIndex: number) => {
-    if (searchState.type !== "success") {
-      return;
-    }
-    if (newIndex > searchState.searchMatchesIndices.length - 1) {
-      newIndex = 0;
-    }
-    if (newIndex < 0) {
-      newIndex = searchState.searchMatchesIndices.length - 1;
-    }
-    onChangeSearchState((state) => ({ ...state, currentSearchIndex: newIndex }));
-  };
+  const updateSearchIndexBounded = useCallback(
+    (newIndex: number) => {
+      if (searchState.type !== "success") {
+        return;
+      }
+      if (newIndex > searchState.searchMatchesIndices.length - 1) {
+        newIndex = 0;
+      }
+      if (newIndex < 0) {
+        newIndex = searchState.searchMatchesIndices.length - 1;
+      }
+      onChangeSearchState((state) => ({ ...state, currentSearchIndex: newIndex }));
+    },
+    [onChangeSearchState, searchState],
+  );
 
-  const handlePriorMatchClick = () => {
+  const handlePriorMatchClick = useCallback(() => {
     updateSearchIndexBounded(
       searchState.type === "success" && isDefined(searchState.currentSearchIndex)
         ? searchState.currentSearchIndex - 1
         : 0,
     );
-  };
+  }, [updateSearchIndexBounded, searchState]);
 
-  const handleNextMatchClick = () => {
+  const handleNextMatchClick = useCallback(() => {
     updateSearchIndexBounded(
       searchState.type === "success" && isDefined(searchState.currentSearchIndex)
         ? searchState.currentSearchIndex + 1
         : 0,
     );
-  };
+  }, [updateSearchIndexBounded, searchState]);
 
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     onChangeSearchState({ type: "init", rawSearchTerm: "" });
-  };
+  }, [onChangeSearchState]);
 
   const handleIndexInputChange = (text: string) => {
     if (searchState.type !== "success") {
@@ -300,34 +304,27 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
     updateSearchIndexBounded(index - 1);
   };
 
-  useEffect(() => {
-    const listener = function (e: KeyboardEvent) {
-      const element = searchRef?.current;
-      if ((e.ctrlKey && e.keyCode === 70) || (e.metaKey && e.keyCode === 70)) {
-        setShowSearchForm(true);
-        if (element !== document.activeElement) {
-          e.preventDefault();
-          element?.focus();
-        }
-      }
-      // Next search match with cmd/ctrl+G
-      // if ((e.ctrlKey && e.keyCode === 71) || (e.metaKey && e.keyCode === 71)) {
-      //   console.log("NEXT", e.keyCode);
-      //   e.preventDefault();
-      //   nextMatch();
-      // }
-
-      // Clear the search on escape
-      if (e.key === "Escape" || e.keyCode === 27) {
-        if (element === document.activeElement) {
-          e.preventDefault();
-          onChangeSearchState({ type: "init", rawSearchTerm: "" });
-        }
-      }
-    };
-    window.addEventListener("keydown", listener);
-    return () => window.removeEventListener("keydown", listener);
-  }, [onChangeSearchState, searchRef]);
+  useKeyboardAction(
+    useMemo(
+      () => ({
+        find: () => {
+          setShowSearchForm(true);
+          if (isDefined(searchRef.current) && searchRef.current !== document.activeElement) {
+            searchRef.current.focus();
+          }
+        },
+        next: () => {
+          handleNextMatchClick();
+        },
+        escape: () => {
+          if (isDefined(searchRef.current) && searchRef.current === document.activeElement) {
+            handleClearSearch();
+          }
+        },
+      }),
+      [searchRef, handleNextMatchClick, handleClearSearch],
+    ),
+  );
 
   if (!showSearchForm) {
     return (

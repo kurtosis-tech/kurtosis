@@ -132,8 +132,8 @@ const ArtifactImpl = ({ enclave, artifactName, files }: ArtifactImplProps) => {
 
   return (
     <AppPageLayout preventPageScroll>
-      <Flex w={"100%"} h={"100%"} gap={"32px"}>
-        <TitledCard title={"FILES"} w={"328px"} minH={"100%"}>
+      <Flex w={"100%"} gap={"32px"}>
+        <TitledCard title={"FILES"} w={"328px"} fillContainer>
           <Flex>
             <FileTree
               nodes={filesAsFileTree.childNodes || []}
@@ -143,6 +143,7 @@ const ArtifactImpl = ({ enclave, artifactName, files }: ArtifactImplProps) => {
           </Flex>
         </TitledCard>
         <TitledCard
+          fillContainer
           title={isDefined(selectedFile) ? selectedFile.path : "Select a file to preview it"}
           controls={
             isDefined(selectedFile) ? (
