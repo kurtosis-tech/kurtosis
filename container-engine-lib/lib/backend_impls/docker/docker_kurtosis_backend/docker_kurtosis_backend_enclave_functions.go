@@ -8,7 +8,6 @@ import (
 
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -21,9 +20,9 @@ import (
 )
 
 const (
-	shouldFetchStoppedContainersWhenGettingEnclaveStatus = true
-
-	shouldFetchStoppedContainersWhenDumpingEnclave = true
+	shouldFetchStoppedContainersWhenGettingEnclaveStatus             = true
+	shouldFetchStoppedContainersWhenDumpingEnclave                   = true
+	shouldFetchStoppedContainersWhenDisconnectingFromEnclaveNetworks = false
 
 	defaultHttpLogsCollectorPortNum = uint16(9712)
 	defaultTcpLogsCollectorPortNum  = uint16(9713)
@@ -118,7 +117,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 			}
 		}
 	}()
-	logrus.Debugf("Docker network '%v' created successfully with ID '%v'", enclaveUuid, networkId)
+	logrus.Debugf("Docker network for enclave '%v' created successfully with ID '%v'", enclaveUuid, networkId)
 
 	enclaveDataVolumeNameStr := enclaveDataVolumeAttrs.GetName().GetString()
 	enclaveDataVolumeLabelStrs := map[string]string{}
@@ -400,17 +399,17 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 		networksToDisconnect[enclaveUuid] = networkInfo.dockerNetwork.GetId()
 	}
 
-	successfulDisconnectReverseProxyFromNetworkEnclaveUuids, erroredDisconnectReverseProxyFromNetworkEnclaveUuids, err := reverse_proxy_functions.DisconnectReverseProxyFromEnclaveNetworks(ctx, backend.dockerManager, networksToDisconnect)
+	successfulDisconnectContainersFromNetworkEnclaveUuids, erroredDisconnectContainersFromNetworkEnclaveUuids, err := backend.disconnectContainersFromEnclaveNetworks(ctx, backend.dockerManager, networksToDisconnect)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred disconnecting the reverse proxy from the networks for enclaves whose volumes were successfully destroyed: %+v", successfulVolumeRemovalEnclaveUuids)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred disconnecting the containers from the networks for enclaves whose volumes were successfully destroyed: %+v", successfulVolumeRemovalEnclaveUuids)
 	}
-	for enclaveUuid, networkDisconnectErr := range erroredDisconnectReverseProxyFromNetworkEnclaveUuids {
+	for enclaveUuid, networkDisconnectErr := range erroredDisconnectContainersFromNetworkEnclaveUuids {
 		erroredEnclaveUuids[enclaveUuid] = networkDisconnectErr
 	}
 
 	// Remove the networks
 	networksToDestroy := map[enclave.EnclaveUUID]string{}
-	for enclaveUuid := range successfulDisconnectReverseProxyFromNetworkEnclaveUuids {
+	for enclaveUuid := range successfulDisconnectContainersFromNetworkEnclaveUuids {
 		networkInfo, found := matchingNetworkInfo[enclaveUuid]
 		if !found {
 			return nil, nil, stacktrace.NewError("Would have attempted to destroy enclave '%v' that didn't match the filters", enclaveUuid)
@@ -554,6 +553,67 @@ func (backend *DockerKurtosisBackend) getAllEnclaveContainers(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v' by labels '%+v'", enclaveUuid, searchLabels)
 	}
 	return containers, nil
+}
+
+func (backend *DockerKurtosisBackend) disconnectContainersFromEnclaveNetworks(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	enclaveNetworkIds map[enclave.EnclaveUUID]string,
+) (
+	map[enclave.EnclaveUUID]bool,
+	map[enclave.EnclaveUUID]error,
+	error,
+) {
+	networkIdsToRemove := map[string]bool{}
+	enclaveUuidsForNetworkIds := map[string]enclave.EnclaveUUID{}
+	for enclaveUuid, networkId := range enclaveNetworkIds {
+		networkIdsToRemove[networkId] = true
+		enclaveUuidsForNetworkIds[networkId] = enclaveUuid
+	}
+
+	var disconnectNetworkOperation docker_operation_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
+		// Get containers connected to this network id (dockerObjectId here)
+		containers, err := backend.dockerManager.GetContainersByNetworkId(ctx, dockerObjectId, shouldFetchStoppedContainersWhenDisconnectingFromEnclaveNetworks)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred getting the containers with enclave network '%v'",
+				dockerObjectId,
+			)
+		}
+		for _, container := range containers {
+			if err = dockerManager.DisconnectContainerFromNetwork(ctx, container.GetId(), dockerObjectId); err != nil {
+				return stacktrace.Propagate(err, "An error occurred while disconnecting container '%v' from the enclave network '%v'", container.GetId(), dockerObjectId)
+			}
+		}
+		return nil
+	}
+
+	successfulNetworkIds, erroredNetworkIds := docker_operation_parallelizer.RunDockerOperationInParallel(
+		ctx,
+		networkIdsToRemove,
+		dockerManager,
+		disconnectNetworkOperation,
+	)
+
+	successfulEnclaveUuids := map[enclave.EnclaveUUID]bool{}
+	for networkId := range successfulNetworkIds {
+		enclaveUuid, found := enclaveUuidsForNetworkIds[networkId]
+		if !found {
+			return nil, nil, stacktrace.NewError("The containers were successfully disconnected from the enclave network '%v', but wasn't requested to be disconnected", networkId)
+		}
+		successfulEnclaveUuids[enclaveUuid] = true
+	}
+
+	erroredEnclaveUuids := map[enclave.EnclaveUUID]error{}
+	for networkId, networkRemovalErr := range erroredNetworkIds {
+		enclaveUuid, found := enclaveUuidsForNetworkIds[networkId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Docker network '%v' had the following error during disconnect, but wasn't requested to be disconnected:\n%v", networkId, networkRemovalErr)
+		}
+		erroredEnclaveUuids[enclaveUuid] = networkRemovalErr
+	}
+	return successfulEnclaveUuids, erroredEnclaveUuids, nil
 }
 
 func getAllEnclaveVolumes(

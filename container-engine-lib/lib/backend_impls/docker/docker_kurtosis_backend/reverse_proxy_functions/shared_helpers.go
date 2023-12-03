@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -25,7 +26,7 @@ func getReverseProxyObjectAndContainerId(
 ) (*reverse_proxy.ReverseProxy, string, error) {
 	reverseProxyContainer, found, err := getReverseProxyContainer(ctx, dockerManager)
 	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "An error occurred getting all reverse proxy containers")
+		return nil, "", stacktrace.Propagate(err, "An error occurred getting the reverse proxy container")
 	}
 	if !found {
 		return nil, "", nil
@@ -74,6 +75,7 @@ func getReverseProxyObjectFromContainerInfo(
 	dockerManager *docker_manager.DockerManager,
 ) (*reverse_proxy.ReverseProxy, error) {
 	var privateIpAddr net.IP
+	var enclaveNetworksIpAddress map[string]net.IP
 
 	isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 	if !found {
@@ -93,6 +95,22 @@ func getReverseProxyObjectFromContainerInfo(
 		if privateIpAddr == nil {
 			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 		}
+		
+		networksIpAddressStr, err := dockerManager.GetContainerIps(ctx, containerId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the networks private IP address of container '%v'", containerId)
+		}
+		enclaveNetworksIpAddress = map[string]net.IP{}
+		for networkId, networkIpAddressStr := range networksIpAddressStr {
+			if networkIpAddressStr != privateIpAddrStr {
+				networkIpAddress := net.ParseIP(networkIpAddressStr)
+				if networkIpAddress == nil {
+					return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", networkIpAddress)
+				}
+				enclaveNetworksIpAddress[networkId] = networkIpAddress
+			}
+		}
+		logrus.Debugf("Enclave networks: '%v'", enclaveNetworksIpAddress)
 	} else {
 		reverseProxyStatus = container.ContainerStatus_Stopped
 	}
@@ -100,6 +118,7 @@ func getReverseProxyObjectFromContainerInfo(
 	reverseProxyObj := reverse_proxy.NewReverseProxy(
 		reverseProxyStatus,
 		privateIpAddr,
+		enclaveNetworksIpAddress,
 		defaultReverseProxyHttpPortNum,
 		defaultReverseProxyDashboardPortNum,
 	)

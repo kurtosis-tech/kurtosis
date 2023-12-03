@@ -73,8 +73,9 @@ const (
 	// ------------------ Filter Search Keys ----------------------
 	// All these defined in https://docs.docker.com/engine/api/v1.24
 
-	containerNameSearchFilterKey  = "name"
-	containerLabelSearchFilterKey = "label"
+	containerNameSearchFilterKey      = "name"
+	containerLabelSearchFilterKey     = "label"
+	containerNetworkIdSearchFilterKey = "network"
 
 	volumeNameSearchFilterKey  = "name"
 	volumeLabelSearchFilterKey = "label"
@@ -777,6 +778,24 @@ func (manager *DockerManager) GetContainerIP(ctx context.Context, networkName st
 	return networkInfo.IPAddress, nil
 }
 
+/*
+GetContainerIps
+Gets the container's IPs on all networks
+Returns a map of network ID : network IP address
+*/
+func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId string) (map[string]string, error) {
+	containerIps := map[string]string{}
+	resp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
+	}
+	allNetworkInfo := resp.NetworkSettings.Networks
+	for _, networkInfo := range allNetworkInfo {
+		containerIps[networkInfo.NetworkID]= networkInfo.IPAddress
+	}
+	return containerIps, nil
+}
+
 func (manager *DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
 	attachOpts := types.ContainerAttachOptions{
 		Stream:     true,
@@ -1180,6 +1199,16 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, shouldShowStoppedContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting containers with labels '%+v'", labelsFilterList)
+	}
+	return result, nil
+}
+
+func (manager *DockerManager) GetContainersByNetworkId(ctx context.Context, networkId string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
+	filterArg := filters.Arg(containerNetworkIdSearchFilterKey, networkId)
+	networkIdFilterList := filters.NewArgs(filterArg)
+	result, err := manager.getContainersByFilterArgs(ctx, networkIdFilterList, shouldShowStoppedContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting containers with network id '%+v'", networkIdFilterList)
 	}
 	return result, nil
 }
