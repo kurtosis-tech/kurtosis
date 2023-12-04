@@ -9,6 +9,22 @@ pagination_next: api-reference/starlark-reference/standard-library
 
 This section details the Kurtosis Starlark DSL used to manipulate the contents of enclaves. Feel free to use the [official Kurtosis Starlark VS Code extension][vscode-plugin] when writing Starlark with VSCode for features like syntax highlighting, method signature suggestions, hover preview for functions, and auto-completion for Kurtosis custom types.
 
+Useful tips for using and writing Starlark
+------------------------------------------
+If you're using Visual Studio Code, you may find our [Kurtosis VS Code Extension][vscode-plugin] helpful when writing Starlark.
+
+If you're using Vim, you can add the following to your `.vimrc` to get Starlark syntax highlighting:
+
+```
+" Add syntax highlighting for Starlark files
+autocmd FileType *.star setlocal filetype=python
+```
+
+or if you use Neovim:
+```
+autocmd BufNewFile,BufRead *.star set filetype=python
+```
+
 Parameter Naming Convention
 ---------------------------
 

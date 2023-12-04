@@ -67,6 +67,10 @@ If you're using Vim, you can add the following to your `.vimrc` to get Starlark 
 autocmd FileType *.star setlocal filetype=python
 ```
 
+or if you use Neovim:
+```
+autocmd BufNewFile,BufRead *.star set filetype=python
+```
 :::
 
 Finally, [run][kurtosis-run-reference] the script (we'll explain enclaves in the "Review" section):
