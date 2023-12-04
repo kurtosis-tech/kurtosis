@@ -33,6 +33,7 @@ import { LogLineMessage } from "./types";
 import { normalizeLogText } from "./utils";
 import {EnclaveFullInfo} from "../../../emui/enclaves/types";
 import {ServiceInfo} from "enclave-manager-sdk/build/api_container_service_pb";
+import {CopyLogsButton} from "../../CopyLogsButton";
 
 type LogViewerProps = {
   logLines: LogLineMessage[];
@@ -184,14 +185,11 @@ export const LogViewer = ({
           </FormLabel>
         </FormControl>
         <ButtonGroup>
-          <CopyButton
-              contentName={"logs"}
-              valueToCopy={getLogsValue}
-              size={"sm"}
-              isDisabled={logLines.length === 0}
-              isIconButton
-              aria-label={"Copy logs"}
-              color={"gray.100"}
+          <CopyLogsButton
+              logsFileName={logsFileName || "logs.txt"}
+              enclave={enclave}
+              service={service}
+              logsToDownload={logLines}
           />
           <DownloadLogsButton
             logsFileName={logsFileName || "logs.txt"}

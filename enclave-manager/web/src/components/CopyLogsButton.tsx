@@ -1,28 +1,40 @@
 import { useState } from "react";import streamsaver from "streamsaver";
-import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
-import { EnclaveFullInfo } from "../../../emui/enclaves/types";
-import { DownloadButton } from "../../CopyButton";
+import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
+import { EnclaveFullInfo } from "../emui/enclaves/types";
+import { CopyButton } from "./CopyButton";
 import {ServiceInfo} from "enclave-manager-sdk/build/api_container_service_pb";
 import {isDefined, stripAnsi} from "../utils";
+import {LogLineMessage} from "./enclaves/logs/types";
+import { Timestamp } from "@bufbuild/protobuf";
+import {DateTime} from "luxon";
 
-type DownloadLogsButtonProps = {
+type CopyLogsButtonProps = {
+    logsFileName:string,
     enclave:EnclaveFullInfo,
     service?:ServiceInfo,
+    logsToDownload: LogLineMessage[];
 };
 
-export const DownloadLogsButton = ({ enclave, service }: DownloadLogsButtonProps) => {
+export const CopyLogsButton = ({ logsFileName, enclave, service, logsToDownload }: CopyLogsButtonProps) => {
     const kurtosisClient = useKurtosisClient();
     const [isLoading, setIsLoading] = useState(false);
-    const [logLinesToDownload, setLogLinesToDownload] = useState(propsLogLines);
+    const [logLinesToDownload, setLogLinesToDownload] = useState(logsToDownload);
 
-    const handleDownloadClick = async () => {
+    const serviceLogLineToLogLineMessage = (lines: string[], timestamp?: Timestamp): LogLineMessage[] => {
+        return lines.map((line) => ({
+            message: line,
+            timestamp: isDefined(timestamp) ? DateTime.fromJSDate(timestamp?.toDate()) : undefined,
+        }));
+    };
+
+    const handleCopyLogsClick = async () => {
         setIsLoading(true);
-        const abortController = new AbortController();
         const writableStream = streamsaver.createWriteStream(logsFileName || "logs.txt");
         const writer = writableStream.getWriter();
 
-        if (service) {
+        if (service){
             console.log("pulling logs")
+            const abortController = new AbortController();
             for await (const lineGroup of await kurtosisClient.getServiceLogs(abortController, enclave, [service], false, 0, true)) {
                 const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
                 if (!isDefined(lineGroupForService)) continue;
@@ -30,18 +42,27 @@ export const DownloadLogsButton = ({ enclave, service }: DownloadLogsButtonProps
                 console.log("writing logs")
                 setLogLinesToDownload((logLinesToDownload) => [...logLinesToDownload, ...parsedLogLines]);
             }
-        } else {
-            setLogLinesToDownload(() => [...logLines])
+
+            try {
+                console.log("downloading logs")
+                await writer.write(logLinesToDownload.map(({message}) => message)
+                    .filter(isDefined)
+                    .map(stripAnsi)
+                    .join("\n"));
+            } catch(err) {
+                console.error(err)
+            }
+            await writer.close();
         }
 
-        try {
-            console.log("downloading logs")
-            await writer.write(logLinesToDownload.map(({message}) => message)
-                .filter(isDefined)
-                .map(stripAnsi)
-                .join("\n"));
-        } catch(err) {
-            console.error(err)
+        if(logsToDownload) {
+            try {
+                console.log("copying logs")
+                await writer.write(getLogsValue())
+            } catch(err) {
+                console.error(err)
+            }
+            await writer.close();
         }
         await writer.close();
         console.log("finished downloading logs")
@@ -49,15 +70,24 @@ export const DownloadLogsButton = ({ enclave, service }: DownloadLogsButtonProps
         setIsLoading(false);
     };
 
+    const getLogsValue = () => {
+        return logsToDownload
+            .map(({ message }) => message)
+            .filter(isDefined)
+            .map(stripAnsi)
+            .join("\n");
+    };
+
     return (
         <CopyButton
             contentName={"logs"}
-            valueToCopy={getLogsValue}
             size={"sm"}
-            isDisabled={logLines.length === 0}
+            // isDisabled={logLinesToDownload.length === 0}
             isIconButton
             aria-label={"Copy logs"}
             color={"gray.100"}
+            isLoading={isLoading}
+            onClick={handleCopyLogsClick}
         />
     );
 };
