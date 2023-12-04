@@ -128,6 +128,9 @@ func CreateEngine(
 			removeReverseProxyFunc()
 		}
 	}()
+	if err = reverse_proxy_functions.ConnectReverseProxyToEnclaveNetworks(ctx, dockerManager); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occured connecting the reverse proxy to the enclave networks")
+	}
 	logrus.Infof("Reverse proxy started.")
 
 	enclaveManagerUIPortSpec, err := port_spec.NewPortSpec(uint16(enclaveManagerUIPort), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)

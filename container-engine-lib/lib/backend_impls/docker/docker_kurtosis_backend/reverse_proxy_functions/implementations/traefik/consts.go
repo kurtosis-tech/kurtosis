@@ -11,7 +11,11 @@ const (
 
 	////////////////////////--TRAEFIK CONFIGURATION SECTION--/////////////////////////////
 	configFileTemplate = `
+accesslog: {}
+log:
+  level: DEBUG
 api:
+  debug: true
   dashboard: true
   insecure: true
   disabledashboardad: true

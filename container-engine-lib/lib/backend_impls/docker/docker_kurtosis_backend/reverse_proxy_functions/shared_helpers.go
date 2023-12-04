@@ -2,8 +2,9 @@ package reverse_proxy_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"net"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -95,7 +96,7 @@ func getReverseProxyObjectFromContainerInfo(
 		if privateIpAddr == nil {
 			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 		}
-		
+
 		networksIpAddressStr, err := dockerManager.GetContainerIps(ctx, containerId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the networks private IP address of container '%v'", containerId)
