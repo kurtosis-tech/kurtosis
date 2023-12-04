@@ -279,7 +279,7 @@ func (manager *enclaveRuntime) GetEnclavesEnclaveIdentifierArtifactsArtifactIden
 		ContentLength: int64(unknownStreamLength),
 	}
 
-	return api.GetEnclavesEnclaveIdentifierArtifactsArtifactIdentifierDownload200ApplicationoctetStreamResponse(response), nil
+	return response, nil
 }
 
 // (GET /enclaves/{enclave_identifier}/services)
@@ -572,7 +572,8 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	jsonParams := utils.DerefWith(request.Body.Params, map[string]interface{}{})
 	jsonBlob, err := json.Marshal(jsonParams)
 	if err != nil {
-		panic("Failed to serialize parameters")
+		stacktrace.Propagate(err, "I'm actually panicking here. Re-serializing a already deserialized JSON parameter should never fail.")
+		return nil, err
 	}
 	jsonString := string(jsonBlob)
 
@@ -632,13 +633,14 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 	logrus.Infof("Run Starlark script on enclave %s", enclaveIdentifier)
 
 	flags := utils.MapList(utils.DerefWith(request.Body.ExperimentalFeatures, []api_type.KurtosisFeatureFlag{}), to_grpc.ToGrpcFeatureFlag)
-	jsonString := utils.MapPointer(request.Body.Params, func(v map[string]interface{}) string {
+	jsonString, err := utils.MapPointerWithError(request.Body.Params, func(v map[string]interface{}) (string, error) {
 		jsonBlob, err := json.Marshal(v)
-		if err != nil {
-			panic("Failed to serialize parsed JSON")
-		}
-		return string(jsonBlob)
+		return string(jsonBlob), err
 	})
+	if err != nil {
+		stacktrace.Propagate(err, "I'm actually panicking here. Re-serializing a already deserialized JSON parameter should never fail.")
+		return nil, err
+	}
 
 	runStarlarkScriptArgs := rpc_api.RunStarlarkScriptArgs{
 		SerializedScript:     request.Body.SerializedScript,
