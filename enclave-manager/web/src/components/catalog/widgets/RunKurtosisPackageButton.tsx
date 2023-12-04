@@ -1,6 +1,6 @@
 import { Button, ButtonProps } from "@chakra-ui/react";
 import { useState } from "react";
-import { FiDownload } from "react-icons/fi";
+import { FiPlay } from "react-icons/fi";
 import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { EnclavesContextProvider } from "../../../emui/enclaves/EnclavesContext";
 import { ConfigureEnclaveModal } from "../../enclaves/modals/ConfigureEnclaveModal";
@@ -10,24 +10,31 @@ type RunKurtosisPackageButtonProps = ButtonProps & {
 };
 
 export const RunKurtosisPackageButton = ({ kurtosisPackage, ...buttonProps }: RunKurtosisPackageButtonProps) => {
-  const [configuringEnclave, setConfiguringEnclave] = useState(false);
+  const [isConfiguringEnclave, setIsConfiguringEnclave] = useState(false);
 
   return (
     <>
       <Button
         size={"xs"}
+        variant={"solidOutline"}
         colorScheme={"kurtosisGreen"}
-        leftIcon={<FiDownload />}
-        onClick={() => setConfiguringEnclave(true)}
+        leftIcon={<FiPlay />}
+        onClick={(e) => {
+          e.preventDefault();
+          setIsConfiguringEnclave(true);
+        }}
+        isActive={isConfiguringEnclave}
+        isLoading={isConfiguringEnclave}
+        loadingText={"Configuring"}
         {...buttonProps}
       >
         Run
       </Button>
-      {configuringEnclave && (
+      {isConfiguringEnclave && (
         <EnclavesContextProvider skipInitialLoad>
           <ConfigureEnclaveModal
             isOpen={true}
-            onClose={() => setConfiguringEnclave(false)}
+            onClose={() => setIsConfiguringEnclave(false)}
             kurtosisPackage={kurtosisPackage}
           />
         </EnclavesContextProvider>

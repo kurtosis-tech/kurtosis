@@ -24,7 +24,7 @@ There are many different ways to get a Kubernetes cluster (roughly ordered easie
 - Deploy it on a managed Kuberenetes cluster, managing scaling and configurations yourself (e.g. EKS, AKS, GKE)
 
 :::tip Kurtosis Kloud Early Access
-If you're looking to run a stress-free "Kurtosis on Kubernetes in the cloud", look no further! We're excited to launch an early access offering for [Kurtosis Kloud](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H). Once you [sign up](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H), we'll reach out to you with the next steps.
+If you're looking to run a stress-free "Kurtosis on Kubernetes in the cloud", look no further! Check out [Kurtosis Cloud](https://cloud.kurtosis.com/).
 :::
 
 

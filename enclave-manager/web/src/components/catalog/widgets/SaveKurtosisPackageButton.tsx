@@ -1,5 +1,5 @@
 import { Button, ButtonProps } from "@chakra-ui/react";
-import { memo, MouseEventHandler, useCallback, useMemo } from "react";
+import React, { memo, MouseEventHandler, useCallback, useMemo } from "react";
 import { MdBookmarkAdd } from "react-icons/md";
 import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { useCatalogContext } from "../../../emui/catalog/CatalogContext";
@@ -15,7 +15,13 @@ export const SaveKurtosisPackageButton = ({ kurtosisPackage, ...buttonProps }: S
     [savedPackages, kurtosisPackage],
   );
 
-  const handleClick = useCallback(() => togglePackageSaved(kurtosisPackage), [togglePackageSaved, kurtosisPackage]);
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      togglePackageSaved(kurtosisPackage);
+    },
+    [togglePackageSaved, kurtosisPackage],
+  );
 
   return <SaveKurtosisPackageButtonMemo isPackageSaved={isPackageSaved} onClick={handleClick} {...buttonProps} />;
 };
