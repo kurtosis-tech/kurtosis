@@ -80,24 +80,3 @@ kurtosis run github.com/kurtosis-tech/basic-service-package \
 ![service-c-partying.png](/img/home/service-c-k8s.png)
  
 </details>
-
-Writing and reading Starlark
-----------------------------
-The Starlark programming language is used to manipulate the contents of environments spun up with Kurtosis. Read more about Starlark and why we chose to use it [here](../advanced-concepts/why-kurtosis-starlark.md).
-
-If you're using Visual Studio Code to write and edit Starlark in Kurtosis packages, you may find our [Kurtosis VS Code Extension][vscode-plugin] helpful when writing Starlark.
-
-If you're using Vim, you can add the following to your `.vimrc` to get Starlark syntax highlighting:
-
-```
-" Add syntax highlighting for Starlark files
-autocmd FileType *.star setlocal filetype=python
-```
-
-or if you use Neovim:
-```
-autocmd BufNewFile,BufRead *.star set filetype=python
-```
-
-<!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
-[vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
