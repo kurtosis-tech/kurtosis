@@ -366,6 +366,8 @@ paths:
         - $ref: "#/components/parameters/expected_response"
         - $ref: "#/components/parameters/request_body"
       responses:
+        default:
+          $ref: "#/components/responses/NotOk"
         "200":
           description: Success
 
