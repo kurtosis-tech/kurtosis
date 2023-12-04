@@ -448,7 +448,7 @@ paths:
               schema:
                 type: object
                 additionalProperties:
-                  $ref: "#/components/schemas/FileArtifactReference"
+                  $ref: "#/components/schemas/FileArtifactUploadResult"
 
   /enclaves/{enclave_identifier}/artifacts/remote-file:
     post:
@@ -1415,6 +1415,14 @@ components:
       required:
         - exit_code
         - log_output
+
+    FileArtifactUploadResult:
+      type: object
+      properties:
+        file_artifact_upload_result:
+          oneOf:
+            - $ref: "#/components/schemas/FileArtifactReference"
+            - $ref: "#/components/schemas/ResponseInfo"
 
     FileArtifactReference:
       type: object

@@ -236,6 +236,16 @@ type FileArtifactReference struct {
 	Uuid string `json:"uuid"`
 }
 
+// FileArtifactUploadResult defines model for FileArtifactUploadResult.
+type FileArtifactUploadResult struct {
+	FileArtifactUploadResult *FileArtifactUploadResult_FileArtifactUploadResult `json:"file_artifact_upload_result,omitempty"`
+}
+
+// FileArtifactUploadResult_FileArtifactUploadResult defines model for FileArtifactUploadResult.FileArtifactUploadResult.
+type FileArtifactUploadResult_FileArtifactUploadResult struct {
+	union json.RawMessage
+}
+
 // HttpMethodAvailability defines model for HttpMethodAvailability.
 type HttpMethodAvailability string
 
@@ -718,6 +728,68 @@ type PostEnclavesEnclaveIdentifierStarlarkScriptsJSONRequestBody = RunStarlarkSc
 
 // PostEnclavesEnclaveIdentifierStatusJSONRequestBody defines body for PostEnclavesEnclaveIdentifierStatus for application/json ContentType.
 type PostEnclavesEnclaveIdentifierStatusJSONRequestBody = EnclaveTargetStatus
+
+// AsFileArtifactReference returns the union data inside the FileArtifactUploadResult_FileArtifactUploadResult as a FileArtifactReference
+func (t FileArtifactUploadResult_FileArtifactUploadResult) AsFileArtifactReference() (FileArtifactReference, error) {
+	var body FileArtifactReference
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromFileArtifactReference overwrites any union data inside the FileArtifactUploadResult_FileArtifactUploadResult as the provided FileArtifactReference
+func (t *FileArtifactUploadResult_FileArtifactUploadResult) FromFileArtifactReference(v FileArtifactReference) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeFileArtifactReference performs a merge with any union data inside the FileArtifactUploadResult_FileArtifactUploadResult, using the provided FileArtifactReference
+func (t *FileArtifactUploadResult_FileArtifactUploadResult) MergeFileArtifactReference(v FileArtifactReference) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+// AsResponseInfo returns the union data inside the FileArtifactUploadResult_FileArtifactUploadResult as a ResponseInfo
+func (t FileArtifactUploadResult_FileArtifactUploadResult) AsResponseInfo() (ResponseInfo, error) {
+	var body ResponseInfo
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseInfo overwrites any union data inside the FileArtifactUploadResult_FileArtifactUploadResult as the provided ResponseInfo
+func (t *FileArtifactUploadResult_FileArtifactUploadResult) FromResponseInfo(v ResponseInfo) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseInfo performs a merge with any union data inside the FileArtifactUploadResult_FileArtifactUploadResult, using the provided ResponseInfo
+func (t *FileArtifactUploadResult_FileArtifactUploadResult) MergeResponseInfo(v ResponseInfo) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JsonMerge(b, t.union)
+	t.union = merged
+	return err
+}
+
+func (t FileArtifactUploadResult_FileArtifactUploadResult) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *FileArtifactUploadResult_FileArtifactUploadResult) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // AsStarlarkInterpretationError returns the union data inside the StarlarkError_Error as a StarlarkInterpretationError
 func (t StarlarkError_Error) AsStarlarkInterpretationError() (StarlarkInterpretationError, error) {

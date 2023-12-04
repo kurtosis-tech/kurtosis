@@ -95,7 +95,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 	}
 	logrus.Infof("Uploading file artifact to enclave %s", enclaveIdentifier)
 
-	uploadedArtifacts := map[string]api_type.FileArtifactReference{}
+	uploadedArtifacts := map[string]api_type.FileArtifactUploadResult{}
 	for {
 		// Get next part (file) from the the multipart POST request
 		part, err := request.Body.NextPart()
@@ -110,7 +110,8 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 		}
 		clientStream := grpc_file_streaming.NewClientStream[rpc_api.StreamedDataChunk, rpc_api.UploadFilesArtifactResponse](client)
 
-		response, err := clientStream.SendData(
+		var result api_type.FileArtifactUploadResult
+		uploadResult, err := clientStream.SendData(
 			filename,
 			part,
 			unknownStreamLength,
@@ -124,16 +125,36 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 				}, nil
 			},
 		)
-
-		// The response is nil when a file artifact with the same has already been uploaded
-		// TODO (edgar) Is this the expected behavior? If so, we should be explicit about it.
-		if response != nil {
-			artifactResponse := api_type.FileArtifactReference{
-				Name: response.Name,
-				Uuid: response.Uuid,
+		if err != nil {
+			logrus.Errorf("Failed to upload file %s with error: %v", filename, err)
+			response := api_type.ResponseInfo{
+				Code:    http.StatusInternalServerError,
+				Type:    api_type.ERROR,
+				Message: fmt.Sprintf("Failed to upload file: %s", filename),
 			}
-			uploadedArtifacts[filename] = artifactResponse
+			result.FileArtifactUploadResult.FromResponseInfo(response)
+			uploadedArtifacts[filename] = result
+			continue
 		}
+
+		if uploadResult == nil {
+			logrus.Warnf("File %s has been already uploaded", filename)
+			response := api_type.ResponseInfo{
+				Code:    http.StatusConflict,
+				Type:    api_type.WARNING,
+				Message: fmt.Sprintf("File %s has been already uploaded", filename),
+			}
+			result.FileArtifactUploadResult.FromResponseInfo(response)
+			uploadedArtifacts[filename] = result
+			continue
+		}
+
+		artifactResponse := api_type.FileArtifactReference{
+			Name: uploadResult.Name,
+			Uuid: uploadResult.Uuid,
+		}
+		result.FileArtifactUploadResult.FromFileArtifactReference(artifactResponse)
+		uploadedArtifacts[filename] = result
 	}
 
 	return api.PostEnclavesEnclaveIdentifierArtifactsLocalFile200JSONResponse(uploadedArtifacts), nil
