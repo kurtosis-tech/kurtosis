@@ -76,7 +76,6 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
             </InputGroup>
             <PackageSourceButton
               source={kurtosisPackage.name}
-              hideCopy
               variant={"outline"}
               color={"gray.100"}
               size={"lg"}
