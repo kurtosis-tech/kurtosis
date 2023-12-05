@@ -32,9 +32,9 @@ export const KurtosisPackageCard = ({ kurtosisPackage }: KurtosisPackageCardProp
           <Image
             h={"80px"}
             w={"80px"}
-            bg={"black"}
-            // TODO: Use package image when supported
-            src={`${client.getBaseApplicationUrl()}/logo.png`}
+            bg={kurtosisPackage.iconUrl !== "" ? "white" : "black"}
+            src={kurtosisPackage.iconUrl || `${client.getBaseApplicationUrl()}/logo.png`}
+            fallbackSrc={`${client.getBaseApplicationUrl()}/logo.png`}
             borderRadius={"6px"}
           />
           <Flex flexDirection={"column"} flex={"1"} justifyContent={"space-between"}>
