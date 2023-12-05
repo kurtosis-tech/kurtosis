@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
@@ -9,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 
 	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
@@ -32,11 +33,19 @@ type EngineRuntime struct {
 func (engine EngineRuntime) DeleteEnclaves(ctx context.Context, request api.DeleteEnclavesRequestObject) (api.DeleteEnclavesResponseObject, error) {
 	removedEnclaveUuidsAndNames, err := engine.EnclaveManager.Clean(ctx, *request.Params.RemoveAll)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
+		response := internalErrorResponseInfof(err, "An error occurred while cleaning enclaves")
+		return api.DeleteEnclavesdefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
 	if *request.Params.RemoveAll {
 		if err = engine.LogFileManager.RemoveAllLogs(); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred removing all logs.")
+			response := internalErrorResponseInfof(err, "An error occurred removing all logs")
+			return api.DeleteEnclavesdefaultJSONResponse{
+				Body:       response,
+				StatusCode: int(response.Code),
+			}, nil
 		}
 	}
 	removedApiResponse := utils.MapList(removedEnclaveUuidsAndNames, to_http.ToHttpEnclaveNameAndUuid)
@@ -48,7 +57,11 @@ func (engine EngineRuntime) DeleteEnclaves(ctx context.Context, request api.Dele
 func (engine EngineRuntime) GetEnclaves(ctx context.Context, request api.GetEnclavesRequestObject) (api.GetEnclavesResponseObject, error) {
 	infoForEnclaves, err := engine.EnclaveManager.GetEnclaves(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
+		response := internalErrorResponseInfof(err, "An error occurred getting info for enclaves")
+		return api.GetEnclavesdefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
 	response := utils.MapMapValues(infoForEnclaves, func(enclave *types.EnclaveInfo) api_type.EnclaveInfo { return to_http.ToHttpEnclaveInfo(*enclave) })
 	return api.GetEnclaves200JSONResponse(response), nil
@@ -57,35 +70,48 @@ func (engine EngineRuntime) GetEnclaves(ctx context.Context, request api.GetEncl
 // Create Enclave
 // (POST /enclaves)
 func (engine EngineRuntime) PostEnclaves(ctx context.Context, request api.PostEnclavesRequestObject) (api.PostEnclavesResponseObject, error) {
-	enclave_mode := utils.DerefWith(request.Body.Mode, api_type.TEST)
-	enclave_name := request.Body.EnclaveName
-	apic_version_tag := request.Body.ApiContainerVersionTag
+	enclaveMode := utils.DerefWith(request.Body.Mode, api_type.TEST)
+	enclaveName := request.Body.EnclaveName
+	apicVersionTag := request.Body.ApiContainerVersionTag
 
-	if err := engine.MetricsClient.TrackCreateEnclave(enclave_name, subnetworkDisableBecauseItIsDeprecated); err != nil {
+	if err := engine.MetricsClient.TrackCreateEnclave(enclaveName, subnetworkDisableBecauseItIsDeprecated); err != nil {
 		logrus.Warn("An error occurred while logging the create enclave event")
 	}
 
 	logrus.Debugf("request: %+v", request)
 	apiContainerLogLevel, err := logrus.ParseLevel(utils.DerefWith(request.Body.ApiContainerLogLevel, "INFO"))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", request.Body.ApiContainerLogLevel)
+		logrus.Infof("An error occurred parsing the log level string '%v':", request.Body.ApiContainerLogLevel)
+		response := api_type.ResponseInfo{
+			Code:    http.StatusBadRequest,
+			Type:    api_type.ERROR,
+			Message: fmt.Sprintf("An error occurred parsing the log level string '%v':", request.Body.ApiContainerLogLevel),
+		}
+		return api.PostEnclavesdefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
 
 	isProduction := false
-	if enclave_mode == api_type.PRODUCTION {
+	if enclaveMode == api_type.PRODUCTION {
 		isProduction = true
 	}
 
 	enclaveInfo, err := engine.EnclaveManager.CreateEnclave(
 		ctx,
 		engine.ImageVersionTag,
-		apic_version_tag,
+		apicVersionTag,
 		apiContainerLogLevel,
-		enclave_name,
+		enclaveName,
 		isProduction,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", request.Body.EnclaveName)
+		response := internalErrorResponseInfof(err, "An error occurred creating new enclave with name '%v'", request.Body.EnclaveName)
+		return api.PostEnclavesdefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
 
 	response := to_http.ToHttpEnclaveInfo(*enclaveInfo)
@@ -97,10 +123,15 @@ func (engine EngineRuntime) PostEnclaves(ctx context.Context, request api.PostEn
 func (engine EngineRuntime) GetEnclavesHistory(ctx context.Context, request api.GetEnclavesHistoryRequestObject) (api.GetEnclavesHistoryResponseObject, error) {
 	allIdentifiers, err := engine.EnclaveManager.GetExistingAndHistoricalEnclaveIdentifiers()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave identifiers")
+		response := internalErrorResponseInfof(err, "An error occurred while fetching enclave identifiers")
+		return api.GetEnclavesHistorydefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
-	identifiers_map_api := utils.MapList(allIdentifiers, to_http.ToHttpEnclaveIdentifiers)
-	return api.GetEnclavesHistory200JSONResponse(identifiers_map_api), nil
+
+	identifiersMapApi := utils.MapList(allIdentifiers, to_http.ToHttpEnclaveIdentifiers)
+	return api.GetEnclavesHistory200JSONResponse(identifiersMapApi), nil
 }
 
 // Destroy Enclave
@@ -113,8 +144,13 @@ func (engine EngineRuntime) DeleteEnclavesEnclaveIdentifier(ctx context.Context,
 	}
 
 	if err := engine.EnclaveManager.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with identifier '%v':", enclaveIdentifier)
+		response := internalErrorResponseInfof(err, "An error occurred destroying enclave with identifier '%v':", enclaveIdentifier)
+		return api.DeleteEnclavesEnclaveIdentifierdefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
+
 	return api.DeleteEnclavesEnclaveIdentifier200Response{}, nil
 }
 
@@ -123,13 +159,22 @@ func (engine EngineRuntime) DeleteEnclavesEnclaveIdentifier(ctx context.Context,
 func (engine EngineRuntime) GetEnclavesEnclaveIdentifier(ctx context.Context, request api.GetEnclavesEnclaveIdentifierRequestObject) (api.GetEnclavesEnclaveIdentifierResponseObject, error) {
 	infoForEnclaves, err := engine.EnclaveManager.GetEnclaves(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
+		response := internalErrorResponseInfof(err, "An error occurred getting info for enclaves")
+		return api.GetEnclavesEnclaveIdentifierdefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
+
 	info, found := infoForEnclaves[request.EnclaveIdentifier]
 	if !found {
-		notFoundErr := stacktrace.NewError("Enclave '%s' not found.", request.EnclaveIdentifier)
-		return nil, notFoundErr
+		response := enclaveNotFoundResponseInfo(request.EnclaveIdentifier)
+		return api.GetEnclavesEnclaveIdentifierdefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
+
 	response := to_http.ToHttpEnclaveInfo(*info)
 	return api.GetEnclavesEnclaveIdentifier200JSONResponse(response), nil
 }
@@ -140,12 +185,20 @@ func (engine EngineRuntime) GetEnclavesEnclaveIdentifierStatus(ctx context.Conte
 	enclaveIdentifier := request.EnclaveIdentifier
 	enclaveList, err := engine.EnclaveManager.GetEnclaves(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
+		response := internalErrorResponseInfof(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
+		return api.GetEnclavesEnclaveIdentifierStatusdefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
+
 	info, found := enclaveList[enclaveIdentifier]
 	if !found {
-		err := stacktrace.NewError("Enclave not found: '%s'", enclaveIdentifier)
-		return nil, err
+		response := enclaveNotFoundResponseInfo(request.EnclaveIdentifier)
+		return api.GetEnclavesEnclaveIdentifierStatusdefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
 
 	return api.GetEnclavesEnclaveIdentifierStatus200JSONResponse(to_http.ToHttpEnclaveStatus(info.EnclaveStatus)), nil
@@ -164,12 +217,26 @@ func (engine EngineRuntime) PostEnclavesEnclaveIdentifierStatus(ctx context.Cont
 		}
 
 		if err := engine.EnclaveManager.StopEnclave(ctx, enclaveIdentifier); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
+			response := internalErrorResponseInfof(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
+			return api.PostEnclavesEnclaveIdentifierStatusdefaultJSONResponse{
+				Body:       response,
+				StatusCode: int(response.Code),
+			}, nil
 		}
+
 		return api.PostEnclavesEnclaveIdentifierStatus200Response{}, nil
+
 	default:
-		err := stacktrace.NewError("Unsupported target state: '%s'", string(*targetState))
-		return nil, err
+		logrus.Infof("Unsupported target state: '%s'", string(*targetState))
+		response := api_type.ResponseInfo{
+			Code:    http.StatusBadRequest,
+			Type:    api_type.WARNING,
+			Message: fmt.Sprintf("Unsupported target state: '%s'", string(*targetState)),
+		}
+		return api.PostEnclavesEnclaveIdentifierStatusdefaultJSONResponse{
+			Body:       response,
+			StatusCode: int(response.Code),
+		}, nil
 	}
 }
 
@@ -178,4 +245,26 @@ func (engine EngineRuntime) PostEnclavesEnclaveIdentifierStatus(ctx context.Cont
 func (engine EngineRuntime) GetEngineInfo(ctx context.Context, request api.GetEngineInfoRequestObject) (api.GetEngineInfoResponseObject, error) {
 	result := api_type.EngineInfo{EngineVersion: engine.ImageVersionTag}
 	return api.GetEngineInfo200JSONResponse(result), nil
+}
+
+// ===============================================================================================================
+// ===================================== Internal Functions =====================================================
+// ===============================================================================================================
+
+func enclaveNotFoundResponseInfo(enclaveIdentifier string) api_type.ResponseInfo {
+	logrus.Infof("Enclave '%s' not found.", enclaveIdentifier)
+	return api_type.ResponseInfo{
+		Code:    http.StatusNotFound,
+		Type:    api_type.INFO,
+		Message: fmt.Sprintf("Enclave '%s' not found.", enclaveIdentifier),
+	}
+}
+
+func internalErrorResponseInfof(err error, format string, args ...interface{}) api_type.ResponseInfo {
+	logrus.WithField("stacktrace", fmt.Sprintf("%+v", err)).WithError(err).Errorf(format, args...)
+	return api_type.ResponseInfo{
+		Code:    http.StatusInternalServerError,
+		Type:    api_type.ERROR,
+		Message: fmt.Sprintf(format, args...),
+	}
 }
