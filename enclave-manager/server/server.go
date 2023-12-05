@@ -44,7 +44,8 @@ type WebServer struct {
 	engineServiceClient *kurtosis_engine_rpc_api_bindingsconnect.EngineServiceClient
 	enforceAuth         bool
 	instanceConfig      *kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
-	apiKey              *string
+	instanceConfigMap   map[string]*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
+	apiKeyMap           map[string]*string
 }
 
 func NewWebserver(enforceAuth bool) (*WebServer, error) {
@@ -57,6 +58,8 @@ func NewWebserver(enforceAuth bool) (*WebServer, error) {
 		enforceAuth:         enforceAuth,
 		instanceConfigMutex: &sync.RWMutex{},
 		apiKeyMutex:         &sync.RWMutex{},
+		apiKeyMap:           map[string]*string{},
+		instanceConfigMap:   map[string]*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse{},
 	}, nil
 }
 
@@ -92,7 +95,7 @@ func (c *WebServer) ValidateRequestAuthorization(
 		return false, stacktrace.NewError("An internal error has occurred. An empty API key was found")
 	}
 
-	instanceConfig, err := c.GetCloudInstanceConfig(ctx, auth.ApiKey)
+	instanceConfig, err := c.GetCloudInstanceConfig(ctx, reqToken, auth.ApiKey)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to retrieve the instance config")
 	}
@@ -103,7 +106,9 @@ func (c *WebServer) ValidateRequestAuthorization(
 	}
 	reqHost = splitHost[0]
 	if instanceConfig.LaunchResult.PublicDns != reqHost {
-		return false, stacktrace.NewError("Instance config public dns '%s' does not match the request host '%s'", instanceConfig.LaunchResult.PublicDns, reqHost)
+		delete(c.apiKeyMap, reqToken)
+		delete(c.instanceConfigMap, reqToken)
+		return false, stacktrace.NewError("either the requested instance does not exist or the user is not authorized to access the resource")
 	}
 
 	return true, nil
@@ -413,11 +418,12 @@ func (c *WebServer) createKurtosisCloudBackendClient(
 
 func (c *WebServer) GetCloudInstanceConfig(
 	ctx context.Context,
+	jwtToken string,
 	apiKey string,
 ) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
 	// Check if we have already fetched the instance config, if so return the cache
-	if c.instanceConfig != nil {
-		return c.instanceConfig, nil
+	if c.instanceConfigMap[jwtToken] != nil {
+		return c.instanceConfigMap[jwtToken], nil
 	}
 
 	// We have not yet fetched the instance configuration, so we write lock, make the external call and cache the result
@@ -452,7 +458,7 @@ func (c *WebServer) GetCloudInstanceConfig(
 		return nil, stacktrace.Propagate(err, "Failed to get the instance config")
 	}
 
-	c.instanceConfig = getInstanceConfigResponse.Msg
+	c.instanceConfigMap[jwtToken] = getInstanceConfigResponse.Msg
 
 	return getInstanceConfigResponse.Msg, nil
 }
@@ -468,21 +474,21 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
-	request := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]{
-		Msg: &kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest{
-			AccessToken: jwtToken,
-		},
-	}
 
-	if c.apiKey != nil {
+	if c.apiKeyMap[jwtToken] != nil {
 		return &Authentication{
-			ApiKey:   *c.apiKey,
+			ApiKey:   *c.apiKeyMap[jwtToken],
 			JwtToken: jwtToken,
 		}, nil
 	} else {
 		c.apiKeyMutex.Lock()
 		defer c.apiKeyMutex.Unlock()
 
+		request := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]{
+			Msg: &kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest{
+				AccessToken: jwtToken,
+			},
+		}
 		result, err := (*client).GetOrCreateApiKey(ctx, request)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to get the API key")
@@ -494,7 +500,7 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 		}
 
 		if len(result.Msg.ApiKey) > 0 {
-			c.apiKey = &result.Msg.ApiKey
+			c.apiKeyMap[jwtToken] = &result.Msg.ApiKey
 			return &Authentication{
 				ApiKey:   result.Msg.ApiKey,
 				JwtToken: jwtToken,
