@@ -1215,7 +1215,6 @@ components:
         is_skipped:
           type: boolean
       required:
-        - position
         - instruction_name
         - arguments
         - executable_instruction

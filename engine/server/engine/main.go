@@ -422,8 +422,8 @@ func restApiServer(
 	// ============================== Engine Management API ======================================
 	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, *enclave_manager, asyncStarlarkLogs, false)
 	if err != nil {
-		stacktrace.Propagate(err, "Failed to initialize %T", enclaveRuntime)
-		return err
+		newErr := stacktrace.Propagate(err, "Failed to initialize %T", enclaveRuntime)
+		return newErr
 	}
 	enclaveApi.RegisterHandlers(echoRouter, enclaveApi.NewStrictHandler(enclaveRuntime, nil))
 

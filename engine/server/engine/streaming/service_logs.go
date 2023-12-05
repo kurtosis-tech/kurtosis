@@ -19,7 +19,8 @@ import (
 )
 
 var (
-	logRetentionFeatureReleaseTime = time.Date(2023, 9, 7, 13, 0, 0, 0, time.UTC)
+	logRetentionFeatureReleaseTime        = time.Date(2023, 9, 7, 13, 0, 0, 0, time.UTC)
+	defaultNumberOfLogLines        uint32 = 100
 )
 
 type ServiceLogStreamer struct {
@@ -51,7 +52,7 @@ func NewServiceLogStreamer(
 	requestedServiceUuids := make(map[user_service.ServiceUUID]bool, len(serviceUuidList))
 	shouldFollowLogs := utils.DerefWith(maybeShouldFollowLogs, false)
 	shouldReturnAllLogs := utils.DerefWith(maybeShouldReturnAllLogs, false)
-	numLogLines := utils.DerefWith(maybeNumLogLines, 100)
+	numLogLines := utils.DerefWith(maybeNumLogLines, defaultNumberOfLogLines)
 	filters := utils.DerefWith(maybeFilters, []api_type.LogLineFilter{})
 
 	for _, serviceUuidStr := range serviceUuidList {

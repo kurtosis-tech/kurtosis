@@ -7,6 +7,10 @@ func DerefWith[T any](value *T, defaultValue T) T {
 	return *value
 }
 
+func MapWithRef[T any, U any](value T, function func(*T) U) U {
+	return function(&value)
+}
+
 func MapPointer[T any, U any](value *T, function func(T) U) *U {
 	if value == nil {
 		return nil

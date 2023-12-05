@@ -9,6 +9,7 @@ import (
 
 	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 type asyncStarlarkLogs struct {
@@ -69,20 +70,28 @@ func (async *asyncStarlarkLogs) AttachStream(stream grpc.ClientStream) {
 	}
 }
 
-func (async *asyncStarlarkLogs) WaitAndConsumeAll() []rpc_api.StarlarkRunResponseLine {
+func (async *asyncStarlarkLogs) WaitAndConsumeAll() ([]rpc_api.StarlarkRunResponseLine, error) {
 	var logs []*rpc_api.StarlarkRunResponseLine
-	async.Consume(func(elem *rpc_api.StarlarkRunResponseLine) error {
+	err := async.Consume(func(elem *rpc_api.StarlarkRunResponseLine) error {
 		if elem != nil {
 			logs = append(logs, elem)
 		}
 		return nil
 	})
-	return utils.FilterListNils(logs)
+	notNilsLogs := utils.FilterListNils(logs)
+
+	if err != nil {
+		return notNilsLogs, stacktrace.Propagate(err, "Failed to consume all logs, %d were consumed before the error", len(notNilsLogs))
+	}
+
+	return notNilsLogs, nil
 }
 
 func (async *asyncStarlarkLogs) Consume(consumer func(*rpc_api.StarlarkRunResponseLine) error) error {
 	for elem := range async.starlarkRunResponseLineChan {
-		consumer(elem)
+		if err := consumer(elem); err != nil {
+			return stacktrace.Propagate(err, "Failed to consume element of type '%T'", elem)
+		}
 	}
 	return nil
 }

@@ -459,7 +459,7 @@ type StarlarkInstruction struct {
 	ExecutableInstruction string                        `json:"executable_instruction"`
 	InstructionName       string                        `json:"instruction_name"`
 	IsSkipped             bool                          `json:"is_skipped"`
-	Position              StarlarkInstructionPosition   `json:"position"`
+	Position              *StarlarkInstructionPosition  `json:"position,omitempty"`
 }
 
 // StarlarkInstructionArgument defines model for StarlarkInstructionArgument.

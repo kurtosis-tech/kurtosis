@@ -2,10 +2,34 @@ package utils
 
 func MapList[T, U any](data []T, function func(T) U) []U {
 	res := make([]U, 0, len(data))
-	for _, e := range data {
-		res = append(res, function(e))
+	for _, elem := range data {
+		res = append(res, function(elem))
 	}
 	return res
+}
+
+func MapListWithRefStopOnError[T, U any](data []T, function func(*T) (U, error)) ([]U, error) {
+	res := make([]U, 0, len(data))
+	for _, elem := range data {
+		value, err := function(&elem)
+		if err != nil {
+			return res, err
+		}
+		res = append(res, value)
+	}
+	return res, nil
+}
+
+func MapListStopOnError[T, U any](data []T, function func(T) (U, error)) ([]U, error) {
+	res := make([]U, 0, len(data))
+	for _, elem := range data {
+		value, err := function(elem)
+		if err != nil {
+			return res, err
+		}
+		res = append(res, value)
+	}
+	return res, nil
 }
 
 func FilterListNils[T any](data []*T) []T {

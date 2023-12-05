@@ -47,6 +47,7 @@ func NewEnclaveRuntime(ctx context.Context, manager enclave_manager.EnclaveManag
 		connectOnHostMachine:     connectOnHostMachine,
 		ctx:                      ctx,
 		asyncStarlarkLogs:        asyncStarlarkLogs,
+		lock:                     sync.Mutex{},
 	}
 
 	err := runtime.refreshEnclaveConnections()
@@ -132,7 +133,9 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 				Type:    api_type.ERROR,
 				Message: fmt.Sprintf("Failed to upload file: %s", filename),
 			}
-			result.FileArtifactUploadResult.FromResponseInfo(response)
+			if err := result.FileArtifactUploadResult.FromResponseInfo(response); err != nil {
+				return nil, stacktrace.Propagate(err, "Failed to write to enum http type with %T", response)
+			}
 			uploadedArtifacts[filename] = result
 			continue
 		}
@@ -144,7 +147,9 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 				Type:    api_type.WARNING,
 				Message: fmt.Sprintf("File %s has been already uploaded", filename),
 			}
-			result.FileArtifactUploadResult.FromResponseInfo(response)
+			if err := result.FileArtifactUploadResult.FromResponseInfo(response); err != nil {
+				return nil, stacktrace.Propagate(err, "Failed to write to enum http type with %T", response)
+			}
 			uploadedArtifacts[filename] = result
 			continue
 		}
@@ -153,7 +158,10 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierArtifactsLocalFile(c
 			Name: uploadResult.Name,
 			Uuid: uploadResult.Uuid,
 		}
-		result.FileArtifactUploadResult.FromFileArtifactReference(artifactResponse)
+		if err := result.FileArtifactUploadResult.FromFileArtifactReference(artifactResponse); err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to write to enum http type with %T", artifactResponse)
+		}
+		uploadedArtifacts[filename] = result
 		uploadedArtifacts[filename] = result
 	}
 
@@ -572,8 +580,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	jsonParams := utils.DerefWith(request.Body.Params, map[string]interface{}{})
 	jsonBlob, err := json.Marshal(jsonParams)
 	if err != nil {
-		stacktrace.Propagate(err, "I'm actually panicking here. Re-serializing a already deserialized JSON parameter should never fail.")
-		return nil, err
+		return nil, stacktrace.Propagate(err, "I'm actually panicking here. Re-serializing a already deserialized JSON parameter should never fail.")
 	}
 	jsonString := string(jsonBlob)
 
@@ -610,13 +617,28 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 	var syncLogs api_type.StarlarkRunResponse_StarlarkExecutionLogs
 
 	if !isAsyncRetrieval {
-		logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), to_http.ToHttpStarlarkRunResponseLine)
-		syncLogs.FromStarlarkRunLogs(utils.FilterListNils(logs))
+		allLogs, err := asyncLogs.WaitAndConsumeAll()
+		if err != nil {
+			cancelCtxFunc()
+			return nil, stacktrace.Propagate(err, "Failed to consume all logs with enclave %s", enclaveIdentifier)
+		}
+		httpLogs, err := utils.MapListWithRefStopOnError(allLogs, to_http.ToHttpStarlarkRunResponseLine)
+		if err != nil {
+			cancelCtxFunc()
+			return nil, stacktrace.Propagate(err, "Failed to convert values to http with enclave %s", enclaveIdentifier)
+		}
+
+		logs := utils.FilterListNils(httpLogs)
+		if err := syncLogs.FromStarlarkRunLogs(logs); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to serialize %T", logs)
+		}
 	} else {
 		asyncUuid := manager.asyncStarlarkLogs.Add(&asyncLogs)
 		var asyncLogs api_type.AsyncStarlarkExecutionLogs
 		asyncLogs.AsyncStarlarkExecutionLogs.StarlarkExecutionUuid = string(asyncUuid)
-		syncLogs.FromAsyncStarlarkExecutionLogs(asyncLogs)
+		if err := syncLogs.FromAsyncStarlarkExecutionLogs(asyncLogs); err != nil {
+			return nil, stacktrace.Propagate(err, "failed to serialize %T", asyncLogs)
+		}
 	}
 
 	response := api_type.StarlarkRunResponse{StarlarkExecutionLogs: &syncLogs}
@@ -638,8 +660,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		return string(jsonBlob), err
 	})
 	if err != nil {
-		stacktrace.Propagate(err, "I'm actually panicking here. Re-serializing a already deserialized JSON parameter should never fail.")
-		return nil, err
+		return nil, stacktrace.Propagate(err, "I'm actually panicking here. Re-serializing a already deserialized JSON parameter should never fail.")
 	}
 
 	runStarlarkScriptArgs := rpc_api.RunStarlarkScriptArgs{
@@ -665,9 +686,22 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 	asyncLogs := streaming.NewAsyncStarlarkLogs(cancelCtxFunc)
 	go asyncLogs.AttachStream(stream)
 
-	logs := utils.MapList(asyncLogs.WaitAndConsumeAll(), to_http.ToHttpStarlarkRunResponseLine)
+	allLogs, err := asyncLogs.WaitAndConsumeAll()
+	if err != nil {
+		cancelCtxFunc()
+		return nil, stacktrace.Propagate(err, "Failed to consume all logs with enclave %s", enclaveIdentifier)
+	}
+	httpLogs, err := utils.MapListWithRefStopOnError(allLogs, to_http.ToHttpStarlarkRunResponseLine)
+	if err != nil {
+		cancelCtxFunc()
+		return nil, stacktrace.Propagate(err, "Failed to convert values to http with enclave %s", enclaveIdentifier)
+	}
+
+	logs := utils.FilterListNils(httpLogs)
 	var syncLogs api_type.StarlarkRunResponse_StarlarkExecutionLogs
-	syncLogs.FromStarlarkRunLogs(utils.FilterListNils(logs))
+	if err := syncLogs.FromStarlarkRunLogs(logs); err != nil {
+		return nil, stacktrace.Propagate(err, "failed to serialize %T", logs)
+	}
 
 	response := api_type.StarlarkRunResponse{StarlarkExecutionLogs: &syncLogs}
 	return api.PostEnclavesEnclaveIdentifierStarlarkScripts200JSONResponse(response), nil
@@ -707,7 +741,7 @@ func getGrpcClientConn(enclaveInfo types.EnclaveInfo, connectOnHostMachine bool)
 	return grpcConnection, nil
 }
 
-func (manager enclaveRuntime) getApiClientOrResponseError(enclaveUuid string) (*rpc_api.ApiContainerServiceClient, *api_type.ResponseInfo) {
+func (manager *enclaveRuntime) getApiClientOrResponseError(enclaveUuid string) (*rpc_api.ApiContainerServiceClient, *api_type.ResponseInfo) {
 	client, err := manager.getGrpcClientForEnclaveUUID(enclaveUuid)
 	if err != nil {
 		return nil, &api_type.ResponseInfo{
@@ -726,7 +760,7 @@ func (manager enclaveRuntime) getApiClientOrResponseError(enclaveUuid string) (*
 	return client, nil
 }
 
-func (manager enclaveRuntime) getGrpcClientForEnclaveUUID(enclaveUuid string) (*rpc_api.ApiContainerServiceClient, error) {
+func (manager *enclaveRuntime) getGrpcClientForEnclaveUUID(enclaveUuid string) (*rpc_api.ApiContainerServiceClient, error) {
 	err := manager.refreshEnclaveConnections()
 	if err != nil {
 		return nil, err
@@ -740,7 +774,7 @@ func (manager enclaveRuntime) getGrpcClientForEnclaveUUID(enclaveUuid string) (*
 	return &client, nil
 }
 
-func (runtime enclaveRuntime) refreshEnclaveConnections() error {
+func (runtime *enclaveRuntime) refreshEnclaveConnections() error {
 	runtime.lock.Lock()
 	defer runtime.lock.Unlock()
 

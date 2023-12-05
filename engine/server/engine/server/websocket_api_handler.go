@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/websocket"
@@ -152,7 +153,7 @@ func writeResponseInfo(ctx echo.Context, response api_type.ResponseInfo) {
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	enc := json.NewEncoder(ctx.Response())
 	ctx.Response().WriteHeader(int(response.Code))
-	enc.Encode(response)
+	_ = enc.Encode(response)
 }
 
 func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
@@ -170,15 +171,20 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool strea
 	websocket.Handler(func(ws *websocket.Conn) {
 		defer ws.Close()
 		found, err := streamerPool.Consume(streaming.StreamerUUID(streamerUUID), func(logline *rpc_api.StarlarkRunResponseLine) error {
-			err := websocket.JSON.Send(ws, utils.MapPointer(logline, to_http.ToHttpStarlarkRunResponseLine))
+			response, err := to_http.ToHttpStarlarkRunResponseLine(logline)
 			if err != nil {
-				return err
+				return stacktrace.Propagate(err, "Failed to convert value of type `%T` to http", logline)
+			}
+			if err := websocket.JSON.Send(ws, response); err != nil {
+				return stacktrace.Propagate(err, "Failed to send value of type `%T` via websocket", logline)
 			}
 			return nil
 		})
 
 		if !found {
-			websocket.JSON.Send(ws, notFoundErr)
+			if err := websocket.JSON.Send(ws, notFoundErr); err != nil {
+				logrus.WithError(err).Errorf("Failed to send value via websocket")
+			}
 		}
 
 		if err != nil {
@@ -191,7 +197,9 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool strea
 				Message: fmt.Sprintf("Log streaming '%s' failed while sending the data", streamerUUID),
 				Code:    http.StatusInternalServerError,
 			}
-			websocket.JSON.Send(ws, streamingErr)
+			if err := websocket.JSON.Send(ws, streamingErr); err != nil {
+				logrus.WithError(err).Errorf("Failed to send value via websocket")
+			}
 		}
 	}).ServeHTTP(ctx.Response(), ctx.Request())
 }
@@ -212,15 +220,21 @@ func streamStarlarkLogsWithHTTP[T any](ctx echo.Context, streamerPool streaming.
 	enc := json.NewEncoder(ctx.Response())
 	ctx.Response().WriteHeader(http.StatusOK)
 	found, err := streamerPool.Consume(streaming.StreamerUUID(streamerUUID), func(logline *rpc_api.StarlarkRunResponseLine) error {
-		if err := enc.Encode(utils.MapPointer(logline, to_http.ToHttpStarlarkRunResponseLine)); err != nil {
-			return err
+		response, err := to_http.ToHttpStarlarkRunResponseLine(logline)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to convert value of type `%T` to http", logline)
+		}
+		if err := enc.Encode(response); err != nil {
+			return stacktrace.Propagate(err, "Failed to send value of type `%T` via http streaming", logline)
 		}
 		ctx.Response().Flush()
 		return nil
 	})
 
 	if !found {
-		enc.Encode(notFoundErr)
+		if err := enc.Encode(notFoundErr); err != nil {
+			logrus.WithError(err).Errorf("Failed to send value via websocket")
+		}
 	}
 
 	if err != nil {
@@ -233,7 +247,9 @@ func streamStarlarkLogsWithHTTP[T any](ctx echo.Context, streamerPool streaming.
 			Message: fmt.Sprintf("Log streaming '%s' failed while sending the data", streamerUUID),
 			Code:    http.StatusInternalServerError,
 		}
-		enc.Encode(streamingErr)
+		if err := enc.Encode(streamingErr); err != nil {
+			logrus.WithError(err).Errorf("Failed to send value via websocket")
+		}
 	}
 }
 
@@ -255,10 +271,12 @@ func streamServiceLogsWithWebsocket(ctx echo.Context, streamer streaming.Service
 			}).Error("Failed to stream all data")
 			streamingErr := api_type.ResponseInfo{
 				Type:    api_type.ERROR,
-				Message: fmt.Sprintf("Log streaming failed while sending the data"),
+				Message: "Log streaming failed while sending the data",
 				Code:    http.StatusInternalServerError,
 			}
-			websocket.JSON.Send(ws, streamingErr)
+			if err := websocket.JSON.Send(ws, streamingErr); err != nil {
+				logrus.WithError(err).Errorf("Failed to send value via websocket")
+			}
 		}
 	}).ServeHTTP(ctx.Response(), ctx.Request())
 }
@@ -282,9 +300,11 @@ func streamServiceLogsWithHTTP(ctx echo.Context, streamer streaming.ServiceLogSt
 		}).Error("Failed to stream all data")
 		streamingErr := api_type.ResponseInfo{
 			Type:    api_type.ERROR,
-			Message: fmt.Sprintf("Log streaming failed while sending the data"),
+			Message: "Log streaming failed while sending the data",
 			Code:    http.StatusInternalServerError,
 		}
-		enc.Encode(streamingErr)
+		if err := enc.Encode(streamingErr); err != nil {
+			logrus.WithError(err).Errorf("Failed to send value via websocket")
+		}
 	}
 }
