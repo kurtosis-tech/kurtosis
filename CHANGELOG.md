@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.42](https://github.com/kurtosis-tech/kurtosis/compare/0.85.41...0.85.42) (2023-12-05)
+
+
+### Bug Fixes
+
+* Rename jwtToken cookie ([#1876](https://github.com/kurtosis-tech/kurtosis/issues/1876)) ([3b13372](https://github.com/kurtosis-tech/kurtosis/commit/3b13372004a0448f5e40154004b2b883e5a5d57a))
+
 ## [0.85.41](https://github.com/kurtosis-tech/kurtosis/compare/0.85.40...0.85.41) (2023-12-05)
 
 
