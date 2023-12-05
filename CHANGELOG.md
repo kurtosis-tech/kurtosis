@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.41](https://github.com/kurtosis-tech/kurtosis/compare/0.85.40...0.85.41) (2023-12-05)
+
+
+### Features
+
+* emui handle json/yaml input interchangably ([#1891](https://github.com/kurtosis-tech/kurtosis/issues/1891)) ([cd4263b](https://github.com/kurtosis-tech/kurtosis/commit/cd4263bed4e784eca2dcd9c118e5b69c5d353f06))
+
 ## [0.85.40](https://github.com/kurtosis-tech/kurtosis/compare/0.85.39...0.85.40) (2023-12-02)
 
 
