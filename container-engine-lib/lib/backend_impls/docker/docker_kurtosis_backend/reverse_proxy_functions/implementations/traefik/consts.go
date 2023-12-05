@@ -17,19 +17,25 @@ log:
 api:
   debug: true
   dashboard: true
+  # api over the traefik endpoint
   insecure: true
   disabledashboardad: true
  
 entryPoints:
+  # http traffic
   web:
     address: ":{{ .HttpPort }}"
+  # API endpoint
   traefik:
     address: ":{{ .DashboardPort }}"
 
 providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
+    # we don't want the containers to be exposed by default.
+    # we are enabling Traefik at the container level instead.
     exposedByDefault: false
+    # Docker network to start Traefik in.
     network: "{{ .NetworkId }}"
 `
 	////////////////////////--FINISH--TRAEFIK CONFIGURATION SECTION--/////////////////////////////

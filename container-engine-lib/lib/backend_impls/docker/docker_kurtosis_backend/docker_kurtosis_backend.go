@@ -484,7 +484,7 @@ func (backend *DockerKurtosisBackend) CreateReverseProxy(ctx context.Context) (*
 		backend.objAttrsProvider,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator using the logs aggregator container '%+v'.", reverseProxyContainer)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the reverse proxy using the reverse proxy container '%+v'.", reverseProxyContainer)
 	}
 	return reverseProxy, nil
 }
@@ -495,7 +495,7 @@ func (backend *DockerKurtosisBackend) GetReverseProxy(ctx context.Context) (*rev
 		backend.dockerManager,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the reverse proxy")
 	}
 
 	return maybeReverseProxy, nil
@@ -503,7 +503,7 @@ func (backend *DockerKurtosisBackend) GetReverseProxy(ctx context.Context) (*rev
 
 func (backend *DockerKurtosisBackend) DestroyReverseProxy(ctx context.Context) error {
 	if err := reverse_proxy_functions.DestroyReverseProxy(ctx, backend.dockerManager); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying the logs aggregator")
+		return stacktrace.Propagate(err, "An error occurred destroying the reverse proxy")
 	}
 
 	return nil

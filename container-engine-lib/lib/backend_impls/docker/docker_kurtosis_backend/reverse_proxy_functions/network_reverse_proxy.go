@@ -61,7 +61,7 @@ func ConnectReverseProxyToEnclaveNetworks(ctx context.Context, dockerManager *do
 	}
 	enclaveNetworks, err := dockerManager.GetNetworksByLabels(ctx, kurtosisNetworkLabels)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting Kurtosis networks")
+		return stacktrace.Propagate(err, "An error occurred getting enclave networks")
 	}
 
 	for _, enclaveNetwork := range enclaveNetworks {

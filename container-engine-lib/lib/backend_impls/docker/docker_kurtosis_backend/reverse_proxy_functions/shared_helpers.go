@@ -20,7 +20,6 @@ const (
 	shouldShowStoppedReverseProxyContainers = true
 )
 
-// Returns nil [ReverseProxy] object if no container is found
 func getReverseProxyObjectAndContainerId(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
@@ -48,7 +47,6 @@ func getReverseProxyObjectAndContainerId(
 	return reverseProxyObject, reverseProxyContainerID, nil
 }
 
-// Returns nil [Container] object and false if no reverse proxy container is found
 func getReverseProxyContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, bool, error) {
 	reverseProxyContainerSearchLabels := map[string]string{
 		docker_label_key.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),

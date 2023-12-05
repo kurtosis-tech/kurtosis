@@ -36,7 +36,7 @@ func (traefik *traefikContainerConfigProvider) GetContainerArgs(
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
 
 	bindMounts := map[string]string{
-		// Necessary so that the engine server can interact with the Docker engine
+		// Necessary so that the reverse proxy can interact with the Docker engine
 		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
 	}
 
@@ -70,7 +70,7 @@ func (traefik *traefikContainerConfigProvider) GetContainerArgs(
 		return nil, stacktrace.Propagate(err, "An error occurred creating a wait with default values")
 	}
 
-	// Publish HTTP and Dashboard ports
+	// Publish HTTP and Dashboard entrypoint ports
 	privateHttpPortSpec, err := port_spec.NewPortSpec(httpPort, port_spec.TransportProtocol_TCP, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -95,7 +95,7 @@ func (traefik *traefikContainerConfigProvider) GetContainerArgs(
 	}
 	privateDashboardDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateDashboardPortSpec)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the private http port spec to a Docker port")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the private dashboard port spec to a Docker port")
 	}
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateHttpDockerPort:      docker_manager.NewManualPublishingSpec(httpPort),

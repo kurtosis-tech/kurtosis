@@ -781,7 +781,7 @@ func (manager *DockerManager) GetContainerIP(ctx context.Context, networkName st
 /*
 GetContainerIps
 Gets the container's IPs on all networks
-Returns a map of network ID : network IP address
+Returns a map of network ID to network IP address
 */
 func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId string) (map[string]string, error) {
 	containerIps := map[string]string{}

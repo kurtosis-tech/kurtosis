@@ -372,7 +372,7 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 		erroredEnclaveUuids[enclaveUuid] = volumeRemovalErr
 	}
 
-	// Disconnect the reverse proxy from the networks
+	// Disconnect the containers from the enclave networks being removed
 	networksToDisconnect := map[enclave.EnclaveUUID]string{}
 	for enclaveUuid := range successfulVolumeRemovalEnclaveUuids {
 		networkInfo, found := matchingNetworkInfo[enclaveUuid]
@@ -381,7 +381,6 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 		}
 		networksToDisconnect[enclaveUuid] = networkInfo.dockerNetwork.GetId()
 	}
-
 	successfulDisconnectContainersFromNetworkEnclaveUuids, erroredDisconnectContainersFromNetworkEnclaveUuids, err := backend.disconnectContainersFromEnclaveNetworks(ctx, backend.dockerManager, networksToDisconnect)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred disconnecting the containers from the networks for enclaves whose volumes were successfully destroyed: %+v", successfulVolumeRemovalEnclaveUuids)
