@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
 import { LogViewer } from "../../../../../components/enclaves/logs/LogViewer";
 import { LogLineMessage } from "../../../../../components/enclaves/logs/types";
-import { assertDefined, isDefined } from "../../../../../utils";
+import { assertDefined, isDefined, stringifyError } from "../../../../../utils";
 import { EnclaveFullInfo } from "../../../types";
 
 const serviceLogLineToLogLineMessage = (lines: string[], timestamp?: Timestamp): LogLineMessage[] => {
@@ -46,18 +46,23 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
     async function* () {
       const abortController = new AbortController();
       const logs = await kurtosisClient.getServiceLogs(abortController, enclave, [service], false, 0, true);
-      for await (const lineGroup of logs) {
-        const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
-        assertDefined(
-          lineGroupForService,
-          `Log line response included a line group withouth service ${
-            service.serviceUuid
-          }: ${lineGroup.toJsonString()}`,
-        );
-        const parsedLogLines = serviceLogLineToLogLineMessage(lineGroupForService.line, lineGroupForService.timestamp);
-        for (const parsedLine of parsedLogLines) {
-          yield parsedLine.message || "";
+      try {
+        for await (const lineGroup of logs) {
+          const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
+          assertDefined(
+            lineGroupForService,
+            `Log line response included a line group withouth service ${
+              service.serviceUuid
+            }: ${lineGroup.toJsonString()}`,
+          );
+          const parsedLogLines = serviceLogLineToLogLineMessage(
+            lineGroupForService.line,
+            lineGroupForService.timestamp,
+          );
+          yield parsedLogLines.map((line) => line.message || "").join("\n");
         }
+      } catch (err: any) {
+        console.error(stringifyError(err));
       }
     },
     [enclave, service],
