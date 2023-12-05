@@ -1,5 +1,5 @@
 import { Button, ButtonGroup, Flex } from "@chakra-ui/react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller } from "react-hook-form";
 import { FieldPath, FieldValues } from "react-hook-form/dist/types";
 import { ControllerRenderProps } from "react-hook-form/dist/types/controller";
@@ -51,7 +51,7 @@ const JsonAndYamlCodeEditor = <
   const handleFormatClick = async () => {
     if (isDefined(codeEditorRef.current)) {
       setIsWorking(true);
-      await codeEditorRef.current.setLanguage(isProbablyJson ? "json" : "yaml");
+      codeEditorRef.current.setLanguage(isProbablyJson ? "json" : "yaml");
       await codeEditorRef.current.formatCode();
       setIsWorking(false);
     }
@@ -76,12 +76,16 @@ const JsonAndYamlCodeEditor = <
     }
   };
 
+  useEffect(() => {
+    codeEditorRef.current?.setLanguage(isProbablyJson ? "json" : "yaml");
+  }, [isProbablyJson]);
+
   return (
     <Flex flexDirection={"column"} gap={"10px"}>
       <ButtonGroup>
         <FormatButton size="xs" onClick={handleFormatClick} isLoading={isWorking} />
         <Button size={"xs"} colorScheme={"darkBlue"} onClick={handleConvertClick} leftIcon={<FiCode />}>
-          Convert to {isProbablyJson ? "YAML" : "JSON"}
+          Switch to {isProbablyJson ? "YAML" : "JSON"}
         </Button>
       </ButtonGroup>
       <CodeEditor ref={codeEditorRef} text={field.value} onTextChange={field.onChange} />

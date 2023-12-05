@@ -2,7 +2,8 @@ import { Box } from "@chakra-ui/react";
 import { Editor, Monaco, OnChange, OnMount } from "@monaco-editor/react";
 import { type editor as monacoEditor } from "monaco-editor";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
-import { assertDefined, isDefined } from "../utils";
+import YAML from "yaml";
+import { assertDefined, isDefined, stringifyError } from "../utils";
 
 type CodeEditorProps = {
   text: string;
@@ -65,13 +66,26 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
             // do nothing
             return;
           }
+          const doFormat = async () => {
+            if (editor.getModel()?.getLanguageId() === "yaml") {
+              try {
+                const formattedText = YAML.stringify(YAML.parse(editor.getValue()));
+                editor.setValue(formattedText);
+              } catch (e: any) {
+                console.error(stringifyError(e));
+              }
+            } else {
+              const formatAction = editor.getAction("editor.action.formatDocument");
+              assertDefined(formatAction, `Format action is not defined`);
+              await formatAction.run();
+            }
+          };
+
           if (isReadOnly) {
             return new Promise((resolve) => {
               const listenerDisposer = editor.onDidChangeConfiguration((event) => {
                 if (event.hasChanged(89 /* ID of the readonly option */)) {
-                  const formatAction = editor.getAction("editor.action.formatDocument");
-                  assertDefined(formatAction, `Format action is not defined`);
-                  formatAction.run().then(() => {
+                  doFormat().then(() => {
                     listenerDisposer.dispose();
                     editor.updateOptions({
                       readOnly: isReadOnly,
@@ -86,10 +100,7 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
               });
             });
           } else {
-            const formatAction = editor.getAction("editor.action.formatDocument");
-            console.log(editor.getModel()?.getLanguageId());
-            assertDefined(formatAction, `Format action is not defined`);
-            return formatAction.run();
+            return doFormat();
           }
         },
         setText: (text: string) => {

@@ -3,7 +3,7 @@ import { BiPaintRoll } from "react-icons/bi";
 
 export const FormatButton = ({ ...buttonProps }: ButtonProps) => {
   return (
-    <Button leftIcon={<BiPaintRoll />} size={"sm"} colorScheme={"darkBlue"} {...buttonProps}>
+    <Button leftIcon={<BiPaintRoll />} size={"sm"} colorScheme={"darkBlue"} loadingText={"Format"} {...buttonProps}>
       Format
     </Button>
   );

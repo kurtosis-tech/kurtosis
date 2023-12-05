@@ -9,13 +9,13 @@ export function argTypeToString(argType?: ArgumentValueType) {
     case ArgumentValueType.INTEGER:
       return "integer";
     case ArgumentValueType.JSON:
-      return "json";
+      return "json/yaml";
     case ArgumentValueType.LIST:
       return "list";
     case ArgumentValueType.STRING:
       return "text";
     default:
-      return "json";
+      return "json/yaml";
   }
 }
 
@@ -31,6 +31,6 @@ export function argToTypeString(arg: PackageArg) {
     case ArgumentValueType.LIST:
       return `${argTypeToString(arg.typeV2.innerType1)} list`;
     default:
-      return "json";
+      return "json/yaml";
   }
 }
