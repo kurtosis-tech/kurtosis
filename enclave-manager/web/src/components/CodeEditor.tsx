@@ -5,6 +5,8 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } fro
 import YAML from "yaml";
 import { assertDefined, isDefined, stringifyError } from "../utils";
 
+const MONACO_READ_ONLY_CHANGE_EVENT_ID = 89;
+
 type CodeEditorProps = {
   text: string;
   fileName?: string;
@@ -84,7 +86,7 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
           if (isReadOnly) {
             return new Promise((resolve) => {
               const listenerDisposer = editor.onDidChangeConfiguration((event) => {
-                if (event.hasChanged(89 /* ID of the readonly option */)) {
+                if (event.hasChanged(MONACO_READ_ONLY_CHANGE_EVENT_ID)) {
                   doFormat().then(() => {
                     listenerDisposer.dispose();
                     editor.updateOptions({
