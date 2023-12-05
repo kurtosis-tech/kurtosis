@@ -67,12 +67,12 @@ func (manager *LogFileManager) StartLogFileManagement(ctx context.Context) {
 
 		logrus.Debugf("Scheduling log file path creation every '%v' minutes...", volume_consts.CreateLogsWaitMinutes)
 		for range logFileCreatorTicker.C {
-			logrus.Debug("Creating log file paths...")
+			logrus.Trace("Creating log file paths...")
 			err := manager.CreateLogFiles(ctx)
 			if err != nil {
 				logrus.Errorf("An error occurred attempting to create log file paths: %v", err)
 			} else {
-				logrus.Debug("Successfully created log file paths.")
+				logrus.Trace("Successfully created log file paths.")
 			}
 		}
 	}()

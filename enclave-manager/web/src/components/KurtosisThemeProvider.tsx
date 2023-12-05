@@ -203,7 +203,7 @@ const theme = extendTheme({
       variants: {
         valueCard: {
           container: {
-            bg: "gray.800",
+            bg: "gray.850",
             borderRadius: "8px",
             padding: "16px",
             gap: "16px",
