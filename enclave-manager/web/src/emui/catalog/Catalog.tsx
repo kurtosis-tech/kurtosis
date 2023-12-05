@@ -80,13 +80,14 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
       </Flex>
       <Flex flexDirection={"column"} gap={"32px"}>
         <Flex flex={"1"} justifyContent={"center"}>
-          <InputGroup variant={"solid"} width={"1192px"}>
+          <InputGroup variant={"solid"} width={"1192px"} color={"gray.150"}>
             <InputLeftElement>
               <Icon as={FiSearch} />
             </InputLeftElement>
             <Input
               ref={searchRef}
               value={searchTerm}
+              bgColor={"gray.850"}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={"Search"}
             />
