@@ -319,8 +319,11 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
             searchRef.current.focus();
           }
         },
-        next: () => {
+        enter: () => {
           handleNextMatchClick();
+        },
+        "shift-enter": () => {
+          handlePriorMatchClick();
         },
         escape: () => {
           if (isDefined(searchRef.current) && searchRef.current === document.activeElement) {
