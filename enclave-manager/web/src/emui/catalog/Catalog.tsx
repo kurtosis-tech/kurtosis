@@ -20,7 +20,7 @@ import { MdBookmarkAdded } from "react-icons/md";
 import { GetPackagesResponse, KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { AppPageLayout } from "../../components/AppLayout";
 import { KurtosisPackageCardGrid } from "../../components/catalog/KurtosisPackageCardGrid";
-import { OmniboxCommand } from "../../components/KeyboardCommands";
+import { FindCommand } from "../../components/KeyboardCommands";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { PageTitle } from "../../components/PageTitle";
 import { useKeyboardAction } from "../../components/useKeyboardAction";
@@ -58,7 +58,7 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
   useKeyboardAction(
     useMemo(
       () => ({
-        omniFind: () => {
+        find: () => {
           if (isDefined(searchRef.current) && searchRef.current !== document.activeElement) {
             searchRef.current.focus();
           }
@@ -91,7 +91,7 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={"Search"}
             />
-            <InputRightElement>
+            <InputRightElement w={"unset"}>
               {isSearching ? (
                 <IconButton
                   aria-label={"Clear search"}
@@ -101,7 +101,7 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
                   onClick={() => setSearchTerm("")}
                 />
               ) : (
-                <OmniboxCommand />
+                <FindCommand whiteSpace={"nowrap"} pr={"10px"} />
               )}
             </InputRightElement>
           </InputGroup>
