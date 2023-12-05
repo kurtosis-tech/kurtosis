@@ -67,6 +67,7 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context
 		logrus.WithFields(logrus.Fields{
 			"enclave_identifier": enclaveIdentifier,
 			"parameters":         params,
+			"stacktrace":         fmt.Sprintf("%+v", err),
 		}).Error("Failed to create log stream")
 		errInfo := api_type.ResponseInfo{
 			Code:    http.StatusInternalServerError,
@@ -103,9 +104,10 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 		params.ConjunctiveFilters,
 	)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
+		logrus.WithError(err).WithFields(logrus.Fields{
 			"enclave_identifier": enclaveIdentifier,
 			"parameters":         params,
+			"stacktrace":         fmt.Sprintf("%+v", err),
 		}).Error("Failed to create log stream")
 		errInfo := api_type.ResponseInfo{
 			Code:    http.StatusInternalServerError,
@@ -129,14 +131,14 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 
 // (GET /starlark/executions/{starlark_execution_uuid}/logs)
 func (engine WebSocketRuntime) GetStarlarkExecutionsStarlarkExecutionUuidLogs(ctx echo.Context, starlarkExecutionUuid api_type.StarlarkExecutionUuid) error {
-	async_log_uuid := streaming.StreamerUUID(starlarkExecutionUuid)
+	asyncLogUuid := streaming.StreamerUUID(starlarkExecutionUuid)
 
 	if ctx.IsWebSocket() {
 		logrus.Infof("Starting log stream using Websocket for streamer UUUID: %s", starlarkExecutionUuid)
-		streamStarlarkLogsWithWebsocket(ctx, engine.AsyncStarlarkLogs, async_log_uuid)
+		streamStarlarkLogsWithWebsocket(ctx, engine.AsyncStarlarkLogs, asyncLogUuid)
 	} else {
 		logrus.Infof("Starting log stream using plain HTTP for streamer UUUID: %s", starlarkExecutionUuid)
-		streamStarlarkLogsWithHTTP(ctx, engine.AsyncStarlarkLogs, async_log_uuid)
+		streamStarlarkLogsWithHTTP(ctx, engine.AsyncStarlarkLogs, asyncLogUuid)
 	}
 
 	return nil
@@ -180,7 +182,10 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool strea
 		}
 
 		if err != nil {
-			logrus.Errorf("Failed to stream all data %s", err)
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"streamerUUID": streamerUUID,
+				"stacktrace":   fmt.Sprintf("%+v", err),
+			}).Error("Failed to stream all data")
 			streamingErr := api_type.ResponseInfo{
 				Type:    api_type.ERROR,
 				Message: fmt.Sprintf("Log streaming '%s' failed while sending the data", streamerUUID),
@@ -219,7 +224,10 @@ func streamStarlarkLogsWithHTTP[T any](ctx echo.Context, streamerPool streaming.
 	}
 
 	if err != nil {
-		logrus.Errorf("Failed to stream all data %s", err)
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"streamerUUID": streamerUUID,
+			"stacktrace":   fmt.Sprintf("%+v", err),
+		}).Error("Failed to stream all data")
 		streamingErr := api_type.ResponseInfo{
 			Type:    api_type.ERROR,
 			Message: fmt.Sprintf("Log streaming '%s' failed while sending the data", streamerUUID),
@@ -241,7 +249,10 @@ func streamServiceLogsWithWebsocket(ctx echo.Context, streamer streaming.Service
 		})
 
 		if err != nil {
-			logrus.Errorf("Failed to stream all data %s", err)
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"stacktrace": fmt.Sprintf("%+v", err),
+				"services":   streamer.GetRequestedServiceUuids(),
+			}).Error("Failed to stream all data")
 			streamingErr := api_type.ResponseInfo{
 				Type:    api_type.ERROR,
 				Message: fmt.Sprintf("Log streaming failed while sending the data"),
@@ -265,7 +276,10 @@ func streamServiceLogsWithHTTP(ctx echo.Context, streamer streaming.ServiceLogSt
 	})
 
 	if err != nil {
-		logrus.Errorf("Failed to stream all data %s", err)
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"stacktrace": fmt.Sprintf("%+v", err),
+			"services":   streamer.GetRequestedServiceUuids(),
+		}).Error("Failed to stream all data")
 		streamingErr := api_type.ResponseInfo{
 			Type:    api_type.ERROR,
 			Message: fmt.Sprintf("Log streaming failed while sending the data"),

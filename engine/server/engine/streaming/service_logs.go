@@ -113,6 +113,10 @@ func NewServiceLogStreamer(
 	}, nil
 }
 
+func (streamer ServiceLogStreamer) GetRequestedServiceUuids() []user_service.ServiceUUID {
+	return streamer.requestedServiceUuids
+}
+
 func (streamer ServiceLogStreamer) Close() {
 	streamer.cancelCtxFunc()
 }
