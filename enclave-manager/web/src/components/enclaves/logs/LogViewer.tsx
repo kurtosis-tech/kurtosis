@@ -39,6 +39,8 @@ type LogViewerProps = {
   ProgressWidget?: ReactElement;
   logsFileName?: string;
   searchEnabled?: boolean;
+  copyLogsEnabled?: boolean;
+  onGetAllLogs?: () => AsyncIterable<string>;
 };
 
 type SearchBaseState = {
@@ -69,6 +71,8 @@ export const LogViewer = ({
   ProgressWidget,
   logsFileName,
   searchEnabled,
+  copyLogsEnabled,
+  onGetAllLogs,
 }: LogViewerProps) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [logLines, setLogLines] = useState(propsLogLines);
@@ -179,17 +183,19 @@ export const LogViewer = ({
           </FormLabel>
         </FormControl>
         <ButtonGroup>
-          <CopyButton
-            contentName={"logs"}
-            valueToCopy={getLogsValue}
-            size={"sm"}
-            isDisabled={logLines.length === 0}
-            isIconButton
-            aria-label={"Copy logs"}
-            color={"gray.100"}
-          />
+          {copyLogsEnabled && (
+            <CopyButton
+              contentName={"logs"}
+              valueToCopy={getLogsValue}
+              size={"sm"}
+              isDisabled={logLines.length === 0}
+              isIconButton
+              aria-label={"Copy logs"}
+              color={"gray.100"}
+            />
+          )}
           <DownloadButton
-            valueToDownload={getLogsValue}
+            valueToDownload={onGetAllLogs || getLogsValue}
             size={"sm"}
             fileName={logsFileName || `logs.txt`}
             isDisabled={logLines.length === 0}
