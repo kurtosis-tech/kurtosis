@@ -31,6 +31,12 @@ export const tagTheme = defineMultiStyleConfig({
         minHeight: "unset",
       },
     }),
+    progress: (props: StyleFunctionProps) => ({
+      container: {
+        bg: `${props.colorScheme}.900`,
+        color: `${props.colorScheme}.100`,
+      },
+    }),
     solid: (props: StyleFunctionProps) => ({
       container: {
         color: `${props.colorScheme}.400`,
