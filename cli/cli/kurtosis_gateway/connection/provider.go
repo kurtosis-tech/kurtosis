@@ -20,6 +20,8 @@ import (
 )
 
 const (
+	TunnelPortIdStr = "tunnel"
+
 	grpcPortIdStr           = "grpc"
 	httpApplicationProtocol = "http"
 )
@@ -80,8 +82,15 @@ func (provider *GatewayConnectionProvider) ForEnclaveApiContainer(enclaveInfo *k
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a port spec describing api container GRPC port on port number'%v', instead a non-nil error was returned", grpcPortUint16)
 	}
+
+	var tunnelPortUint16 = uint16(apiContainerInfo.GetTunnelPortInsideEnclave())
+	apiContainerTunnelPortSpec, err := port_spec.NewPortSpec(tunnelPortUint16, port_spec.TransportProtocol_TCP, httpApplicationProtocol, noWait)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get a port spec describing api container tunnel port on port number'%v', instead a non-nil error was returned", tunnelPortUint16)
+	}
 	apiContainerPorts := map[string]*port_spec.PortSpec{
-		grpcPortIdStr: apiContainerGrpcPortSpec,
+		grpcPortIdStr:   apiContainerGrpcPortSpec,
+		TunnelPortIdStr: apiContainerTunnelPortSpec,
 	}
 	enclaveId := enclaveInfo.GetEnclaveUuid()
 	podPortforwardEndpoint, err := provider.getApiContainerPodPortforwardEndpoint(enclaveId)

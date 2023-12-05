@@ -42,6 +42,8 @@ type DockerEnclaveObjectAttributesProvider interface {
 		ipAddr net.IP,
 		privateGrpcPortId string,
 		privateGrpcPortSpec *port_spec.PortSpec,
+		privateTunnelPortId string,
+		privateTunnelPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
 		serviceName service.ServiceName,
@@ -157,6 +159,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	ipAddr net.IP,
 	privateGrpcPortId string,
 	privateGrpcPortSpec *port_spec.PortSpec,
+	privateTunnelPortId string,
+	privateTunnelPortSpec *port_spec.PortSpec,
 ) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
@@ -181,7 +185,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	labels[docker_label_key.PrivateIPDockerLabelKey] = privateIpLabelValue
 
 	usedPorts := map[string]*port_spec.PortSpec{
-		privateGrpcPortId: privateGrpcPortSpec,
+		privateGrpcPortId:   privateGrpcPortSpec,
+		privateTunnelPortId: privateTunnelPortSpec,
 	}
 	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {

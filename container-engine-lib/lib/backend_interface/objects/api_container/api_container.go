@@ -17,13 +17,15 @@ type APIContainer struct {
 	status container.ContainerStatus
 
 	// Private (i.e. internal to enclave) information about the API container
-	privateIpAddr   net.IP
-	privateGrpcPort *port_spec.PortSpec
+	privateIpAddr     net.IP
+	privateGrpcPort   *port_spec.PortSpec
+	privateTunnelPort *port_spec.PortSpec
 
 	// Public (i.e. external to Kurtosis) information about the API container
 	// This information will be nil if the API container isn't running
-	publicIpAddr   net.IP
-	publicGrpcPort *port_spec.PortSpec
+	publicIpAddr     net.IP
+	publicGrpcPort   *port_spec.PortSpec
+	publicTunnelPort *port_spec.PortSpec
 
 	bridgeNetworkIpAddress net.IP
 }
@@ -33,8 +35,10 @@ func NewAPIContainer(
 	status container.ContainerStatus,
 	privateIpAddr net.IP,
 	privateGrpcPort *port_spec.PortSpec,
+	privateTunnelPort *port_spec.PortSpec,
 	publicIpAddr net.IP,
 	publicGrpcPort *port_spec.PortSpec,
+	publicTunnelPort *port_spec.PortSpec,
 	bridgeNetworkIpAddress net.IP,
 ) *APIContainer {
 	return &APIContainer{
@@ -42,8 +46,10 @@ func NewAPIContainer(
 		status:                 status,
 		privateIpAddr:          privateIpAddr,
 		privateGrpcPort:        privateGrpcPort,
+		privateTunnelPort:      privateTunnelPort,
 		publicIpAddr:           publicIpAddr,
 		publicGrpcPort:         publicGrpcPort,
+		publicTunnelPort:       publicTunnelPort,
 		bridgeNetworkIpAddress: bridgeNetworkIpAddress,
 	}
 }
@@ -68,10 +74,18 @@ func (apiContainer *APIContainer) GetPrivateGRPCPort() *port_spec.PortSpec {
 	return apiContainer.privateGrpcPort
 }
 
+func (apiContainer *APIContainer) GetPrivateTunnelPort() *port_spec.PortSpec {
+	return apiContainer.privateTunnelPort
+}
+
 func (apiContainer *APIContainer) GetPublicIPAddress() net.IP {
 	return apiContainer.publicIpAddr
 }
 
 func (apiContainer *APIContainer) GetPublicGRPCPort() *port_spec.PortSpec {
 	return apiContainer.publicGrpcPort
+}
+
+func (apiContainer *APIContainer) GetPublicTunnelPort() *port_spec.PortSpec {
+	return apiContainer.publicTunnelPort
 }

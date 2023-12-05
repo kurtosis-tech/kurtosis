@@ -27,6 +27,8 @@ import (
 const (
 	apiContainerListenGrpcPortNumInsideNetwork = uint16(7443)
 
+	tunnelServerListenPortNumInsideNetwork = uint16(9501)
+
 	getRandomEnclaveIdRetries = uint16(5)
 
 	validNumberOfUuidMatches = 1
@@ -424,11 +426,24 @@ func getEnclaveApiContainerInformation(
 	if apiContainer.GetBridgeNetworkIPAddress() != nil {
 		bridgeIpAddr = apiContainer.GetBridgeNetworkIPAddress().String()
 	}
+
+	// TODO(omar): this block handles apics created in previous versions that have no tunnel port
+	tunnelPortInsideEnclave := uint32(0)
+	if apiContainer.GetPrivateTunnelPort() != nil {
+		tunnelPortInsideEnclave = uint32(apiContainer.GetPrivateTunnelPort().GetNumber())
+	}
+
+	tunnelPortOnHostMachine := uint32(0)
+	if apiContainer.GetPublicTunnelPort() != nil {
+		tunnelPortOnHostMachine = uint32(apiContainer.GetPublicTunnelPort().GetNumber())
+	}
+
 	resultApiContainerInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-		ContainerId:           "",
-		IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),
-		GrpcPortInsideEnclave: uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
-		BridgeIpAddress:       bridgeIpAddr,
+		ContainerId:             "",
+		IpInsideEnclave:         apiContainer.GetPrivateIPAddress().String(),
+		GrpcPortInsideEnclave:   uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
+		TunnelPortInsideEnclave: tunnelPortInsideEnclave,
+		BridgeIpAddress:         bridgeIpAddr,
 	}
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if resultApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
@@ -438,8 +453,9 @@ func getEnclaveApiContainerInformation(
 			apiContainer.GetPublicGRPCPort() != nil {
 
 			apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-				IpOnHostMachine:       apiContainer.GetPublicIPAddress().String(),
-				GrpcPortOnHostMachine: uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
+				IpOnHostMachine:         apiContainer.GetPublicIPAddress().String(),
+				GrpcPortOnHostMachine:   uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
+				TunnelPortOnHostMachine: tunnelPortOnHostMachine,
 			}
 		}
 

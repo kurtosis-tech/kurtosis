@@ -26,6 +26,8 @@ type APIContainerArgs struct {
 
 	GrpcListenPortNum uint16 `json:"grpcListenPortNum"`
 
+	TunnelListenPortNum uint16 `json:"tunnelListenPortNum"`
+
 	EnclaveUUID string `json:"enclaveUuid"`
 
 	// The directory on the API container where the enclave data directory will have been mounted
@@ -99,6 +101,7 @@ func NewAPIContainerArgs(
 	version string,
 	logLevel string,
 	grpcListenPortNum uint16,
+	tunnelListenPortNum uint16,
 	enclaveUuid string,
 	enclaveDataVolumeDirpath string,
 	kurtosisBackendType KurtosisBackendType,
@@ -115,6 +118,7 @@ func NewAPIContainerArgs(
 		Version:                     version,
 		LogLevel:                    logLevel,
 		GrpcListenPortNum:           grpcListenPortNum,
+		TunnelListenPortNum:         tunnelListenPortNum,
 		EnclaveUUID:                 enclaveUuid,
 		EnclaveDataVolumeDirpath:    enclaveDataVolumeDirpath,
 		KurtosisBackendType:         kurtosisBackendType,

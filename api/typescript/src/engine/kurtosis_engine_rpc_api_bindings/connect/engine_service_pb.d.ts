@@ -250,6 +250,13 @@ export declare class EnclaveAPIContainerInfo extends Message<EnclaveAPIContainer
    */
   bridgeIpAddress: string;
 
+  /**
+   * THe tunnel port inside the enclave network that the API container's tunnel server listens on
+   *
+   * @generated from field: uint32 tunnel_port_inside_enclave = 4;
+   */
+  tunnelPortInsideEnclave: number;
+
   constructor(data?: PartialMessage<EnclaveAPIContainerInfo>);
 
   static readonly runtime: typeof proto3;
@@ -284,6 +291,13 @@ export declare class EnclaveAPIContainerHostMachineInfo extends Message<EnclaveA
    * @generated from field: uint32 grpc_port_on_host_machine = 5;
    */
   grpcPortOnHostMachine: number;
+
+  /**
+   * The tunnel port on the container engine host machine where the API container's tunnel server can be reached
+   *
+   * @generated from field: uint32 tunnel_port_on_host_machine = 6;
+   */
+  tunnelPortOnHostMachine: number;
 
   constructor(data?: PartialMessage<EnclaveAPIContainerHostMachineInfo>);
 

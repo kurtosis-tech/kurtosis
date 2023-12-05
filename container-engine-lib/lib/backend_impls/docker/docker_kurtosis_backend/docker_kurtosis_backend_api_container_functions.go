@@ -26,6 +26,7 @@ import (
 const (
 	// The API container uses gRPC so MUST listen on TCP (no other protocols are supported)
 	apiContainerTransportProtocol = port_spec.TransportProtocol_TCP
+	tunnelServerTransportProtocol = port_spec.TransportProtocol_TCP
 
 	maxWaitForApiContainerAvailabilityRetries         = 10
 	timeBetweenWaitForApiContainerAvailabilityRetries = 1 * time.Second
@@ -38,6 +39,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	image string,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcPortNum uint16,
+	tunnelPortNum uint16,
 	// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
@@ -114,6 +116,16 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		)
 	}
 
+	privateTunnelPortSpec, err := port_spec.NewPortSpec(tunnelPortNum, tunnelServerTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the API container's private tunnel server port spec object using number '%v' and protocol '%v'",
+			tunnelPortNum,
+			tunnelServerTransportProtocol,
+		)
+	}
+
 	enclaveObjAttrProvider, err := backend.objAttrsProvider.ForEnclave(enclaveUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveUuid)
@@ -123,6 +135,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 		consts.KurtosisInternalContainerGrpcPortId,
 		privateGrpcPortSpec,
+		consts.KurtosisInternalTunnelPortId,
+		privateTunnelPortSpec,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the object attributes for the API container")
@@ -132,8 +146,14 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
+	privateTunnelServerDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateTunnelPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the private tunnel server port spec to a Docker port")
+	}
+
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateGrpcDockerPort: docker_manager.NewAutomaticPublishingSpec(),
+		privateGrpcDockerPort:         docker_manager.NewAutomaticPublishingSpec(),
+		privateTunnelServerDockerPort: docker_manager.NewAutomaticPublishingSpec(),
 	}
 
 	bindMounts := map[string]string{
@@ -426,6 +446,11 @@ func getApiContainerObjectFromContainerInfo(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the API container's private port specs from container '%v' with labels: %+v", containerId, labels)
 	}
 
+	privateTunnelPortSpec, err := getPrivateTunnelContainerPorts(labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the API container's private port specs from container '%v' with labels: %+v", containerId, labels)
+	}
+
 	isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 	if !found {
 		// This should never happen because we enforce completeness in a unit test
@@ -440,13 +465,24 @@ func getApiContainerObjectFromContainerInfo(
 
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec.PortSpec
+	var publicTunnelPortSpec *port_spec.PortSpec
 	if apiContainerStatus == container.ContainerStatus_Running {
 		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
+			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the APIC's grpc private port spec")
 		}
 		publicGrpcPortSpec = candidatePublicGrpcPortSpec
 		publicIpAddr = publicGrpcPortIpAddr
+
+		publicTunnelPortIpAddr, candidatePublicTunnelPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateTunnelPortSpec, allHostMachinePortBindings)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the APIC's tunnel private port spec")
+		}
+		if !publicGrpcPortIpAddr.Equal(publicGrpcPortIpAddr) {
+			return nil, stacktrace.NewError("Expected the APIC's tunnel (%v) and grpc (%v) service IPs to match", publicTunnelPortIpAddr, publicGrpcPortIpAddr)
+		}
+
+		publicTunnelPortSpec = candidatePublicTunnelPortSpec
 	}
 
 	result := api_container.NewAPIContainer(
@@ -454,8 +490,10 @@ func getApiContainerObjectFromContainerInfo(
 		apiContainerStatus,
 		privateIpAddr,
 		privateGrpcPortSpec,
+		privateTunnelPortSpec,
 		publicIpAddr,
 		publicGrpcPortSpec,
+		publicTunnelPortSpec,
 		bridgeNetworkIpAddressAddr,
 	)
 
@@ -482,6 +520,29 @@ func getPrivateApiContainerPorts(containerLabels map[string]string) (
 	}
 
 	return grpcPortSpec, nil
+}
+
+func getPrivateTunnelContainerPorts(containerLabels map[string]string) (
+	resultGrpcPortSpec *port_spec.PortSpec,
+	resultErr error,
+) {
+	serializedPortSpecs, found := containerLabels[docker_label_key.PortSpecsDockerLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", docker_label_key.PortSpecsDockerLabelKey.GetString())
+	}
+
+	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", serializedPortSpecs)
+	}
+
+	// TODO(omar): look at this from a continuity perspective; old enclaves won't have a tunnel port post-upgrade
+	tunnelPortSpec, foundTunnelPort := portSpecs[consts.KurtosisInternalTunnelPortId]
+	if !foundTunnelPort {
+		return nil, stacktrace.NewError("No tunnel server port with ID '%v' found in port specs", consts.KurtosisInternalTunnelPortId)
+	}
+
+	return tunnelPortSpec, nil
 }
 
 func extractEnclaveIdApiContainer(apiContainer *api_container.APIContainer) string {

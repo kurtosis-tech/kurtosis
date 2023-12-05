@@ -28,6 +28,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "metrics-library/scripts/build.sh"
     "core/scripts/build.sh"
     "engine/scripts/build.sh"
+    "portal/scripts/build.sh"
     "cli/scripts/build.sh"
 )
 

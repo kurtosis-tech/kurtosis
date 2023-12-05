@@ -115,6 +115,7 @@ export const EnclaveAPIContainerInfo = proto3.makeMessageType(
     { no: 2, name: "ip_inside_enclave", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "grpc_port_inside_enclave", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
     { no: 6, name: "bridge_ip_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "tunnel_port_inside_enclave", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
   ],
 );
 
@@ -128,6 +129,7 @@ export const EnclaveAPIContainerHostMachineInfo = proto3.makeMessageType(
   () => [
     { no: 4, name: "ip_on_host_machine", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "grpc_port_on_host_machine", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 6, name: "tunnel_port_on_host_machine", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
   ],
 );
 

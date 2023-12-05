@@ -17,6 +17,7 @@ RUST_DIRNAME="rust"
 OUTPUT_DIRNAMES=(
     "engine"
     "core"
+    "portal"
 )
 
 # =============================== MAIN LOGIC =======================================================

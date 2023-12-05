@@ -65,6 +65,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	image string,
 	enclaveId enclave.EnclaveUUID,
 	grpcPortNum uint16,
+	tunnelPortNum uint16,
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
@@ -100,8 +101,18 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
+	privateTunnelPortSpec, err := port_spec.NewPortSpec(tunnelPortNum, consts.KurtosisServersTransportProtocol, consts.HttpApplicationProtocol, noWait)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the API container's private tunnel server port spec object using number '%v' and protocol '%v'",
+			tunnelPortNum,
+			consts.KurtosisServersTransportProtocol.String(),
+		)
+	}
 	privatePortSpecs := map[string]*port_spec.PortSpec{
-		consts.KurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		consts.KurtosisInternalContainerGrpcPortSpecId:     privateGrpcPortSpec,
+		consts.KurtosisInternalContainerTunnelServerSpecId: privateTunnelPortSpec,
 	}
 
 	enclaveAttributesProvider := backend.objAttrsProvider.ForEnclave(enclaveId)
@@ -130,7 +141,9 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		consts.KurtosisInternalContainerGrpcPortSpecId,
 		privateGrpcPortSpec,
 		consts.KurtosisInternalContainerGrpcProxyPortSpecId,
-		nil)
+		nil,
+		consts.KurtosisInternalContainerTunnelServerSpecId,
+		privateTunnelPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -961,6 +974,8 @@ func getApiContainerObjectsFromKubernetesResources(
 			kubernetesService,
 			map[string]bool{
 				consts.KurtosisInternalContainerGrpcPortSpecId: true,
+				// TODO(omar): this will break for users with enclaves running prior to upgrading; skipping validation for now as it blocks almost everything (enclave ls, etc)
+				consts.KurtosisInternalContainerTunnelServerSpecId: true,
 			},
 		)
 		if err != nil {
@@ -968,17 +983,25 @@ func getApiContainerObjectsFromKubernetesResources(
 		}
 		privateGrpcPortSpec := privatePorts[consts.KurtosisInternalContainerGrpcPortSpecId]
 
+		// TODO(omar): may be nil as we don't yet validate
+		privateTunnelPortSpec := privatePorts[consts.KurtosisInternalContainerTunnelServerSpecId]
+
 		// NOTE: We set these to nil because in Kubernetes we have no way of knowing what the public info is!
 		var publicIpAddr net.IP = nil
 		var publicGrpcPortSpec *port_spec.PortSpec = nil
+		var publicTunnelPortSpec *port_spec.PortSpec = nil
+
+		logrus.Debugf("Discovered the following private ports for enclave '%v': %v", enclaveId, privatePorts)
 
 		apiContainerObj := api_container.NewAPIContainer(
 			enclaveId,
 			status,
 			privateIpAddr,
 			privateGrpcPortSpec,
+			privateTunnelPortSpec,
 			publicIpAddr,
 			publicGrpcPortSpec,
+			publicTunnelPortSpec,
 			nil,
 		)
 

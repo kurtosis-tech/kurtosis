@@ -51,6 +51,9 @@ pub struct EnclaveApiContainerInfo {
     /// this is the bridge ip address that gets assigned to api container
     #[prost(string, tag = "6")]
     pub bridge_ip_address: ::prost::alloc::string::String,
+    /// THe tunnel port inside the enclave network that the API container's tunnel server listens on
+    #[prost(uint32, tag = "4")]
+    pub tunnel_port_inside_enclave: u32,
 }
 /// Will only be present if the API container is running
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -62,6 +65,9 @@ pub struct EnclaveApiContainerHostMachineInfo {
     /// The grpc port on the container engine host machine where the API container can be reached
     #[prost(uint32, tag = "5")]
     pub grpc_port_on_host_machine: u32,
+    /// The tunnel port on the container engine host machine where the API container's tunnel server can be reached
+    #[prost(uint32, tag = "6")]
+    pub tunnel_port_on_host_machine: u32,
 }
 /// Enclaves are defined by a network in the container system, which is why there's a bunch of network information here
 #[allow(clippy::derive_partial_eq_without_eq)]

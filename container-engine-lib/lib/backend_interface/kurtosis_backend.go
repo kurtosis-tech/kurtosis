@@ -131,6 +131,7 @@ type KurtosisBackend interface {
 		image string,
 		enclaveUuid enclave.EnclaveUUID,
 		grpcPortNum uint16,
+		tunnelPortNum uint16,
 		enclaveDataVolumeDirpath string,
 		// The environment variable that the user is requesting to populate with the container's own IP address
 		// Must not conflict with the custom environment variables

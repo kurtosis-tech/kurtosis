@@ -251,13 +251,8 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	}
 	// Channel for messages to stop the running server
 	gatewayStopChannel := make(chan struct{}, 1)
-
-	// Info for how to connect to the api container through the gateway running on host machine
-	apiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-		IpOnHostMachine:       localHostIpStr,
-		GrpcPortOnHostMachine: uint32(gatewayPortSpec.GetNumber()),
-		// TODO proxy endpoint for gateway
-	}
+	// Channel to receive the local port to the APIC's tunnel server
+	tunnelPortNumberChannel := make(chan uint16, 1)
 
 	// Start the server in a goroutine
 	// Stop the running gateway
@@ -268,7 +263,7 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	// TODO: Modify MinimalGrpcServer.RunUntilStopped to take in a `ReadyChannel` to communicate when a GRPC server is ready to serve
 	// Currently, we have to make a health check request to verify that the API container gateway is ready
 	go func() {
-		if err := api_container_gateway.RunApiContainerGatewayUntilStopped(service.connectionProvider, enclaveInfo, gatewayPortSpec.GetNumber(), gatewayStopChannel); err != nil {
+		if err := api_container_gateway.RunApiContainerGatewayUntilStopped(service.connectionProvider, enclaveInfo, gatewayPortSpec.GetNumber(), gatewayStopChannel, tunnelPortNumberChannel); err != nil {
 			logrus.Warnf("Expected to run api container gateway until stopped, but the server exited prematurely with a non-nil error: '%v'", err)
 		}
 	}()
@@ -278,6 +273,19 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 			gatewayStopFunc()
 		}
 	}()
+
+	// Wait for the local tunnel port
+	localTunnelPortNumber := <-tunnelPortNumberChannel
+
+	// Info for how to connect to the api container through the gateway running on host machine
+	apiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
+		IpOnHostMachine:       localHostIpStr,
+		GrpcPortOnHostMachine: uint32(gatewayPortSpec.GetNumber()),
+		// TODO proxy endpoint for gateway
+
+		TunnelPortOnHostMachine: uint32(localTunnelPortNumber),
+	}
+
 	// Need to wait for the GRPC server spun up in the goFunc to be ready
 	if err := waitForGatewayReady(apiContainerHostMachineInfo); err != nil {
 		logrus.Errorf("Expected Gateway to be reachable, instead an error was returned:\n%v", err)
