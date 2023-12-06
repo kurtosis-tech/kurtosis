@@ -791,7 +791,7 @@ func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId s
 	}
 	allNetworkInfo := resp.NetworkSettings.Networks
 	for _, networkInfo := range allNetworkInfo {
-		containerIps[networkInfo.NetworkID]= networkInfo.IPAddress
+		containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
 	}
 	return containerIps, nil
 }

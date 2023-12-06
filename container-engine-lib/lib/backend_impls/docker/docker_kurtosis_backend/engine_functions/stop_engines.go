@@ -2,6 +2,7 @@ package engine_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -72,7 +73,7 @@ func StopEngines(
 	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, dockerManager); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logging components.")
 	}
-	
+
 	// Stop reverse proxy
 	if err := reverse_proxy_functions.DestroyReverseProxy(ctx, dockerManager); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the reverse proxy.")

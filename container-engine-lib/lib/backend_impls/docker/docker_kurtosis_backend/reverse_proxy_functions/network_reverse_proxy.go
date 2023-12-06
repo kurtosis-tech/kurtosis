@@ -69,6 +69,6 @@ func ConnectReverseProxyToEnclaveNetworks(ctx context.Context, dockerManager *do
 			return stacktrace.Propagate(err, "An error occurred connecting the reverse proxy to the enclave network with id '%v'", enclaveNetwork.GetId())
 		}
 	}
-	
+
 	return nil
 }
