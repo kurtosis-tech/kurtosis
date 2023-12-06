@@ -2,11 +2,12 @@ package grpc_file_streaming
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
-	"math/rand"
-	"testing"
 )
 
 const (

@@ -3,7 +3,6 @@ package docker_network_allocator
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"net"
 	"strings"
 	"time"
@@ -51,11 +50,6 @@ type DockerNetworkAllocator struct {
 }
 
 func NewDockerNetworkAllocator(dockerManager *docker_manager.DockerManager) *DockerNetworkAllocator {
-	// NOTE: If we need a deterministic rand seed anywhere else in the program, this will break it! The reason we do this
-	//  here is because it's way more likely that we'll forget to seed the rand when using this class than it is that we need
-	//  a deterministic rand seed
-	rand.Seed(time.Now().UnixNano())
-
 	return &DockerNetworkAllocator{
 		isConstructedViaConstructor: true,
 		dockerManager:               dockerManager,
