@@ -957,16 +957,11 @@ jobs:
       - run: |
           ${KURTOSIS_BINPATH} enclave add --name test-enclave
           ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=http:80/tcp
-          ${KURTOSIS_BINPATH} enclave inspect test-enclave
           enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
-          echo ${enclave_uuid}
           service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
-          echo ${service_uuid}
           # Give the reverse proxy enough time to discover the httpd user service
           sleep 10
-          curl -v -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)"
           status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
-          echo ${status_code}
           if ! [ "${status_code}" -eq "200" ]; then
             echo 'HTTP request status code returned is '${status_code}' instead of 200'
             false
