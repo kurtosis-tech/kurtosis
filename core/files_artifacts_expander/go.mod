@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander
 
-go 1.19
+go 1.20
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang

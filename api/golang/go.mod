@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/api/golang
 
-go 1.19
+go 1.20
 
 replace github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 
