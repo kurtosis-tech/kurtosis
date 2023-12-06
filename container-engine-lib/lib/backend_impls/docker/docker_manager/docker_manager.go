@@ -10,9 +10,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/go-units"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/moby/buildkit/session"
 	"io"
 	"math"
 	"net"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -137,6 +143,12 @@ const (
 	dontStreamStats        = false
 
 	kurtosisTagPrefix = "kurtosistech/"
+
+	// image building consts
+	defaultContainerImageFile = "Dockerfile"
+
+	// Per https://github.com/hashicorp/waypoint/pull/1937/files
+	buildkitSessionSharedKey = ""
 )
 
 type RestartPolicy string
@@ -1273,6 +1285,111 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, down
 	}
 
 	return pulledFromRemote, imageArchitecture, nil
+}
+
+func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+	contextDirPath := imageBuildSpec.GetContextDir()
+	containerImageFileTarReader, err := getBuildContext(contextDirPath)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
+	}
+
+	// This whole sessions thing was blocking us from using Docker build, until we found this:
+	// https://github.com/hashicorp/waypoint/pull/1937
+	uuidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred generating a UUID to give the Docker Buildkit session")
+	}
+	sessionName := fmt.Sprintf("kurtosis-%s", uuidStr)
+
+	// We generate a new session every time because, per https://github.com/moby/buildkit/issues/1432 ,
+	// sharing sessions is an optimization
+	// We don't bother reusing sessions so that we don't hit bugs
+	buildkitSession, err := session.NewSession(ctx, sessionName, buildkitSessionSharedKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error")
+	}
+
+	dialSessionFunc := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
+		return manager.dockerClientNoTimeout.DialHijack(ctx, "/session", proto, meta)
+	}
+
+	// Activate the session
+	go buildkitSession.Run(ctx, dialSessionFunc)
+	defer buildkitSession.Close()
+
+	imageBuildOpts := types.ImageBuildOptions{
+		Tags:           []string{imageName},
+		SuppressOutput: false,
+		RemoteContext:  "",    // We don't have a remote context (we're uploading it)
+		NoCache:        false, // needs to be false so image only rebuilds if docker detects changes to cached image
+		Remove:         false,
+		ForceRemove:    false,
+		PullParent:     false,
+		Isolation:      container.Isolation(""),
+		CPUSetCPUs:     "",
+		CPUSetMems:     "",
+		CPUShares:      0,
+		CPUQuota:       0,
+		CPUPeriod:      0,
+		Memory:         0,
+		MemorySwap:     0,
+		CgroupParent:   "",
+		NetworkMode:    "",
+		ShmSize:        0,
+		Dockerfile:     defaultContainerImageFile,
+		Ulimits:        []*units.Ulimit{},
+		// BuildArgs needs to be a *string instead of just a string so that
+		// we can tell the difference between "" (empty string) and no value
+		// at all (nil). See the parsing of buildArgs in
+		// api/server/router/build/build_routes.go for even more info.
+		BuildArgs:   map[string]*string{}, // what build args do we require?
+		AuthConfigs: map[string]registry.AuthConfig{},
+		Context:     containerImageFileTarReader,
+		Labels:      map[string]string{}, // how do we want to label this image?
+		// squash the resulting image's layers to the parent
+		// preserves the original image and creates a new one from the parent with all
+		// the changes applied to a single layer
+		Squash: false, // this will probably make image building faster
+		// CacheFrom specifies images that are used for matching cache. Images
+		// specified here do not need to have a valid parent chain to match cache.
+		CacheFrom:   []string{},
+		SecurityOpt: []string{},
+		ExtraHosts:  []string{}, // List of extra hosts
+		Target:      imageBuildSpec.GetTargetStage(),
+		SessionID:   buildkitSession.ID(),
+		Platform:    "",
+		// Version specifies the version of the underlying builder to use
+		Version: types.BuilderBuildKit, // Use 2 for BuildKit
+		// BuildID is an optional identifier that can be passed together with the
+		// build request. The same identifier can be used to gracefully cancel the
+		// build with the cancel request.
+		BuildID: "",
+		// Outputs defines configurations for exporting build results. Only supported in BuildKit mode.
+		Outputs: []types.ImageBuildOutput{},
+	}
+
+	imageBuildResponse, err := manager.dockerClientNoTimeout.ImageBuild(ctx, containerImageFileTarReader, imageBuildOpts)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", imageName)
+	}
+	defer imageBuildResponse.Body.Close()
+
+	_, err = io.Copy(os.Stdout, imageBuildResponse.Body)
+	if err != nil {
+		logrus.Warnf("An error occurred while trying to pipe image build output to stdout: %v", err)
+	}
+
+	return nil
+}
+
+// returns a reader to a tarball of [contextDirPath]
+func getBuildContext(contextDirPath string) (io.Reader, error) {
+	buildContext, _, _, err := CompressPath(contextDirPath, false)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred compressing the path to context directory path '%v'", contextDirPath)
+	}
+	return buildContext, nil
 }
 
 func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {

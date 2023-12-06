@@ -481,8 +481,7 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 }
 
 func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
-	//return backend.dockerManager.BuildImage(ctx, imageName, imageBuildSpec)
-	panic("implement image building in docker")
+	return backend.dockerManager.BuildImage(ctx, imageName, imageBuildSpec)
 }
 
 // ====================================================================================================
