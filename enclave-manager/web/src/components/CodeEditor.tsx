@@ -1,8 +1,11 @@
 import { Box } from "@chakra-ui/react";
-import { Editor, OnChange, OnMount } from "@monaco-editor/react";
-import { editor as monacoEditor } from "monaco-editor";
+import { Editor, Monaco, OnChange, OnMount } from "@monaco-editor/react";
+import { type editor as monacoEditor } from "monaco-editor";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
-import { assertDefined, isDefined } from "../utils";
+import YAML from "yaml";
+import { assertDefined, isDefined, stringifyError } from "../utils";
+
+const MONACO_READ_ONLY_CHANGE_EVENT_ID = 89;
 
 type CodeEditorProps = {
   text: string;
@@ -13,11 +16,14 @@ type CodeEditorProps = {
 
 export type CodeEditorImperativeAttributes = {
   formatCode: () => Promise<void>;
+  setText: (text: string) => void;
+  setLanguage: (language: string) => void;
 };
 
 export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorProps>(
   ({ text, fileName, onTextChange, showLineNumbers }, ref) => {
     const isReadOnly = !isDefined(onTextChange);
+    const [monaco, setMonaco] = useState<Monaco>();
     const [editor, setEditor] = useState<monacoEditor.IStandaloneCodeEditor>();
 
     const resizeEditorBasedOnContent = useCallback(() => {
@@ -32,6 +38,7 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
     }, [editor]);
 
     const handleMount: OnMount = (editor, monaco) => {
+      setMonaco(monaco);
       setEditor(editor);
       const colors: monacoEditor.IColors = {};
       if (isReadOnly) {
@@ -57,37 +64,65 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
       ref,
       () => ({
         formatCode: async () => {
-          console.log("formatting");
           if (!isDefined(editor)) {
             // do nothing
-            console.log("no editor");
             return;
           }
-          return new Promise((resolve) => {
-            const listenerDisposer = editor.onDidChangeConfiguration((event) => {
-              console.log("listener called", event);
-              if (event.hasChanged(89 /* ID of the readonly option */)) {
-                console.log("running format");
-                const formatAction = editor.getAction("editor.action.formatDocument");
-                assertDefined(formatAction, `Format action is not defined`);
-                formatAction.run().then(() => {
-                  listenerDisposer.dispose();
-                  editor.updateOptions({
-                    readOnly: isReadOnly,
-                  });
-                  resizeEditorBasedOnContent();
-                  resolve();
-                });
+          const doFormat = async () => {
+            if (editor.getModel()?.getLanguageId() === "yaml") {
+              try {
+                const formattedText = YAML.stringify(YAML.parse(editor.getValue()));
+                editor.setValue(formattedText);
+              } catch (e: any) {
+                console.error(stringifyError(e));
               }
+            } else {
+              const formatAction = editor.getAction("editor.action.formatDocument");
+              assertDefined(formatAction, `Format action is not defined`);
+              await formatAction.run();
+            }
+          };
+
+          if (isReadOnly) {
+            return new Promise((resolve) => {
+              const listenerDisposer = editor.onDidChangeConfiguration((event) => {
+                if (event.hasChanged(MONACO_READ_ONLY_CHANGE_EVENT_ID)) {
+                  doFormat().then(() => {
+                    listenerDisposer.dispose();
+                    editor.updateOptions({
+                      readOnly: isReadOnly,
+                    });
+                    resizeEditorBasedOnContent();
+                    resolve();
+                  });
+                }
+              });
+              editor.updateOptions({
+                readOnly: false,
+              });
             });
-            console.log("disablin read only");
-            editor.updateOptions({
-              readOnly: false,
-            });
-          });
+          } else {
+            return doFormat();
+          }
+        },
+        setText: (text: string) => {
+          if (!isDefined(editor)) {
+            return;
+          }
+          editor.setValue(text);
+        },
+        setLanguage: (language: string) => {
+          if (!isDefined(editor) || !isDefined(monaco)) {
+            return;
+          }
+          const model = editor.getModel();
+          if (!isDefined(model)) {
+            return;
+          }
+          monaco.editor.setModelLanguage(model, language);
         },
       }),
-      [isReadOnly, editor, resizeEditorBasedOnContent],
+      [isReadOnly, editor, monaco, resizeEditorBasedOnContent],
     );
 
     useEffect(() => {

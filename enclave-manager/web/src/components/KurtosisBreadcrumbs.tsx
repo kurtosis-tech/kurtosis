@@ -215,15 +215,11 @@ type KurtosisBreadcrumbItemProps = KurtosisBreadcrumb & {
 };
 
 const KurtosisBreadcrumbItem = ({ name, destination, alternatives, isLastItem }: KurtosisBreadcrumbItemProps) => {
-  if (isLastItem) {
-    return (
-      <Text fontSize={"xs"} fontWeight={"semibold"} p={"2px 8px"} borderRadius={"6px"} bg={"gray.650"}>
-        {name}
-      </Text>
-    );
-  }
-
-  const baseLink = (
+  const baseLink = isLastItem ? (
+    <Text fontSize={"xs"} fontWeight={"semibold"} p={"2px 8px"} borderRadius={"6px"} bg={"gray.650"}>
+      {name}
+    </Text>
+  ) : (
     <BreadcrumbLink as={Link} to={destination}>
       <Button variant={"breadcrumb"} size={"xs"}>
         {name}

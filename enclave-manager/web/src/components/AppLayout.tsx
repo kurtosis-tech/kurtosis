@@ -1,5 +1,5 @@
-import { Flex } from "@chakra-ui/react";
-import { PropsWithChildren, useRef } from "react";
+import { Box, Flex } from "@chakra-ui/react";
+import { PropsWithChildren } from "react";
 import { Navbar } from "../emui/Navbar";
 import { KurtosisBreadcrumbs } from "./KurtosisBreadcrumbs";
 import {
@@ -14,14 +14,7 @@ export const AppLayout = ({ children }: PropsWithChildren) => {
   return (
     <>
       <Navbar />
-      <Flex
-        as="main"
-        w={"100%"}
-        minH={"100vh"}
-        justifyContent={"flex-start"}
-        flexDirection={"column"}
-        className={"app-container"}
-      >
+      <Flex flexDirection="column" as="main" w={"100%"} minH={"100vh"} className={"app-container"}>
         {children}
       </Flex>
     </>
@@ -33,18 +26,11 @@ type AppPageLayoutProps = PropsWithChildren<{
 }>;
 
 export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProps) => {
-  const headerRef = useRef<HTMLDivElement>(null);
   const numberOfChildren = Array.isArray(children) ? children.length : 1;
 
   if (numberOfChildren === 1) {
     return (
-      <Flex
-        flexDirection={"column"}
-        w={"100%"}
-        h={"100%"}
-        maxHeight={preventPageScroll ? `100vh` : undefined}
-        flex={"1"}
-      >
+      <Box w={"100%"} h={preventPageScroll ? `100vh` : "100%"}>
         <Flex
           flexDirection={"column"}
           flex={"1"}
@@ -55,37 +41,32 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
           pr={MAIN_APP_RIGHT_PADDING}
         >
           <KurtosisBreadcrumbs />
-          <Flex
+          <Box
             w={"100%"}
             h={"100%"}
+            minH={preventPageScroll ? "0" : undefined}
             pt={MAIN_APP_TOP_PADDING}
             pb={MAIN_APP_BOTTOM_PADDING}
             flexDirection={"column"}
             flex={"1"}
           >
             {children}
-          </Flex>
+          </Box>
         </Flex>
-      </Flex>
+      </Box>
     );
   }
 
   // TS cannot infer that children is an array if numberOfChildren === 2
   if (numberOfChildren === 2 && Array.isArray(children)) {
     return (
-      <Flex direction="column" width={"100%"} h={"100%"} flex={"1"}>
-        <Flex ref={headerRef} width={"100%"} bg={"gray.850"}>
-          <Flex
-            flexDirection={"column"}
-            width={"100%"}
-            pl={MAIN_APP_LEFT_PADDING}
-            pr={MAIN_APP_RIGHT_PADDING}
-            maxW={MAIN_APP_MAX_WIDTH}
-          >
+      <Flex flexDirection={"column"} width={"100%"} h={preventPageScroll ? `100vh` : "100%"} flex={"1"}>
+        <Box width={"100%"} bg={"gray.850"}>
+          <Box width={"100%"} pl={MAIN_APP_LEFT_PADDING} pr={MAIN_APP_RIGHT_PADDING} maxW={MAIN_APP_MAX_WIDTH}>
             <KurtosisBreadcrumbs />
             {children[0]}
-          </Flex>
-        </Flex>
+          </Box>
+        </Box>
         <Flex
           maxWidth={MAIN_APP_MAX_WIDTH}
           pl={MAIN_APP_LEFT_PADDING}
@@ -96,7 +77,7 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
           h={"100%"}
           flex={"1"}
           flexDirection={"column"}
-          maxHeight={preventPageScroll ? `calc(100vh - ${headerRef.current?.offsetHeight || 0}px)` : undefined}
+          minH={preventPageScroll ? "0" : undefined}
         >
           {children[1]}
         </Flex>

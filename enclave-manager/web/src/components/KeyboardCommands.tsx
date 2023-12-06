@@ -1,7 +1,7 @@
 import { Text, TextProps } from "@chakra-ui/react";
 
 export const FindCommand = (props: TextProps) => {
-  let text = "^F";
+  let text = "Ctrl + F";
 
   if (navigator.userAgent.indexOf("Mac") > -1) {
     text = "⌘F";
@@ -15,7 +15,7 @@ export const FindCommand = (props: TextProps) => {
 };
 
 export const OmniboxCommand = (props: TextProps) => {
-  let text = "^K";
+  let text = "Ctrl + K";
 
   if (navigator.userAgent.indexOf("Mac") > -1) {
     text = "⌘K";
