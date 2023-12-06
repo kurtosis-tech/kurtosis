@@ -94,7 +94,7 @@ func (clientStream *ClientStream[DataChunkMessageType, ServerResponseType]) Pipe
 			clientStream.grpcStream.RecvMsg,
 			func(chunk *DataChunkMessageType) ([]byte, string, error) {
 				data, hash, extErr := grpcMsgExtractor(chunk)
-				pipeWriter.Write(data)
+				_, _ = pipeWriter.Write(data)
 				return []byte{}, hash, extErr
 			})
 		if err != nil {
