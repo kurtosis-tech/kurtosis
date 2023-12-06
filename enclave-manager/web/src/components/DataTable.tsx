@@ -1,4 +1,4 @@
-import { Button, Icon, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
+import { Box, Button, Icon, Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/react";
 import {
   ColumnDef,
   flexRender,
@@ -66,55 +66,68 @@ export function DataTable<Data extends object>({
   });
 
   return (
-    <Table>
-      <Thead>
-        {table.getHeaderGroups().map((headerGroup) => (
-          <Tr key={headerGroup.id}>
-            {headerGroup.headers.map((header) => {
-              const meta = header.column.columnDef.meta;
-              return (
-                <Th
-                  key={header.id}
-                  onClick={header.column.getToggleSortingHandler()}
-                  isNumeric={meta?.isNumeric}
-                  textAlign={!!meta?.centerAligned ? "center" : undefined}
-                >
-                  {header.column.getCanSort() && (
-                    <Button
-                      variant={"sortableHeader"}
-                      size={"xs"}
-                      rightIcon={
-                        header.column.getIsSorted() === "desc" ? (
-                          <Icon as={BiDownArrowAlt} color={"gray.400"} />
-                        ) : header.column.getIsSorted() === "asc" ? (
-                          <Icon as={BiUpArrowAlt} color={"gray.400"} />
-                        ) : undefined
-                      }
-                    >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </Button>
-                  )}
-                  {!header.column.getCanSort() && flexRender(header.column.columnDef.header, header.getContext())}
-                </Th>
-              );
-            })}
-          </Tr>
-        ))}
-      </Thead>
-      <Tbody>
-        {table.getRowModel().rows.map((row) => (
-          <Tr key={row.id} bg={row.getIsSelected() ? "gray.700" : ""}>
-            {row.getVisibleCells().map((cell) => {
-              const meta = cell.column.columnDef.meta;
-              return (
-                <Td key={cell.id} isNumeric={meta?.isNumeric} textAlign={!!meta?.centerAligned ? "center" : undefined}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </Td>
-              );
-            })}
-          </Tr>
-        ))}
-      </Tbody>
-    </Table>
+    <Box
+      w={"100%"}
+      h={"100%"}
+      borderRadius={"6px"}
+      border={"1px solid"}
+      borderColor={"whiteAlpha.300"}
+      overflow={"clip"}
+    >
+      <Table>
+        <Thead>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <Tr key={headerGroup.id}>
+              {headerGroup.headers.map((header) => {
+                const meta = header.column.columnDef.meta;
+                return (
+                  <Th
+                    key={header.id}
+                    onClick={header.column.getToggleSortingHandler()}
+                    isNumeric={meta?.isNumeric}
+                    textAlign={!!meta?.centerAligned ? "center" : undefined}
+                  >
+                    {header.column.getCanSort() && (
+                      <Button
+                        variant={"sortableHeader"}
+                        size={"xs"}
+                        rightIcon={
+                          header.column.getIsSorted() === "desc" ? (
+                            <Icon as={BiDownArrowAlt} color={"gray.400"} />
+                          ) : header.column.getIsSorted() === "asc" ? (
+                            <Icon as={BiUpArrowAlt} color={"gray.400"} />
+                          ) : undefined
+                        }
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </Button>
+                    )}
+                    {!header.column.getCanSort() && flexRender(header.column.columnDef.header, header.getContext())}
+                  </Th>
+                );
+              })}
+            </Tr>
+          ))}
+        </Thead>
+        <Tbody>
+          {table.getRowModel().rows.map((row) => (
+            <Tr key={row.id} bg={row.getIsSelected() ? "gray.700" : ""}>
+              {row.getVisibleCells().map((cell) => {
+                const meta = cell.column.columnDef.meta;
+                return (
+                  <Td
+                    key={cell.id}
+                    isNumeric={meta?.isNumeric}
+                    textAlign={!!meta?.centerAligned ? "center" : undefined}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </Td>
+                );
+              })}
+            </Tr>
+          ))}
+        </Tbody>
+      </Table>
+    </Box>
   );
 }

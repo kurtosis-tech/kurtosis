@@ -2,7 +2,6 @@ package streaming
 
 import (
 	"context"
-	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -19,8 +18,7 @@ import (
 )
 
 var (
-	logRetentionFeatureReleaseTime        = time.Date(2023, 9, 7, 13, 0, 0, 0, time.UTC)
-	defaultNumberOfLogLines        uint32 = 100
+	defaultNumberOfLogLines uint32 = 100
 )
 
 type ServiceLogStreamer struct {
@@ -35,8 +33,7 @@ func NewServiceLogStreamer(
 	ctx context.Context,
 	enclaveManager *enclave_manager.EnclaveManager,
 	enclaveIdentifier api_type.EnclaveIdentifier,
-	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient,
-	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient,
+	logsDatabaseClient centralized_logs.LogsDatabaseClient,
 	serviceUuidList []user_service.ServiceUUID,
 	maybeShouldFollowLogs *bool,
 	maybeShouldReturnAllLogs *bool,
@@ -60,7 +57,7 @@ func NewServiceLogStreamer(
 		requestedServiceUuids[serviceUuid] = true
 	}
 
-	if perWeekLogsDatabaseClient == nil || perFileLogsDatabaseClient == nil {
+	if logsDatabaseClient == nil {
 		return nil, stacktrace.NewError("It's not possible to return service logs because there is no logs database client; this is bug in Kurtosis")
 	}
 
@@ -70,7 +67,7 @@ func NewServiceLogStreamer(
 		cancelCtxFunc                func()
 	)
 
-	notFoundServiceUuids, err := reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(ctx, enclaveUuid, perWeekLogsDatabaseClient, requestedServiceUuids)
+	notFoundServiceUuids, err := reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(ctx, enclaveUuid, logsDatabaseClient, requestedServiceUuids)
 	if err != nil {
 		return nil, err
 	}
@@ -78,19 +75,6 @@ func NewServiceLogStreamer(
 	conjunctiveLogLineFilters, err := to_logline.ToLoglineLogLineFilters(filters)
 	if err != nil {
 		return nil, err
-	}
-
-	// get enclave creation time to determine strategy to pull logs
-	shouldUseLegacyPerFileLogs, err := shouldUseLegacyPerFileLogsDatabaseClient(ctx, enclaveManager, enclaveUuid)
-	if err != nil {
-		return nil, err
-	}
-
-	var logsDatabaseClient centralized_logs.LogsDatabaseClient
-	if *shouldUseLegacyPerFileLogs {
-		logsDatabaseClient = perFileLogsDatabaseClient
-	} else {
-		logsDatabaseClient = perWeekLogsDatabaseClient
 	}
 
 	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(
@@ -159,11 +143,11 @@ func (streamer ServiceLogStreamer) Consume(consumer func(*api_type.ServiceLogs) 
 func reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient,
+	logsDatabaseClient centralized_logs.LogsDatabaseClient,
 	requestedServiceUuids map[user_service.ServiceUUID]bool,
 ) ([]string, error) {
 	// doesn't matter which logs client is used here
-	existingServiceUuids, err := perWeekLogsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
+	existingServiceUuids, err := logsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service UUIDs from the log client for enclave '%v' and for the requested UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
 	}
@@ -174,36 +158,6 @@ func reportAnyMissingUuidsAndGetNotFoundUuidsListHttp(
 		notFoundServiceUuids = append(notFoundServiceUuids, service)
 	}
 	return notFoundServiceUuids, nil
-}
-
-// If the enclave was created prior to log retention, return the per file logs client
-func shouldUseLegacyPerFileLogsDatabaseClient(ctx context.Context, enclaveManager *enclave_manager.EnclaveManager, enclaveUuid enclave.EnclaveUUID) (*bool, error) {
-	enclaveCreationTime, err := getEnclaveCreationTime(ctx, enclaveManager, enclaveUuid)
-	if err != nil {
-		return nil, err
-	}
-	if enclaveCreationTime.After(logRetentionFeatureReleaseTime) {
-		yes := true
-		return &yes, nil
-	} else {
-		no := false
-		return &no, nil
-	}
-}
-
-func getEnclaveCreationTime(ctx context.Context, enclaveManager *enclave_manager.EnclaveManager, enclaveUuid enclave.EnclaveUUID) (time.Time, error) {
-	enclaves, err := enclaveManager.GetEnclaves(ctx)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	enclaveObj, found := enclaves[string(enclaveUuid)]
-	if !found {
-		return time.Time{}, stacktrace.NewError("Engine could not find enclave '%v'", enclaveUuid)
-	}
-
-	timestamp := enclaveObj.CreationTime
-	return timestamp, nil
 }
 
 func getNotFoundServiceUuidsAndEmptyServiceLogsMap(

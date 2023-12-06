@@ -1,5 +1,6 @@
 import { CSSProperties, forwardRef, PropsWithChildren, useImperativeHandle } from "react";
 import { FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
+import YAML from "yaml";
 import {
   ArgumentValueType,
   KurtosisPackage,
@@ -54,7 +55,8 @@ export const EnclaveConfigurationForm = forwardRef<
 
       switch (valueType) {
         case ArgumentValueType.DICT:
-          return transformRecordsToObject(value, innerValuetype);
+          if (!isDefined(value)) return {};
+          else return transformRecordsToObject(value, innerValuetype);
         case ArgumentValueType.LIST:
           return value.map((v: any) => transformValue(innerValuetype, v));
         case ArgumentValueType.BOOL:
@@ -64,7 +66,7 @@ export const EnclaveConfigurationForm = forwardRef<
         case ArgumentValueType.STRING:
           return value;
         case ArgumentValueType.JSON:
-          return JSON.parse(value);
+          return YAML.parse(value);
         default:
           return value;
       }

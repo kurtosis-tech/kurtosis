@@ -1,4 +1,4 @@
-import { Button, Tooltip } from "@chakra-ui/react";
+import { Button, ButtonProps, Tooltip } from "@chakra-ui/react";
 import { useState } from "react";
 import { FiEdit2 } from "react-icons/fi";
 import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
@@ -7,11 +7,11 @@ import { isDefined } from "../../utils";
 import { ConfigureEnclaveModal } from "./modals/ConfigureEnclaveModal";
 import { PackageLoadingModal } from "./modals/PackageLoadingModal";
 
-type EditEnclaveButtonProps = {
+type EditEnclaveButtonProps = ButtonProps & {
   enclave: EnclaveFullInfo;
 };
 
-export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
+export const EditEnclaveButton = ({ enclave, ...buttonProps }: EditEnclaveButtonProps) => {
   const [showPackageLoader, setShowPackageLoader] = useState(false);
   const [kurtosisPackage, setKurtosisPackage] = useState<KurtosisPackage>();
 
@@ -22,7 +22,7 @@ export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
 
   if (!isDefined(enclave.starlarkRun)) {
     return (
-      <Button isLoading={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
+      <Button isLoading={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"sm"} {...buttonProps}>
         Edit
       </Button>
     );
@@ -31,7 +31,7 @@ export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
   if (enclave.starlarkRun.isErr) {
     return (
       <Tooltip label={"Cannot find previous run config to edit"}>
-        <Button isDisabled={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
+        <Button isDisabled={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"sm"} {...buttonProps}>
           Edit
         </Button>
       </Tooltip>
@@ -40,9 +40,20 @@ export const EditEnclaveButton = ({ enclave }: EditEnclaveButtonProps) => {
 
   return (
     <>
-      <Button onClick={() => setShowPackageLoader(true)} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"md"}>
-        Edit
-      </Button>
+      <Tooltip
+        label={"Edit this enclave. From here you can edit the enclave configuration and update it."}
+        openDelay={1000}
+      >
+        <Button
+          onClick={() => setShowPackageLoader(true)}
+          colorScheme={"blue"}
+          leftIcon={<FiEdit2 />}
+          size={"sm"}
+          {...buttonProps}
+        >
+          Edit
+        </Button>
+      </Tooltip>
       {showPackageLoader && (
         <PackageLoadingModal packageId={enclave.starlarkRun.value.packageId} onPackageLoaded={handlePackageLoaded} />
       )}

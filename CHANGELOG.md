@@ -1,5 +1,186 @@
 # Changelog
 
+## [0.85.42](https://github.com/kurtosis-tech/kurtosis/compare/0.85.41...0.85.42) (2023-12-05)
+
+
+### Bug Fixes
+
+* Rename jwtToken cookie ([#1876](https://github.com/kurtosis-tech/kurtosis/issues/1876)) ([3b13372](https://github.com/kurtosis-tech/kurtosis/commit/3b13372004a0448f5e40154004b2b883e5a5d57a))
+
+## [0.85.41](https://github.com/kurtosis-tech/kurtosis/compare/0.85.40...0.85.41) (2023-12-05)
+
+
+### Features
+
+* emui design improvements ([#1892](https://github.com/kurtosis-tech/kurtosis/issues/1892)) ([9268a24](https://github.com/kurtosis-tech/kurtosis/commit/9268a2450c125ee95721d0c51a401bf68db5d68a))
+* emui handle json/yaml input interchangably ([#1891](https://github.com/kurtosis-tech/kurtosis/issues/1891)) ([cd4263b](https://github.com/kurtosis-tech/kurtosis/commit/cd4263bed4e784eca2dcd9c118e5b69c5d353f06))
+
+## [0.85.40](https://github.com/kurtosis-tech/kurtosis/compare/0.85.39...0.85.40) (2023-12-02)
+
+
+### Features
+
+* change change license to Apache 2.0 ([#1884](https://github.com/kurtosis-tech/kurtosis/issues/1884)) ([64084d8](https://github.com/kurtosis-tech/kurtosis/commit/64084d8e7ce18ebb86b05d17035db90971c2f867))
+
+
+### Bug Fixes
+
+* cache bug ([#1885](https://github.com/kurtosis-tech/kurtosis/issues/1885)) ([82e46e2](https://github.com/kurtosis-tech/kurtosis/commit/82e46e249006e85b4f71824798370968d8ee7731))
+* change tail package ([#1874](https://github.com/kurtosis-tech/kurtosis/issues/1874)) ([f4e87ec](https://github.com/kurtosis-tech/kurtosis/commit/f4e87ec6757219b089ca3b7d2692bc15c42f8fd1))
+
+## [0.85.39](https://github.com/kurtosis-tech/kurtosis/compare/0.85.38...0.85.39) (2023-11-30)
+
+
+### Features
+
+* emui package details page ([#1873](https://github.com/kurtosis-tech/kurtosis/issues/1873)) ([e2b75b2](https://github.com/kurtosis-tech/kurtosis/commit/e2b75b25d597ddfc49f0ebec1de5e2f7ca840281))
+* User service ports Traefik Docker labels ([#1871](https://github.com/kurtosis-tech/kurtosis/issues/1871)) ([d18f20e](https://github.com/kurtosis-tech/kurtosis/commit/d18f20eee93d94739ea9bf497fc5d6780452d57d))
+
+
+### Bug Fixes
+
+* move log collector creation logic ([#1870](https://github.com/kurtosis-tech/kurtosis/issues/1870)) ([b695e27](https://github.com/kurtosis-tech/kurtosis/commit/b695e27742c653b635183c4db04e739b182eaec6))
+* service name collision error message ([#1863](https://github.com/kurtosis-tech/kurtosis/issues/1863)) ([164b316](https://github.com/kurtosis-tech/kurtosis/commit/164b316d335e128668c9ca8b9f9eb74b22efe9ce))
+* Update custom Nix dev deps to work on also linux  ([#1862](https://github.com/kurtosis-tech/kurtosis/issues/1862)) ([d11cd37](https://github.com/kurtosis-tech/kurtosis/commit/d11cd37d5b733114937dd3d4e874255a03c1399d))
+
+## [0.85.38](https://github.com/kurtosis-tech/kurtosis/compare/0.85.37...0.85.38) (2023-11-29)
+
+
+### Bug Fixes
+
+* support logs db for k8s ([#1864](https://github.com/kurtosis-tech/kurtosis/issues/1864)) ([8afa9c7](https://github.com/kurtosis-tech/kurtosis/commit/8afa9c7a7fcd7d7370e2d9740fb4e8e7bc6fe463))
+
+## [0.85.37](https://github.com/kurtosis-tech/kurtosis/compare/0.85.36...0.85.37) (2023-11-29)
+
+
+### Features
+
+* emui catalog overview ([#1865](https://github.com/kurtosis-tech/kurtosis/issues/1865)) ([2f118d9](https://github.com/kurtosis-tech/kurtosis/commit/2f118d92da40f2f5933c5d8f58a5a08c29b96c9a))
+
+## [0.85.36](https://github.com/kurtosis-tech/kurtosis/compare/0.85.35...0.85.36) (2023-11-27)
+
+
+### Features
+
+* emui enhancements ([#1847](https://github.com/kurtosis-tech/kurtosis/issues/1847)) ([633ba42](https://github.com/kurtosis-tech/kurtosis/commit/633ba428c9c2ca9acd860ec97b1b37af3eed28b3))
+
+
+### Bug Fixes
+
+* make run_python not create additional files artifact ([#1851](https://github.com/kurtosis-tech/kurtosis/issues/1851)) ([82d0058](https://github.com/kurtosis-tech/kurtosis/commit/82d005817af05c46e67fd7c19946af4cc13135c9))
+* only print image banner if image arch is non empty string and different ([#1854](https://github.com/kurtosis-tech/kurtosis/issues/1854)) ([75b8c84](https://github.com/kurtosis-tech/kurtosis/commit/75b8c844243a55bdf5ddbd653e229e64ac555e0b))
+* tasks remove containers after they are done ([#1850](https://github.com/kurtosis-tech/kurtosis/issues/1850)) ([179c541](https://github.com/kurtosis-tech/kurtosis/commit/179c54121277b6d9d757a7170e4ec86e72115225))
+
+## [0.85.35](https://github.com/kurtosis-tech/kurtosis/compare/0.85.34...0.85.35) (2023-11-22)
+
+
+### Features
+
+* upgrade golang grpc dependency ([#1840](https://github.com/kurtosis-tech/kurtosis/issues/1840)) ([2377868](https://github.com/kurtosis-tech/kurtosis/commit/2377868363c2bdea6f38478e156269339574622e))
+
+
+### Bug Fixes
+
+* always restart logs aggregator ([#1841](https://github.com/kurtosis-tech/kurtosis/issues/1841)) ([7e6382f](https://github.com/kurtosis-tech/kurtosis/commit/7e6382f0671c3776e31381a12da31f9754222438))
+
+## [0.85.34](https://github.com/kurtosis-tech/kurtosis/compare/0.85.33...0.85.34) (2023-11-21)
+
+
+### Bug Fixes
+
+* display the relevant number in the error message ([#1835](https://github.com/kurtosis-tech/kurtosis/issues/1835)) ([a8c24bc](https://github.com/kurtosis-tech/kurtosis/commit/a8c24bcbeff813217e10a222001ce05c325de03c))
+
+## [0.85.33](https://github.com/kurtosis-tech/kurtosis/compare/0.85.32...0.85.33) (2023-11-20)
+
+
+### Features
+
+* search in service logs ([#1830](https://github.com/kurtosis-tech/kurtosis/issues/1830)) ([7fce5b5](https://github.com/kurtosis-tech/kurtosis/commit/7fce5b59d1060f99f8c2cbd54d7bb8483150310e)), closes [#1791](https://github.com/kurtosis-tech/kurtosis/issues/1791)
+
+## [0.85.32](https://github.com/kurtosis-tech/kurtosis/compare/0.85.31...0.85.32) (2023-11-20)
+
+
+### Features
+
+* emui auth via cookie ([#1783](https://github.com/kurtosis-tech/kurtosis/issues/1783)) ([d5d79d8](https://github.com/kurtosis-tech/kurtosis/commit/d5d79d8c4a67d175d9dc0d842e9edbb6068b8c6c))
+
+## [0.85.31](https://github.com/kurtosis-tech/kurtosis/compare/0.85.30...0.85.31) (2023-11-17)
+
+
+### Bug Fixes
+
+* implement minor emui feedback tweaks ([#1827](https://github.com/kurtosis-tech/kurtosis/issues/1827)) ([8161a34](https://github.com/kurtosis-tech/kurtosis/commit/8161a340a9f4724c885ffecbc61b31b1af9bc3fa))
+
+## [0.85.30](https://github.com/kurtosis-tech/kurtosis/compare/0.85.29...0.85.30) (2023-11-17)
+
+
+### Bug Fixes
+
+* remove monaco max height limit ([#1823](https://github.com/kurtosis-tech/kurtosis/issues/1823)) ([ffe0f43](https://github.com/kurtosis-tech/kurtosis/commit/ffe0f43714cf5a6b1fe0313995fe2998ae856974))
+
+## [0.85.29](https://github.com/kurtosis-tech/kurtosis/compare/0.85.28...0.85.29) (2023-11-17)
+
+
+### Bug Fixes
+
+* check if record is empty ([#1819](https://github.com/kurtosis-tech/kurtosis/issues/1819)) ([392d47b](https://github.com/kurtosis-tech/kurtosis/commit/392d47b7962c9376551da2e0af3ddb32a304cb20))
+
+## [0.85.28](https://github.com/kurtosis-tech/kurtosis/compare/0.85.27...0.85.28) (2023-11-16)
+
+
+### Bug Fixes
+
+* update emui build ([#1814](https://github.com/kurtosis-tech/kurtosis/issues/1814)) ([39d2285](https://github.com/kurtosis-tech/kurtosis/commit/39d228528c61b07827f12280cc3f5e7af4aa16fa))
+
+## [0.85.27](https://github.com/kurtosis-tech/kurtosis/compare/0.85.26...0.85.27) (2023-11-16)
+
+
+### Bug Fixes
+
+* allow building webapp on main ([#1811](https://github.com/kurtosis-tech/kurtosis/issues/1811)) ([1410445](https://github.com/kurtosis-tech/kurtosis/commit/1410445099683124358bd6fe0a012cdecf93e209))
+
+## [0.85.26](https://github.com/kurtosis-tech/kurtosis/compare/0.85.25...0.85.26) (2023-11-16)
+
+
+### Features
+
+* emui improvements ([#1808](https://github.com/kurtosis-tech/kurtosis/issues/1808)) ([4e77667](https://github.com/kurtosis-tech/kurtosis/commit/4e776673fc017a8e2d44f138aa67f057f524ff58))
+
+## [0.85.25](https://github.com/kurtosis-tech/kurtosis/compare/0.85.24...0.85.25) (2023-11-16)
+
+
+### Bug Fixes
+
+* display create enclave error in scrollable box ([#1802](https://github.com/kurtosis-tech/kurtosis/issues/1802)) ([21adc5d](https://github.com/kurtosis-tech/kurtosis/commit/21adc5d70575b0d59980367146a528d1cfe137dc))
+
+## [0.85.24](https://github.com/kurtosis-tech/kurtosis/compare/0.85.23...0.85.24) (2023-11-16)
+
+
+### Features
+
+* generate enclave manager ui in build process and check prettier ([#1717](https://github.com/kurtosis-tech/kurtosis/issues/1717)) ([d6be248](https://github.com/kurtosis-tech/kurtosis/commit/d6be2482cc1af81830e909b8fdbaca104a7b73c3))
+
+## [0.85.23](https://github.com/kurtosis-tech/kurtosis/compare/0.85.22...0.85.23) (2023-11-15)
+
+
+### Bug Fixes
+
+* args were positioned incorrectly ([#1799](https://github.com/kurtosis-tech/kurtosis/issues/1799)) ([18c8b53](https://github.com/kurtosis-tech/kurtosis/commit/18c8b53e3a4d1a58be57105f5a3dfbc28c86c2b3))
+
+## [0.85.22](https://github.com/kurtosis-tech/kurtosis/compare/0.85.21...0.85.22) (2023-11-15)
+
+
+### Features
+
+* configured CORS logs in the enclave manager server inside the Kurtosis engine ([#1797](https://github.com/kurtosis-tech/kurtosis/issues/1797)) ([1eaf469](https://github.com/kurtosis-tech/kurtosis/commit/1eaf469ba0d8d1a742c8bdf544c42e4ff1b17b67))
+
+## [0.85.21](https://github.com/kurtosis-tech/kurtosis/compare/0.85.20...0.85.21) (2023-11-14)
+
+
+### Features
+
+* show usage text when CLI cmd fails because of missing a required argument ([#1774](https://github.com/kurtosis-tech/kurtosis/issues/1774)) ([a7df8cf](https://github.com/kurtosis-tech/kurtosis/commit/a7df8cfff3bac270a9fb755ed71a55d1e72f3d5d))
+
 ## [0.85.20](https://github.com/kurtosis-tech/kurtosis/compare/0.85.19...0.85.20) (2023-11-14)
 
 

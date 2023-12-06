@@ -1,8 +1,8 @@
 import { Badge, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel } from "@chakra-ui/react";
 import { PropsWithChildren } from "react";
 import { FieldError, FieldPath } from "react-hook-form";
-import Markdown from "react-markdown";
 import { isDefined } from "../../../utils";
+import { KurtosisMarkdown } from "../../KurtosisMarkdown";
 import { useEnclaveConfigurationFormContext } from "./EnclaveConfigurationForm";
 import { ConfigureEnclaveForm } from "./types";
 
@@ -39,7 +39,7 @@ export const KurtosisArgumentFormControl = ({
       </Flex>
       {children}
       <FormHelperText>
-        <Markdown>{helperText}</Markdown>
+        <KurtosisMarkdown>{helperText}</KurtosisMarkdown>
       </FormHelperText>
       <FormErrorMessage>{error?.message}</FormErrorMessage>
     </FormControl>

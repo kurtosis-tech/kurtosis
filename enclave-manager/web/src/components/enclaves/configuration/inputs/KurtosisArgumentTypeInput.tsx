@@ -10,102 +10,62 @@ import { JSONArgumentInput } from "./JSONArgumentInput";
 import { ListArgumentInput } from "./ListArgumentInput";
 import { StringArgumentInput } from "./StringArgumentInput";
 
-export type KurtosisArgumentTypeInputProps = {
+type KurtosisArgumentTypeInputProps = {
   type?: ArgumentValueType;
   subType1?: ArgumentValueType;
   subType2?: ArgumentValueType;
   name: FieldPath<ConfigureEnclaveForm>;
+  placeholder?: string;
   isRequired?: boolean;
   validate?: (value: any) => string | undefined;
   disabled?: boolean;
   width?: CSS.Property.Width;
   size?: string;
+  tabIndex?: number;
 };
+
+export type KurtosisArgumentTypeInputImplProps = Omit<KurtosisArgumentTypeInputProps, "type" | "subType1" | "subType2">;
 
 export const KurtosisArgumentTypeInput = ({
   type,
   subType1,
   subType2,
   name,
+  placeholder,
   isRequired,
   validate,
   disabled,
   width,
   size,
+  tabIndex,
 }: KurtosisArgumentTypeInputProps) => {
+  const childProps: KurtosisArgumentTypeInputImplProps = {
+    name,
+    placeholder,
+    isRequired,
+    validate,
+    disabled,
+    width,
+    size,
+    tabIndex,
+  };
+
   switch (type) {
     case ArgumentValueType.INTEGER:
-      return (
-        <IntegerArgumentInput
-          name={name}
-          isRequired={isRequired}
-          disabled={disabled}
-          validate={validate}
-          width={width}
-          size={size}
-        />
-      );
+      return <IntegerArgumentInput {...childProps} />;
     case ArgumentValueType.DICT:
       assertDefined(subType1, `innerType1 was not defined on DICT argument ${name}`);
       assertDefined(subType2, `innerType2 was not defined on DICT argument ${name}`);
-      return (
-        <DictArgumentInput
-          name={name}
-          isRequired={isRequired}
-          keyType={subType1}
-          valueType={subType2}
-          validate={validate}
-          disabled={disabled}
-          width={width}
-          size={size}
-        />
-      );
+      return <DictArgumentInput keyType={subType1} valueType={subType2} {...childProps} />;
     case ArgumentValueType.LIST:
       assertDefined(subType1, `innerType1 was not defined on DICT argument ${name}`);
-      return (
-        <ListArgumentInput
-          name={name}
-          isRequired={isRequired}
-          valueType={subType1}
-          validate={validate}
-          disabled={disabled}
-          width={width}
-          size={size}
-        />
-      );
+      return <ListArgumentInput valueType={subType1} {...childProps} />;
     case ArgumentValueType.BOOL:
-      return (
-        <BooleanArgumentInput
-          name={name}
-          isRequired={isRequired}
-          validate={validate}
-          disabled={disabled}
-          width={width}
-          size={size}
-        />
-      );
+      return <BooleanArgumentInput {...childProps} />;
     case ArgumentValueType.STRING:
-      return (
-        <StringArgumentInput
-          name={name}
-          isRequired={isRequired}
-          validate={validate}
-          disabled={disabled}
-          width={width}
-          size={size}
-        />
-      );
+      return <StringArgumentInput {...childProps} />;
     case ArgumentValueType.JSON:
     default:
-      return (
-        <JSONArgumentInput
-          name={name}
-          isRequired={isRequired}
-          validate={validate}
-          disabled={disabled}
-          width={width}
-          size={size}
-        />
-      );
+      return <JSONArgumentInput {...childProps} />;
   }
 };

@@ -1,11 +1,14 @@
-import { Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import { Flex, Spinner, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { FunctionComponent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { AppPageLayout } from "../../../../components/AppLayout";
+import { HoverLineTabList } from "../../../../components/HoverLineTabList";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
+import { PageTitle } from "../../../../components/PageTitle";
 import { isDefined } from "../../../../utils";
-import { useFullEnclave } from "../../../EmuiAppContext";
 import { EnclaveFullInfo } from "../../types";
+import { useEnclaveFromParams } from "../EnclaveRouteContext";
 import { ServiceLogs } from "./logs/ServiceLogs";
 import { ServiceOverview } from "./overview/ServiceOverview";
 
@@ -15,29 +18,37 @@ const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInf
 ];
 
 export const Service = () => {
-  const { enclaveUUID, serviceUUID } = useParams();
-  const enclave = useFullEnclave(enclaveUUID || "unknown");
+  const { serviceUUID } = useParams();
+  const enclave = useEnclaveFromParams();
 
-  if (enclave.isErr) {
-    return <KurtosisAlert message={"Enclave could not load"} />;
+  if (!isDefined(enclave.services)) {
+    return (
+      <AppPageLayout>
+        <Spinner />
+      </AppPageLayout>
+    );
   }
 
-  if (!isDefined(enclave.value.services)) {
-    return <Spinner />;
+  if (enclave.services.isErr) {
+    return (
+      <AppPageLayout>
+        <KurtosisAlert message={"Services for enclave could not load"} />
+      </AppPageLayout>
+    );
   }
 
-  if (enclave.value.services.isErr) {
-    return <KurtosisAlert message={"Services for enclave could not load"} />;
-  }
-
-  const service = Object.values(enclave.value.services.value.serviceInfo).find(
+  const service = Object.values(enclave.services.value.serviceInfo).find(
     (service) => service.shortenedUuid === serviceUUID,
   );
   if (!isDefined(service)) {
-    return <KurtosisAlert message={`Could not find service ${serviceUUID}`} />;
+    return (
+      <AppPageLayout>
+        <KurtosisAlert message={`Could not find service ${serviceUUID}`} />
+      </AppPageLayout>
+    );
   }
 
-  return <ServiceImpl enclave={enclave.value} service={service} />;
+  return <ServiceImpl enclave={enclave} service={service} />;
 };
 
 type ServiceImplProps = {
@@ -57,15 +68,12 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
   };
 
   return (
-    <Flex direction="column" width={"100%"}>
-      <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
-        <TabList>
-          <TabList>
-            {tabs.map((tab) => (
-              <Tab key={tab.path}>{tab.path}</Tab>
-            ))}
-          </TabList>
-        </TabList>
+    <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
+      <AppPageLayout>
+        <Flex alignItems={"center"} gap={"8px"}>
+          <PageTitle>{service.name}</PageTitle>
+          <HoverLineTabList tabs={tabs.map(({ path }) => path)} activeTab={activeTab} />
+        </Flex>
         <TabPanels>
           {tabs.map((tab) => (
             <TabPanel key={tab.path}>
@@ -73,7 +81,7 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
             </TabPanel>
           ))}
         </TabPanels>
-      </Tabs>
-    </Flex>
+      </AppPageLayout>
+    </Tabs>
   );
 };

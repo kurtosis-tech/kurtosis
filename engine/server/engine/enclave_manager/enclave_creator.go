@@ -8,10 +8,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	defaultHttpLogsCollectorPortNum = uint16(9712)
+	defaultTcpLogsCollectorPortNum  = uint16(9713)
 )
 
 type EnclaveCreator struct {
@@ -44,6 +50,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	kurtosisBackendType args.KurtosisBackendType,
 ) (*types.EnclaveInfo, error) {
 
 	uuid, err := uuid_generator.GenerateUUIDString()
@@ -76,6 +83,23 @@ func (creator *EnclaveCreator) CreateEnclave(
 		}
 	}()
 
+	// only create log collector for backend as
+	shouldDeleteLogsCollector := true
+	if kurtosisBackendType == args.KurtosisBackendType_Docker {
+		// TODO the logs collector has a random private ip address in the enclave network that must be tracked
+		if _, err := creator.kurtosisBackend.CreateLogsCollectorForEnclave(setupCtx, enclaveUuid, defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum)
+		}
+		defer func() {
+			if shouldDeleteLogsCollector {
+				err = creator.kurtosisBackend.DestroyLogsCollectorForEnclave(teardownCtx, enclaveUuid)
+				if err != nil {
+					logrus.Errorf("Couldn't cleanup logs collector for enclave '%v' as the following error was thrown:\n%v", enclaveUuid, err)
+				}
+			}
+		}()
+	}
+
 	apiContainer, err := creator.launchApiContainer(setupCtx,
 		apiContainerImageVersionTag,
 		apiContainerLogLevel,
@@ -89,7 +113,6 @@ func (creator *EnclaveCreator) CreateEnclave(
 		cloudUserID,
 		cloudInstanceID,
 	)
-
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
 	}
@@ -156,8 +179,9 @@ func (creator *EnclaveCreator) CreateEnclave(
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
-	shouldDestroyEnclave = false
 	shouldStopApiContainer = false
+	shouldDeleteLogsCollector = false
+	shouldDestroyEnclave = false
 	return newEnclaveInfo, nil
 }
 

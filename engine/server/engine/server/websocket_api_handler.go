@@ -35,13 +35,7 @@ type WebSocketRuntime struct {
 	DidUserAcceptSendingMetrics bool
 
 	// The clients for consuming container logs from the logs' database server
-
-	// per week pulls logs from enclaves created post log retention feature
-	PerWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient
-
-	// per file pulls logs from enclaves created pre log retention feature
-	// TODO: remove once users are fully migrated to log retention/new log schema
-	PerFileLogsDatabaseClient centralized_logs.LogsDatabaseClient
+	LogsDatabaseClient centralized_logs.LogsDatabaseClient
 
 	LogFileManager *log_file_manager.LogFileManager
 
@@ -56,8 +50,7 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context
 		ctx.Request().Context(),
 		engine.EnclaveManager,
 		enclaveIdentifier,
-		engine.PerWeekLogsDatabaseClient,
-		engine.PerFileLogsDatabaseClient,
+		engine.LogsDatabaseClient,
 		utils.MapList(params.ServiceUuidSet, func(x string) user_service.ServiceUUID { return user_service.ServiceUUID(x) }),
 		params.FollowLogs,
 		params.ReturnAllLogs,
@@ -96,8 +89,7 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 		ctx.Request().Context(),
 		engine.EnclaveManager,
 		enclaveIdentifier,
-		engine.PerWeekLogsDatabaseClient,
-		engine.PerFileLogsDatabaseClient,
+		engine.LogsDatabaseClient,
 		serviceUuidStrSet,
 		params.FollowLogs,
 		params.ReturnAllLogs,

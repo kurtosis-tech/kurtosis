@@ -26,7 +26,6 @@ import {
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
 import { assertDefined, asyncResult, isDefined } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
-import { KURTOSIS_CLOUD_HOST } from "../constants";
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
@@ -51,27 +50,18 @@ export abstract class KurtosisClient {
     this.client = client;
     this.cloudUrl = parentUrl;
     this.baseApplicationUrl = childUrl;
-    console.log("cloudUrl", this.cloudUrl);
-    console.log("baseApplicationUrl", this.baseApplicationUrl);
     this.getParentRequestedRoute();
   }
 
   getParentRequestedRoute() {
     const splits = this.cloudUrl.pathname.split("/enclave-manager");
     if (splits[1]) {
-      console.log("splits ", splits[1]);
       return splits[1];
     }
     return undefined;
   }
 
-  getCloudUrl() {
-    return this.cloudUrl;
-  }
-
-  isRunningInCloud() {
-    return this.cloudUrl.host.toLowerCase().includes(KURTOSIS_CLOUD_HOST);
-  }
+  abstract isRunningInCloud(): boolean;
 
   abstract getHeaderOptions(): { headers?: Headers };
 
@@ -161,7 +151,7 @@ export abstract class KurtosisClient {
     }, `KurtosisClient could not listFilesArtifactNamesAndUuids for ${enclave.name}`);
   }
 
-  async inspectFilesArtifactContents(enclave: RemoveFunctions<EnclaveInfo>, file: FilesArtifactNameAndUuid) {
+  async inspectFilesArtifactContents(enclave: RemoveFunctions<EnclaveInfo>, fileUuid: string) {
     return await asyncResult(() => {
       const apicInfo = enclave.apiContainerInfo;
       assertDefined(
@@ -171,7 +161,7 @@ export abstract class KurtosisClient {
       const request = new InspectFilesArtifactContentsRequest({
         apicIpAddress: apicInfo.bridgeIpAddress,
         apicPort: apicInfo.grpcPortInsideEnclave,
-        fileNamesAndUuid: file,
+        fileNamesAndUuid: { fileUuid },
       });
       return this.client.inspectFilesArtifactContents(request, this.getHeaderOptions());
     }, `KurtosisClient could not inspectFilesArtifactContents for ${enclave.name}`);

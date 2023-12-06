@@ -8,9 +8,9 @@ import { CopyButton } from "../../../CopyButton";
 import { PasteButton } from "../../../PasteButton";
 import { KurtosisArgumentSubtypeFormControl } from "../KurtosisArgumentFormControl";
 import { ConfigureEnclaveForm } from "../types";
-import { KurtosisArgumentTypeInput, KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
+import { KurtosisArgumentTypeInput, KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-type ListArgumentInputProps = Omit<KurtosisArgumentTypeInputProps, "type"> & {
+type ListArgumentInputProps = KurtosisArgumentTypeInputImplProps & {
   valueType: ArgumentValueType;
 };
 
@@ -38,7 +38,6 @@ export const ListArgumentInput = ({ valueType, ...otherProps }: ListArgumentInpu
     <Flex flexDirection={"column"} gap={"10px"}>
       <ButtonGroup isAttached>
         <CopyButton
-          size={"sm"}
           contentName={"value"}
           valueToCopy={() => JSON.stringify(getValues(otherProps.name).map(({ value }: { value: any }) => value))}
         />

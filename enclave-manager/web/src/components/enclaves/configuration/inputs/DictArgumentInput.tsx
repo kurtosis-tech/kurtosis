@@ -8,9 +8,9 @@ import { CopyButton } from "../../../CopyButton";
 import { PasteButton } from "../../../PasteButton";
 import { KurtosisArgumentSubtypeFormControl } from "../KurtosisArgumentFormControl";
 import { ConfigureEnclaveForm } from "../types";
-import { KurtosisArgumentTypeInput, KurtosisArgumentTypeInputProps } from "./KurtosisArgumentTypeInput";
+import { KurtosisArgumentTypeInput, KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-type DictArgumentInputProps = Omit<KurtosisArgumentTypeInputProps, "type"> & {
+type DictArgumentInputProps = KurtosisArgumentTypeInputImplProps & {
   keyType: ArgumentValueType;
   valueType: ArgumentValueType;
 };
@@ -40,7 +40,6 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
       <ButtonGroup isAttached>
         <CopyButton
           contentName={"value"}
-          size={"sm"}
           valueToCopy={() =>
             JSON.stringify(
               getValues(otherProps.name).reduce(
@@ -50,7 +49,7 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
             )
           }
         />
-        <PasteButton size="sm" onValuePasted={handleValuePaste} />
+        <PasteButton onValuePasted={handleValuePaste} />
       </ButtonGroup>
       {fields.map((field, i) => (
         <Flex key={i} gap={"10px"}>

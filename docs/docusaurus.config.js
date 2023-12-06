@@ -65,7 +65,7 @@ const config = {
 				logo: {
 					alt: 'Kurtosis',
 					src: 'img/brand/kurtosis-logo-white-text.png',
-					href: 'https://kurtosis.com',
+					href: 'https://docs.kurtosis.com',
 					target: '_self'
 				},
 				items: [
@@ -91,6 +91,11 @@ const config = {
 						href: 'https://web3.kurtosis.com',
 						position: 'left',
 						label: 'Kurtosis for Web3',
+					},
+					{
+						href: 'https://www.kurtosis.com/release-notes',
+						position: 'left',
+						label: 'Release Notes',
 					},
 					{
 						href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml',

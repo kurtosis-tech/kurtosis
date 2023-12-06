@@ -23,9 +23,6 @@ const (
 
 	shouldFetchStoppedContainersWhenDumpingEnclave = true
 
-	defaultHttpLogsCollectorPortNum = uint16(9712)
-	defaultTcpLogsCollectorPortNum  = uint16(9713)
-
 	serializedArgs = "SERIALIZED_ARGS"
 )
 
@@ -148,21 +145,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 
 	// TODO: return production mode for create enclave request as well
 	newEnclave := enclave.NewEnclave(enclaveUuid, enclaveName, enclave.EnclaveStatus_Empty, &creationTime, false)
-	// TODO the logs collector has a random private ip address in the enclave network that must be tracked
-	if _, err := backend.CreateLogsCollectorForEnclave(ctx, enclaveUuid, defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum)
-	}
-	shouldDeleteLogsCollector := true
-	defer func() {
-		if shouldDeleteLogsCollector {
-			err = backend.DestroyLogsCollectorForEnclave(ctx, enclaveUuid)
-			if err != nil {
-				logrus.Errorf("Couldn't cleanup logs collector for enclave '%v' as the following error was thrown:\n%v", enclaveUuid, err)
-			}
-		}
-	}()
 
-	shouldDeleteLogsCollector = false
 	shouldDeleteNetwork = false
 	shouldDeleteVolume = false
 	return newEnclave, nil

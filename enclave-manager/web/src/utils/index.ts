@@ -4,6 +4,10 @@ export function isDefined<T>(it: T | null | undefined): it is T {
   return it !== null && it !== undefined;
 }
 
+export function isNotEmpty(it: string): it is string {
+  return it.length > 0;
+}
+
 export function isStringTrue(value?: string | null) {
   return (value + "").toLowerCase() === "true";
 }
@@ -30,18 +34,30 @@ export function isAsyncIterable<T>(input: Iterable<T> | any): input is AsyncIter
   return typeof input[Symbol.asyncIterator] === "function";
 }
 
+export function capitalize(input: string): string {
+  return input
+    .split(" ")
+    .map((word) => (word.length >= 1 ? word[0].toUpperCase() + word.substring(1) : word))
+    .join(" ");
+}
+
+const ansiPattern = [
+  "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
+  "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))",
+].join("|");
+
+const ansiRegex = RegExp(ansiPattern, "g");
+
+export function hasAnsi(text: string) {
+  return ansiRegex.test(text);
+}
+
 export function stripAnsi(input: string): string {
   if (typeof input !== "string") {
     throw new TypeError(`Expected a \`string\`, got \`${typeof input}\``);
   }
-  const pattern = [
-    "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
-    "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))",
-  ].join("|");
 
-  const re = new RegExp(pattern, "g");
-
-  return input.replace(re, "");
+  return input.replace(ansiRegex, "");
 }
 
 export function range(until: number): number[];
@@ -86,6 +102,14 @@ export async function asyncResult<T>(
   try {
     const r = await (typeof p === "function" ? p() : p);
     return Result.ok<T, string>(r);
+  } catch (e: any) {
+    return Result.err(errorMessage || stringifyError(e));
+  }
+}
+
+export function wrapResult<T>(c: () => T, errorMessage?: string): Result<T, string> {
+  try {
+    return Result.ok(c());
   } catch (e: any) {
     return Result.err(errorMessage || stringifyError(e));
   }

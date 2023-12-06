@@ -9,9 +9,9 @@ import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { isDefined } from "../../../utils";
 import { DataTable } from "../../DataTable";
 import { FormatDateTime } from "../../FormatDateTime";
+import { PackageSourceButton } from "../../PackageSourceButton";
 import { EnclaveArtifactsSummary } from "../widgets/EnclaveArtifactsSummary";
 import { EnclaveServicesSummary } from "../widgets/EnclaveServicesSummary";
-import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
 import { EnclaveStatus } from "../widgets/EnclaveStatus";
 
 type EnclaveTableRow = {
@@ -115,7 +115,7 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
       }),
       columnHelper.accessor("source", {
         header: "Source",
-        cell: (sourceCell) => <EnclaveSourceButton source={sourceCell.getValue()} />,
+        cell: (sourceCell) => <PackageSourceButton source={sourceCell.getValue()} />,
       }),
       columnHelper.accessor("services", {
         cell: (servicesCell) => <EnclaveServicesSummary services={servicesCell.getValue()} />,
