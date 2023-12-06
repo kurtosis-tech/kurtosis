@@ -73,7 +73,7 @@ const (
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
 
-	restAPIPortAddr uint16 = 977 //TODO: pass this parameter9
+	restAPIPortAddr uint16 = 9779 //TODO: pass this parameter
 	restAPIHostIP   string = "0.0.0.0"
 
 	streamerPoolSize       = 1000
