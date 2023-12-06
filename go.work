@@ -19,4 +19,5 @@ use (
 	./name_generator
 	connect-server
 	./metrics-library/golang
+	utils
 )
