@@ -59,7 +59,7 @@ require (
 	github.com/hpcloud/tail v1.0.0
 	github.com/kurtosis-tech/kurtosis/enclave-manager/server v0.0.0-00010101000000-000000000000
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0-20230803130419-099ee7a4e3dc
-	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231130220701-e2b75b25d597
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
 	github.com/labstack/echo/v4 v4.11.3
 	github.com/rs/cors v1.9.0
 	github.com/spf13/afero v1.10.0
