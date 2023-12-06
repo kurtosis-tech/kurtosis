@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -121,7 +120,7 @@ func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		return nil, interpretationErr
 	}
 
-	compressedDataPath, _, compressedDataMd5, err := shared_utils.CompressPathToFile(pathOnDisk, enforceMaxFileSizeLimit)
+	compressedDataPath, _, compressedDataMd5, err := utils.CompressPathToFile(pathOnDisk, enforceMaxFileSizeLimit)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while compressing the files at '%s'", pathOnDisk)
 	}

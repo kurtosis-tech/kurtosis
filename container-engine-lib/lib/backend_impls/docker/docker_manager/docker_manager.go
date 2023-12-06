@@ -14,6 +14,7 @@ import (
 	"github.com/docker/go-units"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/utils"
 	"github.com/moby/buildkit/session"
 	"io"
 	"math"
@@ -1385,7 +1386,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 
 // returns a reader to a tarball of [contextDirPath]
 func getBuildContext(contextDirPath string) (io.Reader, error) {
-	buildContext, _, _, err := CompressPath(contextDirPath, false)
+	buildContext, _, _, err := utils.CompressPath(contextDirPath, false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred compressing the path to context directory path '%v'", contextDirPath)
 	}

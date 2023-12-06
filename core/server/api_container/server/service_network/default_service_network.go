@@ -24,7 +24,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -1231,7 +1230,7 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 		}
 	}
 
-	compressedFile, _, compressedFileMd5, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
+	compressedFile, _, compressedFileMd5, err := utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
 	}
