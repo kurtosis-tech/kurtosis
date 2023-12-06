@@ -124,7 +124,7 @@ export const EnclaveLogs = () => {
       : 0;
 
   return (
-    <AppPageLayout>
+    <AppPageLayout preventPageScroll>
       <LogViewer
         logLines={logLines}
         progressPercent={progressPercent}
@@ -150,8 +150,10 @@ type ProgressSummaryProps = {
 const ProgressSummary = ({ progress }: ProgressSummaryProps) => {
   return (
     <Tag
-      p={"0 10px"}
+      variant={"progress"}
+      p={"0 16px"}
       h={"40px"}
+      fontSize={"md"}
       colorScheme={progress.stage === "done" ? "green" : progress.stage === "failed" ? "red" : "blue"}
     >
       <Flex gap={"8px"} alignItems={"center"}>

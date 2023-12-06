@@ -1,4 +1,5 @@
 import { Box, Flex, Icon, Image, Input, InputGroup, InputRightElement, Text } from "@chakra-ui/react";
+import { DateTime } from "luxon";
 import { IoStar } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
@@ -8,10 +9,12 @@ import { readablePackageName } from "../../../components/catalog/utils";
 import { RunKurtosisPackageButton } from "../../../components/catalog/widgets/RunKurtosisPackageButton";
 import { SaveKurtosisPackageButton } from "../../../components/catalog/widgets/SaveKurtosisPackageButton";
 import { CopyButton } from "../../../components/CopyButton";
+import { FormatDateTime } from "../../../components/FormatDateTime";
 import { KurtosisAlert } from "../../../components/KurtosisAlert";
 import { KurtosisMarkdown } from "../../../components/KurtosisMarkdown";
 import { PackageSourceButton } from "../../../components/PackageSourceButton";
 import { TitledCard } from "../../../components/TitledCard";
+import { isDefined } from "../../../utils";
 import { useKurtosisPackage } from "../CatalogContext";
 
 export const Package = () => {
@@ -94,6 +97,25 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
                 </Text>
               </Flex>
             </Flex>
+            <Flex gap={"16px"} flexDirection={"column"} p={"16px"}>
+              <Text as={"span"} color="gray.400" fontWeight={"bold"} textTransform={"uppercase"}>
+                Last updated
+              </Text>
+              <span>
+                <FormatDateTime
+                  fontWeight={"medium"}
+                  fontSize={"xl"}
+                  format={"relative"}
+                  flex={"0 1 auto"}
+                  dateTime={
+                    isDefined(kurtosisPackage.repositoryMetadata) &&
+                    isDefined(kurtosisPackage.repositoryMetadata.lastCommitTime)
+                      ? DateTime.fromJSDate(kurtosisPackage.repositoryMetadata.lastCommitTime.toDate())
+                      : null
+                  }
+                />
+              </span>
+            </Flex>
           </Flex>
         </Flex>
       </Flex>
@@ -109,9 +131,9 @@ const PackageHeader = ({ kurtosisPackage }: PackageImplProps) => {
       <Image
         h={"120px"}
         w={"120px"}
-        bg={"black"}
-        // TODO: Use package image when supported
-        src={`${client.getBaseApplicationUrl()}/logo.png`}
+        bg={kurtosisPackage.iconUrl !== "" ? "white" : "black"}
+        src={kurtosisPackage.iconUrl || `${client.getBaseApplicationUrl()}/logo.png`}
+        fallbackSrc={`${client.getBaseApplicationUrl()}/logo.png`}
         borderRadius={"9px"}
       />
       <Flex flexDirection={"column"} justifyContent={"space-between"} flex={"1"}>

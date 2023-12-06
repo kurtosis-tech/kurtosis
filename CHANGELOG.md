@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.85.42](https://github.com/kurtosis-tech/kurtosis/compare/0.85.41...0.85.42) (2023-12-05)
+
+
+### Bug Fixes
+
+* Rename jwtToken cookie ([#1876](https://github.com/kurtosis-tech/kurtosis/issues/1876)) ([3b13372](https://github.com/kurtosis-tech/kurtosis/commit/3b13372004a0448f5e40154004b2b883e5a5d57a))
+
+## [0.85.41](https://github.com/kurtosis-tech/kurtosis/compare/0.85.40...0.85.41) (2023-12-05)
+
+
+### Features
+
+* emui design improvements ([#1892](https://github.com/kurtosis-tech/kurtosis/issues/1892)) ([9268a24](https://github.com/kurtosis-tech/kurtosis/commit/9268a2450c125ee95721d0c51a401bf68db5d68a))
+* emui handle json/yaml input interchangably ([#1891](https://github.com/kurtosis-tech/kurtosis/issues/1891)) ([cd4263b](https://github.com/kurtosis-tech/kurtosis/commit/cd4263bed4e784eca2dcd9c118e5b69c5d353f06))
+
 ## [0.85.40](https://github.com/kurtosis-tech/kurtosis/compare/0.85.39...0.85.40) (2023-12-02)
 
 
