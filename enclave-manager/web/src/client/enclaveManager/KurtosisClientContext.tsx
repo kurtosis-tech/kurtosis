@@ -70,7 +70,7 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
             throw Error(`Port ${port} is not a number.`);
           }
 
-          const jwtToken = Cookies.get("kurtosis");
+          const jwtToken = Cookies.get("_kurtosis_jwt_token");
 
           if (isDefined(jwtToken)) {
             newClient = new AuthenticatedKurtosisClient(

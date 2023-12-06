@@ -1,7 +1,6 @@
-import { Button, ButtonGroup, Flex, Spinner } from "@chakra-ui/react";
+import { ButtonGroup, Flex, Spinner } from "@chakra-ui/react";
 import { InspectFilesArtifactContentsResponse } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BiPaintRoll } from "react-icons/bi";
 import { useParams } from "react-router-dom";
 import { Result } from "true-myth";
 import { useKurtosisClient } from "../../../../client/enclaveManager/KurtosisClientContext";
@@ -10,6 +9,7 @@ import { CodeEditor, CodeEditorImperativeAttributes } from "../../../../componen
 import { CopyButton } from "../../../../components/CopyButton";
 import { DownloadButton } from "../../../../components/DownloadButton";
 import { FileTree, FileTreeNode } from "../../../../components/FileTree";
+import { FormatButton } from "../../../../components/FormatButton";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
 import { TitledCard } from "../../../../components/TitledCard";
 import { isDefined } from "../../../../utils";
@@ -165,15 +165,7 @@ const ArtifactImpl = ({ enclave, artifactName, files }: ArtifactImplProps) => {
           }
           rightControls={
             isDefined(selectedFile) ? (
-              <Button
-                leftIcon={<BiPaintRoll />}
-                variant="ghost"
-                size={"sm"}
-                colorScheme={"darkBlue"}
-                onClick={() => codeEditorRef.current?.formatCode()}
-              >
-                Format
-              </Button>
+              <FormatButton variant="ghost" onClick={() => codeEditorRef.current?.formatCode()} />
             ) : undefined
           }
           flex={"1"}

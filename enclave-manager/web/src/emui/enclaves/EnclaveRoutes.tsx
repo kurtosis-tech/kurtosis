@@ -3,6 +3,7 @@ import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build
 import { FiPlus } from "react-icons/fi";
 import { Outlet, Params } from "react-router-dom";
 import { GoToEnclaveOverviewButton } from "../../components/enclaves/GotToEncalaveOverviewButton";
+import { isDefined } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
 import { KurtosisEnclavesRouteObject } from "../types";
 import { Artifact } from "./enclave/artifact/Artifact";
@@ -96,13 +97,13 @@ export const enclaveRoutes = (): KurtosisEnclavesRouteObject[] => [
                   crumb: (data: RemoveFunctions<EnclavesState>, params: Params<string>) => {
                     const activeTab = params.activeTab;
 
-                    let routeName = activeTab?.toLowerCase() === "logs" ? "Logs" : "Overview";
+                    if (!isDefined(activeTab) || activeTab.toLowerCase() === "overview") {
+                      return [];
+                    }
 
                     return {
-                      name: routeName,
-                      destination: `/enclave/${params.enclaveUUID}/service/${params.serviceUUID}/${
-                        params.activeTab || "overview"
-                      }`,
+                      name: "Logs",
+                      destination: `/enclave/${params.enclaveUUID}/service/${params.serviceUUID}/logs`,
                     };
                   },
                 },
@@ -169,6 +170,10 @@ export const enclaveRoutes = (): KurtosisEnclavesRouteObject[] => [
               type: "enclavesHandle" as "enclavesHandle",
               crumb: (data: RemoveFunctions<EnclavesState>, params: Params<string>) => {
                 const activeTab = params.activeTab;
+
+                if (!isDefined(activeTab) || activeTab.toLowerCase() === "overview") {
+                  return [];
+                }
 
                 let routeName =
                   activeTab?.toLowerCase() === "logs"
