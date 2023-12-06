@@ -90,7 +90,7 @@ run_prepare_testing_docker: &run_prepare_testing_docker
 # Steps to prepare a job for Docker testing
 steps_prepare_testing_docker: &steps_prepare_testing_docker
   steps:
-    <<: *run_prepare_testing_docker 
+    - <<: *run_prepare_testing_docker 
 
 # Run steps to dump kurtosis enclaves from docker
 run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
