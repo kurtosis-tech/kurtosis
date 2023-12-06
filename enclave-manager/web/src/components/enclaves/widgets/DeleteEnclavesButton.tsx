@@ -1,17 +1,17 @@
-import { Button, Tooltip } from "@chakra-ui/react";
+import { Button, ButtonProps, Tooltip } from "@chakra-ui/react";
 import { useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { useEmuiAppContext } from "../../../emui/EmuiAppContext";
+import { useEnclavesContext } from "../../../emui/enclaves/EnclavesContext";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { KurtosisAlertModal } from "../../KurtosisAlertModal";
 
-type DeleteEnclavesButtonProps = {
+type DeleteEnclavesButtonProps = ButtonProps & {
   enclaves: EnclaveFullInfo[];
 };
 
-export const DeleteEnclavesButton = ({ enclaves }: DeleteEnclavesButtonProps) => {
-  const { destroyEnclaves } = useEmuiAppContext();
+export const DeleteEnclavesButton = ({ enclaves, ...buttonProps }: DeleteEnclavesButtonProps) => {
+  const { destroyEnclaves } = useEnclavesContext();
   const navigator = useNavigate();
 
   const [showModal, setShowModal] = useState(false);
@@ -28,7 +28,13 @@ export const DeleteEnclavesButton = ({ enclaves }: DeleteEnclavesButtonProps) =>
   return (
     <>
       <Tooltip label={`This will delete ${enclaves.length} enclaves.`} openDelay={1000}>
-        <Button colorScheme={"red"} leftIcon={<FiTrash2 />} onClick={() => setShowModal(true)}>
+        <Button
+          colorScheme={"red"}
+          leftIcon={<FiTrash2 />}
+          onClick={() => setShowModal(true)}
+          size={"sm"}
+          {...buttonProps}
+        >
           Delete
         </Button>
       </Tooltip>

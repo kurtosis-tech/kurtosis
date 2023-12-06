@@ -55,6 +55,7 @@ type EnclaveManager struct {
 	mutex *sync.Mutex
 
 	kurtosisBackend                           backend_interface.KurtosisBackend
+	kurtosisBackendType                       args.KurtosisBackendType
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 
 	// this is a stop gap solution, this would be stored and retrieved from the DB in the future
@@ -104,8 +105,9 @@ func CreateEnclaveManager(
 	}
 
 	enclaveManager := &EnclaveManager{
-		mutex:           &sync.Mutex{},
-		kurtosisBackend: kurtosisBackend,
+		mutex:               &sync.Mutex{},
+		kurtosisBackend:     kurtosisBackend,
+		kurtosisBackendType: kurtosisBackendType,
 		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
 		allExistingAndHistoricalIdentifiers:       []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{},
 		enclaveCreator:                            enclaveCreator,
@@ -189,6 +191,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			manager.isCI,
 			manager.cloudUserID,
 			manager.cloudInstanceID,
+			manager.kurtosisBackendType,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(

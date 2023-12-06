@@ -1,4 +1,4 @@
-import { Card, Flex, Text } from "@chakra-ui/react";
+import { Card, CardBody, CardHeader, Text } from "@chakra-ui/react";
 import { ReactElement } from "react";
 import { isDefined } from "../utils";
 import { CopyButton } from "./CopyButton";
@@ -12,21 +12,27 @@ type ValueCardProps = {
 
 export const ValueCard = ({ title, value, copyEnabled, copyValue }: ValueCardProps) => {
   return (
-    <Card height={"100%"} display={"flex"} flexDirection={"column"} justifyContent={"space-between"} gap={"16px"}>
-      <Flex flexDirection={"row"} justifyContent={"space-between"} alignItems={"center"} width={"100%"}>
+    <Card variant={"valueCard"} height={"100%"}>
+      <CardHeader>
         <Text fontSize={"sm"} fontWeight={"extrabold"} textTransform={"uppercase"} color={"gray.400"}>
           {title}
         </Text>
         {copyEnabled && (
           <CopyButton
+            isIconButton
+            aria-label={"Copy this value"}
             valueToCopy={isDefined(copyValue) ? copyValue : typeof value === "string" ? value : null}
             contentName={title}
+            color={"gray.400"}
+            colorScheme={"gray"}
           />
         )}
-      </Flex>
-      <Text as={"div"} fontSize={"xl"}>
-        {value}
-      </Text>
+      </CardHeader>
+      <CardBody>
+        <Text as={"div"} fontSize={"xl"}>
+          {value}
+        </Text>
+      </CardBody>
     </Card>
   );
 };

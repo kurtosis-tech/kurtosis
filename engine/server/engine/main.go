@@ -19,6 +19,8 @@ import (
 	em_api "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
@@ -140,19 +142,11 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
+	logsDatabaseClient := getLogsDatabaseClient(serverArgs.KurtosisBackendType, kurtosisBackend)
+
+	// TODO: Move log file management into LogsDatabaseClient
 	osFs := volume_filesystem.NewOsVolumeFilesystem()
 	realTime := logs_clock.NewRealClock()
-
-	// TODO: remove once users are fully migrated to log retention/new log schema
-	// pulls logs per enclave/per service id
-	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
-	perFileLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perFileStreamStrategy)
-
-	// pulls logs /per week/per enclave/per service
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime)
-	perWeekLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamStrategy)
-
-	// TODO: Move logFileManager into LogsDatabaseClient
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
 	logFileManager.StartLogFileManagement(ctx)
 
@@ -232,8 +226,7 @@ func runMain() error {
 		enclaveManager,
 		serverArgs.MetricsUserID,
 		serverArgs.DidUserAcceptSendingMetrics,
-		perWeekLogsDatabaseClient,
-		perFileLogsDatabaseClient,
+		logsDatabaseClient,
 		logFileManager,
 		metricsClient)
 	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
@@ -327,6 +320,21 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 	}
 
 	return kurtosisBackend, nil
+}
+
+// if cluster is docker, return logs client for centralized logging, otherwise use logs db of kurtosis backend which uses k8s logs under the hood
+func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosisBackend backend_interface.KurtosisBackend) centralized_logs.LogsDatabaseClient {
+	var logsDatabaseClient centralized_logs.LogsDatabaseClient
+	switch kurtosisBackendType {
+	case args.KurtosisBackendType_Docker:
+		osFs := volume_filesystem.NewOsVolumeFilesystem()
+		realTime := logs_clock.NewRealClock()
+		perWeekStreamLogsStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime)
+		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamLogsStrategy)
+	case args.KurtosisBackendType_Kubernetes:
+		logsDatabaseClient = kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
+	}
+	return logsDatabaseClient
 }
 
 func formatFilenameFunctionForLogs(filename string, functionName string) string {

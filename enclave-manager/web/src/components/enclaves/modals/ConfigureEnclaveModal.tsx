@@ -19,12 +19,13 @@ import { SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
 import { ArgumentValueType, KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { useEmuiAppContext } from "../../../emui/EmuiAppContext";
+import { useEnclavesContext } from "../../../emui/enclaves/EnclavesContext";
 import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { assertDefined, isDefined, stringifyError } from "../../../utils";
 import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../../constants";
 import { CopyButton } from "../../CopyButton";
 import { KurtosisAlert } from "../../KurtosisAlert";
+import { PackageSourceButton } from "../../PackageSourceButton";
 import {
   EnclaveConfigurationForm,
   EnclaveConfigurationFormImperativeAttributes,
@@ -35,7 +36,6 @@ import { KurtosisArgumentFormControl } from "../configuration/KurtosisArgumentFo
 import { KurtosisPackageArgumentInput } from "../configuration/KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../configuration/types";
 import { allowedEnclaveNamePattern, isEnclaveNameAllowed } from "../utils";
-import { EnclaveSourceButton } from "../widgets/EnclaveSourceButton";
 
 type ConfigureEnclaveModalProps = {
   isOpen: boolean;
@@ -51,7 +51,7 @@ export const ConfigureEnclaveModal = ({
   existingEnclave,
 }: ConfigureEnclaveModalProps) => {
   const kurtosisClient = useKurtosisClient();
-  const { createEnclave, runStarlarkPackage } = useEmuiAppContext();
+  const { createEnclave, runStarlarkPackage } = useEnclavesContext();
   const navigator = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -81,8 +81,6 @@ export const ConfigureEnclaveModal = ({
               return isDefined(value) ? `${value}` : "";
             case ArgumentValueType.STRING:
               return value || "";
-            case ArgumentValueType.JSON:
-              return isDefined(value) ? JSON.stringify(value) : "{}";
             case ArgumentValueType.LIST:
               assertDefined(innerType1, `Cannot parse a list argument type without knowing innerType1`);
               return isDefined(value) ? value.map((v: any) => convertArgValue(innerType1, v)) : [];
@@ -177,7 +175,7 @@ export const ConfigureEnclaveModal = ({
       return;
     }
 
-    let apicInfo = existingEnclave?.apiContainerInfo;
+    let enclave = existingEnclave;
     let enclaveUUID = existingEnclave?.shortenedUuid;
     if (!isDefined(existingEnclave)) {
       setIsLoading(true);
@@ -192,12 +190,12 @@ export const ConfigureEnclaveModal = ({
         setError(`Did not receive enclave info when running createEnclave`);
         return;
       }
-      apicInfo = newEnclave.value.enclaveInfo.apiContainerInfo;
+      enclave = newEnclave.value.enclaveInfo;
       enclaveUUID = newEnclave.value.enclaveInfo.shortenedUuid;
     }
 
-    if (!isDefined(apicInfo)) {
-      setError(`Cannot trigger starlark run as apic info cannot be found`);
+    if (!isDefined(enclave)) {
+      setError(`Cannot trigger starlark run as enclave info cannot be found`);
       return;
     }
 
@@ -217,9 +215,13 @@ export const ConfigureEnclaveModal = ({
     }
     console.log("submissionData for runStarlarkPackage", submissionData);
 
-    const logsIterator = await runStarlarkPackage(apicInfo, kurtosisPackage.name, submissionData);
-    navigator(`/enclave/${enclaveUUID}/logs`, { state: { logs: logsIterator } });
-    onClose();
+    try {
+      const logsIterator = await runStarlarkPackage(enclave, kurtosisPackage.name, submissionData);
+      navigator(`/enclave/${enclaveUUID}/logs`, { state: { logs: logsIterator } });
+      onClose();
+    } catch (error: any) {
+      setError(stringifyError(error));
+    }
   };
 
   return (
@@ -252,7 +254,7 @@ export const ConfigureEnclaveModal = ({
           <ModalBody flex="0 1 auto" p={"0px"} display={"flex"} flexDirection={"column"}>
             <Flex flex={"0"} fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
               <Text>Configuring</Text>
-              <EnclaveSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
+              <PackageSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
             </Flex>
             {isDefined(error) && (
               <KurtosisAlert flex={"1 0 auto"} message={"Could not execute configuration"} details={error} />

@@ -26,7 +26,6 @@ import {
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
 import { assertDefined, asyncResult, isDefined } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
-import { KURTOSIS_CLOUD_HOST } from "../constants";
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
@@ -62,13 +61,7 @@ export abstract class KurtosisClient {
     return undefined;
   }
 
-  getCloudUrl() {
-    return this.cloudUrl;
-  }
-
-  isRunningInCloud() {
-    return this.cloudUrl.host.toLowerCase().includes(KURTOSIS_CLOUD_HOST);
-  }
+  abstract isRunningInCloud(): boolean;
 
   abstract getHeaderOptions(): { headers?: Headers };
 
@@ -158,7 +151,7 @@ export abstract class KurtosisClient {
     }, `KurtosisClient could not listFilesArtifactNamesAndUuids for ${enclave.name}`);
   }
 
-  async inspectFilesArtifactContents(enclave: RemoveFunctions<EnclaveInfo>, file: FilesArtifactNameAndUuid) {
+  async inspectFilesArtifactContents(enclave: RemoveFunctions<EnclaveInfo>, fileUuid: string) {
     return await asyncResult(() => {
       const apicInfo = enclave.apiContainerInfo;
       assertDefined(
@@ -168,7 +161,7 @@ export abstract class KurtosisClient {
       const request = new InspectFilesArtifactContentsRequest({
         apicIpAddress: apicInfo.bridgeIpAddress,
         apicPort: apicInfo.grpcPortInsideEnclave,
-        fileNamesAndUuid: file,
+        fileNamesAndUuid: { fileUuid },
       });
       return this.client.inspectFilesArtifactContents(request, this.getHeaderOptions());
     }, `KurtosisClient could not inspectFilesArtifactContents for ${enclave.name}`);

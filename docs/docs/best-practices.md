@@ -48,11 +48,26 @@ Kurtosis service names implements [RFC-1035](https://datatracker.ietf.org/doc/ht
 
 Failure to adhere to the above standards will result in errors when running Kurtosis.
 
+Writing and reading Starlark
+----------------------------
 
+If you're using Visual Studio Code, you may find our [Kurtosis VS Code Extension][vscode-plugin] helpful when writing Starlark.
+
+If you're using Vim, you can add the following to your `.vimrc` to get Starlark syntax highlighting:
+
+```
+" Add syntax highlighting for Starlark files
+autocmd FileType *.star setlocal filetype=python
+```
+
+or if you use Neovim:
+```
+autocmd BufNewFile,BufRead *.star set filetype=python
+```
 
 <!---------------------------------------- ONLY LINKS BELOW HERE!!! ----------------------------------->
 [package-parameterization]: ./advanced-concepts/packages.md#parameterization
-
+[vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
 [service-config-starlark-reference]: ./api-reference/starlark-reference/service-config.md
 [port-spec-starlark-reference]: ./api-reference/starlark-reference/port-spec.md
 [ready-condition-starlark-reference]: ./api-reference/starlark-reference/ready-condition.md
