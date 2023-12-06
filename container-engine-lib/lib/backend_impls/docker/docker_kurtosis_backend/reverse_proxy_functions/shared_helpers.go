@@ -104,7 +104,7 @@ func getReverseProxyObjectFromContainerInfo(
 			if networkIpAddressStr != privateIpAddrStr {
 				networkIpAddress := net.ParseIP(networkIpAddressStr)
 				if networkIpAddress == nil {
-					return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", networkIpAddress)
+					return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", networkIpAddressStr)
 				}
 				enclaveNetworksIpAddress[networkId] = networkIpAddress
 			}
