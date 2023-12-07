@@ -1834,30 +1834,12 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
 ) (*apiv1.PersistentVolumeClaim, error) {
 	deadline := time.Now().Add(waitForPersistentVolumeBoundTimeout)
 	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
-	var result *apiv1.PersistentVolumeClaim
 	for time.Now().Before(deadline) {
 		claim, err := manager.GetPersistentVolumeClaim(ctx, namespaceName, persistentVolumeClaimName)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaimName, namespaceName)
 		}
-		result = claim
-		claimStatus := claim.Status
-		claimPhase := claimStatus.Phase
-
-		switch claimPhase {
-		//Success phase, the Persistent Volume got bound
-		case apiv1.ClaimBound:
-			return result, nil
-		//Lost the Persistent Volume phase, unrecoverable state
-		case apiv1.ClaimLost:
-			return nil, stacktrace.NewError(
-				"The persistent volume claim '%v' ended up in unrecoverable state '%v'",
-				claim.GetName(),
-				claimPhase,
-			)
-		}
-
-		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
+		return claim, nil
 	}
 
 	return nil, stacktrace.NewError(
