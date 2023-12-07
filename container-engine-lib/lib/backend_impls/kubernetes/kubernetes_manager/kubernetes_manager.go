@@ -29,7 +29,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -71,7 +70,6 @@ const (
 	contextDeadlineExceeded              = "context deadline exceeded"
 	expectedStatusMessageSliceSize       = 6
 
-	volumeHostPathRootDirectory = "/kurtosis-persistent-service-data"
 	// TODO: Maybe pipe this to Starlark to let users choose the size of their persistent directories
 	//  The difficulty is that Docker doesn't have such a feature, so we would need somehow to hack it
 	persistentVolumeDefaultSize                          int64 = 500 * 1024 * 1024 // 500Mb
@@ -302,33 +300,12 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 
 func (manager *KubernetesManager) CreatePersistentVolume(
 	ctx context.Context,
-	namespace string,
+	_ string,
 	volumeName string,
 	labels map[string]string,
 ) (*apiv1.PersistentVolume, error) {
 	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
 
-	// Check that there's only one node, otherwise using HostPath volumes will not work.
-	// TODO: Support Persistent Volumes on Kubernetes with multiple nodes. We have a few options:
-	//  - We make sure the pod restarting gets rescheduled on the same node, which would be quite easy but defeats a
-	//  little bit the power of using k8s to balance load among nodes
-	//  - We can use k8s' `local` persistent volumes. However, those do not support dynamic provisioning. They require
-	//  the directory to already exist on the host. There's some k8s extensions to have them support dynamic provisioning
-	//  but we can't assume all Kubernetes cluster users will use will have those extensions. At least for now
-	//  - If this use case is hit only in the cloud (which is quite likely since having a multi-nodes k8s cluster running
-	//  outside a cloud provider infra is quite rare), then maybe we should just use whatever the cloud provider has,
-	//  like EBS for AWS for example. Those support dynamic provisioning and everything via their respective CSI drivers
-	listOptions := buildListOptionsFromLabels(map[string]string{})
-	nodes, err := manager.kubernetesClientSet.CoreV1().Nodes().List(ctx, listOptions)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An unexpected error occurred retrieving the list of Kubernetes nodes.")
-	} else if len(nodes.Items) > 1 {
-		return nil, stacktrace.NewError("Using persistent volumes on Kubernetes with multiple nodes is currently " +
-			"not supported. Reach out to Kurtosis if you need this feature.")
-	}
-
-	hostPathPath := path.Join(volumeHostPathRootDirectory, namespace, volumeName)
-	hostPathType := apiv1.HostPathDirectoryOrCreate
 	persistentVolumeDefinition := apiv1.PersistentVolume{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
@@ -357,42 +334,9 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 			Capacity: apiv1.ResourceList{
 				apiv1.ResourceStorage: *resource.NewQuantity(persistentVolumeDefaultSize, resource.BinarySI),
 			},
-			PersistentVolumeSource: apiv1.PersistentVolumeSource{
-				GCEPersistentDisk:    nil,
-				AWSElasticBlockStore: nil,
-				HostPath: &apiv1.HostPathVolumeSource{
-					Path: hostPathPath,
-					Type: &hostPathType,
-				},
-				Glusterfs:            nil,
-				NFS:                  nil,
-				RBD:                  nil,
-				ISCSI:                nil,
-				Cinder:               nil,
-				CephFS:               nil,
-				FC:                   nil,
-				Flocker:              nil,
-				FlexVolume:           nil,
-				AzureFile:            nil,
-				VsphereVolume:        nil,
-				Quobyte:              nil,
-				AzureDisk:            nil,
-				PhotonPersistentDisk: nil,
-				PortworxVolume:       nil,
-				ScaleIO:              nil,
-				Local:                nil,
-				StorageOS:            nil,
-				CSI:                  nil,
-			},
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
 				apiv1.ReadWriteOnce, // ReadWriteOncePod would be better, but it's a fairly recent feature
 			},
-			ClaimRef:                      nil,
-			PersistentVolumeReclaimPolicy: "",
-			StorageClassName:              volumeStorageClassName,
-			MountOptions:                  nil,
-			VolumeMode:                    nil,
-			NodeAffinity:                  nil,
 		},
 		Status: apiv1.PersistentVolumeStatus{
 			Phase:   "",
