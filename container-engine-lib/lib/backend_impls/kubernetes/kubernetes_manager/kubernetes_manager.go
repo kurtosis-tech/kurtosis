@@ -91,7 +91,7 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 
 var (
 	// we use the standard class name
-	volumeStorageClassName = ""
+	volumeStorageClassName = "ebs-sc"
 	globalDeletePolicy     = metav1.DeletePropagationForeground
 	globalDeleteOptions    = metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
