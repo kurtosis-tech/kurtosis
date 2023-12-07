@@ -19,9 +19,9 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
-	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/core_rest_api"
-	engineApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/engine_rest_api"
-	loggingApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/websocket_api"
+	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/core_rest_api"
+	engineApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/engine_rest_api"
+	loggingApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/websocket_api"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
