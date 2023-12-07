@@ -448,7 +448,6 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 				},
 				Claims: nil,
 			},
-			VolumeName:       volumeClaimName, // volume and their respective claims have the same name right now
 			StorageClassName: &volumeStorageClassName,
 			VolumeMode:       nil,
 			DataSource:       nil,
