@@ -95,7 +95,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/utils v0.0.0-00010101000000-000000000000 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
-	github.com/moby/buildkit v0.12.4 // indirect
+	github.com/moby/buildkit v0.12.3 // indirect
 	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/sys/signal v0.7.0 // indirect
