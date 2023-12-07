@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/rs/cors v1.9.0
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/net v0.17.0
 )
 
