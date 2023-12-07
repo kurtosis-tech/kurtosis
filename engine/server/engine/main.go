@@ -150,7 +150,7 @@ func runMain() error {
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
 	logFileManager.StartLogFileManagement(ctx)
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, serverArgs.IsCI, serverArgs.CloudUserID, serverArgs.CloudInstanceID)
+	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, serverArgs.IsCI, serverArgs.CloudUserID, serverArgs.CloudInstanceID, serverArgs.KurtosisLocalBackendConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -256,13 +256,18 @@ func getEnclaveManager(
 	isCI bool,
 	cloudUserId metrics_client.CloudUserID,
 	cloudInstanceId metrics_client.CloudInstanceID,
+	kurtosisLocalBackendConfig interface{},
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
 		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
 	case args.KurtosisBackendType_Kubernetes:
-		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier()
+		kurtosisLocalBackendConfigKubernetesType, ok := kurtosisLocalBackendConfig.(kurtosis_backend_config.KubernetesBackendConfig)
+		if !ok {
+			return nil, stacktrace.NewError("Couldn't parse backend type!")
+		}
+		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier(kurtosisLocalBackendConfigKubernetesType.StorageClass)
 	default:
 		return nil, stacktrace.NewError("Backend type '%v' was not recognized by engine server.", kurtosisBackendType.String())
 	}

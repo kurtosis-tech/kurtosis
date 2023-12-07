@@ -6,4 +6,5 @@
 package kurtosis_backend_config
 
 type KubernetesBackendConfig struct {
+	StorageClass string
 }

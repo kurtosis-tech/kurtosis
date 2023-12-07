@@ -91,9 +91,8 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 
 var (
 	// we use the standard class name
-	volumeStorageClassName = "ebs-sc"
-	globalDeletePolicy     = metav1.DeletePropagationForeground
-	globalDeleteOptions    = metav1.DeleteOptions{
+	globalDeletePolicy  = metav1.DeletePropagationForeground
+	globalDeleteOptions = metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -144,6 +143,8 @@ type KubernetesManager struct {
 	kubernetesClientSet *kubernetes.Clientset
 	// Underlying restClient configuration
 	kuberneteRestConfig *rest.Config
+
+	storageClass string
 }
 
 func int64Ptr(i int64) *int64 { return &i }
@@ -152,6 +153,14 @@ func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRe
 	return &KubernetesManager{
 		kubernetesClientSet: kubernetesClientSet,
 		kuberneteRestConfig: kuberneteRestConfig,
+	}
+}
+
+func NewKubernetesManagerWithStorageClass(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config, storageClass string) *KubernetesManager {
+	return &KubernetesManager{
+		kubernetesClientSet: kubernetesClientSet,
+		kuberneteRestConfig: kuberneteRestConfig,
+		storageClass:        storageClass,
 	}
 }
 
@@ -448,7 +457,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 				},
 				Claims: nil,
 			},
-			StorageClassName: &volumeStorageClassName,
+			StorageClassName: &manager.storageClass,
 			VolumeMode:       nil,
 			DataSource:       nil,
 			DataSourceRef:    nil,

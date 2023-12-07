@@ -71,6 +71,7 @@ func GetEngineServerBackend(
 
 func GetApiContainerBackend(
 	ctx context.Context,
+	storageClass string,
 ) (backend_interface.KurtosisBackend, error) {
 	kubernetesConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -103,6 +104,7 @@ func GetApiContainerBackend(
 			kubernetesManager,
 			enclaveId,
 			namespaceName,
+			storageClass,
 		), nil
 	}
 
@@ -134,6 +136,28 @@ func getWrappedKubernetesKurtosisBackend(
 	}
 
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet, kubernetesConfig)
+
+	kubernetesBackend, err := kurtosisBackendSupplier(ctx, kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend")
+	}
+
+	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(kubernetesBackend)
+	return wrappedBackend, nil
+}
+
+func getWrappedKubernetesKurtosisBackendWithStorageClass(
+	ctx context.Context,
+	kubernetesConfig *rest.Config,
+	kurtosisBackendSupplier func(context.Context, *kubernetes_manager.KubernetesManager) (*KubernetesKurtosisBackend, error),
+	storageClass string,
+) (*metrics_reporting.MetricsReportingKurtosisBackend, error) {
+	clientSet, err := kubernetes.NewForConfig(kubernetesConfig)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to create kubernetes client set using Kubernetes config '%+v', instead a non nil error was returned", kubernetesConfig)
+	}
+
+	kubernetesManager := kubernetes_manager.NewKubernetesManagerWithStorageClass(clientSet, kubernetesConfig, storageClass)
 
 	kubernetesBackend, err := kurtosisBackendSupplier(ctx, kubernetesManager)
 	if err != nil {
