@@ -10,10 +10,12 @@ import (
 type ReverseProxy struct {
 	status container.ContainerStatus
 
+	// IP address of the reverse proxy container in its network
 	// This will be nil if the container is not running
 	maybePrivateIpAddr net.IP
 
-	// IP address for each enclave network ID
+	// IP address of the reverse proxy container in each enclave network
+	// This will be nil if the container is not running
 	maybeEnclaveNetworksIpAddress map[string]net.IP
 
 	// HTTP port
@@ -42,7 +44,7 @@ func (reverseProxy *ReverseProxy) GetStatus() container.ContainerStatus {
 	return reverseProxy.status
 }
 
-func (reverseProxy *ReverseProxy) GetMaybePrivateIpAddr() net.IP {
+func (reverseProxy *ReverseProxy) GetPrivateIpAddr() net.IP {
 	return reverseProxy.maybePrivateIpAddr
 }
 
