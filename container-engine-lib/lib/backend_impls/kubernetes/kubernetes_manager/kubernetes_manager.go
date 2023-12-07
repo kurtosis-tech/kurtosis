@@ -73,7 +73,7 @@ const (
 	// TODO: Maybe pipe this to Starlark to let users choose the size of their persistent directories
 	//  The difficulty is that Docker doesn't have such a feature, so we would need somehow to hack it
 	persistentVolumeDefaultSize                          int64 = 500 * 1024 * 1024 // 500Mb
-	waitForPersistentVolumeBoundTimeout                        = 30 * time.Second
+	waitForPersistentVolumeBoundTimeout                        = 3 * time.Minute
 	waitForPersistentVolumeBoundInitialDelayMilliSeconds       = 100
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds       = 500
 )
