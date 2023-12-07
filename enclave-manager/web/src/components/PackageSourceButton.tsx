@@ -3,16 +3,14 @@ import { PropsWithChildren } from "react";
 import { IoLogoGithub } from "react-icons/io";
 import { useKurtosisPackageIndexerClient } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { isDefined, wrapResult } from "../utils";
-import { CopyButton } from "./CopyButton";
 
 type EnclaveSourceProps = PropsWithChildren<
   ButtonProps & {
     source: "loading" | string | null;
-    hideCopy?: boolean;
   }
 >;
 
-export const PackageSourceButton = ({ source, hideCopy, children, ...buttonProps }: EnclaveSourceProps) => {
+export const PackageSourceButton = ({ source, children, ...buttonProps }: EnclaveSourceProps) => {
   const kurtosisIndexer = useKurtosisPackageIndexerClient();
 
   if (!isDefined(source)) {
@@ -63,18 +61,5 @@ export const PackageSourceButton = ({ source, hideCopy, children, ...buttonProps
     }
   }
 
-  return (
-    <ButtonGroup>
-      {button}
-      {!hideCopy && (
-        <CopyButton
-          contentName={"package id"}
-          valueToCopy={source}
-          isIconButton
-          aria-label={"Copy package id"}
-          size={buttonProps.size || "xs"}
-        />
-      )}
-    </ButtonGroup>
-  );
+  return <ButtonGroup>{button}</ButtonGroup>;
 };
