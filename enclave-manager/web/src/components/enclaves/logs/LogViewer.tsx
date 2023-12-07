@@ -19,7 +19,7 @@ import {
   Text,
   Tooltip,
 } from "@chakra-ui/react";
-import { debounce, throttle } from "lodash";
+import { throttle } from "lodash";
 import { ChangeEvent, MutableRefObject, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { MdArrowBackIosNew, MdArrowForwardIos } from "react-icons/md";
@@ -98,7 +98,7 @@ export const LogViewer = ({
     }
   };
 
-  const handleSearchStateChange = (updater: ((prevState: SearchState) => SearchState) | SearchState) => {
+  const handleSearchStateChange = useCallback((updater: ((prevState: SearchState) => SearchState) | SearchState) => {
     setSearchState((prevState) => {
       const newState = typeof updater === "object" ? updater : updater(prevState);
       if (
@@ -110,7 +110,7 @@ export const LogViewer = ({
       }
       return newState;
     });
-  };
+  }, []);
 
   const getLogsValue = () => {
     return logLines
@@ -219,6 +219,8 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
   const searchRef: MutableRefObject<HTMLInputElement | null> = useRef(null);
   const [showSearchForm, setShowSearchForm] = useState(false);
 
+  const maybeCurrentSearchIndex = searchState.type === "success" ? searchState.currentSearchIndex : null;
+
   const updateMatches = useCallback(
     (searchTerm: string) => {
       if (isNotEmpty(searchTerm)) {
@@ -253,44 +255,38 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
     [logLines, onChangeSearchState],
   );
 
-  const debouncedUpdateMatches = useMemo(() => debounce(updateMatches, 100), [updateMatches]);
+  const throttledUpdateMatches = useMemo(() => throttle(updateMatches, 300), [updateMatches]);
 
   const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
     onChangeSearchState((state) => ({ ...state, rawSearchTerm: e.target.value }));
-    debouncedUpdateMatches(e.target.value);
+    throttledUpdateMatches(e.target.value);
   };
 
   const updateSearchIndexBounded = useCallback(
     (newIndex: number) => {
-      if (searchState.type !== "success") {
-        return;
-      }
-      if (newIndex > searchState.searchMatchesIndices.length - 1) {
-        newIndex = 0;
-      }
-      if (newIndex < 0) {
-        newIndex = searchState.searchMatchesIndices.length - 1;
-      }
-      onChangeSearchState((state) => ({ ...state, currentSearchIndex: newIndex }));
+      onChangeSearchState((searchState) => {
+        if (searchState.type !== "success" || searchState.searchMatchesIndices.length === 0) {
+          return searchState;
+        }
+        if (newIndex > searchState.searchMatchesIndices.length - 1) {
+          newIndex = 0;
+        }
+        if (newIndex < 0) {
+          newIndex = searchState.searchMatchesIndices.length - 1;
+        }
+        return { ...searchState, currentSearchIndex: newIndex };
+      });
     },
-    [onChangeSearchState, searchState],
+    [onChangeSearchState],
   );
 
   const handlePriorMatchClick = useCallback(() => {
-    updateSearchIndexBounded(
-      searchState.type === "success" && isDefined(searchState.currentSearchIndex)
-        ? searchState.currentSearchIndex - 1
-        : 0,
-    );
-  }, [updateSearchIndexBounded, searchState]);
+    updateSearchIndexBounded(isDefined(maybeCurrentSearchIndex) ? maybeCurrentSearchIndex - 1 : 0);
+  }, [updateSearchIndexBounded, maybeCurrentSearchIndex]);
 
   const handleNextMatchClick = useCallback(() => {
-    updateSearchIndexBounded(
-      searchState.type === "success" && isDefined(searchState.currentSearchIndex)
-        ? searchState.currentSearchIndex + 1
-        : 0,
-    );
-  }, [updateSearchIndexBounded, searchState]);
+    updateSearchIndexBounded(isDefined(maybeCurrentSearchIndex) ? maybeCurrentSearchIndex + 1 : 0);
+  }, [updateSearchIndexBounded, maybeCurrentSearchIndex]);
 
   const handleClearSearch = useCallback(() => {
     onChangeSearchState({ type: "init", rawSearchTerm: "" });
@@ -319,8 +315,11 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
             searchRef.current.focus();
           }
         },
-        next: () => {
+        enter: () => {
           handleNextMatchClick();
+        },
+        "shift-enter": () => {
+          handlePriorMatchClick();
         },
         escape: () => {
           if (isDefined(searchRef.current) && searchRef.current === document.activeElement) {
