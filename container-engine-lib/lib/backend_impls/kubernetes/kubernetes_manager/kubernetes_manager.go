@@ -90,7 +90,8 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 }
 
 var (
-	volumeStorageClassName = "kurtosis-local-storage"
+	// we use the standard class name
+	volumeStorageClassName = ""
 	globalDeletePolicy     = metav1.DeletePropagationForeground
 	globalDeleteOptions    = metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
