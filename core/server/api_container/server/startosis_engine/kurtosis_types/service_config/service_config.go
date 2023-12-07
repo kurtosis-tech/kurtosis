@@ -44,7 +44,7 @@ const (
 
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
-	filesArtifactsExpanderImage string = "kurtosistech/files-artifacts-expander"
+	filesArtifactsExpanderImage string = "258623609258.dkr.ecr.us-east-2.amazonaws.com/kurtosistech/files-artifacts-expander"
 
 	minimumMemoryAllocationMegabytes = 6
 )

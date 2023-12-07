@@ -19,7 +19,7 @@ import (
 
 const (
 	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "kurtosistech/engine"
+	containerImage = "258623609258.dkr.ecr.us-east-2.amazonaws.com/kurtosistech/engine"
 )
 
 type EngineServerLauncher struct {
