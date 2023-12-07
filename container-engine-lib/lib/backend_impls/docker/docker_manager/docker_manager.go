@@ -11,11 +11,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/docker/client/buildkit"
 	"github.com/docker/go-units"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/utils"
-	"github.com/moby/buildkit/session"
+	bksession "github.com/moby/buildkit/session"
 	"io"
 	"math"
 	"net"
@@ -42,6 +43,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
+	bkclient "github.com/moby/buildkit/client"
 	"github.com/sirupsen/logrus"
 )
 
@@ -1295,28 +1297,30 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		return stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
 	}
 
-	// This whole sessions thing was blocking us from using Docker build, until we found this:
-	// https://github.com/hashicorp/waypoint/pull/1937
-	uuidStr, err := uuid_generator.GenerateUUIDString()
+	// Before instructing docker client to execute an image build, we need to create a connection to buildkit
+	// buildkit is the daemon process that executes build workloads: https://docs.docker.com/build/architecture/#buildkit
+
+	// First, create a client to the buildkit daemon
+	buildkitClientOpts := buildkit.ClientOpts(manager.dockerClientNoTimeout)
+	buildkitClient, err := bkclient.New(ctx, "", buildkitClientOpts...)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating a build kit client for building images in Docker.")
+	}
+
+	// Then, create a long-running session between client and buildkit daemon to enable image building
+	buildkitSessionUuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred generating a UUID to give the Docker Buildkit session")
 	}
-	sessionName := fmt.Sprintf("kurtosis-%s", uuidStr)
-
-	// We generate a new session every time because, per https://github.com/moby/buildkit/issues/1432 ,
+	buildkitSessionName := fmt.Sprintf("kurtosis-%s", buildkitSessionUuidStr)
+	// Generate a new session every time because, per https://github.com/moby/buildkit/issues/1432 ,
 	// sharing sessions is an optimization
-	// We don't bother reusing sessions so that we don't hit bugs
-	buildkitSession, err := session.NewSession(ctx, sessionName, buildkitSessionSharedKey)
+	// Don't reuse sessions to avoid hitting bugs
+	buildkitSession, err := bksession.NewSession(ctx, buildkitSessionName, buildkitSessionSharedKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error")
+		return stacktrace.Propagate(err, "An error occurred creating a new build kit session for building images in Docker.")
 	}
-
-	dialSessionFunc := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
-		return manager.dockerClientNoTimeout.DialHijack(ctx, "/session", proto, meta)
-	}
-
-	// Activate the session
-	go buildkitSession.Run(ctx, dialSessionFunc)
+	go buildkitSession.Run(ctx, buildkitClient.Dialer())
 	defer buildkitSession.Close()
 
 	imageBuildOpts := types.ImageBuildOptions{
@@ -1344,10 +1348,10 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		// we can tell the difference between "" (empty string) and no value
 		// at all (nil). See the parsing of buildArgs in
 		// api/server/router/build/build_routes.go for even more info.
-		BuildArgs:   map[string]*string{}, // what build args do we require?
+		BuildArgs:   map[string]*string{},
 		AuthConfigs: map[string]registry.AuthConfig{},
 		Context:     containerImageFileTarReader,
-		Labels:      map[string]string{}, // how do we want to label this image?
+		Labels:      map[string]string{},
 		// squash the resulting image's layers to the parent
 		// preserves the original image and creates a new one from the parent with all
 		// the changes applied to a single layer
@@ -1369,7 +1373,6 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		// Outputs defines configurations for exporting build results. Only supported in BuildKit mode.
 		Outputs: []types.ImageBuildOutput{},
 	}
-
 	imageBuildResponse, err := manager.dockerClientNoTimeout.ImageBuild(ctx, containerImageFileTarReader, imageBuildOpts)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", imageName)
