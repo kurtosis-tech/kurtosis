@@ -16,7 +16,6 @@
     "@types/react-dom": "^18.0.0",
     "craco": "^0.0.3",
     "dotenv-cli": "^6.0.0",
-    "eslint-plugin-prettier": "5.0.0",
     "lerna": "^5.6.2",
     "prettier": "3.0.3",
     "prettier-plugin-organize-imports": "^3.2.3",
@@ -36,13 +35,11 @@
     "start": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-development lerna run --stream --scope @kurtosis/emui-app start",
     "start:cloud": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-cloudDevelopment lerna run --stream --scope @kurtosis/emui-app start:cloud",
     "start:prod": "lerna run --stream --scope @kurtosis/emui-app start:prod",
-    "test": "lerna run test",
-    "version": "lerna version -y --no-ignore-changes "
+    "test": "lerna run test"
   },
   "workspaces": {
     "packages": [
       "packages/**"
     ]
-  },
-  "version": "0.0.2"
+  }
 }

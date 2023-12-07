@@ -9,7 +9,11 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-
+LERNA_JSON_FILEPATH="lerna.json"
+PACKAGE_JSON_FILEPATH="package.json"
+PACKAGES_PACKAGE_JSON_FILEPATH="packages/*/package.json"
+REPLACE_PATTERN="(\"version\": \")[0-9]+.[0-9]+.[0-9]+(\")"
+REPLACE_DEP_PATTERN="(\"@kurtosis\/.*?\": \")[0-9]+.[0-9]+.[0-9]+(\")"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -32,12 +36,25 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-pushd "${root_dirpath}"
-yarn install
-yarn version ${new_version}
-popd
 to_update_abs_filepath="${root_dirpath}/${PACKAGE_JSON_FILEPATH}"
 if ! sed -i -r "s/${REPLACE_PATTERN}/\1${new_version}\2/g" "${to_update_abs_filepath}"; then
-    echo "Error: An error occurred setting new version '${new_version}' in constants file '${to_update_abs_filepath}' using pattern '${REPLACE_PATTERN}'" >&2
+    echo "Error: An error occurred setting new version '${new_version}' in root package.json file '${to_update_abs_filepath}' using pattern '${REPLACE_PATTERN}'" >&2
     exit 1
 fi
+
+to_update_abs_filepath="${root_dirpath}/${LERNA_JSON_FILEPATH}"
+if ! sed -i -r "s/${REPLACE_PATTERN}/\1${new_version}\2/g" "${to_update_abs_filepath}"; then
+    echo "Error: An error occurred setting new version '${new_version}' in lerna file '${to_update_abs_filepath}' using pattern '${REPLACE_PATTERN}'" >&2
+    exit 1
+fi
+
+for to_update_rel_filepath in `ls ${root_dirpath}/${PACKAGES_PACKAGE_JSON_FILEPATH}`; do
+  if ! sed -i -r "s/${REPLACE_PATTERN}/\1${new_version}\2/g" "${to_update_rel_filepath}"; then
+      echo "Error: An error occurred setting new version '${new_version}' in package package.json file '${to_update_abs_filepath}' using pattern '${REPLACE_PATTERN}'" >&2
+      exit 1
+  fi
+  if ! sed -i -r "s/${REPLACE_DEP_PATTERN}/\1${new_version}\2/g" "${to_update_rel_filepath}"; then
+      echo "Error: An error occurred setting new version '${new_version}' in package package.json file '${to_update_abs_filepath}' using pattern '${REPLACE_PATTERN}'" >&2
+      exit 1
+  fi
+done
