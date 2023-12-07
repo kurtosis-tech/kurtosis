@@ -50,16 +50,6 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
                 <KurtosisMarkdown>{kurtosisPackage.description}</KurtosisMarkdown>
               </Box>
             </TitledCard>
-            <TitledCard title={"ENTRYPOINT DESCRIPTION"}>
-              <Box p={"0 15px 15px 15px"}>
-                <KurtosisMarkdown>{kurtosisPackage.entrypointDescription}</KurtosisMarkdown>
-              </Box>
-            </TitledCard>
-            <TitledCard title={"RETURNS DESCRIPTION"}>
-              <Box p={"0 15px 15px 15px"}>
-                <KurtosisMarkdown>{kurtosisPackage.returnsDescription}</KurtosisMarkdown>
-              </Box>
-            </TitledCard>
           </Flex>
           <Flex flexDirection={"column"} gap={"16px"} flex={"1"}>
             <RunKurtosisPackageButton kurtosisPackage={kurtosisPackage} size={"lg"} />
@@ -76,7 +66,6 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
             </InputGroup>
             <PackageSourceButton
               source={kurtosisPackage.name}
-              hideCopy
               variant={"outline"}
               color={"gray.100"}
               size={"lg"}

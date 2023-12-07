@@ -1,4 +1,4 @@
-import { Button, Checkbox } from "@chakra-ui/react";
+import { Button, Checkbox, Text } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { EnclaveContainersStatus } from "enclave-manager-sdk/build/engine_service_pb";
@@ -93,7 +93,9 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
         cell: (nameCell) => (
           <Link to={`/enclave/${nameCell.row.original.uuid}/overview`}>
             <Button size={"sm"} variant={"ghost"}>
-              {nameCell.row.original.name}
+              <Text as={"span"} maxW={"200px"} textOverflow={"ellipsis"} overflow={"hidden"}>
+                {nameCell.row.original.name}
+              </Text>
             </Button>
           </Link>
         ),
