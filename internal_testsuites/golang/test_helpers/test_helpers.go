@@ -2,17 +2,18 @@ package test_helpers
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"io"
-	"math/rand"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"

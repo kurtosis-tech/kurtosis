@@ -954,6 +954,9 @@ func convertServiceStatusToServiceInfoStatus(serviceStatus service.ServiceStatus
 		return kurtosis_core_rpc_api_bindings.ServiceStatus_RUNNING, nil
 	case service.ServiceStatus_Stopped:
 		return kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED, nil
+	case service.ServiceStatus_Registered:
+		// missing case flagged by the linter, returning default to keep the same behavior since there is match on gRPC api
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_UNKNOWN, stacktrace.NewError("Failed to convert service status %v", serviceStatus)
 	default:
 		return kurtosis_core_rpc_api_bindings.ServiceStatus_UNKNOWN, stacktrace.NewError("Failed to convert service status %v", serviceStatus)
 	}

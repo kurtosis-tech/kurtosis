@@ -16,7 +16,7 @@ param_cli_cluster_backend: &param_cli_cluster_backend
     type: enum
     enum: ["docker", "kubernetes"]
 
-# Install go version 1.19 to run our integration tests on the minimal version we support
+# Install go version to run our integration tests on the minimal version we support
 steps_install_go: &steps_install_go
   - run: |
       wget https://go.dev/dl/go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz
@@ -123,7 +123,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.4
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.6
   slack: circleci/slack@4.10.1
 
 executors:
@@ -136,7 +136,7 @@ executors:
 parameters:
   go-version:
     type: string
-    default: "1.19.10"
+    default: "1.20.11"
   container-engine-lib-build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache
@@ -146,7 +146,7 @@ parameters:
     default: 20.10.7
   api-go-version:
     type: string
-    default: "1.19.10"
+    default: "1.20.11"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
   rust-version:
@@ -1143,7 +1143,7 @@ workflows:
     jobs:
       # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
-          dir-to-exclude: '"./docs/*"'
+          dir-to-exclude: '^(./docs/*|./CHANGELOG.md)'
           should-check-changelog: false
           markdown-link-check-config-json: |
             {

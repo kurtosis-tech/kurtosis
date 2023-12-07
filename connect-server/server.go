@@ -3,17 +3,18 @@ package connect_server
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/rs/cors"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/rs/cors"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 const (
@@ -63,6 +64,7 @@ func (server *ConnectServer) RunServerUntilStopped(
 
 	mux.Handle(server.path, server.handler)
 
+	// nolint:exhaustruct
 	httpServer := http.Server{
 		Addr:     fmt.Sprintf(":%v", server.listenPort),
 		Handler:  cors.Handler(h2c.NewHandler(mux, &http2.Server{})),
@@ -78,7 +80,9 @@ func (server *ConnectServer) RunServerUntilStopped(
 	<-stopper
 	serverStoppedChan := make(chan interface{})
 	go func() {
-		httpServer.Shutdown(context.Background())
+		if err := httpServer.Shutdown(context.Background()); err != nil {
+			logrus.WithError(err).Error("Failed to shutdown the HTTP server")
+		}
 		serverStoppedChan <- nil
 	}()
 	select {

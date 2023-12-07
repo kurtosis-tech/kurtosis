@@ -25,7 +25,7 @@
                 import ./nix-pkgs/protoc-gen-ts.nix { inherit pkgs; };
             in [
               goreleaser
-              go_1_19
+              go_1_20
               gopls
               golangci-lint
               delve
@@ -38,6 +38,8 @@
               protoc-gen-connect-go
               protoc-gen-grpc-web
               grpc-tools
+              grpcui
+              oapi-codegen
               rustc
               cargo
               rustfmt
