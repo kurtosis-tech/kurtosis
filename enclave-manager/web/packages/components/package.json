@@ -1,6 +1,6 @@
 {
   "name": "@kurtosis/components",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": false,
   "main": "build/index",
   "description": "This repo contains components used by Kurtosis UI applications.",
@@ -19,8 +19,6 @@
     "url": "https://github.com/kurtosis-tech/kurtosis/issues"
   },
   "homepage": "https://github.com/kurtosis-tech/kurtosis",
-  "dependencies": {
-  },
   "scripts": {
     "build": "tsc "
   },
