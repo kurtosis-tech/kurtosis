@@ -19,7 +19,7 @@ import {
   Text,
   Tooltip,
 } from "@chakra-ui/react";
-import { debounce, throttle } from "lodash";
+import { throttle } from "lodash";
 import { ChangeEvent, MutableRefObject, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { MdArrowBackIosNew, MdArrowForwardIos } from "react-icons/md";
@@ -255,11 +255,11 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
     [logLines, onChangeSearchState],
   );
 
-  const debouncedUpdateMatches = useMemo(() => debounce(updateMatches, 300), [updateMatches]);
+  const throttledUpdateMatches = useMemo(() => throttle(updateMatches, 300), [updateMatches]);
 
   const handleOnChange = (e: ChangeEvent<HTMLInputElement>) => {
     onChangeSearchState((state) => ({ ...state, rawSearchTerm: e.target.value }));
-    debouncedUpdateMatches(e.target.value);
+    throttledUpdateMatches(e.target.value);
   };
 
   const updateSearchIndexBounded = useCallback(
