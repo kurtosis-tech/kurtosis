@@ -5,6 +5,7 @@ go 1.19
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
+	github.com/kurtosis-tech/kurtosis/utils => ../../utils
 )
 
 require (
@@ -20,6 +21,7 @@ require (
 )
 
 require (
+	github.com/kurtosis-tech/kurtosis/utils v0.0.0-00010101000000-000000000000
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	k8s.io/utils v0.0.0-20230711102312-30195339c3c7
 )
@@ -28,14 +30,21 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
+	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2 // indirect
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230818184218-f4e3e773463b // indirect
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
+	github.com/mholt/archiver v3.1.1+incompatible // indirect
+	github.com/nwaples/rardecode v1.1.3 // indirect
+	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/ulikunitz/xz v0.5.11 // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
