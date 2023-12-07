@@ -1291,8 +1291,8 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, down
 }
 
 func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
-	contextDirPath := imageBuildSpec.GetContextDir()
-	containerImageFileTarReader, err := getBuildContext(contextDirPath)
+	contextDirPath := imageBuildSpec.GetContextDirPath()
+	containerImageFileTarReader, err := getBuildContextReader(contextDirPath)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
 	}
@@ -1304,13 +1304,13 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	buildkitClientOpts := buildkit.ClientOpts(manager.dockerClientNoTimeout)
 	buildkitClient, err := bkclient.New(ctx, "", buildkitClientOpts...)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a build kit client for building images in Docker.")
+		return stacktrace.Propagate(err, "An error occurred creating a buildkit client for building images in Docker.")
 	}
 
 	// Then, create a long-running session between client and buildkit daemon to enable image building
 	buildkitSessionUuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred generating a UUID to give the Docker Buildkit session")
+		return stacktrace.Propagate(err, "An error occurred generating a UUID for the Docker buildkit session")
 	}
 	buildkitSessionName := fmt.Sprintf("kurtosis-%s", buildkitSessionUuidStr)
 	// Generate a new session every time because, per https://github.com/moby/buildkit/issues/1432 ,
@@ -1318,7 +1318,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	// Don't reuse sessions to avoid hitting bugs
 	buildkitSession, err := bksession.NewSession(ctx, buildkitSessionName, buildkitSessionSharedKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new build kit session for building images in Docker.")
+		return stacktrace.Propagate(err, "An error occurred creating a new buildkit session for building images in Docker.")
 	}
 	go buildkitSession.Run(ctx, buildkitClient.Dialer())
 	defer buildkitSession.Close()
@@ -1388,7 +1388,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 }
 
 // returns a reader to a tarball of [contextDirPath]
-func getBuildContext(contextDirPath string) (io.Reader, error) {
+func getBuildContextReader(contextDirPath string) (io.Reader, error) {
 	buildContext, _, _, err := utils.CompressPath(contextDirPath, false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred compressing the path to context directory path '%v'", contextDirPath)
