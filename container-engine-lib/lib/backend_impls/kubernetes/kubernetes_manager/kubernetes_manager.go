@@ -73,7 +73,7 @@ const (
 	// TODO: Maybe pipe this to Starlark to let users choose the size of their persistent directories
 	//  The difficulty is that Docker doesn't have such a feature, so we would need somehow to hack it
 	persistentVolumeDefaultSize                          int64 = 500 * 1024 * 1024 // 500Mb
-	waitForPersistentVolumeBoundTimeout                        = 30 * time.Second
+	waitForPersistentVolumeBoundTimeout                        = 3 * time.Minute
 	waitForPersistentVolumeBoundInitialDelayMilliSeconds       = 100
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds       = 500
 )
@@ -1835,12 +1835,30 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
 ) (*apiv1.PersistentVolumeClaim, error) {
 	deadline := time.Now().Add(waitForPersistentVolumeBoundTimeout)
 	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
+	var result *apiv1.PersistentVolumeClaim
 	for time.Now().Before(deadline) {
 		claim, err := manager.GetPersistentVolumeClaim(ctx, namespaceName, persistentVolumeClaimName)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaimName, namespaceName)
 		}
-		return claim, nil
+		result = claim
+		claimStatus := claim.Status
+		claimPhase := claimStatus.Phase
+
+		switch claimPhase {
+		//Success phase, the Persistent Volume got bound
+		case apiv1.ClaimBound:
+			return result, nil
+		//Lost the Persistent Volume phase, unrecoverable state
+		case apiv1.ClaimLost:
+			return nil, stacktrace.NewError(
+				"The persistent volume claim '%v' ended up in unrecoverable state '%v'",
+				claim.GetName(),
+				claimPhase,
+			)
+		}
+
+		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
 	}
 
 	return nil, stacktrace.NewError(
