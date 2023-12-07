@@ -9,8 +9,7 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-PACKAGE_JSON_FILEPATH="lerna.json"
-REPLACE_PATTERN="(\"version\": \")[0-9]+.[0-9]+.[0-9]+(\")"
+
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -33,6 +32,10 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
+pushd "${root_dirpath}"
+yarn install
+yarn version ${new_version}
+popd
 to_update_abs_filepath="${root_dirpath}/${PACKAGE_JSON_FILEPATH}"
 if ! sed -i -r "s/${REPLACE_PATTERN}/\1${new_version}\2/g" "${to_update_abs_filepath}"; then
     echo "Error: An error occurred setting new version '${new_version}' in constants file '${to_update_abs_filepath}' using pattern '${REPLACE_PATTERN}'" >&2
