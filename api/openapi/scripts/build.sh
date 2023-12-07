@@ -14,5 +14,8 @@ oapi-codegen --config="$openapi_root_dirpath/generators/engine_server.cfg.yaml" 
 oapi-codegen --config="$openapi_root_dirpath/generators/core_server.cfg.yaml" "$openapi_root_dirpath/specs/kurtosis_api.yaml"
 oapi-codegen --config="$openapi_root_dirpath/generators/websocket_server.cfg.yaml" "$openapi_root_dirpath/specs/kurtosis_api.yaml"
 
+echo "Generating Go client code for REST API "
+oapi-codegen --config="$openapi_root_dirpath/generators/go_client.cfg.yaml" "$openapi_root_dirpath/specs/kurtosis_api.yaml"
+
 echo "Generating Typescript client code for REST API "
 openapi-typescript "$openapi_root_dirpath/specs/kurtosis_api.yaml" -o "$api_root_dirpath/typescript/src/engine/rest_api_bindings/types.d.ts"
