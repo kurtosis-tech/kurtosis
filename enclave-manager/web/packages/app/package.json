@@ -34,11 +34,10 @@
   "scripts": {
     "analyze": "source-map-explorer 'build/static/js/*.js'",
     "clean": "rm -rf build",
-    "start": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-development PORT=4000 craco start",
-    "start:cloud": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-cloudDevelopment BROWSER=none PUBLIC_URL=http://localhost:3000/emui-dev PORT=4000 dotenv -e ./.env.cloudDevelopment -- craco start",
+    "start": "PORT=4000 craco start",
+    "start:cloud": "BROWSER=none PUBLIC_URL=http://localhost:3000/emui-dev PORT=4000 dotenv -e ./.env.cloudDevelopment -- craco start",
     "start:prod": "serve -p 4000 -s build",
-    "build": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags) craco build",
-    "build:cloudDev": "dotenv -e ./.env.cloudDevelopment -- craco build",
+    "build": "craco build",
     "test": "craco test",
     "eject": "craco eject"
   },

@@ -23,15 +23,17 @@
     "typescript": "^4.4.2"
   },
   "scripts": {
+    "analyze": "lerna run analyze",
     "cleanInstall": "rm -rf node_modules; rm -rf packages/*/node_modules; yarn install; lerna init",
     "clean": "lerna run clean",
     "prebuild": "rm -rf ../../engine/server/webapp",
     "postbuild": "cp -r packages/app/build/ ../../engine/server/webapp",
-    "build": "lerna run --stream build",
+    "build": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags) lerna run --stream build",
+    "build:cloudDev": "dotenv -e ./.env.cloudDevelopment -- lerna run --stream build",
     "prettier": "prettier . --check",
     "prettier:fix": "prettier . --write",
-    "start": "lerna run --stream --scope @kurtosis/emui-app start",
-    "start:cloud": "lerna run --stream --scope @kurtosis/emui-app start:cloud",
+    "start": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-development lerna run --stream --scope @kurtosis/emui-app start",
+    "start:cloud": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-cloudDevelopment lerna run --stream --scope @kurtosis/emui-app start:cloud",
     "start:prod": "lerna run --stream --scope @kurtosis/emui-app start:prod",
     "test": "lerna run test"
   },

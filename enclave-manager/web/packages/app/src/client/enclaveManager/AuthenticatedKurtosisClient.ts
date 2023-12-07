@@ -22,10 +22,7 @@ export class AuthenticatedKurtosisClient extends KurtosisClient {
       parentUrl,
       childUrl,
     );
-    const client = createPromiseClient(
-      KurtosisEnclaveManagerServer,
-      createConnectTransport({ baseUrl: constructGatewayURL(gatewayHost) }),
-    );
+
     this.token = token;
     const parsedToken = JSON.parse(atob(this.token.split(".")[1]));
     this.tokenExpiry = DateTime.fromSeconds(parsedToken["exp"]);
