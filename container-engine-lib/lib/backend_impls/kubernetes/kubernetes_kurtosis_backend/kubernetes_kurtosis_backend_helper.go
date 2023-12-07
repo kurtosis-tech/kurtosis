@@ -108,10 +108,11 @@ func GetApiContainerBackend(
 		), nil
 	}
 
-	wrappedBackend, err := getWrappedKubernetesKurtosisBackend(
+	wrappedBackend, err := getWrappedKubernetesKurtosisBackendWithStorageClass(
 		ctx,
 		kubernetesConfig,
 		backendSupplier,
+		storageClass,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred wrapping the APIC Kubernetes backend")
