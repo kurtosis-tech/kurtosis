@@ -1846,6 +1846,9 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
 		claimPhase := claimStatus.Phase
 
 		switch claimPhase {
+		// this is essentially a no-op now
+		case apiv1.ClaimPending:
+			return result, nil
 		//Success phase, the Persistent Volume got bound
 		case apiv1.ClaimBound:
 			return result, nil
