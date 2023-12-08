@@ -34,8 +34,8 @@ const (
 	// The collector is per enclave so this is a suffix
 	logsCollectorVolumeFragment = logsCollectorFragment + "-vol"
 
-	reverseProxyEnclaveUuidHeader       = "X-Kurtosis-Enclave-UUID"
-	reverseProxyServiceUuidHeader       = "X-Kurtosis-Service-UUID"
+	reverseProxyEnclaveUuidHeader       = "X-Kurtosis-Enclave-Short-UUID"
+	reverseProxyServiceUuidHeader       = "X-Kurtosis-Service-Short-UUID"
 	reverseProxyServicePortNumberHeader = "X-Kurtosis-Service-Port-Number"
 )
 
@@ -546,10 +546,10 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 // the following labels are returned:
 //
 //	"traefik.enable": "true",
-//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-80.rule": "Headers(`X-Kurtosis-Enclave-UUID`, `65d2fb6d6732`) && Headers(`X-Kurtosis-Service-UUID`, `3771c85af16a`) && Headers(`X-Kurtosis-Port-Number`, `80`)",
+//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-80.rule": "Headers(`X-Kurtosis-Enclave-Short-UUID`, `65d2fb6d6732`) && Headers(`X-Kurtosis-Service-Short-UUID`, `3771c85af16a`) && Headers(`X-Kurtosis-Port-Number`, `80`)",
 //	"traefik.http.routers.65d2fb6d6732-3771c85af16a-80.service": "65d2fb6d6732-3771c85af16a-80",
 //	"traefik.http.services.65d2fb6d6732-3771c85af16a-80.loadbalancer.server.port": "80"
-//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-81.rule": "Headers(`X-Kurtosis-Enclave-UUID`, `65d2fb6d6732`) && Headers(`X-Kurtosis-Service-UUID`, `3771c85af16a`) && Headers(`X-Kurtosis-Port-Number`, `81`)",
+//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-81.rule": "Headers(`X-Kurtosis-Enclave-Short-UUID`, `65d2fb6d6732`) && Headers(`X-Kurtosis-Service-Short-UUID`, `3771c85af16a`) && Headers(`X-Kurtosis-Port-Number`, `81`)",
 //	"traefik.http.routers.65d2fb6d6732-3771c85af16a-81.service": "65d2fb6d6732-3771c85af16a-81",
 //	"traefik.http.services.65d2fb6d6732-3771c85af16a-81.loadbalancer.server.port": "81"
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEnclaveObject(serviceUuid string, ports map[string]*port_spec.PortSpec) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error) {
