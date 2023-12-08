@@ -34,8 +34,8 @@ const (
 	// The collector is per enclave so this is a suffix
 	logsCollectorVolumeFragment = logsCollectorFragment + "-vol"
 
-	reverseProxyEnclaveUuidHeader       = "X-Kurtosis-Enclave-Short-UUID"
-	reverseProxyServiceUuidHeader       = "X-Kurtosis-Service-Short-UUID"
+	reverseProxyEnclaveShortUuidHeader  = "X-Kurtosis-Enclave-Short-UUID"
+	reverseProxyServiceShortUuidHeader  = "X-Kurtosis-Service-Short-UUID"
 	reverseProxyServicePortNumberHeader = "X-Kurtosis-Service-Port-Number"
 )
 
@@ -571,7 +571,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEn
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred getting the traefik rule label key with suffix '%v'", ruleKeySuffix)
 			}
-			ruleValue := fmt.Sprintf("Headers(`%s`, `%s`) && Headers(`%s`, `%s`) && Headers(`%s`, `%d`)", reverseProxyEnclaveUuidHeader, shortEnclaveUuid, reverseProxyServiceUuidHeader, shortServiceUuid, reverseProxyServicePortNumberHeader, portSpec.GetNumber())
+			ruleValue := fmt.Sprintf("Headers(`%s`, `%s`) && Headers(`%s`, `%s`) && Headers(`%s`, `%d`)", reverseProxyEnclaveShortUuidHeader, shortEnclaveUuid, reverseProxyServiceShortUuidHeader, shortServiceUuid, reverseProxyServicePortNumberHeader, portSpec.GetNumber())
 			ruleLabelValue, err := docker_label_value.CreateNewDockerLabelValue(ruleValue)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the traefik rule label value with value '%v'", ruleValue)
