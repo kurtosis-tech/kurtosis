@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -458,6 +459,23 @@ func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context
 func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
 	// TODO IMPLEMENT
 	return stacktrace.NewError("Destroy the logs collector for enclave isn't yet implemented on Kubernetes")
+}
+
+func (backend *KubernetesKurtosisBackend) GetReverseProxy(
+	ctx context.Context,
+) (*reverse_proxy.ReverseProxy, error) {
+	// TODO IMPLEMENT
+	return nil, stacktrace.NewError("Getting the reverse proxy isn't yet implemented on Kubernetes")
+}
+
+func (backend *KubernetesKurtosisBackend) CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
+	// TODO IMPLEMENT
+	return nil, stacktrace.NewError("Creating the reverse proxy isn't yet implemented on Kubernetes")
+}
+
+func (backend *KubernetesKurtosisBackend) DestroyReverseProxy(ctx context.Context) error {
+	// TODO IMPLEMENT
+	return stacktrace.NewError("Destroying the reverse proxy isn't yet implemented on Kubernetes")
 }
 
 func (backend *KubernetesKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {

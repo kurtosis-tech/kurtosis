@@ -3,6 +3,9 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"encoding/json"
+	"strings"
+	"time"
+
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
@@ -14,14 +17,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strings"
-	"time"
 )
 
 const (
-	shouldFetchStoppedContainersWhenGettingEnclaveStatus = true
-
-	shouldFetchStoppedContainersWhenDumpingEnclave = true
+	shouldFetchStoppedContainersWhenGettingEnclaveStatus             = true
+	shouldFetchStoppedContainersWhenDumpingEnclave                   = true
+	shouldFetchStoppedContainersWhenDisconnectingFromEnclaveNetworks = false
 
 	serializedArgs = "SERIALIZED_ARGS"
 )
@@ -113,7 +114,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 			}
 		}
 	}()
-	logrus.Debugf("Docker network '%v' created successfully with ID '%v'", enclaveUuid, networkId)
+	logrus.Debugf("Docker network for enclave '%v' created successfully with ID '%v'", enclaveUuid, networkId)
 
 	enclaveDataVolumeNameStr := enclaveDataVolumeAttrs.GetName().GetString()
 	enclaveDataVolumeLabelStrs := map[string]string{}
@@ -146,8 +147,22 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 	// TODO: return production mode for create enclave request as well
 	newEnclave := enclave.NewEnclave(enclaveUuid, enclaveName, enclave.EnclaveStatus_Empty, &creationTime, false)
 
+	if err := backend.ConnectReverseProxyToNetwork(ctx, networkId); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred connecting the reverse proxy to the enclave network with ID '%v'", networkId)
+	}
+	shouldDisconnectReverseProxyFromNetwork := true
+	defer func() {
+		if shouldDisconnectReverseProxyFromNetwork {
+			err = backend.DisconnectReverseProxyFromNetwork(ctx, networkId)
+			if err != nil {
+				logrus.Errorf("Couldn't disconnect the reverse proxy from the enclave network with ID '%v'", networkId)
+			}
+		}
+	}()
+
 	shouldDeleteNetwork = false
 	shouldDeleteVolume = false
+	shouldDisconnectReverseProxyFromNetwork = false
 	return newEnclave, nil
 }
 
@@ -357,15 +372,33 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 		erroredEnclaveUuids[enclaveUuid] = volumeRemovalErr
 	}
 
+	// Disconnect the external containers from the enclave networks being removed
+	networksToDisconnect := map[enclave.EnclaveUUID]string{}
+	for enclaveUuid := range successfulVolumeRemovalEnclaveUuids {
+		networkInfo, found := matchingNetworkInfo[enclaveUuid]
+		if !found {
+			return nil, nil, stacktrace.NewError("Attempt was made to disconnect enclave '%v' that did not match filters. This is likely a bug in Kurtosis.", enclaveUuid)
+		}
+		networksToDisconnect[enclaveUuid] = networkInfo.dockerNetwork.GetId()
+	}
+	successfulDisconnectExternalContainersFromNetworkEnclaveUuids, erroredDisconnectExternalContainersFromNetworkEnclaveUuids, err := backend.disconnectExternalContainersFromEnclaveNetworks(ctx, backend.dockerManager, networksToDisconnect)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred disconnecting the external containers from the networks for enclaves whose volumes were successfully destroyed: %+v", successfulVolumeRemovalEnclaveUuids)
+	}
+	for enclaveUuid, networkDisconnectErr := range erroredDisconnectExternalContainersFromNetworkEnclaveUuids {
+		erroredEnclaveUuids[enclaveUuid] = networkDisconnectErr
+	}
+
 	// Remove the networks
 	networksToDestroy := map[enclave.EnclaveUUID]string{}
-	for enclaveUuid := range successfulVolumeRemovalEnclaveUuids {
+	for enclaveUuid := range successfulDisconnectExternalContainersFromNetworkEnclaveUuids {
 		networkInfo, found := matchingNetworkInfo[enclaveUuid]
 		if !found {
 			return nil, nil, stacktrace.NewError("Would have attempted to destroy enclave '%v' that didn't match the filters", enclaveUuid)
 		}
 		networksToDestroy[enclaveUuid] = networkInfo.dockerNetwork.GetId()
 	}
+
 	successfulNetworkRemovalEnclaveUuids, erroredNetworkRemovalEnclaveUuids, err := destroyEnclaveNetworks(ctx, backend.dockerManager, networksToDestroy)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying the networks for enclaves whose volumes were successfully destroyed: %+v", successfulVolumeRemovalEnclaveUuids)
@@ -502,6 +535,68 @@ func (backend *DockerKurtosisBackend) getAllEnclaveContainers(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v' by labels '%+v'", enclaveUuid, searchLabels)
 	}
 	return containers, nil
+}
+
+// Disconnect containers not in the enclave from the enclave networks
+func (backend *DockerKurtosisBackend) disconnectExternalContainersFromEnclaveNetworks(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	enclaveNetworkIds map[enclave.EnclaveUUID]string,
+) (
+	map[enclave.EnclaveUUID]bool,
+	map[enclave.EnclaveUUID]error,
+	error,
+) {
+	networkIdsToRemove := map[string]bool{}
+	enclaveUuidsForNetworkIds := map[string]enclave.EnclaveUUID{}
+	for enclaveUuid, networkId := range enclaveNetworkIds {
+		networkIdsToRemove[networkId] = true
+		enclaveUuidsForNetworkIds[networkId] = enclaveUuid
+	}
+
+	var disconnectNetworkOperation docker_operation_parallelizer.DockerOperation = func(ctx context.Context, dockerManager *docker_manager.DockerManager, dockerObjectId string) error {
+		// Get containers connected to this network id (dockerObjectId here)
+		containers, err := backend.dockerManager.GetContainersByNetworkId(ctx, dockerObjectId, shouldFetchStoppedContainersWhenDisconnectingFromEnclaveNetworks)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred getting the containers with enclave network '%v'",
+				dockerObjectId,
+			)
+		}
+		for _, container := range containers {
+			if err = dockerManager.DisconnectContainerFromNetwork(ctx, container.GetId(), dockerObjectId); err != nil {
+				return stacktrace.Propagate(err, "An error occurred while disconnecting container '%v' from the enclave network '%v'", container.GetId(), dockerObjectId)
+			}
+		}
+		return nil
+	}
+
+	successfulNetworkIds, erroredNetworkIds := docker_operation_parallelizer.RunDockerOperationInParallel(
+		ctx,
+		networkIdsToRemove,
+		dockerManager,
+		disconnectNetworkOperation,
+	)
+
+	successfulEnclaveUuids := map[enclave.EnclaveUUID]bool{}
+	for networkId := range successfulNetworkIds {
+		enclaveUuid, found := enclaveUuidsForNetworkIds[networkId]
+		if !found {
+			return nil, nil, stacktrace.NewError("The containers were successfully disconnected from the enclave network '%v', but wasn't requested to be disconnected", networkId)
+		}
+		successfulEnclaveUuids[enclaveUuid] = true
+	}
+
+	erroredEnclaveUuids := map[enclave.EnclaveUUID]error{}
+	for networkId, networkRemovalErr := range erroredNetworkIds {
+		enclaveUuid, found := enclaveUuidsForNetworkIds[networkId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Docker network '%v' had the following error during disconnect, but wasn't requested to be disconnected:\n%v", networkId, networkRemovalErr)
+		}
+		erroredEnclaveUuids[enclaveUuid] = networkRemovalErr
+	}
+	return successfulEnclaveUuids, erroredEnclaveUuids, nil
 }
 
 func getAllEnclaveVolumes(
