@@ -277,13 +277,13 @@ yarn global add grpc-tools
 
 On MacOS:
 ```bash
-go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.4
+go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.16.2
 yarn global add openapi-typescript@7.0.0-next.5
 ```
 
 On Ubuntu:
 ```bash
-go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.4
+go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.16.2
 yarn global add openapi-typescript@7.0.0-next.5
 ```
 
