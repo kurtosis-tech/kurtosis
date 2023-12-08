@@ -1,10 +1,11 @@
 import { Button, ButtonProps, IconButton, IconButtonProps } from "@chakra-ui/react";
 import { FiDownload } from "react-icons/fi";
-import { isDefined } from "../utils";
+import streamsaver from "streamsaver";
+import { isAsyncIterable, isDefined, stripAnsi } from "../utils";
 import { saveTextAsFile } from "../utils/download";
 
 type DownloadButtonProps<IsIconButton extends boolean> = (IsIconButton extends true ? IconButtonProps : ButtonProps) & {
-  valueToDownload?: (() => string) | string | null;
+  valueToDownload?: (() => string) | (() => AsyncIterable<string>) | string | null;
   fileName: string;
   text?: IsIconButton extends true ? string : never;
   isIconButton?: IsIconButton;
@@ -17,9 +18,20 @@ export const DownloadButton = <IsIconButton extends boolean>({
   isIconButton,
   ...buttonProps
 }: DownloadButtonProps<IsIconButton>) => {
-  const handleDownloadClick = () => {
+  const handleDownloadClick = async () => {
     if (isDefined(valueToDownload)) {
       const v = typeof valueToDownload === "string" ? valueToDownload : valueToDownload();
+
+      if (isAsyncIterable(v)) {
+        const writableStream = streamsaver.createWriteStream(fileName);
+        const writer = writableStream.getWriter();
+
+        for await (const part of v) {
+          await writer.write(new TextEncoder().encode(`${stripAnsi(part)}\n`));
+        }
+        await writer.close();
+        return;
+      }
       saveTextAsFile(v, fileName);
     }
   };

@@ -10,12 +10,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/channel_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	terminal "golang.org/x/term"
-	"io"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -26,14 +35,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
-	"net/http"
-	"net/url"
-	"os"
-	"path"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -1911,6 +1912,8 @@ func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
 				claim.GetName(),
 				claimPhase,
 			)
+		case apiv1.ClaimPending:
+			// not impl - skipping
 		}
 
 		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
@@ -1939,6 +1942,8 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 
 		latestPodStatus = &pod.Status
 		switch latestPodStatus.Phase {
+		case apiv1.PodUnknown:
+			// not impl - skipping
 		case apiv1.PodRunning:
 			return nil
 		case apiv1.PodPending:
@@ -2034,6 +2039,9 @@ func (manager *KubernetesManager) waitForPodTermination(ctx context.Context, nam
 
 		latestPodStatus = &pod.Status
 		switch latestPodStatus.Phase {
+		case apiv1.PodPending:
+		case apiv1.PodRunning:
+		case apiv1.PodUnknown:
 		case apiv1.PodSucceeded:
 		case apiv1.PodFailed:
 			return nil
