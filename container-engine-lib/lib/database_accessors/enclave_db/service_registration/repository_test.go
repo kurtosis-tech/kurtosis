@@ -304,6 +304,7 @@ func getServiceRegistrationWithDataForTest(
 func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceConfig {
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
+		nil,
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},

@@ -32,6 +32,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 		mock.MatchedBy(func(serviceConfig *service.ServiceConfig) bool {
 			expectedServiceConfig, err := service.CreateServiceConfig(
 				testContainerImageName,
+				nil,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
 				nil,

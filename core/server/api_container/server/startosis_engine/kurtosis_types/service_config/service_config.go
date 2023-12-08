@@ -2,6 +2,7 @@ package service_config
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -58,8 +59,9 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				{
 					Name:              ImageAttr,
 					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						// TODO: add validation for image build spec
 						return builtin_argument.NonEmptyString(value, ImageAttr)
 					},
 				},
@@ -268,15 +270,33 @@ func convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap map[strin
 
 func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.ServiceNetwork) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
 	var ok bool
-	image, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, ImageAttr)
+
+	// image attribute is either a container image string or an ImageBuildSpec
+	// parse the attribute and populate each accordingly, leaving the other empty
+	var imageName string
+	var imageBuildSpec *image_build_spec.ImageBuildSpec
+	rawImageAttrValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](config.KurtosisValueTypeDefault, ImageAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if !found {
-		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			ImageAttr, ServiceConfigTypeName)
+		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'", ImageAttr, ServiceConfigTypeName)
 	}
-	imageName := image.GoString()
+	imageNameStr, interpretationErr := kurtosis_types.SafeCastToString(rawImageAttrValue, ImageAttr)
+	if interpretationErr == nil {
+		imageName = imageNameStr
+	} else {
+		imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := rawImageAttrValue.(*ImageBuildSpec)
+		if !isImageBuildSpecStarlarkType {
+			return nil, startosis_errors.NewInterpretationError("Failed to cast '%v' to a valid image build spec object.", rawImageAttrValue)
+		}
+		contextDirPath, err := imageBuildSpecStarlarkType.GetContextDirPath()
+		// TODO: convert relative context directory path to absolute context directory path
+		imageBuildSpec, err = imageBuildSpecStarlarkType.ToKurtosisType(contextDirPath)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred attempting to create an image build spec from '%v'", imageBuildSpecStarlarkType)
+		}
+	}
 
 	privatePorts := map[string]*port_spec.PortSpec{}
 	privatePortsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, PortsAttr)
@@ -465,6 +485,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
+		imageBuildSpec,
 		privatePorts,
 		publicPorts,
 		entryPointArgs,

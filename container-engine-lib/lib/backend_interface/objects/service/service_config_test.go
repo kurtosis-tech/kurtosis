@@ -57,6 +57,7 @@ func TestServiceConfigMarshallers(t *testing.T) {
 func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 	serviceConfig, err := CreateServiceConfig(
 		imageName,
+		nil, // no image build spec
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},

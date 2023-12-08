@@ -30,6 +30,7 @@ func NewImageBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor 
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					// TODO: add a validator
+					// is it possible to validate the context directory???
 					Validator: nil,
 				},
 				{
