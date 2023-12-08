@@ -70,8 +70,9 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	}
 
 	getConfigArgs := &api.GetCloudInstanceConfigArgs{
-		ApiKey:     *apiKey,
-		InstanceId: instanceID,
+		ApiKey:          apiKey,
+		InstanceId:      &instanceID,
+		InstanceShortId: nil,
 	}
 	result, err := client.GetCloudInstanceConfig(ctx, getConfigArgs)
 	if err != nil {

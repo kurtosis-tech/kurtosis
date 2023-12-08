@@ -273,6 +273,18 @@ yarn global add ts-protoc-gen
 yarn global add grpc-tools
 ```
 
+#### OpenAPI generators for Go
+
+On MacOS:
+```bash
+go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.4
+```
+
+On Ubuntu:
+```bash
+go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.12.4
+```
+
 Build Instructions
 ------------------
 
