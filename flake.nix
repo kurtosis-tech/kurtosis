@@ -19,6 +19,8 @@
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs;
             let
+              openapi-codegen-go =
+                import ./nix-pkgs/openapi-codegen.nix { inherit pkgs; };
               grpc-tools-node =
                 import ./nix-pkgs/grpc-tools-node.nix { inherit pkgs; };
               protoc-gen-ts =
@@ -39,7 +41,7 @@
               protoc-gen-grpc-web
               grpc-tools
               grpcui
-              oapi-codegen
+              openapi-codegen-go
               rustc
               cargo
               rustfmt
