@@ -1320,8 +1320,8 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new buildkit session for building images in Docker.")
 	}
-	go buildkitSession.Run(ctx, buildkitClient.Dialer())
-	defer buildkitSession.Close()
+	go buildkitSession.Run(ctx, buildkitClient.Dialer()) // nolint
+	defer buildkitSession.Close()                        // nolint
 
 	imageBuildOpts := types.ImageBuildOptions{
 		Tags:           []string{imageName},
