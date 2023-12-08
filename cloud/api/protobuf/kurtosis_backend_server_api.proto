@@ -7,9 +7,13 @@ option go_package = "github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis
 import "google/protobuf/empty.proto";
 
 service KurtosisCloudBackendServer {
-  rpc IsAvailable (google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc IsAvailable (google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  };
   rpc CreateCloudInstance(CreateCloudInstanceConfigArgs) returns (CreateCloudInstanceConfigResponse) {};
-  rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {};
+  rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  };
   rpc GetOrCreateApiKey(GetOrCreateApiKeyRequest) returns (GetOrCreateApiKeyResponse) {};
   rpc GetOrCreateInstance(GetOrCreateInstanceRequest) returns (GetOrCreateInstanceResponse) {};
   rpc GetOrCreatePaymentConfig(GetOrCreatePaymentConfigArgs) returns (GetOrCreatePaymentConfigResponse) {};
@@ -43,8 +47,9 @@ message CreateCloudInstanceConfigResponse {
 }
 
 message GetCloudInstanceConfigArgs {
-  string api_key = 1;
-  string instance_id = 2;
+  optional string api_key = 1;
+  optional string instance_id = 2;
+  optional string instance_short_id = 3;
 }
 
 message LaunchResult {

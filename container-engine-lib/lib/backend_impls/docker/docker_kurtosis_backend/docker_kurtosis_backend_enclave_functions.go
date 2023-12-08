@@ -372,26 +372,26 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 		erroredEnclaveUuids[enclaveUuid] = volumeRemovalErr
 	}
 
-	// Disconnect the containers from the enclave networks being removed
+	// Disconnect the external containers from the enclave networks being removed
 	networksToDisconnect := map[enclave.EnclaveUUID]string{}
 	for enclaveUuid := range successfulVolumeRemovalEnclaveUuids {
 		networkInfo, found := matchingNetworkInfo[enclaveUuid]
 		if !found {
-			return nil, nil, stacktrace.NewError("Would have attempted to disconnect enclave network '%v' that didn't match the filters", enclaveUuid)
+			return nil, nil, stacktrace.NewError("Attempt was made to disconnect enclave '%v' that did not match filters. This is likely a bug in Kurtosis.", enclaveUuid)
 		}
 		networksToDisconnect[enclaveUuid] = networkInfo.dockerNetwork.GetId()
 	}
-	successfulDisconnectContainersFromNetworkEnclaveUuids, erroredDisconnectContainersFromNetworkEnclaveUuids, err := backend.disconnectContainersFromEnclaveNetworks(ctx, backend.dockerManager, networksToDisconnect)
+	successfulDisconnectExternalContainersFromNetworkEnclaveUuids, erroredDisconnectExternalContainersFromNetworkEnclaveUuids, err := backend.disconnectExternalContainersFromEnclaveNetworks(ctx, backend.dockerManager, networksToDisconnect)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred disconnecting the containers from the networks for enclaves whose volumes were successfully destroyed: %+v", successfulVolumeRemovalEnclaveUuids)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred disconnecting the external containers from the networks for enclaves whose volumes were successfully destroyed: %+v", successfulVolumeRemovalEnclaveUuids)
 	}
-	for enclaveUuid, networkDisconnectErr := range erroredDisconnectContainersFromNetworkEnclaveUuids {
+	for enclaveUuid, networkDisconnectErr := range erroredDisconnectExternalContainersFromNetworkEnclaveUuids {
 		erroredEnclaveUuids[enclaveUuid] = networkDisconnectErr
 	}
 
 	// Remove the networks
 	networksToDestroy := map[enclave.EnclaveUUID]string{}
-	for enclaveUuid := range successfulDisconnectContainersFromNetworkEnclaveUuids {
+	for enclaveUuid := range successfulDisconnectExternalContainersFromNetworkEnclaveUuids {
 		networkInfo, found := matchingNetworkInfo[enclaveUuid]
 		if !found {
 			return nil, nil, stacktrace.NewError("Would have attempted to destroy enclave '%v' that didn't match the filters", enclaveUuid)
@@ -537,7 +537,8 @@ func (backend *DockerKurtosisBackend) getAllEnclaveContainers(
 	return containers, nil
 }
 
-func (backend *DockerKurtosisBackend) disconnectContainersFromEnclaveNetworks(
+// Disconnect containers not in the enclave from the enclave networks
+func (backend *DockerKurtosisBackend) disconnectExternalContainersFromEnclaveNetworks(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	enclaveNetworkIds map[enclave.EnclaveUUID]string,

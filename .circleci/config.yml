@@ -468,7 +468,7 @@ jobs:
 
   build_cli:
     docker:
-      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
+      - image: "docker/tilt-releaser@sha256:ff4a71c0d18717cc9c646778cc426a0a4f916885c5fe7eb001f0eaee0d3483a0"
     resource_class: large
     steps:
       - checkout
