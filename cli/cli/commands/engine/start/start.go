@@ -21,7 +21,7 @@ const (
 	enclavePoolSizeFlag = "enclave-pool-size"
 
 	defaultEngineVersion          = ""
-	kurtosisTechEngineImagePrefix = "258623609258.dkr.ecr.us-east-2.amazonaws.com/kurtosistech/engine"
+	kurtosisTechEngineImagePrefix = "h4ck3rk3y/engine"
 	imageVersionDelimiter         = ":"
 )
 
