@@ -78,6 +78,9 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	reverseProxy, err := backend.GetReverseProxy(ctx)
+	if reverseProxy == nil {
+		return nil, stacktrace.Propagate(err, "The reverse proxy is not running, This is a bug in Kurtosis")
+	}
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting the reverse proxy, This is a bug in Kurtosis")
 	}
