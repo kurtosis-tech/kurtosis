@@ -1,9 +1,9 @@
-package shared_utils
+package utils
 
 import (
 	"crypto/md5"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/mholt/archiver/v3"
+	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
