@@ -377,7 +377,7 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	for enclaveUuid := range successfulVolumeRemovalEnclaveUuids {
 		networkInfo, found := matchingNetworkInfo[enclaveUuid]
 		if !found {
-			return nil, nil, stacktrace.NewError("Attempt was made to disconnect enclave that did not match filters. This is likely a bug in Kurtosis.", enclaveUuid)
+			return nil, nil, stacktrace.NewError("Attempt was made to disconnect enclave '%v' that did not match filters. This is likely a bug in Kurtosis.", enclaveUuid)
 		}
 		networksToDisconnect[enclaveUuid] = networkInfo.dockerNetwork.GetId()
 	}
