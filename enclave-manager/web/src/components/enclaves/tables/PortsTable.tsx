@@ -82,9 +82,9 @@ export const PortsTable = ({
         cell: ({ row, getValue }) => (
           <Flex flexDirection={"column"} gap={"10px"}>
             <Text>
-              {row.original.link.startsWith("http") ? (
+              {row.original.port.applicationProtocol?.startsWith("http") ? (
                 <Link href={row.original.link} isExternal>
-                  {row.original.port.name}
+                  {row.original.port.name}&nbsp;
                   <ExternalLinkIcon mx="2px" />
                 </Link>
               ) : (
