@@ -1,4 +1,4 @@
-MY_USER_NAME = "h4ck3kr3y"
+MY_USER_NAME = "h4ck3rk3y"
 
 import subprocess
 import sys
