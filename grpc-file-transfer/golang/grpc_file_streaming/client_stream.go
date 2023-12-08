@@ -1,9 +1,10 @@
 package grpc_file_streaming
 
 import (
+	"io"
+
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
-	"io"
 )
 
 // ClientStream is a wrapper around a GRPC ClientStream object to be able to send and receive payloads bypassing the
@@ -73,4 +74,33 @@ func (clientStream *ClientStream[DataChunkMessageType, ServerResponseType]) Rece
 			contentNameForLogging)
 	}
 	return assembledContent, nil
+}
+
+// PipeReader pipe out data via streaming expecting the content to be received in fixed-sized chunks from
+// the server until the server returns io.EOF. The pipe is filled up asynchronously and the data can be consumed
+// as the client Stream send them. This allows a low (and constant) memory footprint. If the transfer fails the
+// PipeReader will be closed with the error.
+func (clientStream *ClientStream[DataChunkMessageType, ServerResponseType]) PipeReader(
+	contentNameForLogging string,
+	grpcMsgExtractor func(dataChunk *DataChunkMessageType) ([]byte, string, error),
+) *io.PipeReader {
+	// Use pipe and gorotines to stream over data from the client directly to the pipe consumer
+	pipeReader, pipeWriter := io.Pipe()
+	go func() {
+		defer pipeWriter.Close()
+		// Read all the chunks and assemble them into a single byte array assembledContent
+		_, err := readMessagesFromStream[DataChunkMessageType](
+			contentNameForLogging,
+			clientStream.grpcStream.RecvMsg,
+			func(chunk *DataChunkMessageType) ([]byte, string, error) {
+				data, hash, extErr := grpcMsgExtractor(chunk)
+				_, _ = pipeWriter.Write(data)
+				return []byte{}, hash, extErr
+			})
+		if err != nil {
+			pipeReader.CloseWithError(stacktrace.Propagate(err, "An error occurred sending the data chunks for '%s' through the stream", contentNameForLogging))
+		}
+	}()
+
+	return pipeReader
 }

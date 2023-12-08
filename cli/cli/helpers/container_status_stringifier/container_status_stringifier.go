@@ -17,6 +17,8 @@ func ContainerStatusStringifier(containerStatus kurtosis_core_rpc_api_bindings.C
 		return colorizeStopped(containerStatusStr)
 	case kurtosis_core_rpc_api_bindings.Container_RUNNING:
 		return colorizeRunning(containerStatusStr)
+	case kurtosis_core_rpc_api_bindings.Container_UNKNOWN:
+		return containerStatusStr
 	default:
 		return containerStatusStr
 	}
