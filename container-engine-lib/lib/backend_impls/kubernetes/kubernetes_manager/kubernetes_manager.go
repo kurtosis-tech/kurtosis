@@ -72,7 +72,8 @@ const (
 
 	// TODO: Maybe pipe this to Starlark to let users choose the size of their persistent directories
 	//  The difficulty is that Docker doesn't have such a feature, so we would need somehow to hack it
-	persistentVolumeDefaultSize                          int64 = 500 * 1024 * 1024 // 500Mb
+	// We use 1g as thats the minimum possible on cloud providers
+	persistentVolumeDefaultSize                          int64 = 1 * 1024 * 1024 * 1024 // 1Gb
 	waitForPersistentVolumeBoundTimeout                        = 3 * time.Minute
 	waitForPersistentVolumeBoundInitialDelayMilliSeconds       = 100
 	waitForPersistentVolumeBoundRetriesDelayMilliSeconds       = 500
@@ -347,6 +348,8 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
 				apiv1.ReadWriteOnce, // ReadWriteOncePod would be better, but it's a fairly recent feature
 			},
+			// This should cleanup everywhere - verify AWS (gyani)
+			PersistentVolumeReclaimPolicy: apiv1.PersistentVolumeReclaimDelete,
 		},
 		Status: apiv1.PersistentVolumeStatus{
 			Phase:   "",
@@ -1139,7 +1142,8 @@ func (manager *KubernetesManager) CreatePod(
 		Containers:          podContainers,
 		EphemeralContainers: nil,
 		// We don't want Kubernetes auto-magically restarting our containers if they fail
-		RestartPolicy:                 apiv1.RestartPolicyOnFailure,
+		// try out always
+		RestartPolicy:                 apiv1.RestartPolicyAlways,
 		TerminationGracePeriodSeconds: nil,
 		ActiveDeadlineSeconds:         nil,
 		DNSPolicy:                     "",
