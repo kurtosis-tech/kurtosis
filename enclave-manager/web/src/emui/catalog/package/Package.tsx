@@ -1,5 +1,6 @@
 import { Box, Flex, Icon, Image, Input, InputGroup, InputRightElement, Text } from "@chakra-ui/react";
 import { DateTime } from "luxon";
+import { useState } from "react";
 import { IoStar } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
@@ -15,6 +16,8 @@ import { KurtosisMarkdown } from "../../../components/KurtosisMarkdown";
 import { PackageSourceButton } from "../../../components/PackageSourceButton";
 import { TitledCard } from "../../../components/TitledCard";
 import { isDefined } from "../../../utils";
+import { ConfigureEnclaveModal } from "../../enclaves/components/modals/ConfigureEnclaveModal";
+import { EnclavesContextProvider } from "../../enclaves/EnclavesContext";
 import { useKurtosisPackage } from "../CatalogContext";
 
 export const Package = () => {
@@ -37,6 +40,7 @@ type PackageImplProps = {
 };
 
 const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
+  const [showConfigurePackage, setShowConfigurePackage] = useState(false);
   const runCommand = `kurtosis run ${kurtosisPackage.name}`;
 
   return (
@@ -52,7 +56,11 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
             </TitledCard>
           </Flex>
           <Flex flexDirection={"column"} gap={"16px"} flex={"1"}>
-            <RunKurtosisPackageButton kurtosisPackage={kurtosisPackage} size={"lg"} />
+            <RunKurtosisPackageButton
+              kurtosisPackage={kurtosisPackage}
+              size={"lg"}
+              onClick={() => setShowConfigurePackage(true)}
+            />
             <InputGroup size={"lg"}>
               <Input value={runCommand} textOverflow={"ellipsis"} />
               <InputRightElement>
@@ -107,6 +115,15 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
             </Flex>
           </Flex>
         </Flex>
+        {showConfigurePackage && (
+          <EnclavesContextProvider skipInitialLoad>
+            <ConfigureEnclaveModal
+              isOpen={true}
+              onClose={() => setShowConfigurePackage(false)}
+              kurtosisPackage={kurtosisPackage}
+            />
+          </EnclavesContextProvider>
+        )}
       </Flex>
     </AppPageLayout>
   );

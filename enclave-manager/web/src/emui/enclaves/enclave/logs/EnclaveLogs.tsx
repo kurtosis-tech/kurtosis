@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { FiCheck, FiX } from "react-icons/fi";
 import { Location, useLocation, useNavigate } from "react-router-dom";
 import { AppPageLayout } from "../../../../components/AppLayout";
-import { EditEnclaveButton } from "../../../../components/enclaves/EditEnclaveButton";
-import { LogViewer } from "../../../../components/enclaves/logs/LogViewer";
-import { LogLineMessage } from "../../../../components/enclaves/logs/types";
-import { DeleteEnclavesButton } from "../../../../components/enclaves/widgets/DeleteEnclavesButton";
+import { LogViewer } from "../../../../components/logs/LogViewer";
+import { LogLineMessage } from "../../../../components/logs/types";
 import { isAsyncIterable, stringifyError } from "../../../../utils";
+import { EditEnclaveButton } from "../../components/EditEnclaveButton";
+import { DeleteEnclavesButton } from "../../components/widgets/DeleteEnclavesButton";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { useEnclaveFromParams } from "../EnclaveRouteContext";
 

@@ -3,8 +3,8 @@ import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb"
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
 import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
-import { LogViewer } from "../../../../../components/enclaves/logs/LogViewer";
-import { LogLineMessage } from "../../../../../components/enclaves/logs/types";
+import { LogViewer } from "../../../../../components/logs/LogViewer";
+import { LogLineMessage } from "../../../../../components/logs/types";
 import { assertDefined, isDefined, stringifyError } from "../../../../../utils";
 import { EnclaveFullInfo } from "../../../types";
 
@@ -65,7 +65,7 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
         console.error(stringifyError(err));
       }
     },
-    [enclave, service],
+    [kurtosisClient, enclave, service],
   );
 
   useEffect(() => {

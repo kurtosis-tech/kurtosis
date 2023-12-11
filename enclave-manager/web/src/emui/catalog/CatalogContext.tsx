@@ -3,14 +3,13 @@ import { createContext, PropsWithChildren, useCallback, useContext, useEffect, u
 import { Result } from "true-myth";
 import { GetPackagesResponse, KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { useKurtosisPackageIndexerClient } from "../../client/packageIndexer/KurtosisPackageIndexerClientContext";
+import { SavedPackagesProvider } from "../../components/catalog/SavedPackages";
 import { isDefined } from "../../utils";
 import { loadSavedPackageNames, storeSavedPackages } from "./storage";
 
 export type CatalogState = {
   catalog: Result<GetPackagesResponse, string>;
-  savedPackages: KurtosisPackage[];
   refreshCatalog: () => Promise<Result<GetPackagesResponse, string>>;
-  togglePackageSaved: (kurtosisPackage: KurtosisPackage) => void;
 };
 
 const CatalogContext = createContext<CatalogState>(null as any);
@@ -60,8 +59,10 @@ export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
   }
 
   return (
-    <CatalogContext.Provider value={{ catalog, refreshCatalog, togglePackageSaved, savedPackages }}>
-      {children}
+    <CatalogContext.Provider value={{ catalog, refreshCatalog }}>
+      <SavedPackagesProvider savedPackages={savedPackages} togglePackageSaved={togglePackageSaved}>
+        {children}
+      </SavedPackagesProvider>
     </CatalogContext.Provider>
   );
 };

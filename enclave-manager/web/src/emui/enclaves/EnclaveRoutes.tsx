@@ -2,10 +2,12 @@ import { Icon } from "@chakra-ui/react";
 import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { FiPlus } from "react-icons/fi";
 import { Outlet, Params } from "react-router-dom";
-import { GoToEnclaveOverviewButton } from "../../components/enclaves/GotToEncalaveOverviewButton";
+import { registerBreadcrumbHandler } from "../../components/KurtosisBreadcrumbs";
 import { isDefined } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
 import { KurtosisEnclavesRouteObject } from "../types";
+import { GoToEnclaveOverviewButton } from "./components/GotToEncalaveOverviewButton";
+import { KurtosisEnclavesBreadcrumbs } from "./components/KurtosisEnclaveBreadcrumbs";
 import { Artifact } from "./enclave/artifact/Artifact";
 import { Enclave } from "./enclave/Enclave";
 import { EnclaveRouteContextProvider } from "./enclave/EnclaveRouteContext";
@@ -13,6 +15,8 @@ import { EnclaveLogs } from "./enclave/logs/EnclaveLogs";
 import { Service } from "./enclave/service/Service";
 import { EnclaveList } from "./EnclaveList";
 import { EnclavesState } from "./EnclavesContext";
+
+registerBreadcrumbHandler("enclavesHandle", KurtosisEnclavesBreadcrumbs);
 
 export const enclaveRoutes = (): KurtosisEnclavesRouteObject[] => [
   {

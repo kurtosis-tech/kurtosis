@@ -20,15 +20,19 @@ import { MdBookmarkAdded } from "react-icons/md";
 import { GetPackagesResponse, KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { AppPageLayout } from "../../components/AppLayout";
 import { KurtosisPackageCardGrid } from "../../components/catalog/KurtosisPackageCardGrid";
+import { useSavedPackages } from "../../components/catalog/SavedPackages";
 import { FindCommand } from "../../components/KeyboardCommands";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { PageTitle } from "../../components/PageTitle";
 import { useKeyboardAction } from "../../components/useKeyboardAction";
 import { isDefined } from "../../utils";
+import { ConfigureEnclaveModal } from "../enclaves/components/modals/ConfigureEnclaveModal";
+import { EnclavesContextProvider } from "../enclaves/EnclavesContext";
 import { useCatalogContext } from "./CatalogContext";
 
 export const Catalog = () => {
-  const { catalog, savedPackages } = useCatalogContext();
+  const { catalog } = useCatalogContext();
+  const { savedPackages } = useSavedPackages();
 
   if (catalog.isErr) {
     return (
@@ -49,11 +53,16 @@ type CatalogImplProps = {
 const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
   const searchRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [configuringPackage, setConfiguringPackage] = useState<KurtosisPackage>();
   const isSearching = searchTerm.length > 0;
   const filteredCatalog = useMemo(
     () => catalog.packages.filter((kurtosisPackage) => kurtosisPackage.name.toLowerCase().indexOf(searchTerm) > -1),
     [searchTerm, catalog],
   );
+
+  const handlePackageRun = (kurtosisPackage: KurtosisPackage) => {
+    setConfiguringPackage(kurtosisPackage);
+  };
 
   useKeyboardAction(
     useMemo(
@@ -111,7 +120,7 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
             <Heading fontSize={"lg"} fontWeight={"medium"}>
               {filteredCatalog.length} Matches
             </Heading>
-            <KurtosisPackageCardGrid packages={filteredCatalog} />
+            <KurtosisPackageCardGrid packages={filteredCatalog} onPackageRunClicked={handlePackageRun} />
           </>
         )}
         {!isSearching && (
@@ -131,7 +140,7 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
                     <Text as={"span"}>Saved</Text>
                   </CardHeader>
                   <CardBody>
-                    <KurtosisPackageCardGrid packages={savedPackages} />
+                    <KurtosisPackageCardGrid packages={savedPackages} onPackageRunClicked={handlePackageRun} />
                   </CardBody>
                 </Card>
               </Box>
@@ -139,8 +148,17 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
             <Heading fontSize={"lg"} fontWeight={"medium"}>
               All
             </Heading>
-            <KurtosisPackageCardGrid packages={catalog.packages} />
+            <KurtosisPackageCardGrid packages={catalog.packages} onPackageRunClicked={handlePackageRun} />
           </>
+        )}
+        {configuringPackage && (
+          <EnclavesContextProvider skipInitialLoad>
+            <ConfigureEnclaveModal
+              isOpen={true}
+              onClose={() => setConfiguringPackage(undefined)}
+              kurtosisPackage={configuringPackage}
+            />
+          </EnclavesContextProvider>
         )}
       </Flex>
     </AppPageLayout>

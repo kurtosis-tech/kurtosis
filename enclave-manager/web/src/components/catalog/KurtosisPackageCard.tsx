@@ -1,16 +1,18 @@
 import { Box, Flex, Icon, Image, Text } from "@chakra-ui/react";
 import { IoStar } from "react-icons/io5";
-import { Link } from "react-router-dom";
-import { useKurtosisClient } from "../../client/enclaveManager/KurtosisClientContext";
+import { Link, useHref } from "react-router-dom";
 import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { readablePackageName } from "./utils";
 import { RunKurtosisPackageButton } from "./widgets/RunKurtosisPackageButton";
 import { SaveKurtosisPackageButton } from "./widgets/SaveKurtosisPackageButton";
 
-type KurtosisPackageCardProps = { kurtosisPackage: KurtosisPackage };
+type KurtosisPackageCardProps = {
+  kurtosisPackage: KurtosisPackage;
+  onRunClick: () => void;
+};
 
-export const KurtosisPackageCard = ({ kurtosisPackage }: KurtosisPackageCardProps) => {
-  const client = useKurtosisClient();
+export const KurtosisPackageCard = ({ kurtosisPackage, onRunClick }: KurtosisPackageCardProps) => {
+  const logoHref = useHref("/logo.png");
 
   return (
     <Link to={`/catalog/${encodeURIComponent(kurtosisPackage.name)}`}>
@@ -33,8 +35,8 @@ export const KurtosisPackageCard = ({ kurtosisPackage }: KurtosisPackageCardProp
             h={"80px"}
             w={"80px"}
             bg={kurtosisPackage.iconUrl !== "" ? "white" : "black"}
-            src={kurtosisPackage.iconUrl || `${client.getBaseApplicationUrl()}/logo.png`}
-            fallbackSrc={`${client.getBaseApplicationUrl()}/logo.png`}
+            src={kurtosisPackage.iconUrl || logoHref}
+            fallbackSrc={logoHref}
             borderRadius={"6px"}
           />
           <Flex flexDirection={"column"} flex={"1"} justifyContent={"space-between"}>
@@ -56,12 +58,8 @@ export const KurtosisPackageCard = ({ kurtosisPackage }: KurtosisPackageCardProp
                   {kurtosisPackage.repositoryMetadata?.owner.replaceAll("-", " ") || "Unknown owner"}
                 </Text>
                 <Flex gap={"4px"} alignItems={"center"}>
-                  {kurtosisPackage.stars > 0 && (
-                    <>
-                      <Icon color="gray.500" as={IoStar} />
-                      <Text as={"span"}>{kurtosisPackage.stars.toString()}</Text>
-                    </>
-                  )}
+                  <Icon color="gray.  500" as={IoStar} />
+                  <Text as={"span"}>{kurtosisPackage.stars.toString()}</Text>
                 </Flex>
               </Flex>
             </Box>
@@ -69,7 +67,7 @@ export const KurtosisPackageCard = ({ kurtosisPackage }: KurtosisPackageCardProp
         </Flex>
         <Flex gap={"16px"} width={"100%"}>
           <SaveKurtosisPackageButton kurtosisPackage={kurtosisPackage} flex={"1"} />
-          <RunKurtosisPackageButton kurtosisPackage={kurtosisPackage} flex={"1"} />
+          <RunKurtosisPackageButton kurtosisPackage={kurtosisPackage} onClick={onRunClick} flex={"1"} />
         </Flex>
       </Flex>
     </Link>

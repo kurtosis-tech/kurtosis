@@ -1,5 +1,6 @@
 import { RouteObject } from "react-router-dom";
-import { KurtosisCatalogBreadcrumbsHandle, KurtosisEnclavesBreadcrumbsHandle } from "../components/KurtosisBreadcrumbs";
+import { KurtosisCatalogBreadcrumbsHandle } from "./catalog/components/KurtosisCatalogBreadcrumbs";
+import { KurtosisEnclavesBreadcrumbsHandle } from "./enclaves/components/KurtosisEnclaveBreadcrumbs";
 
 export type KurtosisEnclavesRouteObject = RouteObject & {
   handle?: KurtosisEnclavesBreadcrumbsHandle;
@@ -8,5 +9,5 @@ export type KurtosisEnclavesRouteObject = RouteObject & {
 
 export type KurtosisCatalogRouteObject = RouteObject & {
   handle?: KurtosisCatalogBreadcrumbsHandle;
-  children?: KurtosisEnclavesRouteObject[];
+  children?: KurtosisCatalogRouteObject[];
 };

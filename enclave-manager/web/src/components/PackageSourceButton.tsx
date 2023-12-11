@@ -1,8 +1,8 @@
 import { Button, ButtonGroup, ButtonProps, Icon, Link, Spinner, Tag, Tooltip } from "@chakra-ui/react";
 import { PropsWithChildren } from "react";
 import { IoLogoGithub } from "react-icons/io";
-import { useKurtosisPackageIndexerClient } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { isDefined, wrapResult } from "../utils";
+import { parsePackageUrl } from "../utils/packageUtils";
 
 type EnclaveSourceProps = PropsWithChildren<
   ButtonProps & {
@@ -11,8 +11,6 @@ type EnclaveSourceProps = PropsWithChildren<
 >;
 
 export const PackageSourceButton = ({ source, children, ...buttonProps }: EnclaveSourceProps) => {
-  const kurtosisIndexer = useKurtosisPackageIndexerClient();
-
   if (!isDefined(source)) {
     return <Tag>Unknown</Tag>;
   }
@@ -29,7 +27,7 @@ export const PackageSourceButton = ({ source, children, ...buttonProps }: Enclav
     </Link>
   );
   if (source.startsWith("github.com/")) {
-    const repositoryResult = wrapResult(() => kurtosisIndexer.parsePackageUrl(source));
+    const repositoryResult = wrapResult(() => parsePackageUrl(source));
     if (repositoryResult.isOk) {
       const repository = repositoryResult.value;
       const url = `https://${repository.baseUrl}/${repository.owner}/${repository.name}${

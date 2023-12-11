@@ -1,14 +1,14 @@
 import { Flex, Grid, GridItem, Spinner } from "@chakra-ui/react";
 import { DateTime } from "luxon";
-import { FilesTable } from "../../../../components/enclaves/tables/FilesTable";
-import { ServicesTable } from "../../../../components/enclaves/tables/ServicesTable";
-import { EnclaveStatus } from "../../../../components/enclaves/widgets/EnclaveStatus";
 import { FormatDateTime } from "../../../../components/FormatDateTime";
 import { KurtosisAlert } from "../../../../components/KurtosisAlert";
 import { FLEX_STANDARD_GAP } from "../../../../components/theme/constants";
 import { TitledBox } from "../../../../components/TitledBox";
 import { ValueCard } from "../../../../components/ValueCard";
 import { isDefined } from "../../../../utils";
+import { FilesTable } from "../../components/tables/FilesTable";
+import { ServicesTable } from "../../components/tables/ServicesTable";
+import { EnclaveStatus } from "../../components/widgets/EnclaveStatus";
 import { EnclaveFullInfo } from "../../types";
 
 type EnclaveOverviewProps = {
