@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/exec"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/inspect"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/logs"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/restart"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/rm"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/shell"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/start"
@@ -35,4 +36,5 @@ func init() {
 	ServiceCmd.AddCommand(start.ServiceStartCmd.MustGetCobraCommand())
 	ServiceCmd.AddCommand(stop.ServiceStopCmd.MustGetCobraCommand())
 	ServiceCmd.AddCommand(inspect.ServiceInspectCmd.MustGetCobraCommand())
+	ServiceCmd.AddCommand(restart.ServiceRestartCmd.MustGetCobraCommand())
 }
