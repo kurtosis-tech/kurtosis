@@ -112,16 +112,16 @@ func restartServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.Enc
 	serviceNameString := fmt.Sprintf(`{"service_name": "%s"}`, serviceName)
 	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(serviceNameString)))
 	if err != nil {
-		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for starting service")
+		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for restarting service")
 	}
 	if runResult.ExecutionError != nil {
-		return stacktrace.NewError("An error occurred during Starlark script execution for starting service: %s", runResult.ExecutionError.GetErrorMessage())
+		return stacktrace.NewError("An error occurred during Starlark script execution for restarting service: %s", runResult.ExecutionError.GetErrorMessage())
 	}
 	if runResult.InterpretationError != nil {
-		return stacktrace.NewError("An error occurred during Starlark script interpretation for starting service: %s", runResult.InterpretationError.GetErrorMessage())
+		return stacktrace.NewError("An error occurred during Starlark script interpretation for restarting service: %s", runResult.InterpretationError.GetErrorMessage())
 	}
 	if len(runResult.ValidationErrors) > 0 {
-		return stacktrace.NewError("An error occurred during Starlark script validation for starting service: %v", runResult.ValidationErrors)
+		return stacktrace.NewError("An error occurred during Starlark script validation for restarting service: %v", runResult.ValidationErrors)
 	}
 	return nil
 }
