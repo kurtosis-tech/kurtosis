@@ -529,7 +529,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 }
 
 // Return Traefik labels
-// Including the labels required to route traffic to the user service ports based on the header X-Kurtosis-Service-Port:
+// Including the labels required to route traffic to the user service ports based on the Host header:
 // <port number>-<service short uuid>-<enclave short uuid>
 // The Traefik service name format is: <enclave short uuid>-<service short uuid>-<port number>
 // With the following input:
@@ -561,7 +561,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEn
 			shortServiceUuid := uuid_generator.ShortenedUUIDString(serviceUuid)
 			servicePortStr := fmt.Sprintf("%s-%s-%d", shortEnclaveUuid, shortServiceUuid, portSpec.GetNumber())
 
-			// Header X-Kurtosis-Service-Port rule
+			// Header Host rule
 			ruleKeySuffix := fmt.Sprintf("http.routers.%s.rule", servicePortStr)
 			ruleLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(ruleKeySuffix)
 			if err != nil {
