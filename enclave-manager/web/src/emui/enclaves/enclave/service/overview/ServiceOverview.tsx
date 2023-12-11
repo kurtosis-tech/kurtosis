@@ -15,9 +15,10 @@ import { EnclaveFullInfo } from "../../../types";
 type ServiceOverviewProps = {
   enclave: EnclaveFullInfo;
   service: ServiceInfo;
+  instanceUUID: string;
 };
 
-export const ServiceOverview = ({ service, enclave }: ServiceOverviewProps) => {
+export const ServiceOverview = ({ service, enclave, instanceUUID }: ServiceOverviewProps) => {
   return (
     <Flex flexDirection={"column"} gap={FLEX_STANDARD_GAP}>
       <Grid templateColumns={"repeat(4, 1fr)"} gap={FLEX_STANDARD_GAP}>
@@ -44,6 +45,9 @@ export const ServiceOverview = ({ service, enclave }: ServiceOverviewProps) => {
       </Grid>
       <TitledBox title={"Ports"}>
         <PortsTable
+          instanceUUID={instanceUUID}
+          enclaveUUID={enclave.enclaveUuid}
+          serviceUUID={service.serviceUuid}
           privatePorts={service.privatePorts}
           publicPorts={service.maybePublicPorts}
           publicIp={service.maybePublicIpAddr}
