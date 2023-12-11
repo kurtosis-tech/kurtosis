@@ -61,6 +61,7 @@ const (
 	ServiceRmCmdStr         = "rm"
 	ServiceShellCmdStr      = "shell"
 	ServiceStartCmdStr      = "start"
+	ServiceRestartCmdStr    = "restart"
 	ServiceStopCmdStr       = "stop"
 	ServiceInspectCmdStr    = "inspect"
 	StarlarkRunCmdStr       = "run"
