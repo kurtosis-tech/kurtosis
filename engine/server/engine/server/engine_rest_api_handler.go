@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
-	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/engine_rest_api"
+	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/engine_rest_api"
 )
 
 type EngineRuntime struct {

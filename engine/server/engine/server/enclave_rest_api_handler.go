@@ -23,7 +23,7 @@ import (
 
 	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
-	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/core_rest_api"
+	api "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/core_rest_api"
 )
 
 const (

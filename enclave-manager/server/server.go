@@ -456,10 +456,11 @@ func (c *WebServer) GetCloudInstanceConfig(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get the instance")
 	}
+	// nolint:exhaustruct
 	getInstanceConfigRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs{
-			ApiKey:     apiKey,
-			InstanceId: getInstanceResponse.Msg.InstanceId,
+			ApiKey:     &apiKey,
+			InstanceId: &getInstanceResponse.Msg.InstanceId,
 		},
 	}
 	getInstanceConfigResponse, err := (*client).GetCloudInstanceConfig(ctx, getInstanceConfigRequest)
