@@ -93,7 +93,7 @@ func run(
 	}
 
 	for _, serviceIdentifier := range serviceIdentifiers {
-		logrus.Infof("Starting service '%v'", serviceIdentifier)
+		logrus.Infof("Restarting service '%v'", serviceIdentifier)
 		serviceContext, err := enclaveCtx.GetServiceContext(serviceIdentifier)
 		if err != nil {
 			return stacktrace.NewError("Couldn't validate whether the service exists for identifier '%v'", serviceIdentifier)
