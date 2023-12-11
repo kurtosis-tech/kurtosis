@@ -778,6 +778,7 @@ jobs:
       # Service stop and start
       - run: "${KURTOSIS_BINPATH} service stop test-enclave test1"
       - run: "${KURTOSIS_BINPATH} service start test-enclave test1"
+      - run: "${KURTOSIS_BINPATH} service restart test-enclave test1"
 
       # Service inspect
       - run: "${KURTOSIS_BINPATH} service inspect test-enclave test1"
