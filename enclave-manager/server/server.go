@@ -458,8 +458,8 @@ func (c *WebServer) GetCloudInstanceConfig(
 	}
 	getInstanceConfigRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs{
-			ApiKey:     &apiKey,
-			InstanceId: &getInstanceResponse.Msg.InstanceId,
+			ApiKey:     apiKey,
+			InstanceId: getInstanceResponse.Msg.InstanceId,
 		},
 	}
 	getInstanceConfigResponse, err := (*client).GetCloudInstanceConfig(ctx, getInstanceConfigRequest)

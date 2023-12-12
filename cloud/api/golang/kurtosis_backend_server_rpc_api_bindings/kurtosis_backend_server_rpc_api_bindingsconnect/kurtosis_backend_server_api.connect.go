@@ -19,7 +19,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion0_1_0
 
 const (
 	// KurtosisCloudBackendServerName is the fully-qualified name of the KurtosisCloudBackendServer
@@ -87,8 +87,7 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 		isAvailable: connect.NewClient[emptypb.Empty, emptypb.Empty](
 			httpClient,
 			baseURL+KurtosisCloudBackendServerIsAvailableProcedure,
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
+			opts...,
 		),
 		createCloudInstance: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse](
 			httpClient,
@@ -98,8 +97,7 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 		getCloudInstanceConfig: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse](
 			httpClient,
 			baseURL+KurtosisCloudBackendServerGetCloudInstanceConfigProcedure,
-			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-			connect.WithClientOptions(opts...),
+			opts...,
 		),
 		getOrCreateApiKey: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse](
 			httpClient,
@@ -206,8 +204,7 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 	kurtosisCloudBackendServerIsAvailableHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerIsAvailableProcedure,
 		svc.IsAvailable,
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+		opts...,
 	)
 	kurtosisCloudBackendServerCreateCloudInstanceHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerCreateCloudInstanceProcedure,
@@ -217,8 +214,7 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 	kurtosisCloudBackendServerGetCloudInstanceConfigHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerGetCloudInstanceConfigProcedure,
 		svc.GetCloudInstanceConfig,
-		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
-		connect.WithHandlerOptions(opts...),
+		opts...,
 	)
 	kurtosisCloudBackendServerGetOrCreateApiKeyHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerGetOrCreateApiKeyProcedure,
