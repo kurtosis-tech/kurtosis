@@ -301,7 +301,7 @@ func getEnclaveManager(
 	case args.KurtosisBackendType_Kubernetes:
 		kurtosisLocalBackendConfigKubernetesType, ok := kurtosisLocalBackendConfig.(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
-			return nil, stacktrace.NewError("Couldn't parse backend type!")
+			return nil, stacktrace.NewError("Couldn't parse backend configuration")
 		}
 		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier(kurtosisLocalBackendConfigKubernetesType.StorageClass)
 	default:
