@@ -43,6 +43,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	restApi "github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
@@ -408,9 +409,12 @@ func restApiServer(
 	echoRouter.Use(echomiddleware.Logger())
 
 	// Setup CORS policies for the REST API server
+	allowOrigins := utils.DerefWith(serverArgs.AllowedCORSOrigins, defaultCORSOrigins)
+	logrus.Infof("Setting-up CORS policy to accept requests from origins: %v", allowOrigins)
+
 	// nolint:exhaustruct
 	echoRouter.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: defaultCORSOrigins,
+		AllowOrigins: allowOrigins,
 		AllowHeaders: defaultCORSHeaders,
 	}))
 

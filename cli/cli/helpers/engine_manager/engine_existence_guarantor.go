@@ -3,6 +3,7 @@ package engine_manager
 import (
 	"context"
 	"fmt"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -71,6 +72,8 @@ type engineExistenceGuarantor struct {
 	poolSize uint8
 
 	enclaveEnvVars string
+
+	allowedCORSOrigins *[]string
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -85,6 +88,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	onBastionHost bool,
 	poolSize uint8,
 	enclaveEnvVars string,
+	allowedCORSOrigins *[]string,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -99,6 +103,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		onBastionHost,
 		poolSize,
 		enclaveEnvVars,
+		allowedCORSOrigins,
 	)
 }
 
@@ -115,6 +120,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	onBastionHost bool,
 	poolSize uint8,
 	enclaveEnvVars string,
+	allowedCORSOrigins *[]string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -131,6 +137,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		onBastionHost:                             onBastionHost,
 		poolSize:                                  poolSize,
 		enclaveEnvVars:                            enclaveEnvVars,
+		allowedCORSOrigins:                        allowedCORSOrigins,
 	}
 }
 
@@ -165,6 +172,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metrics_client.IsCI(),
 			maybeCloudUserId,
 			maybeCloudInstanceId,
+			guarantor.allowedCORSOrigins,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -181,6 +189,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metrics_client.IsCI(),
 			maybeCloudUserId,
 			maybeCloudInstanceId,
+			guarantor.allowedCORSOrigins,
 		)
 	}
 	if engineLaunchErr != nil {
