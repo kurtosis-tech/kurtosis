@@ -1,4 +1,4 @@
-go 1.20
+go 1.19
 
 use (
 	./api/golang
@@ -16,8 +16,7 @@ use (
 	./grpc-file-transfer/golang
 	./internal_testsuites/golang
 	./kurtosis_version
-	./metrics-library/golang
 	./name_generator
-	./utils
 	connect-server
+	./metrics-library/golang
 )

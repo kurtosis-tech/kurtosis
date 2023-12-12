@@ -19,18 +19,13 @@
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs;
             let
-              openapi-codegen-go =
-                import ./nix-pkgs/openapi-codegen.nix { inherit pkgs; };
               grpc-tools-node =
                 import ./nix-pkgs/grpc-tools-node.nix { inherit pkgs; };
               protoc-gen-ts =
                 import ./nix-pkgs/protoc-gen-ts.nix { inherit pkgs; };
-              openapi-typescript =
-                # import ./nix-pkgs/openapi-typescript.nix { inherit pkgs; };
-                import ./nix-pkgs/openapi-ts { inherit pkgs; };
             in [
               goreleaser
-              go_1_20
+              go_1_19
               gopls
               golangci-lint
               delve
@@ -43,8 +38,6 @@
               protoc-gen-connect-go
               protoc-gen-grpc-web
               grpc-tools
-              grpcui
-              openapi-codegen-go
               rustc
               cargo
               rustfmt
@@ -55,7 +48,6 @@
               # local definition (see above)
               grpc-tools-node
               protoc-gen-ts
-              openapi-typescript
             ];
 
           shellHook = ''

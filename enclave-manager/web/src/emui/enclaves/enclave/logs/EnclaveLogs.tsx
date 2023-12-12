@@ -128,7 +128,6 @@ export const EnclaveLogs = () => {
       <LogViewer
         logLines={logLines}
         progressPercent={progressPercent}
-        copyLogsEnabled
         ProgressWidget={
           <Flex justifyContent={"space-between"} alignItems={"center"} width={"100%"}>
             <ProgressSummary progress={progress} />

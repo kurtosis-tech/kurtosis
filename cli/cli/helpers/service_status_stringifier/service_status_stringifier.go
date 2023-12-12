@@ -17,8 +17,6 @@ func ServiceStatusStringifier(serviceStatus kurtosis_core_rpc_api_bindings.Servi
 		return colorizeStopped(serviceStatusStr)
 	case kurtosis_core_rpc_api_bindings.ServiceStatus_RUNNING:
 		return colorizeRunning(serviceStatusStr)
-	case kurtosis_core_rpc_api_bindings.ServiceStatus_UNKNOWN:
-		return serviceStatusStr
 	default:
 		return serviceStatusStr
 	}

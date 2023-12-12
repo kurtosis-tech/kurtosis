@@ -1,4 +1,4 @@
-import { Box, Flex, Icon, Image, Text } from "@chakra-ui/react";
+import { Flex, Icon, Image, Text } from "@chakra-ui/react";
 import { IoStar } from "react-icons/io5";
 import { Link } from "react-router-dom";
 import { useKurtosisClient } from "../../client/enclaveManager/KurtosisClientContext";
@@ -41,30 +41,19 @@ export const KurtosisPackageCard = ({ kurtosisPackage }: KurtosisPackageCardProp
             <Text noOfLines={2} fontSize={"lg"}>
               {readablePackageName(kurtosisPackage.name)}
             </Text>
-            <Box
-              flex={"1"}
-              sx={{
-                containerType: "size",
-                containerName: "details-container",
-                "@container details-container (min-height: 30px)": {
-                  "> div": { flexDirection: "column", justifyContent: "flex-end", height: "100%" },
-                },
-              }}
-            >
-              <Flex justifyContent={"space-between"} fontSize={"xs"} gap={"8px"}>
-                <Text as={"span"} textTransform={"capitalize"}>
-                  {kurtosisPackage.repositoryMetadata?.owner.replaceAll("-", " ") || "Unknown owner"}
-                </Text>
-                <Flex gap={"4px"} alignItems={"center"}>
-                  {kurtosisPackage.stars > 0 && (
-                    <>
-                      <Icon color="gray.500" as={IoStar} />
-                      <Text as={"span"}>{kurtosisPackage.stars.toString()}</Text>
-                    </>
-                  )}
-                </Flex>
+            <Flex justifyContent={"space-between"} fontSize={"xs"}>
+              <Text as={"span"} textTransform={"capitalize"}>
+                {kurtosisPackage.repositoryMetadata?.owner.replaceAll("-", " ") || "Unknown owner"}
+              </Text>
+              <Flex gap={"4px"} alignItems={"center"}>
+                {kurtosisPackage.stars > 0 && (
+                  <>
+                    <Icon color="gray.500" as={IoStar} />
+                    <Text as={"span"}>{kurtosisPackage.stars.toString()}</Text>
+                  </>
+                )}
               </Flex>
-            </Box>
+            </Flex>
           </Flex>
         </Flex>
         <Flex gap={"16px"} width={"100%"}>

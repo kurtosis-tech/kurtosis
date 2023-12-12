@@ -1,11 +1,11 @@
 import { Timestamp } from "@bufbuild/protobuf";
 import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DateTime } from "luxon";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
 import { LogViewer } from "../../../../../components/enclaves/logs/LogViewer";
 import { LogLineMessage } from "../../../../../components/enclaves/logs/types";
-import { assertDefined, isDefined, stringifyError } from "../../../../../utils";
+import { isDefined } from "../../../../../utils";
 import { EnclaveFullInfo } from "../../../types";
 
 const serviceLogLineToLogLineMessage = (lines: string[], timestamp?: Timestamp): LogLineMessage[] => {
@@ -42,32 +42,6 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
   const kurtosisClient = useKurtosisClient();
   const [logLines, setLogLines] = useState<LogLineMessage[]>([]);
 
-  const handleGetAllLogs = useCallback(
-    async function* () {
-      const abortController = new AbortController();
-      const logs = await kurtosisClient.getServiceLogs(abortController, enclave, [service], false, 0, true);
-      try {
-        for await (const lineGroup of logs) {
-          const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
-          assertDefined(
-            lineGroupForService,
-            `Log line response included a line group withouth service ${
-              service.serviceUuid
-            }: ${lineGroup.toJsonString()}`,
-          );
-          const parsedLogLines = serviceLogLineToLogLineMessage(
-            lineGroupForService.line,
-            lineGroupForService.timestamp,
-          );
-          yield parsedLogLines.map((line) => line.message || "").join("\n");
-        }
-      } catch (err: any) {
-        console.error(stringifyError(err));
-      }
-    },
-    [enclave, service],
-  );
-
   useEffect(() => {
     let canceled = false;
     const abortController = new AbortController();
@@ -101,5 +75,5 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
   }, [enclave, service, kurtosisClient]);
 
   const logsFileName = `${enclave.name}--${service.name}-logs.txt`;
-  return <LogViewer logLines={logLines} logsFileName={logsFileName} searchEnabled onGetAllLogs={handleGetAllLogs} />;
+  return <LogViewer logLines={logLines} logsFileName={logsFileName} searchEnabled />;
 };
