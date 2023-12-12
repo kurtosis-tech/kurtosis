@@ -33,6 +33,10 @@ const (
 	logsCollectorFragment                  = "kurtosis-logs-collector"
 	// The collector is per enclave so this is a suffix
 	logsCollectorVolumeFragment = logsCollectorFragment + "-vol"
+
+	reverseProxyEnclaveShortUuidHeader  = "X-Kurtosis-Enclave-Short-UUID"
+	reverseProxyServiceShortUuidHeader  = "X-Kurtosis-Service-Short-UUID"
+	reverseProxyServicePortNumberHeader = "X-Kurtosis-Service-Port-Number"
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
@@ -529,7 +533,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 }
 
 // Return Traefik labels
-// Including the labels required to route traffic to the user service ports based on the Host header:
+// Including the labels required to route traffic to the user service ports based on the header X-Kurtosis-Service-Port:
 // <port number>-<service short uuid>-<enclave short uuid>
 // The Traefik service name format is: <enclave short uuid>-<service short uuid>-<port number>
 // With the following input:
@@ -542,10 +546,10 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 // the following labels are returned:
 //
 //	"traefik.enable": "true",
-//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-80.rule": "Host(`80-3771c85af16a-65d2fb6d6732`)",
+//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-80.rule": "Headers(`X-Kurtosis-Enclave-Short-UUID`, `65d2fb6d6732`) && Headers(`X-Kurtosis-Service-Short-UUID`, `3771c85af16a`) && Headers(`X-Kurtosis-Port-Number`, `80`)",
 //	"traefik.http.routers.65d2fb6d6732-3771c85af16a-80.service": "65d2fb6d6732-3771c85af16a-80",
 //	"traefik.http.services.65d2fb6d6732-3771c85af16a-80.loadbalancer.server.port": "80"
-//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-80.rule": "Host(`81-3771c85af16a-65d2fb6d6732`)",
+//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-81.rule": "Headers(`X-Kurtosis-Enclave-Short-UUID`, `65d2fb6d6732`) && Headers(`X-Kurtosis-Service-Short-UUID`, `3771c85af16a`) && Headers(`X-Kurtosis-Port-Number`, `81`)",
 //	"traefik.http.routers.65d2fb6d6732-3771c85af16a-81.service": "65d2fb6d6732-3771c85af16a-81",
 //	"traefik.http.services.65d2fb6d6732-3771c85af16a-81.loadbalancer.server.port": "81"
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEnclaveObject(serviceUuid string, ports map[string]*port_spec.PortSpec) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error) {
@@ -561,13 +565,13 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEn
 			shortServiceUuid := uuid_generator.ShortenedUUIDString(serviceUuid)
 			servicePortStr := fmt.Sprintf("%s-%s-%d", shortEnclaveUuid, shortServiceUuid, portSpec.GetNumber())
 
-			// Header Host rule
+			// Header X-Kurtosis-Service-Port rule
 			ruleKeySuffix := fmt.Sprintf("http.routers.%s.rule", servicePortStr)
 			ruleLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(ruleKeySuffix)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred getting the traefik rule label key with suffix '%v'", ruleKeySuffix)
 			}
-			ruleValue := fmt.Sprintf("Host(`%d-%s-%s`)", portSpec.GetNumber(), shortServiceUuid, shortEnclaveUuid)
+			ruleValue := fmt.Sprintf("Headers(`%s`, `%s`) && Headers(`%s`, `%s`) && Headers(`%s`, `%d`)", reverseProxyEnclaveShortUuidHeader, shortEnclaveUuid, reverseProxyServiceShortUuidHeader, shortServiceUuid, reverseProxyServicePortNumberHeader, portSpec.GetNumber())
 			ruleLabelValue, err := docker_label_value.CreateNewDockerLabelValue(ruleValue)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the traefik rule label value with value '%v'", ruleValue)
