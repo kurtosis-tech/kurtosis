@@ -120,7 +120,7 @@ const theme = extendTheme({
           const outline = theme.components.Button.variants!.outline(props);
           return {
             ...outline,
-            _hover: { ...outline._hover, bg: "gray.600" },
+            _hover: { ...outline._hover, bg: "gray.700" },
             color: `${props.colorScheme}.400`,
             borderColor: "gray.300",
           };
