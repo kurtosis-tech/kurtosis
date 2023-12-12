@@ -138,12 +138,6 @@ const (
 	dontStreamStats        = false
 
 	kurtosisTagPrefix = "kurtosistech/"
-
-	// image building consts
-	defaultContainerImageFile = "Dockerfile"
-
-	// Per https://github.com/hashicorp/waypoint/pull/1937/files
-	buildkitSessionSharedKey = ""
 )
 
 type RestartPolicy string
