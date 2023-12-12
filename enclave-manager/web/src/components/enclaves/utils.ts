@@ -9,8 +9,6 @@ export function transportProtocolToString(protocol: Port_TransportProtocol) {
       return "SCTP";
     case Port_TransportProtocol.UDP:
       return "UDP";
-    default:
-      return "";
   }
 }
 

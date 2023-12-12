@@ -11,9 +11,8 @@ import { EnclaveFullInfo } from "../../types";
 import { useEnclaveFromParams } from "../EnclaveRouteContext";
 import { ServiceLogs } from "./logs/ServiceLogs";
 import { ServiceOverview } from "./overview/ServiceOverview";
-import Cookies from "js-cookie";
 
-const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInfo; service: ServiceInfo; instanceUUID: string }> }[] = [
+const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInfo; service: ServiceInfo }> }[] = [
   { path: "overview", element: ServiceOverview },
   { path: "logs", element: ServiceLogs },
 ];
@@ -68,8 +67,6 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
     navigator(`/enclave/${enclave.shortenedUuid}/service/${service.shortenedUuid}/${tab.path}`);
   };
 
-  const instanceUUID = Cookies.get("_kurtosis_instance_id") || "";
-
   return (
     <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
       <AppPageLayout>
@@ -80,7 +77,7 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
         <TabPanels>
           {tabs.map((tab) => (
             <TabPanel key={tab.path}>
-              <tab.element enclave={enclave} service={service} instanceUUID={instanceUUID} />
+              <tab.element enclave={enclave} service={service} />
             </TabPanel>
           ))}
         </TabPanels>
