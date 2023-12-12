@@ -32,3 +32,8 @@ kurtosis-clusters:
       storage-class: "standard"
       enclave-size-in-megabytes: 10
 ```
+
+:::tip Storage Class
+The Storage Class specified in the configuration above will be used for spinning up persistent volumes. Make sure you have the right
+value in case you are using persistent directories.
+:::

@@ -146,6 +146,8 @@ type KubernetesManager struct {
 	kubernetesClientSet *kubernetes.Clientset
 	// Underlying restClient configuration
 	kuberneteRestConfig *rest.Config
+	// The storage class name as specified in the `kurtosis-config.yaml`
+	storageClass string
 }
 
 func int64Ptr(i int64) *int64 { return &i }
@@ -154,6 +156,14 @@ func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRe
 	return &KubernetesManager{
 		kubernetesClientSet: kubernetesClientSet,
 		kuberneteRestConfig: kuberneteRestConfig,
+	}
+}
+
+func NewKubernetesManagerWithStorageClass(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config, storageClass string) *KubernetesManager {
+	return &KubernetesManager{
+		kubernetesClientSet: kubernetesClientSet,
+		kuberneteRestConfig: kuberneteRestConfig,
+		storageClass:        storageClass,
 	}
 }
 
