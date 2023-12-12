@@ -43,7 +43,7 @@ def run(plan, args):
 var ServiceRestartCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.ServiceRestartCmdStr,
 	ShortDescription:          "Restarts one or many services",
-	LongDescription:           "Restarts service with the given service identifier in the given enclave",
+	LongDescription:           "Restarts services with the given service identifiers in the given enclave",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
