@@ -26,6 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 	terminal "golang.org/x/term"
 	apiv1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -297,6 +298,32 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 	}
 
 	return &servicesNotMarkedForDeletionserviceList, nil
+}
+
+func (manager *KubernetesManager) GetIngressesByLabels(ctx context.Context, namespace string, ingressLabels map[string]string) (*netv1.IngressList, error) {
+	ingressesClient := manager.kubernetesClientSet.NetworkingV1().Ingresses(namespace)
+
+	opts := buildListOptionsFromLabels(ingressLabels)
+	ingressResult, err := ingressesClient.List(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list ingresses with labels '%+v' in namespace '%s'", ingressLabels, namespace)
+	}
+
+	// Only return objects not tombstoned by Kubernetes
+	var ingressesNotMarkedForDeletionList []netv1.Ingress
+	for _, service := range ingressResult.Items {
+		deletionTimestamp := service.GetObjectMeta().GetDeletionTimestamp()
+		if deletionTimestamp == nil {
+			ingressesNotMarkedForDeletionList = append(ingressesNotMarkedForDeletionList, service)
+		}
+	}
+	ingressesNotMarkedForDeletionserviceList := netv1.IngressList{
+		Items:    ingressesNotMarkedForDeletionList,
+		TypeMeta: ingressResult.TypeMeta,
+		ListMeta: ingressResult.ListMeta,
+	}
+
+	return &ingressesNotMarkedForDeletionserviceList, nil
 }
 
 // ---------------------------Volumes------------------------------------------------------------------------------
@@ -1752,6 +1779,67 @@ func (manager *KubernetesManager) HasComputeNodes(ctx context.Context) (bool, er
 		return false, stacktrace.Propagate(err, "An error occurred while checking if the Kubernetes cluster has any nodes")
 	}
 	return len(nodes.Items) != 0, nil
+}
+
+// ---------------------------Ingresses------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateIngress(ctx context.Context, namespace string, serviceName string,annotations map[string]string, rules []netv1.IngressRule) (*netv1.Ingress, error) {
+	client := manager.kubernetesClientSet.NetworkingV1().Ingresses(namespace)
+
+	ingress := &netv1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            serviceName,
+			GenerateName:    "",
+			Namespace:       "",
+			SelfLink:        "",
+			UID:             "",
+			ResourceVersion: "",
+			Generation:      0,
+			CreationTimestamp: metav1.Time{
+				Time: time.Time{},
+			},
+			DeletionTimestamp:          nil,
+			DeletionGracePeriodSeconds: nil,
+			Labels:                     nil,
+			Annotations:                annotations,
+			OwnerReferences:            nil,
+			Finalizers:                 nil,
+			ManagedFields:              nil,
+		},
+		Spec: netv1.IngressSpec{
+			IngressClassName: nil,
+			DefaultBackend:   nil,
+			TLS:              nil,
+			Rules:            rules,
+		},
+		Status: netv1.IngressStatus{
+			LoadBalancer: netv1.IngressLoadBalancerStatus{
+				Ingress: nil,
+			},
+		},	
+	}
+
+	ingressResult, err := client.Create(ctx, ingress, globalCreateOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the ingress with name '%s' in namespace '%v'", serviceName, namespace)
+	}
+	return ingressResult, nil
+}
+
+func (manager *KubernetesManager) RemoveIngress(ctx context.Context, ingress *netv1.Ingress) error {
+	namespace := ingress.Namespace
+	ingressName := ingress.Name
+	ingressesClient := manager.kubernetesClientSet.NetworkingV1().Ingresses(namespace)
+
+	if err := ingressesClient.Delete(ctx, ingressName, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete ingress '%s' with delete options '%+v' in namespace '%s'", ingressName, globalDeleteOptions, namespace)
+	}
+
+	return nil
 }
 
 // TODO Delete this after 2022-08-01 if we're not using Jobs
