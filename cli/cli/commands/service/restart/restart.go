@@ -79,7 +79,7 @@ func run(
 
 	serviceIdentifiers, err := args.GetGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the service identifier value using key '%v'", serviceIdentifierArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the service identifiers values using key '%v'", serviceIdentifierArgKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
