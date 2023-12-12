@@ -80,19 +80,14 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
 
-run_prepare_testing_docker: &run_prepare_testing_docker
-  - run:
-      name: Load the engine, apic and file artifacts images and start the engine
-      command: |
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-        ${KURTOSIS_BINPATH} engine start --cli-log-level trace
-
 # Steps to prepare a job for Docker testing
 steps_prepare_testing_docker: &steps_prepare_testing_docker
   steps:
-    - <<: *run_prepare_testing_docker 
+    - run: |
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
 
 # Run steps to dump kurtosis enclaves from docker
 run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
@@ -120,17 +115,6 @@ abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
     if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
       circleci-agent step halt
     fi 
-
-abort_job_if_kubernetes_backend: &abort_job_if_kubernetes_backend
-  when:
-    condition:
-      and:
-        - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-    steps:
-      - run: circleci-agent step halt
-
-abort_job: &abort_job
-  run: circleci-agent step halt
 
 ##############
 # CircleCI
@@ -232,9 +216,6 @@ parameters:
   kurtosis-cluster-setting-abs-filepath:
     type: string
     default: "/home/circleci/.local/share/kurtosis/cluster-setting"
-  reverse-proxy-entrypoint-web-port:
-    type: string
-    default: "9730"
 
 
 
@@ -658,9 +639,6 @@ jobs:
   test_old_enclave_continuity:
     executor: ubuntu_vm
     steps:
-      # TODO: Re-enable once Traefik has been released.
-      - <<: *abort_job
-
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
@@ -900,9 +878,9 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run:
-                name: "Verify only the engine, logs aggregator and reverse proxy remain after the clean"
+                name: "Verify only the engine container and logs aggregator remains after the clean"
                 command: |
-                  if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 3 ]; then
+                  if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 2 ]; then
                     docker container ls -a
                     false
                   fi
@@ -925,61 +903,6 @@ jobs:
                     docker network ls
                     false
                   fi
-
-  test_reverse_proxy:
-    executor: ubuntu_vm
-    parameters:
-      <<: *param_cli_cluster_backend
-    steps:
-      - <<: *abort_job_if_kubernetes_backend
-
-      - checkout
-
-      - <<: *abort_job_if_only_docs_changes
-      
-      # Set up Kurtosis
-      - attach_workspace:
-          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
-
-      - <<: *steps_install_go
-
-      - run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kurtosis-cli curl
-      # We don't send metrics to avoid polluting our logs
-      - run: |
-          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
-      - run: "${KURTOSIS_BINPATH} analytics disable"
-
-      - <<: *run_prepare_testing_docker
-
-      # Start a service and send an http request to it via the reverse proxy
-      - run: |
-          ${KURTOSIS_BINPATH} enclave add --name test-enclave
-          ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=http:80/tcp
-          enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
-          service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
-          # Give the reverse proxy enough time to discover the httpd user service
-          sleep 10
-          status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "X-Kurtosis-Enclave-Short-UUID: $(echo $enclave_uuid)" -H "X-Kurtosis-Service-Short-UUID: $(echo $service_uuid)" -H "X-Kurtosis-Service-Port-Number: 80"| head -1 | awk '{print $2}')
-          if ! [ "${status_code}" -eq "200" ]; then
-            echo 'HTTP request status code returned is '${status_code}' instead of 200'
-            false
-          fi
-
-      # Restart the engine and make sure Traefik restarted and reconfigured properly 
-      - run: |
-          ${KURTOSIS_BINPATH} engine restart
-          enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
-          service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
-          # Give the reverse proxy enough time to discover the httpd user service
-          sleep 10
-          status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "X-Kurtosis-Enclave-Short-UUID: $(echo $enclave_uuid)" -H "X-Kurtosis-Service-Short-UUID: $(echo $service_uuid)" -H "X-Kurtosis-Service-Port-Number: 80"| head -1 | awk '{print $2}')
-          if ! [ "${status_code}" -eq "200" ]; then
-            echo 'HTTP request status code returned is '${status_code}' instead of 200'
-            false
-          fi
 
   test_ci_for_failure:
     executor: ubuntu_vm
@@ -1420,18 +1343,6 @@ workflows:
           <<: *filters_ignore_main
 
       - test_old_enclave_continuity:
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
-
-      - test_reverse_proxy:
-          name: "Test reverse proxy against Docker"
-          cli-cluster-backend: "docker"
           context:
             - docker-user
           requires:

@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -438,18 +437,6 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollectorForEnclave(c
 	}
 
 	return nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
-	return backend.underlying.CreateReverseProxy(ctx)
-}
-
-func (backend *MetricsReportingKurtosisBackend) GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
-	return backend.underlying.GetReverseProxy(ctx)
-}
-
-func (backend *MetricsReportingKurtosisBackend) DestroyReverseProxy(ctx context.Context) error {
-	return backend.underlying.DestroyReverseProxy(ctx)
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {

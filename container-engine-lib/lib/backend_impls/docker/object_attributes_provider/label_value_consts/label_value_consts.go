@@ -15,7 +15,6 @@ const (
 	engineContainerTypeLabelValueStr         = "kurtosis-engine"
 	logsAggregatorContainerTypeLabelValueStr = "kurtosis-logs-aggregator"
 	logsCollectorContainerTypeLabelValueStr  = "kurtosis-logs-collector"
-	reverseProxyContainerTypeLabelValueStr   = "kurtosis-reverse-proxy"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	apiContainerContainerTypeLabelValueStr           = "api-container"
@@ -39,7 +38,6 @@ var AppIDDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(app
 var EngineContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)
 var LogsAggregatorTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsAggregatorContainerTypeLabelValueStr)
 var LogsCollectorTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsCollectorContainerTypeLabelValueStr)
-var ReverseProxyTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(reverseProxyContainerTypeLabelValueStr)
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

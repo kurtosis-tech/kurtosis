@@ -11,7 +11,6 @@ var labelValueStrsToEnsure = map[string]string{
 	engineContainerTypeLabelValueStr:         "kurtosis-engine",
 	logsCollectorContainerTypeLabelValueStr:  "kurtosis-logs-collector",
 	logsAggregatorContainerTypeLabelValueStr: "kurtosis-logs-aggregator",
-	reverseProxyContainerTypeLabelValueStr:   "kurtosis-reverse-proxy",
 }
 
 var labelValuesToEnsure = map[*docker_label_value.DockerLabelValue]string{
@@ -19,7 +18,6 @@ var labelValuesToEnsure = map[*docker_label_value.DockerLabelValue]string{
 	EngineContainerTypeDockerLabelValue: "kurtosis-engine",
 	LogsAggregatorTypeDockerLabelValue:  "kurtosis-logs-aggregator",
 	LogsCollectorTypeDockerLabelValue:   "kurtosis-logs-collector",
-	ReverseProxyTypeDockerLabelValue:    "kurtosis-reverse-proxy",
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
