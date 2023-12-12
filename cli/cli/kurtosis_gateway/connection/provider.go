@@ -22,6 +22,8 @@ import (
 const (
 	grpcPortIdStr           = "grpc"
 	httpApplicationProtocol = "http"
+	// this doesn't have any effect as this is just the gateway
+	emptyStorageClassName = ""
 )
 
 var noWait *port_spec.Wait = nil
@@ -42,7 +44,7 @@ func NewGatewayConnectionProvider(ctx context.Context, kubernetesConfig *restcli
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get config for Kubernetes client set, instead a non nil error was returned")
 	}
-	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet, kubernetesConfig)
+	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet, kubernetesConfig, emptyStorageClassName)
 
 	return &GatewayConnectionProvider{
 		config:                          kubernetesConfig,

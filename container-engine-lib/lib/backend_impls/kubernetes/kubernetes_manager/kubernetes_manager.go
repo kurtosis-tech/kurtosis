@@ -152,14 +152,7 @@ type KubernetesManager struct {
 
 func int64Ptr(i int64) *int64 { return &i }
 
-func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config) *KubernetesManager {
-	return &KubernetesManager{
-		kubernetesClientSet: kubernetesClientSet,
-		kuberneteRestConfig: kuberneteRestConfig,
-	}
-}
-
-func NewKubernetesManagerWithStorageClass(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config, storageClass string) *KubernetesManager {
+func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config, storageClass string) *KubernetesManager {
 	return &KubernetesManager{
 		kubernetesClientSet: kubernetesClientSet,
 		kuberneteRestConfig: kuberneteRestConfig,
