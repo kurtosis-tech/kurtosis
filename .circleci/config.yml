@@ -470,7 +470,7 @@ jobs:
     # we use this docker/tilt-releaser image for cli jobs because starlark-lsp requires it to build
     # as opposed to running image off cimg/go:<< pipeline.parameters.go-version like every other job
     docker:
-      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     resource_class: large
     steps:
       - checkout
@@ -1183,7 +1183,7 @@ jobs:
     # as opposed to running image off cimg/go:<< pipeline.parameters.go-version like every other job
     # TODO make this a constant
     docker:
-      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - slack/notify:
           channel: engineering
