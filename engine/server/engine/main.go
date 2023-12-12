@@ -301,7 +301,7 @@ func getEnclaveManager(
 	case args.KurtosisBackendType_Kubernetes:
 		kurtosisLocalBackendConfigKubernetesType, ok := kurtosisLocalBackendConfig.(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
-			return nil, stacktrace.NewError("Couldn't parse backend configuration")
+			return nil, stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
 		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier(kurtosisLocalBackendConfigKubernetesType.StorageClass)
 	default:
@@ -345,11 +345,11 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 				"connect to a remote Kurtosis backend")
 		}
 		// Use this with more properties
-		_, ok := (backendConfig).(kurtosis_backend_config.KubernetesBackendConfig)
+		clusterConfigK8s, ok := (backendConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
 			return nil, stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
-		kurtosisBackend, err = kubernetes_kurtosis_backend.GetEngineServerBackend(ctx)
+		kurtosisBackend, err = kubernetes_kurtosis_backend.GetEngineServerBackend(ctx, clusterConfigK8s.StorageClass)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,

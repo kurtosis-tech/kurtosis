@@ -21,7 +21,7 @@ var kubeConfigFileFilepath = filepath.Join(
 	os.Getenv("HOME"), ".kube", "config",
 )
 
-func GetCLIBackend(ctx context.Context) (backend_interface.KurtosisBackend, error) {
+func GetCLIBackend(ctx context.Context, storageClass string) (backend_interface.KurtosisBackend, error) {
 	kubernetesConfig, err := clientcmd.BuildConfigFromFlags(emptyMasterURL, kubeConfigFileFilepath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating kubernetes configuration from flags in file '%v'", kubeConfigFileFilepath)
@@ -35,6 +35,7 @@ func GetCLIBackend(ctx context.Context) (backend_interface.KurtosisBackend, erro
 		ctx,
 		kubernetesConfig,
 		backendSupplier,
+		storageClass,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred wrapping the CLI Kubernetes backend")
@@ -44,7 +45,7 @@ func GetCLIBackend(ctx context.Context) (backend_interface.KurtosisBackend, erro
 }
 
 func GetEngineServerBackend(
-	ctx context.Context,
+	ctx context.Context, storageClass string,
 ) (backend_interface.KurtosisBackend, error) {
 	kubernetesConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -61,6 +62,7 @@ func GetEngineServerBackend(
 		ctx,
 		kubernetesConfig,
 		backendSupplier,
+		storageClass,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred wrapping the Kurtosis Engine Kubernetes backend")
@@ -108,7 +110,7 @@ func GetApiContainerBackend(
 		), nil
 	}
 
-	wrappedBackend, err := getWrappedKubernetesKurtosisBackendWithStorageClass(
+	wrappedBackend, err := getWrappedKubernetesKurtosisBackend(
 		ctx,
 		kubernetesConfig,
 		backendSupplier,
@@ -127,27 +129,6 @@ func GetApiContainerBackend(
 //
 // ====================================================================================================
 func getWrappedKubernetesKurtosisBackend(
-	ctx context.Context,
-	kubernetesConfig *rest.Config,
-	kurtosisBackendSupplier func(context.Context, *kubernetes_manager.KubernetesManager) (*KubernetesKurtosisBackend, error),
-) (*metrics_reporting.MetricsReportingKurtosisBackend, error) {
-	clientSet, err := kubernetes.NewForConfig(kubernetesConfig)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to create kubernetes client set using Kubernetes config '%+v', instead a non nil error was returned", kubernetesConfig)
-	}
-
-	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet, kubernetesConfig)
-
-	kubernetesBackend, err := kurtosisBackendSupplier(ctx, kubernetesManager)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend")
-	}
-
-	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(kubernetesBackend)
-	return wrappedBackend, nil
-}
-
-func getWrappedKubernetesKurtosisBackendWithStorageClass(
 	ctx context.Context,
 	kubernetesConfig *rest.Config,
 	kurtosisBackendSupplier func(context.Context, *kubernetes_manager.KubernetesManager) (*KubernetesKurtosisBackend, error),
