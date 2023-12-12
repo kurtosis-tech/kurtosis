@@ -1,17 +1,5 @@
 # Changelog
 
-## [0.85.44](https://github.com/kurtosis-tech/kurtosis/compare/0.85.43...0.85.44) (2023-12-11)
-
-
-### Features
-
-* Docker Traefik routing based on host header ([#1921](https://github.com/kurtosis-tech/kurtosis/issues/1921)) ([7086662](https://github.com/kurtosis-tech/kurtosis/commit/70866622dd978979b5c069e0b9f138346b52ce3d))
-
-
-### Bug Fixes
-
-* make push cli job use golang 1.20 ([#1925](https://github.com/kurtosis-tech/kurtosis/issues/1925)) ([805469e](https://github.com/kurtosis-tech/kurtosis/commit/805469e5068202c6a188b90d84291813e0788a0e))
-
 ## [0.85.43](https://github.com/kurtosis-tech/kurtosis/compare/0.85.42...0.85.43) (2023-12-11)
 
 
