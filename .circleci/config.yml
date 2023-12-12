@@ -123,7 +123,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.6
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.4
   slack: circleci/slack@4.10.1
 
 executors:
@@ -1143,7 +1143,7 @@ workflows:
     jobs:
       # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
-          dir-to-exclude: '^(./docs/*|./CHANGELOG.md)'
+          dir-to-exclude: '"./docs/*"'
           should-check-changelog: false
           markdown-link-check-config-json: |
             {
