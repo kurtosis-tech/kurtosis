@@ -48,6 +48,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -82,6 +83,11 @@ const (
 	pathToEnclaveSpecs   = "/api/specs/enclave"
 	pathToEngineSpecs    = "/api/specs/engine"
 	pathToWebsocketSpecs = "/api/specs/websocket"
+)
+
+var (
+	defaultCORSOrigins []string = []string{"*"}
+	defaultCORSHeaders []string = []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept}
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -400,6 +406,13 @@ func restApiServer(
 	// This is how you set up a basic Echo router
 	echoRouter := echo.New()
 	echoRouter.Use(echomiddleware.Logger())
+
+	// Setup CORS policies for the REST API server
+	// nolint:exhaustruct
+	echoRouter.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: defaultCORSOrigins,
+		AllowHeaders: defaultCORSHeaders,
+	}))
 
 	// ============================== Engine Management API ======================================
 	engineRuntime := restApi.EngineRuntime{

@@ -192,7 +192,7 @@ parameters:
   # We can bump the version here if we ever need to bust the cache
   cli-build-cache-key-prefix:
     type: string
-    default: "cli-go-mod-v1"
+    default: "cli-go-mod-v2"
   generate-kurtosis-version-script-path:
     type: string
     default: "scripts/generate-kurtosis-version.sh"
@@ -467,6 +467,8 @@ jobs:
             - "<< pipeline.parameters.engine-server-image-filename >>"
 
   build_cli:
+    # we use this docker/tilt-releaser image for cli jobs because starlark-lsp requires it to build
+    # as opposed to running image off cimg/go:<< pipeline.parameters.go-version like every other job
     docker:
       - image: "docker/tilt-releaser@sha256:ff4a71c0d18717cc9c646778cc426a0a4f916885c5fe7eb001f0eaee0d3483a0"
     resource_class: large
@@ -962,7 +964,7 @@ jobs:
           service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
           # Give the reverse proxy enough time to discover the httpd user service
           sleep 10
-          status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "X-Kurtosis-Enclave-Short-UUID: $(echo $enclave_uuid)" -H "X-Kurtosis-Service-Short-UUID: $(echo $service_uuid)" -H "X-Kurtosis-Service-Port-Number: 80"| head -1 | awk '{print $2}')
+          status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
           if ! [ "${status_code}" -eq "200" ]; then
             echo 'HTTP request status code returned is '${status_code}' instead of 200'
             false
@@ -975,7 +977,7 @@ jobs:
           service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
           # Give the reverse proxy enough time to discover the httpd user service
           sleep 10
-          status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "X-Kurtosis-Enclave-Short-UUID: $(echo $enclave_uuid)" -H "X-Kurtosis-Service-Short-UUID: $(echo $service_uuid)" -H "X-Kurtosis-Service-Port-Number: 80"| head -1 | awk '{print $2}')
+          status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
           if ! [ "${status_code}" -eq "200" ]; then
             echo 'HTTP request status code returned is '${status_code}' instead of 200'
             false
@@ -1177,8 +1179,10 @@ jobs:
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   push_cli_artifacts:
+    # we use this docker/tilt-releaser image for cli jobs because starlark-lsp requires it to build
+    # as opposed to running image off cimg/go:<< pipeline.parameters.go-version like every other job
     docker:
-      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
+      - image: "docker/tilt-releaser@sha256:ff4a71c0d18717cc9c646778cc426a0a4f916885c5fe7eb001f0eaee0d3483a0"
     steps:
       - slack/notify:
           channel: engineering
