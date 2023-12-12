@@ -8,20 +8,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"net"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"runtime"
-	"strings"
-	"time"
-
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
-	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/core_rest_api"
-	engineApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/engine_rest_api"
-	loggingApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/websocket_api"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -41,16 +28,19 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
-	restApi "github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/labstack/echo/v4"
-	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
 )
 
 const (
@@ -72,16 +62,6 @@ const (
 	indexPath                   = "index.html"
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
-
-	restAPIPortAddr uint16 = 9779 //TODO: pass this parameter
-	restAPIHostIP   string = "0.0.0.0"
-
-	streamerPoolSize       = 1000
-	streamerExpirationTime = time.Hour * 2
-
-	pathToEnclaveSpecs   = "/api/specs/enclave"
-	pathToEngineSpecs    = "/api/specs/engine"
-	pathToWebsocketSpecs = "/api/specs/websocket"
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -241,22 +221,6 @@ func runMain() error {
 		}
 	}()
 
-	go func() {
-		err := restApiServer(
-			ctx,
-			serverArgs,
-			enclaveManager,
-			logsDatabaseClient,
-			logFileManager,
-			metricsClient,
-		)
-		if err != nil {
-			logrus.Fatal("The REST API server is down, exiting!", err)
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			os.Exit(failureExitCode)
-		}
-	}()
-
 	engineConnectServer := server.NewEngineConnectServerService(
 		serverArgs.ImageVersionTag,
 		enclaveManager,
@@ -272,11 +236,11 @@ func runMain() error {
 		}
 	}()
 
+	logrus.Info("Running server...")
 	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
 	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
-
 	return nil
 }
 
@@ -381,83 +345,4 @@ func formatFilenameFunctionForLogs(filename string, functionName string) string 
 	output.WriteString(functionName)
 	output.WriteString("]")
 	return output.String()
-}
-
-func restApiServer(
-	ctx context.Context,
-	serverArgs *args.EngineServerArgs,
-	enclave_manager *enclave_manager.EnclaveManager,
-	logsDatabaseClient centralized_logs.LogsDatabaseClient,
-	logFileManager *log_file_manager.LogFileManager,
-	metricsClient metrics_client.MetricsClient,
-) error {
-
-	asyncStarlarkLogs := streaming.NewStreamerPool[*kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamerPoolSize, streamerExpirationTime)
-	defer asyncStarlarkLogs.Clean()
-
-	logrus.Info("Running REST API server...")
-
-	// This is how you set up a basic Echo router
-	echoRouter := echo.New()
-	echoRouter.Use(echomiddleware.Logger())
-
-	// ============================== Engine Management API ======================================
-	engineRuntime := restApi.EngineRuntime{
-		ImageVersionTag: serverArgs.ImageVersionTag,
-		EnclaveManager:  enclave_manager,
-		LogFileManager:  logFileManager,
-		MetricsClient:   metricsClient,
-	}
-	engineApi.RegisterHandlers(echoRouter, engineApi.NewStrictHandler(engineRuntime, nil))
-
-	// ============================== Logging API ======================================
-	webSocketRuntime := restApi.WebSocketRuntime{
-		ImageVersionTag:             serverArgs.ImageVersionTag,
-		EnclaveManager:              enclave_manager,
-		MetricsUserID:               serverArgs.MetricsUserID,
-		DidUserAcceptSendingMetrics: serverArgs.DidUserAcceptSendingMetrics,
-		LogsDatabaseClient:          logsDatabaseClient,
-		LogFileManager:              logFileManager,
-		MetricsClient:               metricsClient,
-		AsyncStarlarkLogs:           asyncStarlarkLogs,
-	}
-	loggingApi.RegisterHandlers(echoRouter, webSocketRuntime)
-
-	// ============================== Engine Management API ======================================
-	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, *enclave_manager, asyncStarlarkLogs, false)
-	if err != nil {
-		newErr := stacktrace.Propagate(err, "Failed to initialize %T", enclaveRuntime)
-		return newErr
-	}
-	enclaveApi.RegisterHandlers(echoRouter, enclaveApi.NewStrictHandler(enclaveRuntime, nil))
-
-	// ============================== Serve OpenAPI specs ======================================
-	// TODO (edgar) Move Spec service to Web Server
-	// =========================================================================================
-	swaggerEngine, err := engineApi.GetSwagger()
-	if err != nil {
-		// Log and skip since this is non-essential
-		logrus.Errorf("Error loading swagger spec: %v", err)
-	} else {
-		server.ServeSwaggerUI(echoRouter, pathToEngineSpecs, server.NewSwaggerUIConfig(swaggerEngine))
-	}
-
-	swaggerEnclave, err := enclaveApi.GetSwagger()
-	if err != nil {
-		// Log and skip since this is non-essential
-		logrus.Errorf("Error loading swagger spec: %v", err)
-	} else {
-		server.ServeSwaggerUI(echoRouter, pathToEnclaveSpecs, server.NewSwaggerUIConfig(swaggerEnclave))
-	}
-
-	swaggerWebsocket, err := loggingApi.GetSwagger()
-	if err != nil {
-		// Log and skip since this is non-essential
-		logrus.Errorf("Error loading swagger spec: %v", err)
-	} else {
-		server.ServeSwaggerUI(echoRouter, pathToWebsocketSpecs, server.NewSwaggerUIConfig(swaggerWebsocket))
-	}
-
-	// ============================== Start Server ======================================
-	return echoRouter.Start(net.JoinHostPort(restAPIHostIP, fmt.Sprint(restAPIPortAddr)))
 }

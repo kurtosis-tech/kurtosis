@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite
 
-go 1.20
+go 1.19
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
@@ -27,16 +27,15 @@ require (
 require (
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
-	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.3.1 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2 // indirect
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230818184218-f4e3e773463b // indirect
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // indirect

@@ -3,10 +3,6 @@ package output_printers
 import (
 	"errors"
 	"fmt"
-	"strings"
-	"sync"
-	"time"
-
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
@@ -16,6 +12,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"strings"
+	"sync"
+	"time"
 )
 
 const (
@@ -185,7 +184,6 @@ func formatInfo(infoMessage string) string {
 	return colorizeInfo(infoMessage)
 }
 
-// nolint:exhaustive
 func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction, verbosity run.Verbosity) string {
 	var serializedInstruction string
 	switch verbosity {

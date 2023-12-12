@@ -26,13 +26,11 @@ import (
 )
 
 const (
-	listenPort                 = 8081
-	grpcServerStopGracePeriod  = 5 * time.Second
-	engineHostUrl              = "http://localhost:9710"
-	kurtosisCloudApiHost       = "https://cloud.kurtosis.com"
-	kurtosisCloudApiPort       = 8080
-	numberOfElementsAuthHeader = 2
-	numberOfElementsHostString = 2
+	listenPort                = 8081
+	grpcServerStopGracePeriod = 5 * time.Second
+	engineHostUrl             = "http://localhost:9710"
+	kurtosisCloudApiHost      = "https://cloud.kurtosis.com"
+	kurtosisCloudApiPort      = 8080
 )
 
 type Authentication struct {
@@ -62,7 +60,6 @@ func NewWebserver(enforceAuth bool) (*WebServer, error) {
 		apiKeyMutex:         &sync.RWMutex{},
 		apiKeyMap:           map[string]*string{},
 		instanceConfigMap:   map[string]*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse{},
-		instanceConfig:      nil,
 	}, nil
 }
 
@@ -86,7 +83,7 @@ func (c *WebServer) ValidateRequestAuthorization(
 
 	reqToken := header.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer")
-	if len(splitToken) != numberOfElementsAuthHeader {
+	if len(splitToken) != 2 {
 		return false, stacktrace.NewError("Authorization token malformed. Bearer token format required")
 	}
 	reqToken = strings.TrimSpace(splitToken[1])
@@ -104,7 +101,7 @@ func (c *WebServer) ValidateRequestAuthorization(
 	}
 	reqHost := header.Get("Host")
 	splitHost := strings.Split(reqHost, ":")
-	if len(splitHost) != numberOfElementsHostString {
+	if len(splitHost) != 2 {
 		return false, stacktrace.NewError("Host header malformed. host:port format required")
 	}
 	reqHost = splitHost[0]
@@ -230,9 +227,6 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 	}
 
 	starlarkLogsStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, runStarlarkRequest)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to run package: %s", req.Msg.RunStarlarkPackageArgs.PackageId)
-	}
 
 	for starlarkLogsStream.Receive() {
 		resp := starlarkLogsStream.Msg()
@@ -339,9 +333,6 @@ func (c *WebServer) DownloadFilesArtifact(
 	}
 
 	filesArtifactStream, err := (*apiContainerServiceClient).DownloadFilesArtifact(ctx, downloadFilesArtifactRequest)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create download stream for file artifact: %s", filesArtifactIdentifier)
-	}
 	for filesArtifactStream.Receive() {
 		resp := filesArtifactStream.Msg()
 		err = str.Send(resp)
