@@ -510,6 +510,9 @@ jobs:
             - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
             - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
+      - store_artifacts:
+          path: cli/cli/dist
+
   build_golang_testsuite:
     executor: ubuntu_vm
     parameters:
