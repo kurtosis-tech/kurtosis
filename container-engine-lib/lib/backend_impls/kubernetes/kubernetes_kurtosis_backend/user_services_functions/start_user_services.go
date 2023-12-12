@@ -42,6 +42,12 @@ const (
 	unboundPortNumber = 1
 
 	unlimitedReplacements = -1
+
+	ingressRulePathAllPaths = "/"
+)
+
+var (
+	ingressRulePathTypePrefix = netv1.PathTypePrefix
 )
 
 // Completeness enforced via unit test
@@ -899,7 +905,6 @@ func getUserServiceIngressRules(
 	serviceRegistration *service.ServiceRegistration,
 	privatePorts map[string]*port_spec.PortSpec,
 ) ([]netv1.IngressRule, error) {
-	path := "/"
 	ingressRules := []netv1.IngressRule{}
 	for _, portSpec := range privatePorts {
 		host := fmt.Sprintf("%d-%s-%s", portSpec.GetNumber(), serviceRegistration.GetUUID(), serviceRegistration.GetEnclaveID())
@@ -909,7 +914,8 @@ func getUserServiceIngressRules(
 				HTTP: &netv1.HTTPIngressRuleValue{
 					Paths: []netv1.HTTPIngressPath{
 						{
-							Path: path,
+							Path:     ingressRulePathAllPaths,
+							PathType: &ingressRulePathTypePrefix,
 							Backend: netv1.IngressBackend{
 								Service: &netv1.IngressServiceBackend{
 									Name: string(serviceRegistration.GetName()),
