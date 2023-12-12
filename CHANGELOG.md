@@ -1,12 +1,5 @@
 # Changelog
 
-## [0.85.45](https://github.com/kurtosis-tech/kurtosis/compare/0.85.44...0.85.45) (2023-12-12)
-
-
-### Bug Fixes
-
-* bust cli build cache ([#1930](https://github.com/kurtosis-tech/kurtosis/issues/1930)) ([1e32da8](https://github.com/kurtosis-tech/kurtosis/commit/1e32da840844537936244ec5b76609f7e3d18fea))
-
 ## [0.85.44](https://github.com/kurtosis-tech/kurtosis/compare/0.85.43...0.85.44) (2023-12-11)
 
 
