@@ -2,7 +2,6 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"io"
 	"sync"
 
@@ -478,10 +477,6 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 		return 0, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
 	}
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
-}
-
-func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
-	return backend.dockerManager.BuildImage(ctx, imageName, imageBuildSpec)
 }
 
 // ====================================================================================================

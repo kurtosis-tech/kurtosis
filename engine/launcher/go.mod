@@ -11,7 +11,7 @@ replace (
 require (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.4
 )
 
@@ -22,9 +22,8 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rogpeppe/go-internal v1.10.0 // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/segmentio/backo-go v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect

@@ -1,4 +1,4 @@
-package utils
+package shared_utils
 
 import (
 	"encoding/hex"

@@ -16,8 +16,7 @@ use (
 	./grpc-file-transfer/golang
 	./internal_testsuites/golang
 	./kurtosis_version
-	./metrics-library/golang
 	./name_generator
-	./utils
 	connect-server
+	./metrics-library/golang
 )
