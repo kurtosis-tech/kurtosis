@@ -70,6 +70,9 @@ const (
 	listOptionsTimeoutSeconds      int64 = 10
 	contextDeadlineExceeded              = "context deadline exceeded"
 	expectedStatusMessageSliceSize       = 6
+
+	// bringing this back to test
+	persistentVolumeDefaultSize int64 = 1 * 1024 * 1024 * 1024
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -390,7 +393,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 				Requests: apiv1.ResourceList{
 					// we give each claim 100% of the corresponding volume. Since we have a 1:1 mapping between volumes
 					// and claims right now, it's the best we can do
-					apiv1.ResourceStorage: *resource.NewQuantity(requiredSize, resource.BinarySI),
+					apiv1.ResourceStorage: *resource.NewQuantity(persistentVolumeDefaultSize, resource.BinarySI),
 				},
 				Claims: nil,
 			},
