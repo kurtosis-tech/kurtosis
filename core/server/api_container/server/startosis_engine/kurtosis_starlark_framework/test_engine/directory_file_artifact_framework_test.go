@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -35,4 +36,8 @@ func (t *directoryFileArtifactTestCase) Assert(typeValue builtin_argument.Kurtos
 	require.Nil(t, err)
 	require.False(t, found)
 	require.Empty(t, persistentKey)
+
+	size, err := directoryStarlark.GetSizeOrDefault()
+	require.Nil(t, err)
+	require.Equal(t, startosis_constants.DefaultPersistentDirectorySize, size)
 }

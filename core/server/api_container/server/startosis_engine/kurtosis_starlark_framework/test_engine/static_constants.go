@@ -48,6 +48,7 @@ var (
 	testFilesArtifactName2      = "file_2"
 	testPersistentDirectoryPath = "path/to/persistent/dir"
 	testPersistentDirectoryKey  = "persistent-dir-test"
+	testPersistentDirectorySize = int64(30)
 
 	testEntryPointSlice = []string{
 		"127.0.0.0",
