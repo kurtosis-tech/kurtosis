@@ -15,10 +15,10 @@ const (
 	enclaveCreationTimeKeyStr = labelKeyPrefixStr + "enclave-creation-time"
 
 	enclaveNameKeyStr = labelKeyPrefixStr + "enclave-name"
-	
+
 	// Traefik ingress router
 	traefikKeyIngressRouterPrefixStr = "traefik.ingress.kubernetes.io/router."
-	traefikKeyEntrypointsStr = traefikKeyIngressRouterPrefixStr + "entrypoints"
+	traefikKeyEntrypointsStr         = traefikKeyIngressRouterPrefixStr + "entrypoints"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
