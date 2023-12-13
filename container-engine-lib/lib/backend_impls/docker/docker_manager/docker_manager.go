@@ -139,8 +139,7 @@ const (
 
 	kurtosisTagPrefix = "kurtosistech/"
 
-	volumeSizeOptKey = "size"
-	byteSuffix       = "b"
+	byteSuffix = "b"
 )
 
 type RestartPolicy string
@@ -441,7 +440,7 @@ func (manager *DockerManager) CreateVolumeWithLimitedSize(context context.Contex
 		ClusterVolumeSpec: nil,
 		Driver:            "",
 		DriverOpts: map[string]string{
-			volumeSizeOptKey: fmt.Sprintf("%v%s", requiredSize, byteSuffix),
+			"o": fmt.Sprintf("size=%v%s", requiredSize, byteSuffix),
 		},
 		Labels: labels,
 		Name:   volumeName,
