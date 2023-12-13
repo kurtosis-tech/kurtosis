@@ -1783,7 +1783,7 @@ func (manager *KubernetesManager) HasComputeNodes(ctx context.Context) (bool, er
 
 // ---------------------------Ingresses------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) CreateIngress(ctx context.Context, namespace string, serviceName string,annotations map[string]string, rules []netv1.IngressRule) (*netv1.Ingress, error) {
+func (manager *KubernetesManager) CreateIngress(ctx context.Context, namespace string, name string,annotations map[string]string, rules []netv1.IngressRule) (*netv1.Ingress, error) {
 	client := manager.kubernetesClientSet.NetworkingV1().Ingresses(namespace)
 
 	ingress := &netv1.Ingress{
@@ -1792,7 +1792,7 @@ func (manager *KubernetesManager) CreateIngress(ctx context.Context, namespace s
 			APIVersion: "",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            serviceName,
+			Name:            name,
 			GenerateName:    "",
 			Namespace:       "",
 			SelfLink:        "",
@@ -1825,7 +1825,7 @@ func (manager *KubernetesManager) CreateIngress(ctx context.Context, namespace s
 
 	ingressResult, err := client.Create(ctx, ingress, globalCreateOptions)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create the ingress with name '%s' in namespace '%v'", serviceName, namespace)
+		return nil, stacktrace.Propagate(err, "Failed to create the ingress with name '%s' in namespace '%v'", name, namespace)
 	}
 	return ingressResult, nil
 }

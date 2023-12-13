@@ -907,7 +907,9 @@ func getUserServiceIngressRules(
 ) ([]netv1.IngressRule, error) {
 	ingressRules := []netv1.IngressRule{}
 	for _, portSpec := range privatePorts {
-		host := fmt.Sprintf("%d-%s-%s", portSpec.GetNumber(), serviceRegistration.GetUUID(), serviceRegistration.GetEnclaveID())
+		enclaveShortUuid := uuid_generator.ShortenedUUIDString(string(serviceRegistration.GetEnclaveID()))
+		serviceShortUuid := uuid_generator.ShortenedUUIDString(string(serviceRegistration.GetUUID()))
+		host := fmt.Sprintf("%d-%s-%s", portSpec.GetNumber(), serviceShortUuid, enclaveShortUuid)
 		ingressRule := netv1.IngressRule{
 			Host: host,
 			IngressRuleValue: netv1.IngressRuleValue{
