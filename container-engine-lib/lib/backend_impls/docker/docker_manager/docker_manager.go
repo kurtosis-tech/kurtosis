@@ -430,6 +430,10 @@ Args:
 	sizeLimit: Size limit of the volume in bytes
 */
 func (manager *DockerManager) CreateVolumeWithLimitedSize(context context.Context, volumeName string, labels map[string]string, sizeLimit int64) error {
+	if sizeLimit == 0 {
+		return stacktrace.NewError("Cannot create volume '%v' with 0 size", volumeName)
+	}
+
 	volumeConfig := volume.CreateOptions{
 		ClusterVolumeSpec: &volume.ClusterVolumeSpec{
 			Group:                     "",
