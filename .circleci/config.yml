@@ -30,7 +30,7 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         name: Install K3D and create the K3D/K3S cluster on Docker
         command: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-          k3d cluster create --servers 1 --no-lb --wait --verbose
+          k3d cluster create -p "<< pipeline.parameters.reverse-proxy-entrypoint-web-port >>:80@loadbalancer" --servers 1 --wait --verbose
     - run:
         name: Load Kurtosis images into the K3S cluster
         # First load the image into Docker and then import the images into K3S by taking the image from Docker
@@ -954,7 +954,16 @@ jobs:
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: "${KURTOSIS_BINPATH} analytics disable"
 
-      - <<: *run_prepare_testing_docker
+      - when:
+          condition:
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s_k3s
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
 
       # Start a service and send an http request to it via the reverse proxy
       - run: |
