@@ -48,6 +48,7 @@ func getOrCreatePersistentDirectories(
 		// note this doesn't consider persistentDirectory.Size
 		// Docker doesn't support sized volumes - the best you can do is create tmpfs (in memory) persistent volumes
 		// but that would go away if you restart Docker
+		// TODO Make the `lsp` aware of `size`
 		if err = dockerManager.CreateVolume(ctx, volumeName, volumeLabelsStrs); err != nil {
 			return nil, stacktrace.Propagate(
 				err,
