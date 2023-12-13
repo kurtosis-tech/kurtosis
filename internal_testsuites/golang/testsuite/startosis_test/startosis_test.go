@@ -24,6 +24,7 @@ const (
 	renderedConfigRelativePath    = "foo/bar.yml"
 	renderedConfigFile            = renderedConfigMountPath + "/" + renderedConfigRelativePath
 
+	// TODO remove dependence on external package - if the rendering fails next time please make it local or put in our test packages!
 	startosisScript = `
 DATASTORE_IMAGE = "kurtosistech/example-datastore-server"
 DATASTORE_SERVICE_NAME = "` + serviceName + `"
@@ -36,7 +37,7 @@ FILE_TO_BE_CREATED = "` + fileToBeCreated + `"
 SERVICE_DEPENDENT_ON_DATASTORE_SERVICE = "` + serviceIdForDependentService + `"
 PATH_TO_MOUNT_ON_DEPENDENT_SERVICE =  "` + pathToCheckOnDependentService + `"
 
-TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/ethereum-package/static_files/prometheus-config/prometheus.yml.tmpl"
+TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/prometheus-package/static-files/prometheus.yml.tmpl"
 PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
@@ -183,8 +184,7 @@ scrape_configs:
     static_configs:
       - targets: ['foobar.com']
         labels:
-          test: "pass"
-`
+          test: "pass"`
 	logrus.Infof("Checking that the file got mounted on " + serviceIdForDependentService)
 	serviceCtx, err = enclaveCtx.GetServiceContext(serviceIdForDependentService)
 	require.Nil(t, err, "Unexpected Error Creating Service Context")
