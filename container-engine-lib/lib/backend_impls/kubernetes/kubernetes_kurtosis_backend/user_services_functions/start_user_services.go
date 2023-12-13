@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -444,27 +445,29 @@ func createStartServiceOperation(
 			return nil, stacktrace.Propagate(err, "An error occurred creating the user service ingress rules for service with UUID '%v'", serviceUuid)
 		}
 
-		ingressName := string(serviceName)
-		createdIngress, err := kubernetesManager.CreateIngress(
-			ctx,
-			namespaceName,
-			ingressName,
-			ingressAnnotationsStrs,
-			ingressRules,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating ingress for service with UUID '%v'", serviceUuid)
+		if ingressRules != nil {
+			ingressName := string(serviceName)
+			createdIngress, err := kubernetesManager.CreateIngress(
+				ctx,
+				namespaceName,
+				ingressName,
+				ingressAnnotationsStrs,
+				ingressRules,
+			)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating ingress for service with UUID '%v'", serviceUuid)
+			}
+			shouldDestroyIngress := true
+			defer func() {
+				if !shouldDestroyIngress {
+					return
+				}
+				if err := kubernetesManager.RemoveIngress(ctx, createdIngress); err != nil {
+					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the ingress we created but doing so threw an error:\n%v", err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to remove ingress '%v' in '%v' manually!!!", ingressName, namespaceName)
+				}
+			}()
 		}
-		shouldDestroyIngress := true
-		defer func() {
-			if !shouldDestroyIngress {
-				return
-			}
-			if err := kubernetesManager.RemoveIngress(ctx, createdIngress); err != nil {
-				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the ingress we created but doing so threw an error:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to remove ingress '%v' in '%v' manually!!!", ingressName, namespaceName)
-			}
-		}()
 
 		updatedService, undoServiceUpdateFunc, err := updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts, kubernetesManager)
 		if err != nil {
@@ -906,35 +909,41 @@ func getUserServiceIngressRules(
 	serviceRegistration *service.ServiceRegistration,
 	privatePorts map[string]*port_spec.PortSpec,
 ) ([]netv1.IngressRule, error) {
-	ingressRules := []netv1.IngressRule{}
+	var ingressRules []netv1.IngressRule
 	enclaveShortUuid := uuid_generator.ShortenedUUIDString(string(serviceRegistration.GetEnclaveID()))
 	serviceShortUuid := uuid_generator.ShortenedUUIDString(string(serviceRegistration.GetUUID()))
 	for _, portSpec := range privatePorts {
-		host := fmt.Sprintf("%d-%s-%s", portSpec.GetNumber(), serviceShortUuid, enclaveShortUuid)
-		ingressRule := netv1.IngressRule{
-			Host: host,
-			IngressRuleValue: netv1.IngressRuleValue{
-				HTTP: &netv1.HTTPIngressRuleValue{
-					Paths: []netv1.HTTPIngressPath{
-						{
-							Path:     ingressRulePathAllPaths,
-							PathType: &ingressRulePathTypePrefix,
-							Backend: netv1.IngressBackend{
-								Service: &netv1.IngressServiceBackend{
-									Name: string(serviceRegistration.GetName()),
-									Port: netv1.ServiceBackendPort{
-										Name:   "",
-										Number: int32(portSpec.GetNumber()),
+		maybeApplicationProtocol := ""
+		if portSpec.GetMaybeApplicationProtocol() != nil {
+			maybeApplicationProtocol = *portSpec.GetMaybeApplicationProtocol()
+		}
+		if maybeApplicationProtocol == consts.HttpApplicationProtocol {
+			host := fmt.Sprintf("%d-%s-%s", portSpec.GetNumber(), serviceShortUuid, enclaveShortUuid)
+			ingressRule := netv1.IngressRule{
+				Host: host,
+				IngressRuleValue: netv1.IngressRuleValue{
+					HTTP: &netv1.HTTPIngressRuleValue{
+						Paths: []netv1.HTTPIngressPath{
+							{
+								Path:     ingressRulePathAllPaths,
+								PathType: &ingressRulePathTypePrefix,
+								Backend: netv1.IngressBackend{
+									Service: &netv1.IngressServiceBackend{
+										Name: string(serviceRegistration.GetName()),
+										Port: netv1.ServiceBackendPort{
+											Name:   "",
+											Number: int32(portSpec.GetNumber()),
+										},
 									},
+									Resource: nil,
 								},
-								Resource: nil,
 							},
 						},
 					},
 				},
-			},
+			}
+			ingressRules = append(ingressRules, ingressRule)
 		}
-		ingressRules = append(ingressRules, ingressRule)
 	}
 	return ingressRules, nil
 }
