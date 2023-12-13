@@ -10,6 +10,8 @@
     "js-cookie": "^3.0.5",
     "kurtosis-cloud-indexer-sdk": "^0.0.2",
     "kurtosis-ui-components": "0.86.2",
+    "openapi-fetch": "^0.8.2",
+    "openapi-typescript-helpers": "^0.0.5",
     "react-error-boundary": "^4.0.11",
     "react-hook-form": "^7.47.0",
     "yaml": "^2.3.4"

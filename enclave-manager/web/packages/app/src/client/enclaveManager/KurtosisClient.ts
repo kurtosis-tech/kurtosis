@@ -23,11 +23,16 @@ import {
   InspectFilesArtifactContentsRequest,
   RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
+import { paths } from "kurtosis-sdk/src/engine/rest_api_bindings/types";
 import { assertDefined, asyncResult, isDefined, RemoveFunctions } from "kurtosis-ui-components";
+import createClient from "openapi-fetch";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
+
+type KurtosisRestClient = ReturnType<typeof createClient<paths>>;
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
+  protected readonly restClient: KurtosisRestClient;
 
   /* Full URL of the browser containing the EM UI covering two use cases:
    * In local-mode this is: http://localhost:9711, http://localhost:3000 (with `yarn start` / dev mode)
@@ -45,8 +50,14 @@ export abstract class KurtosisClient {
    * */
   protected readonly baseApplicationUrl: URL;
 
-  constructor(client: PromiseClient<typeof KurtosisEnclaveManagerServer>, parentUrl: URL, childUrl: URL) {
+  constructor(
+    client: PromiseClient<typeof KurtosisEnclaveManagerServer>,
+    restClient: KurtosisRestClient,
+    parentUrl: URL,
+    childUrl: URL,
+  ) {
     this.client = client;
+    this.restClient = restClient;
     this.cloudUrl = parentUrl;
     this.baseApplicationUrl = childUrl;
     this.getParentRequestedRoute();
@@ -73,6 +84,7 @@ export abstract class KurtosisClient {
   }
 
   async checkHealth() {
+    console.log(await this.restClient.GET("/engine/info"));
     return asyncResult(this.client.check({}, this.getHeaderOptions()));
   }
 
