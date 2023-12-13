@@ -138,8 +138,6 @@ const (
 	dontStreamStats        = false
 
 	kurtosisTagPrefix = "kurtosistech/"
-
-	byteSuffix = "b"
 )
 
 type RestartPolicy string
