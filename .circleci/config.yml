@@ -1452,6 +1452,18 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
+      - test_reverse_proxy:
+          name: "Test reverse proxy against Kubernetes"
+          cli-cluster-backend: "kubernetes"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
       # -- Artifact-publishing jobs --------------------------------
       - publish_kurtosis_sdk_rust:
           context:
