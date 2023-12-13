@@ -22,6 +22,7 @@ export interface ClientOptions extends Omit<RequestInit, "headers"> {
     wss?: typeof WebSocket;
     /** global querySerializer */
     querySerializer?: QuerySerializer<unknown>;
+
 }
 
 export type HeadersOptions =
@@ -58,6 +59,10 @@ export type RequestBodyOption<T> = OperationRequestBodyContent<T> extends never
 
 export type FetchOptions<T> = RequestOptions<T> & Omit<RequestInit, "body">;
 
+export type Abortable = {
+    abortSignal?: AbortSignal;
+}
+
 export type FetchResponse<T> =
     | {
         data: FilterKeys<SuccessResponse<ResponseObjectMap<T>>, MediaType>;
@@ -70,7 +75,7 @@ export type FetchResponse<T> =
         response: Response;
     };
 
-export type RequestOptions<T> = ParamsOption<T> &
+export type RequestOptions<T> = ParamsOption<T> & Abortable &
     RequestBodyOption<T> & {
         querySerializer?: QuerySerializer<T>;
         parseAs?: ParseAs;

@@ -19,6 +19,7 @@ export default function createWSClient(clientOptions) {
             params = {},
             parseAs = "json",
             querySerializer = globalQuerySerializer ?? defaultQuerySerializer,
+            abortSignal,
             ...init
         } = fetchOptions || {};
 
@@ -34,6 +35,13 @@ export default function createWSClient(clientOptions) {
             ws = new wss(finalURL);
         } catch (error) {
             return { error: {}, data: null }
+        }
+
+        if (abortSignal) {
+            if (abortSignal.aborted) {
+                ws.close();  // already aborted, fail immediately
+            }
+            abortSignal.addEventListener('abort', () => ws.close());
         }
 
         ws.onmessage = (event) => {

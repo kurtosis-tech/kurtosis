@@ -90,16 +90,30 @@ export abstract class KurtosisClient {
     return asyncResult(this.client.check({}, this.getHeaderOptions()));
   }
 
-  async ServiceLogs2() {
+  async getServiceLogsWS(
+    abortSignal: AbortSignal,
+    enclave: RemoveFunctions<EnclaveFullInfo>,
+    serviceUUID: string,
+    followLogs?: boolean,
+    numLogLines?: number,
+    returnAllLogs?: boolean,
+    conjunctiveFilters?: LogLineFilter[],
+  ) {
     var wssClient = createWSClient<paths>({ baseUrl: KURTOSIS_WEBSOCKET_API_DEFAULT_URL });
     wssClient.GET("/enclaves/{enclave_identifier}/services/{service_identifier}/logs", (resp) => console.log(resp), {
       params: {
         path: {
-          enclave_identifier: "2c70255d55874b5ea2fd3d84d7c1d5f7",
-          service_identifier: "81bce6e8ceb0428594b232a6f1802c91",
+          enclave_identifier: enclave.enclaveUuid,
+          service_identifier: serviceUUID,
         },
-        query: { follow_logs: true },
+        query: {
+          follow_logs: followLogs,
+          num_log_lines: numLogLines,
+          return_all_logs: returnAllLogs,
+          // conjunctive_filters: conjunctiveFilters?.map(x => {operator: x.operator; text_pattern: x.textPattern})
+        },
       },
+      abortSignal: abortSignal,
     });
   }
 

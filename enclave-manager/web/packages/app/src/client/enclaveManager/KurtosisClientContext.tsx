@@ -7,6 +7,7 @@ import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
 import { KurtosisClient } from "./KurtosisClient";
 import { LocalKurtosisClient } from "./LocalKurtosisClient";
 import React from "react";
+import { EnclaveInfo } from "enclave-manager-sdk/build/engine_service_pb";
 
 type KurtosisClientContextState = {
   client: KurtosisClient | null;
@@ -88,7 +89,14 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
 
         if (isDefined(newClient)) {
           const checkResp = await newClient.checkHealth();
-          const checkResp2 = await newClient.ServiceLogs2();
+          var mock = new EnclaveInfo();
+          var abort = new AbortController();
+          mock.enclaveUuid = "2c70255d55874b5ea2fd3d84d7c1d5f7"
+          const checkResp2 = await newClient.getServiceLogsWS(
+            abort.signal,
+            mock,
+            "81bce6e8ceb0428594b232a6f1802c91"
+          );
           console.info(">>>>> HERE")
           console.dir(checkResp2);
           if (checkResp.isErr) {
