@@ -92,7 +92,7 @@ func getReverseProxyObjectFromContainerInfo(
 		}
 		privateIpAddr = net.ParseIP(privateIpAddrStr)
 		if privateIpAddr == nil {
-			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
+			return nil, stacktrace.NewError("Couldn't parse the reverse proxy container private IP address string '%v' to an IP", privateIpAddrStr)
 		}
 
 		networksIpAddressStr, err := dockerManager.GetContainerIps(ctx, containerId)
@@ -104,7 +104,7 @@ func getReverseProxyObjectFromContainerInfo(
 			if networkIpAddressStr != privateIpAddrStr {
 				networkIpAddress := net.ParseIP(networkIpAddressStr)
 				if networkIpAddress == nil {
-					return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", networkIpAddressStr)
+					return nil, stacktrace.NewError("Couldn't parse the reverse proxy network '%v' private IP address string '%v' to an IP", networkId, networkIpAddressStr)
 				}
 				enclaveNetworksIpAddress[networkId] = networkIpAddress
 			}
