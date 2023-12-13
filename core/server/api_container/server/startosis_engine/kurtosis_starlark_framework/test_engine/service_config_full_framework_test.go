@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
 	"net"
 	"testing"
@@ -88,8 +89,11 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	require.NotNil(t, serviceConfig.GetFilesArtifactsExpansion())
 	require.Equal(t, expectedFilesArtifactMap, serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
 
-	expectedPersistentDirectoryMap := map[string]service_directory.DirectoryPersistentKey{
-		testPersistentDirectoryPath: service_directory.DirectoryPersistentKey(testPersistentDirectoryKey),
+	expectedPersistentDirectoryMap := map[string]service_directory.PersistentDirectory{
+		testPersistentDirectoryPath: {
+			PersistentKey: service_directory.DirectoryPersistentKey(testPersistentDirectoryKey),
+			Size:          service_directory.DirectoryPersistentSize(startosis_constants.DefaultPersistentDirectorySize),
+		},
 	}
 	require.NotNil(t, serviceConfig.GetPersistentDirectories())
 	require.Equal(t, expectedPersistentDirectoryMap, serviceConfig.GetPersistentDirectories().ServiceDirpathToPersistentDirectory)
