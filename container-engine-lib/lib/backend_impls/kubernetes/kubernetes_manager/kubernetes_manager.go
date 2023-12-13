@@ -70,13 +70,6 @@ const (
 	listOptionsTimeoutSeconds      int64 = 10
 	contextDeadlineExceeded              = "context deadline exceeded"
 	expectedStatusMessageSliceSize       = 6
-
-	volumeHostPathRootDirectory = "/kurtosis-persistent-service-data"
-	// TODO: Maybe pipe this to Starlark to let users choose the size of their persistent directories
-	//  The difficulty is that Docker doesn't have such a feature, so we would need somehow to hack it
-	waitForPersistentVolumeBoundTimeout                  = 30 * time.Second
-	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
-	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -1774,51 +1767,6 @@ func transformTypedAnnotationsToStrs(input map[*kubernetes_annotation_key.Kubern
 	return result
 }
 */
-
-func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
-	ctx context.Context,
-	namespaceName string,
-	persistentVolumeClaimName string,
-) (*apiv1.PersistentVolumeClaim, error) {
-	deadline := time.Now().Add(waitForPersistentVolumeBoundTimeout)
-	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
-	var result *apiv1.PersistentVolumeClaim
-	for time.Now().Before(deadline) {
-		claim, err := manager.GetPersistentVolumeClaim(ctx, namespaceName, persistentVolumeClaimName)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaimName, namespaceName)
-		}
-		result = claim
-		claimStatus := claim.Status
-		claimPhase := claimStatus.Phase
-
-		switch claimPhase {
-		//Success phase, the Persistent Volume got bound
-		case apiv1.ClaimBound:
-			return result, nil
-		//Lost the Persistent Volume phase, unrecoverable state
-		case apiv1.ClaimLost:
-			return nil, stacktrace.NewError(
-				"The persistent volume claim '%v' ended up in unrecoverable state '%v'",
-				claim.GetName(),
-				claimPhase,
-			)
-		case apiv1.ClaimPending:
-			// not impl - skipping
-		}
-
-		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
-	}
-
-	return nil, stacktrace.NewError(
-		"Persistent volume claim '%v' in namespace '%v' did not become bound despite waiting for %v with %v "+
-			"between polls",
-		persistentVolumeClaimName,
-		namespaceName,
-		waitForPersistentVolumeBoundTimeout,
-		waitForPersistentVolumeBoundRetriesDelayMilliSeconds,
-	)
-}
 
 func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, namespaceName string, podName string) error {
 	// Wait for the pod to start running
