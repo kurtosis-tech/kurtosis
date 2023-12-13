@@ -54,11 +54,20 @@ export const KurtosisArgumentTypeInput = ({
     case ArgumentValueType.INTEGER:
       return <IntegerArgumentInput {...childProps} />;
     case ArgumentValueType.DICT:
-      assertDefined(subType1, `innerType1 was not defined on DICT argument ${name}`);
-      assertDefined(subType2, `innerType2 was not defined on DICT argument ${name}`);
+      assertDefined(
+        subType1,
+        `innerType1 was not defined on DICT argument ${name}, check the format used matches https://docs.kurtosis.com/api-reference/starlark-reference/docstring-syntax#types`,
+      );
+      assertDefined(
+        subType2,
+        `innerType2 was not defined on DICT argument ${name}, check the format used matches https://docs.kurtosis.com/api-reference/starlark-reference/docstring-syntax#types`,
+      );
       return <DictArgumentInput keyType={subType1} valueType={subType2} {...childProps} />;
     case ArgumentValueType.LIST:
-      assertDefined(subType1, `innerType1 was not defined on DICT argument ${name}`);
+      assertDefined(
+        subType1,
+        `innerType1 was not defined on DICT argument ${name}, check the format used matches https://docs.kurtosis.com/api-reference/starlark-reference/docstring-syntax#types`,
+      );
       return <ListArgumentInput valueType={subType1} {...childProps} />;
     case ArgumentValueType.BOOL:
       return <BooleanArgumentInput {...childProps} />;
