@@ -440,7 +440,9 @@ func (manager *DockerManager) CreateVolumeWithLimitedSize(context context.Contex
 		ClusterVolumeSpec: nil,
 		Driver:            "",
 		DriverOpts: map[string]string{
-			"o": fmt.Sprintf("size=%v%s", requiredSize, byteSuffix),
+			"o":      fmt.Sprintf("size=%v%s", requiredSize, byteSuffix),
+			"device": "tmpfs",
+			"type":   "tmpfs",
 		},
 		Labels: labels,
 		Name:   volumeName,
