@@ -445,6 +445,7 @@ func createStartServiceOperation(
 			return nil, stacktrace.Propagate(err, "An error occurred creating the user service ingress rules for service with UUID '%v'", serviceUuid)
 		}
 
+		shouldDestroyIngress := false
 		if ingressRules != nil {
 			ingressName := string(serviceName)
 			createdIngress, err := kubernetesManager.CreateIngress(
@@ -457,7 +458,7 @@ func createStartServiceOperation(
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating ingress for service with UUID '%v'", serviceUuid)
 			}
-			shouldDestroyIngress := true
+			shouldDestroyIngress = true
 			defer func() {
 				if !shouldDestroyIngress {
 					return
