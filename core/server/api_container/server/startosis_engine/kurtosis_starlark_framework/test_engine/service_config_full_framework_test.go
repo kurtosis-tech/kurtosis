@@ -92,7 +92,7 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 		testPersistentDirectoryPath: service_directory.DirectoryPersistentKey(testPersistentDirectoryKey),
 	}
 	require.NotNil(t, serviceConfig.GetPersistentDirectories())
-	require.Equal(t, expectedPersistentDirectoryMap, serviceConfig.GetPersistentDirectories().ServiceDirpathToDirectoryPersistentKey)
+	require.Equal(t, expectedPersistentDirectoryMap, serviceConfig.GetPersistentDirectories().ServiceDirpathToPersistentDirectory)
 
 	require.Equal(t, testEntryPointSlice, serviceConfig.GetEntrypointArgs())
 	require.Equal(t, testCmdSlice, serviceConfig.GetCmdArgs())
