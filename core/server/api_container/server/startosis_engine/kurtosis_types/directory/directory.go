@@ -79,6 +79,7 @@ func CreateDirectoryFromFilesArtifact(
 	args := []starlark.Value{
 		starlark.String(filesArtifactName),
 		nil,
+		nil,
 	}
 
 	argumentDefinitions := NewDirectoryType().KurtosisBaseBuiltin.Arguments
