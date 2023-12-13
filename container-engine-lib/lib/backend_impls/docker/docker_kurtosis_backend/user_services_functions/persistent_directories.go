@@ -45,7 +45,7 @@ func getOrCreatePersistentDirectories(
 			return nil, stacktrace.NewError("More than one volume with name '%s' exists in docker. This is unexpected", volumeName)
 		}
 
-		if err = dockerManager.CreateVolume(ctx, volumeName, volumeLabelsStrs); err != nil {
+		if err = dockerManager.CreateVolumeWithLimitedSize(ctx, volumeName, volumeLabelsStrs, int64(persistentDirectory.Size)); err != nil {
 			return nil, stacktrace.Propagate(
 				err,
 				"An error occurred creating persistent directory volume '%s' for service '%v'",
