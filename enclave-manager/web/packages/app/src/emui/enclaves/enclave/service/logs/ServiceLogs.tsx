@@ -5,6 +5,7 @@ import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
 import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
 import { EnclaveFullInfo } from "../../../types";
+import React from "react";
 
 const serviceLogLineToLogLineMessage = (lines: string[], timestamp?: Timestamp): LogLineMessage[] => {
   return lines.map((line) => ({

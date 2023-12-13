@@ -26,7 +26,9 @@ import {
 import { paths } from "kurtosis-sdk/src/engine/rest_api_bindings/types";
 import { assertDefined, asyncResult, isDefined, RemoveFunctions } from "kurtosis-ui-components";
 import createClient from "openapi-fetch";
+import { KURTOSIS_WEBSOCKET_API_DEFAULT_URL } from "../../client/constants";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
+import createWSClient from "./websocketClient/WebSocketClient";
 
 type KurtosisRestClient = ReturnType<typeof createClient<paths>>;
 
@@ -86,6 +88,19 @@ export abstract class KurtosisClient {
   async checkHealth() {
     console.log(await this.restClient.GET("/engine/info"));
     return asyncResult(this.client.check({}, this.getHeaderOptions()));
+  }
+
+  async ServiceLogs2() {
+    var wssClient = createWSClient<paths>({ baseUrl: KURTOSIS_WEBSOCKET_API_DEFAULT_URL });
+    wssClient.GET("/enclaves/{enclave_identifier}/services/{service_identifier}/logs", (resp) => console.log(resp), {
+      params: {
+        path: {
+          enclave_identifier: "2c70255d55874b5ea2fd3d84d7c1d5f7",
+          service_identifier: "81bce6e8ceb0428594b232a6f1802c91",
+        },
+        query: { follow_logs: true },
+      },
+    });
   }
 
   async getEnclaves() {

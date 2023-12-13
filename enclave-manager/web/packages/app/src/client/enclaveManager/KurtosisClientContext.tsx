@@ -6,6 +6,7 @@ import { KURTOSIS_CLOUD_EM_PAGE, KURTOSIS_CLOUD_EM_URL } from "../constants";
 import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
 import { KurtosisClient } from "./KurtosisClient";
 import { LocalKurtosisClient } from "./LocalKurtosisClient";
+import React from "react";
 
 type KurtosisClientContextState = {
   client: KurtosisClient | null;
@@ -87,6 +88,9 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
 
         if (isDefined(newClient)) {
           const checkResp = await newClient.checkHealth();
+          const checkResp2 = await newClient.ServiceLogs2();
+          console.info(">>>>> HERE")
+          console.dir(checkResp2);
           if (checkResp.isErr) {
             setError("Cannot reach the enclave manager backend - is the Enclave Manager API running and accessible?");
             return;
