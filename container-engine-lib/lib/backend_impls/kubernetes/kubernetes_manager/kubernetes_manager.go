@@ -76,10 +76,9 @@ const (
 	volumeHostPathRootDirectory = "/kurtosis-persistent-service-data"
 	// TODO: Maybe pipe this to Starlark to let users choose the size of their persistent directories
 	//  The difficulty is that Docker doesn't have such a feature, so we would need somehow to hack it
-	persistentVolumeDefaultSize                          int64 = 500 * 1024 * 1024 // 500Mb
-	waitForPersistentVolumeBoundTimeout                        = 30 * time.Second
-	waitForPersistentVolumeBoundInitialDelayMilliSeconds       = 100
-	waitForPersistentVolumeBoundRetriesDelayMilliSeconds       = 500
+	waitForPersistentVolumeBoundTimeout                  = 30 * time.Second
+	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
+	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -333,7 +332,12 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 	namespace string,
 	volumeName string,
 	labels map[string]string,
+	requiredSize int64,
 ) (*apiv1.PersistentVolume, error) {
+	if requiredSize == 0 {
+		return nil, stacktrace.NewError("Cannot create volume '%v' of size 0; need size greater than 0", volumeName)
+	}
+
 	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
 
 	// Check that there's only one node, otherwise using HostPath volumes will not work.
@@ -383,7 +387,7 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 		},
 		Spec: apiv1.PersistentVolumeSpec{
 			Capacity: apiv1.ResourceList{
-				apiv1.ResourceStorage: *resource.NewQuantity(persistentVolumeDefaultSize, resource.BinarySI),
+				apiv1.ResourceStorage: *resource.NewQuantity(requiredSize, resource.BinarySI),
 			},
 			PersistentVolumeSource: apiv1.PersistentVolumeSource{
 				GCEPersistentDisk:    nil,
@@ -490,7 +494,12 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 	namespace string,
 	volumeClaimName string,
 	labels map[string]string,
+	requiredSize int64,
 ) (*apiv1.PersistentVolumeClaim, error) {
+	if requiredSize == 0 {
+		return nil, stacktrace.NewError("Cannot create volume '%v' of 0 size; need a value greater than 0", volumeClaimName)
+	}
+
 	volumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
 	volumeClaimsDefinition := apiv1.PersistentVolumeClaim{
@@ -527,7 +536,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 				Requests: apiv1.ResourceList{
 					// we give each claim 100% of the corresponding volume. Since we have a 1:1 mapping between volumes
 					// and claims right now, it's the best we can do
-					apiv1.ResourceStorage: *resource.NewQuantity(persistentVolumeDefaultSize, resource.BinarySI),
+					apiv1.ResourceStorage: *resource.NewQuantity(requiredSize, resource.BinarySI),
 				},
 				Claims: nil,
 			},

@@ -593,7 +593,7 @@ func createStartServiceOperation(
 				ctx,
 				serviceUUID,
 				enclaveObjAttrsProvider,
-				persistentDirectories.ServiceDirpathToDirectoryPersistentKey,
+				persistentDirectories.ServiceDirpathToPersistentDirectory,
 				dockerManager,
 			)
 			if err != nil {

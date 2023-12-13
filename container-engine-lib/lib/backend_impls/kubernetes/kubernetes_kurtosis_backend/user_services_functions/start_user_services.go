@@ -355,7 +355,7 @@ func createStartServiceOperation(
 				namespaceName,
 				serviceUuid,
 				enclaveObjAttributesProvider,
-				persistentDirectories.ServiceDirpathToDirectoryPersistentKey,
+				persistentDirectories.ServiceDirpathToPersistentDirectory,
 				kubernetesManager)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volumes and claims requested for service '%s'", serviceName)
