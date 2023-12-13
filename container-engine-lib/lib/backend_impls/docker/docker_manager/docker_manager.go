@@ -420,38 +420,6 @@ func (manager *DockerManager) CreateVolume(context context.Context, volumeName s
 }
 
 /*
-CreateVolumeWithLimitedSize
-Creates a Docker volume identified by the given name.
-
-Args:
-
-	context: The Context that this request is running in (useful for cancellation)
-	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
-		even give volumes IDs - this name is all there is)
-	labels: Labels to attach to the volume object
-	sizeLimit: Size limit of the volume in bytes
-*/
-func (manager *DockerManager) CreateVolumeWithLimitedSize(context context.Context, volumeName string, labels map[string]string, requiredSize int64) error {
-	if requiredSize == 0 {
-		return stacktrace.NewError("Cannot create volume '%v' with 0 size; size needs to be greater than 0", volumeName)
-	}
-
-	volumeConfig := volume.CreateOptions{
-		ClusterVolumeSpec: nil,
-		Driver:            "",
-		DriverOpts: map[string]string{
-			"o":      fmt.Sprintf("size=%v%s", requiredSize, byteSuffix),
-			"device": "tmpfs",
-			"type":   "tmpfs",
-		},
-		Labels: labels,
-		Name:   volumeName,
-	}
-
-	return manager.createPersistentVolumeInternal(context, volumeConfig)
-}
-
-/*
 GetVolumesByName
 Searches for volumes whose names match the given one
 
