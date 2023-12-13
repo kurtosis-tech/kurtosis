@@ -12,14 +12,12 @@ import (
 )
 
 type kubernetesVolumeWithClaim struct {
-	VolumeName string
-
 	VolumeClaimName string
 }
 
 func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolume() *apiv1.Volume {
 	return &apiv1.Volume{
-		Name: volumeAndClaim.VolumeName,
+		Name: volumeAndClaim.VolumeClaimName,
 		VolumeSource: apiv1.VolumeSource{
 			HostPath:             nil,
 			EmptyDir:             nil,
@@ -59,7 +57,7 @@ func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolume() *apiv1.Volume {
 
 func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolumeMount(mountPath string) *apiv1.VolumeMount {
 	return &apiv1.VolumeMount{
-		Name:             volumeAndClaim.VolumeName,
+		Name:             volumeAndClaim.VolumeClaimName,
 		ReadOnly:         false,
 		MountPath:        mountPath,
 		SubPath:          "",
@@ -96,16 +94,7 @@ func preparePersistentDirectoriesResources(
 
 		persistentVolumeSize := int64(persistentDirectory.Size)
 
-		var persistentVolume *apiv1.PersistentVolume
-		if persistentVolume, err = kubernetesManager.GetPersistentVolume(ctx, volumeName); err != nil {
-			persistentVolume, err = kubernetesManager.CreatePersistentVolume(ctx, namespace, volumeName, volumeLabelsStrs, persistentVolumeSize)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume for '%s'", persistentDirectory.PersistentKey)
-			}
-			volumesCreated[persistentVolume.Name] = persistentVolume
-		}
-
-		// For now, we have a 1:1 mapping between volume and volume claims, so it's fine giving it the same name
+		// This claim works with a dynamic driver - it will spin up its own volume
 		var persistentVolumeClaim *apiv1.PersistentVolumeClaim
 		if persistentVolumeClaim, err = kubernetesManager.GetPersistentVolumeClaim(ctx, namespace, volumeName); err != nil {
 			persistentVolumeClaim, err = kubernetesManager.CreatePersistentVolumeClaim(ctx, namespace, volumeName, volumeLabelsStrs, persistentVolumeSize)
@@ -116,7 +105,6 @@ func preparePersistentDirectoriesResources(
 		}
 
 		persistentVolumesAndClaims[dirPath] = &kubernetesVolumeWithClaim{
-			VolumeName:      persistentVolume.Name,
 			VolumeClaimName: persistentVolumeClaim.Name,
 		}
 	}
