@@ -305,9 +305,9 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 	namespace string,
 	volumeName string,
 	labels map[string]string,
-	sizeLimit int64,
+	requiredSize int64,
 ) (*apiv1.PersistentVolume, error) {
-	if sizeLimit == 0 {
+	if requiredSize == 0 {
 		return nil, stacktrace.NewError("Cannot create volume '%v' of size 0; need size greater than 0", volumeName)
 	}
 
@@ -360,7 +360,7 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 		},
 		Spec: apiv1.PersistentVolumeSpec{
 			Capacity: apiv1.ResourceList{
-				apiv1.ResourceStorage: *resource.NewQuantity(sizeLimit, resource.BinarySI),
+				apiv1.ResourceStorage: *resource.NewQuantity(requiredSize, resource.BinarySI),
 			},
 			PersistentVolumeSource: apiv1.PersistentVolumeSource{
 				GCEPersistentDisk:    nil,
@@ -467,9 +467,9 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 	namespace string,
 	volumeClaimName string,
 	labels map[string]string,
-	sizeLimit int64,
+	requiredSize int64,
 ) (*apiv1.PersistentVolumeClaim, error) {
-	if sizeLimit == 0 {
+	if requiredSize == 0 {
 		return nil, stacktrace.NewError("Cannot create volume '%v' of 0 size; need a value greater than 0", volumeClaimName)
 	}
 
@@ -509,7 +509,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 				Requests: apiv1.ResourceList{
 					// we give each claim 100% of the corresponding volume. Since we have a 1:1 mapping between volumes
 					// and claims right now, it's the best we can do
-					apiv1.ResourceStorage: *resource.NewQuantity(sizeLimit, resource.BinarySI),
+					apiv1.ResourceStorage: *resource.NewQuantity(requiredSize, resource.BinarySI),
 				},
 				Claims: nil,
 			},

@@ -429,8 +429,8 @@ Args:
 	labels: Labels to attach to the volume object
 	sizeLimit: Size limit of the volume in bytes
 */
-func (manager *DockerManager) CreateVolumeWithLimitedSize(context context.Context, volumeName string, labels map[string]string, sizeLimit int64) error {
-	if sizeLimit == 0 {
+func (manager *DockerManager) CreateVolumeWithLimitedSize(context context.Context, volumeName string, labels map[string]string, requiredSize int64) error {
+	if requiredSize == 0 {
 		return stacktrace.NewError("Cannot create volume '%v' with 0 size; size needs to be greater than 0", volumeName)
 	}
 
@@ -440,8 +440,8 @@ func (manager *DockerManager) CreateVolumeWithLimitedSize(context context.Contex
 			AccessMode:                nil,
 			AccessibilityRequirements: nil,
 			CapacityRange: &volume.CapacityRange{
-				RequiredBytes: 0,
-				LimitBytes:    sizeLimit,
+				RequiredBytes: requiredSize,
+				LimitBytes:    0,
 			},
 			Secrets:      nil,
 			Availability: "",
