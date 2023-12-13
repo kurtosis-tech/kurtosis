@@ -14,17 +14,17 @@ func getOrCreatePersistentDirectories(
 	ctx context.Context,
 	serviceUuid service.ServiceUUID,
 	objAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
-	serviceMountpointsToPersistentKey map[string]service_directory.DirectoryPersistentKey,
+	serviceMountpointsToPersistentKey map[string]service_directory.PersistentDirectory,
 	dockerManager *docker_manager.DockerManager,
 ) (map[string]string, error) {
 	shouldDeleteVolumes := true
 	volumeNamesToRemoveIfFailure := map[string]bool{}
 	persistentDirectories := map[string]string{}
 
-	for serviceDirPath, persistentKey := range serviceMountpointsToPersistentKey {
-		volumeAttrs, err := objAttrsProvider.ForSinglePersistentDirectoryVolume(serviceUuid, persistentKey)
+	for serviceDirPath, persistentDirectory := range serviceMountpointsToPersistentKey {
+		volumeAttrs, err := objAttrsProvider.ForSinglePersistentDirectoryVolume(serviceUuid, persistentDirectory.PersistentKey)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error creating persistent directory labels for '%s'", persistentKey)
+			return nil, stacktrace.Propagate(err, "Error creating persistent directory labels for '%s'", persistentDirectory.PersistentKey)
 		}
 
 		volumeName := volumeAttrs.GetName().GetString()
@@ -49,7 +49,7 @@ func getOrCreatePersistentDirectories(
 			return nil, stacktrace.Propagate(
 				err,
 				"An error occurred creating persistent directory volume '%s' for service '%v'",
-				persistentKey,
+				persistentDirectory.PersistentKey,
 				serviceUuid,
 			)
 		}
