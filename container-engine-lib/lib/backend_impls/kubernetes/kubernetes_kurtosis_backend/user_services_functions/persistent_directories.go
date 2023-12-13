@@ -94,9 +94,11 @@ func preparePersistentDirectoriesResources(
 			volumeLabelsStrs[key.GetString()] = value.GetString()
 		}
 
+		persistentVolumeSize := int64(persistentDirectory.Size)
+
 		var persistentVolume *apiv1.PersistentVolume
 		if persistentVolume, err = kubernetesManager.GetPersistentVolume(ctx, volumeName); err != nil {
-			persistentVolume, err = kubernetesManager.CreatePersistentVolume(ctx, namespace, volumeName, volumeLabelsStrs)
+			persistentVolume, err = kubernetesManager.CreatePersistentVolume(ctx, namespace, volumeName, volumeLabelsStrs, persistentVolumeSize)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume for '%s'", persistentDirectory.PersistentKey)
 			}
@@ -106,7 +108,7 @@ func preparePersistentDirectoriesResources(
 		// For now, we have a 1:1 mapping between volume and volume claims, so it's fine giving it the same name
 		var persistentVolumeClaim *apiv1.PersistentVolumeClaim
 		if persistentVolumeClaim, err = kubernetesManager.GetPersistentVolumeClaim(ctx, namespace, volumeName); err != nil {
-			persistentVolumeClaim, err = kubernetesManager.CreatePersistentVolumeClaim(ctx, namespace, volumeName, volumeLabelsStrs)
+			persistentVolumeClaim, err = kubernetesManager.CreatePersistentVolumeClaim(ctx, namespace, volumeName, volumeLabelsStrs, persistentVolumeSize)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume claim for '%s'", persistentDirectory.PersistentKey)
 			}
