@@ -36,7 +36,7 @@ FILE_TO_BE_CREATED = "` + fileToBeCreated + `"
 SERVICE_DEPENDENT_ON_DATASTORE_SERVICE = "` + serviceIdForDependentService + `"
 PATH_TO_MOUNT_ON_DEPENDENT_SERVICE =  "` + pathToCheckOnDependentService + `"
 
-TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/ethereum-package/static_files/prometheus-config/prometheus.yml.tmpl"
+TEMPLATE_FILE_TO_RENDER="github.com/kurtosis-tech/prometheus-package/static-files//prometheus.yml.tmpl"
 PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
