@@ -16,6 +16,8 @@ const (
 	ArtifactNameAttr  = "artifact_name"
 	PersistentKeyAttr = "persistent_key"
 	SizeKeyAttr       = "size"
+
+	atleastOneMegabyte = 1
 )
 
 func NewDirectoryType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -45,7 +47,7 @@ func NewDirectoryType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.Int64InRange(value, SizeKeyAttr, 0, math.MaxInt64)
+						return builtin_argument.Int64InRange(value, SizeKeyAttr, atleastOneMegabyte, math.MaxInt64)
 					},
 				},
 			},

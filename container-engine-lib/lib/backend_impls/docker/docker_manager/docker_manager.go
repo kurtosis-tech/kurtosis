@@ -431,7 +431,7 @@ Args:
 */
 func (manager *DockerManager) CreateVolumeWithLimitedSize(context context.Context, volumeName string, labels map[string]string, sizeLimit int64) error {
 	if sizeLimit == 0 {
-		return stacktrace.NewError("Cannot create volume '%v' with 0 size", volumeName)
+		return stacktrace.NewError("Cannot create volume '%v' with 0 size; size needs to be greater than 0", volumeName)
 	}
 
 	volumeConfig := volume.CreateOptions{
