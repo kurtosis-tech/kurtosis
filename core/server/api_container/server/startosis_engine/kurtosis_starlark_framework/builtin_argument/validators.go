@@ -36,6 +36,21 @@ func Uint64InRange(value starlark.Value, argNameForLogging string, min uint64, m
 	return nil
 }
 
+func Int64InRange(value starlark.Value, argNameForLogging string, min int64, max int64) *startosis_errors.InterpretationError {
+	valueInt, ok := value.(starlark.Int)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be an integer between %d and %d, but it was '%s'", argNameForLogging, min, max, reflect.TypeOf(value))
+	}
+	valueInt64, ok := valueInt.Int64()
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be an integer between %d and %d, but it was %v", argNameForLogging, min, max, valueInt)
+	}
+	if valueInt64 < min || valueInt64 > max {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be an integer between %d and %d, but it was %v", argNameForLogging, min, max, valueInt64)
+	}
+	return nil
+}
+
 func FloatInRange(value starlark.Value, argNameForLogging string, min float64, max float64) *startosis_errors.InterpretationError {
 	valueStarlarkFloat, ok := value.(starlark.Float)
 	if !ok {
