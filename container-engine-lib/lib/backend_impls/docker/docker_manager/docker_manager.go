@@ -138,6 +138,9 @@ const (
 	dontStreamStats        = false
 
 	kurtosisTagPrefix = "kurtosistech/"
+
+	volumeSizeOptKey = "size"
+	byteSuffix       = "b"
 )
 
 type RestartPolicy string
@@ -435,21 +438,13 @@ func (manager *DockerManager) CreateVolumeWithLimitedSize(context context.Contex
 	}
 
 	volumeConfig := volume.CreateOptions{
-		ClusterVolumeSpec: &volume.ClusterVolumeSpec{
-			Group:                     "",
-			AccessMode:                nil,
-			AccessibilityRequirements: nil,
-			CapacityRange: &volume.CapacityRange{
-				RequiredBytes: requiredSize,
-				LimitBytes:    0,
-			},
-			Secrets:      nil,
-			Availability: "",
+		ClusterVolumeSpec: nil,
+		Driver:            "",
+		DriverOpts: map[string]string{
+			volumeSizeOptKey: fmt.Sprintf("%v%s", requiredSize, byteSuffix),
 		},
-		Driver:     "",
-		DriverOpts: nil,
-		Labels:     labels,
-		Name:       volumeName,
+		Labels: labels,
+		Name:   volumeName,
 	}
 
 	return manager.createPersistentVolumeInternal(context, volumeConfig)
