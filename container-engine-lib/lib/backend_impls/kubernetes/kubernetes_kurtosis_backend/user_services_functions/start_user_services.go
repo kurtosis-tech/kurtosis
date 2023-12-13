@@ -444,10 +444,11 @@ func createStartServiceOperation(
 			return nil, stacktrace.Propagate(err, "An error occurred creating the user service ingress rules for service with UUID '%v'", serviceUuid)
 		}
 
+		ingressName := string(serviceName)
 		createdIngress, err := kubernetesManager.CreateIngress(
 			ctx,
 			namespaceName,
-			string(serviceName),
+			ingressName,
 			ingressAnnotationsStrs,
 			ingressRules,
 		)
@@ -460,8 +461,8 @@ func createStartServiceOperation(
 				return
 			}
 			if err := kubernetesManager.RemoveIngress(ctx, createdIngress); err != nil {
-				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
+				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the ingress we created but doing so threw an error:\n%v", err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to remove ingress '%v' in '%v' manually!!!", ingressName, namespaceName)
 			}
 		}()
 
@@ -906,9 +907,9 @@ func getUserServiceIngressRules(
 	privatePorts map[string]*port_spec.PortSpec,
 ) ([]netv1.IngressRule, error) {
 	ingressRules := []netv1.IngressRule{}
+	enclaveShortUuid := uuid_generator.ShortenedUUIDString(string(serviceRegistration.GetEnclaveID()))
+	serviceShortUuid := uuid_generator.ShortenedUUIDString(string(serviceRegistration.GetUUID()))
 	for _, portSpec := range privatePorts {
-		enclaveShortUuid := uuid_generator.ShortenedUUIDString(string(serviceRegistration.GetEnclaveID()))
-		serviceShortUuid := uuid_generator.ShortenedUUIDString(string(serviceRegistration.GetUUID()))
 		host := fmt.Sprintf("%d-%s-%s", portSpec.GetNumber(), serviceShortUuid, enclaveShortUuid)
 		ingressRule := netv1.IngressRule{
 			Host: host,

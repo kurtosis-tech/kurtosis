@@ -245,14 +245,14 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceIng
 ) (KubernetesObjectAttributes, error) {
 	name, err := getKubernetesObjectName(serviceName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get name for user service pod")
+		return nil, stacktrace.Propagate(err, "Failed to get name for user service ingress")
 	}
 
 	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(serviceName), string(serviceUUID))
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Failed to get labels for user service pod with name '%s' and UUID '%s'",
+			"Failed to get labels for user service ingress with name '%s' and UUID '%s'",
 			serviceName,
 			serviceUUID,
 		)
