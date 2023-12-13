@@ -23,13 +23,15 @@ import {
   InspectFilesArtifactContentsRequest,
   RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
-import { paths } from "kurtosis-sdk/src/engine/rest_api_bindings/types";
+import { components, paths } from "kurtosis-sdk/src/engine/rest_api_bindings/types";
 import createClient from "openapi-fetch";
+import { Result } from "true-myth";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
-import { assertDefined, asyncResult, isDefined } from "../../utils";
+import { assertDefined, asyncRestResult, asyncResult, isDefined } from "../../utils";
 import { RemoveFunctions } from "../../utils/types";
 
 type KurtosisRestClient = ReturnType<typeof createClient<paths>>;
+export type KurtotisRestApiTypes = components["schemas"];
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
@@ -89,8 +91,8 @@ export abstract class KurtosisClient {
     return asyncResult(this.client.check({}, this.getHeaderOptions()));
   }
 
-  async getEnclaves() {
-    return asyncResult(this.client.getEnclaves({}, this.getHeaderOptions()), "KurtosisClient could not getEnclaves");
+  async getEnclaves(): Promise<Result<{ [key: string]: KurtotisRestApiTypes["EnclaveInfo"] | undefined }, string>> {
+    return asyncRestResult(this.restClient.GET("/enclaves"));
   }
 
   async destroy(enclaveUUID: string) {

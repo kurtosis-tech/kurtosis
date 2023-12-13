@@ -74,9 +74,9 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
     const getEnclavesResponse = await kurtosisClient.getEnclaves();
     setState((state) => ({
       ...state,
-      enclaves: getEnclavesResponse.map((resp) => Object.values(resp.enclaveInfo)),
+      enclaves: getEnclavesResponse.map((resp) => Object.values(resp).filter(isDefined)),
     }));
-    return getEnclavesResponse.map((resp) => Object.values(resp.enclaveInfo));
+    return getEnclavesResponse.map((resp) => Object.values(resp));
   }, [kurtosisClient]);
 
   const refreshServices = useCallback(

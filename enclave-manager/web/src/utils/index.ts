@@ -1,3 +1,5 @@
+import { FetchResponse } from "openapi-fetch";
+import { FilterKeys, ResponseObjectMap, SuccessResponse, type MediaType } from "openapi-typescript-helpers";
 import { Result } from "true-myth";
 
 export function isDefined<T>(it: T | null | undefined): it is T {
@@ -102,6 +104,21 @@ export async function asyncResult<T>(
   try {
     const r = await (typeof p === "function" ? p() : p);
     return Result.ok<T, string>(r);
+  } catch (e: any) {
+    return Result.err(errorMessage || stringifyError(e));
+  }
+}
+
+export async function asyncRestResult<T>(
+  p: Promise<FetchResponse<T>> | (() => Promise<FetchResponse<T>>),
+  errorMessage?: string,
+): Promise<Result<FilterKeys<SuccessResponse<ResponseObjectMap<T>>, MediaType>, string>> {
+  try {
+    const r = await (typeof p === "function" ? p() : p);
+    if (isDefined(r.data)) {
+      return Result.ok(r.data);
+    }
+    return Result.err(isDefined(r.error) ? stringifyError(r.error) : "Neither error or data is present");
   } catch (e: any) {
     return Result.err(errorMessage || stringifyError(e));
   }
