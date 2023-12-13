@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.85.46](https://github.com/kurtosis-tech/kurtosis/compare/0.85.45...0.85.46) (2023-12-12)
+
+
+### Bug Fixes
+
+* revert image building ([#1934](https://github.com/kurtosis-tech/kurtosis/issues/1934)) ([7e7c96b](https://github.com/kurtosis-tech/kurtosis/commit/7e7c96b0ca4bf5646f2df86aa320cfd84191ab08))
+
+## [0.85.45](https://github.com/kurtosis-tech/kurtosis/compare/0.85.44...0.85.45) (2023-12-12)
+
+
+### Bug Fixes
+
+* bust cli build cache ([#1930](https://github.com/kurtosis-tech/kurtosis/issues/1930)) ([1e32da8](https://github.com/kurtosis-tech/kurtosis/commit/1e32da840844537936244ec5b76609f7e3d18fea))
+
 ## [0.85.44](https://github.com/kurtosis-tech/kurtosis/compare/0.85.43...0.85.44) (2023-12-11)
 
 
