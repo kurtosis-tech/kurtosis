@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.85.46](https://github.com/kurtosis-tech/kurtosis/compare/0.85.45...0.85.46) (2023-12-12)
+
+
+### Bug Fixes
+
+* revert image building ([#1934](https://github.com/kurtosis-tech/kurtosis/issues/1934)) ([7e7c96b](https://github.com/kurtosis-tech/kurtosis/commit/7e7c96b0ca4bf5646f2df86aa320cfd84191ab08))
+
+## [0.85.45](https://github.com/kurtosis-tech/kurtosis/compare/0.85.44...0.85.45) (2023-12-12)
+
+
+### Bug Fixes
+
+* bust cli build cache ([#1930](https://github.com/kurtosis-tech/kurtosis/issues/1930)) ([1e32da8](https://github.com/kurtosis-tech/kurtosis/commit/1e32da840844537936244ec5b76609f7e3d18fea))
+
 ## [0.85.44](https://github.com/kurtosis-tech/kurtosis/compare/0.85.43...0.85.44) (2023-12-11)
 
 
@@ -20,7 +34,7 @@
 * Add new ports view to the EM UI ([#1919](https://github.com/kurtosis-tech/kurtosis/issues/1919)) ([027d74b](https://github.com/kurtosis-tech/kurtosis/commit/027d74b02f06f6c5ac4fdfc38e26f1ff63f08a77))
 * add REST API bindings for TS and Golang ([#1907](https://github.com/kurtosis-tech/kurtosis/issues/1907)) ([97b9b80](https://github.com/kurtosis-tech/kurtosis/commit/97b9b807a8abfd189117b9d5680b2a449cbba2a6))
 * add support for public ports ([#1905](https://github.com/kurtosis-tech/kurtosis/issues/1905)) ([97a3d95](https://github.com/kurtosis-tech/kurtosis/commit/97a3d9583683c0b19d5c657107a9a53cf7b3ffd5))
-* enable building images in docker image building pt. 1 ([#1911](https://github.com/kurtosis-tech/kurtosis/issues/1911)) ([c153873](https://github.com/kurtosis-tech/kurtosis/commit/c153873141c8054f97d35a9067f24b7a7d7bb5a8))
+* enable building images in docker ([#1911](https://github.com/kurtosis-tech/kurtosis/issues/1911)) ([c153873](https://github.com/kurtosis-tech/kurtosis/commit/c153873141c8054f97d35a9067f24b7a7d7bb5a8))
 * Reverse proxy lifecycle management and connectivity on Docker ([#1906](https://github.com/kurtosis-tech/kurtosis/issues/1906)) ([69c5b27](https://github.com/kurtosis-tech/kurtosis/commit/69c5b2764b257c63221dd2a966c6fc3b401c11eb))
 * service logs full download ([#1895](https://github.com/kurtosis-tech/kurtosis/issues/1895)) ([b91333f](https://github.com/kurtosis-tech/kurtosis/commit/b91333fcdb7bf23cb9bd2ba08dfd32ae9569df29))
 * Unified REST API ([c3911f6](https://github.com/kurtosis-tech/kurtosis/commit/c3911f6f55e68b21e06a1d96d89d6a3241a368a0))

@@ -43,11 +43,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	restApi "github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -82,6 +84,11 @@ const (
 	pathToEnclaveSpecs   = "/api/specs/enclave"
 	pathToEngineSpecs    = "/api/specs/engine"
 	pathToWebsocketSpecs = "/api/specs/websocket"
+)
+
+var (
+	defaultCORSOrigins []string = []string{"*"}
+	defaultCORSHeaders []string = []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept}
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -405,6 +412,16 @@ func restApiServer(
 	// This is how you set up a basic Echo router
 	echoRouter := echo.New()
 	echoRouter.Use(echomiddleware.Logger())
+
+	// Setup CORS policies for the REST API server
+	allowOrigins := utils.DerefWith(serverArgs.AllowedCORSOrigins, defaultCORSOrigins)
+	logrus.Infof("Setting-up CORS policy to accept requests from origins: %v", allowOrigins)
+
+	// nolint:exhaustruct
+	echoRouter.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: allowOrigins,
+		AllowHeaders: defaultCORSHeaders,
+	}))
 
 	// ============================== Engine Management API ======================================
 	engineRuntime := restApi.EngineRuntime{
