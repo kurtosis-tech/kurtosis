@@ -94,7 +94,7 @@ func preparePersistentDirectoriesResources(
 
 		persistentVolumeSize := int64(persistentDirectory.Size)
 
-		// This claim works with a dynamic driver - it will spin up its own volume
+		// This claim works with a dynamic driver - it will spin up its own volume - the volume will get deleted when said claims is deleted
 		var persistentVolumeClaim *apiv1.PersistentVolumeClaim
 		if persistentVolumeClaim, err = kubernetesManager.GetPersistentVolumeClaim(ctx, namespace, volumeName); err != nil {
 			persistentVolumeClaim, err = kubernetesManager.CreatePersistentVolumeClaim(ctx, namespace, volumeName, volumeLabelsStrs, persistentVolumeSize)
