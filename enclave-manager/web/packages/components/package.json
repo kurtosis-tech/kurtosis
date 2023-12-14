@@ -1,10 +1,24 @@
 {
   "name": "@kurtosis/components",
   "version": "0.0.0",
-  "private": true,
-  "main": "./src/index.tsx",
-  "dependencies": {
+  "private": false,
+  "main": "build/index",
+  "description": "This repo contains components used by Kurtosis UI applications.",
+  "types": "./build/index",
+  "files": [
+    "build"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kurtosis-tech/enclave-manager-sdk.git",
+    "directory": "enclave-manager/web/packages/components"
   },
+  "author": "Kurtosis Technologies Inc <support@kurtosistech.com> (https://www.kurtosistech.com/)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/kurtosis-tech/kurtosis/issues"
+  },
+  "homepage": "https://github.com/kurtosis-tech/kurtosis",
   "scripts": {
     "build": "rm -rf build/; tsc"
   },
