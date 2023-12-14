@@ -21,7 +21,6 @@ import {
 import { Result } from "true-myth";
 import { useKurtosisClient } from "../../client/enclaveManager/KurtosisClientContext";
 import { EnclaveFullInfo } from "./types";
-import React from "react";
 
 export type EnclavesState = {
   enclaves: Result<RemoveFunctions<EnclaveInfo>[], string>;

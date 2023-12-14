@@ -37,6 +37,7 @@
               enumer
               nodejs_20
               yarn
+              nodePackages.prettier
               protobuf
               protoc-gen-go
               protoc-gen-go-grpc

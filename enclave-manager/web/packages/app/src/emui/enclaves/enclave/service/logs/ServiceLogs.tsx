@@ -49,13 +49,13 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
           const lineGroupForService = lineGroup.service_logs_by_service_uuid![service.serviceUuid];
           assertDefined(
             lineGroupForService,
-            `Log line response included a line group without service ${
-              service.serviceUuid
-            }: ${JSON.stringify(lineGroup)}`,
+            `Log line response included a line group without service ${service.serviceUuid}: ${JSON.stringify(
+              lineGroup,
+            )}`,
           );
           const parsedLogLines = serviceLogLineToLogLineMessage(
             lineGroupForService.line,
-            Timestamp.fromDate(new Date(lineGroupForService.timestamp))
+            Timestamp.fromDate(new Date(lineGroupForService.timestamp)),
           );
           yield parsedLogLines.map((line) => line.message || "").join("\n");
         }
@@ -75,13 +75,18 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
       if (isRetry) setLogLines([]);
       console.info("Created a new logging stream");
       try {
-        for await (const lineGroup of kurtosisClient.getServiceLogsWS(abortController, enclave, service.serviceUuid, true)) {
+        for await (const lineGroup of kurtosisClient.getServiceLogsWS(
+          abortController,
+          enclave,
+          service.serviceUuid,
+          true,
+        )) {
           if (canceled) return;
           const lineGroupForService = lineGroup.service_logs_by_service_uuid![service.serviceUuid];
           if (!isDefined(lineGroupForService)) continue;
           const parsedLines = serviceLogLineToLogLineMessage(
             lineGroupForService.line,
-            Timestamp.fromDate(new Date(lineGroupForService.timestamp))
+            Timestamp.fromDate(new Date(lineGroupForService.timestamp)),
           );
           setLogLines((logLines) => [...logLines, ...parsedLines]);
         }
