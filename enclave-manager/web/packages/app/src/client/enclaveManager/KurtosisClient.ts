@@ -26,12 +26,12 @@ import {
 import { components, paths } from "kurtosis-sdk/src/engine/rest_api_bindings/types";
 import { assertDefined, asyncResult, isDefined, RemoveFunctions } from "kurtosis-ui-components";
 import createClient from "openapi-fetch";
-import { KURTOSIS_WEBSOCKET_API_DEFAULT_URL } from "../../client/constants";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
 import createWSClient from "./websocketClient/WebSocketClient";
 
 type KurtosisRestClient = ReturnType<typeof createClient<paths>>;
 type KurtosisWebsocketClient = ReturnType<typeof createWSClient<paths>>;
+export type KurtosisRestApiTypes = components["schemas"];
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
@@ -102,9 +102,9 @@ export abstract class KurtosisClient {
     numLogLines?: number,
     returnAllLogs?: boolean,
     conjunctiveFilters?: LogLineFilter[],
-  ): AsyncGenerator<components["schemas"]["ServiceLogs"]> {
+  ): AsyncGenerator<KurtosisRestApiTypes["ServiceLogs"]> {
     // TODO (edgar) do proper filter conversion
-    // const filters: components["schemas"]["LogLineFilter"][] = conjunctiveFilters!.map(x => {return {operator: x.operator, text_pattern: x.textPattern};});
+    // const filters: KurtosisRestApiTypes["LogLineFilter"][] = conjunctiveFilters!.map(x => {return {operator: x.operator, text_pattern: x.textPattern};});
     const logs = this.websocketClient.WS("/enclaves/{enclave_identifier}/services/{service_identifier}/logs", {
       params: {
         path: {
@@ -129,7 +129,7 @@ export abstract class KurtosisClient {
         yield lineGroup.data;
       }
     }
-  };
+  }
 
   async getEnclaves() {
     return asyncResult(this.client.getEnclaves({}, this.getHeaderOptions()), "KurtosisClient could not getEnclaves");
