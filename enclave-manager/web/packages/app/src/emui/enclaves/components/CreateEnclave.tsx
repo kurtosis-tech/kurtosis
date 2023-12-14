@@ -1,9 +1,9 @@
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import { isDefined } from "kurtosis-ui-components";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { KURTOSIS_CREATE_ENCLAVE_URL_ARG } from "../../../components/constants";
-import { isDefined } from "../../../utils";
 import { ConfigureEnclaveModal } from "./modals/ConfigureEnclaveModal";
+import { KURTOSIS_CREATE_ENCLAVE_URL_ARG } from "./modals/constants";
 import { ManualCreateEnclaveModal } from "./modals/ManualCreateEnclaveModal";
 import { PreloadPackage } from "./PreloadPackage";
 

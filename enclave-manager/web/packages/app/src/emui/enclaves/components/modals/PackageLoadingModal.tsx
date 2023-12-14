@@ -11,11 +11,10 @@ import {
   Spinner,
   Text,
 } from "@chakra-ui/react";
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import { isDefined, KurtosisAlert } from "kurtosis-ui-components";
 import { useEffect, useState } from "react";
-import { KurtosisPackage } from "../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { useKurtosisPackageIndexerClient } from "../../../../client/packageIndexer/KurtosisPackageIndexerClientContext";
-import { KurtosisAlert } from "../../../../components/KurtosisAlert";
-import { isDefined } from "../../../../utils";
 
 export type PackageLoadingModalProps = {
   packageId: string;

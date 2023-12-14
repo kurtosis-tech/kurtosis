@@ -1,10 +1,8 @@
 import { Icon } from "@chakra-ui/react";
 import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
+import { isDefined, registerBreadcrumbHandler, RemoveFunctions } from "kurtosis-ui-components";
 import { FiPlus } from "react-icons/fi";
 import { Outlet, Params } from "react-router-dom";
-import { registerBreadcrumbHandler } from "../../components/KurtosisBreadcrumbs";
-import { isDefined } from "../../utils";
-import { RemoveFunctions } from "../../utils/types";
 import { KurtosisEnclavesRouteObject } from "../types";
 import { GoToEnclaveOverviewButton } from "./components/GotToEncalaveOverviewButton";
 import { KurtosisEnclavesBreadcrumbs } from "./components/KurtosisEnclaveBreadcrumbs";

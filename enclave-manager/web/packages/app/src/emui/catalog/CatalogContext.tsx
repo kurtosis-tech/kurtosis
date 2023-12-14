@@ -1,10 +1,9 @@
 import { Flex, Heading, Spinner } from "@chakra-ui/react";
+import { GetPackagesResponse, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import { isDefined, SavedPackagesProvider } from "kurtosis-ui-components";
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
 import { Result } from "true-myth";
-import { GetPackagesResponse, KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { useKurtosisPackageIndexerClient } from "../../client/packageIndexer/KurtosisPackageIndexerClientContext";
-import { SavedPackagesProvider } from "../../components/catalog/SavedPackages";
-import { isDefined } from "../../utils";
 import { loadSavedPackageNames, storeSavedPackages } from "./storage";
 
 export type CatalogState = {

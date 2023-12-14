@@ -1,4 +1,4 @@
-import { ArgumentValueType, PackageArg } from "../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
+import { ArgumentValueType, PackageArg } from "kurtosis-cloud-indexer-sdk";
 
 export function argTypeToString(argType?: ArgumentValueType) {
   switch (argType) {

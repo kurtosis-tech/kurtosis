@@ -1,9 +1,8 @@
+import { AppLayout, KurtosisThemeProvider } from "kurtosis-ui-components";
 import { useMemo } from "react";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import { KurtosisClientProvider, useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
 import { KurtosisPackageIndexerProvider } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
-import { AppLayout } from "../components/AppLayout";
-import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
 import { CatalogContextProvider } from "./catalog/CatalogContext";
 import { catalogRoutes } from "./catalog/CatalogRoutes";
 import { CreateEnclave } from "./enclaves/components/CreateEnclave";

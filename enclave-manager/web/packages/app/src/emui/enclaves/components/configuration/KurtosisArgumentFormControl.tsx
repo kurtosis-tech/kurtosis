@@ -1,8 +1,7 @@
 import { Badge, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel } from "@chakra-ui/react";
+import { isDefined, KurtosisMarkdown } from "kurtosis-ui-components";
 import { PropsWithChildren } from "react";
 import { FieldError, FieldPath } from "react-hook-form";
-import { KurtosisMarkdown } from "../../../../components/KurtosisMarkdown";
-import { isDefined } from "../../../../utils";
 import { useEnclaveConfigurationFormContext } from "./EnclaveConfigurationForm";
 import { ConfigureEnclaveForm } from "./types";
 

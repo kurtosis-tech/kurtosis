@@ -1,18 +1,22 @@
 import { ButtonGroup, Flex, Spinner } from "@chakra-ui/react";
 import { InspectFilesArtifactContentsResponse } from "enclave-manager-sdk/build/api_container_service_pb";
+import {
+  AppPageLayout,
+  CodeEditor,
+  CodeEditorImperativeAttributes,
+  CopyButton,
+  DownloadButton,
+  FileTree,
+  FileTreeNode,
+  FormatButton,
+  isDefined,
+  KurtosisAlert,
+  TitledCard,
+} from "kurtosis-ui-components";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Result } from "true-myth";
 import { useKurtosisClient } from "../../../../client/enclaveManager/KurtosisClientContext";
-import { AppPageLayout } from "../../../../components/AppLayout";
-import { CodeEditor, CodeEditorImperativeAttributes } from "../../../../components/CodeEditor";
-import { CopyButton } from "../../../../components/CopyButton";
-import { DownloadButton } from "../../../../components/DownloadButton";
-import { FileTree, FileTreeNode } from "../../../../components/FileTree";
-import { FormatButton } from "../../../../components/FormatButton";
-import { KurtosisAlert } from "../../../../components/KurtosisAlert";
-import { TitledCard } from "../../../../components/TitledCard";
-import { isDefined } from "../../../../utils";
 import { useFullEnclave } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 

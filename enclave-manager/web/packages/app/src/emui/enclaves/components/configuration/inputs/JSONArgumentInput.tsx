@@ -1,13 +1,17 @@
 import { Button, ButtonGroup, Flex } from "@chakra-ui/react";
+import {
+  CodeEditor,
+  CodeEditorImperativeAttributes,
+  FormatButton,
+  isDefined,
+  stringifyError,
+} from "kurtosis-ui-components";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller } from "react-hook-form";
 import { FieldPath, FieldValues } from "react-hook-form/dist/types";
 import { ControllerRenderProps } from "react-hook-form/dist/types/controller";
 import { FiCode } from "react-icons/fi";
 import YAML from "yaml";
-import { CodeEditor, CodeEditorImperativeAttributes } from "../../../../../components/CodeEditor";
-import { FormatButton } from "../../../../../components/FormatButton";
-import { isDefined, stringifyError } from "../../../../../utils";
 import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
 export const JSONArgumentInput = (props: KurtosisArgumentTypeInputImplProps) => {

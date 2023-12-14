@@ -1,8 +1,8 @@
 import { Button, ButtonProps, Tooltip } from "@chakra-ui/react";
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import { isDefined } from "kurtosis-ui-components";
 import { useState } from "react";
 import { FiEdit2 } from "react-icons/fi";
-import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { isDefined } from "../../../utils";
 import { EnclaveFullInfo } from "../types";
 import { ConfigureEnclaveModal } from "./modals/ConfigureEnclaveModal";
 import { PackageLoadingModal } from "./modals/PackageLoadingModal";

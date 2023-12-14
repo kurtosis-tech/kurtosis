@@ -14,17 +14,21 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
+import { ArgumentValueType, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import {
+  assertDefined,
+  CopyButton,
+  isDefined,
+  KurtosisAlert,
+  KurtosisAlertError,
+  PackageSourceButton,
+  stringifyError,
+} from "kurtosis-ui-components";
 import { useMemo, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useKurtosisClient } from "../../../../client/enclaveManager/KurtosisClientContext";
-import { ArgumentValueType, KurtosisPackage } from "../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../../../../components/constants";
-import { CopyButton } from "../../../../components/CopyButton";
-import { KurtosisAlert, KurtosisAlertError } from "../../../../components/KurtosisAlert";
-import { PackageSourceButton } from "../../../../components/PackageSourceButton";
-import { assertDefined, isDefined, stringifyError } from "../../../../utils";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 import {
@@ -37,6 +41,7 @@ import { KurtosisArgumentFormControl } from "../configuration/KurtosisArgumentFo
 import { KurtosisPackageArgumentInput } from "../configuration/KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../configuration/types";
 import { allowedEnclaveNamePattern, isEnclaveNameAllowed } from "../utils";
+import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "./constants";
 
 type ConfigureEnclaveModalProps = {
   isOpen: boolean;

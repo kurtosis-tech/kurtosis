@@ -1,6 +1,6 @@
 import { Tag, Text } from "@chakra-ui/react";
 import { FilesArtifactNameAndUuid } from "enclave-manager-sdk/build/api_container_service_pb";
-import { isDefined } from "../../../../utils";
+import { isDefined } from "kurtosis-ui-components";
 
 type EnclaveArtifactsSummaryProps = {
   artifacts: FilesArtifactNameAndUuid[] | null;

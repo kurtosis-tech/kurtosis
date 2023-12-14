@@ -1,8 +1,8 @@
 import { Button, ButtonProps, Tooltip } from "@chakra-ui/react";
+import { KurtosisAlertModal } from "kurtosis-ui-components";
 import { useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { KurtosisAlertModal } from "../../../../components/KurtosisAlertModal";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 

@@ -1,11 +1,9 @@
 import { Timestamp } from "@bufbuild/protobuf";
 import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
+import { assertDefined, isDefined, LogLineMessage, LogViewer, stringifyError } from "kurtosis-ui-components";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
 import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
-import { LogViewer } from "../../../../../components/logs/LogViewer";
-import { LogLineMessage } from "../../../../../components/logs/types";
-import { assertDefined, isDefined, stringifyError } from "../../../../../utils";
 import { EnclaveFullInfo } from "../../../types";
 
 const serviceLogLineToLogLineMessage = (lines: string[], timestamp?: Timestamp): LogLineMessage[] => {

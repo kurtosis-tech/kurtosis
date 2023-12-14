@@ -1,6 +1,6 @@
 import { Flex, Spinner, Tag, TagProps, Tooltip } from "@chakra-ui/react";
 import { ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
-import { isDefined } from "../../../../utils";
+import { isDefined } from "kurtosis-ui-components";
 
 type ServicesSummaryProps = {
   services: "loading" | ServiceInfo[] | null;

@@ -1,7 +1,6 @@
+import { AppPageLayout, KurtosisAlert } from "kurtosis-ui-components";
 import { createContext, PropsWithChildren, useContext } from "react";
 import { useParams } from "react-router-dom";
-import { AppPageLayout } from "../../../components/AppLayout";
-import { KurtosisAlert } from "../../../components/KurtosisAlert";
 import { useFullEnclave } from "../EnclavesContext";
 import { EnclaveFullInfo } from "../types";
 

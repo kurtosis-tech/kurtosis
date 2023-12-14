@@ -1,8 +1,8 @@
 import { FilesArtifactNameAndUuid } from "enclave-manager-sdk/build/api_container_service_pb";
+import { DownloadButton } from "kurtosis-ui-components";
 import { useState } from "react";
 import streamsaver from "streamsaver";
 import { useKurtosisClient } from "../../../../client/enclaveManager/KurtosisClientContext";
-import { DownloadButton } from "../../../../components/DownloadButton";
 import { EnclaveFullInfo } from "../../types";
 
 type DownloadFileButtonProps = {

@@ -7,6 +7,7 @@ import {
   StarlarkRunResponseLine,
 } from "enclave-manager-sdk/build/api_container_service_pb";
 import { CreateEnclaveResponse, EnclaveInfo } from "enclave-manager-sdk/build/engine_service_pb";
+import { assertDefined, isDefined, RemoveFunctions } from "kurtosis-ui-components";
 import {
   createContext,
   PropsWithChildren,
@@ -19,8 +20,6 @@ import {
 } from "react";
 import { Result } from "true-myth";
 import { useKurtosisClient } from "../../client/enclaveManager/KurtosisClientContext";
-import { assertDefined, isDefined } from "../../utils";
-import { RemoveFunctions } from "../../utils/types";
 import { EnclaveFullInfo } from "./types";
 
 export type EnclavesState = {

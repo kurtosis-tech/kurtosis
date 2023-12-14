@@ -1,5 +1,5 @@
 import { Port_TransportProtocol } from "enclave-manager-sdk/build/api_container_service_pb";
-import { isDefined } from "../../../utils";
+import { isDefined } from "kurtosis-ui-components";
 
 export function transportProtocolToString(protocol: Port_TransportProtocol) {
   switch (protocol) {

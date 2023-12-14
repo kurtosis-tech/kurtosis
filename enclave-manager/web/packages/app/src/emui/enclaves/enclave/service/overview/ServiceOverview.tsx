@@ -1,13 +1,8 @@
 import { Flex, Grid, GridItem, Icon, Text } from "@chakra-ui/react";
 import { Container, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
+import { FileDisplay, isDefined, KurtosisAlert, TitledBox, ValueCard } from "kurtosis-ui-components";
 import { useMemo } from "react";
 import { IoLogoDocker } from "react-icons/io5";
-import { FileDisplay } from "../../../../../components/FileDisplay";
-import { KurtosisAlert } from "../../../../../components/KurtosisAlert";
-import { FLEX_STANDARD_GAP } from "../../../../../components/theme/constants";
-import { TitledBox } from "../../../../../components/TitledBox";
-import { ValueCard } from "../../../../../components/ValueCard";
-import { isDefined } from "../../../../../utils";
 import { PortsTable } from "../../../components/tables/PortsTable";
 import { ServiceStatusTag } from "../../../components/widgets/ServiceStatus";
 import { EnclaveFullInfo } from "../../../types";
@@ -20,8 +15,8 @@ type ServiceOverviewProps = {
 
 export const ServiceOverview = ({ service, enclave, instanceUUID }: ServiceOverviewProps) => {
   return (
-    <Flex flexDirection={"column"} gap={FLEX_STANDARD_GAP}>
-      <Grid templateColumns={"repeat(4, 1fr)"} gap={FLEX_STANDARD_GAP}>
+    <Flex flexDirection={"column"} gap={"32px"}>
+      <Grid templateColumns={"repeat(4, 1fr)"} gap={"32px"}>
         <GridItem>
           <ValueCard title={"Name"} value={service.name} copyEnabled />
         </GridItem>

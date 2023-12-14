@@ -4,18 +4,21 @@ import { useState } from "react";
 import { IoStar } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
-import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { AppPageLayout } from "../../../components/AppLayout";
-import { readablePackageName } from "../../../components/catalog/utils";
-import { RunKurtosisPackageButton } from "../../../components/catalog/widgets/RunKurtosisPackageButton";
-import { SaveKurtosisPackageButton } from "../../../components/catalog/widgets/SaveKurtosisPackageButton";
-import { CopyButton } from "../../../components/CopyButton";
-import { FormatDateTime } from "../../../components/FormatDateTime";
-import { KurtosisAlert } from "../../../components/KurtosisAlert";
-import { KurtosisMarkdown } from "../../../components/KurtosisMarkdown";
-import { PackageSourceButton } from "../../../components/PackageSourceButton";
-import { TitledCard } from "../../../components/TitledCard";
-import { isDefined } from "../../../utils";
+
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import {
+  AppPageLayout,
+  CopyButton,
+  FormatDateTime,
+  isDefined,
+  KurtosisAlert,
+  KurtosisMarkdown,
+  PackageSourceButton,
+  readablePackageName,
+  RunKurtosisPackageButton,
+  SaveKurtosisPackageButton,
+  TitledCard,
+} from "kurtosis-ui-components";
 import { ConfigureEnclaveModal } from "../../enclaves/components/modals/ConfigureEnclaveModal";
 import { EnclavesContextProvider } from "../../enclaves/EnclavesContext";
 import { useKurtosisPackage } from "../CatalogContext";
