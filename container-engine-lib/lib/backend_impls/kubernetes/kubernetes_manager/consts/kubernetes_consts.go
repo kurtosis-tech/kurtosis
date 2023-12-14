@@ -23,6 +23,7 @@ const (
 	NodesKubernetesResource                  = "nodes"
 	PersistentVolumesKubernetesResource      = "persistentvolumes"
 	PersistentVolumeClaimsKubernetesResource = "persistentvolumeclaims"
+	IngressesKubernetesResource              = "ingresses"
 
 	ClusterRoleKubernetesResourceType = "ClusterRole"
 	RoleKubernetesResourceType        = "Role"

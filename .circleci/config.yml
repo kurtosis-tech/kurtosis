@@ -30,7 +30,7 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         name: Install K3D and create the K3D/K3S cluster on Docker
         command: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-          k3d cluster create --servers 1 --no-lb --wait --verbose
+          k3d cluster create -p "<< pipeline.parameters.reverse-proxy-entrypoint-web-port >>:80@loadbalancer" --servers 1 --wait --verbose
     - run:
         name: Load Kurtosis images into the K3S cluster
         # First load the image into Docker and then import the images into K3S by taking the image from Docker
@@ -124,8 +124,7 @@ abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
 abort_job_if_kubernetes_backend: &abort_job_if_kubernetes_backend
   when:
     condition:
-      and:
-        - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+      equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
     steps:
       - run: circleci-agent step halt
 
@@ -540,8 +539,7 @@ jobs:
 
       - when:
           condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -614,8 +612,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} analytics disable"
       - when:
           condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -767,8 +764,7 @@ jobs:
       # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -940,8 +936,6 @@ jobs:
     parameters:
       <<: *param_cli_cluster_backend
     steps:
-      - <<: *abort_job_if_kubernetes_backend
-
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
@@ -961,7 +955,15 @@ jobs:
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: "${KURTOSIS_BINPATH} analytics disable"
 
-      - <<: *run_prepare_testing_docker
+      - when:
+          condition:
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s_k3s
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
 
       # Start a service and send an http request to it via the reverse proxy
       - run: |
@@ -977,18 +979,22 @@ jobs:
             false
           fi
 
-      # Restart the engine and make sure Traefik restarted and reconfigured properly 
-      - run: |
-          ${KURTOSIS_BINPATH} engine restart
-          enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
-          service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
-          # Give the reverse proxy enough time to discover the httpd user service
-          sleep 10
-          status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
-          if ! [ "${status_code}" -eq "200" ]; then
-            echo 'HTTP request status code returned is '${status_code}' instead of 200'
-            false
-          fi
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            # Restart the engine and make sure Traefik restarted and reconfigured properly 
+            - run: |
+                ${KURTOSIS_BINPATH} engine restart
+                enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
+                service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
+                # Give the reverse proxy enough time to discover the httpd user service
+                sleep 10
+                status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
+                if ! [ "${status_code}" -eq "200" ]; then
+                  echo 'HTTP request status code returned is '${status_code}' instead of 200'
+                  false
+                fi
 
   test_ci_for_failure:
     executor: ubuntu_vm
@@ -1013,8 +1019,7 @@ jobs:
       # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -1463,6 +1468,18 @@ workflows:
       - test_reverse_proxy:
           name: "Test reverse proxy against Docker"
           cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
+      - test_reverse_proxy:
+          name: "Test reverse proxy against Kubernetes"
+          cli-cluster-backend: "kubernetes"
           context:
             - docker-user
           requires:
