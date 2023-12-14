@@ -52,7 +52,7 @@ kurtosis-clusters:
     type: "kubernetes"
     config:
       kubernetes-cluster-name: "minikube"
-      storage-class: "standard"
+      storage-class: "local-path"
       enclave-size-in-megabytes: 10
   cloud:
     type: "kubernetes"
