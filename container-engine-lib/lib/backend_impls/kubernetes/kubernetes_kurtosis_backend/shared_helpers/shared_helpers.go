@@ -391,12 +391,8 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		serviceUuid := service.ServiceUUID(serviceGuidStr)
 
 		numIngressesForGuid := len(kubernetesIngressForGuid)
-		if numIngressesForGuid == 0 {
-			// This would indicate a bug in our ingress retrieval logic because we shouldn't even have a map entry if there's nothing matching it
-			return nil, stacktrace.NewError("Got entry of result ingresses for service GUID '%v', but no Kubernetes ingress were returned; this is a bug in Kurtosis", serviceUuid)
-		}
-		if numIngressesForGuid > 1 {
-			return nil, stacktrace.NewError("Found %v Kubernetes ingresses associated with service GUID '%v'; this is a bug in Kurtosis", numIngressesForGuid, serviceUuid)
+		if numIngressesForGuid != 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes ingresses associated with service GUID '%v', but number of ingresses should be exactly 1; this is a bug in Kurtosis", numIngressesForGuid, serviceUuid)
 		}
 		kubernetesIngress := kubernetesIngressForGuid[0]
 
