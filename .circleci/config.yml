@@ -171,6 +171,9 @@ parameters:
   api-node-version:
     type: string
     default: 16.13.0
+  ui-node-version:
+    type: string
+    default: 18.19.0
   core-server-build-cache-key-prefix:
     type: string
     default: "core-server-go-mod-v1"   # Can bump this version to bust the cache
@@ -1059,7 +1062,7 @@ jobs:
 
   publish_kurtosis_ui_libs:
     docker:
-      - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
+      - image: "cimg/node:<< pipeline.parameters.ui-node-version>>"
     steps:
       - slack/notify:
           channel: engineering
