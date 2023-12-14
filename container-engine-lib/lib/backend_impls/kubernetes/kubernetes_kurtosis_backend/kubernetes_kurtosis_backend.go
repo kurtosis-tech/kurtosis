@@ -3,6 +3,7 @@ package kubernetes_kurtosis_backend
 import (
 	"context"
 	"io"
+	apiv1 "k8s.io/api/core/v1"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/engine_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
@@ -114,9 +115,9 @@ func NewCLIModeKubernetesKurtosisBackend(
 
 func NewKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-	// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple
-	//  backends per consumer, e.g. APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc.
-	//  This can only happen once the CLI no longer uses the same functionality as API container, engine, etc. though
+// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple
+//  backends per consumer, e.g. APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc.
+//  This can only happen once the CLI no longer uses the same functionality as API container, engine, etc. though
 	cliModeArgs *shared_helpers.CliModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	apiContainerModeargs *shared_helpers.ApiContainerModeArgs,
@@ -271,6 +272,11 @@ func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 	map[service.ServiceUUID]error,
 	error,
 ) {
+	restartPolicy := apiv1.RestartPolicyNever
+	if backend.productionMode {
+		restartPolicy = apiv1.RestartPolicyOnFailure
+	}
+
 	successfullyStartedServices, failedServices, err := user_services_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
@@ -278,7 +284,8 @@ func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
-		backend.kubernetesManager)
+		backend.kubernetesManager,
+		restartPolicy)
 	if err != nil {
 		var serviceUuids []service.ServiceUUID
 		for serviceUuid := range services {
