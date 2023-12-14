@@ -16,6 +16,7 @@ import (
 	starlark_port_spec "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
 	"math"
 	"path"
@@ -268,11 +269,16 @@ func convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap map[strin
 	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
 }
 
-func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.ServiceNetwork) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
+func (config *ServiceConfig) ToKurtosisType(
+	serviceNetwork service_network.ServiceNetwork,
+	packageId string,
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string,
+) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
 	var ok bool
 
-	// image attribute is either a container image string or an ImageBuildSpec
-	// parse the attribute and populate each accordingly, leaving the other empty
+	// TODO: figure out the best way to handle naming an image if there's an image build spec
 	var imageName string
 	var imageBuildSpec *image_build_spec.ImageBuildSpec
 	rawImageAttrValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](config.KurtosisValueTypeDefault, ImageAttr)
@@ -288,13 +294,11 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 	} else {
 		imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := rawImageAttrValue.(*ImageBuildSpec)
 		if !isImageBuildSpecStarlarkType {
-			return nil, startosis_errors.NewInterpretationError("Failed to cast '%v' to a valid image build spec object.", rawImageAttrValue)
+			return nil, startosis_errors.NewInterpretationError("Failed to cast '%v' to an image build spec object.", rawImageAttrValue)
 		}
-		contextDirPath, err := imageBuildSpecStarlarkType.GetContextDirPath()
-		// TODO: convert relative context directory path to absolute context directory path
-		imageBuildSpec, err = imageBuildSpecStarlarkType.ToKurtosisType(contextDirPath)
-		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred attempting to create an image build spec from '%v'", imageBuildSpecStarlarkType)
+		imageBuildSpec, interpretationErr = imageBuildSpecStarlarkType.ToKurtosisType(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageContentProvider, packageReplaceOptions)
+		if interpretationErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred attempting to convert the image build spec to Kurtosis type: '%v'", imageBuildSpecStarlarkType)
 		}
 	}
 
