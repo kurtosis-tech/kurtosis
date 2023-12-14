@@ -124,7 +124,13 @@ export const ConfigureEnclaveModal = ({
     if (!isDefined(preloadArgs)) {
       return undefined;
     }
-    const parsedForm = JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
+    let parsedForm: ConfigureEnclaveForm;
+    try {
+      parsedForm = JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
+    } catch (err: any) {
+      setError(`Unable to parse the url - was it copied correctly? Got Error: ${stringifyError(err)}`);
+      return undefined;
+    }
     kurtosisPackage.args
       .filter((arg) => !isDefined(arg.typeV2?.topLevelType) || arg.typeV2?.topLevelType === ArgumentValueType.JSON)
       .forEach((arg) => {
