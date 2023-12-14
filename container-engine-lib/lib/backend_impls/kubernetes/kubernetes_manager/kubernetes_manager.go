@@ -400,7 +400,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 				},
 				Claims: nil,
 			},
-			VolumeName:       volumeClaimName, // volume and their respective claims have the same name right now
+			VolumeName:       "", // we use dynamic provisioning this should happen automagically
 			StorageClassName: &manager.storageClass,
 			VolumeMode:       nil,
 			DataSource:       nil,
