@@ -235,6 +235,9 @@ parameters:
   reverse-proxy-entrypoint-web-port:
     type: string
     default: "9730"
+  tilt-releaser-version:
+    type: string
+    default: "31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
 
 
 
@@ -467,10 +470,11 @@ jobs:
             - "<< pipeline.parameters.engine-server-image-filename >>"
 
   build_cli:
-    # we use this docker/tilt-releaser image for cli jobs because starlark-lsp requires it to build
-    # as opposed to running image off cimg/go:<< pipeline.parameters.go-version like every other job
+    # The starlark-lsp uses treesitter which has direct c bindings; and making a go releaser cross arch build
+    # requires a lot of tooling; when the original author adding starlark-lsp to the project they copied the tilt-releaser
+    # which came with all of the underlying tooling instead of bundling their own image; perhaps due to time constraints
     docker:
-      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
+      - image: "docker/tilt-releaser@sha256:<< pipeline.parameters.tilt-releaser-version >>"
     resource_class: large
     steps:
       - checkout
@@ -1181,8 +1185,11 @@ jobs:
   push_cli_artifacts:
     # we use this docker/tilt-releaser image for cli jobs because starlark-lsp requires it to build
     # as opposed to running image off cimg/go:<< pipeline.parameters.go-version like every other job
+    # The starlark-lsp uses treesitter which has direct c bindings; and making a go releaser cross arch build
+    # requires a lot of tooling; when the original author adding starlark-lsp to the project they copied the tilt-releaser
+    # which came with all of the underlying tooling instead of bundling their own image; perhaps due to time constraints
     docker:
-      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
+      - image: "docker/tilt-releaser@sha256:<< pipeline.parameters.tilt-releaser-version >>"
     steps:
       - slack/notify:
           channel: engineering
