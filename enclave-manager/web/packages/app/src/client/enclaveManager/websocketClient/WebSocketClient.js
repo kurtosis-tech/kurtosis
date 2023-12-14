@@ -1,9 +1,8 @@
 
-import { defaultQueryParamSerializer, defaultQuerySerializer, deepObjectPath, createFinalURL } from "openapi-fetch"
+import { defaultQuerySerializer, createFinalURL } from "openapi-fetch"
 
 export default function createWSClient(clientOptions) {
     const {
-        wss: baseFetch = WebSocket,
         querySerializer: globalQuerySerializer,
         ...baseOptions
     } = clientOptions ?? {};
@@ -14,7 +13,6 @@ export default function createWSClient(clientOptions) {
 
     async function* websocketMessagesGenerator(url, fetchOptions) {
         const {
-            wss = baseFetch,
             headers,
             params = {},
             parseAs = "json",
@@ -32,7 +30,7 @@ export default function createWSClient(clientOptions) {
 
         var socket
         try {
-            socket = new wss(finalURL);
+            socket = new WebSocket(finalURL);
         } catch (error) {
             return { error: {}, data: null }
         }
