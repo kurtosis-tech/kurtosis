@@ -11,7 +11,7 @@ import {
   KURTOSIS_DEFAULT_REST_API_PORT,
 } from "../constants";
 import { KurtosisClient } from "./KurtosisClient";
-import createWSClient from "./websocketClient/WebSocketClient";
+import { createWSClient } from "./websocketClient/WebSocketClient";
 
 function constructGatewayURL(remoteHost: string): string {
   return `${KURTOSIS_CLOUD_UI_URL}/gateway/ips/${remoteHost}/ports/${KURTOSIS_DEFAULT_EM_API_PORT}`;
@@ -22,7 +22,7 @@ function constructRESTGatewayURL(remoteHost: string): string {
 }
 
 function constructWSGatewayURL(remoteHost: string): string {
-  return constructRESTGatewayURL(remoteHost).replace(/^http/, 'ws');
+  return constructRESTGatewayURL(remoteHost).replace(/^http/, "ws");
 }
 
 export class AuthenticatedKurtosisClient extends KurtosisClient {

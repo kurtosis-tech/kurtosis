@@ -27,7 +27,7 @@ import { components, paths } from "kurtosis-sdk/src/engine/rest_api_bindings/typ
 import { assertDefined, asyncResult, isDefined, RemoveFunctions } from "kurtosis-ui-components";
 import createClient from "openapi-fetch";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
-import createWSClient from "./websocketClient/WebSocketClient";
+import { createWSClient } from "./websocketClient/WebSocketClient";
 
 type KurtosisRestClient = ReturnType<typeof createClient<paths>>;
 type KurtosisWebsocketClient = ReturnType<typeof createWSClient<paths>>;
