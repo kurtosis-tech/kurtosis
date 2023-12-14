@@ -72,7 +72,10 @@ const (
 	expectedStatusMessageSliceSize       = 6
 
 	// bringing this back to test
-	persistentVolumeDefaultSize int64 = 1 * 1024 * 1024 * 1024
+	persistentVolumeDefaultSize                          int64 = 1 * 1024 * 1024 * 1024
+	waitForPersistentVolumeBoundTimeout                        = 3 * time.Minute
+	waitForPersistentVolumeBoundInitialDelayMilliSeconds       = 100
+	waitForPersistentVolumeBoundRetriesDelayMilliSeconds       = 500
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -418,7 +421,13 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 		return nil, stacktrace.Propagate(err, "Failed to create volume claim '%s'", volumeClaimName)
 	}
 
-	return volumeClaim, err
+	// Wait for the PVC to become bound and return that object (which will have VolumeName filled out)
+	boundVolumeClaim, err := manager.waitForPersistentVolumeClaimBinding(ctx, namespace, volumeClaim.Name)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for persistent volume claim '%v' get bound in namespace '%v'",
+			volumeClaim.GetName(), volumeClaim.GetNamespace())
+	}
+	return boundVolumeClaim, err
 }
 
 func (manager *KubernetesManager) RemovePersistentVolumeClaim(
@@ -1835,6 +1844,31 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 		latestPodStatus.Phase,
 		latestPodStatus.Message,
 		strings.Join(containerStatusStrs, "\n"),
+	)
+}
+
+func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
+	ctx context.Context,
+	namespaceName string,
+	persistentVolumeClaimName string,
+) (*apiv1.PersistentVolumeClaim, error) {
+	deadline := time.Now().Add(waitForPersistentVolumeBoundTimeout)
+	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
+	for time.Now().Before(deadline) {
+		claim, err := manager.GetPersistentVolumeClaim(ctx, namespaceName, persistentVolumeClaimName)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaimName, namespaceName)
+		}
+		return claim, nil
+	}
+
+	return nil, stacktrace.NewError(
+		"Persistent volume claim '%v' in namespace '%v' did not become bound despite waiting for %v with %v "+
+			"between polls",
+		persistentVolumeClaimName,
+		namespaceName,
+		waitForPersistentVolumeBoundTimeout,
+		waitForPersistentVolumeBoundRetriesDelayMilliSeconds,
 	)
 }
 
