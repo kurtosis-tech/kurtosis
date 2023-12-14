@@ -13,6 +13,6 @@ const (
 	PlaceHolderMainFileForPlaceStandAloneScript                      = ""
 	ParallelismParam                            StarlarkContextParam = "PARALLELISM"
 
-	// DefaultPersistentDirectorySize 500 Megabytes is the default value
-	DefaultPersistentDirectorySize int64 = 500 * 1024 * 1024
+	// DefaultPersistentDirectorySize 1Gi Megabytes is the default value and what most drivers support
+	DefaultPersistentDirectorySize int64 = 1024 * 1024 * 1024
 )

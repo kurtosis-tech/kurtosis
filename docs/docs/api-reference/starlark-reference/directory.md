@@ -36,7 +36,7 @@ persistent_directory = Directory(
 )
 ```
 
-The default size of a persistent directory is `500Mb`. Note the size attribute is ignored on Docker due to Docker limitations.
+The default size of a persistent directory is `1Gb`. Note the size attribute is ignored on Docker due to Docker limitations.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [render-templates-reference]: ./plan.md#render_templates
