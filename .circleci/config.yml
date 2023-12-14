@@ -1498,7 +1498,7 @@ workflows:
             - slack-secrets
           filters:
             branches:
-              only: bgazzard/emui-shared-packages
+              only: bgazzard/emui-populate-components
       - publish_files_artifacts_expander_image:
           context:
             - docker-user
