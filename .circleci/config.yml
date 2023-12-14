@@ -1071,6 +1071,7 @@ jobs:
           template: basic_fail_1
 
       - checkout
+      - run: enclave-manager/api/scripts/build.sh
       - run: enclave-manager/web/scripts/build.sh
       - npm-publisher/publish-from-package-version:
           package-path: enclave-manager/web/packages/components
