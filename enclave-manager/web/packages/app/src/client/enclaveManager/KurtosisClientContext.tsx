@@ -93,21 +93,6 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
             setError("Cannot reach the enclave manager backend - is the Enclave Manager API running and accessible?");
             return;
           }
-          
-          // var mock = new EnclaveInfo();
-          // var abort = new AbortController();
-          // mock.enclaveUuid = "0e822339d46e4c7e83d5f39968457fc3"
-          // const checkResp2 = newClient.getServiceLogsWS(
-          //   abort,
-          //   mock,
-          //   "13b913ebcda24b3cb509082af1d66840",
-          //   true
-          // );
-          // console.dir(checkResp2);
-          // for await (const lineGroup of checkResp2) {
-          //   console.info(lineGroup)
-          // }
-
           setClient(newClient);
         }
       } catch (e: any) {

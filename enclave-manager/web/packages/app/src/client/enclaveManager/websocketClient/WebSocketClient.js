@@ -66,8 +66,8 @@ export default function createWSClient(clientOptions) {
     };
 
     return {
-        /** Call a GET endpoint */
-        GET: async function* (url, init) {
+        /** Call a WS endpoint */
+        WS: async function* (url, init) {
             for await (const val of websocketMessagesGenerator(url, { ...init, method: "GET" })) {
                 yield val;
             }

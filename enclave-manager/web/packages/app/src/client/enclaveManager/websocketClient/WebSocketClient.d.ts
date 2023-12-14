@@ -85,8 +85,8 @@ export type RequestOptions<T> = ParamsOption<T> & Abortable &
 export default function createWSClient<Paths extends {}>(
     clientOptions?: ClientOptions,
 ): {
-    /** Call a GET endpoint */
-    GET<P extends PathsWithMethod<Paths, "get">>(
+    /** Call a WS endpoint */
+    WS<P extends PathsWithMethod<Paths, "get">>(
         url: P,
         ...init: HasRequiredKeys<
             FetchOptions<FilterKeys<Paths[P], "get">>

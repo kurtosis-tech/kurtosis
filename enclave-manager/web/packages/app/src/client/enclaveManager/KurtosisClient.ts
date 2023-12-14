@@ -31,10 +31,12 @@ import { EnclaveFullInfo } from "../../emui/enclaves/types";
 import createWSClient from "./websocketClient/WebSocketClient";
 
 type KurtosisRestClient = ReturnType<typeof createClient<paths>>;
+type KurtosisWebsocketClient = ReturnType<typeof createWSClient<paths>>;
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
   protected readonly restClient: KurtosisRestClient;
+  protected readonly websocketClient: KurtosisWebsocketClient;
 
   /* Full URL of the browser containing the EM UI covering two use cases:
    * In local-mode this is: http://localhost:9711, http://localhost:3000 (with `yarn start` / dev mode)
@@ -55,11 +57,13 @@ export abstract class KurtosisClient {
   constructor(
     client: PromiseClient<typeof KurtosisEnclaveManagerServer>,
     restClient: KurtosisRestClient,
+    websocketClient: KurtosisWebsocketClient,
     parentUrl: URL,
     childUrl: URL,
   ) {
     this.client = client;
     this.restClient = restClient;
+    this.websocketClient = websocketClient;
     this.cloudUrl = parentUrl;
     this.baseApplicationUrl = childUrl;
     this.getParentRequestedRoute();
@@ -90,7 +94,7 @@ export abstract class KurtosisClient {
     return asyncResult(this.client.check({}, this.getHeaderOptions()));
   }
 
-  getServiceLogsWS = async function* (
+  async *getServiceLogsWS(
     abortController: AbortController,
     enclave: RemoveFunctions<EnclaveFullInfo>,
     serviceUUID: string,
@@ -99,8 +103,9 @@ export abstract class KurtosisClient {
     returnAllLogs?: boolean,
     conjunctiveFilters?: LogLineFilter[],
   ): AsyncGenerator<components["schemas"]["ServiceLogs"]> {
-    var wssClient = createWSClient<paths>({ baseUrl: KURTOSIS_WEBSOCKET_API_DEFAULT_URL });
-    const logs = wssClient.GET("/enclaves/{enclave_identifier}/services/{service_identifier}/logs", {
+    // TODO (edgar) do proper filter conversion
+    // const filters: components["schemas"]["LogLineFilter"][] = conjunctiveFilters!.map(x => {return {operator: x.operator, text_pattern: x.textPattern};});
+    const logs = this.websocketClient.WS("/enclaves/{enclave_identifier}/services/{service_identifier}/logs", {
       params: {
         path: {
           enclave_identifier: enclave.enclaveUuid,
@@ -110,7 +115,7 @@ export abstract class KurtosisClient {
           follow_logs: followLogs,
           num_log_lines: numLogLines,
           return_all_logs: returnAllLogs,
-          // conjunctive_filters: conjunctiveFilters?.map(x => {operator: x.operator; text_pattern: x.textPattern})
+          // conjunctive_filters: filters
         },
       },
       abortSignal: abortController.signal,
