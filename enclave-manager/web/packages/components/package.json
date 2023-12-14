@@ -10,7 +10,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kurtosis-tech/enclave-manager-sdk.git",
+    "url": "git+https://github.com/kurtosis-tech/kurtosis.git",
     "directory": "enclave-manager/web/packages/components"
   },
   "author": "Kurtosis Technologies Inc <support@kurtosistech.com> (https://www.kurtosistech.com/)",
