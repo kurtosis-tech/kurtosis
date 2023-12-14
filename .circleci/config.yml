@@ -170,6 +170,9 @@ parameters:
   api-node-version:
     type: string
     default: 16.13.0
+  ui-node-version:
+    type: string
+    default: 18.19.0
   core-server-build-cache-key-prefix:
     type: string
     default: "core-server-go-mod-v1"   # Can bump this version to bust the cache
@@ -234,6 +237,9 @@ parameters:
   reverse-proxy-entrypoint-web-port:
     type: string
     default: "9730"
+  tilt-releaser-version:
+    type: string
+    default: "31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
 
 
 
@@ -466,10 +472,11 @@ jobs:
             - "<< pipeline.parameters.engine-server-image-filename >>"
 
   build_cli:
-    # we use this docker/tilt-releaser image for cli jobs because starlark-lsp requires it to build
-    # as opposed to running image off cimg/go:<< pipeline.parameters.go-version like every other job
+    # The starlark-lsp uses treesitter which has direct c bindings; and making a go releaser cross arch build
+    # requires a lot of tooling; when the original author adding starlark-lsp to the project they copied the tilt-releaser
+    # which came with all of the underlying tooling instead of bundling their own image; perhaps due to time constraints
     docker:
-      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
+      - image: "docker/tilt-releaser@sha256:<< pipeline.parameters.tilt-releaser-version >>"
     resource_class: large
     steps:
       - checkout
@@ -1062,6 +1069,23 @@ jobs:
           package-path: api/typescript
           publish-token-variable: NPMJS_AUTH_TOKEN
 
+  publish_kurtosis_ui_libs:
+    docker:
+      - image: "cimg/node:<< pipeline.parameters.ui-node-version>>"
+    steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
+      - checkout
+      - run: enclave-manager/api/typescript/scripts/build.sh
+      - run: enclave-manager/web/scripts/build.sh
+      - npm-publisher/publish-from-package-version:
+          package-path: enclave-manager/web/packages/components
+          publish-token-variable: NPMJS_AUTH_TOKEN
+
   publish_files_artifacts_expander_image:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version >>"
@@ -1186,8 +1210,11 @@ jobs:
   push_cli_artifacts:
     # we use this docker/tilt-releaser image for cli jobs because starlark-lsp requires it to build
     # as opposed to running image off cimg/go:<< pipeline.parameters.go-version like every other job
+    # The starlark-lsp uses treesitter which has direct c bindings; and making a go releaser cross arch build
+    # requires a lot of tooling; when the original author adding starlark-lsp to the project they copied the tilt-releaser
+    # which came with all of the underlying tooling instead of bundling their own image; perhaps due to time constraints
     docker:
-      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
+      - image: "docker/tilt-releaser@sha256:<< pipeline.parameters.tilt-releaser-version >>"
     steps:
       - slack/notify:
           channel: engineering
@@ -1474,6 +1501,15 @@ workflows:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
 
       - publish_kurtosis_api_typescript:
+          context:
+            - npmjs-user
+            - slack-secrets
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_kurtosis_ui_libs:
           context:
             - npmjs-user
             - slack-secrets

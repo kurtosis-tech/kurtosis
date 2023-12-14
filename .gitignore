@@ -123,3 +123,6 @@ Cargo.lock
 
 # direnv files
 .direnv
+
+# Lerna debug
+lerna-debug.log

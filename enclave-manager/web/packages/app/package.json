@@ -1,0 +1,63 @@
+{
+  "name": "@kurtosis/emui-app",
+  "version": "0.0.1",
+  "private": true,
+  "homepage": ".",
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "@tanstack/react-table": "^8.10.7",
+    "ansi-to-html": "^0.7.2",
+    "enclave-manager-sdk": "file:../../../api/typescript",
+    "html-react-parser": "^4.2.2",
+    "js-cookie": "^3.0.5",
+    "kurtosis-ui-components": "0.0.1",
+    "lodash": "^4.17.21",
+    "luxon": "^3.4.3",
+    "react-error-boundary": "^4.0.11",
+    "react-hook-form": "^7.47.0",
+    "react-icons": "^4.11.0",
+    "react-markdown": "^9.0.0",
+    "react-router-dom": "^6.17.0",
+    "react-virtuoso": "^4.6.2",
+    "streamsaver": "^2.0.6",
+    "true-myth": "^7.1.0",
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
+    "@types/luxon": "^3.3.3",
+    "@types/node": "^16.7.13",
+    "@types/streamsaver": "^2.0.4",
+    "monaco-editor": "^0.44.0",
+    "serve": "^14.2.1",
+    "source-map-explorer": "^2.5.3"
+  },
+  "scripts": {
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
+    "clean": "rm -rf build",
+    "start": "PORT=4000 craco start",
+    "start:cloud": "BROWSER=none PUBLIC_URL=http://localhost:3000/emui-dev PORT=4000 dotenv -e ./.env.cloudDevelopment -- craco start",
+    "start:prod": "serve -p 4000 -s build",
+    "build": "craco build",
+    "test": "craco test",
+    "eject": "craco eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

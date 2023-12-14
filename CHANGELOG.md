@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.85.48](https://github.com/kurtosis-tech/kurtosis/compare/0.85.47...0.85.48) (2023-12-14)
+
+
+### Bug Fixes
+
+* failing test due to prometheus package creation ([#1955](https://github.com/kurtosis-tech/kurtosis/issues/1955)) ([67169cb](https://github.com/kurtosis-tech/kurtosis/commit/67169cbfc0fce4b3ae6089e491ec20a50af38969))
+
+## [0.85.47](https://github.com/kurtosis-tech/kurtosis/compare/0.85.46...0.85.47) (2023-12-14)
+
+
+### Features
+
+* Add CORS policy to REST API server ([#1924](https://github.com/kurtosis-tech/kurtosis/issues/1924)) ([a934b1e](https://github.com/kurtosis-tech/kurtosis/commit/a934b1e07805d600cf10fd4bd5b8e6cd62fcc83e))
+* allow specifying size of persistent directories ([#1939](https://github.com/kurtosis-tech/kurtosis/issues/1939)) ([5a997bc](https://github.com/kurtosis-tech/kurtosis/commit/5a997bc720cf23fdee5a3598b83a9bb6d3952aba))
+
+
+### Bug Fixes
+
+* enclave name in error message ([#1942](https://github.com/kurtosis-tech/kurtosis/issues/1942)) ([4754073](https://github.com/kurtosis-tech/kurtosis/commit/475407361345da4c3febc5e1cdc626c02930eb04))
+* fix cloud link out markdown ([#1929](https://github.com/kurtosis-tech/kurtosis/issues/1929)) ([846efb1](https://github.com/kurtosis-tech/kurtosis/commit/846efb126a04f851e2e04454d603dd7e9110d5a0))
+* small Emui QoL improvements ([#1944](https://github.com/kurtosis-tech/kurtosis/issues/1944)) ([21b5ffd](https://github.com/kurtosis-tech/kurtosis/commit/21b5ffd8bcd91397046be38d0fe84d416b4d8d43))
+* update startosis test ([#1945](https://github.com/kurtosis-tech/kurtosis/issues/1945)) ([cc44ade](https://github.com/kurtosis-tech/kurtosis/commit/cc44adec747a9c79a6bd20ad4d036fb3ef337dae))
+
 ## [0.85.46](https://github.com/kurtosis-tech/kurtosis/compare/0.85.45...0.85.46) (2023-12-12)
 
 
