@@ -1,11 +1,11 @@
 import { Button, ButtonGroup, Flex } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import { AppPageLayout } from "../../components/AppLayout";
-import { CreateEnclaveButton } from "../../components/enclaves/CreateEnclaveButton";
-import { EnclavesTable } from "../../components/enclaves/tables/EnclavesTable";
-import { DeleteEnclavesButton } from "../../components/enclaves/widgets/DeleteEnclavesButton";
 import { KurtosisAlert } from "../../components/KurtosisAlert";
 import { PageTitle } from "../../components/PageTitle";
+import { CreateEnclaveButton } from "./components/CreateEnclaveButton";
+import { EnclavesTable } from "./components/tables/EnclavesTable";
+import { DeleteEnclavesButton } from "./components/widgets/DeleteEnclavesButton";
 import { useFullEnclaves } from "./EnclavesContext";
 import { EnclaveFullInfo } from "./types";
 

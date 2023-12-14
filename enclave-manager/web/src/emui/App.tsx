@@ -3,12 +3,13 @@ import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import { KurtosisClientProvider, useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
 import { KurtosisPackageIndexerProvider } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { AppLayout } from "../components/AppLayout";
-import { CreateEnclave } from "../components/enclaves/CreateEnclave";
 import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
 import { CatalogContextProvider } from "./catalog/CatalogContext";
 import { catalogRoutes } from "./catalog/CatalogRoutes";
+import { CreateEnclave } from "./enclaves/components/CreateEnclave";
 import { enclaveRoutes } from "./enclaves/EnclaveRoutes";
 import { EnclavesContextProvider } from "./enclaves/EnclavesContext";
+import { Navbar } from "./Navbar";
 
 const logLogo = (t: string) => console.log(`%c ${t}`, "background: black; color: #00C223");
 logLogo(`                                                                               
@@ -54,7 +55,7 @@ const KurtosisRouter = () => {
         [
           {
             element: (
-              <AppLayout>
+              <AppLayout navbar={<Navbar />}>
                 <Outlet />
               </AppLayout>
             ),

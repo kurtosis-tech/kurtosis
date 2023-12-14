@@ -1,21 +1,32 @@
 import { Box, Flex } from "@chakra-ui/react";
-import { PropsWithChildren } from "react";
-import { Navbar } from "../emui/Navbar";
+import { createContext, PropsWithChildren, ReactElement, useContext } from "react";
+import { isDefined } from "../utils";
 import { KurtosisBreadcrumbs } from "./KurtosisBreadcrumbs";
 import {
   MAIN_APP_BOTTOM_PADDING,
-  MAIN_APP_LEFT_PADDING,
+  MAIN_APP_LEFT_PADDING_WITHOUT_NAV,
+  MAIN_APP_LEFT_PADDING_WITH_NAV,
   MAIN_APP_MAX_WIDTH,
   MAIN_APP_RIGHT_PADDING,
   MAIN_APP_TOP_PADDING,
 } from "./theme/constants";
 
-export const AppLayout = ({ children }: PropsWithChildren) => {
+type AppLayoutContextState = {
+  hasNavbar: boolean;
+};
+
+const AppLayoutContext = createContext<AppLayoutContextState>({ hasNavbar: true });
+
+type AppLayoutProps = PropsWithChildren<{
+  navbar?: ReactElement;
+}>;
+
+export const AppLayout = ({ children, navbar }: AppLayoutProps) => {
   return (
     <>
-      <Navbar />
+      {isDefined(navbar) && navbar}
       <Flex flexDirection="column" as="main" w={"100%"} minH={"100vh"} className={"app-container"}>
-        {children}
+        <AppLayoutContext.Provider value={{ hasNavbar: isDefined(navbar) }}>{children}</AppLayoutContext.Provider>
       </Flex>
     </>
   );
@@ -26,6 +37,7 @@ type AppPageLayoutProps = PropsWithChildren<{
 }>;
 
 export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProps) => {
+  const { hasNavbar } = useContext(AppLayoutContext);
   const numberOfChildren = Array.isArray(children) ? children.length : 1;
 
   if (numberOfChildren === 1) {
@@ -37,7 +49,7 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
           w={"100%"}
           h={"100%"}
           maxWidth={MAIN_APP_MAX_WIDTH}
-          pl={MAIN_APP_LEFT_PADDING}
+          pl={hasNavbar ? MAIN_APP_LEFT_PADDING_WITH_NAV : MAIN_APP_LEFT_PADDING_WITHOUT_NAV}
           pr={MAIN_APP_RIGHT_PADDING}
         >
           <KurtosisBreadcrumbs />
@@ -62,14 +74,19 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
     return (
       <Flex flexDirection={"column"} width={"100%"} h={preventPageScroll ? `100vh` : "100%"} flex={"1"}>
         <Box width={"100%"} bg={"gray.850"}>
-          <Box width={"100%"} pl={MAIN_APP_LEFT_PADDING} pr={MAIN_APP_RIGHT_PADDING} maxW={MAIN_APP_MAX_WIDTH}>
+          <Box
+            width={"100%"}
+            pl={hasNavbar ? MAIN_APP_LEFT_PADDING_WITH_NAV : MAIN_APP_LEFT_PADDING_WITHOUT_NAV}
+            pr={MAIN_APP_RIGHT_PADDING}
+            maxW={MAIN_APP_MAX_WIDTH}
+          >
             <KurtosisBreadcrumbs />
             {children[0]}
           </Box>
         </Box>
         <Flex
           maxWidth={MAIN_APP_MAX_WIDTH}
-          pl={MAIN_APP_LEFT_PADDING}
+          pl={hasNavbar ? MAIN_APP_LEFT_PADDING_WITH_NAV : MAIN_APP_LEFT_PADDING_WITHOUT_NAV}
           pr={MAIN_APP_RIGHT_PADDING}
           pt={MAIN_APP_TOP_PADDING}
           pb={MAIN_APP_BOTTOM_PADDING}

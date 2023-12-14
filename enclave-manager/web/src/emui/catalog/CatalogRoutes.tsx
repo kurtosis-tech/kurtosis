@@ -1,10 +1,14 @@
 import { Params } from "react-router-dom";
 import { readablePackageName } from "../../components/catalog/utils";
+import { registerBreadcrumbHandler } from "../../components/KurtosisBreadcrumbs";
 import { RemoveFunctions } from "../../utils/types";
 import { KurtosisCatalogRouteObject } from "../types";
 import { Catalog } from "./Catalog";
 import { CatalogState } from "./CatalogContext";
+import { KurtosisCatalogBreadcrumbs } from "./components/KurtosisCatalogBreadcrumbs";
 import { Package } from "./package/Package";
+
+registerBreadcrumbHandler("catalogHandle", KurtosisCatalogBreadcrumbs);
 
 export const catalogRoutes = (): KurtosisCatalogRouteObject[] => [
   {

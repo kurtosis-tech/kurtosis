@@ -6,19 +6,25 @@ import { KurtosisPackageCard } from "./KurtosisPackageCard";
 type KurtosisPackageCardGridProps = {
   packages: KurtosisPackage[];
   onPackageClicked?: (kurtosisPackage: KurtosisPackage) => void;
+  onPackageRunClicked: (kurtosisPackage: KurtosisPackage) => void;
 };
 
-export const KurtosisPackageCardGrid = memo(({ packages, onPackageClicked }: KurtosisPackageCardGridProps) => {
-  return (
-    <Grid gridTemplateColumns={"1fr 1fr 1fr"} columnGap={"32px"} rowGap={"32px"}>
-      {packages.map((kurtosisPackage) => (
-        <GridItem
-          key={kurtosisPackage.url}
-          onClick={onPackageClicked ? () => onPackageClicked(kurtosisPackage) : undefined}
-        >
-          <KurtosisPackageCard kurtosisPackage={kurtosisPackage} />
-        </GridItem>
-      ))}
-    </Grid>
-  );
-});
+export const KurtosisPackageCardGrid = memo(
+  ({ packages, onPackageClicked, onPackageRunClicked }: KurtosisPackageCardGridProps) => {
+    return (
+      <Grid gridTemplateColumns={"1fr 1fr 1fr"} columnGap={"32px"} rowGap={"32px"}>
+        {packages.map((kurtosisPackage) => (
+          <GridItem
+            key={kurtosisPackage.url}
+            onClick={onPackageClicked ? () => onPackageClicked(kurtosisPackage) : undefined}
+          >
+            <KurtosisPackageCard
+              kurtosisPackage={kurtosisPackage}
+              onRunClick={() => onPackageRunClicked(kurtosisPackage)}
+            />
+          </GridItem>
+        ))}
+      </Grid>
+    );
+  },
+);

@@ -13,31 +13,30 @@ import {
   MenuList,
   Text,
 } from "@chakra-ui/react";
-import { ReactElement, useMemo } from "react";
+import { ReactElement } from "react";
 import { BsCaretDownFill } from "react-icons/bs";
-import { Link, Params, UIMatch, useMatches } from "react-router-dom";
-import { CatalogState, useCatalogContext } from "../emui/catalog/CatalogContext";
-import { EnclavesState, useEnclavesContext } from "../emui/enclaves/EnclavesContext";
+import { Link, UIMatch, useMatches } from "react-router-dom";
 import { isDefined } from "../utils";
-import { RemoveFunctions } from "../utils/types";
-import { BREADCRUMBS_HEIGHT, MAIN_APP_MAX_WIDTH_WITHOUT_PADDING } from "./theme/constants";
+import { BREADCRUMBS_HEIGHT } from "./theme/constants";
 
-type KurtosisBaseBreadcrumbsHandle = {
-  type: string;
+export type KurtosisBreadcrumbsHandle<T extends string> = {
+  type: T;
 };
 
-export type KurtosisEnclavesBreadcrumbsHandle = KurtosisBaseBreadcrumbsHandle & {
-  type: "enclavesHandle";
-  crumb?: (state: RemoveFunctions<EnclavesState>, params: Params<string>) => KurtosisBreadcrumb | KurtosisBreadcrumb[];
-  extraControls?: (state: RemoveFunctions<EnclavesState>, params: Params<string>) => ReactElement | null;
-};
+type MatchRendererFunction<T extends string> = (props: {
+  matches: UIMatch<object, KurtosisBreadcrumbsHandle<T>>[];
+}) => ReactElement;
 
-export type KurtosisCatalogBreadcrumbsHandle = {
-  type: "catalogHandle";
-  crumb?: (state: RemoveFunctions<CatalogState>, params: Params<string>) => KurtosisBreadcrumb | KurtosisBreadcrumb[];
+const handlerRegistry: Record<string, MatchRendererFunction<any>> = {};
+export const registerBreadcrumbHandler = <T extends string>(
+  type: T,
+  render: (props: { matches: UIMatch<object, KurtosisBreadcrumbsHandle<T>>[] }) => ReactElement,
+) => {
+  handlerRegistry[type] = render;
 };
-
-export type KurtosisBreadcrumbsHandle = KurtosisEnclavesBreadcrumbsHandle | KurtosisCatalogBreadcrumbsHandle;
+const getBreadcumbHandlerRenderer = <T extends string>(type: T): MatchRendererFunction<T> | null => {
+  return (handlerRegistry[type] as MatchRendererFunction<T>) || null;
+};
 
 type KurtosisBreadcrumbMenuItem = {
   name: string;
@@ -52,121 +51,22 @@ export type KurtosisBreadcrumb = {
 };
 
 export const KurtosisBreadcrumbs = () => {
-  const matches = useMatches() as UIMatch<object, KurtosisBreadcrumbsHandle>[];
+  const matches = useMatches() as UIMatch<object, KurtosisBreadcrumbsHandle<any>>[];
 
-  const handlers = new Set(matches.map((match) => match.handle?.type).filter(isDefined));
-  if (handlers.size === 0) {
+  const handlerTypes = new Set(matches.map((match) => match.handle?.type).filter(isDefined));
+  if (handlerTypes.size === 0) {
     throw Error(`Currently routes with no breadcrumb handles are not supported`);
   }
-  if (handlers.size > 1) {
+  if (handlerTypes.size > 1) {
     throw Error(`Routes with multiple breadcrumb handles are not supported.`);
   }
-  const handleType = [...handlers][0];
-  const isEnclavesMatches = (
-    matches: UIMatch<object, KurtosisBreadcrumbsHandle>[],
-    onlyType: KurtosisBreadcrumbsHandle["type"],
-  ): matches is UIMatch<object, KurtosisEnclavesBreadcrumbsHandle>[] => onlyType === "enclavesHandle";
-  const isCatalogMatches = (
-    matches: UIMatch<object, KurtosisBreadcrumbsHandle>[],
-    onlyType: KurtosisBreadcrumbsHandle["type"],
-  ): matches is UIMatch<object, KurtosisCatalogBreadcrumbsHandle>[] => onlyType === "catalogHandle";
-  if (isEnclavesMatches(matches, handleType)) {
-    return <KurtosisEnclavesBreadcrumbs matches={matches} />;
-  }
-  if (isCatalogMatches(matches, handleType)) {
-    return <KurtosisCatalogBreadcrumbs matches={matches} />;
+  const handleType = [...handlerTypes][0];
+  const Renderer = getBreadcumbHandlerRenderer(handleType);
+  if (isDefined(Renderer)) {
+    return <Renderer matches={matches} />;
   }
 
   throw new Error(`Unable to handle breadcrumbs of type ${handleType}`);
-};
-
-type KurtosisEnclavesBreadcrumbsProps = {
-  matches: UIMatch<object, KurtosisEnclavesBreadcrumbsHandle>[];
-};
-
-const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcrumbsProps) => {
-  const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave, starlarkRunningInEnclaves } =
-    useEnclavesContext();
-
-  const matchCrumbs = useMemo(
-    () =>
-      matches.flatMap((match) => {
-        if (isDefined(match.handle?.crumb)) {
-          const r = match.handle.crumb(
-            {
-              enclaves,
-              filesAndArtifactsByEnclave,
-              starlarkRunsByEnclave,
-              servicesByEnclave,
-              starlarkRunningInEnclaves,
-            },
-            match.params,
-          );
-          return Array.isArray(r) ? r : [r];
-        }
-        return [];
-      }),
-    [
-      matches,
-      enclaves,
-      filesAndArtifactsByEnclave,
-      starlarkRunsByEnclave,
-      servicesByEnclave,
-      starlarkRunningInEnclaves,
-    ],
-  );
-
-  const extraControls = useMemo(
-    () =>
-      matches
-        .map((match) =>
-          isDefined(match.handle?.extraControls)
-            ? match.handle?.extraControls(
-                {
-                  enclaves,
-                  filesAndArtifactsByEnclave,
-                  starlarkRunsByEnclave,
-                  servicesByEnclave,
-                  starlarkRunningInEnclaves,
-                },
-                match.params,
-              )
-            : null,
-        )
-        .filter(isDefined),
-    [
-      matches,
-      enclaves,
-      filesAndArtifactsByEnclave,
-      starlarkRunsByEnclave,
-      servicesByEnclave,
-      starlarkRunningInEnclaves,
-    ],
-  );
-
-  return <KurtosisBreadcrumbsImpl matchCrumbs={matchCrumbs} extraControls={extraControls} />;
-};
-
-type KurtosisCatalogBreadcrumbsProps = {
-  matches: UIMatch<object, KurtosisCatalogBreadcrumbsHandle>[];
-};
-
-const KurtosisCatalogBreadcrumbs = ({ matches }: KurtosisCatalogBreadcrumbsProps) => {
-  const { catalog, savedPackages } = useCatalogContext();
-
-  const matchCrumbs = useMemo(
-    () =>
-      matches.flatMap((match) => {
-        if (isDefined(match.handle?.crumb)) {
-          const r = match.handle.crumb({ catalog, savedPackages }, match.params);
-          return Array.isArray(r) ? r : [r];
-        }
-        return [];
-      }),
-    [matches, catalog, savedPackages],
-  );
-
-  return <KurtosisBreadcrumbsImpl matchCrumbs={matchCrumbs} />;
 };
 
 type KurtosisBreadcrumbsImplProps = {
@@ -174,15 +74,9 @@ type KurtosisBreadcrumbsImplProps = {
   extraControls?: ReactElement[];
 };
 
-const KurtosisBreadcrumbsImpl = ({ matchCrumbs, extraControls }: KurtosisBreadcrumbsImplProps) => {
+export const KurtosisBreadcrumbsImpl = ({ matchCrumbs, extraControls }: KurtosisBreadcrumbsImplProps) => {
   return (
-    <Flex
-      flex={"none"}
-      h={BREADCRUMBS_HEIGHT}
-      w={MAIN_APP_MAX_WIDTH_WITHOUT_PADDING}
-      alignItems={"center"}
-      justifyContent={"space-between"}
-    >
+    <Flex flex={"none"} h={BREADCRUMBS_HEIGHT} alignItems={"center"} justifyContent={"space-between"}>
       <Flex>
         <Breadcrumb
           variant={"topNavigation"}

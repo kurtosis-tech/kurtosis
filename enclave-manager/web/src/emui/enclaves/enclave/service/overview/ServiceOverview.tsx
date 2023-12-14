@@ -2,14 +2,14 @@ import { Flex, Grid, GridItem, Icon, Text } from "@chakra-ui/react";
 import { Container, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useMemo } from "react";
 import { IoLogoDocker } from "react-icons/io5";
-import { PortsTable } from "../../../../../components/enclaves/tables/PortsTable";
-import { ServiceStatusTag } from "../../../../../components/enclaves/widgets/ServiceStatus";
 import { FileDisplay } from "../../../../../components/FileDisplay";
 import { KurtosisAlert } from "../../../../../components/KurtosisAlert";
 import { FLEX_STANDARD_GAP } from "../../../../../components/theme/constants";
 import { TitledBox } from "../../../../../components/TitledBox";
 import { ValueCard } from "../../../../../components/ValueCard";
 import { isDefined } from "../../../../../utils";
+import { PortsTable } from "../../../components/tables/PortsTable";
+import { ServiceStatusTag } from "../../../components/widgets/ServiceStatus";
 import { EnclaveFullInfo } from "../../../types";
 
 type ServiceOverviewProps = {

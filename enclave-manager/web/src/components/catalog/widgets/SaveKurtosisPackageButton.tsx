@@ -2,14 +2,24 @@ import { Button, ButtonProps } from "@chakra-ui/react";
 import React, { memo, MouseEventHandler, useCallback, useMemo } from "react";
 import { MdBookmarkAdd } from "react-icons/md";
 import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { useCatalogContext } from "../../../emui/catalog/CatalogContext";
+import { isDefined } from "../../../utils";
+import { useSavedPackages } from "../SavedPackages";
 
 type SaveKurtosisPackageButtonProps = ButtonProps & {
   kurtosisPackage: KurtosisPackage;
 };
 
+// This button is only shown if there is a SavedPackagesContext in the tree.
 export const SaveKurtosisPackageButton = ({ kurtosisPackage, ...buttonProps }: SaveKurtosisPackageButtonProps) => {
-  const { savedPackages, togglePackageSaved } = useCatalogContext();
+  const savePackageContext = useSavedPackages();
+  if (!isDefined(savePackageContext)) {
+    return null;
+  }
+  return <SaveKurtosisPackageButtonImpl kurtosisPackage={kurtosisPackage} {...buttonProps} />;
+};
+
+const SaveKurtosisPackageButtonImpl = ({ kurtosisPackage, ...buttonProps }: SaveKurtosisPackageButtonProps) => {
+  const { savedPackages, togglePackageSaved } = useSavedPackages();
   const isPackageSaved = useMemo(
     () => savedPackages.some((p) => p.name === kurtosisPackage.name),
     [savedPackages, kurtosisPackage],
@@ -26,7 +36,7 @@ export const SaveKurtosisPackageButton = ({ kurtosisPackage, ...buttonProps }: S
   return <SaveKurtosisPackageButtonMemo isPackageSaved={isPackageSaved} onClick={handleClick} {...buttonProps} />;
 };
 
-type SaveKurtosisPackageButtonMemoProps = Omit<SaveKurtosisPackageButtonProps, "kurtosisPackage"> & {
+type SaveKurtosisPackageButtonMemoProps = ButtonProps & {
   isPackageSaved: boolean;
   onClick: MouseEventHandler;
 };

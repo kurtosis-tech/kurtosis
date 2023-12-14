@@ -3,12 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { FunctionComponent, useState } from "react";
 import { AppPageLayout } from "../../../components/AppLayout";
-import { EditEnclaveButton } from "../../../components/enclaves/EditEnclaveButton";
-import { DeleteEnclavesButton } from "../../../components/enclaves/widgets/DeleteEnclavesButton";
 import { FeatureNotImplementedModal } from "../../../components/FeatureNotImplementedModal";
 import { HoverLineTabList } from "../../../components/HoverLineTabList";
 import { KurtosisAlert } from "../../../components/KurtosisAlert";
 import { PageTitle } from "../../../components/PageTitle";
+import { EditEnclaveButton } from "../components/EditEnclaveButton";
+import { DeleteEnclavesButton } from "../components/widgets/DeleteEnclavesButton";
 import { useFullEnclave } from "../EnclavesContext";
 import { EnclaveFullInfo } from "../types";
 import { EnclaveOverview } from "./overview/EnclaveOverview";
