@@ -22,7 +22,7 @@ export class KurtosisPackageIndexerClient {
   };
 
   parsePackageUrl(packageUrl: string) {
-    const components = packageUrl.split("/");
+    const components = packageUrl.replace(/https?:\/\//, "").split("/");
     if (components.length < 3) {
       throw Error(`Illegal url, invalid number of components: ${packageUrl}`);
     }

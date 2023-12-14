@@ -12,7 +12,8 @@ import {
   Box,
   Flex,
 } from "@chakra-ui/react";
-import { isDefined } from "../utils";
+import { FallbackProps } from "react-error-boundary";
+import { isDefined, stringifyError } from "../utils";
 
 type KurtosisAlertProps = AlertProps & {
   message: string;
@@ -50,4 +51,8 @@ export const KurtosisAlert = ({ message, details, ...alertProps }: KurtosisAlert
       </Flex>
     </Alert>
   );
+};
+
+export const KurtosisAlertError = ({ error }: FallbackProps) => {
+  return <KurtosisAlert message={"An error ocurred, details below"} details={stringifyError(error)} />;
 };

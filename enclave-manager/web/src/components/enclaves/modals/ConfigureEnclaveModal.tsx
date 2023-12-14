@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { useMemo, useRef, useState } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
@@ -24,7 +25,7 @@ import { EnclaveFullInfo } from "../../../emui/enclaves/types";
 import { assertDefined, isDefined, stringifyError } from "../../../utils";
 import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../../constants";
 import { CopyButton } from "../../CopyButton";
-import { KurtosisAlert } from "../../KurtosisAlert";
+import { KurtosisAlert, KurtosisAlertError } from "../../KurtosisAlert";
 import { PackageSourceButton } from "../../PackageSourceButton";
 import {
   EnclaveConfigurationForm,
@@ -123,7 +124,13 @@ export const ConfigureEnclaveModal = ({
     if (!isDefined(preloadArgs)) {
       return undefined;
     }
-    const parsedForm = JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
+    let parsedForm: ConfigureEnclaveForm;
+    try {
+      parsedForm = JSON.parse(atob(preloadArgs)) as ConfigureEnclaveForm;
+    } catch (err: any) {
+      setError(`Unable to parse the url - was it copied correctly? Got Error: ${stringifyError(err)}`);
+      return undefined;
+    }
     kurtosisPackage.args
       .filter((arg) => !isDefined(arg.typeV2?.topLevelType) || arg.typeV2?.topLevelType === ArgumentValueType.JSON)
       .forEach((arg) => {
@@ -239,77 +246,81 @@ export const ConfigureEnclaveModal = ({
           {!isDefined(existingEnclave) && "New "}Enclave Configuration
         </ModalHeader>
         <ModalCloseButton />
-        <EnclaveConfigurationForm
-          ref={formRef}
-          initialValues={initialValues}
-          onSubmit={handleLoadSubmit}
-          kurtosisPackage={kurtosisPackage}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            flex: "0 1 auto",
-            minHeight: 0,
-          }}
-        >
-          <ModalBody flex="0 1 auto" p={"0px"} display={"flex"} flexDirection={"column"}>
-            <Flex flex={"0"} fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
-              <Text>Configuring</Text>
-              <PackageSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
-            </Flex>
-            {isDefined(error) && (
-              <KurtosisAlert flex={"1 0 auto"} message={"Could not execute configuration"} details={error} />
-            )}
-            <Flex
-              flex={"0 1 auto"}
-              overflowY={"scroll"}
-              minHeight={0}
-              flexDirection={"column"}
-              gap={"24px"}
-              p={"12px 24px"}
-              bg={"gray.900"}
-            >
-              <Flex justifyContent={"space-between"} alignItems={"center"}>
-                <Tooltip
-                  shouldWrapChildren
-                  label={"When enabled, Kurtosis will automatically restart any services that crash inside the enclave"}
-                >
-                  <FormControl display={"flex"} alignItems={"center"} gap={"16px"}>
-                    <BooleanArgumentInput inputType={"switch"} name={"restartServices"} />
-                    <Text fontSize={"xs"}>Restart services</Text>
-                  </FormControl>
-                </Tooltip>
-                <Tooltip shouldWrapChildren label={"Create a link that can be used to share this configuration."}>
-                  <CopyButton contentName={"url"} valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
-                </Tooltip>
+        <ErrorBoundary fallbackRender={KurtosisAlertError}>
+          <EnclaveConfigurationForm
+            ref={formRef}
+            initialValues={initialValues}
+            onSubmit={handleLoadSubmit}
+            kurtosisPackage={kurtosisPackage}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              flex: "0 1 auto",
+              minHeight: 0,
+            }}
+          >
+            <ModalBody flex="0 1 auto" p={"0px"} display={"flex"} flexDirection={"column"}>
+              <Flex flex={"0"} fontSize={"sm"} justifyContent={"center"} alignItems={"center"} gap={"12px"} pb={"12px"}>
+                <Text>Configuring</Text>
+                <PackageSourceButton source={kurtosisPackage.name} size={"sm"} variant={"outline"} color={"gray.100"} />
               </Flex>
-              <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"text"}>
-                <StringArgumentInput
-                  name={"enclaveName"}
-                  disabled={isDefined(existingEnclave)}
-                  validate={(value) => {
-                    if (value.length > 0 && !isEnclaveNameAllowed(value)) {
-                      return `The enclave name must match ${allowedEnclaveNamePattern}`;
+              {isDefined(error) && (
+                <KurtosisAlert flex={"1 0 auto"} message={"Could not execute configuration"} details={error} />
+              )}
+              <Flex
+                flex={"0 1 auto"}
+                overflowY={"scroll"}
+                minHeight={0}
+                flexDirection={"column"}
+                gap={"24px"}
+                p={"12px 24px"}
+                bg={"gray.900"}
+              >
+                <Flex justifyContent={"space-between"} alignItems={"center"}>
+                  <Tooltip
+                    shouldWrapChildren
+                    label={
+                      "When enabled, Kurtosis will automatically restart any services that crash inside the enclave"
                     }
-                  }}
-                  tabIndex={1}
-                />
-              </KurtosisArgumentFormControl>
-              {kurtosisPackage.args.map((arg, i) => (
-                <KurtosisPackageArgumentInput key={i} argument={arg} />
-              ))}
-            </Flex>
-          </ModalBody>
-          <ModalFooter flex={"0"}>
-            <Flex justifyContent={"flex-end"} gap={"12px"}>
-              <Button color={"gray.100"} onClick={handleClose} isDisabled={isLoading}>
-                Cancel
-              </Button>
-              <Button type={"submit"} isLoading={isLoading} colorScheme={"kurtosisGreen"}>
-                {existingEnclave ? "Update" : "Run"}
-              </Button>
-            </Flex>
-          </ModalFooter>
-        </EnclaveConfigurationForm>
+                  >
+                    <FormControl display={"flex"} alignItems={"center"} gap={"16px"}>
+                      <BooleanArgumentInput inputType={"switch"} name={"restartServices"} />
+                      <Text fontSize={"xs"}>Restart services</Text>
+                    </FormControl>
+                  </Tooltip>
+                  <Tooltip shouldWrapChildren label={"Create a link that can be used to share this configuration."}>
+                    <CopyButton contentName={"url"} valueToCopy={getLinkToCurrentConfig} text={"Copy link"} />
+                  </Tooltip>
+                </Flex>
+                <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"text"}>
+                  <StringArgumentInput
+                    name={"enclaveName"}
+                    disabled={isDefined(existingEnclave)}
+                    validate={(value) => {
+                      if (value.length > 0 && !isEnclaveNameAllowed(value)) {
+                        return `The enclave name must match ${allowedEnclaveNamePattern}`;
+                      }
+                    }}
+                    tabIndex={1}
+                  />
+                </KurtosisArgumentFormControl>
+                {kurtosisPackage.args.map((arg, i) => (
+                  <KurtosisPackageArgumentInput key={i} argument={arg} />
+                ))}
+              </Flex>
+            </ModalBody>
+            <ModalFooter flex={"0"}>
+              <Flex justifyContent={"flex-end"} gap={"12px"}>
+                <Button color={"gray.100"} onClick={handleClose} isDisabled={isLoading}>
+                  Cancel
+                </Button>
+                <Button type={"submit"} isLoading={isLoading} colorScheme={"kurtosisGreen"}>
+                  {existingEnclave ? "Update" : "Run"}
+                </Button>
+              </Flex>
+            </ModalFooter>
+          </EnclaveConfigurationForm>
+        </ErrorBoundary>
       </ModalContent>
     </Modal>
   );

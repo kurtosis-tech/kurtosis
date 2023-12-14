@@ -78,6 +78,7 @@ export const PortsTable = ({
   const columns = useMemo<ColumnDef<PortsTableRow, any>[]>(
     () => [
       columnHelper.accessor("port", {
+        id: "port_name",
         header: "Name",
         cell: ({ row, getValue }) => (
           <Flex flexDirection={"column"} gap={"10px"}>
@@ -95,6 +96,7 @@ export const PortsTable = ({
         ),
       }),
       columnHelper.accessor("port", {
+        id: "private_public_ports",
         header: "Private / Public Ports",
         cell: ({ row, getValue }) => (
           <Flex flexDirection={"column"} gap={"10px"}>
@@ -105,6 +107,7 @@ export const PortsTable = ({
         ),
       }),
       columnHelper.accessor("port", {
+        id: "port_protocol",
         header: "Application Protocol",
         cell: ({ row, getValue }) => (
           <Flex flexDirection={"column"} gap={"10px"}>
@@ -113,6 +116,7 @@ export const PortsTable = ({
         ),
       }),
       columnHelper.accessor("port", {
+        id: "port_transport",
         header: "Transport Protocol",
         cell: ({ row, getValue }) => (
           <Flex flexDirection={"column"} gap={"10px"}>
@@ -128,7 +132,7 @@ export const PortsTable = ({
     <DataTable
       columns={columns}
       data={getPortTableRows(instanceUUID, enclaveUUID, serviceUUID, privatePorts, publicPorts, publicIp)}
-      defaultSorting={[{ id: "port", desc: true }]}
+      defaultSorting={[{ id: "port_name", desc: true }]}
     />
   );
 };
