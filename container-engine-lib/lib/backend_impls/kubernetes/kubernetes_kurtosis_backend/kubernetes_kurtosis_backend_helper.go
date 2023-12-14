@@ -74,6 +74,7 @@ func GetEngineServerBackend(
 func GetApiContainerBackend(
 	ctx context.Context,
 	storageClass string,
+	productionMode bool,
 ) (backend_interface.KurtosisBackend, error) {
 	kubernetesConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -107,6 +108,7 @@ func GetApiContainerBackend(
 			enclaveId,
 			namespaceName,
 			storageClass,
+			productionMode,
 		), nil
 	}
 

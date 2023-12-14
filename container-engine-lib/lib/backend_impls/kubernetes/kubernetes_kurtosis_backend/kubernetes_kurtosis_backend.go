@@ -26,6 +26,7 @@ import (
 
 const (
 	isResourceInformationComplete = false
+	noProductionMode              = false
 )
 
 type KubernetesKurtosisBackend struct {
@@ -39,6 +40,9 @@ type KubernetesKurtosisBackend struct {
 
 	// Will only be filled out for the API container
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs
+
+	// Whether services should be restarted
+	productionMode bool
 }
 
 func (backend *KubernetesKurtosisBackend) DumpKurtosis(ctx context.Context, outputDirpath string) error {
@@ -52,6 +56,7 @@ func newKubernetesKurtosisBackend(
 	cliModeArgs *shared_helpers.CliModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	productionMoe bool,
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
@@ -60,6 +65,7 @@ func newKubernetesKurtosisBackend(
 		cliModeArgs:          cliModeArgs,
 		engineServerModeArgs: engineServerModeArgs,
 		apiContainerModeArgs: apiContainerModeArgs,
+		productionMode:       productionMoe,
 	}
 }
 
@@ -68,6 +74,7 @@ func NewAPIContainerKubernetesKurtosisBackend(
 	ownEnclaveUuid enclave.EnclaveUUID,
 	ownNamespaceName string,
 	storageClassName string,
+	productionMode bool,
 ) *KubernetesKurtosisBackend {
 	modeArgs := shared_helpers.NewApiContainerModeArgs(ownEnclaveUuid, ownNamespaceName, storageClassName)
 	return newKubernetesKurtosisBackend(
@@ -75,6 +82,7 @@ func NewAPIContainerKubernetesKurtosisBackend(
 		nil,
 		nil,
 		modeArgs,
+		productionMode,
 	)
 }
 
@@ -87,6 +95,7 @@ func NewEngineServerKubernetesKurtosisBackend(
 		nil,
 		modeArgs,
 		nil,
+		noProductionMode,
 	)
 }
 
@@ -99,6 +108,7 @@ func NewCLIModeKubernetesKurtosisBackend(
 		modeArgs,
 		nil,
 		nil,
+		noProductionMode,
 	)
 }
 

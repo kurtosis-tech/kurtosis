@@ -28,6 +28,8 @@ const (
 
 	// As of 2022-05-17, these get attached to files artifact expansion volumes
 	userServiceGuidKeyStr = labelKeyPrefixStr + "user-service-guid"
+
+	enclaveTypeLabelKeyStr = labelKeyPrefixStr + "enclave-type"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!

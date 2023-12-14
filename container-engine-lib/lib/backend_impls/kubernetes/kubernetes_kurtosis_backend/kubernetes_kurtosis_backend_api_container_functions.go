@@ -418,6 +418,12 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerInitContainers := []apiv1.Container{}
 
+	apiContainerRestartPolicy := apiv1.RestartPolicyNever
+	if backend.productionMode {
+		// This mimics the Docker behavior where APIC and backend services have the RestartOnFailure Policy
+		apiContainerRestartPolicy = apiv1.RestartPolicyOnFailure
+	}
+
 	// Create pods with api container containers and volumes in Kubernetes
 	apiContainerPod, err := backend.kubernetesManager.CreatePod(
 		ctx,
@@ -429,6 +435,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		apiContainerContainers,
 		apiContainerVolumes,
 		apiContainerServiceAccountName,
+		apiContainerRestartPolicy,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
