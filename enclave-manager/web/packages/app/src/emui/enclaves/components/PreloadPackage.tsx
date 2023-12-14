@@ -1,6 +1,6 @@
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { isDefined } from "kurtosis-ui-components";
 import { useSearchParams } from "react-router-dom";
-import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { KURTOSIS_PACKAGE_ID_URL_ARG } from "./modals/constants";
 import { PackageLoadingModal } from "./modals/PackageLoadingModal";
 

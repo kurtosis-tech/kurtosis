@@ -1,7 +1,7 @@
 import { Button, ButtonProps } from "@chakra-ui/react";
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { FiPlay } from "react-icons/fi";
-import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { isDefined } from "../../../utils";
+import { isDefined } from "../../utils";
 
 type RunKurtosisPackageButtonProps = ButtonProps & {
   kurtosisPackage: KurtosisPackage;

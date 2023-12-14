@@ -1,4 +1,4 @@
-import { PackageArg } from "../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
+import { PackageArg } from "kurtosis-cloud-indexer-sdk";
 import { KurtosisArgumentTypeInput } from "./inputs/KurtosisArgumentTypeInput";
 import { KurtosisArgumentFormControl } from "./KurtosisArgumentFormControl";
 import { argToTypeString } from "./utils";

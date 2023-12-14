@@ -14,6 +14,7 @@ import {
   InputRightElement,
   Text,
 } from "@chakra-ui/react";
+import { GetPackagesResponse, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import {
   AppPageLayout,
   FindCommand,
@@ -27,7 +28,6 @@ import {
 import { useMemo, useRef, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { MdBookmarkAdded } from "react-icons/md";
-import { GetPackagesResponse, KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { ConfigureEnclaveModal } from "../enclaves/components/modals/ConfigureEnclaveModal";
 import { EnclavesContextProvider } from "../enclaves/EnclavesContext";
 import { useCatalogContext } from "./CatalogContext";

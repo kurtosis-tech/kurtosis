@@ -1,5 +1,5 @@
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { createContext, PropsWithChildren, useContext } from "react";
-import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 
 type SavedPackagesState = {
   savedPackages: KurtosisPackage[];

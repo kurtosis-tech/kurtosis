@@ -1,8 +1,8 @@
 import { Button, ButtonProps } from "@chakra-ui/react";
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import React, { memo, MouseEventHandler, useCallback, useMemo } from "react";
 import { MdBookmarkAdd } from "react-icons/md";
-import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { isDefined } from "../../../utils";
+import { isDefined } from "../../utils";
 import { useSavedPackages } from "../SavedPackages";
 
 type SaveKurtosisPackageButtonProps = ButtonProps & {

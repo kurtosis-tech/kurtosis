@@ -1,6 +1,6 @@
 import { Grid, GridItem } from "@chakra-ui/react";
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { memo } from "react";
-import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { KurtosisPackageCard } from "./KurtosisPackageCard";
 
 type KurtosisPackageCardGridProps = {

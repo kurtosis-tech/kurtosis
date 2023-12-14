@@ -1,7 +1,7 @@
 import { Box, Flex, Icon, Image, Text } from "@chakra-ui/react";
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { IoStar } from "react-icons/io5";
 import { Link, useHref } from "react-router-dom";
-import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { readablePackageName } from "./utils";
 import { RunKurtosisPackageButton } from "./widgets/RunKurtosisPackageButton";
 import { SaveKurtosisPackageButton } from "./widgets/SaveKurtosisPackageButton";

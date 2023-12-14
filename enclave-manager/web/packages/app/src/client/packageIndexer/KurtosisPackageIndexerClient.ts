@@ -1,9 +1,8 @@
 import { createPromiseClient, PromiseClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
+import { KurtosisPackageIndexer, PackageRepository, ReadPackageRequest } from "kurtosis-cloud-indexer-sdk";
 import { asyncResult, parsePackageUrl } from "kurtosis-ui-components";
 import { KURTOSIS_PACKAGE_INDEXER_URL } from "../constants";
-import { KurtosisPackageIndexer } from "./api/kurtosis_package_indexer_connect";
-import { PackageRepository, ReadPackageRequest } from "./api/kurtosis_package_indexer_pb";
 
 export class KurtosisPackageIndexerClient {
   private client: PromiseClient<typeof KurtosisPackageIndexer>;

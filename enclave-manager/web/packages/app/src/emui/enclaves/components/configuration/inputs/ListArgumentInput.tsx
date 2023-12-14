@@ -1,6 +1,6 @@
 import { Button, ButtonGroup, Flex, useToast } from "@chakra-ui/react";
-import { ArgumentValueType } from "../../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 
+import { ArgumentValueType } from "kurtosis-cloud-indexer-sdk";
 import { CopyButton, PasteButton, stringifyError } from "kurtosis-ui-components";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { FiDelete, FiPlus } from "react-icons/fi";

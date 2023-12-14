@@ -1,7 +1,7 @@
 import * as CSS from "csstype";
+import { ArgumentValueType } from "kurtosis-cloud-indexer-sdk";
 import { assertDefined } from "kurtosis-ui-components";
 import { FieldPath } from "react-hook-form";
-import { ArgumentValueType } from "../../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { ConfigureEnclaveForm } from "../types";
 import { BooleanArgumentInput } from "./BooleanArgumentInput";
 import { DictArgumentInput } from "./DictArgumentInput";

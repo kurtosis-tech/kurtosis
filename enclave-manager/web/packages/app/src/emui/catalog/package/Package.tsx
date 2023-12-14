@@ -4,8 +4,8 @@ import { useState } from "react";
 import { IoStar } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
-import { KurtosisPackage } from "../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import {
   AppPageLayout,
   CopyButton,

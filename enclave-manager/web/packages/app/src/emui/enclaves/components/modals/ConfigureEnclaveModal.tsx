@@ -14,6 +14,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
+import { ArgumentValueType, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import {
   assertDefined,
   CopyButton,
@@ -28,7 +29,6 @@ import { ErrorBoundary } from "react-error-boundary";
 import { SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useKurtosisClient } from "../../../../client/enclaveManager/KurtosisClientContext";
-import { ArgumentValueType, KurtosisPackage } from "../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 import {

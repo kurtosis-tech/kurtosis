@@ -1,12 +1,8 @@
+import { ArgumentValueType, KurtosisPackage, PackageArg } from "kurtosis-cloud-indexer-sdk";
 import { isDefined, isStringTrue } from "kurtosis-ui-components";
 import { CSSProperties, forwardRef, PropsWithChildren, useImperativeHandle } from "react";
 import { FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import YAML from "yaml";
-import {
-  ArgumentValueType,
-  KurtosisPackage,
-  PackageArg,
-} from "../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { ConfigureEnclaveForm } from "./types";
 
 type EnclaveConfigurationFormProps = PropsWithChildren<{
