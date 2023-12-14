@@ -23,7 +23,7 @@ import {
   InspectFilesArtifactContentsRequest,
   RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
-import { paths } from "kurtosis-sdk/src/engine/rest_api_bindings/types";
+import { components, paths } from "kurtosis-sdk/src/engine/rest_api_bindings/types";
 import { assertDefined, asyncResult, isDefined, RemoveFunctions } from "kurtosis-ui-components";
 import createClient from "openapi-fetch";
 import { KURTOSIS_WEBSOCKET_API_DEFAULT_URL } from "../../client/constants";
@@ -90,17 +90,17 @@ export abstract class KurtosisClient {
     return asyncResult(this.client.check({}, this.getHeaderOptions()));
   }
 
-  async getServiceLogsWS(
-    abortSignal: AbortSignal,
+  getServiceLogsWS = async function* (
+    abortController: AbortController,
     enclave: RemoveFunctions<EnclaveFullInfo>,
     serviceUUID: string,
     followLogs?: boolean,
     numLogLines?: number,
     returnAllLogs?: boolean,
     conjunctiveFilters?: LogLineFilter[],
-  ) {
+  ): AsyncGenerator<components["schemas"]["ServiceLogs"]> {
     var wssClient = createWSClient<paths>({ baseUrl: KURTOSIS_WEBSOCKET_API_DEFAULT_URL });
-    wssClient.GET("/enclaves/{enclave_identifier}/services/{service_identifier}/logs", (resp) => console.log(resp), {
+    const logs = wssClient.GET("/enclaves/{enclave_identifier}/services/{service_identifier}/logs", {
       params: {
         path: {
           enclave_identifier: enclave.enclaveUuid,
@@ -113,9 +113,18 @@ export abstract class KurtosisClient {
           // conjunctive_filters: conjunctiveFilters?.map(x => {operator: x.operator; text_pattern: x.textPattern})
         },
       },
-      abortSignal: abortSignal,
+      abortSignal: abortController.signal,
     });
-  }
+
+    for await (const lineGroup of logs) {
+      if (lineGroup.error) {
+        return;
+      }
+      if (lineGroup.data) {
+        yield lineGroup.data;
+      }
+    }
+  };
 
   async getEnclaves() {
     return asyncResult(this.client.getEnclaves({}, this.getHeaderOptions()), "KurtosisClient could not getEnclaves");

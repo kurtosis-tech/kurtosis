@@ -88,21 +88,12 @@ export default function createWSClient<Paths extends {}>(
     /** Call a GET endpoint */
     GET<P extends PathsWithMethod<Paths, "get">>(
         url: P,
-        withResponse: (response: FetchResponse<
-            "get" extends infer T
-            ? T extends "get"
-            ? T extends keyof Paths[P]
-            ? Paths[P][T]
-            : unknown
-            : never
-            : never
-        >) => void,
         ...init: HasRequiredKeys<
             FetchOptions<FilterKeys<Paths[P], "get">>
         > extends never
             ? [(FetchOptions<FilterKeys<Paths[P], "get">> | undefined)?]
             : [FetchOptions<FilterKeys<Paths[P], "get">>]
-    );
+    ): AsyncGenerator<FetchResponse<"get" extends infer T ? T extends "get" ? T extends keyof Paths[P] ? Paths[P][T] : unknown : never : never>>;
 };
 
 export { };

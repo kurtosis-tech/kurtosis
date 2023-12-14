@@ -12,7 +12,7 @@ export default function createWSClient(clientOptions) {
         baseUrl = baseUrl.slice(0, -1); // remove trailing slash
     }
 
-    async function coreFetch(url, callback, fetchOptions) {
+    async function* websocketMessagesGenerator(url, fetchOptions) {
         const {
             wss = baseFetch,
             headers,
@@ -30,35 +30,47 @@ export default function createWSClient(clientOptions) {
             querySerializer,
         });
 
-        var ws
+        var socket
         try {
-            ws = new wss(finalURL);
+            socket = new wss(finalURL);
         } catch (error) {
             return { error: {}, data: null }
         }
 
         if (abortSignal) {
             if (abortSignal.aborted) {
-                ws.close();  // already aborted, fail immediately
+                socket.close();  // already aborted, fail immediately
             }
-            abortSignal.addEventListener('abort', () => ws.close());
+            abortSignal.addEventListener('abort', () => socket.close());
         }
 
-        ws.onmessage = (event) => {
-            callback({ error: {}, data: JSON.parse(event.data) })
-        };
+        // Wait for the WebSocket connection to be open
+        await new Promise(resolve => {
+            socket.addEventListener('open', resolve);
+        });
 
-        ws.onclose = () => {
-            console.log('Disconnected from server');
-        };
+        try {
+            while (socket.readyState === WebSocket.OPEN) {
+                // Wait for the next message
+                const message = await new Promise(resolve => {
+                    socket.addEventListener('message', event => resolve(event));
+                });
 
-    }
+                // Yield the received message
+                yield { error: undefined, data: JSON.parse(message.data) };
+            }
+        } finally {
+            // Close the WebSocket connection when the generator is done
+            socket.close();
+        }
+    };
 
     return {
         /** Call a GET endpoint */
-        async GET(url, callback, init) {
-            coreFetch(url, callback, { ...init, callback, method: "GET" });
-            return;
+        GET: async function* (url, init) {
+            for await (const val of websocketMessagesGenerator(url, { ...init, method: "GET" })) {
+                yield val;
+            }
         },
     };
 }
