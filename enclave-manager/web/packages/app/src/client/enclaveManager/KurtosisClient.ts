@@ -23,9 +23,8 @@ import {
   InspectFilesArtifactContentsRequest,
   RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
+import { assertDefined, asyncResult, isDefined, RemoveFunctions } from "kurtosis-ui-components";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
-import { assertDefined, asyncResult, isDefined } from "../../utils";
-import { RemoveFunctions } from "../../utils/types";
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;

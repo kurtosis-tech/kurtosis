@@ -1,7 +1,7 @@
 import { Button, Icon, Text } from "@chakra-ui/react";
+import { isDefined } from "kurtosis-ui-components";
 import { useMemo } from "react";
 import { IoLogoDocker } from "react-icons/io5";
-import { isDefined } from "../../../../utils";
 
 function getUrlForImage(image: string): string | null {
   const [imageName] = image.split(":");

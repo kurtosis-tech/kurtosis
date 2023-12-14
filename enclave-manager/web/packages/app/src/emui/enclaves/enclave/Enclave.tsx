@@ -1,12 +1,14 @@
 import { Flex, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import {
+  AppPageLayout,
+  FeatureNotImplementedModal,
+  HoverLineTabList,
+  KurtosisAlert,
+  PageTitle,
+} from "kurtosis-ui-components";
 import { FunctionComponent, useState } from "react";
-import { AppPageLayout } from "../../../components/AppLayout";
-import { FeatureNotImplementedModal } from "../../../components/FeatureNotImplementedModal";
-import { HoverLineTabList } from "../../../components/HoverLineTabList";
-import { KurtosisAlert } from "../../../components/KurtosisAlert";
-import { PageTitle } from "../../../components/PageTitle";
 import { EditEnclaveButton } from "../components/EditEnclaveButton";
 import { DeleteEnclavesButton } from "../components/widgets/DeleteEnclavesButton";
 import { useFullEnclave } from "../EnclavesContext";

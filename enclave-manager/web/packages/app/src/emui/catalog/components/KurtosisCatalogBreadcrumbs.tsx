@@ -1,12 +1,13 @@
-import { useMemo } from "react";
-import { Params, UIMatch } from "react-router-dom";
 import {
+  isDefined,
   KurtosisBreadcrumb,
   KurtosisBreadcrumbsHandle,
   KurtosisBreadcrumbsImpl,
-} from "../../../components/KurtosisBreadcrumbs";
-import { isDefined } from "../../../utils";
-import { RemoveFunctions } from "../../../utils/types";
+  RemoveFunctions,
+} from "kurtosis-ui-components";
+import { useMemo } from "react";
+import { Params, UIMatch } from "react-router-dom";
+
 import { CatalogState, useCatalogContext } from "../CatalogContext";
 
 export type KurtosisCatalogBreadcrumbsHandle = KurtosisBreadcrumbsHandle<"catalogHandle"> & {

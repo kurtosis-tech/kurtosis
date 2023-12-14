@@ -1,8 +1,7 @@
 import { Button, ButtonGroup, ButtonProps, Icon, Link, Spinner, Tag, Tooltip } from "@chakra-ui/react";
 import { PropsWithChildren } from "react";
 import { IoLogoGithub } from "react-icons/io";
-import { isDefined, wrapResult } from "../utils";
-import { parsePackageUrl } from "../utils/packageUtils";
+import { isDefined, parsePackageUrl, wrapResult } from "./utils";
 
 type EnclaveSourceProps = PropsWithChildren<
   ButtonProps & {

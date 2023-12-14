@@ -1,12 +1,12 @@
-import { ReactElement, useMemo } from "react";
-import { Params, UIMatch } from "react-router-dom";
 import {
+  isDefined,
   KurtosisBreadcrumb,
   KurtosisBreadcrumbsHandle,
   KurtosisBreadcrumbsImpl,
-} from "../../../components/KurtosisBreadcrumbs";
-import { isDefined } from "../../../utils";
-import { RemoveFunctions } from "../../../utils/types";
+  RemoveFunctions,
+} from "kurtosis-ui-components";
+import { ReactElement, useMemo } from "react";
+import { Params, UIMatch } from "react-router-dom";
 import { EnclavesState, useEnclavesContext } from "../EnclavesContext";
 
 export type KurtosisEnclavesBreadcrumbsHandle = KurtosisBreadcrumbsHandle<"enclavesHandle"> & {

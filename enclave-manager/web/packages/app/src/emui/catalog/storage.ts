@@ -1,5 +1,5 @@
+import { isDefined, stringifyError } from "kurtosis-ui-components";
 import { KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { isDefined, stringifyError } from "../../utils";
 
 const SAVED_PACKAGES_LOCAL_STORAGE_KEY = "kurtosis-saved-packages";
 

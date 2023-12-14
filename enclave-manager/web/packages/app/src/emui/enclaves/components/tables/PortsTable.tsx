@@ -2,10 +2,9 @@ import { ExternalLinkIcon } from "@chakra-ui/icons";
 import { Flex, Link, Text } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
+import { DataTable, isDefined } from "kurtosis-ui-components";
 import { useMemo } from "react";
 import { KURTOSIS_CLOUD_HOST, KURTOSIS_CLOUD_PROTOCOL } from "../../../../client/constants";
-import { DataTable } from "../../../../components/DataTable";
-import { isDefined } from "../../../../utils";
 import { transportProtocolToString } from "../utils";
 
 type PortsTableRow = {

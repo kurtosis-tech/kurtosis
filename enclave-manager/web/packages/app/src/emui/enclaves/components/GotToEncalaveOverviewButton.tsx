@@ -1,7 +1,7 @@
 import { Button } from "@chakra-ui/react";
+import { isDefined } from "kurtosis-ui-components";
 import { IoExitOutline } from "react-icons/io5";
 import { Link } from "react-router-dom";
-import { isDefined } from "../../../utils";
 
 type GotToEncalaveOverviewButtonProps = {
   enclaveUUID?: string;

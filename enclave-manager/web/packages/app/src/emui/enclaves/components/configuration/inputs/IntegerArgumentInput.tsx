@@ -1,5 +1,5 @@
 import { Input } from "@chakra-ui/react";
-import { isDefined } from "../../../../../utils";
+import { isDefined } from "kurtosis-ui-components";
 import { useEnclaveConfigurationFormContext } from "../EnclaveConfigurationForm";
 import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 

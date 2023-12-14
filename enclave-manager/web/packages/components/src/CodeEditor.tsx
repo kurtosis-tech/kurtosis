@@ -3,7 +3,7 @@ import { Editor, Monaco, OnChange, OnMount } from "@monaco-editor/react";
 import { type editor as monacoEditor } from "monaco-editor";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import YAML from "yaml";
-import { assertDefined, isDefined, stringifyError } from "../utils";
+import { assertDefined, isDefined, stringifyError } from "./utils";
 
 const MONACO_READ_ONLY_CHANGE_EVENT_ID = 89;
 

@@ -1,6 +1,6 @@
 import { Tab, TabList } from "@chakra-ui/react";
 import { useState } from "react";
-import { isDefined } from "../utils";
+import { isDefined } from "./utils";
 
 type HoverLineTabListProps = {
   tabs: string[];

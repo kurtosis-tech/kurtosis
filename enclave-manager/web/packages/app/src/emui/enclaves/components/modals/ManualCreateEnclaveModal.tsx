@@ -15,12 +15,12 @@ import {
   ModalHeader,
   ModalOverlay,
 } from "@chakra-ui/react";
+import { isDefined } from "kurtosis-ui-components";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { IoLogoGithub } from "react-icons/io";
 import { KurtosisPackage } from "../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
 import { useKurtosisPackageIndexerClient } from "../../../../client/packageIndexer/KurtosisPackageIndexerClientContext";
-import { isDefined } from "../../../../utils";
 
 type ManualCreateEnclaveForm = {
   url: string;

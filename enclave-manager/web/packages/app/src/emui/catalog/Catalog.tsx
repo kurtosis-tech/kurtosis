@@ -14,18 +14,20 @@ import {
   InputRightElement,
   Text,
 } from "@chakra-ui/react";
+import {
+  AppPageLayout,
+  FindCommand,
+  isDefined,
+  KurtosisAlert,
+  KurtosisPackageCardGrid,
+  PageTitle,
+  useKeyboardAction,
+  useSavedPackages,
+} from "kurtosis-ui-components";
 import { useMemo, useRef, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { MdBookmarkAdded } from "react-icons/md";
 import { GetPackagesResponse, KurtosisPackage } from "../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { AppPageLayout } from "../../components/AppLayout";
-import { KurtosisPackageCardGrid } from "../../components/catalog/KurtosisPackageCardGrid";
-import { useSavedPackages } from "../../components/catalog/SavedPackages";
-import { FindCommand } from "../../components/KeyboardCommands";
-import { KurtosisAlert } from "../../components/KurtosisAlert";
-import { PageTitle } from "../../components/PageTitle";
-import { useKeyboardAction } from "../../components/useKeyboardAction";
-import { isDefined } from "../../utils";
 import { ConfigureEnclaveModal } from "../enclaves/components/modals/ConfigureEnclaveModal";
 import { EnclavesContextProvider } from "../enclaves/EnclavesContext";
 import { useCatalogContext } from "./CatalogContext";

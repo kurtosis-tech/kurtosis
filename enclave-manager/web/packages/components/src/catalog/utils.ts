@@ -1,4 +1,4 @@
-import { capitalize } from "../../utils";
+import { capitalize } from "../utils";
 
 export function readablePackageName(packageName: string): string {
   const parts = packageName.replaceAll("-", " ").split("/");

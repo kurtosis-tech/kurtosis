@@ -1,7 +1,7 @@
 import * as CSS from "csstype";
+import { assertDefined } from "kurtosis-ui-components";
 import { FieldPath } from "react-hook-form";
 import { ArgumentValueType } from "../../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { assertDefined } from "../../../../../utils";
 import { ConfigureEnclaveForm } from "../types";
 import { BooleanArgumentInput } from "./BooleanArgumentInput";
 import { DictArgumentInput } from "./DictArgumentInput";

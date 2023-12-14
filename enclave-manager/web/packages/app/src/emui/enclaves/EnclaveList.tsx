@@ -1,8 +1,6 @@
 import { Button, ButtonGroup, Flex } from "@chakra-ui/react";
+import { AppPageLayout, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { useEffect, useMemo, useState } from "react";
-import { AppPageLayout } from "../../components/AppLayout";
-import { KurtosisAlert } from "../../components/KurtosisAlert";
-import { PageTitle } from "../../components/PageTitle";
 import { CreateEnclaveButton } from "./components/CreateEnclaveButton";
 import { EnclavesTable } from "./components/tables/EnclavesTable";
 import { DeleteEnclavesButton } from "./components/widgets/DeleteEnclavesButton";

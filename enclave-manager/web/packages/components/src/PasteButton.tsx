@@ -1,7 +1,7 @@
 import { Button, ButtonProps, IconButton, IconButtonProps } from "@chakra-ui/react";
 import { useState } from "react";
 import { FiClipboard } from "react-icons/fi";
-import { isDefined } from "../utils";
+import { isDefined } from "./utils";
 
 type PasteButtonProps<IsIconButton extends boolean> = (IsIconButton extends true ? IconButtonProps : ButtonProps) & {
   onValuePasted: (value: string) => void;

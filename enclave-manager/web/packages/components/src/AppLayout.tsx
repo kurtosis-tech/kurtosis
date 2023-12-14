@@ -1,6 +1,5 @@
 import { Box, Flex } from "@chakra-ui/react";
 import { createContext, PropsWithChildren, ReactElement, useContext } from "react";
-import { isDefined } from "../utils";
 import { KurtosisBreadcrumbs } from "./KurtosisBreadcrumbs";
 import {
   MAIN_APP_BOTTOM_PADDING,
@@ -10,6 +9,7 @@ import {
   MAIN_APP_RIGHT_PADDING,
   MAIN_APP_TOP_PADDING,
 } from "./theme/constants";
+import { isDefined } from "./utils";
 
 type AppLayoutContextState = {
   hasNavbar: boolean;

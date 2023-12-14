@@ -1,5 +1,5 @@
 import { Text, TextProps } from "@chakra-ui/react";
-import { isDefined } from "../utils";
+import { isDefined } from "./utils";
 
 type FileSizeProps = TextProps & {
   fileSize?: bigint;

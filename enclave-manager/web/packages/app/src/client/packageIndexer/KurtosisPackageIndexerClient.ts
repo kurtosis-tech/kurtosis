@@ -1,7 +1,6 @@
 import { createPromiseClient, PromiseClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
-import { asyncResult } from "../../utils";
-import { parsePackageUrl } from "../../utils/packageUtils";
+import { asyncResult, parsePackageUrl } from "kurtosis-ui-components";
 import { KURTOSIS_PACKAGE_INDEXER_URL } from "../constants";
 import { KurtosisPackageIndexer } from "./api/kurtosis_package_indexer_connect";
 import { PackageRepository, ReadPackageRequest } from "./api/kurtosis_package_indexer_pb";

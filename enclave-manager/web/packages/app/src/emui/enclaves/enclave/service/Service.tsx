@@ -1,19 +1,18 @@
 import { Flex, Spinner, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
+import Cookies from "js-cookie";
+import { AppPageLayout, HoverLineTabList, isDefined, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { FunctionComponent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { AppPageLayout } from "../../../../components/AppLayout";
-import { HoverLineTabList } from "../../../../components/HoverLineTabList";
-import { KurtosisAlert } from "../../../../components/KurtosisAlert";
-import { PageTitle } from "../../../../components/PageTitle";
-import { isDefined } from "../../../../utils";
 import { EnclaveFullInfo } from "../../types";
 import { useEnclaveFromParams } from "../EnclaveRouteContext";
 import { ServiceLogs } from "./logs/ServiceLogs";
 import { ServiceOverview } from "./overview/ServiceOverview";
-import Cookies from "js-cookie";
 
-const tabs: { path: string; element: FunctionComponent<{ enclave: EnclaveFullInfo; service: ServiceInfo; instanceUUID: string }> }[] = [
+const tabs: {
+  path: string;
+  element: FunctionComponent<{ enclave: EnclaveFullInfo; service: ServiceInfo; instanceUUID: string }>;
+}[] = [
   { path: "overview", element: ServiceOverview },
   { path: "logs", element: ServiceLogs },
 ];

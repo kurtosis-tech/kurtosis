@@ -1,8 +1,7 @@
 import { Flex, Heading, Spinner } from "@chakra-ui/react";
 import Cookies from "js-cookie";
+import { assertDefined, isDefined, KurtosisAlert, stringifyError } from "kurtosis-ui-components";
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
-import { KurtosisAlert } from "../../components/KurtosisAlert";
-import { assertDefined, isDefined, stringifyError } from "../../utils";
 import { KURTOSIS_CLOUD_EM_PAGE, KURTOSIS_CLOUD_EM_URL } from "../constants";
 import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
 import { KurtosisClient } from "./KurtosisClient";

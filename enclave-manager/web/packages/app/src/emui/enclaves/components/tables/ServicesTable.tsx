@@ -6,10 +6,9 @@ import {
   ServiceInfo,
   ServiceStatus,
 } from "enclave-manager-sdk/build/api_container_service_pb";
+import { DataTable, RemoveFunctions } from "kurtosis-ui-components";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { DataTable } from "../../../../components/DataTable";
-import { RemoveFunctions } from "../../../../utils/types";
 import { ImageButton } from "../widgets/ImageButton";
 import { PortsSummary } from "../widgets/PortsSummary";
 import { ServiceStatusTag } from "../widgets/ServiceStatus";

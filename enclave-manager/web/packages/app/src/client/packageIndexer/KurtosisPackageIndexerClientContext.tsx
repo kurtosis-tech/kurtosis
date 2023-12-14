@@ -1,5 +1,5 @@
+import { assertDefined } from "kurtosis-ui-components";
 import { createContext, PropsWithChildren, useContext, useMemo } from "react";
-import { assertDefined } from "../../utils";
 import { KurtosisPackageIndexerClient } from "./KurtosisPackageIndexerClient";
 
 type KurtosisPackageIndexerClientContextState = {

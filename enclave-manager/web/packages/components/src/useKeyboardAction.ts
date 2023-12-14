@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { isDefined } from "../utils";
+import { isDefined } from "./utils";
 
 export type KeyboardActions = "escape" | "find" | "omniFind" | "enter" | "shift-enter";
 

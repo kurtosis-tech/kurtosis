@@ -4,10 +4,9 @@ import {
   FilesArtifactNameAndUuid,
   ListFilesArtifactNamesAndUuidsResponse,
 } from "enclave-manager-sdk/build/api_container_service_pb";
+import { DataTable, RemoveFunctions } from "kurtosis-ui-components";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { DataTable } from "../../../../components/DataTable";
-import { RemoveFunctions } from "../../../../utils/types";
 import { EnclaveFullInfo } from "../../types";
 import { DownloadFileArtifactButton } from "../widgets/DownloadFileArtifactButton";
 

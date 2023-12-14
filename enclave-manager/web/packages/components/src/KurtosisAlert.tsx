@@ -13,7 +13,7 @@ import {
   Flex,
 } from "@chakra-ui/react";
 import { FallbackProps } from "react-error-boundary";
-import { isDefined, stringifyError } from "../utils";
+import { isDefined, stringifyError } from "./utils";
 
 type KurtosisAlertProps = AlertProps & {
   message: string;

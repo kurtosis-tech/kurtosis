@@ -1,3 +1,4 @@
+import { isDefined, isStringTrue } from "kurtosis-ui-components";
 import { CSSProperties, forwardRef, PropsWithChildren, useImperativeHandle } from "react";
 import { FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import YAML from "yaml";
@@ -6,7 +7,6 @@ import {
   KurtosisPackage,
   PackageArg,
 } from "../../../../client/packageIndexer/api/kurtosis_package_indexer_pb";
-import { isDefined, isStringTrue } from "../../../../utils";
 import { ConfigureEnclaveForm } from "./types";
 
 type EnclaveConfigurationFormProps = PropsWithChildren<{

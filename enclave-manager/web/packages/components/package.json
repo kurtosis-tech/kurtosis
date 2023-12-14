@@ -28,6 +28,27 @@
       "react-app/jest"
     ]
   },
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "@tanstack/react-table": "^8.10.7",
+    "react-error-boundary": "^4.0.11",
+    "react-markdown": "^9.0.0",
+    "react-router-dom": "^6.17.0",
+    "react-virtuoso": "^4.6.2",
+    "streamsaver": "^2.0.6",
+    "yaml": "^2.3.4"
+  },
+  "peerDependencies": {
+    "react": ">=16 || >=17 || >= 18",
+    "react-dom": ">=16 || >=17 || >= 18",
+    "@chakra-ui/icons": ">=2 && < 3",
+    "@chakra-ui/react": ">=2.8 && <3",
+    "true-myth": ">=7 && < 8",
+    "luxon": ">=3 && <4"
+  },
+  "devDependencies": {
+    "monaco-editor": "^0.44.0"
+  },
   "browserslist": {
     "production": [
       ">0.2%",

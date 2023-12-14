@@ -16,8 +16,8 @@ import {
 import { ReactElement } from "react";
 import { BsCaretDownFill } from "react-icons/bs";
 import { Link, UIMatch, useMatches } from "react-router-dom";
-import { isDefined } from "../utils";
 import { BREADCRUMBS_HEIGHT } from "./theme/constants";
+import { isDefined } from "./utils";
 
 export type KurtosisBreadcrumbsHandle<T extends string> = {
   type: T;

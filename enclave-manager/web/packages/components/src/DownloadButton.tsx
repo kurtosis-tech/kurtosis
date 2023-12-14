@@ -1,8 +1,7 @@
 import { Button, ButtonProps, IconButton, IconButtonProps } from "@chakra-ui/react";
 import { FiDownload } from "react-icons/fi";
 import streamsaver from "streamsaver";
-import { isAsyncIterable, isDefined, stripAnsi } from "../utils";
-import { saveTextAsFile } from "../utils/download";
+import { isAsyncIterable, isDefined, saveTextAsFile, stripAnsi } from "./utils";
 
 type DownloadButtonProps<IsIconButton extends boolean> = (IsIconButton extends true ? IconButtonProps : ButtonProps) & {
   valueToDownload?: (() => string) | (() => AsyncIterable<string>) | string | null;

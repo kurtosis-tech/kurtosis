@@ -13,7 +13,7 @@ import { type RowSelectionState } from "@tanstack/table-core/src/features/RowSel
 import { type OnChangeFn } from "@tanstack/table-core/src/types";
 import { useState } from "react";
 import { BiDownArrowAlt, BiUpArrowAlt } from "react-icons/bi";
-import { assertDefined, isDefined } from "../utils";
+import { assertDefined, isDefined } from "./utils";
 
 declare module "@tanstack/table-core" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

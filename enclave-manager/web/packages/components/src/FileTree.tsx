@@ -1,8 +1,8 @@
 import { Button, Flex, Text } from "@chakra-ui/react";
 import React, { useCallback, useMemo, useState } from "react";
 import { AiFillFile, AiFillFolder, AiFillFolderOpen } from "react-icons/ai";
-import { isDefined } from "../utils";
 import { FileSize } from "./FileSize";
+import { isDefined } from "./utils";
 
 /**
  * This file tree component recursively renders itself to present a file tree.

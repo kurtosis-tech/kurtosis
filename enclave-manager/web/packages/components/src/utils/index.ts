@@ -1,5 +1,9 @@
 import { Result } from "true-myth";
 
+export * from "./download";
+export * from "./packageUtils";
+export * from "./types";
+
 export function isDefined<T>(it: T | null | undefined): it is T {
   return it !== null && it !== undefined;
 }

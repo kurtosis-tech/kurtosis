@@ -1,7 +1,5 @@
+import { readablePackageName, registerBreadcrumbHandler, RemoveFunctions } from "kurtosis-ui-components";
 import { Params } from "react-router-dom";
-import { readablePackageName } from "../../components/catalog/utils";
-import { registerBreadcrumbHandler } from "../../components/KurtosisBreadcrumbs";
-import { RemoveFunctions } from "../../utils/types";
 import { KurtosisCatalogRouteObject } from "../types";
 import { Catalog } from "./Catalog";
 import { CatalogState } from "./CatalogContext";

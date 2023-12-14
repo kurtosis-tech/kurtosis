@@ -1,7 +1,7 @@
 import { Card, CardBody, CardHeader, Text } from "@chakra-ui/react";
 import { ReactElement } from "react";
-import { isDefined } from "../utils";
 import { CopyButton } from "./CopyButton";
+import { isDefined } from "./utils";
 
 type ValueCardProps = {
   title: string;

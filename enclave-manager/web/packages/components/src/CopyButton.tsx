@@ -1,7 +1,7 @@
 import { Button, ButtonProps, IconButton, IconButtonProps, useToast } from "@chakra-ui/react";
 import { FiCopy } from "react-icons/fi";
-import { isDefined } from "../utils";
 import { SuccessToast } from "./Toasts";
+import { isDefined } from "./utils";
 
 type CopyButtonProps<IsIconButton extends boolean> = (IsIconButton extends true ? IconButtonProps : ButtonProps) & {
   valueToCopy?: (() => string) | string | null;

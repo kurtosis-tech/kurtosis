@@ -1,4 +1,4 @@
-import { isDefined } from "../utils";
+import { isDefined } from "kurtosis-ui-components";
 
 // Configurable:
 export const KURTOSIS_CLOUD_PROTOCOL = "https";

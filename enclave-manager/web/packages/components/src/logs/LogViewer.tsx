@@ -24,11 +24,11 @@ import { ChangeEvent, MutableRefObject, ReactElement, useCallback, useEffect, us
 import { FiSearch } from "react-icons/fi";
 import { MdArrowBackIosNew, MdArrowForwardIos } from "react-icons/md";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
-import { isDefined, isNotEmpty, stringifyError, stripAnsi } from "../../utils";
 import { CopyButton } from "../CopyButton";
 import { DownloadButton } from "../DownloadButton";
 import { FindCommand } from "../KeyboardCommands";
 import { useKeyboardAction } from "../useKeyboardAction";
+import { isDefined, isNotEmpty, stringifyError, stripAnsi } from "../utils";
 import { LogLine } from "./LogLine";
 import { LogLineMessage } from "./types";
 import { normalizeLogText } from "./utils";

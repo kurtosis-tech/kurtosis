@@ -3,7 +3,7 @@ import { Box, Flex } from "@chakra-ui/react";
 import Convert from "ansi-to-html";
 import parse from "html-react-parser";
 import { ReactElement } from "react";
-import { hasAnsi, isDefined } from "../../utils";
+import { hasAnsi, isDefined } from "../utils";
 import { LogLineMessage, LogStatus } from "./types";
 import { normalizeLogText } from "./utils";
 

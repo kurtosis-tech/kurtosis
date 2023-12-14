@@ -1,11 +1,6 @@
 import { Flex, Grid, GridItem, Spinner } from "@chakra-ui/react";
+import { FormatDateTime, isDefined, KurtosisAlert, TitledBox, ValueCard } from "kurtosis-ui-components";
 import { DateTime } from "luxon";
-import { FormatDateTime } from "../../../../components/FormatDateTime";
-import { KurtosisAlert } from "../../../../components/KurtosisAlert";
-import { FLEX_STANDARD_GAP } from "../../../../components/theme/constants";
-import { TitledBox } from "../../../../components/TitledBox";
-import { ValueCard } from "../../../../components/ValueCard";
-import { isDefined } from "../../../../utils";
 import { FilesTable } from "../../components/tables/FilesTable";
 import { ServicesTable } from "../../components/tables/ServicesTable";
 import { EnclaveStatus } from "../../components/widgets/EnclaveStatus";
@@ -21,8 +16,8 @@ export const EnclaveOverview = ({ enclave }: EnclaveOverviewProps) => {
     : null;
 
   return (
-    <Flex flexDirection={"column"} gap={FLEX_STANDARD_GAP}>
-      <Grid templateColumns={"repeat(4, 1fr)"} gap={FLEX_STANDARD_GAP}>
+    <Flex flexDirection={"column"} gap={"32px"}>
+      <Grid templateColumns={"repeat(4, 1fr)"} gap={"32px"}>
         <GridItem>
           <ValueCard title={"Name"} value={enclave.name} copyEnabled />
         </GridItem>
