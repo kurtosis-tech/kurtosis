@@ -124,17 +124,6 @@ func preparePersistentDirectoriesResources(
 				logrus.Warnf("You'll need to clean up volume claim '%v' manually!", volumeClaimNameStr)
 			}
 		}
-		for volumeNameStr := range volumesCreated {
-			// Background context so we still run this even if the input context was cancelled
-			if err := kubernetesManager.RemovePersistentVolumeClaim(context.Background(), namespace, volumeNameStr); err != nil {
-				logrus.Warnf(
-					"Creating persistent directory volumes didn't complete successfully so we tried to delete volume '%v' that we created, but doing so threw an error:\n%v",
-					volumeNameStr,
-					err,
-				)
-				logrus.Warnf("You'll need to clean up volume '%v' manually!", volumeNameStr)
-			}
-		}
 	}()
 
 	shouldDeleteVolumesAndClaimsCreated = false
