@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.48](https://github.com/kurtosis-tech/kurtosis/compare/0.85.47...0.85.48) (2023-12-14)
+
+
+### Bug Fixes
+
+* failing test due to prometheus package creation ([#1955](https://github.com/kurtosis-tech/kurtosis/issues/1955)) ([67169cb](https://github.com/kurtosis-tech/kurtosis/commit/67169cbfc0fce4b3ae6089e491ec20a50af38969))
+
 ## [0.85.47](https://github.com/kurtosis-tech/kurtosis/compare/0.85.46...0.85.47) (2023-12-14)
 
 
