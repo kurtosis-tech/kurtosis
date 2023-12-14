@@ -6,8 +6,6 @@ import { KURTOSIS_CLOUD_EM_PAGE, KURTOSIS_CLOUD_EM_URL } from "../constants";
 import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
 import { KurtosisClient } from "./KurtosisClient";
 import { LocalKurtosisClient } from "./LocalKurtosisClient";
-import React from "react";
-import { EnclaveInfo } from "enclave-manager-sdk/build/engine_service_pb";
 
 type KurtosisClientContextState = {
   client: KurtosisClient | null;

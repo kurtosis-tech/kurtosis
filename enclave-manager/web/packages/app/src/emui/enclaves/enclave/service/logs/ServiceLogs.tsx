@@ -5,7 +5,6 @@ import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
 import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
 import { EnclaveFullInfo } from "../../../types";
-import React from "react";
 
 const serviceLogLineToLogLineMessage = (lines: string[], timestamp?: Timestamp): LogLineMessage[] => {
   return lines.map((line) => ({
@@ -50,7 +49,7 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
           const lineGroupForService = lineGroup.service_logs_by_service_uuid![service.serviceUuid];
           assertDefined(
             lineGroupForService,
-            `Log line response included a line group withouth service ${
+            `Log line response included a line group without service ${
               service.serviceUuid
             }: ${JSON.stringify(lineGroup)}`,
           );

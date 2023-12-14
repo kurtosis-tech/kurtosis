@@ -9,7 +9,6 @@ import {
   KURTOSIS_CLOUD_UI_URL,
   KURTOSIS_DEFAULT_EM_API_PORT,
   KURTOSIS_DEFAULT_REST_API_PORT,
-  KURTOSIS_WEBSOCKET_API_DEFAULT_URL,
 } from "../constants";
 import { KurtosisClient } from "./KurtosisClient";
 import createWSClient from "./websocketClient/WebSocketClient";
