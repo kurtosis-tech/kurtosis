@@ -189,7 +189,7 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 		isProduction,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", args.EnclaveName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", args.GetEnclaveName())
 	}
 
 	grpcEnclaveInfo := toGrpcEnclaveInfo(*enclaveInfo)
