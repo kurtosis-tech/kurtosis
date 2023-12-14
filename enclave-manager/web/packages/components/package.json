@@ -1,0 +1,43 @@
+{
+  "name": "kurtosis-ui-components",
+  "version": "0.0.1",
+  "private": false,
+  "main": "build/index",
+  "description": "This repo contains components used by Kurtosis UI applications.",
+  "types": "./build/index",
+  "files": [
+    "build"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kurtosis-tech/kurtosis.git",
+    "directory": "enclave-manager/web/packages/components"
+  },
+  "author": "Kurtosis Technologies Inc <support@kurtosistech.com> (https://www.kurtosistech.com/)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/kurtosis-tech/kurtosis/issues"
+  },
+  "homepage": "https://github.com/kurtosis-tech/kurtosis",
+  "scripts": {
+    "build": "rm -rf build/; tsc"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

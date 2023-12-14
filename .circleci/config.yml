@@ -171,6 +171,9 @@ parameters:
   api-node-version:
     type: string
     default: 16.13.0
+  ui-node-version:
+    type: string
+    default: 18.19.0
   core-server-build-cache-key-prefix:
     type: string
     default: "core-server-go-mod-v1"   # Can bump this version to bust the cache
@@ -1057,6 +1060,23 @@ jobs:
           package-path: api/typescript
           publish-token-variable: NPMJS_AUTH_TOKEN
 
+  publish_kurtosis_ui_libs:
+    docker:
+      - image: "cimg/node:<< pipeline.parameters.ui-node-version>>"
+    steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
+      - checkout
+      - run: enclave-manager/api/typescript/scripts/build.sh
+      - run: enclave-manager/web/scripts/build.sh
+      - npm-publisher/publish-from-package-version:
+          package-path: enclave-manager/web/packages/components
+          publish-token-variable: NPMJS_AUTH_TOKEN
+
   publish_files_artifacts_expander_image:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version >>"
@@ -1457,6 +1477,15 @@ workflows:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
 
       - publish_kurtosis_api_typescript:
+          context:
+            - npmjs-user
+            - slack-secrets
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_kurtosis_ui_libs:
           context:
             - npmjs-user
             - slack-secrets
