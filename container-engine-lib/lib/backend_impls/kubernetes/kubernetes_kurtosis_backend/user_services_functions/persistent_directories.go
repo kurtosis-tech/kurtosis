@@ -75,7 +75,6 @@ func preparePersistentDirectoriesResources(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (map[string]*kubernetesVolumeWithClaim, error) {
 	shouldDeleteVolumesAndClaimsCreated := true
-	volumesCreated := map[string]*apiv1.PersistentVolume{}
 	volumeClaimsCreated := map[string]*apiv1.PersistentVolumeClaim{}
 
 	persistentVolumesAndClaims := map[string]*kubernetesVolumeWithClaim{}
