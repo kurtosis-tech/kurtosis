@@ -4,9 +4,8 @@ import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
 import { useMemo } from "react";
 import { KURTOSIS_CLOUD_HOST, KURTOSIS_CLOUD_PROTOCOL } from "../../../../client/constants";
-import { useKurtosisClient } from "../../../../client/enclaveManager/KurtosisClientContext";
-import { isDefined } from "../../../../utils";
 import { DataTable } from "../../../../components/DataTable";
+import { isDefined } from "../../../../utils";
 import { transportProtocolToString } from "../utils";
 
 type PortsTableRow = {
@@ -73,8 +72,6 @@ export const PortsTable = ({
   publicPorts,
   publicIp,
 }: PortsTableProps) => {
-  const kurtosisClient = useKurtosisClient();
-
   const columns = useMemo<ColumnDef<PortsTableRow, any>[]>(
     () => [
       columnHelper.accessor("port", {
