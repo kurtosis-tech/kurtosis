@@ -14,7 +14,7 @@ BUILDSCRIPT_REL_DIRPATH="scripts/build.sh"
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-api_subproject_dirpaths="$(find "${api_root_dirpath}" -type d -maxdepth 1 -mindepth 1)"
+api_subproject_dirpaths="$(find "${api_root_dirpath}" -maxdepth 1 -mindepth 1 -type d)"
 for api_subproject_dirpath in ${api_subproject_dirpaths}; do
     if [ "$(basename "${api_subproject_dirpath}")" == "${PROTOBUF_DIRNAME}" ]; then
         continue
