@@ -3,25 +3,21 @@ import { defaultQuerySerializer, createFinalURL } from "openapi-fetch"
 
 export default function createWSClient(clientOptions) {
     const {
-        querySerializer: globalQuerySerializer,
-        ...baseOptions
+        baseUrl = "",
     } = clientOptions ?? {};
-    let baseUrl = baseOptions.baseUrl ?? "";
     if (baseUrl.endsWith("/")) {
         baseUrl = baseUrl.slice(0, -1); // remove trailing slash
     }
 
     async function* websocketMessagesGenerator(url, fetchOptions) {
         const {
-            headers,
             params = {},
-            parseAs = "json",
-            querySerializer = globalQuerySerializer ?? defaultQuerySerializer,
+            querySerializer = defaultQuerySerializer,
             abortSignal,
             ...init
         } = fetchOptions || {};
 
-        // URL
+        // build full URL
         const finalURL = createFinalURL(url, {
             baseUrl,
             params,
@@ -35,17 +31,24 @@ export default function createWSClient(clientOptions) {
             return { error: {}, data: null }
         }
 
-        if (abortSignal) {
-            if (abortSignal.aborted) {
-                socket.close();  // already aborted, fail immediately
-            }
-            abortSignal.addEventListener('abort', () => socket.close());
-        }
-
         // Wait for the WebSocket connection to be open
         await new Promise(resolve => {
             socket.addEventListener('open', resolve);
         });
+
+        if (abortSignal) {
+            // already aborted, fail immediately
+            if (abortSignal.aborted) {
+                console.warn(`Websocket on ${finalURL} got aborted before using. Closing it.`)
+                socket.close();
+            }
+
+            // close later if aborted
+            abortSignal.addEventListener('abort', () => {
+                console.warn(`Websocket on ${finalURL} has been asked to abort. Closing it.`)
+                socket.close();
+            });
+        }
 
         try {
             while (socket.readyState === WebSocket.OPEN) {

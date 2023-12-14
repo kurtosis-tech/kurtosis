@@ -10,27 +10,22 @@ import type {
 } from "openapi-typescript-helpers";
 
 import type {
-    ParseAs,
     FetchResponse,
     ParamsOption,
     QuerySerializer
 } from "openapi-fetch"
 
-export interface ClientOptions extends Omit<RequestInit, "headers"> {
-    /** set the common root URL for all API requests */
+export interface ClientOptions {
     baseUrl?: string;
-    /** global querySerializer */
-    querySerializer?: QuerySerializer<unknown>;
 }
-
-export type FetchOptions<T> = RequestOptions<T> & Omit<RequestInit, "body">;
 
 export type RequestOptions<T> = ParamsOption<T> & {
     querySerializer?: QuerySerializer<T>;
-    parseAs?: ParseAs;
     abortSignal?: AbortSignal;
 };
 
+// This implementation is based on the http version of the lib `openapi-fetch`
+// https://github.com/drwpow/openapi-typescript/blob/main/packages/openapi-fetch/src/index.d.ts
 export default function createWSClient<Paths extends {}>(
     clientOptions?: ClientOptions,
 ): {
@@ -38,10 +33,10 @@ export default function createWSClient<Paths extends {}>(
     WS<P extends PathsWithMethod<Paths, "get">>(
         url: P,
         ...init: HasRequiredKeys<
-            FetchOptions<FilterKeys<Paths[P], "get">>
+            RequestOptions<FilterKeys<Paths[P], "get">>
         > extends never
-            ? [(FetchOptions<FilterKeys<Paths[P], "get">> | undefined)?]
-            : [FetchOptions<FilterKeys<Paths[P], "get">>]
+            ? [(RequestOptions<FilterKeys<Paths[P], "get">> | undefined)?]
+            : [RequestOptions<FilterKeys<Paths[P], "get">>]
     ): AsyncGenerator<FetchResponse<"get" extends infer T ? T extends "get" ? T extends keyof Paths[P] ? Paths[P][T] : unknown : never : never>>;
 };
 
