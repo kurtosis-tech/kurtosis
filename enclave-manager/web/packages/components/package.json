@@ -1,5 +1,5 @@
 {
-  "name": "@kurtosis/components",
+  "name": "kurtosis-ui-components",
   "version": "0.0.0",
   "private": false,
   "main": "build/index",

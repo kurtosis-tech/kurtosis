@@ -1,4 +1,4 @@
-import { hello } from "@kurtosis/components";
+import { hello } from "kurtosis-ui-components";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { EmuiApp } from "./emui/App";
