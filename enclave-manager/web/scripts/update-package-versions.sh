@@ -13,7 +13,7 @@ LERNA_JSON_FILEPATH="lerna.json"
 PACKAGE_JSON_FILEPATH="package.json"
 PACKAGES_PACKAGE_JSON_FILEPATH="packages/*/package.json"
 REPLACE_PATTERN="(\"version\": \")[0-9]+.[0-9]+.[0-9]+(\")"
-REPLACE_DEP_PATTERN="(\"@kurtosis\/.*?\": \")[0-9]+.[0-9]+.[0-9]+(\")"
+REPLACE_DEP_PATTERN="(\"kurtosis.*?\": \")[0-9]+.[0-9]+.[0-9]+(\")"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
