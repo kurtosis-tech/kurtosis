@@ -74,7 +74,7 @@ func preparePersistentDirectoriesResources(
 	serviceMountpointsToPersistentKey map[string]service_directory.PersistentDirectory,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (map[string]*kubernetesVolumeWithClaim, error) {
-	shouldDeleteVolumesAndClaimsCreated := true
+	shouldDeleteVolumeClaims := true
 	volumeClaimsCreated := map[string]*apiv1.PersistentVolumeClaim{}
 
 	persistentVolumesAndClaims := map[string]*kubernetesVolumeWithClaim{}
@@ -109,7 +109,7 @@ func preparePersistentDirectoriesResources(
 	}
 
 	defer func() {
-		if !shouldDeleteVolumesAndClaimsCreated {
+		if !shouldDeleteVolumeClaims {
 			return
 		}
 		for volumeClaimNameStr := range volumeClaimsCreated {
@@ -125,6 +125,6 @@ func preparePersistentDirectoriesResources(
 		}
 	}()
 
-	shouldDeleteVolumesAndClaimsCreated = false
+	shouldDeleteVolumeClaims = false
 	return persistentVolumesAndClaims, nil
 }
