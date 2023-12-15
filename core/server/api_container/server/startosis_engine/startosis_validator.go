@@ -260,7 +260,7 @@ func sendContainerImageSummaryInfoMsg(
 func updateProgressWithDownloadInfo(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, imageCurrentlyInProgress []string, numberOfImageValidated uint32, totalNumberOfImagesToValidate uint32) {
 	msgLines := []string{validationInProgressMsg}
 	for _, imageName := range imageCurrentlyInProgress {
-		msgLines = append(msgLines, fmt.Sprintf("Downloading %s", imageName))
+		msgLines = append(msgLines, fmt.Sprintf("Validating %s", imageName))
 	}
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromMultilineProgressInfo(
 		msgLines, numberOfImageValidated, totalNumberOfImagesToValidate)
