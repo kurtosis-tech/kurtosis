@@ -8,7 +8,11 @@ type ValidatedImage struct {
 }
 
 func NewValidatedImage(name string, pulledFromRemote bool, builtLocally bool, architecture string) *ValidatedImage {
-	return &ValidatedImage{name: name, pulledFromRemote: pulledFromRemote, architecture: architecture}
+	return &ValidatedImage{
+		name:             name,
+		pulledFromRemote: pulledFromRemote,
+		builtLocally:     builtLocally,
+		architecture:     architecture}
 }
 
 func (v *ValidatedImage) GetName() string {
