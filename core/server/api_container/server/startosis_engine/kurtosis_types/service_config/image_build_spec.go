@@ -14,10 +14,11 @@ import (
 const (
 	ImageBuildSpecTypeName = "ImageBuildSpec"
 
-	BuildContextAttr = "build_context"
-	TargetStageAttr  = "target_stage"
+	BuiltImageNameAttr = "name"
+	BuildContextAttr   = "build_context_dir"
+	TargetStageAttr    = "target_stage"
 
-	// Currently, only support container images named Dockerfile
+	// Currently only supports container images named Dockerfile
 	defaultContainerImageFileName = "Dockerfile"
 )
 
@@ -26,6 +27,14 @@ func NewImageBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor 
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: ImageBuildSpecTypeName,
 			Arguments: []*builtin_argument.BuiltinArgument{
+				{
+					Name:              BuiltImageNameAttr,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, BuiltImageNameAttr)
+					},
+				},
 				{
 					Name:              BuildContextAttr,
 					IsOptional:        false,
@@ -69,6 +78,20 @@ func (imageBuildSpec *ImageBuildSpec) Copy() (builtin_argument.KurtosisValueType
 	return &ImageBuildSpec{
 		KurtosisValueTypeDefault: copiedValueType,
 	}, nil
+}
+
+// Name to give image built from ImageBuildSpec
+func (imageBuildSpec *ImageBuildSpec) GetImageName() (string, *startosis_errors.InterpretationError) {
+	imageName, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](imageBuildSpec.KurtosisValueTypeDefault, BuiltImageNameAttr)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if !found {
+		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
+			BuiltImageNameAttr, ImageBuildSpecTypeName)
+	}
+	imageNameStr := imageName.GoString()
+	return imageNameStr, nil
 }
 
 // Relative locator of build context directory

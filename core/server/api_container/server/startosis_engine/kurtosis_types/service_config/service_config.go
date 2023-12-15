@@ -214,61 +214,6 @@ func (config *ServiceConfig) Copy() (builtin_argument.KurtosisValueType, error) 
 	}, nil
 }
 
-func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]string, serviceNetwork service_network.ServiceNetwork) (*service_directory.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
-	filesArtifactsExpansions := []args.FilesArtifactExpansion{}
-	serviceDirpathsToArtifactIdentifiers := map[string]string{}
-	expanderDirpathToUserServiceDirpathMap := map[string]string{}
-	for mountpointOnUserService, filesArtifactIdentifier := range filesArtifactsMountDirpathsMap {
-		dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactIdentifier)
-		expansion := args.FilesArtifactExpansion{
-			FilesIdentifier:   filesArtifactIdentifier,
-			DirPathToExpandTo: dirpathToExpandTo,
-		}
-		filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
-		serviceDirpathsToArtifactIdentifiers[mountpointOnUserService] = filesArtifactIdentifier
-		expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
-	}
-
-	// TODO: Sad that we need the service network here to get the APIC info. This is wrong, we should fix this by
-	//  passing the APIC info DOWN to the backend and have the backend create the expander itself.
-	//  Here writing those info into each service config is dumb
-	apiContainerInfo := serviceNetwork.GetApiContainerInfo()
-	filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
-		apiContainerInfo.GetIpAddress().String(),
-		apiContainerInfo.GetGrpcPortNum(),
-		filesArtifactsExpansions,
-	)
-	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("An error occurred creating files artifacts expander args")
-	}
-
-	expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
-	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
-	}
-
-	expanderImageAndTag := fmt.Sprintf(
-		"%v:%v",
-		filesArtifactsExpanderImage,
-		apiContainerInfo.GetVersion(),
-	)
-
-	return &service_directory.FilesArtifactsExpansion{
-		ExpanderImage:                        expanderImageAndTag,
-		ExpanderEnvVars:                      expanderEnvVars,
-		ServiceDirpathsToArtifactIdentifiers: serviceDirpathsToArtifactIdentifiers,
-		ExpanderDirpathsToServiceDirpaths:    expanderDirpathToUserServiceDirpathMap,
-	}, nil
-}
-
-func convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap map[string]string) *service_directory.PersistentDirectories {
-	persistentDirectoriesMap := map[string]service_directory.DirectoryPersistentKey{}
-	for dirPath, persistentKeyStr := range persistentDirectoriesDirpathsMap {
-		persistentDirectoriesMap[dirPath] = service_directory.DirectoryPersistentKey(persistentKeyStr)
-	}
-	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
-}
-
 func (config *ServiceConfig) ToKurtosisType(
 	serviceNetwork service_network.ServiceNetwork,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
@@ -287,20 +232,14 @@ func (config *ServiceConfig) ToKurtosisType(
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'", ImageAttr, ServiceConfigTypeName)
 	}
-	imageNameStr, interpretationErr := kurtosis_types.SafeCastToString(rawImageAttrValue, ImageAttr)
-	if interpretationErr == nil {
-		imageName = imageNameStr
-	} else {
-		imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := rawImageAttrValue.(*ImageBuildSpec)
-		if !isImageBuildSpecStarlarkType {
-			return nil, startosis_errors.NewInterpretationError("Failed to cast '%v' to an image build spec object.", rawImageAttrValue)
-		}
-		imageBuildSpec, interpretationErr = imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
-		if interpretationErr != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred attempting to convert the image build spec to Kurtosis type: '%v'", imageBuildSpecStarlarkType)
-		}
-		// TODO: figure out the best way to handle naming an image if there's an image build spec
-		imageName = "placeholder"
+	imageName, imageBuildSpec, interpretationErr = convertImageAttr(
+		rawImageAttrValue,
+		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		packageId,
+		packageContentProvider,
+		packageReplaceOptions)
+	if interpretationErr != nil {
+		return nil, interpretationErr
 	}
 
 	privatePorts := map[string]*port_spec.PortSpec{}
@@ -523,6 +462,53 @@ func (config *ServiceConfig) GetReadyCondition() (*ReadyCondition, *startosis_er
 	return readyConditions, nil
 }
 
+func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]string, serviceNetwork service_network.ServiceNetwork) (*service_directory.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
+	filesArtifactsExpansions := []args.FilesArtifactExpansion{}
+	serviceDirpathsToArtifactIdentifiers := map[string]string{}
+	expanderDirpathToUserServiceDirpathMap := map[string]string{}
+	for mountpointOnUserService, filesArtifactIdentifier := range filesArtifactsMountDirpathsMap {
+		dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactIdentifier)
+		expansion := args.FilesArtifactExpansion{
+			FilesIdentifier:   filesArtifactIdentifier,
+			DirPathToExpandTo: dirpathToExpandTo,
+		}
+		filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
+		serviceDirpathsToArtifactIdentifiers[mountpointOnUserService] = filesArtifactIdentifier
+		expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
+	}
+
+	// TODO: Sad that we need the service network here to get the APIC info. This is wrong, we should fix this by
+	//  passing the APIC info DOWN to the backend and have the backend create the expander itself.
+	//  Here writing those info into each service config is dumb
+	apiContainerInfo := serviceNetwork.GetApiContainerInfo()
+	filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
+		apiContainerInfo.GetIpAddress().String(),
+		apiContainerInfo.GetGrpcPortNum(),
+		filesArtifactsExpansions,
+	)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("An error occurred creating files artifacts expander args")
+	}
+
+	expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
+	}
+
+	expanderImageAndTag := fmt.Sprintf(
+		"%v:%v",
+		filesArtifactsExpanderImage,
+		apiContainerInfo.GetVersion(),
+	)
+
+	return &service_directory.FilesArtifactsExpansion{
+		ExpanderImage:                        expanderImageAndTag,
+		ExpanderEnvVars:                      expanderEnvVars,
+		ServiceDirpathsToArtifactIdentifiers: serviceDirpathsToArtifactIdentifiers,
+		ExpanderDirpathsToServiceDirpaths:    expanderDirpathToUserServiceDirpathMap,
+	}, nil
+}
+
 func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value starlark.Value, dictForLogging *starlark.Dict) (string, *port_spec.PortSpec, *startosis_errors.InterpretationError) {
 	keyStr, ok := key.(starlark.String)
 	if !ok {
@@ -584,4 +570,40 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 		}
 	}
 	return filesArtifacts, persistentDirectories, nil
+}
+
+func convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap map[string]string) *service_directory.PersistentDirectories {
+	persistentDirectoriesMap := map[string]service_directory.DirectoryPersistentKey{}
+	for dirPath, persistentKeyStr := range persistentDirectoriesDirpathsMap {
+		persistentDirectoriesMap[dirPath] = service_directory.DirectoryPersistentKey(persistentKeyStr)
+	}
+	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
+}
+
+// If [rawImageAttrValue] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
+// If [rawImageAttrValue] is an ImageBuildSpec type, name for the image to build and ImageBuildSpec converted to KurtosisType is returned (image will be built)
+func convertImageAttr(
+	rawImageAttrValue starlark.Value,
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
+	imageName, interpretationErr := kurtosis_types.SafeCastToString(rawImageAttrValue, ImageAttr)
+	if interpretationErr == nil {
+		return imageName, nil, nil
+	} else {
+		imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := rawImageAttrValue.(*ImageBuildSpec)
+		if !isImageBuildSpecStarlarkType {
+			return "", nil, startosis_errors.NewInterpretationError("Failed to cast '%v' to an image build spec object.", rawImageAttrValue)
+		}
+		imageBuildSpec, interpretationErr := imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
+		if interpretationErr != nil {
+			return "", nil, interpretationErr
+		}
+		imageName, interpretationErr = imageBuildSpecStarlarkType.GetImageName()
+		if interpretationErr != nil {
+			return "", nil, interpretationErr
+		}
+		return imageName, imageBuildSpec, nil
+	}
 }
