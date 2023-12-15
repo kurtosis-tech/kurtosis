@@ -258,7 +258,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceIng
 			serviceUUID,
 		)
 	}
-	labels[kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
+	labels[kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceIngressKurtosisResourceTypeKubernetesLabelValue
 
 	traefikIngressRouterEntrypointsAnnotationValue, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(traefikIngressRouterEntrypointsValue)
 	if err != nil {
