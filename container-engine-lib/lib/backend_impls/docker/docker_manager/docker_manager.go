@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types/registry"
-	"github.com/docker/docker/client/buildkit"
 	"github.com/docker/go-units"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
@@ -44,7 +43,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 
-	bkclient "github.com/moby/buildkit/client"
 	bksession "github.com/moby/buildkit/session"
 )
 
@@ -1317,28 +1315,26 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	// Before instructing docker client to execute an image build, we need to create a connection to buildkit
 	// buildkit is the daemon process that executes build workloads: https://docs.docker.com/build/architecture/#buildkit
 
-	// First, create a client to the buildkit daemon
-	buildkitClientOpts := buildkit.ClientOpts(manager.dockerClientNoTimeout)
-	buildkitClient, err := bkclient.New(ctx, "", buildkitClientOpts...)
+	// Setup session to buildkit (eg. https://github.com/hashicorp/waypoint/pull/1937)
+	uuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a buildkit client for building images in Docker.")
+		return stacktrace.Propagate(err, "An error occurred generating a UUID to give the Docker Buildkit session")
+	}
+	sessionName := fmt.Sprintf("kurtosis-%s", uuidStr)
+
+	// Generate a new session every time because per https://github.com/moby/buildkit/issues/1432 sharing sessions is an optimization
+	// Don't bother reusing sessions so that we don't hit bugs
+	buildkitSession, err := bksession.NewSession(ctx, sessionName, buildkitSessionSharedKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error")
+	}
+	dialSessionFunc := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
+		return manager.dockerClientNoTimeout.DialHijack(ctx, "/session", proto, meta)
 	}
 
-	// Then, create a long-running session between client and buildkit daemon to enable image building
-	buildkitSessionUuidStr, err := uuid_generator.GenerateUUIDString()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred generating a UUID for the Docker buildkit session")
-	}
-	buildkitSessionName := fmt.Sprintf("kurtosis-%s", buildkitSessionUuidStr)
-	// Generate a new session every time because, per https://github.com/moby/buildkit/issues/1432 ,
-	// sharing sessions is an optimization
-	// Don't reuse sessions to avoid hitting bugs
-	buildkitSession, err := bksession.NewSession(ctx, buildkitSessionName, buildkitSessionSharedKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new buildkit session for building images in Docker.")
-	}
-	go buildkitSession.Run(ctx, buildkitClient.Dialer()) // nolint
-	defer buildkitSession.Close()                        // nolint
+	// Activate the session
+	go buildkitSession.Run(ctx, dialSessionFunc) // nolint
+	defer buildkitSession.Close()                //nolint
 
 	imageBuildOpts := types.ImageBuildOptions{
 		Tags:           []string{imageName},
