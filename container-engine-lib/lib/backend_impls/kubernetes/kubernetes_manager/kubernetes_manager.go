@@ -1477,7 +1477,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 	return execOutputChan, finalExecResultChan, nil
 }
 
-func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, *apiv1.PersistentVolumeList, *rbacv1.ClusterRoleList, *rbacv1.ClusterRoleBindingList, error) {
+func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, *rbacv1.ClusterRoleList, *rbacv1.ClusterRoleBindingList, error) {
 
 	var (
 		wg                      = sync.WaitGroup{}
@@ -1485,7 +1485,6 @@ func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Con
 		allCallsDoneChan        = make(chan bool)
 		podsList                *apiv1.PodList
 		servicesList            *apiv1.ServiceList
-		persistentVolumesList   *apiv1.PersistentVolumeList
 		clusterRolesList        *rbacv1.ClusterRoleList
 		clusterRoleBindingsList *rbacv1.ClusterRoleBindingList
 	)
@@ -1505,16 +1504,6 @@ func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Con
 		defer wg.Done()
 		var err error
 		servicesList, err = manager.GetServicesByLabels(ctx, namespace, labels)
-		if err != nil {
-			errChan <- stacktrace.Propagate(err, "Expected to be able to get services with labels '%+v', instead a non-nil error was returned", labels)
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		var err error
-		persistentVolumesList, err = manager.GetPersistentVolumesByLabels(ctx, labels)
 		if err != nil {
 			errChan <- stacktrace.Propagate(err, "Expected to be able to get services with labels '%+v', instead a non-nil error was returned", labels)
 		}
@@ -1550,14 +1539,14 @@ func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Con
 		break
 	case err, isChanOpen := <-errChan:
 		if isChanOpen {
-			return nil, nil, nil, nil, nil, stacktrace.NewError("The error chan has been closed; this is a bug in Kurtosis")
+			return nil, nil, nil, nil, stacktrace.NewError("The error chan has been closed; this is a bug in Kurtosis")
 		}
 		if err != nil {
-			return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting pods and services for labels '%+v' in namespace '%s'", labels, namespace)
+			return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting pods and services for labels '%+v' in namespace '%s'", labels, namespace)
 		}
 	}
 
-	return podsList, servicesList, persistentVolumesList, clusterRolesList, clusterRoleBindingsList, nil
+	return podsList, servicesList, clusterRolesList, clusterRoleBindingsList, nil
 }
 
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {

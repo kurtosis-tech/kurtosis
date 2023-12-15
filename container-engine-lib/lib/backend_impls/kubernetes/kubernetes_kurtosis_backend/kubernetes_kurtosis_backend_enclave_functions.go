@@ -501,7 +501,7 @@ func (backend *KubernetesKurtosisBackend) createGetEnclaveResourcesOperation(
 		}
 
 		// Pods and Services
-		podsList, servicesList, persistentVolumesList, clusterRolesList, clusterRoleBindingsList, err := backend.kubernetesManager.GetAllEnclaveResourcesByLabels(
+		podsList, servicesList, clusterRolesList, clusterRoleBindingsList, err := backend.kubernetesManager.GetAllEnclaveResourcesByLabels(
 			ctx,
 			namespaceName,
 			enclaveWithIDMatchLabels,
@@ -515,9 +515,6 @@ func (backend *KubernetesKurtosisBackend) createGetEnclaveResourcesOperation(
 
 		var services []apiv1.Service
 		services = append(services, servicesList.Items...)
-
-		var persistentVolumes []apiv1.PersistentVolume
-		persistentVolumes = append(persistentVolumes, persistentVolumesList.Items...)
 
 		var clusterRoles []rbacv1.ClusterRole
 		clusterRoles = append(clusterRoles, clusterRolesList.Items...)
