@@ -4,6 +4,22 @@ info:
   title: Kurtosis RESTful API
   version: 0.1.0
 
+servers:
+  
+  - url: http://engine.localhost:{port}/api
+    description: Local environment 
+    variables:
+      port:
+        enum:
+          - '9779'
+        default: '9779'
+
+  - url: https://instance-{instance_uuid}.cloud.kurtosis.com/api
+    description: Production Cloud environment 
+    variables:
+      instance_uuid:
+        default: "000000000000"
+
 paths:
   # =========================================================================================================================
   # =========================================================================================================================
