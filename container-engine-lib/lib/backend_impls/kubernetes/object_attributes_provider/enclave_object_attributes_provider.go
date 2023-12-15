@@ -30,7 +30,7 @@ const (
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error)
 	ForApiContainer() KubernetesApiContainerObjectAttributesProvider
-	ForEnclaveDataDirVolume(enclaveNameSpace string) (KubernetesObjectAttributes, error)
+	ForEnclaveDataDirVolume() (KubernetesObjectAttributes, error)
 	ForUserServiceService(
 		uuid service.ServiceUUID,
 		id service.ServiceName,
@@ -202,10 +202,10 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataDirVolume(enclaveNameSpace string) (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataDirVolume() (KubernetesObjectAttributes, error) {
 	name, err := getCompositeKubernetesObjectName([]string{
-		enclaveNameSpace,
 		enclaveDataDirFragment,
+		provider.enclaveId,
 	})
 
 	if err != nil {

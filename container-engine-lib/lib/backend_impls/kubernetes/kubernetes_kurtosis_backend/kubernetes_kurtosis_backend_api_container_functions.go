@@ -413,7 +413,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting container ports from the API container's private port specs")
 	}
 
-	volumeAttrs, err := enclaveAttributesProvider.ForEnclaveDataDirVolume(enclaveNamespaceName)
+	volumeAttrs, err := enclaveAttributesProvider.ForEnclaveDataDirVolume()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the labels for enclave data dir volume")
 	}
