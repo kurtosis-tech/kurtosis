@@ -15,9 +15,9 @@ const (
 	engineKurtosisResourceTypeLabelValueStr = "kurtosis-engine"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	enclaveKurtosisResourceTypeLabelValueStr            = "enclave"
-	apiContainerKurtosisResourceTypeLabelValueStr       = "api-container"
-	userServiceKurtosisResourceTypeLabelValueStr        = "user-service"
+	enclaveKurtosisResourceTypeLabelValueStr      = "enclave"
+	apiContainerKurtosisResourceTypeLabelValueStr = "api-container"
+	userServiceKurtosisResourceTypeLabelValueStr  = "user-service"
 
 	enclaveDataVolumeTypeLabelValueStr             = "enclave-data"
 	filesArtifactsExpansionVolumeTypeLabelValueStr = "files-artifacts-expansion"
