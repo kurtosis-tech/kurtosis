@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -72,13 +71,6 @@ const (
 	listOptionsTimeoutSeconds      int64 = 10
 	contextDeadlineExceeded              = "context deadline exceeded"
 	expectedStatusMessageSliceSize       = 6
-
-	volumeHostPathRootDirectory = "/kurtosis-persistent-service-data"
-	// TODO: Maybe pipe this to Starlark to let users choose the size of their persistent directories
-	//  The difficulty is that Docker doesn't have such a feature, so we would need somehow to hack it
-	waitForPersistentVolumeBoundTimeout                  = 30 * time.Second
-	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
-	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -93,9 +85,8 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 }
 
 var (
-	volumeStorageClassName = "kurtosis-local-storage"
-	globalDeletePolicy     = metav1.DeletePropagationForeground
-	globalDeleteOptions    = metav1.DeleteOptions{
+	globalDeletePolicy  = metav1.DeletePropagationForeground
+	globalDeleteOptions = metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -146,14 +137,17 @@ type KubernetesManager struct {
 	kubernetesClientSet *kubernetes.Clientset
 	// Underlying restClient configuration
 	kuberneteRestConfig *rest.Config
+	// The storage class name as specified in the `kurtosis-config.yaml`
+	storageClass string
 }
 
 func int64Ptr(i int64) *int64 { return &i }
 
-func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config) *KubernetesManager {
+func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config, storageClass string) *KubernetesManager {
 	return &KubernetesManager{
 		kubernetesClientSet: kubernetesClientSet,
 		kuberneteRestConfig: kuberneteRestConfig,
+		storageClass:        storageClass,
 	}
 }
 
@@ -327,142 +321,6 @@ func (manager *KubernetesManager) GetIngressesByLabels(ctx context.Context, name
 
 // ---------------------------Volumes------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) CreatePersistentVolume(
-	ctx context.Context,
-	namespace string,
-	volumeName string,
-	labels map[string]string,
-	requiredSize int64,
-) (*apiv1.PersistentVolume, error) {
-	if requiredSize == 0 {
-		return nil, stacktrace.NewError("Cannot create volume '%v' of size 0; need size greater than 0", volumeName)
-	}
-
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-
-	// Check that there's only one node, otherwise using HostPath volumes will not work.
-	// TODO: Support Persistent Volumes on Kubernetes with multiple nodes. We have a few options:
-	//  - We make sure the pod restarting gets rescheduled on the same node, which would be quite easy but defeats a
-	//  little bit the power of using k8s to balance load among nodes
-	//  - We can use k8s' `local` persistent volumes. However, those do not support dynamic provisioning. They require
-	//  the directory to already exist on the host. There's some k8s extensions to have them support dynamic provisioning
-	//  but we can't assume all Kubernetes cluster users will use will have those extensions. At least for now
-	//  - If this use case is hit only in the cloud (which is quite likely since having a multi-nodes k8s cluster running
-	//  outside a cloud provider infra is quite rare), then maybe we should just use whatever the cloud provider has,
-	//  like EBS for AWS for example. Those support dynamic provisioning and everything via their respective CSI drivers
-	listOptions := buildListOptionsFromLabels(map[string]string{})
-	nodes, err := manager.kubernetesClientSet.CoreV1().Nodes().List(ctx, listOptions)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An unexpected error occurred retrieving the list of Kubernetes nodes.")
-	} else if len(nodes.Items) > 1 {
-		return nil, stacktrace.NewError("Using persistent volumes on Kubernetes with multiple nodes is currently " +
-			"not supported. Reach out to Kurtosis if you need this feature.")
-	}
-
-	hostPathPath := path.Join(volumeHostPathRootDirectory, namespace, volumeName)
-	hostPathType := apiv1.HostPathDirectoryOrCreate
-	persistentVolumeDefinition := apiv1.PersistentVolume{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            volumeName,
-			GenerateName:    "",
-			Namespace:       "",
-			SelfLink:        "",
-			UID:             "",
-			ResourceVersion: "",
-			Generation:      0,
-			CreationTimestamp: metav1.Time{
-				Time: time.Time{},
-			},
-			DeletionTimestamp:          nil,
-			DeletionGracePeriodSeconds: nil,
-			Labels:                     labels,
-			Annotations:                nil,
-			OwnerReferences:            nil,
-			Finalizers:                 nil,
-			ManagedFields:              nil,
-		},
-		Spec: apiv1.PersistentVolumeSpec{
-			Capacity: apiv1.ResourceList{
-				apiv1.ResourceStorage: *resource.NewQuantity(requiredSize, resource.BinarySI),
-			},
-			PersistentVolumeSource: apiv1.PersistentVolumeSource{
-				GCEPersistentDisk:    nil,
-				AWSElasticBlockStore: nil,
-				HostPath: &apiv1.HostPathVolumeSource{
-					Path: hostPathPath,
-					Type: &hostPathType,
-				},
-				Glusterfs:            nil,
-				NFS:                  nil,
-				RBD:                  nil,
-				ISCSI:                nil,
-				Cinder:               nil,
-				CephFS:               nil,
-				FC:                   nil,
-				Flocker:              nil,
-				FlexVolume:           nil,
-				AzureFile:            nil,
-				VsphereVolume:        nil,
-				Quobyte:              nil,
-				AzureDisk:            nil,
-				PhotonPersistentDisk: nil,
-				PortworxVolume:       nil,
-				ScaleIO:              nil,
-				Local:                nil,
-				StorageOS:            nil,
-				CSI:                  nil,
-			},
-			AccessModes: []apiv1.PersistentVolumeAccessMode{
-				apiv1.ReadWriteOnce, // ReadWriteOncePod would be better, but it's a fairly recent feature
-			},
-			ClaimRef:                      nil,
-			PersistentVolumeReclaimPolicy: "",
-			StorageClassName:              volumeStorageClassName,
-			MountOptions:                  nil,
-			VolumeMode:                    nil,
-			NodeAffinity:                  nil,
-		},
-		Status: apiv1.PersistentVolumeStatus{
-			Phase:   "",
-			Message: "",
-			Reason:  "",
-		},
-	}
-
-	volume, err := volumesClient.Create(ctx, &persistentVolumeDefinition, globalCreateOptions)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create volume '%s'", volumeName)
-	}
-	return volume, err
-}
-
-func (manager *KubernetesManager) RemovePersistentVolume(
-	ctx context.Context,
-	volumeName string,
-) error {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-	if err := volumesClient.Delete(ctx, volumeName, globalDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing the persistent volume '%s'", volumeName)
-	}
-	return nil
-}
-
-func (manager *KubernetesManager) GetPersistentVolume(
-	ctx context.Context,
-	volumeName string,
-) (*apiv1.PersistentVolume, error) {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-	volume, err := volumesClient.Get(ctx, volumeName, globalGetOptions)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the persistent volume '%s'", volumeName)
-	}
-	return volume, nil
-}
-
 func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Context, persistentVolumeLabels map[string]string) (*apiv1.PersistentVolumeList, error) {
 	persistentVolumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
 
@@ -540,8 +398,8 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 				},
 				Claims: nil,
 			},
-			VolumeName:       volumeClaimName, // volume and their respective claims have the same name right now
-			StorageClassName: &volumeStorageClassName,
+			VolumeName:       "", // we use dynamic provisioning this should happen automagically
+			StorageClassName: &manager.storageClass,
 			VolumeMode:       nil,
 			DataSource:       nil,
 			DataSourceRef:    nil,
@@ -561,13 +419,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 		return nil, stacktrace.Propagate(err, "Failed to create volume claim '%s'", volumeClaimName)
 	}
 
-	// Wait for the PVC to become bound and return that object (which will have VolumeName filled out)
-	boundVolumeClaim, err := manager.waitForPersistentVolumeClaimBinding(ctx, namespace, volumeClaim.Name)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for persistent volume claim '%v' get bound in namespace '%v'",
-			volumeClaim.GetName(), volumeClaim.GetNamespace())
-	}
-	return boundVolumeClaim, err
+	return volumeClaim, err
 }
 
 func (manager *KubernetesManager) RemovePersistentVolumeClaim(
@@ -1625,7 +1477,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 	return execOutputChan, finalExecResultChan, nil
 }
 
-func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, *apiv1.PersistentVolumeList, *rbacv1.ClusterRoleList, *rbacv1.ClusterRoleBindingList, error) {
+func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, *rbacv1.ClusterRoleList, *rbacv1.ClusterRoleBindingList, error) {
 
 	var (
 		wg                      = sync.WaitGroup{}
@@ -1633,7 +1485,6 @@ func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Con
 		allCallsDoneChan        = make(chan bool)
 		podsList                *apiv1.PodList
 		servicesList            *apiv1.ServiceList
-		persistentVolumesList   *apiv1.PersistentVolumeList
 		clusterRolesList        *rbacv1.ClusterRoleList
 		clusterRoleBindingsList *rbacv1.ClusterRoleBindingList
 	)
@@ -1653,16 +1504,6 @@ func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Con
 		defer wg.Done()
 		var err error
 		servicesList, err = manager.GetServicesByLabels(ctx, namespace, labels)
-		if err != nil {
-			errChan <- stacktrace.Propagate(err, "Expected to be able to get services with labels '%+v', instead a non-nil error was returned", labels)
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		var err error
-		persistentVolumesList, err = manager.GetPersistentVolumesByLabels(ctx, labels)
 		if err != nil {
 			errChan <- stacktrace.Propagate(err, "Expected to be able to get services with labels '%+v', instead a non-nil error was returned", labels)
 		}
@@ -1698,14 +1539,14 @@ func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Con
 		break
 	case err, isChanOpen := <-errChan:
 		if isChanOpen {
-			return nil, nil, nil, nil, nil, stacktrace.NewError("The error chan has been closed; this is a bug in Kurtosis")
+			return nil, nil, nil, nil, stacktrace.NewError("The error chan has been closed; this is a bug in Kurtosis")
 		}
 		if err != nil {
-			return nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting pods and services for labels '%+v' in namespace '%s'", labels, namespace)
+			return nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting pods and services for labels '%+v' in namespace '%s'", labels, namespace)
 		}
 	}
 
-	return podsList, servicesList, persistentVolumesList, clusterRolesList, clusterRoleBindingsList, nil
+	return podsList, servicesList, clusterRolesList, clusterRoleBindingsList, nil
 }
 
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
@@ -1980,51 +1821,6 @@ func transformTypedAnnotationsToStrs(input map[*kubernetes_annotation_key.Kubern
 	return result
 }
 */
-
-func (manager *KubernetesManager) waitForPersistentVolumeClaimBinding(
-	ctx context.Context,
-	namespaceName string,
-	persistentVolumeClaimName string,
-) (*apiv1.PersistentVolumeClaim, error) {
-	deadline := time.Now().Add(waitForPersistentVolumeBoundTimeout)
-	time.Sleep(time.Duration(waitForPersistentVolumeBoundInitialDelayMilliSeconds) * time.Millisecond)
-	var result *apiv1.PersistentVolumeClaim
-	for time.Now().Before(deadline) {
-		claim, err := manager.GetPersistentVolumeClaim(ctx, namespaceName, persistentVolumeClaimName)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting persistent volume claim '%v' in namespace '%v", persistentVolumeClaimName, namespaceName)
-		}
-		result = claim
-		claimStatus := claim.Status
-		claimPhase := claimStatus.Phase
-
-		switch claimPhase {
-		//Success phase, the Persistent Volume got bound
-		case apiv1.ClaimBound:
-			return result, nil
-		//Lost the Persistent Volume phase, unrecoverable state
-		case apiv1.ClaimLost:
-			return nil, stacktrace.NewError(
-				"The persistent volume claim '%v' ended up in unrecoverable state '%v'",
-				claim.GetName(),
-				claimPhase,
-			)
-		case apiv1.ClaimPending:
-			// not impl - skipping
-		}
-
-		time.Sleep(time.Duration(waitForPersistentVolumeBoundRetriesDelayMilliSeconds) * time.Millisecond)
-	}
-
-	return nil, stacktrace.NewError(
-		"Persistent volume claim '%v' in namespace '%v' did not become bound despite waiting for %v with %v "+
-			"between polls",
-		persistentVolumeClaimName,
-		namespaceName,
-		waitForPersistentVolumeBoundTimeout,
-		waitForPersistentVolumeBoundRetriesDelayMilliSeconds,
-	)
-}
 
 func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, namespaceName string, podName string) error {
 	// Wait for the pod to start running

@@ -41,7 +41,7 @@ III. Add your cluster information to `kurtosis-config.yml`
 --------------------------------
 
 1. Open the file located at `"$(kurtosis config path)"`. This should look like `/Users/<YOUR_USER>/Library/Application Support/kurtosis/kurtosis-config.yml` on MacOS.
-2. Paste the following contents, changing `NAME-OF-YOUR-CLUSTER` to the cluster you created and save:
+2. Paste the following contents, changing `NAME-OF-YOUR-CLUSTER` and `STORAGE-CLASS-TO-USE` as per the cluster you created and save:
 ```yaml
 config-version: 2
 should-send-metrics: true
@@ -58,9 +58,14 @@ kurtosis-clusters:
     type: "kubernetes"
     config:
       kubernetes-cluster-name: "NAME-OF-YOUR-CLUSTER"
-      storage-class: "standard"
+      storage-class: "STORAGE-CLASS-TO-USE"
       enclave-size-in-megabytes: 10
 ```
+
+:::tip Storage Class
+The Storage Class specified in the configuration above will be used for spinning up persistent volumes. Make sure you have the right
+value in case you are using persistent directories.
+:::
 
 IV. Configure Kurtosis
 --------------------------------

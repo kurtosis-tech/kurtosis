@@ -146,7 +146,7 @@ func runMain() error {
 		}
 	case args.KurtosisBackendType_Kubernetes:
 		// TODO Use this value when we have fields for the API container
-		_, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
+		clusterConfigK8s, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
 			return stacktrace.NewError(
 				"Failed to cast untyped cluster configuration object '%+v' to the appropriate type, even though "+
@@ -155,7 +155,7 @@ func runMain() error {
 				args.KurtosisBackendType_Kubernetes.String(),
 			)
 		}
-		kurtosisBackend, err = kubernetes_kurtosis_backend.GetApiContainerBackend(ctx)
+		kurtosisBackend, err = kubernetes_kurtosis_backend.GetApiContainerBackend(ctx, clusterConfigK8s.StorageClass)
 		if err != nil {
 			return stacktrace.Propagate(
 				err,

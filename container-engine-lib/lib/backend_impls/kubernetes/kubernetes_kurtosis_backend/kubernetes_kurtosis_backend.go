@@ -67,8 +67,9 @@ func NewAPIContainerKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	ownEnclaveUuid enclave.EnclaveUUID,
 	ownNamespaceName string,
+	storageClassName string,
 ) *KubernetesKurtosisBackend {
-	modeArgs := shared_helpers.NewApiContainerModeArgs(ownEnclaveUuid, ownNamespaceName)
+	modeArgs := shared_helpers.NewApiContainerModeArgs(ownEnclaveUuid, ownNamespaceName, storageClassName)
 	return newKubernetesKurtosisBackend(
 		kubernetesManager,
 		nil,

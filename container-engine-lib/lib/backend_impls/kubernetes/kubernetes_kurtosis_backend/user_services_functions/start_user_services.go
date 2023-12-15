@@ -372,14 +372,9 @@ func createStartServiceOperation(
 			}
 			for _, volumeAndClaim := range createVolumesWithClaims {
 				volumeClaimName := volumeAndClaim.VolumeClaimName
-				volumeName := volumeAndClaim.VolumeName
 				if err := kubernetesManager.RemovePersistentVolumeClaim(ctx, namespaceName, volumeClaimName); err != nil {
 					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the persistent volume claim we created but doing so threw an error:\n%v", err)
 					logrus.Errorf("ACTION REQUIRED: You'll need to remove persistent volume claim '%v' in '%v' manually!!!", volumeClaimName, namespaceName)
-				}
-				if err := kubernetesManager.RemovePersistentVolume(ctx, volumeAndClaim.VolumeName); err != nil {
-					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the persistent volume we created but doing so threw an error:\n%v", err)
-					logrus.Errorf("ACTION REQUIRED: You'll need to remove persistent volume '%v' manually!!!", volumeName)
 				}
 			}
 		}()

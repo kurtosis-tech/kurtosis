@@ -59,7 +59,7 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
               type: kubernetes
               config:
                 kubernetes-cluster-name: k3d-k3s-default
-                storage-class: standard
+                storage-class: local-path
                 enclave-size-in-megabytes: 2048
           EOF
     # Set the K3S cluster with some previous steps to force this cluster type in the cluster-setting file. This save us to start the engine with the cluster set command
