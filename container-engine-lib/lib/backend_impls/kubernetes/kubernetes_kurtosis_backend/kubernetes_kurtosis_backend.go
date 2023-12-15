@@ -113,25 +113,6 @@ func NewCLIModeKubernetesKurtosisBackend(
 	)
 }
 
-func NewKubernetesKurtosisBackend(
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple
-//  backends per consumer, e.g. APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc.
-//  This can only happen once the CLI no longer uses the same functionality as API container, engine, etc. though
-	cliModeArgs *shared_helpers.CliModeArgs,
-	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
-	apiContainerModeargs *shared_helpers.ApiContainerModeArgs,
-) *KubernetesKurtosisBackend {
-	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-	return &KubernetesKurtosisBackend{
-		kubernetesManager:    kubernetesManager,
-		objAttrsProvider:     objAttrsProvider,
-		cliModeArgs:          cliModeArgs,
-		engineServerModeArgs: engineServerModeArgs,
-		apiContainerModeArgs: apiContainerModeargs,
-	}
-}
-
 func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	logrus.Warnf("FetchImage isn't implemented for Kubernetes yet")
 	return false, "", nil

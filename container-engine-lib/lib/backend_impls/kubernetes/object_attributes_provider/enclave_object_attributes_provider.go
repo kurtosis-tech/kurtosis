@@ -234,8 +234,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataDir
 	}
 
 	return objectAttributes, nil
-
-	return nil, nil
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(serviceUUID service.ServiceUUID, persistentKey service_directory.DirectoryPersistentKey) (KubernetesObjectAttributes, error) {
