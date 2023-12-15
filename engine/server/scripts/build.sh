@@ -15,7 +15,13 @@ BUILD_DIRNAME="build"
 
 DEFAULT_SKIP_DOCKER_IMAGE_BUILDING=false
 
-DEFAULT_ARCHITECTURE_TO_BUILD="amd64"
+DEFAULT_ARCHITECTURE_TO_BUILD="unknown"
+
+if [ "$uname_arch" == "x86_64" ] || [ "$uname_arch" == "amd64" ]; then
+    DEFAULT_ARCHITECTURE_TO_BUILD="amd64"
+elif [ "$uname_arch" == "aarch64" ] || [ "$uname_arch" == "arm64" ]; then
+    DEFAULT_ARCHITECTURE_TO_BUILD="arm64"
+fi
 
 MAIN_DIRNAME="engine"
 MAIN_GO_FILEPATH="${engine_root_dirpath}/${MAIN_DIRNAME}/main.go"
