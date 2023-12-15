@@ -30,8 +30,10 @@ const (
 	KurtosisOnBoardCalendlyUrl        = "https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding"
 	FeedbackEmail                     = "feedback@" + OldDomain
 	FeedbackEmailLink                 = "mailto:" + FeedbackEmail
-	KurtosisTechTwitterProfileLink    = "https://twitter.com/KurtosisTech"
-	KurtosisCloudLink                 = "https://cloud." + Domain
+	// TODO: Address issue: https://github.com/kurtosis-tech/kurtosis/issues/1968 and add this back to urlsToValidateInTest
+	// This link frequently returns 400 even though it works causing CI tests to flake
+	KurtosisTechTwitterProfileLink = "https://twitter.com/KurtosisTech"
+	KurtosisCloudLink              = "https://cloud." + Domain
 
 	//    If you add new URLs above, make sure to add them to the urlsToValidateInTest below!!!
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
@@ -56,6 +58,5 @@ var urlsToValidateInTest = []string{
 	KurtosisDiscordUrl,
 	KurtosisOnBoardCalendlyUrl,
 	HowImportWorksLink,
-	KurtosisTechTwitterProfileLink,
 	KurtosisCloudLink,
 }
