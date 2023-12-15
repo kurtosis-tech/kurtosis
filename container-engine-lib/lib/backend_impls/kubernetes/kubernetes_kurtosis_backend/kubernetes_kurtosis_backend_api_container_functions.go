@@ -448,11 +448,8 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerInitContainers := []apiv1.Container{}
 
-	apiContainerRestartPolicy := apiv1.RestartPolicyNever
-	if backend.productionMode {
-		// This mimics the Docker behavior where APIC and backend services have the RestartOnFailure Policy
-		apiContainerRestartPolicy = apiv1.RestartPolicyOnFailure
-	}
+	// Data is always persistent we can always restart like Docker
+	apiContainerRestartPolicy := apiv1.RestartPolicyOnFailure
 
 	// Create pods with api container containers and volumes in Kubernetes
 	apiContainerPod, err := backend.kubernetesManager.CreatePod(
