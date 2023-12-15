@@ -14,6 +14,8 @@ import (
 
 	exec_result "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 
+	image_build_spec "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+
 	image_download_mode "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	io "io"
@@ -42,6 +44,50 @@ type MockKurtosisBackend_Expecter struct {
 
 func (_m *MockKurtosisBackend) EXPECT() *MockKurtosisBackend_Expecter {
 	return &MockKurtosisBackend_Expecter{mock: &_m.Mock}
+}
+
+// BuildImage provides a mock function with given fields: ctx, imageName, imageBuildSpec
+func (_m *MockKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+	ret := _m.Called(ctx, imageName, imageBuildSpec)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *image_build_spec.ImageBuildSpec) error); ok {
+		r0 = rf(ctx, imageName, imageBuildSpec)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockKurtosisBackend_BuildImage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BuildImage'
+type MockKurtosisBackend_BuildImage_Call struct {
+	*mock.Call
+}
+
+// BuildImage is a helper method to define mock.On call
+//   - ctx context.Context
+//   - imageName string
+//   - imageBuildSpec *image_build_spec.ImageBuildSpec
+func (_e *MockKurtosisBackend_Expecter) BuildImage(ctx interface{}, imageName interface{}, imageBuildSpec interface{}) *MockKurtosisBackend_BuildImage_Call {
+	return &MockKurtosisBackend_BuildImage_Call{Call: _e.mock.On("BuildImage", ctx, imageName, imageBuildSpec)}
+}
+
+func (_c *MockKurtosisBackend_BuildImage_Call) Run(run func(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec)) *MockKurtosisBackend_BuildImage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(*image_build_spec.ImageBuildSpec))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_BuildImage_Call) Return(_a0 error) *MockKurtosisBackend_BuildImage_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_BuildImage_Call) RunAndReturn(run func(context.Context, string, *image_build_spec.ImageBuildSpec) error) *MockKurtosisBackend_BuildImage_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // CopyFilesFromUserService provides a mock function with given fields: ctx, enclaveUuid, serviceUuid, srcPathOnService, output
