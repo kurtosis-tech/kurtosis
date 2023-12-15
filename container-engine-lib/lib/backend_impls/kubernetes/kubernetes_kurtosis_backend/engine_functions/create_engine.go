@@ -434,6 +434,8 @@ func createEnginePod(
 		engineContainers,
 		engineVolumes,
 		serviceAccountName,
+		// Engine doesn't auto restart
+		apiv1.RestartPolicyNever,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)

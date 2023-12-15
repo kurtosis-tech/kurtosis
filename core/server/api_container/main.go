@@ -155,7 +155,8 @@ func runMain() error {
 				args.KurtosisBackendType_Kubernetes.String(),
 			)
 		}
-		kurtosisBackend, err = kubernetes_kurtosis_backend.GetApiContainerBackend(ctx, clusterConfigK8s.StorageClass)
+		// TODO wrap up APIContainerModeArgs if the parameter list keeps on going up (currently just IsProductionEnclave)
+		kurtosisBackend, err = kubernetes_kurtosis_backend.GetApiContainerBackend(ctx, clusterConfigK8s.StorageClass, serverArgs.IsProductionEnclave)
 		if err != nil {
 			return stacktrace.Propagate(
 				err,
