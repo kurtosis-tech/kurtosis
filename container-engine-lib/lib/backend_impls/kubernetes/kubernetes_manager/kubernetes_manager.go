@@ -321,29 +321,6 @@ func (manager *KubernetesManager) GetIngressesByLabels(ctx context.Context, name
 
 // ---------------------------Volumes------------------------------------------------------------------------------
 
-func (manager *KubernetesManager) RemovePersistentVolume(
-	ctx context.Context,
-	volumeName string,
-) error {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-	if err := volumesClient.Delete(ctx, volumeName, globalDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing the persistent volume '%s'", volumeName)
-	}
-	return nil
-}
-
-func (manager *KubernetesManager) GetPersistentVolume(
-	ctx context.Context,
-	volumeName string,
-) (*apiv1.PersistentVolume, error) {
-	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
-	volume, err := volumesClient.Get(ctx, volumeName, globalGetOptions)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the persistent volume '%s'", volumeName)
-	}
-	return volume, nil
-}
-
 func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Context, persistentVolumeLabels map[string]string) (*apiv1.PersistentVolumeList, error) {
 	persistentVolumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
 
