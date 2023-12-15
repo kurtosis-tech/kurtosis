@@ -151,7 +151,7 @@ func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvi
 		}
 	}
 
-	validatorEnvironment.AppendRequiredContainerImage(imageName)
+	validatorEnvironment.AppendRequiredImagePull(imageName)
 	return nil
 
 }

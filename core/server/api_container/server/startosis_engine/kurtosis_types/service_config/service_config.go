@@ -278,7 +278,6 @@ func (config *ServiceConfig) ToKurtosisType(
 ) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
 	var ok bool
 
-	// TODO: figure out the best way to handle naming an image if there's an image build spec
 	var imageName string
 	var imageBuildSpec *image_build_spec.ImageBuildSpec
 	rawImageAttrValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](config.KurtosisValueTypeDefault, ImageAttr)
@@ -300,6 +299,8 @@ func (config *ServiceConfig) ToKurtosisType(
 		if interpretationErr != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred attempting to convert the image build spec to Kurtosis type: '%v'", imageBuildSpecStarlarkType)
 		}
+		// TODO: figure out the best way to handle naming an image if there's an image build spec
+		imageName = "placeholder"
 	}
 
 	privatePorts := map[string]*port_spec.PortSpec{}
