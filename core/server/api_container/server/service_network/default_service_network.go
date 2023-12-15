@@ -463,9 +463,6 @@ func (network *DefaultServiceNetwork) StartServices(
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 		}
-		if serviceRegistration.GetStatus() == service.ServiceStatus_Started {
-			return nil, nil, stacktrace.NewError("Service '%v' is already started", serviceRegistration.GetName())
-		}
 		serviceRegistrations[serviceRegistration.GetUUID()] = serviceRegistration
 	}
 
