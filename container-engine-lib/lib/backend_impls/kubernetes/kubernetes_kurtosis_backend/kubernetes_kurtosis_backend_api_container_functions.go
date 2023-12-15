@@ -418,30 +418,34 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the labels for enclave data dir volume")
 	}
 
-	volumeLabelsStrs := map[string]string{}
-	for key, value := range volumeAttrs.GetLabels() {
-		volumeLabelsStrs[key.GetString()] = value.GetString()
-	}
-	if _, err = backend.kubernetesManager.CreatePersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveDataDirVolumeName, volumeLabelsStrs, enclaveDataDirVolumeSize); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume claim for enclave data dir volume for enclave '%s'", enclaveDataDirVolumeName)
-	}
-	shouldDeleteVolumeClaim := true
+	shouldDeleteVolumeClaim := false
+	if backend.productionMode {
 
-	defer func() {
-		if !shouldDeleteVolumeClaim {
-			return
+		volumeLabelsStrs := map[string]string{}
+		for key, value := range volumeAttrs.GetLabels() {
+			volumeLabelsStrs[key.GetString()] = value.GetString()
 		}
-		if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), enclaveNamespaceName, enclaveDataDirVolumeName); err != nil {
-			logrus.Warnf(
-				"Creating pod didn't finish successfully - we tried removing the PVC %v but failed with error %v",
-				enclaveDataDirVolumeName,
-				err,
-			)
-			logrus.Warnf("You'll need to clean up volume claim '%v' manually!", enclaveDataDirVolumeName)
+		if _, err = backend.kubernetesManager.CreatePersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveDataDirVolumeName, volumeLabelsStrs, enclaveDataDirVolumeSize); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume claim for enclave data dir volume for enclave '%s'", enclaveDataDirVolumeName)
 		}
-	}()
+		shouldDeleteVolumeClaim = true
 
-	apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataVolumeDirpath)
+		defer func() {
+			if !shouldDeleteVolumeClaim {
+				return
+			}
+			if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), enclaveNamespaceName, enclaveDataDirVolumeName); err != nil {
+				logrus.Warnf(
+					"Creating pod didn't finish successfully - we tried removing the PVC %v but failed with error %v",
+					enclaveDataDirVolumeName,
+					err,
+				)
+				logrus.Warnf("You'll need to clean up volume claim '%v' manually!", enclaveDataDirVolumeName)
+			}
+		}()
+	}
+
+	apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataVolumeDirpath, backend.productionMode)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers and volumes")
 	}
@@ -1030,6 +1034,7 @@ func getApiContainerContainersAndVolumes(
 	containerPorts []apiv1.ContainerPort,
 	envVars map[string]string,
 	enclaveDataVolumeDirpath string,
+	productionMode bool,
 ) (
 	resultContainers []apiv1.Container,
 	resultVolumes []apiv1.Volume,
@@ -1118,6 +1123,15 @@ func getApiContainerContainersAndVolumes(
 				Ephemeral:            nil,
 			},
 		},
+	}
+
+	// we go with an empty dir if we are not in production mode for speed
+	if !productionMode {
+		volumes[0].PersistentVolumeClaim = nil
+		volumes[0].EmptyDir = &apiv1.EmptyDirVolumeSource{
+			Medium:    "",
+			SizeLimit: nil,
+		}
 	}
 
 	return containers, volumes, nil
