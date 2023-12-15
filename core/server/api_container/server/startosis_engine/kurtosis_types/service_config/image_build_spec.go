@@ -8,7 +8,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
-	"path"
+	"path/filepath"
+	"strings"
 )
 
 const (
@@ -130,7 +131,7 @@ func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string) (*image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
-	buildContextDirPath, interpretationErr := imageBuildSpec.getBuildContextDirPathFromBuildContextLocator(
+	buildContextDirPathOnDisk, containerImageFilePathOnDisk, interpretationErr := imageBuildSpec.getOnDiskImageBuildSpecPaths(
 		packageId,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageContentProvider,
@@ -139,39 +140,40 @@ func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
 		return nil, interpretationErr
 	}
 
-	// Assume, that container image sits at the same level as the build context directory
-	containerImageFilePath := path.Join(buildContextDirPath, defaultContainerImageFileName)
-
 	targetStageStr, interpretationErr := imageBuildSpec.GetTargetStage()
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	return image_build_spec.NewImageBuildSpec(buildContextDirPath, containerImageFilePath, targetStageStr), nil
+	return image_build_spec.NewImageBuildSpec(buildContextDirPathOnDisk, containerImageFilePathOnDisk, targetStageStr), nil
 }
 
-func (imageBuildSpec *ImageBuildSpec) getBuildContextDirPathFromBuildContextLocator(
+func (imageBuildSpec *ImageBuildSpec) getOnDiskImageBuildSpecPaths(
 	packageId string,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError) {
+	packageReplaceOptions map[string]string) (string, string, *startosis_errors.InterpretationError) {
 	// get locator of context directory (relative or absolute)
 	buildContextLocator, interpretationErr := imageBuildSpec.GetBuildContextLocator()
 	if interpretationErr != nil {
-		return "", interpretationErr
+		return "", "", interpretationErr
 	}
 
 	// get absolute locator of context directory
 	contextDirAbsoluteLocator, interpretationErr := packageContentProvider.GetAbsoluteLocator(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, buildContextLocator, packageReplaceOptions)
 	if interpretationErr != nil {
-		return "", interpretationErr
+		return "", "", interpretationErr
 	}
 
-	// based on absolute directory, get the path to context directory on APIC
-	contextDirPathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsoluteFilePath(contextDirAbsoluteLocator)
+	// get on disk directory path of Dockerfile
+	containerImageAbsoluteLocator := strings.Join([]string{contextDirAbsoluteLocator, defaultContainerImageFileName}, "/")
+	containerImagePathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsoluteFilePath(containerImageAbsoluteLocator)
 	if interpretationErr != nil {
-		return "", interpretationErr
+		return "", "", interpretationErr
 	}
 
-	return contextDirPathOnDisk, nil
+	// Assume, that container image sits at the same level as context directory to get context dir path on disk
+	contextDirPathOnDisk := filepath.Dir(containerImagePathOnDisk)
+
+	return contextDirPathOnDisk, containerImagePathOnDisk, nil
 }
