@@ -119,6 +119,7 @@ func StartRegisteredUserServices(
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	restartPolicy apiv1.RestartPolicy,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -178,7 +179,8 @@ func StartRegisteredUserServices(
 		enclaveUuid,
 		serviceRegisteredThatCanBeStarted,
 		existingObjectsAndResources,
-		kubernetesManager)
+		kubernetesManager,
+		restartPolicy)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
@@ -240,6 +242,7 @@ func runStartServiceOperationsInParallel(
 	services map[service.ServiceUUID]*service.ServiceConfig,
 	servicesObjectsAndResources map[service.ServiceUUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	restartPolicy apiv1.RestartPolicy,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -253,7 +256,8 @@ func runStartServiceOperationsInParallel(
 			config,
 			servicesObjectsAndResources,
 			enclaveUUID,
-			kubernetesManager)
+			kubernetesManager,
+			restartPolicy)
 	}
 
 	successfulServiceObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
@@ -286,7 +290,8 @@ func createStartServiceOperation(
 	serviceConfig *service.ServiceConfig,
 	servicesObjectsAndResources map[service.ServiceUUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	enclaveUuid enclave.EnclaveUUID,
-	kubernetesManager *kubernetes_manager.KubernetesManager) operation_parallelizer.Operation {
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	restartPolicy apiv1.RestartPolicy) operation_parallelizer.Operation {
 
 	return func() (interface{}, error) {
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
@@ -366,14 +371,9 @@ func createStartServiceOperation(
 			}
 			for _, volumeAndClaim := range createVolumesWithClaims {
 				volumeClaimName := volumeAndClaim.VolumeClaimName
-				volumeName := volumeAndClaim.VolumeName
 				if err := kubernetesManager.RemovePersistentVolumeClaim(ctx, namespaceName, volumeClaimName); err != nil {
 					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the persistent volume claim we created but doing so threw an error:\n%v", err)
 					logrus.Errorf("ACTION REQUIRED: You'll need to remove persistent volume claim '%v' in '%v' manually!!!", volumeClaimName, namespaceName)
-				}
-				if err := kubernetesManager.RemovePersistentVolume(ctx, volumeAndClaim.VolumeName); err != nil {
-					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the persistent volume we created but doing so threw an error:\n%v", err)
-					logrus.Errorf("ACTION REQUIRED: You'll need to remove persistent volume '%v' manually!!!", volumeName)
 				}
 			}
 		}()
@@ -412,6 +412,7 @@ func createStartServiceOperation(
 			podContainers,
 			podVolumes,
 			userServiceServiceAccountName,
+			restartPolicy,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
@@ -432,6 +433,7 @@ func createStartServiceOperation(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new ingress for service with UUID '%v'", serviceUuid)
 		}
+		ingressLabelsStrs := shared_helpers.GetStringMapFromLabelMap(ingressAttributes.GetLabels())
 		ingressAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(ingressAttributes.GetAnnotations())
 
 		ingressRules, err := getUserServiceIngressRules(serviceRegistrationObj, privatePorts)
@@ -446,6 +448,7 @@ func createStartServiceOperation(
 				ctx,
 				namespaceName,
 				ingressName,
+				ingressLabelsStrs,
 				ingressAnnotationsStrs,
 				ingressRules,
 			)
