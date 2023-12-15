@@ -101,8 +101,8 @@ func (imageBuildSpec *ImageBuildSpec) GetTargetStage() (string, *startosis_error
 }
 
 func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
-	packageId string,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string) (*image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
 	buildContextDirPath, interpretationErr := imageBuildSpec.getBuildContextDirPathFromBuildContextLocator(

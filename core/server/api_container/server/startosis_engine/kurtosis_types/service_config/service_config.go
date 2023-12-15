@@ -271,8 +271,8 @@ func convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap map[strin
 
 func (config *ServiceConfig) ToKurtosisType(
 	serviceNetwork service_network.ServiceNetwork,
-	packageId string,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
 ) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
@@ -296,7 +296,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		if !isImageBuildSpecStarlarkType {
 			return nil, startosis_errors.NewInterpretationError("Failed to cast '%v' to an image build spec object.", rawImageAttrValue)
 		}
-		imageBuildSpec, interpretationErr = imageBuildSpecStarlarkType.ToKurtosisType(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageContentProvider, packageReplaceOptions)
+		imageBuildSpec, interpretationErr = imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred attempting to convert the image build spec to Kurtosis type: '%v'", imageBuildSpecStarlarkType)
 		}

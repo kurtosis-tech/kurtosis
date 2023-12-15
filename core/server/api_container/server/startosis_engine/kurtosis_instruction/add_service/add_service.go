@@ -53,6 +53,7 @@ func NewAddService(
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
+						// TODO: figure this out
 						if _, _, err := validateAndConvertConfigAndReadyCondition(
 							serviceNetwork,
 							value,
@@ -119,8 +120,8 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(
 		builtin.serviceNetwork,
 		serviceConfig,
-		builtin.packageId,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		builtin.packageId,
 		builtin.packageContentProvider,
 		builtin.packageReplaceOptions,
 	)
@@ -238,8 +239,8 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 func validateAndConvertConfigAndReadyCondition(
 	serviceNetwork service_network.ServiceNetwork,
 	rawConfig starlark.Value,
-	packageId string,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
 ) (*service.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
@@ -249,8 +250,8 @@ func validateAndConvertConfigAndReadyCondition(
 	}
 	apiServiceConfig, interpretationErr := config.ToKurtosisType(
 		serviceNetwork,
-		packageId,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		packageId,
 		packageContentProvider,
 		packageReplaceOptions)
 	if interpretationErr != nil {

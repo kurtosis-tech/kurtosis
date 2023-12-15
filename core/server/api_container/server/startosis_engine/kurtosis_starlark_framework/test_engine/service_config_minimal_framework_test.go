@@ -7,19 +7,22 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 type serviceConfigMinimalTestCase struct {
 	*testing.T
-	serviceNetwork *service_network.MockServiceNetwork
+	serviceNetwork         *service_network.MockServiceNetwork
+	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
 }
 
 func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigMinimal() {
 	suite.run(&serviceConfigMinimalTestCase{
-		T:              suite.T(),
-		serviceNetwork: suite.serviceNetwork,
+		T:                      suite.T(),
+		serviceNetwork:         suite.serviceNetwork,
+		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
@@ -33,7 +36,12 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
-	serviceConfig, interpretationErr := serviceConfigStarlark.ToKurtosisType(t.serviceNetwork)
+	serviceConfig, interpretationErr := serviceConfigStarlark.ToKurtosisType(
+		t.serviceNetwork,
+		"",
+		"",
+		t.packageContentProvider,
+		map[string]string{})
 	require.Nil(t, interpretationErr)
 
 	expectedServiceConfig, err := service.CreateServiceConfig(
