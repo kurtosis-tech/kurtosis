@@ -43,12 +43,6 @@ const (
 	unboundPortNumber = 1
 
 	unlimitedReplacements = -1
-
-	ingressRulePathAllPaths = "/"
-)
-
-var (
-	ingressRulePathTypePrefix = netv1.PathTypePrefix
 )
 
 // Completeness enforced via unit test
@@ -926,8 +920,8 @@ func getUserServiceIngressRules(
 					HTTP: &netv1.HTTPIngressRuleValue{
 						Paths: []netv1.HTTPIngressPath{
 							{
-								Path:     ingressRulePathAllPaths,
-								PathType: &ingressRulePathTypePrefix,
+								Path:     consts.IngressRulePathAllPaths,
+								PathType: &consts.IngressRulePathTypePrefix,
 								Backend: netv1.IngressBackend{
 									Service: &netv1.IngressServiceBackend{
 										Name: string(serviceRegistration.GetName()),

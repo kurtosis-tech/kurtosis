@@ -27,6 +27,8 @@ const (
 	maxWaitForEngineContainerAvailabilityRetries         = 30
 	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
 	httpApplicationProtocol                              = "http"
+
+	restAPIPortHost = "engine"
 )
 
 var noWait *port_spec.Wait = nil
@@ -162,6 +164,27 @@ func CreateEngine(
 			if err := kubernetesManager.RemoveService(ctx, engineService); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes service '%v' that we created but an error was thrown:\n%v", engineService.Name, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes service with name '%v'!!!!!!!", engineService.Name)
+			}
+		}
+	}()
+
+	engineService, err := createEngineIngress(
+		ctx,
+		namespaceName,
+		engineAttributesProvider,
+		privateGrpcPortSpec,
+		enginePodLabels,
+		kubernetesManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ingress")
+	}
+	var shouldRemoveIngress = true
+	defer func() {
+		if shouldRemoveIngress {
+			if err := kubernetesManager.RemoveIngress(ctx, engineIngress); err != nil {
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes ingress '%v' that we created but an error was thrown:\n%v", engineIngress.Name, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes ingress with name '%v'!!!!!!!", engineIngress.Name)
 			}
 		}
 	}()
@@ -442,6 +465,8 @@ func createEnginePod(
 	return pod, enginePodLabels, nil
 }
 
+// TODO: Add back createEngineService
+
 func createEngineIngress(
 	ctx context.Context,
 	namespace string,
@@ -457,10 +482,10 @@ func createEngineIngress(
 		)
 	}
 	engineIngressName := engineIngressAttributes.GetName().GetString()
-	engineIngressLabels := shared_helpers.GetStringMapFromLabelMap(engineServiceAttributes.GetLabels())
-	engineIngressAnnotations := shared_helpers.GetStringMapFromAnnotationMap(engineServiceAttributes.GetAnnotations())
+	engineIngressLabels := shared_helpers.GetStringMapFromLabelMap(engineIngressAttributes.GetLabels())
+	engineIngressAnnotations := shared_helpers.GetStringMapFromAnnotationMap(engineIngressAttributes.GetAnnotations())
 
-	engineIngressRules, err := getEngineIngressRules(serviceRegistrationObj, privatePorts)
+	engineIngressRules, err := getEngineIngressRules(engineIngressName, privateRESTAPIPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the user service ingress rules for ingress service with name '%v'", engineIngressName)
 	}
@@ -469,6 +494,7 @@ func createEngineIngress(
 		ctx,
 		namespace,
 		engineIngressName,
+		engineIngressLabels,
 		engineIngressAnnotations,
 		engineIngressRules,
 	)
@@ -477,4 +503,37 @@ func createEngineIngress(
 	}
 
 	return createdIngress, nil
+}
+
+func getEngineIngressRules(
+	engineIngressName string,
+	privateRESTAPIPortSpec *port_spec.PortSpec,
+) ([]netv1.IngressRule, error) {
+	var ingressRules []netv1.IngressRule
+	ingressRule := netv1.IngressRule{
+		Host: restAPIPortHost,
+		IngressRuleValue: netv1.IngressRuleValue{
+			HTTP: &netv1.HTTPIngressRuleValue{
+				Paths: []netv1.HTTPIngressPath{
+					{
+						Path:     consts.IngressRulePathAllPaths,
+						PathType: &consts.IngressRulePathTypePrefix,
+						Backend: netv1.IngressBackend{
+							Service: &netv1.IngressServiceBackend{
+								Name: engineIngressName,
+								Port: netv1.ServiceBackendPort{
+									Name:   "",
+									Number: int32(privateRESTAPIPortSpec.GetNumber()),
+								},
+							},
+							Resource: nil,
+						},
+					},
+				},
+			},
+		},
+	}
+	ingressRules = append(ingressRules, ingressRule)
+	
+	return ingressRules, nil
 }
