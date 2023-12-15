@@ -441,35 +441,54 @@ func createEnginePod(
 	return pod, enginePodLabels, nil
 }
 
-func createEngineService(
+func createEngineIngress(
 	ctx context.Context,
 	namespace string,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
-	privateGrpcPortSpec *port_spec.PortSpec,
-	podMatchLabels map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue,
+	privateRESTAPIPortSpec *port_spec.PortSpec,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*apiv1.Service, error) {
-	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(
-		consts.KurtosisInternalContainerGrpcPortSpecId,
-		privateGrpcPortSpec,
-		consts.KurtosisInternalContainerGrpcProxyPortSpecId, nil)
+	engineIngressAttributes, err := engineAttributesProvider.ForEngineIngress()
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred getting the engine service attributes using private grpc port spec '%+v'",
-			privateGrpcPortSpec,
+			"An error occurred getting the engine ingress attributes",
 		)
 	}
-	engineServiceName := engineServiceAttributes.GetName().GetString()
-	engineServiceLabels := shared_helpers.GetStringMapFromLabelMap(engineServiceAttributes.GetLabels())
+	engineIngressName := engineIngressAttributes.GetName().GetString()
+	engineIngressLabels := shared_helpers.GetStringMapFromLabelMap(engineServiceAttributes.GetLabels())
 	engineServiceAnnotations := shared_helpers.GetStringMapFromAnnotationMap(engineServiceAttributes.GetAnnotations())
 
-	// Define service ports. These hook up to ports on the containers running in the engine pod
-	servicePorts, err := shared_helpers.GetKubernetesServicePortsFromPrivatePortSpecs(map[string]*port_spec.PortSpec{
-		consts.KurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
-	})
+	ingressAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(ingressAttributes.GetAnnotations())
+
+	ingressRules, err := getUserServiceIngressRules(serviceRegistrationObj, privatePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the engine service's ports using the engine private port specs")
+		return nil, stacktrace.Propagate(err, "An error occurred creating the user service ingress rules for service with UUID '%v'", serviceUuid)
+	}
+
+	shouldDestroyIngress := false
+	if ingressRules != nil {
+		ingressName := string(serviceName)
+		createdIngress, err := kubernetesManager.CreateIngress(
+			ctx,
+			namespaceName,
+			ingressName,
+			ingressAnnotationsStrs,
+			ingressRules,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating ingress for service with UUID '%v'", serviceUuid)
+		}
+		shouldDestroyIngress = true
+		defer func() {
+			if !shouldDestroyIngress {
+				return
+			}
+			if err := kubernetesManager.RemoveIngress(ctx, createdIngress); err != nil {
+				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the ingress we created but doing so threw an error:\n%v", err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to remove ingress '%v' in '%v' manually!!!", ingressName, namespaceName)
+			}
+		}()
 	}
 
 	podMatchLabelStrs := shared_helpers.GetStringMapFromLabelMap(podMatchLabels)
