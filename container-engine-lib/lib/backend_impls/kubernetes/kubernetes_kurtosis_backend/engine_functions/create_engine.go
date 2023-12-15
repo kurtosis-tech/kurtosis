@@ -475,4 +475,6 @@ func createEngineIngress(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the ingress with name '%s' in namespace '%s'", engineIngressName, namespace)
 	}
+
+	return createdIngress, nil
 }
