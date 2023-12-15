@@ -67,6 +67,15 @@ The Storage Class specified in the configuration above will be used for spinning
 value in case you are using persistent directories.
 :::
 
+We support storage classes that support dynamic provisioning; here are some of them:
+
+1. For AWS we recommend the [`aws-ebs-csi-driver`](https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/install.md)
+2. For DigitalOcean we recommend [`do-block-storage`](https://github.com/digitalocean/csi-digitalocean/?tab=readme-ov-file#installing-to-kubernetes) but your cluster should have this out of the box
+3. K3s the default provisioner `local-path` should just work out of the box
+4. For minikube the default provisioner `standard` should just work out of the box
+
+For any other cloud setup please reach out to us by creating an issue on our [GitHub](https://github.com/kurtosis-tech/kurtosis)
+
 IV. Configure Kurtosis
 --------------------------------
 
