@@ -14,7 +14,7 @@ import (
 const (
 	ImageBuildSpecTypeName = "ImageBuildSpec"
 
-	BuiltImageNameAttr = "name"
+	BuiltImageNameAttr = "image_name"
 	BuildContextAttr   = "build_context_dir"
 	TargetStageAttr    = "target_stage"
 
