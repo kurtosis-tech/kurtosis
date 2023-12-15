@@ -16,11 +16,10 @@ type ServiceConfig struct {
 }
 
 type privateServiceConfig struct {
-	// empty string if ImageBuildSpec is set
 	ContainerImageName string
 
-	// Configuration for Kurtosis to build image for this service
-	// nil if ContainerImageName is provided
+	// Configuration for container engine to build image for this service
+	// If nil, container engine won't be able to build image for this service
 	ImageBuildSpec *image_build_spec.ImageBuildSpec
 
 	PrivatePorts map[string]*port_spec.PortSpec
