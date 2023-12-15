@@ -23,6 +23,8 @@ import (
 const (
 	namespacePrefix = "kt"
 
+	enclaveDataDirFragment = "enclave-data-dir"
+
 	persistentServiceDirectoryNameFragment = "service-persistent-directory"
 
 	traefikIngressRouterEntrypointsValue = "web"
@@ -31,6 +33,7 @@ const (
 type KubernetesEnclaveObjectAttributesProvider interface {
 	ForEnclaveNamespace(creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error)
 	ForApiContainer() KubernetesApiContainerObjectAttributesProvider
+	ForEnclaveDataDirVolume() (KubernetesObjectAttributes, error)
 	ForUserServiceService(
 		uuid service.ServiceUUID,
 		id service.ServiceName,
@@ -202,6 +205,40 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create user service pod object attributes")
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataDirVolume() (KubernetesObjectAttributes, error) {
+	name, err := getCompositeKubernetesObjectName([]string{
+		enclaveDataDirFragment,
+		provider.enclaveId,
+	})
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
+	}
+
+	hasher := md5.New()
+	hasher.Write([]byte(provider.enclaveId))
+	hasher.Write([]byte(enclaveDataDirFragment))
+	volumeHash := hex.EncodeToString(hasher.Sum(nil))
+
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(
+		enclaveDataDirFragment,
+		volumeHash,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave namespace using ID '%v'", provider.enclaveId)
+	}
+
+	//No userServiceService annotations.
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create service persistent directory object attributes")
 	}
 
 	return objectAttributes, nil

@@ -1047,6 +1047,7 @@ func (manager *KubernetesManager) CreatePod(
 	podContainers []apiv1.Container,
 	podVolumes []apiv1.Volume,
 	podServiceAccountName string,
+	restartPolicy apiv1.RestartPolicy,
 ) (*apiv1.Pod, error) {
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespaceName)
 
@@ -1070,12 +1071,11 @@ func (manager *KubernetesManager) CreatePod(
 		ManagedFields:              nil,
 	}
 	podSpec := apiv1.PodSpec{
-		Volumes:             podVolumes,
-		InitContainers:      initContainers,
-		Containers:          podContainers,
-		EphemeralContainers: nil,
-		// We don't want Kubernetes auto-magically restarting our containers if they fail
-		RestartPolicy:                 apiv1.RestartPolicyNever,
+		Volumes:                       podVolumes,
+		InitContainers:                initContainers,
+		Containers:                    podContainers,
+		EphemeralContainers:           nil,
+		RestartPolicy:                 restartPolicy,
 		TerminationGracePeriodSeconds: nil,
 		ActiveDeadlineSeconds:         nil,
 		DNSPolicy:                     "",

@@ -125,6 +125,7 @@ func StartRegisteredUserServices(
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	restartPolicy apiv1.RestartPolicy,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -184,7 +185,8 @@ func StartRegisteredUserServices(
 		enclaveUuid,
 		serviceRegisteredThatCanBeStarted,
 		existingObjectsAndResources,
-		kubernetesManager)
+		kubernetesManager,
+		restartPolicy)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
 	}
@@ -246,6 +248,7 @@ func runStartServiceOperationsInParallel(
 	services map[service.ServiceUUID]*service.ServiceConfig,
 	servicesObjectsAndResources map[service.ServiceUUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
+	restartPolicy apiv1.RestartPolicy,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -259,7 +262,8 @@ func runStartServiceOperationsInParallel(
 			config,
 			servicesObjectsAndResources,
 			enclaveUUID,
-			kubernetesManager)
+			kubernetesManager,
+			restartPolicy)
 	}
 
 	successfulServiceObjs, failedOperations := operation_parallelizer.RunOperationsInParallel(startServiceOperations)
@@ -292,7 +296,8 @@ func createStartServiceOperation(
 	serviceConfig *service.ServiceConfig,
 	servicesObjectsAndResources map[service.ServiceUUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
 	enclaveUuid enclave.EnclaveUUID,
-	kubernetesManager *kubernetes_manager.KubernetesManager) operation_parallelizer.Operation {
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	restartPolicy apiv1.RestartPolicy) operation_parallelizer.Operation {
 
 	return func() (interface{}, error) {
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
@@ -413,6 +418,7 @@ func createStartServiceOperation(
 			podContainers,
 			podVolumes,
 			userServiceServiceAccountName,
+			restartPolicy,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)

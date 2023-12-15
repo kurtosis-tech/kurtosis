@@ -36,6 +36,8 @@ const (
 	timeBetweenWaitForApiContainerContainerAvailabilityRetries = 1 * time.Second
 
 	enclaveDataDirVolumeName = "enclave-data"
+
+	enclaveDataDirVolumeSize int64 = 1 * 1024 * 1024 * 1024 // 1g minimum size on Kubernetes
 )
 
 var noWait *port_spec.Wait = nil
@@ -412,12 +414,43 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting container ports from the API container's private port specs")
 	}
 
+	volumeAttrs, err := enclaveAttributesProvider.ForEnclaveDataDirVolume()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the labels for enclave data dir volume")
+	}
+
+	volumeLabelsStrs := map[string]string{}
+	for key, value := range volumeAttrs.GetLabels() {
+		volumeLabelsStrs[key.GetString()] = value.GetString()
+	}
+	if _, err = backend.kubernetesManager.CreatePersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveDataDirVolumeName, volumeLabelsStrs, enclaveDataDirVolumeSize); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume claim for enclave data dir volume for enclave '%s'", enclaveDataDirVolumeName)
+	}
+	shouldDeleteVolumeClaim := true
+
+	defer func() {
+		if !shouldDeleteVolumeClaim {
+			return
+		}
+		if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), enclaveNamespaceName, enclaveDataDirVolumeName); err != nil {
+			logrus.Warnf(
+				"Creating pod didn't finish successfully - we tried removing the PVC %v but failed with error %v",
+				enclaveDataDirVolumeName,
+				err,
+			)
+			logrus.Warnf("You'll need to clean up volume claim '%v' manually!", enclaveDataDirVolumeName)
+		}
+	}()
+
 	apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataVolumeDirpath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers and volumes")
 	}
 
 	apiContainerInitContainers := []apiv1.Container{}
+
+	// Data is always persistent we can always restart like Docker
+	apiContainerRestartPolicy := apiv1.RestartPolicyOnFailure
 
 	// Create pods with api container containers and volumes in Kubernetes
 	apiContainerPod, err := backend.kubernetesManager.CreatePod(
@@ -430,6 +463,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		apiContainerContainers,
 		apiContainerVolumes,
 		apiContainerServiceAccountName,
+		apiContainerRestartPolicy,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
@@ -481,6 +515,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	shouldRemoveServiceAccount = false
 	shouldRemovePod = false
 	shouldRemoveService = false
+	shouldDeleteVolumeClaim = false
 	return resultApiContainer, nil
 }
 
@@ -995,7 +1030,7 @@ func getApiContainerContainersAndVolumes(
 	enclaveDataVolumeDirpath string,
 ) (
 	resultContainers []apiv1.Container,
-	resultPodVolumes []apiv1.Volume,
+	resultVolumes []apiv1.Volume,
 	resultErr error,
 ) {
 	if _, found := envVars[ApiContainerOwnNamespaceNameEnvVar]; found {
@@ -1047,38 +1082,38 @@ func getApiContainerContainersAndVolumes(
 		{
 			Name: enclaveDataDirVolumeName,
 			VolumeSource: apiv1.VolumeSource{
-				HostPath: nil,
-				EmptyDir: &apiv1.EmptyDirVolumeSource{
-					Medium:    "",
-					SizeLimit: nil,
+				HostPath:             nil,
+				EmptyDir:             nil,
+				GCEPersistentDisk:    nil,
+				AWSElasticBlockStore: nil,
+				GitRepo:              nil,
+				Secret:               nil,
+				NFS:                  nil,
+				ISCSI:                nil,
+				Glusterfs:            nil,
+				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					ClaimName: enclaveDataDirVolumeName,
+					ReadOnly:  false,
 				},
-				GCEPersistentDisk:     nil,
-				AWSElasticBlockStore:  nil,
-				GitRepo:               nil,
-				Secret:                nil,
-				NFS:                   nil,
-				ISCSI:                 nil,
-				Glusterfs:             nil,
-				PersistentVolumeClaim: nil,
-				RBD:                   nil,
-				FlexVolume:            nil,
-				Cinder:                nil,
-				CephFS:                nil,
-				Flocker:               nil,
-				DownwardAPI:           nil,
-				FC:                    nil,
-				AzureFile:             nil,
-				ConfigMap:             nil,
-				VsphereVolume:         nil,
-				Quobyte:               nil,
-				AzureDisk:             nil,
-				PhotonPersistentDisk:  nil,
-				Projected:             nil,
-				PortworxVolume:        nil,
-				ScaleIO:               nil,
-				StorageOS:             nil,
-				CSI:                   nil,
-				Ephemeral:             nil,
+				RBD:                  nil,
+				FlexVolume:           nil,
+				Cinder:               nil,
+				CephFS:               nil,
+				Flocker:              nil,
+				DownwardAPI:          nil,
+				FC:                   nil,
+				AzureFile:            nil,
+				ConfigMap:            nil,
+				VsphereVolume:        nil,
+				Quobyte:              nil,
+				AzureDisk:            nil,
+				PhotonPersistentDisk: nil,
+				Projected:            nil,
+				PortworxVolume:       nil,
+				ScaleIO:              nil,
+				StorageOS:            nil,
+				CSI:                  nil,
+				Ephemeral:            nil,
 			},
 		},
 	}

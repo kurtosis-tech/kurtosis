@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"io"
+	apiv1 "k8s.io/api/core/v1"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/engine_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
@@ -27,6 +28,7 @@ import (
 
 const (
 	isResourceInformationComplete = false
+	noProductionMode              = false
 )
 
 type KubernetesKurtosisBackend struct {
@@ -40,6 +42,9 @@ type KubernetesKurtosisBackend struct {
 
 	// Will only be filled out for the API container
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs
+
+	// Whether services should be restarted
+	productionMode bool
 }
 
 func (backend *KubernetesKurtosisBackend) DumpKurtosis(ctx context.Context, outputDirpath string) error {
@@ -53,6 +58,7 @@ func newKubernetesKurtosisBackend(
 	cliModeArgs *shared_helpers.CliModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	productionMoe bool,
 ) *KubernetesKurtosisBackend {
 	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
 	return &KubernetesKurtosisBackend{
@@ -61,6 +67,7 @@ func newKubernetesKurtosisBackend(
 		cliModeArgs:          cliModeArgs,
 		engineServerModeArgs: engineServerModeArgs,
 		apiContainerModeArgs: apiContainerModeArgs,
+		productionMode:       productionMoe,
 	}
 }
 
@@ -69,6 +76,7 @@ func NewAPIContainerKubernetesKurtosisBackend(
 	ownEnclaveUuid enclave.EnclaveUUID,
 	ownNamespaceName string,
 	storageClassName string,
+	productionMode bool,
 ) *KubernetesKurtosisBackend {
 	modeArgs := shared_helpers.NewApiContainerModeArgs(ownEnclaveUuid, ownNamespaceName, storageClassName)
 	return newKubernetesKurtosisBackend(
@@ -76,6 +84,7 @@ func NewAPIContainerKubernetesKurtosisBackend(
 		nil,
 		nil,
 		modeArgs,
+		productionMode,
 	)
 }
 
@@ -88,6 +97,7 @@ func NewEngineServerKubernetesKurtosisBackend(
 		nil,
 		modeArgs,
 		nil,
+		noProductionMode,
 	)
 }
 
@@ -100,26 +110,8 @@ func NewCLIModeKubernetesKurtosisBackend(
 		modeArgs,
 		nil,
 		nil,
+		noProductionMode,
 	)
-}
-
-func NewKubernetesKurtosisBackend(
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-	// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple
-	//  backends per consumer, e.g. APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc.
-	//  This can only happen once the CLI no longer uses the same functionality as API container, engine, etc. though
-	cliModeArgs *shared_helpers.CliModeArgs,
-	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
-	apiContainerModeargs *shared_helpers.ApiContainerModeArgs,
-) *KubernetesKurtosisBackend {
-	objAttrsProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-	return &KubernetesKurtosisBackend{
-		kubernetesManager:    kubernetesManager,
-		objAttrsProvider:     objAttrsProvider,
-		cliModeArgs:          cliModeArgs,
-		engineServerModeArgs: engineServerModeArgs,
-		apiContainerModeArgs: apiContainerModeargs,
-	}
 }
 
 func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
@@ -262,6 +254,11 @@ func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 	map[service.ServiceUUID]error,
 	error,
 ) {
+	restartPolicy := apiv1.RestartPolicyNever
+	if backend.productionMode {
+		restartPolicy = apiv1.RestartPolicyOnFailure
+	}
+
 	successfullyStartedServices, failedServices, err := user_services_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
@@ -269,7 +266,8 @@ func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
-		backend.kubernetesManager)
+		backend.kubernetesManager,
+		restartPolicy)
 	if err != nil {
 		var serviceUuids []service.ServiceUUID
 		for serviceUuid := range services {
