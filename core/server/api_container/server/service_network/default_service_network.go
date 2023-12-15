@@ -528,9 +528,6 @@ func (network *DefaultServiceNetwork) StopServices(
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 		}
-		if serviceRegistration.GetStatus() == service.ServiceStatus_Stopped {
-			return nil, nil, stacktrace.NewError("Service '%v' is already stopped", serviceRegistration.GetName())
-		}
 		serviceUuids[serviceRegistration.GetUUID()] = true
 		serviceNamesByUuid[serviceRegistration.GetUUID()] = serviceRegistration.GetName()
 	}

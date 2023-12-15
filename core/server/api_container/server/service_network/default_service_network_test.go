@@ -685,13 +685,19 @@ func TestStopService_ServiceAlreadyStopped(t *testing.T) {
 			},
 			Statuses: nil,
 		},
-	).Maybe().Times(0)
+	).Times(1).Return(
+		map[service.ServiceUUID]bool{
+			serviceUuid: true,
+		},
+		map[service.ServiceUUID]error{},
+		nil,
+	)
 
 	err = network.StopService(ctx, string(serviceName))
-	require.NotNil(t, err)
-	expectedErrorMsg := fmt.Sprintf("Service '%s' is already stopped", string(serviceName))
-	require.Contains(t, err.Error(), expectedErrorMsg)
-	require.Equal(t, service.ServiceStatus_Stopped, serviceRegistration.GetStatus())
+	require.Nil(t, err)
+	serviceRegistrationAfterBeingStopped, err := network.serviceRegistrationRepository.Get(serviceName)
+	require.NoError(t, err)
+	require.Equal(t, serviceRegistrationAfterBeingStopped.GetStatus(), service.ServiceStatus_Stopped)
 }
 
 func TestStartService_Successful(t *testing.T) {
