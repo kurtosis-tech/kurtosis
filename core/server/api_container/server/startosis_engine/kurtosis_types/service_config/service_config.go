@@ -61,10 +61,8 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              ImageAttr,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						// TODO: add validation for image build spec
-						return builtin_argument.NonEmptyString(value, ImageAttr)
-					},
+					// TODO: add validation for image build spec
+					Validator: nil,
 				},
 				{
 					Name:              PortsAttr,

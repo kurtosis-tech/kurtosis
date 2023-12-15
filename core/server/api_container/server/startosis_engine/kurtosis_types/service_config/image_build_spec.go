@@ -39,15 +39,17 @@ func NewImageBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor 
 					Name:              BuildContextAttr,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					// TODO: add a validator
-					Validator: nil,
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, BuildContextAttr)
+					},
 				},
 				{
 					Name:              TargetStageAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					// TODO: add a validator
-					Validator: nil,
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, TargetStageAttr)
+					},
 				},
 			},
 		},
