@@ -15,10 +15,9 @@ const (
 	engineKurtosisResourceTypeLabelValueStr = "kurtosis-engine"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	enclaveKurtosisResourceTypeLabelValueStr            = "enclave"
-	apiContainerKurtosisResourceTypeLabelValueStr       = "api-container"
-	userServiceKurtosisResourceTypeLabelValueStr        = "user-service"
-	userServiceIngressKurtosisResourceTypeLabelValueStr = "user-service-ingress"
+	enclaveKurtosisResourceTypeLabelValueStr      = "enclave"
+	apiContainerKurtosisResourceTypeLabelValueStr = "api-container"
+	userServiceKurtosisResourceTypeLabelValueStr  = "user-service"
 
 	enclaveDataVolumeTypeLabelValueStr             = "enclave-data"
 	filesArtifactsExpansionVolumeTypeLabelValueStr = "files-artifacts-expansion"
@@ -37,7 +36,5 @@ var EngineKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.Must
 var EnclaveKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(enclaveKurtosisResourceTypeLabelValueStr)
 var APIContainerKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(apiContainerKurtosisResourceTypeLabelValueStr)
 var UserServiceKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(userServiceKurtosisResourceTypeLabelValueStr)
-var UserServiceIngressKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(userServiceIngressKurtosisResourceTypeLabelValueStr)
-
 var EnclaveDataVolumeTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(enclaveDataVolumeTypeLabelValueStr)
 var FilesArtifactsExpansionVolumeTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(filesArtifactsExpansionVolumeTypeLabelValueStr)

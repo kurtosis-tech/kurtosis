@@ -439,6 +439,7 @@ func createStartServiceOperation(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting attributes for new ingress for service with UUID '%v'", serviceUuid)
 		}
+		ingressLabelsStrs := shared_helpers.GetStringMapFromLabelMap(ingressAttributes.GetLabels())
 		ingressAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(ingressAttributes.GetAnnotations())
 
 		ingressRules, err := getUserServiceIngressRules(serviceRegistrationObj, privatePorts)
@@ -453,6 +454,7 @@ func createStartServiceOperation(
 				ctx,
 				namespaceName,
 				ingressName,
+				ingressLabelsStrs,
 				ingressAnnotationsStrs,
 				ingressRules,
 			)
