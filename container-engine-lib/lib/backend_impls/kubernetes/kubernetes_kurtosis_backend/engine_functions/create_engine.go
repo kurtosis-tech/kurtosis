@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"time"
 )
@@ -447,7 +448,7 @@ func createEngineIngress(
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
 	privateRESTAPIPortSpec *port_spec.PortSpec,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-) (*apiv1.Service, error) {
+) (*netv1.Ingress, error) {
 	engineIngressAttributes, err := engineAttributesProvider.ForEngineIngress()
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -457,61 +458,21 @@ func createEngineIngress(
 	}
 	engineIngressName := engineIngressAttributes.GetName().GetString()
 	engineIngressLabels := shared_helpers.GetStringMapFromLabelMap(engineServiceAttributes.GetLabels())
-	engineServiceAnnotations := shared_helpers.GetStringMapFromAnnotationMap(engineServiceAttributes.GetAnnotations())
+	engineIngressAnnotations := shared_helpers.GetStringMapFromAnnotationMap(engineServiceAttributes.GetAnnotations())
 
-	ingressAnnotationsStrs := shared_helpers.GetStringMapFromAnnotationMap(ingressAttributes.GetAnnotations())
-
-	ingressRules, err := getUserServiceIngressRules(serviceRegistrationObj, privatePorts)
+	engineIngressRules, err := getEngineIngressRules(serviceRegistrationObj, privatePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the user service ingress rules for service with UUID '%v'", serviceUuid)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the user service ingress rules for ingress service with name '%v'", engineIngressName)
 	}
 
-	shouldDestroyIngress := false
-	if ingressRules != nil {
-		ingressName := string(serviceName)
-		createdIngress, err := kubernetesManager.CreateIngress(
-			ctx,
-			namespaceName,
-			ingressName,
-			ingressAnnotationsStrs,
-			ingressRules,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating ingress for service with UUID '%v'", serviceUuid)
-		}
-		shouldDestroyIngress = true
-		defer func() {
-			if !shouldDestroyIngress {
-				return
-			}
-			if err := kubernetesManager.RemoveIngress(ctx, createdIngress); err != nil {
-				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the ingress we created but doing so threw an error:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to remove ingress '%v' in '%v' manually!!!", ingressName, namespaceName)
-			}
-		}()
-	}
-
-	podMatchLabelStrs := shared_helpers.GetStringMapFromLabelMap(podMatchLabels)
-
-	// Create Service
-	service, err := kubernetesManager.CreateService(
+	createdIngress, err := kubernetesManager.CreateIngress(
 		ctx,
 		namespace,
-		engineServiceName,
-		engineServiceLabels,
-		engineServiceAnnotations,
-		podMatchLabelStrs,
-		apiv1.ServiceTypeClusterIP,
-		servicePorts,
+		engineIngressName,
+		engineIngressAnnotations,
+		engineIngressRules,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v'",
-			engineServiceName,
-			namespace,
-			privateGrpcPortSpec.GetNumber(),
-		)
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ingress with name '%s' in namespace '%s'", engineIngressName, namespace)
 	}
-	return service, nil
 }
