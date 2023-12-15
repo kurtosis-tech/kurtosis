@@ -145,7 +145,8 @@ func TestGitPackageProvider_SucceedsForNonStarlarkFile(t *testing.T) {
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, nil)
 
-	sampleStarlarkPackage := "github.com/kurtosis-tech/ethereum-package/static_files/prometheus-config/prometheus.yml.tmpl"
+	// TODO replace this with something local or static
+	sampleStarlarkPackage := "github.com/kurtosis-tech/prometheus-package/static-files/prometheus.yml.tmpl"
 	contents, err := provider.GetModuleContents(sampleStarlarkPackage)
 	require.Nil(t, err)
 	require.NotEmpty(t, contents)

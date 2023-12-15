@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	apiv1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
@@ -109,6 +110,24 @@ func CollectMatchingServices(
 	error,
 ) {
 	objects, err := kubernetesManager.GetServicesByLabels(ctx, namespace, searchLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources matching labels: %+v", searchLabels)
+	}
+	return postFilterKubernetesResources(getListOfPointersFromListOfElements(objects.Items), postFilterLabelKey, postFilterLabelValues)
+}
+
+func CollectMatchingIngresses(
+	ctx context.Context,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+	namespace string,
+	searchLabels map[string]string,
+	postFilterLabelKey string,
+	postFilterLabelValues map[string]bool,
+) (
+	map[string][]*netv1.Ingress,
+	error,
+) {
+	objects, err := kubernetesManager.GetIngressesByLabels(ctx, namespace, searchLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes resources matching labels: %+v", searchLabels)
 	}

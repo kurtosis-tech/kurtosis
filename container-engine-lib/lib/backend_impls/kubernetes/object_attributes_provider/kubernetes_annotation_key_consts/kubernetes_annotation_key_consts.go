@@ -15,6 +15,10 @@ const (
 	enclaveCreationTimeKeyStr = labelKeyPrefixStr + "enclave-creation-time"
 
 	enclaveNameKeyStr = labelKeyPrefixStr + "enclave-name"
+
+	// Traefik ingress router
+	traefikKeyIngressRouterPrefixStr = "traefik.ingress.kubernetes.io/router."
+	traefikKeyEntrypointsStr         = traefikKeyIngressRouterPrefixStr + "entrypoints"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -23,3 +27,4 @@ const (
 var PortSpecsKubernetesAnnotationKey = kubernetes_annotation_key.MustCreateNewKubernetesAnnotationKey(portSpecsAnnotationKeyStr)
 var EnclaveCreationTimeAnnotationKey = kubernetes_annotation_key.MustCreateNewKubernetesAnnotationKey(enclaveCreationTimeKeyStr)
 var EnclaveNameAnnotationKey = kubernetes_annotation_key.MustCreateNewKubernetesAnnotationKey(enclaveNameKeyStr)
+var TraefikIngressRouterEntrypointsAnnotationKey = kubernetes_annotation_key.MustCreateNewKubernetesAnnotationKey(traefikKeyEntrypointsStr)
