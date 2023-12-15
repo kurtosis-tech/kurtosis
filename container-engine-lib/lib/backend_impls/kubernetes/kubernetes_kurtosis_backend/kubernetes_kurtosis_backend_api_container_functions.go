@@ -340,6 +340,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 				kubernetes_manager_consts.ServicesKubernetesResource,
 				kubernetes_manager_consts.JobsKubernetesResource,
 				kubernetes_manager_consts.PersistentVolumeClaimsKubernetesResource,
+				kubernetes_manager_consts.IngressesKubernetesResource,
 			},
 		},
 		{

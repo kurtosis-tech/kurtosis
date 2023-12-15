@@ -145,7 +145,7 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		}
 
 		backendSupplier = func(ctx context.Context) (backend_interface.KurtosisBackend, error) {
-			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx)
+			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx, *kubernetesConfig.StorageClass)
 			if err != nil {
 				return nil, stacktrace.Propagate(
 					err,

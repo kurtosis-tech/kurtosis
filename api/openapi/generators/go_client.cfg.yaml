@@ -1,0 +1,7 @@
+package: core_rest_api
+generate:
+  client: true
+additional-imports:
+  - package: github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types
+    alias: .
+output: api/golang/http_rest/client/rest_api_client.gen.go

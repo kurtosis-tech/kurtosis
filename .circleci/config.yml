@@ -30,7 +30,7 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         name: Install K3D and create the K3D/K3S cluster on Docker
         command: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-          k3d cluster create --servers 1 --no-lb --wait --verbose
+          k3d cluster create -p "<< pipeline.parameters.reverse-proxy-entrypoint-web-port >>:80@loadbalancer" --servers 1 --wait --verbose
     - run:
         name: Load Kurtosis images into the K3S cluster
         # First load the image into Docker and then import the images into K3S by taking the image from Docker
@@ -59,7 +59,7 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
               type: kubernetes
               config:
                 kubernetes-cluster-name: k3d-k3s-default
-                storage-class: standard
+                storage-class: local-path
                 enclave-size-in-megabytes: 2048
           EOF
     # Set the K3S cluster with some previous steps to force this cluster type in the cluster-setting file. This save us to start the engine with the cluster set command
@@ -80,14 +80,19 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
 
-# Steps to prepare a job for Docker testing
-steps_prepare_testing_docker: &steps_prepare_testing_docker
-  steps:
-    - run: |
+run_prepare_testing_docker: &run_prepare_testing_docker
+  - run:
+      name: Load the engine, apic and file artifacts images and start the engine
+      command: |
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
+        ${KURTOSIS_BINPATH} engine start --cli-log-level trace
+
+# Steps to prepare a job for Docker testing
+steps_prepare_testing_docker: &steps_prepare_testing_docker
+  steps:
+    - <<: *run_prepare_testing_docker 
 
 # Run steps to dump kurtosis enclaves from docker
 run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
@@ -115,6 +120,16 @@ abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
     if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
       circleci-agent step halt
     fi 
+
+abort_job_if_kubernetes_backend: &abort_job_if_kubernetes_backend
+  when:
+    condition:
+      equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+    steps:
+      - run: circleci-agent step halt
+
+abort_job: &abort_job
+  run: circleci-agent step halt
 
 ##############
 # CircleCI
@@ -155,6 +170,9 @@ parameters:
   api-node-version:
     type: string
     default: 16.13.0
+  ui-node-version:
+    type: string
+    default: 18.19.0
   core-server-build-cache-key-prefix:
     type: string
     default: "core-server-go-mod-v1"   # Can bump this version to bust the cache
@@ -176,7 +194,7 @@ parameters:
   # We can bump the version here if we ever need to bust the cache
   cli-build-cache-key-prefix:
     type: string
-    default: "cli-go-mod-v1"
+    default: "cli-go-mod-v2"
   generate-kurtosis-version-script-path:
     type: string
     default: "scripts/generate-kurtosis-version.sh"
@@ -216,6 +234,12 @@ parameters:
   kurtosis-cluster-setting-abs-filepath:
     type: string
     default: "/home/circleci/.local/share/kurtosis/cluster-setting"
+  reverse-proxy-entrypoint-web-port:
+    type: string
+    default: "9730"
+  tilt-releaser-version:
+    type: string
+    default: "31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
 
 
 
@@ -448,8 +472,11 @@ jobs:
             - "<< pipeline.parameters.engine-server-image-filename >>"
 
   build_cli:
+    # The starlark-lsp uses treesitter which has direct c bindings; and making a go releaser cross arch build
+    # requires a lot of tooling; when the original author adding starlark-lsp to the project they copied the tilt-releaser
+    # which came with all of the underlying tooling instead of bundling their own image; perhaps due to time constraints
     docker:
-      - image: "docker/tilt-releaser@sha256:ff4a71c0d18717cc9c646778cc426a0a4f916885c5fe7eb001f0eaee0d3483a0"
+      - image: "docker/tilt-releaser@sha256:<< pipeline.parameters.tilt-releaser-version >>"
     resource_class: large
     steps:
       - checkout
@@ -512,8 +539,7 @@ jobs:
 
       - when:
           condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -586,8 +612,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} analytics disable"
       - when:
           condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -639,6 +664,9 @@ jobs:
   test_old_enclave_continuity:
     executor: ubuntu_vm
     steps:
+      # TODO: Re-enable once Traefik has been released.
+      - <<: *abort_job
+
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
@@ -736,8 +764,7 @@ jobs:
       # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -878,9 +905,9 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run:
-                name: "Verify only the engine container and logs aggregator remains after the clean"
+                name: "Verify only the engine, logs aggregator and reverse proxy remain after the clean"
                 command: |
-                  if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 2 ]; then
+                  if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 3 ]; then
                     docker container ls -a
                     false
                   fi
@@ -903,6 +930,71 @@ jobs:
                     docker network ls
                     false
                   fi
+
+  test_reverse_proxy:
+    executor: ubuntu_vm
+    parameters:
+      <<: *param_cli_cluster_backend
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+      
+      # Set up Kurtosis
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go
+
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kurtosis-cli curl
+      # We don't send metrics to avoid polluting our logs
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      - run: "${KURTOSIS_BINPATH} analytics disable"
+
+      - when:
+          condition:
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s_k3s
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
+
+      # Start a service and send an http request to it via the reverse proxy
+      - run: |
+          ${KURTOSIS_BINPATH} enclave add --name test-enclave
+          ${KURTOSIS_BINPATH} service add test-enclave test1 httpd --ports http=http:80/tcp
+          enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
+          service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
+          # Give the reverse proxy enough time to discover the httpd user service
+          sleep 10
+          status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
+          if ! [ "${status_code}" -eq "200" ]; then
+            echo 'HTTP request status code returned is '${status_code}' instead of 200'
+            false
+          fi
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            # Restart the engine and make sure Traefik restarted and reconfigured properly 
+            - run: |
+                ${KURTOSIS_BINPATH} engine restart
+                enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
+                service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
+                # Give the reverse proxy enough time to discover the httpd user service
+                sleep 10
+                status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
+                if ! [ "${status_code}" -eq "200" ]; then
+                  echo 'HTTP request status code returned is '${status_code}' instead of 200'
+                  false
+                fi
 
   test_ci_for_failure:
     executor: ubuntu_vm
@@ -927,8 +1019,7 @@ jobs:
       # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -976,6 +1067,23 @@ jobs:
       - run: api/typescript/scripts/build.sh
       - npm-publisher/publish-from-package-version:
           package-path: api/typescript
+          publish-token-variable: NPMJS_AUTH_TOKEN
+
+  publish_kurtosis_ui_libs:
+    docker:
+      - image: "cimg/node:<< pipeline.parameters.ui-node-version>>"
+    steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
+      - checkout
+      - run: enclave-manager/api/typescript/scripts/build.sh
+      - run: enclave-manager/web/scripts/build.sh
+      - npm-publisher/publish-from-package-version:
+          package-path: enclave-manager/web/packages/components
           publish-token-variable: NPMJS_AUTH_TOKEN
 
   publish_files_artifacts_expander_image:
@@ -1100,8 +1208,13 @@ jobs:
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   push_cli_artifacts:
+    # we use this docker/tilt-releaser image for cli jobs because starlark-lsp requires it to build
+    # as opposed to running image off cimg/go:<< pipeline.parameters.go-version like every other job
+    # The starlark-lsp uses treesitter which has direct c bindings; and making a go releaser cross arch build
+    # requires a lot of tooling; when the original author adding starlark-lsp to the project they copied the tilt-releaser
+    # which came with all of the underlying tooling instead of bundling their own image; perhaps due to time constraints
     docker:
-      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
+      - image: "docker/tilt-releaser@sha256:<< pipeline.parameters.tilt-releaser-version >>"
     steps:
       - slack/notify:
           channel: engineering
@@ -1352,6 +1465,30 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
+      - test_reverse_proxy:
+          name: "Test reverse proxy against Docker"
+          cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
+      - test_reverse_proxy:
+          name: "Test reverse proxy against Kubernetes"
+          cli-cluster-backend: "kubernetes"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
       # -- Artifact-publishing jobs --------------------------------
       - publish_kurtosis_sdk_rust:
           context:
@@ -1364,6 +1501,15 @@ workflows:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
 
       - publish_kurtosis_api_typescript:
+          context:
+            - npmjs-user
+            - slack-secrets
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_kurtosis_ui_libs:
           context:
             - npmjs-user
             - slack-secrets

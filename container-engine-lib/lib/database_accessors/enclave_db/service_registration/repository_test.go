@@ -327,9 +327,9 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 }
 
 func testPersistentDirectory() *service_directory.PersistentDirectories {
-	persistentDirectoriesMap := map[string]service_directory.DirectoryPersistentKey{
-		"dirpath1": service_directory.DirectoryPersistentKey("dirpath1_persistent_directory_key"),
-		"dirpath2": service_directory.DirectoryPersistentKey("dirpath2_persistent_directory_key"),
+	persistentDirectoriesMap := map[string]service_directory.PersistentDirectory{
+		"dirpath1": {PersistentKey: service_directory.DirectoryPersistentKey("dirpath1_persistent_directory_key"), Size: service_directory.DirectoryPersistentSize(int64(0))},
+		"dirpath2": {PersistentKey: service_directory.DirectoryPersistentKey("dirpath2_persistent_directory_key"), Size: service_directory.DirectoryPersistentSize(int64(0))},
 	}
 
 	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)

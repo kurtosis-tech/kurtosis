@@ -1,5 +1,73 @@
 # Changelog
 
+## [0.85.48](https://github.com/kurtosis-tech/kurtosis/compare/0.85.47...0.85.48) (2023-12-14)
+
+
+### Bug Fixes
+
+* failing test due to prometheus package creation ([#1955](https://github.com/kurtosis-tech/kurtosis/issues/1955)) ([67169cb](https://github.com/kurtosis-tech/kurtosis/commit/67169cbfc0fce4b3ae6089e491ec20a50af38969))
+
+## [0.85.47](https://github.com/kurtosis-tech/kurtosis/compare/0.85.46...0.85.47) (2023-12-14)
+
+
+### Features
+
+* Add CORS policy to REST API server ([#1924](https://github.com/kurtosis-tech/kurtosis/issues/1924)) ([a934b1e](https://github.com/kurtosis-tech/kurtosis/commit/a934b1e07805d600cf10fd4bd5b8e6cd62fcc83e))
+* allow specifying size of persistent directories ([#1939](https://github.com/kurtosis-tech/kurtosis/issues/1939)) ([5a997bc](https://github.com/kurtosis-tech/kurtosis/commit/5a997bc720cf23fdee5a3598b83a9bb6d3952aba))
+
+
+### Bug Fixes
+
+* enclave name in error message ([#1942](https://github.com/kurtosis-tech/kurtosis/issues/1942)) ([4754073](https://github.com/kurtosis-tech/kurtosis/commit/475407361345da4c3febc5e1cdc626c02930eb04))
+* fix cloud link out markdown ([#1929](https://github.com/kurtosis-tech/kurtosis/issues/1929)) ([846efb1](https://github.com/kurtosis-tech/kurtosis/commit/846efb126a04f851e2e04454d603dd7e9110d5a0))
+* small Emui QoL improvements ([#1944](https://github.com/kurtosis-tech/kurtosis/issues/1944)) ([21b5ffd](https://github.com/kurtosis-tech/kurtosis/commit/21b5ffd8bcd91397046be38d0fe84d416b4d8d43))
+* update startosis test ([#1945](https://github.com/kurtosis-tech/kurtosis/issues/1945)) ([cc44ade](https://github.com/kurtosis-tech/kurtosis/commit/cc44adec747a9c79a6bd20ad4d036fb3ef337dae))
+
+## [0.85.46](https://github.com/kurtosis-tech/kurtosis/compare/0.85.45...0.85.46) (2023-12-12)
+
+
+### Bug Fixes
+
+* revert image building ([#1934](https://github.com/kurtosis-tech/kurtosis/issues/1934)) ([7e7c96b](https://github.com/kurtosis-tech/kurtosis/commit/7e7c96b0ca4bf5646f2df86aa320cfd84191ab08))
+
+## [0.85.45](https://github.com/kurtosis-tech/kurtosis/compare/0.85.44...0.85.45) (2023-12-12)
+
+
+### Bug Fixes
+
+* bust cli build cache ([#1930](https://github.com/kurtosis-tech/kurtosis/issues/1930)) ([1e32da8](https://github.com/kurtosis-tech/kurtosis/commit/1e32da840844537936244ec5b76609f7e3d18fea))
+
+## [0.85.44](https://github.com/kurtosis-tech/kurtosis/compare/0.85.43...0.85.44) (2023-12-11)
+
+
+### Features
+
+* Docker Traefik routing based on host header ([#1921](https://github.com/kurtosis-tech/kurtosis/issues/1921)) ([7086662](https://github.com/kurtosis-tech/kurtosis/commit/70866622dd978979b5c069e0b9f138346b52ce3d))
+
+
+### Bug Fixes
+
+* make push cli job use golang 1.20 ([#1925](https://github.com/kurtosis-tech/kurtosis/issues/1925)) ([805469e](https://github.com/kurtosis-tech/kurtosis/commit/805469e5068202c6a188b90d84291813e0788a0e))
+
+## [0.85.43](https://github.com/kurtosis-tech/kurtosis/compare/0.85.42...0.85.43) (2023-12-11)
+
+
+### Features
+
+* Add new ports view to the EM UI ([#1919](https://github.com/kurtosis-tech/kurtosis/issues/1919)) ([027d74b](https://github.com/kurtosis-tech/kurtosis/commit/027d74b02f06f6c5ac4fdfc38e26f1ff63f08a77))
+* add REST API bindings for TS and Golang ([#1907](https://github.com/kurtosis-tech/kurtosis/issues/1907)) ([97b9b80](https://github.com/kurtosis-tech/kurtosis/commit/97b9b807a8abfd189117b9d5680b2a449cbba2a6))
+* add support for public ports ([#1905](https://github.com/kurtosis-tech/kurtosis/issues/1905)) ([97a3d95](https://github.com/kurtosis-tech/kurtosis/commit/97a3d9583683c0b19d5c657107a9a53cf7b3ffd5))
+* enable building images in docker ([#1911](https://github.com/kurtosis-tech/kurtosis/issues/1911)) ([c153873](https://github.com/kurtosis-tech/kurtosis/commit/c153873141c8054f97d35a9067f24b7a7d7bb5a8))
+* Reverse proxy lifecycle management and connectivity on Docker ([#1906](https://github.com/kurtosis-tech/kurtosis/issues/1906)) ([69c5b27](https://github.com/kurtosis-tech/kurtosis/commit/69c5b2764b257c63221dd2a966c6fc3b401c11eb))
+* service logs full download ([#1895](https://github.com/kurtosis-tech/kurtosis/issues/1895)) ([b91333f](https://github.com/kurtosis-tech/kurtosis/commit/b91333fcdb7bf23cb9bd2ba08dfd32ae9569df29))
+* Unified REST API ([c3911f6](https://github.com/kurtosis-tech/kurtosis/commit/c3911f6f55e68b21e06a1d96d89d6a3241a368a0))
+
+
+### Bug Fixes
+
+* add installation description for oapi-codegen ([#1917](https://github.com/kurtosis-tech/kurtosis/issues/1917)) ([8f2427b](https://github.com/kurtosis-tech/kurtosis/commit/8f2427b7b3043b7efea65eb1ebe76329745c8a7a))
+* Fix doc checker CI ([#1912](https://github.com/kurtosis-tech/kurtosis/issues/1912)) ([cc2696d](https://github.com/kurtosis-tech/kurtosis/commit/cc2696d587c1316f1537fd0091237c4eb79e46ea))
+
 ## [0.85.42](https://github.com/kurtosis-tech/kurtosis/compare/0.85.41...0.85.42) (2023-12-05)
 
 

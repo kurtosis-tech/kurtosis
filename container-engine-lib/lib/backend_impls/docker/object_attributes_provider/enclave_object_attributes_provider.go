@@ -533,18 +533,21 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 // <port number>-<service short uuid>-<enclave short uuid>
 // The Traefik service name format is: <enclave short uuid>-<service short uuid>-<port number>
 // With the following input:
-//   Enclave short UUID: 65d2fb6d6732
-//   Service short UUID: 3771c85af16a
-//   HTTP Port 1 number: 80
-//   HTTP Port 2 number: 81
+//
+//	Enclave short UUID: 65d2fb6d6732
+//	Service short UUID: 3771c85af16a
+//	HTTP Port 1 number: 80
+//	HTTP Port 2 number: 81
+//
 // the following labels are returned:
-//   "traefik.enable": "true",
-//   "traefik.http.routers.65d2fb6d6732-3771c85af16a-80.rule": "Host(`80-3771c85af16a-65d2fb6d6732`)",
-//   "traefik.http.routers.65d2fb6d6732-3771c85af16a-80.service": "65d2fb6d6732-3771c85af16a-80",
-//   "traefik.http.services.65d2fb6d6732-3771c85af16a-80.loadbalancer.server.port": "80"
-//   "traefik.http.routers.65d2fb6d6732-3771c85af16a-81.rule": "Host(`81-3771c85af16a-65d2fb6d6732`)",
-//   "traefik.http.routers.65d2fb6d6732-3771c85af16a-81.service": "65d2fb6d6732-3771c85af16a-81",
-//   "traefik.http.services.65d2fb6d6732-3771c85af16a-81.loadbalancer.server.port": "81"
+//
+//	"traefik.enable": "true",
+//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-80.rule": "Host(`80-3771c85af16a-65d2fb6d6732`)",
+//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-80.service": "65d2fb6d6732-3771c85af16a-80",
+//	"traefik.http.services.65d2fb6d6732-3771c85af16a-80.loadbalancer.server.port": "80"
+//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-80.rule": "Host(`81-3771c85af16a-65d2fb6d6732`)",
+//	"traefik.http.routers.65d2fb6d6732-3771c85af16a-81.service": "65d2fb6d6732-3771c85af16a-81",
+//	"traefik.http.services.65d2fb6d6732-3771c85af16a-81.loadbalancer.server.port": "81"
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEnclaveObject(serviceUuid string, ports map[string]*port_spec.PortSpec) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error) {
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{}
 
@@ -558,7 +561,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEn
 			shortServiceUuid := uuid_generator.ShortenedUUIDString(serviceUuid)
 			servicePortStr := fmt.Sprintf("%s-%s-%d", shortEnclaveUuid, shortServiceUuid, portSpec.GetNumber())
 
-			// Host rule
+			// Header Host rule
 			ruleKeySuffix := fmt.Sprintf("http.routers.%s.rule", servicePortStr)
 			ruleLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(ruleKeySuffix)
 			if err != nil {

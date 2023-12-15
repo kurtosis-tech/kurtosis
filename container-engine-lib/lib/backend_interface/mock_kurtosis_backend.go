@@ -14,8 +14,6 @@ import (
 
 	exec_result "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 
-	image_build_spec "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-
 	image_download_mode "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	io "io"
@@ -25,6 +23,8 @@ import (
 	logs_collector "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 
 	mock "github.com/stretchr/testify/mock"
+
+	reverse_proxy "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
 
 	service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 
@@ -42,50 +42,6 @@ type MockKurtosisBackend_Expecter struct {
 
 func (_m *MockKurtosisBackend) EXPECT() *MockKurtosisBackend_Expecter {
 	return &MockKurtosisBackend_Expecter{mock: &_m.Mock}
-}
-
-// BuildImage provides a mock function with given fields: ctx, imageName, imageBuildSpec
-func (_m *MockKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
-	ret := _m.Called(ctx, imageName, imageBuildSpec)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *image_build_spec.ImageBuildSpec) error); ok {
-		r0 = rf(ctx, imageName, imageBuildSpec)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockKurtosisBackend_BuildImage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BuildImage'
-type MockKurtosisBackend_BuildImage_Call struct {
-	*mock.Call
-}
-
-// BuildImage is a helper method to define mock.On call
-//   - ctx context.Context
-//   - imageName string
-//   - imageBuildSpec *image_build_spec.ImageBuildSpec
-func (_e *MockKurtosisBackend_Expecter) BuildImage(ctx interface{}, imageName interface{}, imageBuildSpec interface{}) *MockKurtosisBackend_BuildImage_Call {
-	return &MockKurtosisBackend_BuildImage_Call{Call: _e.mock.On("BuildImage", ctx, imageName, imageBuildSpec)}
-}
-
-func (_c *MockKurtosisBackend_BuildImage_Call) Run(run func(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec)) *MockKurtosisBackend_BuildImage_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(*image_build_spec.ImageBuildSpec))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_BuildImage_Call) Return(_a0 error) *MockKurtosisBackend_BuildImage_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_BuildImage_Call) RunAndReturn(run func(context.Context, string, *image_build_spec.ImageBuildSpec) error) *MockKurtosisBackend_BuildImage_Call {
-	_c.Call.Return(run)
-	return _c
 }
 
 // CopyFilesFromUserService provides a mock function with given fields: ctx, enclaveUuid, serviceUuid, srcPathOnService, output
@@ -419,6 +375,60 @@ func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) RunAndReturn(r
 	return _c
 }
 
+// CreateReverseProxy provides a mock function with given fields: ctx
+func (_m *MockKurtosisBackend) CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *reverse_proxy.ReverseProxy
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*reverse_proxy.ReverseProxy, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *reverse_proxy.ReverseProxy); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*reverse_proxy.ReverseProxy)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockKurtosisBackend_CreateReverseProxy_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateReverseProxy'
+type MockKurtosisBackend_CreateReverseProxy_Call struct {
+	*mock.Call
+}
+
+// CreateReverseProxy is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockKurtosisBackend_Expecter) CreateReverseProxy(ctx interface{}) *MockKurtosisBackend_CreateReverseProxy_Call {
+	return &MockKurtosisBackend_CreateReverseProxy_Call{Call: _e.mock.On("CreateReverseProxy", ctx)}
+}
+
+func (_c *MockKurtosisBackend_CreateReverseProxy_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_CreateReverseProxy_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateReverseProxy_Call) Return(_a0 *reverse_proxy.ReverseProxy, _a1 error) *MockKurtosisBackend_CreateReverseProxy_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateReverseProxy_Call) RunAndReturn(run func(context.Context) (*reverse_proxy.ReverseProxy, error)) *MockKurtosisBackend_CreateReverseProxy_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DestroyAPIContainers provides a mock function with given fields: ctx, filters
 func (_m *MockKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveUUID]bool, map[enclave.EnclaveUUID]error, error) {
 	ret := _m.Called(ctx, filters)
@@ -692,6 +702,48 @@ func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) Return(_a0 er
 }
 
 func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID) error) *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DestroyReverseProxy provides a mock function with given fields: ctx
+func (_m *MockKurtosisBackend) DestroyReverseProxy(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockKurtosisBackend_DestroyReverseProxy_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyReverseProxy'
+type MockKurtosisBackend_DestroyReverseProxy_Call struct {
+	*mock.Call
+}
+
+// DestroyReverseProxy is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockKurtosisBackend_Expecter) DestroyReverseProxy(ctx interface{}) *MockKurtosisBackend_DestroyReverseProxy_Call {
+	return &MockKurtosisBackend_DestroyReverseProxy_Call{Call: _e.mock.On("DestroyReverseProxy", ctx)}
+}
+
+func (_c *MockKurtosisBackend_DestroyReverseProxy_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_DestroyReverseProxy_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyReverseProxy_Call) Return(_a0 error) *MockKurtosisBackend_DestroyReverseProxy_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyReverseProxy_Call) RunAndReturn(run func(context.Context) error) *MockKurtosisBackend_DestroyReverseProxy_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1288,6 +1340,60 @@ func (_c *MockKurtosisBackend_GetLogsCollectorForEnclave_Call) Return(_a0 *logs_
 }
 
 func (_c *MockKurtosisBackend_GetLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID) (*logs_collector.LogsCollector, error)) *MockKurtosisBackend_GetLogsCollectorForEnclave_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetReverseProxy provides a mock function with given fields: ctx
+func (_m *MockKurtosisBackend) GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *reverse_proxy.ReverseProxy
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*reverse_proxy.ReverseProxy, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *reverse_proxy.ReverseProxy); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*reverse_proxy.ReverseProxy)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockKurtosisBackend_GetReverseProxy_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetReverseProxy'
+type MockKurtosisBackend_GetReverseProxy_Call struct {
+	*mock.Call
+}
+
+// GetReverseProxy is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockKurtosisBackend_Expecter) GetReverseProxy(ctx interface{}) *MockKurtosisBackend_GetReverseProxy_Call {
+	return &MockKurtosisBackend_GetReverseProxy_Call{Call: _e.mock.On("GetReverseProxy", ctx)}
+}
+
+func (_c *MockKurtosisBackend_GetReverseProxy_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_GetReverseProxy_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetReverseProxy_Call) Return(_a0 *reverse_proxy.ReverseProxy, _a1 error) *MockKurtosisBackend_GetReverseProxy_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetReverseProxy_Call) RunAndReturn(run func(context.Context) (*reverse_proxy.ReverseProxy, error)) *MockKurtosisBackend_GetReverseProxy_Call {
 	_c.Call.Return(run)
 	return _c
 }

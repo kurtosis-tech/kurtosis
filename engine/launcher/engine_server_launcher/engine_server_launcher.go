@@ -7,6 +7,8 @@ package engine_server_launcher
 
 import (
 	"context"
+	"net"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
@@ -14,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 const (
@@ -43,6 +44,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	allowedCORSOrigins *[]string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -62,6 +64,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		isCI,
 		cloudUserID,
 		cloudInstanceID,
+		allowedCORSOrigins,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -83,6 +86,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	allowedCORSOrigins *[]string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -103,6 +107,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		isCI,
 		cloudUserID,
 		cloudInstanceID,
+		allowedCORSOrigins,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")

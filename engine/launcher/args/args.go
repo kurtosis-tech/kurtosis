@@ -2,9 +2,10 @@ package args
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"reflect"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/stacktrace"
@@ -57,6 +58,9 @@ type EngineServerArgs struct {
 
 	// The Cloud Instance ID of the current user if available
 	CloudInstanceID metrics_client.CloudInstanceID `json:"cloud_instance_id"`
+
+	// List of allowed origins to validate CORS requests on the REST API. If undefined, defaults to '*' (any origin).
+	AllowedCORSOrigins *[]string `json:"allowed_cors_origins,omitempty"`
 }
 
 var skipValidation = map[string]bool{
@@ -111,6 +115,7 @@ func NewEngineServerArgs(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	allowedCORSOrigins *[]string,
 ) (*EngineServerArgs, error) {
 	if enclaveEnvVars == "" {
 		enclaveEnvVars = emptyJsonField
@@ -129,6 +134,7 @@ func NewEngineServerArgs(
 		IsCI:                        isCI,
 		CloudUserID:                 cloudUserID,
 		CloudInstanceID:             cloudInstanceID,
+		AllowedCORSOrigins:          allowedCORSOrigins,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

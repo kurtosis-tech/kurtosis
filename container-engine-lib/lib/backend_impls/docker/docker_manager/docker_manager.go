@@ -10,17 +10,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/docker/docker/api/types/registry"
-	"github.com/docker/docker/client/buildkit"
-	"github.com/docker/go-units"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/kurtosis/utils"
-	bksession "github.com/moby/buildkit/session"
 	"io"
 	"math"
 	"net"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -43,7 +35,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
-	bkclient "github.com/moby/buildkit/client"
 	"github.com/sirupsen/logrus"
 )
 
@@ -82,8 +73,9 @@ const (
 	// ------------------ Filter Search Keys ----------------------
 	// All these defined in https://docs.docker.com/engine/api/v1.24
 
-	containerNameSearchFilterKey  = "name"
-	containerLabelSearchFilterKey = "label"
+	containerNameSearchFilterKey      = "name"
+	containerLabelSearchFilterKey     = "label"
+	containerNetworkIdSearchFilterKey = "network"
 
 	volumeNameSearchFilterKey  = "name"
 	volumeLabelSearchFilterKey = "label"
@@ -146,12 +138,6 @@ const (
 	dontStreamStats        = false
 
 	kurtosisTagPrefix = "kurtosistech/"
-
-	// image building consts
-	defaultContainerImageFile = "Dockerfile"
-
-	// Per https://github.com/hashicorp/waypoint/pull/1937/files
-	buildkitSessionSharedKey = ""
 )
 
 type RestartPolicy string
@@ -428,19 +414,7 @@ func (manager *DockerManager) CreateVolume(context context.Context, volumeName s
 		Name:              volumeName,
 	}
 
-	/*
-		We don't use the return value of VolumeCreate because there's not much useful information on there - Docker doesn't
-		use UUIDs to identify volumes - only the name - so there's no UUID to retrieve, and the volume's Mountpoint (what you'd
-		think would be the path of the volume on the local machine) isn't useful either because Docker itself runs inside a VM
-		so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
-		to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
-	*/
-	_, err := manager.dockerClient.VolumeCreate(context, volumeConfig)
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not create Docker volume for test controller")
-	}
-
-	return nil
+	return manager.createPersistentVolumeInternal(context, volumeConfig)
 }
 
 /*
@@ -790,6 +764,24 @@ func (manager *DockerManager) GetContainerIP(ctx context.Context, networkName st
 		return "", stacktrace.NewError("Container ID '%v' isn't connected to network '%v'", containerId, networkName)
 	}
 	return networkInfo.IPAddress, nil
+}
+
+/*
+GetContainerIps
+Gets the container's IPs on all networks
+Returns a map of network ID to network IP address
+*/
+func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId string) (map[string]string, error) {
+	containerIps := map[string]string{}
+	resp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
+	}
+	allNetworkInfo := resp.NetworkSettings.Networks
+	for _, networkInfo := range allNetworkInfo {
+		containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
+	}
+	return containerIps, nil
 }
 
 func (manager *DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
@@ -1199,6 +1191,16 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	return result, nil
 }
 
+func (manager *DockerManager) GetContainersByNetworkId(ctx context.Context, networkId string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
+	filterArg := filters.Arg(containerNetworkIdSearchFilterKey, networkId)
+	networkIdFilterList := filters.NewArgs(filterArg)
+	result, err := manager.getContainersByFilterArgs(ctx, networkIdFilterList, shouldShowStoppedContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting containers with network id '%+v'", networkIdFilterList)
+	}
+	return result, nil
+}
+
 // [FetchImageIfMissing] uses the local [dockerImage] if it's available.
 // If unavailable, will attempt to fetch the latest image.
 // Returns error if local [dockerImage] is unavailable and pulling image fails.
@@ -1290,112 +1292,6 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, down
 	return pulledFromRemote, imageArchitecture, nil
 }
 
-func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
-	contextDirPath := imageBuildSpec.GetContextDirPath()
-	containerImageFileTarReader, err := getBuildContextReader(contextDirPath)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
-	}
-
-	// Before instructing docker client to execute an image build, we need to create a connection to buildkit
-	// buildkit is the daemon process that executes build workloads: https://docs.docker.com/build/architecture/#buildkit
-
-	// First, create a client to the buildkit daemon
-	buildkitClientOpts := buildkit.ClientOpts(manager.dockerClientNoTimeout)
-	buildkitClient, err := bkclient.New(ctx, "", buildkitClientOpts...)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a buildkit client for building images in Docker.")
-	}
-
-	// Then, create a long-running session between client and buildkit daemon to enable image building
-	buildkitSessionUuidStr, err := uuid_generator.GenerateUUIDString()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred generating a UUID for the Docker buildkit session")
-	}
-	buildkitSessionName := fmt.Sprintf("kurtosis-%s", buildkitSessionUuidStr)
-	// Generate a new session every time because, per https://github.com/moby/buildkit/issues/1432 ,
-	// sharing sessions is an optimization
-	// Don't reuse sessions to avoid hitting bugs
-	buildkitSession, err := bksession.NewSession(ctx, buildkitSessionName, buildkitSessionSharedKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new buildkit session for building images in Docker.")
-	}
-	go buildkitSession.Run(ctx, buildkitClient.Dialer()) // nolint
-	defer buildkitSession.Close()                        // nolint
-
-	imageBuildOpts := types.ImageBuildOptions{
-		Tags:           []string{imageName},
-		SuppressOutput: false,
-		RemoteContext:  "",    // We don't have a remote context (we're uploading it)
-		NoCache:        false, // needs to be false so image only rebuilds if docker detects changes to cached image
-		Remove:         false,
-		ForceRemove:    false,
-		PullParent:     false,
-		Isolation:      container.Isolation(""),
-		CPUSetCPUs:     "",
-		CPUSetMems:     "",
-		CPUShares:      0,
-		CPUQuota:       0,
-		CPUPeriod:      0,
-		Memory:         0,
-		MemorySwap:     0,
-		CgroupParent:   "",
-		NetworkMode:    "",
-		ShmSize:        0,
-		Dockerfile:     defaultContainerImageFile,
-		Ulimits:        []*units.Ulimit{},
-		// BuildArgs needs to be a *string instead of just a string so that
-		// we can tell the difference between "" (empty string) and no value
-		// at all (nil). See the parsing of buildArgs in
-		// api/server/router/build/build_routes.go for even more info.
-		BuildArgs:   map[string]*string{},
-		AuthConfigs: map[string]registry.AuthConfig{},
-		Context:     containerImageFileTarReader,
-		Labels:      map[string]string{},
-		// squash the resulting image's layers to the parent
-		// preserves the original image and creates a new one from the parent with all
-		// the changes applied to a single layer
-		Squash: false, // this will probably make image building faster
-		// CacheFrom specifies images that are used for matching cache. Images
-		// specified here do not need to have a valid parent chain to match cache.
-		CacheFrom:   []string{},
-		SecurityOpt: []string{},
-		ExtraHosts:  []string{}, // List of extra hosts
-		Target:      imageBuildSpec.GetTargetStage(),
-		SessionID:   buildkitSession.ID(),
-		Platform:    "",
-		// Version specifies the version of the underlying builder to use
-		Version: types.BuilderBuildKit, // Use 2 for BuildKit
-		// BuildID is an optional identifier that can be passed together with the
-		// build request. The same identifier can be used to gracefully cancel the
-		// build with the cancel request.
-		BuildID: "",
-		// Outputs defines configurations for exporting build results. Only supported in BuildKit mode.
-		Outputs: []types.ImageBuildOutput{},
-	}
-	imageBuildResponse, err := manager.dockerClientNoTimeout.ImageBuild(ctx, containerImageFileTarReader, imageBuildOpts)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", imageName)
-	}
-	defer imageBuildResponse.Body.Close()
-
-	_, err = io.Copy(os.Stdout, imageBuildResponse.Body)
-	if err != nil {
-		logrus.Warnf("An error occurred while trying to pipe image build output to stdout: %v", err)
-	}
-
-	return nil
-}
-
-// returns a reader to a tarball of [contextDirPath]
-func getBuildContextReader(contextDirPath string) (io.Reader, error) {
-	buildContext, _, _, err := utils.CompressPath(contextDirPath, false)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred compressing the path to context directory path '%v'", contextDirPath)
-	}
-	return buildContext, nil
-}
-
 func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
 	config := types.ExecConfig{
 		User:         "",
@@ -1466,6 +1362,23 @@ func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (com
 //	INSTANCE HELPER FUNCTIONS
 //
 // =================================================================================================================
+func (manager *DockerManager) createPersistentVolumeInternal(context context.Context, volumeConfig volume.CreateOptions) error {
+	/*
+		We don't use the return value of VolumeCreate because there's not much useful information on there - Docker doesn't
+		use UUIDs to identify volumes - only the name - so there's no UUID to retrieve, and the volume's Mountpoint (what you'd
+		think would be the path of the volume on the local machine) isn't useful either because Docker itself runs inside a VM
+		so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
+		to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
+	*/
+	_, err := manager.dockerClient.VolumeCreate(context, volumeConfig)
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not create Docker volume for test controller")
+	}
+
+	return nil
+
+}
+
 func (manager *DockerManager) isImageAvailableLocally(imageName string) (bool, error) {
 	// Own context for checking if the image is locally available because we do not want to cancel this works in case the main context in the request is cancelled
 	// if the first request fails the image will be ready for following request making the process faster

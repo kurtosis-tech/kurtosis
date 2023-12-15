@@ -3,6 +3,8 @@ package object_attributes_provider
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
@@ -16,13 +18,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/stacktrace"
-	"time"
 )
 
 const (
 	namespacePrefix = "kt"
 
 	persistentServiceDirectoryNameFragment = "service-persistent-directory"
+
+	traefikIngressRouterEntrypointsValue = "web"
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
@@ -41,6 +44,11 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 	ForSinglePersistentDirectoryVolume(
 		serviceUUID service.ServiceUUID,
 		persistentKey service_directory.DirectoryPersistentKey,
+	) (KubernetesObjectAttributes, error)
+	ForUserServiceIngress(
+		uuid service.ServiceUUID,
+		id service.ServiceName,
+		privatePorts map[string]*port_spec.PortSpec,
 	) (KubernetesObjectAttributes, error)
 }
 
@@ -226,6 +234,43 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForSinglePersiste
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create service persistent directory object attributes")
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceIngress(
+	serviceUUID service.ServiceUUID,
+	serviceName service.ServiceName,
+	privatePorts map[string]*port_spec.PortSpec,
+) (KubernetesObjectAttributes, error) {
+	name, err := getKubernetesObjectName(serviceName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get name for user service ingress")
+	}
+
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(serviceName), string(serviceUUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Failed to get labels for user service ingress with name '%s' and UUID '%s'",
+			serviceName,
+			serviceUUID,
+		)
+	}
+	labels[kubernetes_label_key.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
+
+	traefikIngressRouterEntrypointsAnnotationValue, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(traefikIngressRouterEntrypointsValue)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new user custom Kubernetes label value '%s'", traefikIngressRouterEntrypointsValue)
+	}
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
+		kubernetes_annotation_key_consts.TraefikIngressRouterEntrypointsAnnotationKey: traefikIngressRouterEntrypointsAnnotationValue,
+	}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create user service ingress object attributes")
 	}
 
 	return objectAttributes, nil

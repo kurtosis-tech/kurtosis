@@ -307,6 +307,7 @@ func createEngineClusterRole(
 				kubernetes_manager_consts.ServicesKubernetesResource,
 				kubernetes_manager_consts.PersistentVolumesKubernetesResource,
 				kubernetes_manager_consts.PersistentVolumeClaimsKubernetesResource,
+				kubernetes_manager_consts.IngressesKubernetesResource,
 				kubernetes_manager_consts.JobsKubernetesResource, // Necessary so that we can give the API container the permission
 			},
 		},

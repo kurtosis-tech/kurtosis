@@ -2,9 +2,10 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"net"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -73,7 +74,19 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 
 	enclaveLogsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector for enclave '%v; This is a bug in Kurtosis'", enclaveUuid)
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector for enclave '%v'; This is a bug in Kurtosis", enclaveUuid)
+	}
+
+	reverseProxy, err := backend.GetReverseProxy(ctx)
+	if reverseProxy == nil {
+		return nil, stacktrace.Propagate(err, "The reverse proxy is not running, This is a bug in Kurtosis")
+	}
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the reverse proxy, This is a bug in Kurtosis")
+	}
+	reverseProxyEnclaveNetworkIpAddress, found := reverseProxy.GetEnclaveNetworksIpAddress()[enclaveNetwork.GetId()]
+	if !found {
+		return nil, stacktrace.NewError("An error occured while getting the reverse proxy enclave network IP address for enclave '%v', This is a bug in Kurtosis", enclaveUuid)
 	}
 
 	networkCidr := enclaveNetwork.GetIpAndMask()
@@ -81,6 +94,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		networkCidr.IP.String():                                    true,
 		enclaveNetwork.GetGatewayIp():                              true,
 		enclaveLogsCollector.GetEnclaveNetworkIpAddress().String(): true,
+		reverseProxyEnclaveNetworkIpAddress.String():               true,
 	}
 
 	ipAddr, err := network_helpers.GetFreeIpAddrFromSubnet(alreadyTakenIps, networkCidr)

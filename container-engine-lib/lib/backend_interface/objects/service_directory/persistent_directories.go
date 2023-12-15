@@ -1,13 +1,19 @@
 package service_directory
 
 type DirectoryPersistentKey string
+type DirectoryPersistentSize int64
 
-type PersistentDirectories struct {
-	ServiceDirpathToDirectoryPersistentKey map[string]DirectoryPersistentKey
+type PersistentDirectory struct {
+	PersistentKey DirectoryPersistentKey
+	Size          DirectoryPersistentSize
 }
 
-func NewPersistentDirectories(serviceDirpathToDirectoryPersistentKey map[string]DirectoryPersistentKey) *PersistentDirectories {
+type PersistentDirectories struct {
+	ServiceDirpathToPersistentDirectory map[string]PersistentDirectory
+}
+
+func NewPersistentDirectories(persistentDirectories map[string]PersistentDirectory) *PersistentDirectories {
 	return &PersistentDirectories{
-		ServiceDirpathToDirectoryPersistentKey: serviceDirpathToDirectoryPersistentKey,
+		ServiceDirpathToPersistentDirectory: persistentDirectories,
 	}
 }

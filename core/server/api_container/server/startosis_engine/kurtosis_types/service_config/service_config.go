@@ -278,8 +278,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	}
 	if found {
 		var filesArtifactsMountDirpathsMap map[string]string
-		var persistentDirectoriesDirpathsMap map[string]string
-		filesArtifactsMountDirpathsMap, persistentDirectoriesDirpathsMap, interpretationErr = convertFilesArguments(FilesAttr, filesStarlark)
+		filesArtifactsMountDirpathsMap, persistentDirectoriesDirpathsMap, interpretationErr := convertFilesArguments(FilesAttr, filesStarlark)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -507,6 +506,10 @@ func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]strin
 	}, nil
 }
 
+func convertPersistentDirectoryMounts(persistentDirectoriesMap map[string]service_directory.PersistentDirectory) *service_directory.PersistentDirectories {
+	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
+}
+
 func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value starlark.Value, dictForLogging *starlark.Dict) (string, *port_spec.PortSpec, *startosis_errors.InterpretationError) {
 	keyStr, ok := key.(starlark.String)
 	if !ok {
@@ -523,9 +526,9 @@ func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value st
 	return keyStr.GoString(), servicePortSpec, nil
 }
 
-func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) (map[string]string, map[string]string, *startosis_errors.InterpretationError) {
+func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) (map[string]string, map[string]service_directory.PersistentDirectory, *startosis_errors.InterpretationError) {
 	filesArtifacts := map[string]string{}
-	persistentDirectories := map[string]string{}
+	persistentDirectories := map[string]service_directory.PersistentDirectory{}
 	for _, fileItem := range filesDict.Items() {
 		rawDirPath := fileItem[0]
 		dirPath, ok := rawDirPath.(starlark.String)
@@ -555,6 +558,10 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 		if interpretationErr != nil {
 			return nil, nil, interpretationErr
 		}
+		persistentDirectorySize, interpretationErr := directoryObj.GetSizeOrDefault()
+		if interpretationErr != nil {
+			return nil, nil, interpretationErr
+		}
 		if artifactNameSet == persistentKeySet {
 			// this condition is a XOR
 			return nil, nil, startosis_errors.NewInterpretationError("Parameter '%s' and '%s' cannot be set on the same '%s' object: '%s'",
@@ -564,18 +571,13 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 			filesArtifacts[dirPath.GoString()] = artifactName
 		} else {
 			// persistentKey is necessarily set since we checked the exclusivity above
-			persistentDirectories[dirPath.GoString()] = persistentKey
+			persistentDirectories[dirPath.GoString()] = service_directory.PersistentDirectory{
+				PersistentKey: service_directory.DirectoryPersistentKey(persistentKey),
+				Size:          service_directory.DirectoryPersistentSize(persistentDirectorySize),
+			}
 		}
 	}
 	return filesArtifacts, persistentDirectories, nil
-}
-
-func convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap map[string]string) *service_directory.PersistentDirectories {
-	persistentDirectoriesMap := map[string]service_directory.DirectoryPersistentKey{}
-	for dirPath, persistentKeyStr := range persistentDirectoriesDirpathsMap {
-		persistentDirectoriesMap[dirPath] = service_directory.DirectoryPersistentKey(persistentKeyStr)
-	}
-	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
 }
 
 // If [rawImageAttrValue] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
