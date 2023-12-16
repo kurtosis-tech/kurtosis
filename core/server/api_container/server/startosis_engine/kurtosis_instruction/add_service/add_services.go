@@ -46,7 +46,19 @@ func NewAddServices(
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 					// TODO: add a validator
-					Validator: nil,
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						// we just try to convert the configs here to validate their shape, to avoid code duplication with Interpret
+						if _, _, err := validateAndConvertConfigsAndReadyConditions(
+							serviceNetwork,
+							value,
+							rootModuleLocator,
+							packageId,
+							packageContentProvider,
+							packageReplaceOptions); err != nil {
+							return err
+						}
+						return nil
+					},
 				},
 			},
 		},

@@ -9,8 +9,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
+	"path"
 	"path/filepath"
-	"strings"
 )
 
 const (
@@ -174,7 +174,7 @@ func getOnDiskImageBuildSpecPaths(
 	}
 
 	// get on disk directory path of Dockerfile
-	containerImageAbsoluteLocator := strings.Join([]string{contextDirAbsoluteLocator, defaultContainerImageFileName}, "/")
+	containerImageAbsoluteLocator := path.Join(contextDirAbsoluteLocator, defaultContainerImageFileName)
 	containerImagePathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsoluteFilePath(containerImageAbsoluteLocator)
 	if interpretationErr != nil {
 		return "", "", interpretationErr

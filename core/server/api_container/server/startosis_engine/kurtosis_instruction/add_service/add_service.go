@@ -25,6 +25,8 @@ const (
 
 	ServiceNameArgName   = "name"
 	ServiceConfigArgName = "config"
+
+	rootModuleLocator = ""
 )
 
 func NewAddService(
@@ -52,7 +54,15 @@ func NewAddService(
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*service_config.ServiceConfig],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication with Interpret
-						// TODO: add validator
+						if _, _, err := validateAndConvertConfigAndReadyCondition(
+							serviceNetwork,
+							value,
+							rootModuleLocator,
+							packageId,
+							packageContentProvider,
+							packageReplaceOptions); err != nil {
+							return err
+						}
 						return nil
 					},
 				},
