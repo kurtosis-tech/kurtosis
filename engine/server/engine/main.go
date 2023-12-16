@@ -28,6 +28,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	em_api "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
@@ -74,9 +75,6 @@ const (
 	indexPath                   = "index.html"
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
-
-	restAPIPortAddr uint16 = 9779 //TODO: pass this parameter
-	restAPIHostIP   string = "0.0.0.0"
 
 	streamerPoolSize       = 1000
 	streamerExpirationTime = time.Hour * 2
@@ -481,5 +479,5 @@ func restApiServer(
 	}
 
 	// ============================== Start Server ======================================
-	return echoRouter.Start(net.JoinHostPort(restAPIHostIP, fmt.Sprint(restAPIPortAddr)))
+	return echoRouter.Start(net.JoinHostPort(engine.RESTAPIHostIP, fmt.Sprint(engine.RESTAPIPortAddr)))
 }
