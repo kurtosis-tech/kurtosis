@@ -204,6 +204,7 @@ func CreateEngine(
 		serviceAccount:     serviceAccount,
 		service:            engineService,
 		pod:                enginePod,
+		ingress:            engineIngress,
 	}
 	engineObjsById, err := getEngineObjectsFromKubernetesResources(map[engine.EngineGUID]*engineKubernetesResources{
 		engineGuid: engineResources,
@@ -248,6 +249,7 @@ func CreateEngine(
 	shouldRemoveClusterRoleBinding = false
 	shouldRemovePod = false
 	shouldRemoveService = false
+	shouldRemoveIngress = false
 	return resultEngine, nil
 }
 
