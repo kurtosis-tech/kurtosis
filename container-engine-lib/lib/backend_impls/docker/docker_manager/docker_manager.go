@@ -1330,7 +1330,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	// Don't bother reusing sessions so that we don't hit bugs
 	buildkitSession, err := bksession.NewSession(ctx, sessionName, buildkitSessionSharedKey)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error")
+		return "", stacktrace.Propagate(err, "An error generating a Docker Buildkit session with sessionName: %v", sessionName)
 	}
 	dialSessionFunc := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
 		return manager.dockerClientNoTimeout.DialHijack(ctx, "/session", proto, meta)
@@ -1404,12 +1404,11 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	imageBuildResponseBodyStr := imageBuildResponseBuffer.String()
 
 	// ImageBuildResponse has no notion of success or error builds, so must manually parse the response body for error
-	// To do this, see if body contains an instance of a successful image build pattern
-	successfulImageBuild, err := regexp.MatchString(successfulImageBuildRegexStr, imageBuildResponseBodyStr)
+	isSuccessfulImageBuild, err := regexp.MatchString(successfulImageBuildRegexStr, imageBuildResponseBodyStr)
 	if err != nil {
 		return "", stacktrace.NewError("An error occurred attempting to match successful image build regex '%v' with image build output:\n%v", successfulImageBuildRegexStr, imageBuildResponseBodyStr)
 	}
-	if !successfulImageBuild {
+	if !isSuccessfulImageBuild {
 		return "", stacktrace.NewError("Image build for '%s' failed with the following output:\n%v", imageName, imageBuildResponseBodyStr)
 	}
 
