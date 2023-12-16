@@ -176,11 +176,11 @@ func TestBuildImage(t *testing.T) {
 	//dockerManager, err := CreateDockerManager(clientOpts)
 	//require.NoError(t, err)
 	//
-	//contextDirPath := "<path to file>"
+	//contextDirPath := ""
 	//containerImageFilePath := contextDirPath + "/Dockerfile"
 	//
 	//imageBuildSpec := image_build_spec.NewImageBuildSpec(contextDirPath, containerImageFilePath, "")
-	//err = dockerManager.BuildImage(ctx, "foobar", imageBuildSpec)
+	//_, err = dockerManager.BuildImage(ctx, "foobar", imageBuildSpec)
 	//require.NoError(t, err)
 }
 

@@ -1309,11 +1309,11 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, down
 	return pulledFromRemote, imageArchitecture, nil
 }
 
-func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
 	contextDirPath := imageBuildSpec.GetContextDirPath()
 	containerImageFileTarReader, err := getBuildContextReader(contextDirPath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
+		return "", stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
 	}
 
 	// Before instructing docker client to execute an image build, we need to create a connection to buildkit
@@ -1322,7 +1322,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	// Setup session to buildkit (eg. https://github.com/hashicorp/waypoint/pull/1937)
 	uuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred generating a UUID to give the Docker Buildkit session")
+		return "", stacktrace.Propagate(err, "An error occurred generating a UUID to give the Docker Buildkit session")
 	}
 	sessionName := fmt.Sprintf("kurtosis-%s", uuidStr)
 
@@ -1330,7 +1330,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	// Don't bother reusing sessions so that we don't hit bugs
 	buildkitSession, err := bksession.NewSession(ctx, sessionName, buildkitSessionSharedKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error")
+		return "", stacktrace.Propagate(err, "An error")
 	}
 	dialSessionFunc := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
 		return manager.dockerClientNoTimeout.DialHijack(ctx, "/session", proto, meta)
@@ -1392,14 +1392,14 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	}
 	imageBuildResponse, err := manager.dockerClientNoTimeout.ImageBuild(ctx, containerImageFileTarReader, imageBuildOpts)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", imageName)
+		return "", stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", imageName)
 	}
 	defer imageBuildResponse.Body.Close()
 
 	var imageBuildResponseBuffer bytes.Buffer
 	_, err = io.Copy(&imageBuildResponseBuffer, imageBuildResponse.Body)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while trying to pipe image build output to a buffer.")
+		return "", stacktrace.Propagate(err, "An error occurred while trying to pipe image build output to a buffer.")
 	}
 	imageBuildResponseBodyStr := imageBuildResponseBuffer.String()
 
@@ -1407,13 +1407,18 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	// To do this, see if body contains an instance of a successful image build pattern
 	successfulImageBuild, err := regexp.MatchString(successfulImageBuildRegexStr, imageBuildResponseBodyStr)
 	if err != nil {
-		return stacktrace.NewError("An error occurred attempting to match successful image build regex '%v' with image build output:\n%v", successfulImageBuildRegexStr, imageBuildResponseBodyStr)
+		return "", stacktrace.NewError("An error occurred attempting to match successful image build regex '%v' with image build output:\n%v", successfulImageBuildRegexStr, imageBuildResponseBodyStr)
 	}
 	if !successfulImageBuild {
-		return stacktrace.NewError("Image build for '%s' failed with the following output:\n%v", imageName, imageBuildResponseBodyStr)
+		return "", stacktrace.NewError("Image build for '%s' failed with the following output:\n%v", imageName, imageBuildResponseBodyStr)
 	}
 
-	return nil
+	imageArch, err := manager.getImagePlatform(ctx, imageName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred attempting to get image platform for '%v'.", imageName)
+	}
+
+	return imageArch, nil
 }
 
 // returns a reader to a tarball of [contextDirPath]

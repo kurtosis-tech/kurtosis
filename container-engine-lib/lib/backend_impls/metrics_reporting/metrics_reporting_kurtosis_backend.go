@@ -460,6 +460,6 @@ func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx con
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+func (backend *MetricsReportingKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
 	return backend.underlying.BuildImage(ctx, imageName, imageBuildSpec)
 }

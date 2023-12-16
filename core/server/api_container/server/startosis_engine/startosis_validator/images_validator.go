@@ -3,7 +3,6 @@ package startosis_validator
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"runtime"
 	"sync"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -96,19 +95,19 @@ func (validator *ImagesValidator) buildImageUsingBackend(
 	imageBuildStarted chan<- string,
 	imageBuildFinished chan<- *ValidatedImage) {
 	logrus.Debugf("Requesting the build of image: '%s'", imageName)
+	var imageArch string
 	imageBuiltLocally := true
 	imagePulledFromRemote := false
-
 	defer wg.Done()
 	imageCurrentlyBuilding <- true
 	imageBuildStarted <- imageName
 	defer func() {
 		<-imageCurrentlyBuilding
-		imageBuildFinished <- NewValidatedImage(imageName, imagePulledFromRemote, imageBuiltLocally, runtime.GOARCH) // if image is built locally, then it is built for same arch as go is targeting
+		imageBuildFinished <- NewValidatedImage(imageName, imagePulledFromRemote, imageBuiltLocally, imageArch)
 	}()
 
 	logrus.Debugf("Starting the build of image: '%s'", imageName)
-	err := (*backend).BuildImage(ctx, imageName, imageBuildSpec)
+	imageArch, err := (*backend).BuildImage(ctx, imageName, imageBuildSpec)
 	if err != nil {
 		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())
 		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageName)

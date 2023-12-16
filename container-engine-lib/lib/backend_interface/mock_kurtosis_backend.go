@@ -47,17 +47,27 @@ func (_m *MockKurtosisBackend) EXPECT() *MockKurtosisBackend_Expecter {
 }
 
 // BuildImage provides a mock function with given fields: ctx, imageName, imageBuildSpec
-func (_m *MockKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+func (_m *MockKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
 	ret := _m.Called(ctx, imageName, imageBuildSpec)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *image_build_spec.ImageBuildSpec) error); ok {
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *image_build_spec.ImageBuildSpec) (string, error)); ok {
+		return rf(ctx, imageName, imageBuildSpec)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *image_build_spec.ImageBuildSpec) string); ok {
 		r0 = rf(ctx, imageName, imageBuildSpec)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, string, *image_build_spec.ImageBuildSpec) error); ok {
+		r1 = rf(ctx, imageName, imageBuildSpec)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MockKurtosisBackend_BuildImage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BuildImage'
@@ -80,12 +90,12 @@ func (_c *MockKurtosisBackend_BuildImage_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *MockKurtosisBackend_BuildImage_Call) Return(_a0 error) *MockKurtosisBackend_BuildImage_Call {
-	_c.Call.Return(_a0)
+func (_c *MockKurtosisBackend_BuildImage_Call) Return(_a0 string, _a1 error) *MockKurtosisBackend_BuildImage_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockKurtosisBackend_BuildImage_Call) RunAndReturn(run func(context.Context, string, *image_build_spec.ImageBuildSpec) error) *MockKurtosisBackend_BuildImage_Call {
+func (_c *MockKurtosisBackend_BuildImage_Call) RunAndReturn(run func(context.Context, string, *image_build_spec.ImageBuildSpec) (string, error)) *MockKurtosisBackend_BuildImage_Call {
 	_c.Call.Return(run)
 	return _c
 }

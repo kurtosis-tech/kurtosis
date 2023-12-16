@@ -534,7 +534,7 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }
 
-func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
 	return backend.dockerManager.BuildImage(ctx, imageName, imageBuildSpec)
 }
 

@@ -477,9 +477,9 @@ func (backend *KubernetesKurtosisBackend) DestroyReverseProxy(ctx context.Contex
 	return stacktrace.NewError("Destroying the reverse proxy isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error {
+func (backend *KubernetesKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
 	// TODO IMPLEMENT
-	return stacktrace.NewError("Building images isn't yet implemented in Kubernetes.")
+	return "", stacktrace.NewError("Building images isn't yet implemented in Kubernetes.")
 }
 
 // ====================================================================================================

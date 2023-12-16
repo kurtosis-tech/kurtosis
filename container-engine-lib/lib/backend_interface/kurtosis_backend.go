@@ -350,5 +350,6 @@ type KurtosisBackend interface {
 	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error)
 
 	// BuildImage builds a container image based on the [imageBuildSpec] with [imageName]
-	BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) error
+	// Returns image architecture and if error occurred
+	BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error)
 }
