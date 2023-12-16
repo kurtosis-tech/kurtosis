@@ -69,7 +69,7 @@ func instantiateImageBuildSpec(arguments *builtin_argument.ArgumentValuesSet) (b
 	}, nil
 }
 
-// ImageBuildSpec is a starlark.Value that holds all the information needed for building a container image
+// ImageBuildSpec is a starlark.Value that holds all the information for the startosis_engine to initiate an image build
 type ImageBuildSpec struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
 }

@@ -581,7 +581,7 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 }
 
 // If [rawImageAttrValue] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
-// If [rawImageAttrValue] is an ImageBuildSpec type, name for the image to build and ImageBuildSpec converted to KurtosisType is returned (image will be built)
+// If [rawImageAttrValue] is an ImageBuildSpec type, returns name for the image to build and ImageBuildSpec converted to KurtosisType
 func convertImageAttr(
 	rawImageAttrValue starlark.Value,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
