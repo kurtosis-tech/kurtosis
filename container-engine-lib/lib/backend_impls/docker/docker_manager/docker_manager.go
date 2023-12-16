@@ -7,6 +7,7 @@ package docker_manager
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -18,7 +19,6 @@ import (
 	"io"
 	"math"
 	"net"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -151,6 +151,10 @@ const (
 
 	// Per https://github.com/hashicorp/waypoint/pull/1937/files
 	buildkitSessionSharedKey = ""
+
+	// NOTE: this regex only accounts for image builds with latest tag
+	// this will need to be changed whenever configuring labels on image builds is enabled
+	successfulImageBuildRegexStr = "{\"stream\":\"Successfully tagged (.+):latest\\\\n\"\\}"
 )
 
 type RestartPolicy string
@@ -1392,9 +1396,21 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	}
 	defer imageBuildResponse.Body.Close()
 
-	_, err = io.Copy(os.Stdout, imageBuildResponse.Body)
+	var imageBuildResponseBuffer bytes.Buffer
+	_, err = io.Copy(&imageBuildResponseBuffer, imageBuildResponse.Body)
 	if err != nil {
-		logrus.Warnf("An error occurred while trying to pipe image build output to stdout: %v", err)
+		return stacktrace.Propagate(err, "An error occurred while trying to pipe image build output to a buffer.")
+	}
+	imageBuildResponseBodyStr := imageBuildResponseBuffer.String()
+
+	// ImageBuildResponse has no notion of success or error builds, so must manually parse the response body for error
+	// To do this, see if body contains an instance of a successful image build pattern
+	successfulImageBuild, err := regexp.MatchString(successfulImageBuildRegexStr, imageBuildResponseBodyStr)
+	if err != nil {
+		return stacktrace.NewError("An error occurred attempting to match successful image build regex '%v' with image build output:\n%v", successfulImageBuildRegexStr, imageBuildResponseBodyStr)
+	}
+	if !successfulImageBuild {
+		return stacktrace.NewError("Image build for '%s' failed with the following output:\n%v", imageName, imageBuildResponseBodyStr)
 	}
 
 	return nil
