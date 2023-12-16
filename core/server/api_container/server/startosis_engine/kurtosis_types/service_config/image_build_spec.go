@@ -132,7 +132,14 @@ func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string) (*image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
-	buildContextDirPathOnDisk, containerImageFilePathOnDisk, interpretationErr := imageBuildSpec.getOnDiskImageBuildSpecPaths(
+	// get locator of context directory (relative or absolute)
+	buildContextLocator, interpretationErr := imageBuildSpec.GetBuildContextLocator()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	buildContextDirPathOnDisk, containerImageFilePathOnDisk, interpretationErr := getOnDiskImageBuildSpecPaths(
+		buildContextLocator,
 		packageId,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageContentProvider,
@@ -149,20 +156,17 @@ func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
 	return image_build_spec.NewImageBuildSpec(buildContextDirPathOnDisk, containerImageFilePathOnDisk, targetStageStr), nil
 }
 
-func (imageBuildSpec *ImageBuildSpec) getOnDiskImageBuildSpecPaths(
+// Returns the filepath of the build context directory and container image on APIC based on package info
+func getOnDiskImageBuildSpecPaths(
+	buildContextLocator string,
 	packageId string,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string) (string, string, *startosis_errors.InterpretationError) {
-	// get locator of context directory (relative or absolute)
-	buildContextLocator, interpretationErr := imageBuildSpec.GetBuildContextLocator()
-	if interpretationErr != nil {
-		return "", "", interpretationErr
-	}
-
 	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
 		return "", "", startosis_errors.NewInterpretationError("Cannot use ImageBuildSpec in a standalone script; create a package and rerun to use ImageBuildSpec.")
 	}
+
 	// get absolute locator of context directory
 	contextDirAbsoluteLocator, interpretationErr := packageContentProvider.GetAbsoluteLocator(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, buildContextLocator, packageReplaceOptions)
 	if interpretationErr != nil {
