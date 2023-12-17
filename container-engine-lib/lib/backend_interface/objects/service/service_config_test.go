@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/stretchr/testify/require"
@@ -52,12 +53,13 @@ func TestServiceConfigMarshallers(t *testing.T) {
 	require.Equal(t, originalServiceConfig.GetMinCPUAllocationMillicpus(), newServiceConfig.GetMinCPUAllocationMillicpus())
 	require.Equal(t, originalServiceConfig.GetMinMemoryAllocationMegabytes(), newServiceConfig.GetMinMemoryAllocationMegabytes())
 	require.Equal(t, originalServiceConfig.GetLabels(), newServiceConfig.GetLabels())
+	require.Equal(t, originalServiceConfig.GetImageBuildSpec(), newServiceConfig.GetImageBuildSpec())
 }
 
 func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 	serviceConfig, err := CreateServiceConfig(
 		imageName,
-		nil, // no image build spec
+		testImageBuildSpec(),
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},
@@ -163,4 +165,11 @@ func testEnvVars() map[string]string {
 		"HTTP_PORT":  "80",
 		"HTTPS_PORT": "443",
 	}
+}
+
+func testImageBuildSpec() *image_build_spec.ImageBuildSpec {
+	return image_build_spec.NewImageBuildSpec(
+		"test-image",
+		"path",
+		"")
 }
