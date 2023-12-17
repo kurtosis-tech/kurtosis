@@ -15,7 +15,7 @@ const (
 	//  be stored in the port spec label
 	KurtosisInternalContainerGrpcPortSpecId = "grpc"
 
-	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
+	// The ID of the REST API port
 	KurtosisInternalContainerRESTAPIPortSpecId = "rest-api"
 	
 	HttpApplicationProtocol                      = "http"
