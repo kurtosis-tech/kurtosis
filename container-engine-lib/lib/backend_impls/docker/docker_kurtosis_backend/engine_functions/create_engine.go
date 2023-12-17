@@ -158,7 +158,7 @@ func CreateEngine(
 		)
 	}
 
-	restAPIPortSpec, err := port_spec.NewPortSpec(uint16(engine.RESTAPIPortAddr), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	restAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -206,7 +206,7 @@ func CreateEngine(
 		privateGrpcDockerPort:       docker_manager.NewManualPublishingSpec(grpcPortNum),
 		enclaveManagerUIDockerPort:  docker_manager.NewManualPublishingSpec(uint16(enclaveManagerUIPort)),
 		enclaveManagerAPIDockerPort: docker_manager.NewManualPublishingSpec(uint16(enclaveManagerAPIPort)),
-		restAPIDockerPort:           docker_manager.NewManualPublishingSpec(uint16(engine.RESTAPIPortAddr)),
+		restAPIDockerPort:           docker_manager.NewManualPublishingSpec(engine.RESTAPIPortAddr),
 	}
 
 	bindMounts := map[string]string{

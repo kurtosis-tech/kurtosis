@@ -220,7 +220,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineIngress()
 
 	traefikIngressRouterEntrypointsAnnotationValue, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(traefikIngressRouterEntrypointsValue)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a new user custom Kubernetes label value '%s'", traefikIngressRouterEntrypointsValue)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the Traefik ingress router entrypoint annotation with value '%s'", traefikIngressRouterEntrypointsValue)
 	}
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
 		kubernetes_annotation_key_consts.TraefikIngressRouterEntrypointsAnnotationKey: traefikIngressRouterEntrypointsAnnotationValue,
