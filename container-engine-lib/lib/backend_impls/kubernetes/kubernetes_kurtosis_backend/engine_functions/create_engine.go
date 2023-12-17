@@ -3,6 +3,8 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
@@ -18,7 +20,6 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"time"
 )
 
 const (
@@ -177,7 +178,6 @@ func CreateEngine(
 			}
 		}
 	}()
-
 
 	engineIngress, err := createEngineIngress(
 		ctx,
@@ -507,7 +507,7 @@ func createEngineService(
 
 	// Define service ports. These hook up to ports on the containers running in the engine pod
 	servicePorts, err := shared_helpers.GetKubernetesServicePortsFromPrivatePortSpecs(map[string]*port_spec.PortSpec{
-		consts.KurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		consts.KurtosisInternalContainerGrpcPortSpecId:    privateGrpcPortSpec,
 		consts.KurtosisInternalContainerRESTAPIPortSpecId: privateRESTAPIPortSpec,
 	})
 	if err != nil {
@@ -607,6 +607,6 @@ func getEngineIngressRules(
 		},
 	}
 	ingressRules = append(ingressRules, ingressRule)
-	
+
 	return ingressRules, nil
 }

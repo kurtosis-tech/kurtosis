@@ -2,7 +2,7 @@ package consts
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 )
 
@@ -17,9 +17,9 @@ const (
 
 	// The ID of the REST API port
 	KurtosisInternalContainerRESTAPIPortSpecId = "rest-api"
-	
-	HttpApplicationProtocol                      = "http"
-	
+
+	HttpApplicationProtocol = "http"
+
 	IngressRulePathAllPaths = "/"
 )
 

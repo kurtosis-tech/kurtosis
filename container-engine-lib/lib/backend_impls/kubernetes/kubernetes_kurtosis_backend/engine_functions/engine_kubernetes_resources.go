@@ -22,7 +22,7 @@ type engineKubernetesResources struct {
 
 	// Should always be nil if namespace is nil
 	pod *apiv1.Pod
-	
+
 	// Should always be nil if namespace is nil
 	ingress *netv1.Ingress
 }

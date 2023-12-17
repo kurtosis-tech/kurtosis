@@ -33,7 +33,7 @@ type KubernetesEngineObjectAttributesProvider interface {
 	ForEngineClusterRole() (KubernetesObjectAttributes, error)
 
 	ForEngineClusterRoleBindings() (KubernetesObjectAttributes, error)
-	
+
 	ForEngineIngress() (KubernetesObjectAttributes, error)
 }
 
@@ -93,7 +93,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
-		grpcPortId: grpcPortSpec,
+		grpcPortId:    grpcPortSpec,
 		restAPIPortId: restAPIPortSpec,
 	}
 	serializedPortsSpec, err := kubernetes_port_spec_serializer.SerializePortSpecs(usedPorts)

@@ -26,7 +26,7 @@ type KubernetesApiContainerObjectAttributesProvider interface {
 	ForApiContainerPod() (KubernetesObjectAttributes, error)
 	ForApiContainerService(
 		privateGrpcPortId string,
-		privateGrpcPortSpec *port_spec.PortSpec)(KubernetesObjectAttributes, error)
+		privateGrpcPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
 	ForApiContainerServiceAccount() (KubernetesObjectAttributes, error)
 	ForApiContainerRole() (KubernetesObjectAttributes, error)
 	ForApiContainerClusterRole() (KubernetesObjectAttributes, error)
