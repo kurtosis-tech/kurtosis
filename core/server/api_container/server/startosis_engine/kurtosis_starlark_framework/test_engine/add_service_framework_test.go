@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"testing"
 
@@ -72,9 +73,9 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 	return add_service.NewAddService(
 		t.serviceNetwork,
 		t.runtimeValueStore,
-		"",
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		t.packageContentProvider,
-		map[string]string{})
+		emptyPackageReplaceOptions)
 }
 
 func (t *addServiceTestCase) GetStarlarkCode() string {

@@ -106,4 +106,7 @@ var (
 		testServiceConfigLabelsKey1: testServiceConfigLabelsValue1,
 		testServiceConfigLabelsKey2: testServiceConfigLabelsValue2,
 	}
+
+	emptyPackageReplaceOptions = map[string]string{}
+	rootModuleLocator          = ""
 )

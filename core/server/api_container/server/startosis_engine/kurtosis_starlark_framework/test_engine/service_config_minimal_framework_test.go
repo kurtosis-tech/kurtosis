@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -38,10 +39,10 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 
 	serviceConfig, interpretationErr := serviceConfigStarlark.ToKurtosisType(
 		t.serviceNetwork,
-		"",
-		"",
+		rootModuleLocator,
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		t.packageContentProvider,
-		map[string]string{})
+		emptyPackageReplaceOptions)
 	require.Nil(t, interpretationErr)
 
 	expectedServiceConfig, err := service.CreateServiceConfig(
