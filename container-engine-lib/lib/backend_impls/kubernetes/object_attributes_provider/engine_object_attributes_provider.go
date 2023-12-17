@@ -23,8 +23,8 @@ type KubernetesEngineObjectAttributesProvider interface {
 
 	ForEngineService(privateGrpcPortId string,
 		privateGrpcPortSpec *port_spec.PortSpec,
-		privateGrpcProxyPortId string,
-		privateGrpcProxyPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
+		privateRESTAPIPortId string,
+		privateRESTAPIPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
 
 	ForEngineNamespace() (KubernetesObjectAttributes, error)
 
@@ -79,8 +79,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(grpcPortId string,
 	grpcPortSpec *port_spec.PortSpec,
-	grpcProxyPortId string,
-	grpcProxyPortSpec *port_spec.PortSpec,
+	restAPIPortId string,
+	restAPIPortSpec *port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
 	name, err := provider.getEngineObjectName()
 	if err != nil {
@@ -94,6 +94,7 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 
 	usedPorts := map[string]*port_spec.PortSpec{
 		grpcPortId: grpcPortSpec,
+		restAPIPortId: restAPIPortSpec,
 	}
 	serializedPortsSpec, err := kubernetes_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {

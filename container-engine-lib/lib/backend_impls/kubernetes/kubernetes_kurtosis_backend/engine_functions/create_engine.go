@@ -68,6 +68,15 @@ func CreateEngine(
 			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
+	privateRESTAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the engine's private rest api port spec object using number '%v' and protocol '%v'",
+			engine.RESTAPIPortAddr,
+			consts.KurtosisServersTransportProtocol.String(),
+		)
+	}
 	privatePortSpecs := map[string]*port_spec.PortSpec{
 		consts.KurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
 	}
@@ -152,6 +161,7 @@ func CreateEngine(
 		namespaceName,
 		engineAttributesProvider,
 		privateGrpcPortSpec,
+		privateRESTAPIPortSpec,
 		enginePodLabels,
 		kubernetesManager,
 	)
@@ -168,15 +178,7 @@ func CreateEngine(
 		}
 	}()
 
-	privateRESTAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating the engine's private rest api port spec object using number '%v' and protocol '%v'",
-			engine.RESTAPIPortAddr,
-			consts.KurtosisServersTransportProtocol.String(),
-		)
-	}
+
 	engineIngress, err := createEngineIngress(
 		ctx,
 		namespaceName,
@@ -482,18 +484,21 @@ func createEngineService(
 	namespace string,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
 	privateGrpcPortSpec *port_spec.PortSpec,
+	privateRESTAPIPortSpec *port_spec.PortSpec,
 	podMatchLabels map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*apiv1.Service, error) {
 	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(
 		consts.KurtosisInternalContainerGrpcPortSpecId,
 		privateGrpcPortSpec,
-		consts.KurtosisInternalContainerGrpcProxyPortSpecId, nil)
+		consts.KurtosisInternalContainerRESTAPIPortSpecId,
+		privateRESTAPIPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred getting the engine service attributes using private grpc port spec '%+v'",
+			"An error occurred getting the engine service attributes using private grpc port spec '%+v' and private REST API port spec '%+v'",
 			privateGrpcPortSpec,
+			privateRESTAPIPortSpec,
 		)
 	}
 	engineServiceName := engineServiceAttributes.GetName().GetString()
@@ -503,6 +508,7 @@ func createEngineService(
 	// Define service ports. These hook up to ports on the containers running in the engine pod
 	servicePorts, err := shared_helpers.GetKubernetesServicePortsFromPrivatePortSpecs(map[string]*port_spec.PortSpec{
 		consts.KurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		consts.KurtosisInternalContainerRESTAPIPortSpecId: privateRESTAPIPortSpec,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the engine service's ports using the engine private port specs")
@@ -524,10 +530,11 @@ func createEngineService(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v'",
+			"An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v' and '%v'",
 			engineServiceName,
 			namespace,
 			privateGrpcPortSpec.GetNumber(),
+			privateRESTAPIPortSpec.GetNumber(),
 		)
 	}
 	return service, nil
