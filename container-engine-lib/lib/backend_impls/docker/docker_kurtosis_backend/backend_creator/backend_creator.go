@@ -245,7 +245,7 @@ func getDockerKurtosisBackend(
 			return nil, stacktrace.Propagate(err, "An error occurred while getting the reverse proxy, This is a bug in Kurtosis")
 		}
 		if maybeReverseProxy == nil {
-			return nil, stacktrace.NewError("Expected to get the Kurtosis reverse proxy but it was not found, This is a bug in Kurtosis")
+			return nil, stacktrace.Propagate(err, "The reverse proxy is not running, This is a bug in Kurtosis")
 		}
 
 		reverseProxyEnclaveNetworkIpAddress, found := maybeReverseProxy.GetEnclaveNetworksIpAddress()[network.GetId()]
