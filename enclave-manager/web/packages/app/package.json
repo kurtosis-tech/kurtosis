@@ -23,8 +23,9 @@
   "scripts": {
     "analyze": "source-map-explorer 'build/static/js/*.js'",
     "clean": "rm -rf build",
-    "start": "PORT=4000 craco start",
-    "start:cloud": "BROWSER=none PUBLIC_URL=http://localhost:3000/emui-dev PORT=4000 dotenv -e ./.env.cloudDevelopment -- craco start",
+    "waitForComponentsBuild": "scripts/wait-until-file-exists.sh ../components/build/index.js",
+    "start": "yarn waitForComponentsBuild && PORT=4000 craco start",
+    "start:cloud": "yarn waitForComponentsBuild && BROWSER=none PUBLIC_URL=http://localhost:3000/emui-dev PORT=4000 dotenv -e ./.env.cloudDevelopment -- craco start",
     "start:prod": "serve -p 4000 -s build",
     "build": "craco build",
     "test": "craco test",
