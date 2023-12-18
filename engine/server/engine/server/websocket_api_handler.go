@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -25,6 +27,14 @@ import (
 const (
 	wsReadBufferSize  = 1024
 	wsWriteBufferSize = 1024
+	maxMessageSize    = 512
+	// Time allowed to write a message to the peer.
+	writeWait = 10 * time.Second
+	// Time allowed to read the next pong message from the peer.
+	pongWait = 60 * time.Second
+	// Send pings to peer with this period. Must be less than pongWait.
+	// nolint:gomnd
+	pingPeriod = (pongWait * 9) / 10
 )
 
 // nolint: exhaustruct
@@ -171,29 +181,36 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool strea
 		return
 	}
 
-	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
+	wsPump, err := NewWebsocketPump[api_type.StarlarkRunResponseLine](ctx)
 	if err != nil {
-		logrus.WithError(err).Errorf("Failed to send value via websocket")
-		// TODO return error
+		logrus.WithError(err).Error("Failed to start websocket connection")
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		enc := json.NewEncoder(ctx.Response())
+		ctx.Response().WriteHeader(http.StatusInternalServerError)
+		err = enc.Encode(api_type.ResponseInfo{
+			Type:    api_type.ERROR,
+			Message: "Failed to start websocket connection",
+			Code:    http.StatusInternalServerError,
+		})
+		if err != nil {
+			logrus.WithError(err).Error("Failed to encode error message")
+		}
 		return
 	}
-	defer conn.Close()
+	defer wsPump.Close()
+	go wsPump.startPumping()
 
 	found, err := streamerPool.Consume(streaming.StreamerUUID(streamerUUID), func(logline *rpc_api.StarlarkRunResponseLine) error {
 		response, err := to_http.ToHttpStarlarkRunResponseLine(logline)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to convert value of type `%T` to http", logline)
 		}
-		if err := conn.WriteJSON(response); err != nil {
-			return stacktrace.Propagate(err, "Failed to send value of type `%T` via websocket", logline)
-		}
+		wsPump.pumpMessage(response)
 		return nil
 	})
 
 	if !found {
-		if err := conn.WriteJSON(notFoundErr); err != nil {
-			logrus.WithError(err).Errorf("Failed to send value via websocket")
-		}
+		wsPump.pumpResponseInfo(&notFoundErr)
 	}
 
 	if err != nil {
@@ -206,9 +223,7 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool strea
 			Message: fmt.Sprintf("Log streaming '%s' failed while sending the data", streamerUUID),
 			Code:    http.StatusInternalServerError,
 		}
-		if err := conn.WriteJSON(streamingErr); err != nil {
-			logrus.WithError(err).Errorf("Failed to send value via websocket")
-		}
+		wsPump.pumpResponseInfo(&streamingErr)
 	}
 }
 
@@ -262,19 +277,27 @@ func streamStarlarkLogsWithHTTP[T any](ctx echo.Context, streamerPool streaming.
 }
 
 func streamServiceLogsWithWebsocket(ctx echo.Context, streamer streaming.ServiceLogStreamer) {
-	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
+	wsPump, err := NewWebsocketPump[api_type.ServiceLogs](ctx)
 	if err != nil {
-		logrus.WithError(err).Errorf("Failed to send value via websocket")
-		// TODO return error
+		logrus.WithError(err).Error("Failed to start websocket connection")
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		enc := json.NewEncoder(ctx.Response())
+		ctx.Response().WriteHeader(http.StatusInternalServerError)
+		err = enc.Encode(api_type.ResponseInfo{
+			Type:    api_type.ERROR,
+			Message: "Failed to start websocket connection",
+			Code:    http.StatusInternalServerError,
+		})
+		if err != nil {
+			logrus.WithError(err).Error("Failed to encode error message")
+		}
 		return
 	}
-	defer conn.Close()
+	defer wsPump.Close()
+	go wsPump.startPumping()
 
 	err = streamer.Consume(func(logline *api_type.ServiceLogs) error {
-		err := conn.WriteJSON(logline)
-		if err != nil {
-			return err
-		}
+		wsPump.pumpMessage(logline)
 		return nil
 	})
 
@@ -288,9 +311,7 @@ func streamServiceLogsWithWebsocket(ctx echo.Context, streamer streaming.Service
 			Message: "Log streaming failed while sending the data",
 			Code:    http.StatusInternalServerError,
 		}
-		if err := conn.WriteJSON(streamingErr); err != nil {
-			logrus.WithError(err).Errorf("Failed to send value via websocket")
-		}
+		wsPump.pumpResponseInfo(&streamingErr)
 	}
 }
 
@@ -320,4 +341,89 @@ func streamServiceLogsWithHTTP(ctx echo.Context, streamer streaming.ServiceLogSt
 			logrus.WithError(err).Errorf("Failed to send value via websocket")
 		}
 	}
+}
+
+type WebsocketPump[T interface{}] struct {
+	websocket  *websocket.Conn
+	inputChan  chan *T
+	infoChan   chan *api_type.ResponseInfo
+	ctx        context.Context
+	cancelFunc context.CancelFunc
+}
+
+func NewWebsocketPump[T interface{}](ctx echo.Context) (*WebsocketPump[T], error) {
+	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to upgrade http connection to websocket")
+	}
+
+	ctxWithCancel, cancelFunc := context.WithCancel(context.Background())
+
+	return &WebsocketPump[T]{
+		websocket:  conn,
+		inputChan:  make(chan *T),
+		ctx:        ctxWithCancel,
+		cancelFunc: cancelFunc,
+	}, nil
+}
+
+func (pump WebsocketPump[T]) startPumping() {
+	ticker := time.NewTicker(pingPeriod)
+	defer func() {
+		ticker.Stop()
+		pump.websocket.Close()
+	}()
+
+	logrus.WithFields(logrus.Fields{
+		"pongWait":       pongWait,
+		"pingPeriod":     pingPeriod,
+		"maxMessageSize": maxMessageSize,
+	}).Debug("Started keep alive process for websocket connection.")
+
+	pump.websocket.SetReadLimit(maxMessageSize)
+	if err := pump.websocket.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
+		logrus.WithError(err).Error("Failed to set Pong wait time")
+		return
+	}
+	// nolint:errcheck
+	pump.websocket.SetPongHandler(func(string) error { return pump.websocket.SetReadDeadline(time.Now().Add(pongWait)) })
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := pump.websocket.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+				logrus.Debug("Websocket connection is likely closed, exiting keep alive process")
+				return
+			}
+			if err := pump.websocket.WriteMessage(websocket.PingMessage, nil); err != nil {
+				logrus.Debug("Websocket connection is likely closed, exiting keep alive process")
+				return
+			}
+		case msg := <-pump.inputChan:
+			if err := pump.websocket.WriteJSON(msg); err != nil {
+				logrus.WithError(stacktrace.Propagate(err, "Failed to send value of type `%T` via websocket", msg)).Errorf("Failed to write message to websocket, closing it.")
+				return
+			}
+		case msg := <-pump.infoChan:
+			if err := pump.websocket.WriteJSON(msg); err != nil {
+				logrus.WithError(stacktrace.Propagate(err, "Failed to send value of type `%T` via websocket", msg)).Errorf("Failed to write message to websocket, closing it.")
+				return
+			}
+		case <-pump.ctx.Done():
+			logrus.Debug("Websocket pumper has been asked to close, closing it.")
+			return
+		}
+	}
+}
+
+func (pump *WebsocketPump[T]) pumpResponseInfo(msg *api_type.ResponseInfo) {
+	pump.infoChan <- msg
+}
+
+func (pump *WebsocketPump[T]) pumpMessage(msg *T) {
+	pump.inputChan <- msg
+}
+
+func (pump *WebsocketPump[T]) Close() {
+	pump.cancelFunc()
 }
