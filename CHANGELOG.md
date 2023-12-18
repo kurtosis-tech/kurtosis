@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.85.49](https://github.com/kurtosis-tech/kurtosis/compare/0.85.48...0.85.49) (2023-12-18)
+
+
+### Features
+
+* add production mode to k8s ([#1963](https://github.com/kurtosis-tech/kurtosis/issues/1963)) ([b0e27e6](https://github.com/kurtosis-tech/kurtosis/commit/b0e27e6c0c6a73a0291bd6ca6eb5a1f48b4c2fc3))
+* persistent volumes work on multi node k8s clusters ([#1943](https://github.com/kurtosis-tech/kurtosis/issues/1943)) ([b2fd9f2](https://github.com/kurtosis-tech/kurtosis/commit/b2fd9f2488a6749c78c8974b6f08cf22b54b2358))
+* User service K8S ingresses for reverse proxy routing ([#1941](https://github.com/kurtosis-tech/kurtosis/issues/1941)) ([c37dd7f](https://github.com/kurtosis-tech/kurtosis/commit/c37dd7f1732a06705d899803fe7678203fa1e6f2))
+
+
+### Bug Fixes
+
+* adding remove logs aggregator container function when it already exists ([#1974](https://github.com/kurtosis-tech/kurtosis/issues/1974)) ([5d74d16](https://github.com/kurtosis-tech/kurtosis/commit/5d74d162019e95cf904c0dd4a2547039fe49af70))
+* Do not fail if the Traefik config dir path already exists ([#1966](https://github.com/kurtosis-tech/kurtosis/issues/1966)) ([4e6f7d7](https://github.com/kurtosis-tech/kurtosis/commit/4e6f7d7e1f5bd232990e5e8351d08ef93884216a))
+* ignore the current status of the service during a start/stop ([#1965](https://github.com/kurtosis-tech/kurtosis/issues/1965)) ([1c4863f](https://github.com/kurtosis-tech/kurtosis/commit/1c4863f4ec112e3c8ca6f095b3551883cbc8a213))
+* refactor the emui components to the shared package ([#1959](https://github.com/kurtosis-tech/kurtosis/issues/1959)) ([a406973](https://github.com/kurtosis-tech/kurtosis/commit/a4069737f364bd7e1a85edd29d33fe0acb2d15df))
+* Set the user service K8S ingress labels so it can be found ([#1962](https://github.com/kurtosis-tech/kurtosis/issues/1962)) ([9cc5f77](https://github.com/kurtosis-tech/kurtosis/commit/9cc5f7749fe151038818ecd6c2cb9a1f328db4ce))
+
 ## [0.85.48](https://github.com/kurtosis-tech/kurtosis/compare/0.85.47...0.85.48) (2023-12-14)
 
 
