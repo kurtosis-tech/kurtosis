@@ -52,6 +52,7 @@ func NewWebsocketPump[T interface{}](ctx echo.Context, cors cors.Cors) (*Websock
 	return &WebsocketPump[T]{
 		websocket:  conn,
 		inputChan:  make(chan *T),
+		infoChan:   make(chan *api_type.ResponseInfo),
 		ctx:        ctxWithCancel,
 		cancelFunc: cancelFunc,
 	}, nil
@@ -62,6 +63,8 @@ func (pump WebsocketPump[T]) StartPumping() {
 	defer func() {
 		ticker.Stop()
 		pump.websocket.Close()
+		close(pump.inputChan)
+		close(pump.infoChan)
 	}()
 
 	logrus.WithFields(logrus.Fields{
