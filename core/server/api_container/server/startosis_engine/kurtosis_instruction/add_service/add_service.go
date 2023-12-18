@@ -25,8 +25,6 @@ const (
 
 	ServiceNameArgName   = "name"
 	ServiceConfigArgName = "config"
-
-	rootModuleLocator = ""
 )
 
 func NewAddService(
@@ -57,7 +55,7 @@ func NewAddService(
 						if _, _, err := validateAndConvertConfigAndReadyCondition(
 							serviceNetwork,
 							value,
-							rootModuleLocator,
+							"",
 							packageId,
 							packageContentProvider,
 							packageReplaceOptions); err != nil {

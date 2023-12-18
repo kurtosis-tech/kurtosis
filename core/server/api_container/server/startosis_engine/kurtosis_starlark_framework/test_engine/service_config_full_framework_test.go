@@ -64,13 +64,14 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 
 	serviceConfig, err := serviceConfigStarlark.ToKurtosisType(
 		t.serviceNetwork,
-		rootModuleLocator,
-		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		testModulePackageId,
+		testModuleMainFileLocator,
 		t.packageContentProvider,
-		emptyPackageReplaceOptions)
+		testNoPackageReplaceOptions)
 	require.Nil(t, err)
 
 	require.Equal(t, testContainerImageName, serviceConfig.GetContainerImageName())
+	require.Nil(t, serviceConfig.GetImageBuildSpec())
 
 	waitDuration, errParseDuration := time.ParseDuration(testWaitConfiguration)
 	require.NoError(t, errParseDuration)

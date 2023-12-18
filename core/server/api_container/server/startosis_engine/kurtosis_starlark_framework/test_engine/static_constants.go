@@ -26,7 +26,11 @@ var (
 	testModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
 	testModuleRelativeLocator = "./helpers.star"
 
-	testContainerImageName = "kurtosistech/example-datastore-server"
+	testContainerImageName       = "kurtosistech/example-datastore-server"
+	testBuildContextDir          = "./"
+	testTargetStage              = "builder"
+	testOnDiskContextDirPath     = ""
+	testOnDiskContainerImagePath = ""
 
 	testPrivatePortId              = "grpc"
 	testPrivatePortNumber          = uint16(1323)
@@ -106,7 +110,4 @@ var (
 		testServiceConfigLabelsKey1: testServiceConfigLabelsValue1,
 		testServiceConfigLabelsKey2: testServiceConfigLabelsValue2,
 	}
-
-	emptyPackageReplaceOptions = map[string]string{}
-	rootModuleLocator          = ""
 )

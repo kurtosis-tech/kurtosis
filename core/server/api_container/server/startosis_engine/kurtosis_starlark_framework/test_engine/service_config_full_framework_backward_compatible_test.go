@@ -56,13 +56,14 @@ func (t *serviceConfigFullTestCaseBackwardCompatible) Assert(typeValue builtin_a
 
 	serviceConfig, err := serviceConfigStarlark.ToKurtosisType(
 		t.serviceNetwork,
-		"",
-		"",
+		testModulePackageId,
+		testModuleMainFileLocator,
 		t.packageContentProvider,
 		map[string]string{})
 	require.Nil(t, err)
 
 	require.Equal(t, testContainerImageName, serviceConfig.GetContainerImageName())
+	require.Nil(t, serviceConfig.GetImageBuildSpec())
 
 	waitDuration, errParseDuration := time.ParseDuration(testWaitConfiguration)
 	require.NoError(t, errParseDuration)

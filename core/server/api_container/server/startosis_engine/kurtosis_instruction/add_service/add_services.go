@@ -51,7 +51,7 @@ func NewAddServices(
 						if _, _, err := validateAndConvertConfigsAndReadyConditions(
 							serviceNetwork,
 							value,
-							rootModuleLocator,
+							"",
 							packageId,
 							packageContentProvider,
 							packageReplaceOptions); err != nil {
