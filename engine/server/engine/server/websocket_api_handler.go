@@ -278,17 +278,11 @@ func streamServiceLogsWithWebsocket(ctx echo.Context, cors cors.Cors, streamer s
 	wsPump, err := NewWebsocketPump[api_type.ServiceLogs](ctx, cors)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to start websocket connection")
-		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		enc := json.NewEncoder(ctx.Response())
-		ctx.Response().WriteHeader(http.StatusInternalServerError)
-		err = enc.Encode(api_type.ResponseInfo{
+		writeResponseInfo(ctx, api_type.ResponseInfo{
 			Type:    api_type.ERROR,
 			Message: "Failed to start websocket connection",
 			Code:    http.StatusInternalServerError,
 		})
-		if err != nil {
-			logrus.WithError(err).Error("Failed to encode error message")
-		}
 		return
 	}
 	defer wsPump.Close()
