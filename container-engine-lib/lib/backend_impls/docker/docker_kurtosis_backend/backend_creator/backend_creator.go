@@ -240,13 +240,17 @@ func getDockerKurtosisBackend(
 			return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector object for enclave '%v'; This is a bug in Kurtosis", enclaveUuid)
 		}
 
-		reverseProxy, err := reverse_proxy_functions.GetReverseProxy(ctx, dockerManager)
+		maybeReverseProxy, err := reverse_proxy_functions.GetReverseProxy(ctx, dockerManager)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while getting the reverse proxy, This is a bug in Kurtosis")
 		}
-		reverseProxyEnclaveNetworkIpAddress, found := reverseProxy.GetEnclaveNetworksIpAddress()[network.GetId()]
+		if maybeReverseProxy == nil {
+			return nil, stacktrace.NewError("Expected to get the Kurtosis reverse proxy but it was not found, This is a bug in Kurtosis")
+		}
+
+		reverseProxyEnclaveNetworkIpAddress, found := maybeReverseProxy.GetEnclaveNetworksIpAddress()[network.GetId()]
 		if !found {
-			return nil, stacktrace.NewError("An error occured while getting the reverse proxy enclave network IP address for enclave '%v', This is a bug in Kurtosis", enclaveUuid)
+			return nil, stacktrace.NewError("An error occurred while getting the reverse proxy enclave network IP address for enclave '%v', This is a bug in Kurtosis", enclaveUuid)
 		}
 
 		alreadyTakenIps := map[string]bool{
