@@ -7,9 +7,15 @@ package user_support_constants
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/cookiejar"
 	"testing"
+)
+
+const (
+	safariUserAgent    = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+	userAgentHeaderKey = "User-Agent"
 )
 
 func TestValidUrls(t *testing.T) {
@@ -22,7 +28,11 @@ func TestValidUrls(t *testing.T) {
 		client := &http.Client{
 			Jar: jar,
 		}
-		resp, err := client.Get(url)
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		require.NoError(t, err, "Got an unexpected error while creating a new GET request with URL '%v'", url)
+		// Adding the User-Agent header because it's mandatory for sending a request to Twitter
+		req.Header.Set(userAgentHeaderKey, safariUserAgent)
+		resp, err := client.Do(req)
 		assert.NoError(t, err, "Got an unexpected error checking url '%v'", url)
 		assert.True(t, isValidReturnCode(resp.StatusCode), "URL '%v' returned unexpected status code: '%d'", url, resp.StatusCode)
 		assert.NoError(t, err, "Got an unexpected error checking url '%v'", url)
