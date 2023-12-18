@@ -18,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 
 	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -36,12 +37,6 @@ const (
 	// nolint:gomnd
 	pingPeriod = (pongWait * 9) / 10
 )
-
-// nolint: exhaustruct
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  wsReadBufferSize,
-	WriteBufferSize: wsWriteBufferSize,
-}
 
 type WebSocketRuntime struct {
 	// The version tag of the engine server image, so it can report its own version
@@ -64,6 +59,9 @@ type WebSocketRuntime struct {
 
 	// Pool of Starlark log streamers create by package/script runs
 	AsyncStarlarkLogs streaming.StreamerPool[*rpc_api.StarlarkRunResponseLine]
+
+	// Allow CORS origins for websocket
+	CorsConfig cors.Cors
 }
 
 func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, params api_type.GetEnclavesEnclaveIdentifierLogsParams) error {
@@ -95,7 +93,7 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context
 
 	if ctx.IsWebSocket() {
 		logrus.Infof("Starting log stream using Websocket")
-		streamServiceLogsWithWebsocket(ctx, *streamer)
+		streamServiceLogsWithWebsocket(ctx, engine.CorsConfig, *streamer)
 	} else {
 		logrus.Infof("Starting log stream using plain HTTP")
 		streamServiceLogsWithHTTP(ctx, *streamer)
@@ -134,7 +132,7 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 
 	if ctx.IsWebSocket() {
 		logrus.Infof("Starting log stream using Websocket")
-		streamServiceLogsWithWebsocket(ctx, *streamer)
+		streamServiceLogsWithWebsocket(ctx, engine.CorsConfig, *streamer)
 	} else {
 		logrus.Infof("Starting log stream using plain HTTP")
 		streamServiceLogsWithHTTP(ctx, *streamer)
@@ -149,7 +147,7 @@ func (engine WebSocketRuntime) GetStarlarkExecutionsStarlarkExecutionUuidLogs(ct
 
 	if ctx.IsWebSocket() {
 		logrus.Infof("Starting log stream using Websocket for streamer UUUID: %s", starlarkExecutionUuid)
-		streamStarlarkLogsWithWebsocket(ctx, engine.AsyncStarlarkLogs, asyncLogUuid)
+		streamStarlarkLogsWithWebsocket(ctx, engine.CorsConfig, engine.AsyncStarlarkLogs, asyncLogUuid)
 	} else {
 		logrus.Infof("Starting log stream using plain HTTP for streamer UUUID: %s", starlarkExecutionUuid)
 		streamStarlarkLogsWithHTTP(ctx, engine.AsyncStarlarkLogs, asyncLogUuid)
@@ -169,7 +167,7 @@ func writeResponseInfo(ctx echo.Context, response api_type.ResponseInfo) {
 	_ = enc.Encode(response)
 }
 
-func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
+func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, cors cors.Cors, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
 	notFoundErr := api_type.ResponseInfo{
 		Type:    api_type.INFO,
 		Message: fmt.Sprintf("Log streaming '%s' not found. Either it has been consumed or has expired.", streamerUUID),
@@ -181,7 +179,7 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool strea
 		return
 	}
 
-	wsPump, err := NewWebsocketPump[api_type.StarlarkRunResponseLine](ctx)
+	wsPump, err := NewWebsocketPump[api_type.StarlarkRunResponseLine](ctx, cors)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to start websocket connection")
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -276,8 +274,8 @@ func streamStarlarkLogsWithHTTP[T any](ctx echo.Context, streamerPool streaming.
 	}
 }
 
-func streamServiceLogsWithWebsocket(ctx echo.Context, streamer streaming.ServiceLogStreamer) {
-	wsPump, err := NewWebsocketPump[api_type.ServiceLogs](ctx)
+func streamServiceLogsWithWebsocket(ctx echo.Context, cors cors.Cors, streamer streaming.ServiceLogStreamer) {
+	wsPump, err := NewWebsocketPump[api_type.ServiceLogs](ctx, cors)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to start websocket connection")
 		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -351,7 +349,14 @@ type WebsocketPump[T interface{}] struct {
 	cancelFunc context.CancelFunc
 }
 
-func NewWebsocketPump[T interface{}](ctx echo.Context) (*WebsocketPump[T], error) {
+func NewWebsocketPump[T interface{}](ctx echo.Context, cors cors.Cors) (*WebsocketPump[T], error) {
+	// nolint: exhaustruct
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  wsReadBufferSize,
+		WriteBufferSize: wsWriteBufferSize,
+		CheckOrigin:     cors.OriginAllowed,
+	}
+
 	conn, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to upgrade http connection to websocket")

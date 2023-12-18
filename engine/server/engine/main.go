@@ -436,6 +436,11 @@ func restApiServer(
 	engineApi.RegisterHandlers(echoApiRouter, engineApi.NewStrictHandler(engineRuntime, nil))
 
 	// ============================== Logging API ======================================
+	// nolint:exhaustruct
+	corsConfig := cors.New(cors.Options{
+		AllowedOrigins: allowOrigins,
+		AllowedMethods: defaultCORSHeaders,
+	})
 	webSocketRuntime := restApi.WebSocketRuntime{
 		ImageVersionTag:             serverArgs.ImageVersionTag,
 		EnclaveManager:              enclave_manager,
@@ -445,6 +450,7 @@ func restApiServer(
 		LogFileManager:              logFileManager,
 		MetricsClient:               metricsClient,
 		AsyncStarlarkLogs:           asyncStarlarkLogs,
+		CorsConfig:                  *corsConfig,
 	}
 	loggingApi.RegisterHandlers(echoApiRouter, webSocketRuntime)
 
