@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.50](https://github.com/kurtosis-tech/kurtosis/compare/0.85.49...0.85.50) (2023-12-18)
+
+
+### Bug Fixes
+
+* Rust version upgraded to v1.70.0 for fixing the publish Rust SDK CI job, ([#1977](https://github.com/kurtosis-tech/kurtosis/issues/1977)) ([6f7e1bb](https://github.com/kurtosis-tech/kurtosis/commit/6f7e1bb0d1c444e9ba3cc354179cdbb5deb64abb))
+
 ## [0.85.49](https://github.com/kurtosis-tech/kurtosis/compare/0.85.48...0.85.49) (2023-12-18)
 
 
