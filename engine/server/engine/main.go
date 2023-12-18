@@ -413,7 +413,7 @@ func restApiServer(
 
 	// This is how you set up a basic Echo router
 	echoRouter := echo.New()
-	echoApiRouter := echoRouter.Group("/api")
+	echoApiRouter := echoRouter.Group(pathToApiGroup)
 	echoApiRouter.Use(echomiddleware.Logger())
 
 	// Setup CORS policies for the REST API server
