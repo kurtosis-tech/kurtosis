@@ -36,8 +36,6 @@ type enclaveKubernetesResources struct {
 	// StopEnclave
 	services []apiv1.Service
 
-	persistentVolumes []apiv1.PersistentVolume
-
 	clusterRoles []rbacv1.ClusterRole
 
 	clusterRoleBindings []rbacv1.ClusterRoleBinding
@@ -101,7 +99,6 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 		namespace:           enclaveNamespace,
 		pods:                []apiv1.Pod{},
 		services:            nil,
-		persistentVolumes:   []apiv1.PersistentVolume{},
 		clusterRoles:        []rbacv1.ClusterRole{},
 		clusterRoleBindings: []rbacv1.ClusterRoleBinding{},
 	}
@@ -296,21 +293,6 @@ func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
 					enclaveId,
 				)
 				continue
-			}
-		}
-
-		// Remove persistent volume
-		if resources.persistentVolumes != nil {
-			for _, persistentVolume := range resources.persistentVolumes {
-				if err := backend.kubernetesManager.RemovePersistentVolume(ctx, persistentVolume.Name); err != nil {
-					erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
-						err,
-						"An error occurred removing persistent volume '%v' for enclave '%v'",
-						persistentVolume.Name,
-						enclaveId,
-					)
-					continue
-				}
 			}
 		}
 
@@ -519,7 +501,7 @@ func (backend *KubernetesKurtosisBackend) createGetEnclaveResourcesOperation(
 		}
 
 		// Pods and Services
-		podsList, servicesList, persistentVolumesList, clusterRolesList, clusterRoleBindingsList, err := backend.kubernetesManager.GetAllEnclaveResourcesByLabels(
+		podsList, servicesList, clusterRolesList, clusterRoleBindingsList, err := backend.kubernetesManager.GetAllEnclaveResourcesByLabels(
 			ctx,
 			namespaceName,
 			enclaveWithIDMatchLabels,
@@ -534,9 +516,6 @@ func (backend *KubernetesKurtosisBackend) createGetEnclaveResourcesOperation(
 		var services []apiv1.Service
 		services = append(services, servicesList.Items...)
 
-		var persistentVolumes []apiv1.PersistentVolume
-		persistentVolumes = append(persistentVolumes, persistentVolumesList.Items...)
-
 		var clusterRoles []rbacv1.ClusterRole
 		clusterRoles = append(clusterRoles, clusterRolesList.Items...)
 
@@ -547,7 +526,6 @@ func (backend *KubernetesKurtosisBackend) createGetEnclaveResourcesOperation(
 			namespace:           namespace,
 			pods:                pods,
 			services:            services,
-			persistentVolumes:   persistentVolumes,
 			clusterRoles:        clusterRoles,
 			clusterRoleBindings: clusterRoleBindings,
 		}

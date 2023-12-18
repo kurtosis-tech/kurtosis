@@ -102,11 +102,11 @@ type dumpPodResult struct {
 
 func NewApiContainerModeArgs(
 	ownEnclaveId enclave.EnclaveUUID,
-	ownNamespaceName string) *ApiContainerModeArgs {
+	ownNamespaceName string, storageClassName string) *ApiContainerModeArgs {
 	return &ApiContainerModeArgs{
 		ownEnclaveId:     ownEnclaveId,
 		ownNamespaceName: ownNamespaceName,
-		storageClassName: "",
+		storageClassName: storageClassName,
 		filesArtifactExpansionVolumeSizeInMegabytes: 0,
 	}
 }

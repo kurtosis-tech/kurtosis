@@ -41,7 +41,7 @@ III. Add your cluster information to `kurtosis-config.yml`
 --------------------------------
 
 1. Open the file located at `"$(kurtosis config path)"`. This should look like `/Users/<YOUR_USER>/Library/Application Support/kurtosis/kurtosis-config.yml` on MacOS.
-2. Paste the following contents, changing `NAME-OF-YOUR-CLUSTER` to the cluster you created and save:
+2. Paste the following contents, changing `NAME-OF-YOUR-CLUSTER` and `STORAGE-CLASS-TO-USE` as per the cluster you created and save:
 ```yaml
 config-version: 2
 should-send-metrics: true
@@ -58,9 +58,23 @@ kurtosis-clusters:
     type: "kubernetes"
     config:
       kubernetes-cluster-name: "NAME-OF-YOUR-CLUSTER"
-      storage-class: "standard"
+      storage-class: "STORAGE-CLASS-TO-USE"
       enclave-size-in-megabytes: 10
 ```
+
+:::tip Storage Class
+The Storage Class specified in the configuration above will be used for spinning up persistent volumes. Make sure you have the right
+value in case you are using persistent directories.
+:::
+
+We support storage classes that support dynamic provisioning; here are some of them:
+
+1. For AWS we recommend the [`aws-ebs-csi-driver`](https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/install.md)
+2. For DigitalOcean we recommend [`do-block-storage`](https://github.com/digitalocean/csi-digitalocean/?tab=readme-ov-file#installing-to-kubernetes) but your cluster should have this out of the box
+3. K3s the default provisioner `local-path` should just work out of the box
+4. For minikube the default provisioner `standard` should just work out of the box
+
+For any other cloud setup please reach out to us by creating an issue on our [GitHub](https://github.com/kurtosis-tech/kurtosis)
 
 IV. Configure Kurtosis
 --------------------------------
