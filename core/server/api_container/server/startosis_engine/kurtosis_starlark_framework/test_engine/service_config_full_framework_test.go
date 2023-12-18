@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/require"
 	"net"
 	"testing"
@@ -19,7 +19,7 @@ import (
 type serviceConfigFullTestCase struct {
 	*testing.T
 	serviceNetwork         *service_network.MockServiceNetwork
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
+	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
 func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFull() {

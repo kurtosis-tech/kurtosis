@@ -22,7 +22,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"net"
@@ -54,14 +53,14 @@ const (
 type StartosisInterpreterTestSuite struct {
 	suite.Suite
 	serviceNetwork         *service_network.MockServiceNetwork
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
+	packageContentProvider *startosis_packages.MockPackageContentProvider
 	runtimeValueStore      *runtime_value_store.RuntimeValueStore
 
 	interpreter *StartosisInterpreter
 }
 
 func (suite *StartosisInterpreterTestSuite) SetupTest() {
-	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
+	suite.packageContentProvider = startosis_packages.NewMockPackageContentProvider(suite.T())
 	enclaveDb := getEnclaveDBForTest(suite.T())
 
 	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()

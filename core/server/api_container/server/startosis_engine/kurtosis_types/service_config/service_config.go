@@ -579,30 +579,30 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 	return filesArtifacts, persistentDirectories, nil
 }
 
-// If [rawImageAttrValue] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
 // If [rawImageAttrValue] is an ImageBuildSpec type, returns name for the image to build and ImageBuildSpec converted to KurtosisType
+// If [rawImageAttrValue] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
 func convertImageAttr(
 	rawImageAttrValue starlark.Value,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
-	imageName, interpretationErr := kurtosis_types.SafeCastToString(rawImageAttrValue, ImageAttr)
-	if interpretationErr == nil {
-		return imageName, nil, nil
-	} else {
-		imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := rawImageAttrValue.(*ImageBuildSpec)
-		if !isImageBuildSpecStarlarkType {
-			return "", nil, startosis_errors.NewInterpretationError("Failed to cast '%v' to an image build spec object.", rawImageAttrValue)
-		}
+	imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := rawImageAttrValue.(*ImageBuildSpec)
+	if isImageBuildSpecStarlarkType {
 		imageBuildSpec, interpretationErr := imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {
 			return "", nil, interpretationErr
 		}
-		imageName, interpretationErr = imageBuildSpecStarlarkType.GetImageName()
+		imageName, interpretationErr := imageBuildSpecStarlarkType.GetImageName()
 		if interpretationErr != nil {
 			return "", nil, interpretationErr
 		}
 		return imageName, imageBuildSpec, nil
+	} else {
+		imageName, interpretationErr := kurtosis_types.SafeCastToString(rawImageAttrValue, ImageAttr)
+		if interpretationErr != nil {
+			return "", nil, interpretationErr
+		}
+		return imageName, nil, nil
 	}
 }

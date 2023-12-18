@@ -29,8 +29,9 @@ var (
 	testContainerImageName       = "kurtosistech/example-datastore-server"
 	testBuildContextDir          = "./"
 	testTargetStage              = "builder"
-	testOnDiskContextDirPath     = ""
-	testOnDiskContainerImagePath = ""
+	testContainerImageLocator    = "github.com/kurtosistech/test-package/Dockerfile"
+	testOnDiskContextDirPath     = "kurtosis-data/test-package"
+	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"
 
 	testPrivatePortId              = "grpc"
 	testPrivatePortNumber          = uint16(1323)

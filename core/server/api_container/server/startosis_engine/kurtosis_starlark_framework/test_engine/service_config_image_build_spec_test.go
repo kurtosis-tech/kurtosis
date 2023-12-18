@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -16,20 +16,21 @@ import (
 type serviceConfigImageBuildSpecTestCase struct {
 	*testing.T
 	serviceNetwork         *service_network.MockServiceNetwork
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
+	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
 func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSpec() {
-	// setup package content provider
-	suite.serviceNetwork.EXPECT()
+	suite.packageContentProvider.EXPECT().
+		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
+		Times(1).
+		Return(testModuleMainFileLocator, nil)
 
-	// mock
-	// packageContentProvider.GetAbsoluteLocator(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, buildContextLocator, packageReplaceOptions)
+	suite.packageContentProvider.EXPECT().
+		GetOnDiskAbsoluteFilePath(testContainerImageLocator).
+		Times(1).
+		Return(testOnDiskContainerImagePath, nil)
 
-	// mock
-	// packageContentProvider.GetOnDiskAbsoluteFilePath(containerImageAbsoluteLocator)
-
-	suite.run(&serviceConfigMinimalTestCase{
+	suite.run(&serviceConfigImageBuildSpecTestCase{
 		T:                      suite.T(),
 		serviceNetwork:         suite.serviceNetwork,
 		packageContentProvider: suite.packageContentProvider,
@@ -37,7 +38,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSp
 }
 
 func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
-	imageBuildSpec := fmt.Sprintf("%s(%s=%s,%s=%s,%s=%s)",
+	imageBuildSpec := fmt.Sprintf("%s(%s=%q,%s=%q,%s=%q)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
@@ -85,4 +86,5 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
+	require.Equal(t, expectedImageBuildSpec, serviceConfig.GetImageBuildSpec())
 }

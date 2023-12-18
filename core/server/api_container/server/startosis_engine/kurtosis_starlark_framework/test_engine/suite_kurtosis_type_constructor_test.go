@@ -6,7 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/suite"
 	"go.starlark.net/starlark"
 	"reflect"
@@ -25,7 +25,7 @@ type KurtosisTypeConstructorTestSuite struct {
 
 	serviceNetwork         *service_network.MockServiceNetwork
 	runtimeValueStore      *runtime_value_store.RuntimeValueStore
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
+	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
 func TestKurtosisTypeConstructorSuite(t *testing.T) {
@@ -44,7 +44,7 @@ func (suite *KurtosisTypeConstructorTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 	suite.runtimeValueStore = runtimeValueStoreForTest
 
-	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
+	suite.packageContentProvider = startosis_packages.NewMockPackageContentProvider(suite.T())
 }
 
 func (suite *KurtosisTypeConstructorTestSuite) run(builtin KurtosisTypeConstructorBaseTest) {

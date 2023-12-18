@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -15,7 +15,7 @@ import (
 type serviceConfigMinimalTestCase struct {
 	*testing.T
 	serviceNetwork         *service_network.MockServiceNetwork
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
+	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
 func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigMinimal() {
