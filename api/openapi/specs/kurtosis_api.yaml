@@ -14,10 +14,10 @@ servers:
           - '9779'
         default: '9779'
 
-  - url: https://instance-{instance_uuid}.cloud.kurtosis.com/api
+  - url: https://engine-{engine_uuid}.cloud.kurtosis.com/api
     description: Production Cloud environment 
     variables:
-      instance_uuid:
+      engine_uuid:
         default: "000000000000"
 
 paths:
