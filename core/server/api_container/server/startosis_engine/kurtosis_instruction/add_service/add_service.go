@@ -52,20 +52,14 @@ func NewAddService(
 					Name:              ServiceConfigArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*service_config.ServiceConfig],
-					Validator:         nil,
-					//Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-					//	// we just try to convert the configs here to validate their shape, to avoid code duplication with Interpret
-					//	if _, _, err := validateAndConvertConfigAndReadyCondition(
-					//		serviceNetwork,
-					//		value,
-					//		packageId, // use package id for root locator
-					//		packageId,
-					//		packageContentProvider,
-					//		packageReplaceOptions); err != nil {
-					//		return err
-					//	}
-					//	return nil
-					//},
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						// we just try to convert the configs here to validate their shape, to avoid code duplication with Interpret
+						_, ok := value.(*service_config.ServiceConfig)
+						if !ok {
+							return startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(value))
+						}
+						return nil
+					},
 				},
 			},
 		},

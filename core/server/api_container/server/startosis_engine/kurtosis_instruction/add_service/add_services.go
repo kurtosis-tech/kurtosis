@@ -45,17 +45,11 @@ func NewAddServices(
 					Name:              ConfigsArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
-					// TODO: add a validator
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication with Interpret
-						if _, _, err := validateAndConvertConfigsAndReadyConditions(
-							serviceNetwork,
-							value,
-							"",
-							packageId,
-							packageContentProvider,
-							packageReplaceOptions); err != nil {
-							return err
+						_, ok := value.(*starlark.Dict)
+						if !ok {
+							return startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(value))
 						}
 						return nil
 					},

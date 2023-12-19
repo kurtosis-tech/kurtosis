@@ -230,7 +230,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'", ImageAttr, ServiceConfigTypeName)
 	}
-	imageName, imageBuildSpec, interpretationErr = convertImageAttr(
+	imageName, imageBuildSpec, interpretationErr = convertImage(
 		rawImageAttrValue,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageId,
@@ -580,15 +580,15 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 	return filesArtifacts, persistentDirectories, nil
 }
 
-// If [rawImageAttrValue] is an ImageBuildSpec type, returns name for the image to build and ImageBuildSpec converted to KurtosisType
-// If [rawImageAttrValue] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
-func convertImageAttr(
-	rawImageAttrValue starlark.Value,
+// If [image] is an ImageBuildSpec type, returns name for the image to build and ImageBuildSpec converted to KurtosisType
+// If [image] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
+func convertImage(
+	image starlark.Value,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
-	imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := rawImageAttrValue.(*ImageBuildSpec)
+	imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := image.(*ImageBuildSpec)
 	if isImageBuildSpecStarlarkType {
 		imageBuildSpec, interpretationErr := imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {
@@ -601,7 +601,7 @@ func convertImageAttr(
 		logrus.Debugf("CONVERT IMAGE ATTRIBUTE: %v %v", imageName, imageBuildSpec)
 		return imageName, imageBuildSpec, nil
 	} else {
-		imageName, interpretationErr := kurtosis_types.SafeCastToString(rawImageAttrValue, ImageAttr)
+		imageName, interpretationErr := kurtosis_types.SafeCastToString(image, ImageAttr)
 		if interpretationErr != nil {
 			return "", nil, interpretationErr
 		}
