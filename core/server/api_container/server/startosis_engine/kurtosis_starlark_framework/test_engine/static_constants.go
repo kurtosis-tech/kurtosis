@@ -29,6 +29,7 @@ var (
 	testContainerImageName       = "kurtosistech/example-datastore-server"
 	testBuildContextDir          = "./"
 	testTargetStage              = "builder"
+	testBuildContextLocator      = testModulePackageId
 	testContainerImageLocator    = "github.com/kurtosistech/test-package/Dockerfile"
 	testOnDiskContextDirPath     = "kurtosis-data/test-package"
 	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"

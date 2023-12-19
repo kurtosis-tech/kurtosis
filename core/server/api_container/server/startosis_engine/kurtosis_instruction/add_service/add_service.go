@@ -25,6 +25,8 @@ const (
 
 	ServiceNameArgName   = "name"
 	ServiceConfigArgName = "config"
+
+	testRootModuleLocator = "./"
 )
 
 func NewAddService(
@@ -50,19 +52,20 @@ func NewAddService(
 					Name:              ServiceConfigArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*service_config.ServiceConfig],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						// we just try to convert the configs here to validate their shape, to avoid code duplication with Interpret
-						if _, _, err := validateAndConvertConfigAndReadyCondition(
-							serviceNetwork,
-							value,
-							"",
-							packageId,
-							packageContentProvider,
-							packageReplaceOptions); err != nil {
-							return err
-						}
-						return nil
-					},
+					Validator:         nil,
+					//Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+					//	// we just try to convert the configs here to validate their shape, to avoid code duplication with Interpret
+					//	if _, _, err := validateAndConvertConfigAndReadyCondition(
+					//		serviceNetwork,
+					//		value,
+					//		packageId, // use package id for root locator
+					//		packageId,
+					//		packageContentProvider,
+					//		packageReplaceOptions); err != nil {
+					//		return err
+					//	}
+					//	return nil
+					//},
 				},
 			},
 		},

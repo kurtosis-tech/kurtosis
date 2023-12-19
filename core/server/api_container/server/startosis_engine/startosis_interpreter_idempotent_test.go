@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.starlark.net/starlark"
@@ -33,12 +34,12 @@ var noPackageReplaceOptions = map[string]string{}
 
 type StartosisInterpreterIdempotentTestSuite struct {
 	suite.Suite
-	packageContentProvider *startosis_packages.MockPackageContentProvider
+	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
 	interpreter            *StartosisInterpreter
 }
 
 func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
-	suite.packageContentProvider = startosis_packages.NewMockPackageContentProvider(suite.T())
+	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
 	enclaveDb := getEnclaveDBForTest(suite.T())
 
 	thread := &starlark.Thread{

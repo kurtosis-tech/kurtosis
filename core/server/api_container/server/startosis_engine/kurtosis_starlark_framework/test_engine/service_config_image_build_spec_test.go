@@ -23,7 +23,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSp
 	suite.packageContentProvider.EXPECT().
 		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
 		Times(1).
-		Return(testModuleMainFileLocator, nil)
+		Return(testBuildContextLocator, nil)
 
 	suite.packageContentProvider.EXPECT().
 		GetOnDiskAbsoluteFilePath(testContainerImageLocator).
@@ -38,7 +38,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSp
 }
 
 func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
-	imageBuildSpec := fmt.Sprintf("%s(%s=%q,%s=%q,%s=%q)",
+	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
@@ -46,7 +46,7 @@ func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
 		testBuildContextDir,
 		service_config.TargetStageAttr,
 		testTargetStage)
-	return fmt.Sprintf("%s(%s=%q)",
+	return fmt.Sprintf("%s(%s=%s)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, imageBuildSpec)
 }
