@@ -76,7 +76,7 @@ func (suite *StarlarkValueSerdeSuite) TestStarlarkValueSerde_Dict() {
 }
 
 func (suite *StarlarkValueSerdeSuite) TestStarlarkValueSerde_Service() {
-	port, interpretationErr := port_spec.CreatePortSpec(
+	port, interpretationErr := port_spec.CreatePortSpecUsingGoValues(
 		uint16(443),
 		port_spec_core.TransportProtocol_TCP,
 		nil,
