@@ -685,13 +685,19 @@ func TestStopService_ServiceAlreadyStopped(t *testing.T) {
 			},
 			Statuses: nil,
 		},
-	).Maybe().Times(0)
+	).Times(1).Return(
+		map[service.ServiceUUID]bool{
+			serviceUuid: true,
+		},
+		map[service.ServiceUUID]error{},
+		nil,
+	)
 
 	err = network.StopService(ctx, string(serviceName))
-	require.NotNil(t, err)
-	expectedErrorMsg := fmt.Sprintf("Service '%s' is already stopped", string(serviceName))
-	require.Contains(t, err.Error(), expectedErrorMsg)
-	require.Equal(t, service.ServiceStatus_Stopped, serviceRegistration.GetStatus())
+	require.Nil(t, err)
+	serviceRegistrationAfterBeingStopped, err := network.serviceRegistrationRepository.Get(serviceName)
+	require.NoError(t, err)
+	require.Equal(t, serviceRegistrationAfterBeingStopped.GetStatus(), service.ServiceStatus_Stopped)
 }
 
 func TestStartService_Successful(t *testing.T) {
@@ -814,6 +820,7 @@ func TestStartService_ServiceAlreadyStarted(t *testing.T) {
 	serviceRegistration.SetStatus(service.ServiceStatus_Started)
 	serviceConfig := testServiceConfig(t, testContainerImageName)
 	serviceRegistration.SetConfig(serviceConfig)
+	serviceObj := service.NewService(serviceRegistration, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{}, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil))
 
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
@@ -841,13 +848,19 @@ func TestStartService_ServiceAlreadyStarted(t *testing.T) {
 		map[service.ServiceUUID]*service.ServiceConfig{
 			serviceUuid: serviceConfig,
 		},
-	).Maybe().Times(0)
+	).Times(1).Return(
+		map[service.ServiceUUID]*service.Service{
+			serviceUuid: serviceObj,
+		},
+		map[service.ServiceUUID]error{},
+		nil,
+	)
 
 	err = network.StartService(ctx, string(serviceName))
-	require.NotNil(t, err)
-	expectedErrorMsg := fmt.Sprintf("Service '%s' is already started", string(serviceName))
-	require.Contains(t, err.Error(), expectedErrorMsg)
-	require.Equal(t, serviceRegistration.GetStatus(), service.ServiceStatus_Started)
+	require.Nil(t, err)
+	serviceRegistrationAfterBeingStarted, err := network.serviceRegistrationRepository.Get(serviceName)
+	require.NoError(t, err)
+	require.Equal(t, serviceRegistrationAfterBeingStarted.GetStatus(), service.ServiceStatus_Started)
 }
 
 func TestUpdateService(t *testing.T) {

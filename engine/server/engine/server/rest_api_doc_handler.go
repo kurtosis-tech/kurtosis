@@ -100,23 +100,23 @@ type TemplateRenderer struct {
 	templates *template.Template
 }
 
-func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+func (templateRender *TemplateRenderer) Render(writer io.Writer, name string, data interface{}, ctx echo.Context) error {
 	// Add global methods if data is a map
 	if viewContext, isMap := data.(map[string]interface{}); isMap {
-		viewContext["reverse"] = c.Echo().Reverse
+		viewContext["reverse"] = ctx.Echo().Reverse
 	}
-	return t.templates.ExecuteTemplate(w, name, data)
+	return templateRender.templates.ExecuteTemplate(writer, name, data)
 }
 
-func ServeSwaggerUI(e *echo.Echo, uri string, opts UIConfig) {
+func ServeSwaggerUI(echoRouter *echo.Echo, groupPath string, uri string, opts UIConfig) {
 	const template_name = "swaggerui"
 
 	tmpl := TemplateRenderer{
 		templates: template.Must(template.New(template_name).Parse(uiTemplate)),
 	}
-	e.Renderer = &tmpl
+	echoRouter.Renderer = &tmpl
 
-	e.GET(uri, func(c echo.Context) error {
-		return c.Render(http.StatusOK, template_name, opts)
+	echoRouter.Group(groupPath).GET(uri, func(ctx echo.Context) error {
+		return ctx.Render(http.StatusOK, template_name, opts)
 	})
 }
