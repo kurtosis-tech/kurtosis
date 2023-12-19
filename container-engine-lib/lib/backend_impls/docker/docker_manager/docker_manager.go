@@ -1361,23 +1361,15 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		ShmSize:        0,
 		Dockerfile:     defaultContainerImageFile,
 		Ulimits:        []*units.Ulimit{},
-		// BuildArgs needs to be a *string instead of just a string so that
-		// we can tell the difference between "" (empty string) and no value
-		// at all (nil). See the parsing of buildArgs in
-		// api/server/router/build/build_routes.go for even more info.
-		BuildArgs:   map[string]*string{},
-		AuthConfigs: map[string]registry.AuthConfig{},
-		Context:     containerImageFileTarReader,
+		BuildArgs:      map[string]*string{},
+		AuthConfigs:    map[string]registry.AuthConfig{},
+		Context:        containerImageFileTarReader,
+		// 0.0.0 label is a hack so that images by internal testsuite are cleaned up by kurtosis clean/PruneUnusedImages
 		Labels:      map[string]string{},
-		// squash the resulting image's layers to the parent
-		// preserves the original image and creates a new one from the parent with all
-		// the changes applied to a single layer
-		Squash: false, // this will probably make image building faster
-		// CacheFrom specifies images that are used for matching cache. Images
-		// specified here do not need to have a valid parent chain to match cache.
+		Squash:      false,
 		CacheFrom:   []string{},
 		SecurityOpt: []string{},
-		ExtraHosts:  []string{}, // List of extra hosts
+		ExtraHosts:  []string{},
 		Target:      imageBuildSpec.GetTargetStage(),
 		SessionID:   buildkitSession.ID(),
 		Platform:    "",
