@@ -221,7 +221,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	var ok bool
 
 	var imageName string
-	var imageBuildSpec *image_build_spec.ImageBuildSpec
+	var maybeImageBuildSpec *image_build_spec.ImageBuildSpec
 	rawImageAttrValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](config.KurtosisValueTypeDefault, ImageAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -229,7 +229,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'", ImageAttr, ServiceConfigTypeName)
 	}
-	imageName, imageBuildSpec, interpretationErr = convertImage(
+	imageName, maybeImageBuildSpec, interpretationErr = convertImage(
 		rawImageAttrValue,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageId,
@@ -425,7 +425,7 @@ func (config *ServiceConfig) ToKurtosisType(
 
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
-		imageBuildSpec,
+		maybeImageBuildSpec,
 		privatePorts,
 		publicPorts,
 		entryPointArgs,

@@ -1306,10 +1306,10 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, down
 }
 
 func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
-	contextDirPath := imageBuildSpec.GetContextDirPath()
-	containerImageFileTarReader, err := getBuildContextReader(contextDirPath)
+	buildContextDirPath := imageBuildSpec.GetBuildContextDir()
+	buildContextTarReader, err := getBuildContextReader(buildContextDirPath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, contextDirPath)
+		return "", stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, buildContextDirPath)
 	}
 
 	// Before instructing docker client to execute an image build, we need to create a connection to buildkit
@@ -1333,8 +1333,13 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	}
 
 	// Activate the session
-	go buildkitSession.Run(ctx, dialSessionFunc) // nolint
-	defer buildkitSession.Close()                //nolint
+	go func() {
+		err := buildkitSession.Run(ctx, dialSessionFunc)
+		if err != nil {
+			logrus.Errorf("An error occurred running a buildkit session for building image '%v':\n%v", imageName, err)
+		}
+	}()
+	defer buildkitSession.Close() //nolint
 
 	imageBuildOpts := types.ImageBuildOptions{
 		Tags:           []string{imageName},
@@ -1359,7 +1364,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		Ulimits:        []*units.Ulimit{},
 		BuildArgs:      map[string]*string{},
 		AuthConfigs:    map[string]registry.AuthConfig{},
-		Context:        containerImageFileTarReader,
+		Context:        buildContextTarReader,
 		// 0.0.0 label is a hack so that images by internal testsuite are cleaned up by kurtosis clean/PruneUnusedImages
 		Labels:      map[string]string{},
 		Squash:      false,
@@ -1378,7 +1383,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		// Outputs defines configurations for exporting build results. Only supported in BuildKit mode.
 		Outputs: []types.ImageBuildOutput{},
 	}
-	imageBuildResponse, err := manager.dockerClientNoTimeout.ImageBuild(ctx, containerImageFileTarReader, imageBuildOpts)
+	imageBuildResponse, err := manager.dockerClientNoTimeout.ImageBuild(ctx, buildContextTarReader, imageBuildOpts)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", imageName)
 	}
