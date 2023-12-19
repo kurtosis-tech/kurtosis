@@ -1,7 +1,6 @@
 package docker_manager
 
 import (
-	"regexp"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -182,40 +181,4 @@ func TestBuildImage(t *testing.T) {
 	//imageBuildSpec := image_build_spec.NewImageBuildSpec(contextDirPath, containerImageFilePath, "")
 	//_, err = dockerManager.BuildImage(ctx, "foobar", imageBuildSpec)
 	//require.NoError(t, err)
-}
-
-func TestSuccessfulImageBuildRegex(t *testing.T) {
-	imageBuildResponseBodyStr := `
-		{"id":"moby.buildkit.trace","aux":"Cm8KR3NoYTI1Njo3ZWFiZDFlODNlMWUwZmI1MDNjOWQ0MjdiNzFlNTQxY2VjODFkNDFiN2I0Mjk3NjhhMjdhZmYyM2VhNzRkMDZhGiRbaW50ZXJuYWxdIGxvYWQgcmVtb3RlIGJ1aWxkIGNvbnRleHQ="}
-		{"id":"moby.buildkit.trace","aux":"Cn0KR3NoYTI1Njo3ZWFiZDFlODNlMWUwZmI1MDNjOWQ0MjdiNzFlNTQxY2VjODFkNDFiN2I0Mjk3NjhhMjdhZmYyM2VhNzRkMDZhGiRbaW50ZXJuYWxdIGxvYWQgcmVtb3RlIGJ1aWxkIGNvbnRleHQqDAiF/ferBhCLzIGyAg=="}
-		{"stream":"Successfully tagged foobar:latest\n"}
-	`
-
-	successfulImageBuild, err := regexp.MatchString(successfulImageBuildRegexStr, imageBuildResponseBodyStr)
-	require.NoError(t, err)
-	require.True(t, successfulImageBuild)
-}
-
-func TestSuccessfulImageBuildRegexWithLongerImageName(t *testing.T) {
-	imageBuildResponseBodyStr := `
-		{"id":"moby.buildkit.trace","aux":"Cm8KR3NoYTI1Njo3ZWFiZDFlODNlMWUwZmI1MDNjOWQ0MjdiNzFlNTQxY2VjODFkNDFiN2I0Mjk3NjhhMjdhZmYyM2VhNzRkMDZhGiRbaW50ZXJuYWxdIGxvYWQgcmVtb3RlIGJ1aWxkIGNvbnRleHQ="}
-		{"id":"moby.buildkit.trace","aux":"Cn0KR3NoYTI1Njo3ZWFiZDFlODNlMWUwZmI1MDNjOWQ0MjdiNzFlNTQxY2VjODFkNDFiN2I0Mjk3NjhhMjdhZmYyM2VhNzRkMDZhGiRbaW50ZXJuYWxdIGxvYWQgcmVtb3RlIGJ1aWxkIGNvbnRleHQqDAiF/ferBhCLzIGyAg=="}
-		{"stream":"Successfully tagged kurtosis/backend-server:latest\n"}
-	`
-
-	successfulImageBuild, err := regexp.MatchString(successfulImageBuildRegexStr, imageBuildResponseBodyStr)
-	require.NoError(t, err)
-	require.True(t, successfulImageBuild)
-}
-
-func TestSuccessfulImageBuildRegexFailure(t *testing.T) {
-	imageBuildResponseBodyStr := `
-		{"id":"moby.buildkit.trace","aux":"Cm8KR3NoYTI1Njo4ZDZjNTBkZDU3ZGM1N2Y3YWFhN2ZkYTQ5NjFlMDc3YjYyYjJkMTIxYmRlM2RmZmEzYWI5MDJkOGI4NDc3NDE3GiRbaW50ZXJuYWxdIGxvYWQgcmVtb3RlIGJ1aWxkIGNvbnRleHQ="}
-		{"id":"moby.buildkit.trace","aux":"Cn0KR3NoYTI1Njo4ZDZjNTBkZDU3ZGM1N2Y3YWFhN2ZkYTQ5NjFlMDc3YjYyYjJkMTIxYmRlM2RmZmEzYWI5MDJkOGI4NDc3NDE3GiRbaW50ZXJuYWxdIGxvYWQgcmVtb3RlIGJ1aWxkIGNvbnRleHQqDAiu/PerBhCYsc3wAQ=="}
-		{"errorDetail":{"message":"failed to compute cache key: \"/kurtosis-cloud-admin-backend-server\" not found: not found"},"error":"failed to compute cache key: \"/kurtosis-cloud-admin-backend-server\" not found: not found"}
-	`
-
-	successfulImageBuild, err := regexp.MatchString(successfulImageBuildRegexStr, imageBuildResponseBodyStr)
-	require.NoError(t, err)
-	require.False(t, successfulImageBuild)
 }

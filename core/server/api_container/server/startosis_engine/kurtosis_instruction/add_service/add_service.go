@@ -25,8 +25,6 @@ const (
 
 	ServiceNameArgName   = "name"
 	ServiceConfigArgName = "config"
-
-	testRootModuleLocator = "./"
 )
 
 func NewAddService(

@@ -17,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
-	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"math"
 	"path"
@@ -598,7 +597,6 @@ func convertImage(
 		if interpretationErr != nil {
 			return "", nil, interpretationErr
 		}
-		logrus.Debugf("CONVERT IMAGE ATTRIBUTE: %v %v", imageName, imageBuildSpec)
 		return imageName, imageBuildSpec, nil
 	} else {
 		imageName, interpretationErr := kurtosis_types.SafeCastToString(image, ImageAttr)

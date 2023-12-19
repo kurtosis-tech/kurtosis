@@ -151,10 +151,6 @@ const (
 
 	// Per https://github.com/hashicorp/waypoint/pull/1937/files
 	buildkitSessionSharedKey = ""
-
-	// NOTE: this regex only accounts for image builds with latest tag
-	// this will need to be changed whenever configuring labels on image builds is enabled
-	successfulImageBuildRegexStr = "{\"stream\":\"Successfully tagged (.+):latest\\\\n\"\\}"
 )
 
 type RestartPolicy string
@@ -1395,12 +1391,13 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	}
 	imageBuildResponseBodyStr := imageBuildResponseBuffer.String()
 
-	// ImageBuildResponse has no notion of success or error builds, so must manually parse the response body for error
-	isSuccessfulImageBuild, err := regexp.MatchString(successfulImageBuildRegexStr, imageBuildResponseBodyStr)
+	// ImageBuildResponse has no notion of success or error builds, so we check if the image is available locally and return the
+	// response body if it is not found
+	isImageAvailable, err := manager.isImageAvailableLocally(imageName)
 	if err != nil {
-		return "", stacktrace.NewError("An error occurred attempting to match successful image build regex '%v' with image build output:\n%v", successfulImageBuildRegexStr, imageBuildResponseBodyStr)
+		return "", stacktrace.Propagate(err, "Failed to check if '%v' was built and available locally.", imageName)
 	}
-	if !isSuccessfulImageBuild {
+	if !isImageAvailable {
 		return "", stacktrace.NewError("Image build for '%s' failed with the following output:\n%v", imageName, imageBuildResponseBodyStr)
 	}
 
