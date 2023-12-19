@@ -530,10 +530,6 @@ Error encountered running Starlark code.
 
 Here, Kurtosis is telling us that the `add_service` instruction on line `54` of your `main.star` (the one for ensuring PostgREST is up) is timing out when was checking for ports opening.
 
-:::info
-Fun fact: this failure was encountered at the last step in Kurtosis' [multi-phase run approach][multi-phase-runs-reference], which is also called the Execution step that we mentioned earlier [when we got Postgres up and running](#review-run-postgres).
-:::
-
 
 #### Investigating the issue
 If you check the service's logs, printed in the error message right after this header `== SERVICE 'api' LOGS ===================================`, you will see that there is an authentication error  
