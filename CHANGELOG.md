@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.85.51](https://github.com/kurtosis-tech/kurtosis/compare/0.85.50...0.85.51) (2023-12-19)
+
+
+### Features
+
+* catalog show run count ([#1975](https://github.com/kurtosis-tech/kurtosis/issues/1975)) ([5f29a12](https://github.com/kurtosis-tech/kurtosis/commit/5f29a12a891a18ddf8a0f48ed806acb125008fc2))
+* update api path and keep alive ([#1976](https://github.com/kurtosis-tech/kurtosis/issues/1976)) ([e026109](https://github.com/kurtosis-tech/kurtosis/commit/e0261098ae7870caa7804a120e7ee408d053854f))
+
+
+### Bug Fixes
+
+* fix nil pointer error when getting reverse proxy from the cluster ([#1980](https://github.com/kurtosis-tech/kurtosis/issues/1980)) ([f20c290](https://github.com/kurtosis-tech/kurtosis/commit/f20c290143e801d3f48fe8f29ea6399ed50ecb48))
+
 ## [0.85.50](https://github.com/kurtosis-tech/kurtosis/compare/0.85.49...0.85.50) (2023-12-18)
 
 
