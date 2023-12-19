@@ -1,3 +1,8 @@
+//go:build !kubernetes
+// +build !kubernetes
+
+// We don't run this test in Kubernetes because, as of 2023-12-18, image building is not implemented in Kubernetes yet
+
 package startosis_package_test
 
 import (
