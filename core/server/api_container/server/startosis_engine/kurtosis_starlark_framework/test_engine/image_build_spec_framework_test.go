@@ -54,6 +54,6 @@ func (t *imageBuildSpecTest) Assert(typeValue builtin_argument.KurtosisValueType
 		testNoPackageReplaceOptions)
 	require.Nil(t, err)
 	require.Equal(t, testOnDiskContainerImagePath, imageBuildSpec.GetContainerImageFilePath())
-	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetContextDirPath())
+	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
 	require.Equal(t, testTargetStage, imageBuildSpec.GetTargetStage())
 }

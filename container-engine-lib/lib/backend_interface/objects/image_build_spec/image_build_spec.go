@@ -52,7 +52,7 @@ func (imageBuildSpec *ImageBuildSpec) GetContainerImageFilePath() string {
 	return imageBuildSpec.privateImageBuildSpec.ContainerImageFilePath
 }
 
-func (imageBuildSpec *ImageBuildSpec) GetContextDirPath() string {
+func (imageBuildSpec *ImageBuildSpec) GetBuildContextDir() string {
 	return imageBuildSpec.privateImageBuildSpec.ContextDirPath
 }
 
