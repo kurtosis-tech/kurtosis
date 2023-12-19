@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/require"
 	"net"
 	"testing"
@@ -17,7 +18,8 @@ import (
 
 type serviceConfigFullTestCase struct {
 	*testing.T
-	serviceNetwork *service_network.MockServiceNetwork
+	serviceNetwork         *service_network.MockServiceNetwork
+	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
 func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFull() {
@@ -26,8 +28,9 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFull() {
 	)
 
 	suite.run(&serviceConfigFullTestCase{
-		T:              suite.T(),
-		serviceNetwork: suite.serviceNetwork,
+		T:                      suite.T(),
+		serviceNetwork:         suite.serviceNetwork,
+		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
@@ -51,8 +54,7 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 		service_config.MinMemoryMegaBytesAttr, testMinMemoryMegabytes,
 		service_config.ReadyConditionsAttr,
 		getDefaultReadyConditionsScriptPart(),
-		service_config.LabelsAttr, fmt.Sprintf("{%q: %q, %q: %q}", testServiceConfigLabelsKey1, testServiceConfigLabelsValue1, testServiceConfigLabelsKey2, testServiceConfigLabelsValue2),
-	)
+		service_config.LabelsAttr, fmt.Sprintf("{%q: %q, %q: %q}", testServiceConfigLabelsKey1, testServiceConfigLabelsValue1, testServiceConfigLabelsKey2, testServiceConfigLabelsValue2))
 	return starlarkCode
 }
 
@@ -60,10 +62,16 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
-	serviceConfig, err := serviceConfigStarlark.ToKurtosisType(t.serviceNetwork)
+	serviceConfig, err := serviceConfigStarlark.ToKurtosisType(
+		t.serviceNetwork,
+		testModulePackageId,
+		testModuleMainFileLocator,
+		t.packageContentProvider,
+		testNoPackageReplaceOptions)
 	require.Nil(t, err)
 
 	require.Equal(t, testContainerImageName, serviceConfig.GetContainerImageName())
+	require.Nil(t, serviceConfig.GetImageBuildSpec())
 
 	waitDuration, errParseDuration := time.ParseDuration(testWaitConfiguration)
 	require.NoError(t, errParseDuration)

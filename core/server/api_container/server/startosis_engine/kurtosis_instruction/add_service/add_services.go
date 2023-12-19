@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -29,7 +30,12 @@ const (
 	ConfigsArgName = "configs"
 )
 
-func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewAddServices(
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServicesBuiltinName,
@@ -40,10 +46,10 @@ func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueS
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						// we just try to convert the configs here to validate their shape, to avoid code duplication
-						// with Interpret
-						if _, _, err := validateAndConvertConfigsAndReadyConditions(serviceNetwork, value); err != nil {
-							return err
+						// we just try to convert the configs here to validate their shape, to avoid code duplication with Interpret
+						_, ok := value.(*starlark.Dict)
+						if !ok {
+							return startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(value))
 						}
 						return nil
 					},
@@ -53,10 +59,12 @@ func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueS
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &AddServicesCapabilities{
-				serviceNetwork:    serviceNetwork,
-				runtimeValueStore: runtimeValueStore,
-
-				serviceConfigs: nil, // populated at interpretation time
+				serviceNetwork:         serviceNetwork,
+				runtimeValueStore:      runtimeValueStore,
+				packageId:              packageId,
+				packageContentProvider: packageContentProvider,
+				packageReplaceOptions:  packageReplaceOptions,
+				serviceConfigs:         nil, // populated at interpretation time
 
 				resultUuids:     map[service.ServiceName]string{}, // populated at interpretation time
 				readyConditions: nil,                              // populated at interpretation time
@@ -72,8 +80,11 @@ func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueS
 }
 
 type AddServicesCapabilities struct {
-	serviceNetwork    service_network.ServiceNetwork
-	runtimeValueStore *runtime_value_store.RuntimeValueStore
+	serviceNetwork         service_network.ServiceNetwork
+	runtimeValueStore      *runtime_value_store.RuntimeValueStore
+	packageId              string
+	packageContentProvider startosis_packages.PackageContentProvider
+	packageReplaceOptions  map[string]string
 
 	serviceConfigs map[service.ServiceName]*service.ServiceConfig
 
@@ -82,12 +93,19 @@ type AddServicesCapabilities struct {
 	resultUuids map[service.ServiceName]string
 }
 
-func (builtin *AddServicesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	ServiceConfigsDict, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, ConfigsArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ConfigsArgName)
 	}
-	serviceConfigs, readyConditions, interpretationErr := validateAndConvertConfigsAndReadyConditions(builtin.serviceNetwork, ServiceConfigsDict)
+	serviceConfigs, readyConditions, interpretationErr := validateAndConvertConfigsAndReadyConditions(
+		builtin.serviceNetwork,
+		ServiceConfigsDict,
+		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		builtin.packageId,
+		builtin.packageContentProvider,
+		builtin.packageReplaceOptions,
+	)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -369,6 +387,10 @@ func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
 func validateAndConvertConfigsAndReadyConditions(
 	serviceNetwork service_network.ServiceNetwork,
 	configs starlark.Value,
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string,
 ) (
 	map[service.ServiceName]*service.ServiceConfig,
 	map[service.ServiceName]*service_config.ReadyCondition,
@@ -397,7 +419,7 @@ func validateAndConvertConfigsAndReadyConditions(
 		if !isDictValueAServiceConfig {
 			return nil, nil, startosis_errors.NewInterpretationError("One value of the '%s' dictionary is not a ServiceConfig (was '%s'). Values of this argument should correspond to the config of the service to be added", ConfigsArgName, reflect.TypeOf(dictValue))
 		}
-		apiServiceConfig, interpretationErr := serviceConfig.ToKurtosisType(serviceNetwork)
+		apiServiceConfig, interpretationErr := serviceConfig.ToKurtosisType(serviceNetwork, locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {
 			return nil, nil, interpretationErr
 		}

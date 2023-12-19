@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -12,41 +13,63 @@ import (
 	"testing"
 )
 
-type serviceConfigMinimalTestCase struct {
+type serviceConfigImageBuildSpecTestCase struct {
 	*testing.T
 	serviceNetwork         *service_network.MockServiceNetwork
 	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
-func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigMinimal() {
-	suite.run(&serviceConfigMinimalTestCase{
+func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSpec() {
+	suite.packageContentProvider.EXPECT().
+		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
+		Times(1).
+		Return(testBuildContextLocator, nil)
+
+	suite.packageContentProvider.EXPECT().
+		GetOnDiskAbsoluteFilePath(testContainerImageLocator).
+		Times(1).
+		Return(testOnDiskContainerImagePath, nil)
+
+	suite.run(&serviceConfigImageBuildSpecTestCase{
 		T:                      suite.T(),
 		serviceNetwork:         suite.serviceNetwork,
 		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
-func (t *serviceConfigMinimalTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)",
+func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
+	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
+		service_config.ImageBuildSpecTypeName,
+		service_config.BuiltImageNameAttr,
+		testContainerImageName,
+		service_config.BuildContextAttr,
+		testBuildContextDir,
+		service_config.TargetStageAttr,
+		testTargetStage)
+	return fmt.Sprintf("%s(%s=%s)",
 		service_config.ServiceConfigTypeName,
-		service_config.ImageAttr, testContainerImageName)
+		service_config.ImageAttr, imageBuildSpec)
 }
 
-func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
+func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
 	serviceConfig, interpretationErr := serviceConfigStarlark.ToKurtosisType(
 		t.serviceNetwork,
-		testModulePackageId,
 		testModuleMainFileLocator,
+		testModulePackageId,
 		t.packageContentProvider,
 		testNoPackageReplaceOptions)
 	require.Nil(t, interpretationErr)
 
+	expectedImageBuildSpec := image_build_spec.NewImageBuildSpec(
+		testOnDiskContextDirPath,
+		testOnDiskContainerImagePath,
+		testTargetStage)
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
-		nil,
+		expectedImageBuildSpec,
 		map[string]*port_spec.PortSpec{},
 		map[string]*port_spec.PortSpec{},
 		nil,
@@ -63,5 +86,5 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
-	require.Nil(t, serviceConfig.GetImageBuildSpec())
+	require.Equal(t, expectedImageBuildSpec, serviceConfig.GetImageBuildSpec())
 }

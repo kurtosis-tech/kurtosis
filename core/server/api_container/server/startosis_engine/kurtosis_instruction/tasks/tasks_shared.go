@@ -151,7 +151,7 @@ func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvi
 		}
 	}
 
-	validatorEnvironment.AppendRequiredContainerImage(imageName)
+	validatorEnvironment.AppendRequiredImagePull(imageName)
 	return nil
 
 }
@@ -249,6 +249,7 @@ func resultMapToString(resultMap map[string]starlark.Comparable, builtinNameForL
 func getServiceConfig(image string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion) (*service.ServiceConfig, error) {
 	serviceConfig, err := service.CreateServiceConfig(
 		image,
+		nil,
 		nil,
 		nil,
 		// This make sure that the container does not stop as soon as it starts

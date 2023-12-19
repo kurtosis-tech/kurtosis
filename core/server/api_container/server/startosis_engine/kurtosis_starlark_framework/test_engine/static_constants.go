@@ -26,7 +26,13 @@ var (
 	testModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
 	testModuleRelativeLocator = "./helpers.star"
 
-	testContainerImageName = "kurtosistech/example-datastore-server"
+	testContainerImageName       = "kurtosistech/example-datastore-server"
+	testBuildContextDir          = "./"
+	testTargetStage              = "builder"
+	testBuildContextLocator      = testModulePackageId
+	testContainerImageLocator    = "github.com/kurtosistech/test-package/Dockerfile"
+	testOnDiskContextDirPath     = "kurtosis-data/test-package"
+	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"
 
 	testPrivatePortId              = "grpc"
 	testPrivatePortNumber          = uint16(1323)

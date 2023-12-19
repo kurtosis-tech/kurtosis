@@ -90,7 +90,13 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	}
 
 	validatorEnvironment.AddServiceName(serviceName)
-	validatorEnvironment.AppendRequiredContainerImage(serviceConfig.GetContainerImageName())
+
+	if serviceConfig.GetImageBuildSpec() != nil {
+		validatorEnvironment.AppendRequiredImageBuild(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec())
+	} else {
+		validatorEnvironment.AppendRequiredImagePull(serviceConfig.GetContainerImageName())
+	}
+
 	var portIds []string
 	for portId := range serviceConfig.GetPrivatePorts() {
 		portIds = append(portIds, portId)
@@ -167,6 +173,7 @@ func replaceMagicStrings(
 
 	renderedServiceConfig, err := service.CreateServiceConfig(
 		serviceConfig.GetContainerImageName(),
+		serviceConfig.GetImageBuildSpec(),
 		serviceConfig.GetPrivatePorts(),
 		serviceConfig.GetPublicPorts(),
 		entrypoints,
