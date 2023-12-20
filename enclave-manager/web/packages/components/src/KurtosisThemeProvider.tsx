@@ -137,10 +137,7 @@ const theme = extendTheme({
           };
         },
         solid: defineStyle((props) => ({
-          _hover: { bg: "gray.600" },
-          _active: { bg: "gray.600" },
-          color: `${props.colorScheme}.400`,
-          bg: "gray.700",
+          color: `white`,
         })),
         ghost: defineStyle((props) => ({
           _hover: { bg: "gray.650" },
@@ -267,7 +264,14 @@ const theme = extendTheme({
       baseStyle: {
         list: {
           minW: "unset",
+          padding: "4px",
+          boxShadow:
+            "0px 11.25px 30px 0px rgba(0, 0, 0, 0.40), 0px 3.75px 7.5px 0px rgba(0, 0, 0, 0.20), 0px 0px 0px 0.75px rgba(0, 0, 0, 0.10)",
         },
+        item: {
+          borderRadius: "6px",
+        },
+        icon: { color: "gray.400", "font-size": "18px !important" },
       },
     },
     Popover: {

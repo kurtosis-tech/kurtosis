@@ -1,4 +1,4 @@
-import { Box, Flex, Icon, Image, Input, InputGroup, InputRightElement, Text } from "@chakra-ui/react";
+import { Box, Flex, Icon, Input, InputGroup, InputRightElement, Text } from "@chakra-ui/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { IoPlay, IoStar } from "react-icons/io5";
@@ -13,6 +13,7 @@ import {
   isDefined,
   KurtosisAlert,
   KurtosisMarkdown,
+  PackageLogo,
   PackageSourceButton,
   readablePackageName,
   RunKurtosisPackageButton,
@@ -148,14 +149,7 @@ const PackageHeader = ({ kurtosisPackage }: PackageImplProps) => {
 
   return (
     <Flex gap={"22px"} w={"100%"}>
-      <Image
-        h={"120px"}
-        w={"120px"}
-        bg={kurtosisPackage.iconUrl !== "" ? "white" : "black"}
-        src={kurtosisPackage.iconUrl || `${client.getBaseApplicationUrl()}/logo.png`}
-        fallbackSrc={`${client.getBaseApplicationUrl()}/logo.png`}
-        borderRadius={"9px"}
-      />
+      <PackageLogo logoUrl={kurtosisPackage.iconUrl} h={"120px"} w={"120px"} borderRadius={"9px"} />
       <Flex flexDirection={"column"} justifyContent={"space-between"} flex={"1"}>
         <Flex flexDirection={"column"} gap={"8px"}>
           <Text noOfLines={1} fontSize={"xl"}>
