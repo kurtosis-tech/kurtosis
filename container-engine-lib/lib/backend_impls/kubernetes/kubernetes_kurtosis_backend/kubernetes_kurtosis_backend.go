@@ -256,7 +256,7 @@ func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 ) {
 	restartPolicy := apiv1.RestartPolicyNever
 	if backend.productionMode {
-		restartPolicy = apiv1.RestartPolicyOnFailure
+		restartPolicy = apiv1.RestartPolicyAlways
 	}
 
 	successfullyStartedServices, failedServices, err := user_services_functions.StartRegisteredUserServices(
