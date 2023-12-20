@@ -32,9 +32,16 @@ func CreateReverseProxy(
 	}
 	if found {
 		logrus.Debugf("Found existing reverse proxy; cannot start a new one.")
-		reverseProxyObj, _, getProxyObjErr := getReverseProxyObjectAndContainerId(ctx, dockerManager)
+		reverseProxyObj, proxyContainerId, getProxyObjErr := getReverseProxyObjectAndContainerId(ctx, dockerManager)
 		if getProxyObjErr == nil {
-			return reverseProxyObj, nil, nil
+			removeProxyFunc := func() {
+				removeCtx := context.Background()
+				if err := dockerManager.RemoveContainer(removeCtx, proxyContainerId); err != nil {
+					logrus.Errorf("an error occurred to remove the current reverse proxy container with ID '%s' failed. Error was:\n%v", proxyContainerId, err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the reverse proxy server with Docker container ID '%v'!!!!!!", proxyContainerId)
+				}
+			}
+			return reverseProxyObj, removeProxyFunc, nil
 		}
 		logrus.Debugf("Something failed while trying to create the reverse proxy object using container with ID '%s'. Error was:\n%s", proxyDockerContainer.GetId(), getProxyObjErr.Error())
 		logrus.Debugf("Destroying the failing reverse proxy to create a new one...")
