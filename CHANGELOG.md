@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.85.53](https://github.com/kurtosis-tech/kurtosis/compare/0.85.52...0.85.53) (2023-12-20)
+
+
+### Bug Fixes
+
+* change restart policy to always ([#1996](https://github.com/kurtosis-tech/kurtosis/issues/1996)) ([c41583d](https://github.com/kurtosis-tech/kurtosis/commit/c41583d7a6d07e9d39bdb5911627db2f7e9af7e5))
+* destroying the current reverse proxy if it can't be used to create a new one during the `CreateReverseProxy` process ([#1991](https://github.com/kurtosis-tech/kurtosis/issues/1991)) ([82d1565](https://github.com/kurtosis-tech/kurtosis/commit/82d156568655e908d715ea04f8f19bce555b4815))
+* nil pointer error found in the `kurtosis clean -a` cmd, adding remove reverse proxy container function when it already exists ([#1995](https://github.com/kurtosis-tech/kurtosis/issues/1995)) ([64eff3e](https://github.com/kurtosis-tech/kurtosis/commit/64eff3ee80a7159301a8266a0da45abe57754f9a))
+* websocket keep-alive ([#1993](https://github.com/kurtosis-tech/kurtosis/issues/1993)) ([509c508](https://github.com/kurtosis-tech/kurtosis/commit/509c508f84fc00b7a09911628fc795e3db94c2ec))
+
 ## [0.85.52](https://github.com/kurtosis-tech/kurtosis/compare/0.85.51...0.85.52) (2023-12-20)
 
 
