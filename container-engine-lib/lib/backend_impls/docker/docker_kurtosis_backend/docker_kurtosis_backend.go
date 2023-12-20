@@ -229,7 +229,7 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 
 	var restartPolicy docker_manager.RestartPolicy = docker_manager.NoRestart
 	if backend.productionMode {
-		restartPolicy = docker_manager.RestartOnFailure
+		restartPolicy = docker_manager.RestartAlways
 	}
 
 	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
