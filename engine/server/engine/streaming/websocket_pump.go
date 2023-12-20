@@ -32,6 +32,7 @@ type WebsocketPump[T interface{}] struct {
 	infoChan   chan *api_type.ResponseInfo
 	ctx        context.Context
 	cancelFunc context.CancelFunc
+	closed     bool
 }
 
 func NewWebsocketPump[T interface{}](ctx echo.Context, cors cors.Cors) (*WebsocketPump[T], error) {
@@ -55,16 +56,18 @@ func NewWebsocketPump[T interface{}](ctx echo.Context, cors cors.Cors) (*Websock
 		infoChan:   make(chan *api_type.ResponseInfo),
 		ctx:        ctxWithCancel,
 		cancelFunc: cancelFunc,
+		closed:     false,
 	}, nil
 }
 
-func (pump WebsocketPump[T]) StartPumping() {
+func (pump *WebsocketPump[T]) StartPumping() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
 		pump.websocket.Close()
 		close(pump.inputChan)
 		close(pump.infoChan)
+		pump.closed = true
 	}()
 
 	logrus.WithFields(logrus.Fields{
@@ -109,12 +112,20 @@ func (pump WebsocketPump[T]) StartPumping() {
 	}
 }
 
-func (pump *WebsocketPump[T]) PumpResponseInfo(msg *api_type.ResponseInfo) {
+func (pump *WebsocketPump[T]) PumpResponseInfo(msg *api_type.ResponseInfo) error {
+	if pump.closed {
+		return stacktrace.NewError("Websocket pump closed but there are still more message to send")
+	}
 	pump.infoChan <- msg
+	return nil
 }
 
-func (pump *WebsocketPump[T]) PumpMessage(msg *T) {
+func (pump *WebsocketPump[T]) PumpMessage(msg *T) error {
+	if pump.closed {
+		return stacktrace.NewError("Websocket pump closed but there are still more message to send")
+	}
 	pump.inputChan <- msg
+	return nil
 }
 
 func (pump *WebsocketPump[T]) Close() {

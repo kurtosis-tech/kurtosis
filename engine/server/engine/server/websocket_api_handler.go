@@ -187,12 +187,13 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, cors cors.Cors, st
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to convert value of type `%T` to http", logline)
 		}
-		wsPump.PumpMessage(response)
-		return nil
+		return wsPump.PumpMessage(response)
 	})
 
 	if !found {
-		wsPump.PumpResponseInfo(&notFoundErr)
+		if err := wsPump.PumpResponseInfo(&notFoundErr); err != nil {
+			logrus.WithError(err).Error("Failed to send response.")
+		}
 	}
 
 	if err != nil {
@@ -205,7 +206,9 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, cors cors.Cors, st
 			Message: fmt.Sprintf("Log streaming '%s' failed while sending the data", streamerUUID),
 			Code:    http.StatusInternalServerError,
 		}
-		wsPump.PumpResponseInfo(&streamingErr)
+		if err := wsPump.PumpResponseInfo(&streamingErr); err != nil {
+			logrus.WithError(err).Error("Failed to send response.")
+		}
 	}
 }
 
@@ -273,8 +276,7 @@ func streamServiceLogsWithWebsocket(ctx echo.Context, cors cors.Cors, streamer s
 	go wsPump.StartPumping()
 
 	err = streamer.Consume(func(logline *api_type.ServiceLogs) error {
-		wsPump.PumpMessage(logline)
-		return nil
+		return wsPump.PumpMessage(logline)
 	})
 
 	if err != nil {
@@ -287,7 +289,9 @@ func streamServiceLogsWithWebsocket(ctx echo.Context, cors cors.Cors, streamer s
 			Message: "Log streaming failed while sending the data",
 			Code:    http.StatusInternalServerError,
 		}
-		wsPump.PumpResponseInfo(&streamingErr)
+		if err := wsPump.PumpResponseInfo(&streamingErr); err != nil {
+			logrus.WithError(err).Error("Failed to send response.")
+		}
 	}
 }
 
