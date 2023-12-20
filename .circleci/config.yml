@@ -664,9 +664,6 @@ jobs:
   test_old_enclave_continuity:
     executor: ubuntu_vm
     steps:
-      # TODO: Re-enable once Traefik has been released.
-      - <<: *abort_job
-
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
