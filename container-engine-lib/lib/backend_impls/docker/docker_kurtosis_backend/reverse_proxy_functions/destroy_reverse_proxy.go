@@ -24,13 +24,20 @@ func DestroyReverseProxy(ctx context.Context, dockerManager *docker_manager.Dock
 		return nil
 	}
 
-	if err := dockerManager.StopContainer(ctx, maybeReverseProxyContainerId, stopReverseProxyContainerTimeout); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping the reverse proxy container with ID '%v'", maybeReverseProxyContainerId)
+	if err := destroyReverseProxyWithContainerId(ctx, dockerManager, maybeReverseProxyContainerId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the reverse proxy container with ID '%v'", maybeReverseProxyContainerId)
 	}
 
-	if err := dockerManager.RemoveContainer(ctx, maybeReverseProxyContainerId); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing the reverse proxy container with ID '%v'", maybeReverseProxyContainerId)
+	return nil
+}
+
+func destroyReverseProxyWithContainerId(ctx context.Context, dockerManager *docker_manager.DockerManager, reverseProxyContainerId string) error {
+	if err := dockerManager.StopContainer(ctx, reverseProxyContainerId, stopReverseProxyContainerTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the reverse proxy container with ID '%v'", reverseProxyContainerId)
 	}
 
+	if err := dockerManager.RemoveContainer(ctx, reverseProxyContainerId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing the reverse proxy container with ID '%v'", reverseProxyContainerId)
+	}
 	return nil
 }
