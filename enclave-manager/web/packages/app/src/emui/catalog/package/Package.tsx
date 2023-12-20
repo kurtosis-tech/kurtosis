@@ -65,8 +65,8 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
               size={"lg"}
               onClick={() => setShowConfigurePackage(true)}
             />
-            <InputGroup size={"lg"}>
-              <Input value={runCommand} textOverflow={"ellipsis"} />
+            <InputGroup size={"lg"} variant={"solid "}>
+              <Input value={runCommand} textOverflow={"ellipsis"} fontFamily={"Inconsolata"} bgColor={"gray.850"} />
               <InputRightElement>
                 <CopyButton
                   contentName={"command"}
@@ -85,8 +85,14 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
             >
               View on Github
             </PackageSourceButton>
-            <Flex borderBottomWidth={"1px"} borderBottomColor={"whiteAlpha.300"} gap={"32px"} p={"16px"}>
-              <Flex gap={"16px"} flexDirection={"column"}>
+            <Flex
+              borderBottomWidth={"1px"}
+              borderBottomColor={"whiteAlpha.300"}
+              justifyContent={"space-between"}
+              gap={"32px"}
+              p={"16px"}
+            >
+              <Flex gap={"16px"} flexDirection={"column"} flex={"1"}>
                 <Flex gap={"8px"} color="gray.400" fontWeight={"bold"} alignItems={"center"}>
                   <Icon as={IoStar} w={"12px"} h={"12px"} />
                   <Text as={"span"} textTransform={"uppercase"}>
@@ -97,7 +103,7 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
                   {kurtosisPackage.stars.toString()}
                 </Text>
               </Flex>
-              <Flex gap={"16px"} flexDirection={"column"}>
+              <Flex gap={"16px"} flexDirection={"column"} flex={"1"}>
                 <Flex gap={"8px"} color="gray.400" fontWeight={"bold"} alignItems={"center"}>
                   <Icon as={IoPlay} w={"12px"} h={"12px"} />
                   <Text as={"span"} textTransform={"uppercase"}>
@@ -160,7 +166,7 @@ const PackageHeader = ({ kurtosisPackage }: PackageImplProps) => {
           </Text>
         </Flex>
         <Box>
-          <SaveKurtosisPackageButton kurtosisPackage={kurtosisPackage} />
+          <SaveKurtosisPackageButton kurtosisPackage={kurtosisPackage} size={"md"} />
         </Box>
       </Flex>
     </Flex>

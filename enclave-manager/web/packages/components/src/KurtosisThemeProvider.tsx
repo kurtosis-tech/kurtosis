@@ -139,6 +139,16 @@ const theme = extendTheme({
         solid: defineStyle((props) => ({
           color: `white`,
         })),
+        savedSolid: (props: StyleFunctionProps) => {
+          const solid = theme.components.Button.variants!.solid(props);
+          return {
+            ...solid,
+            _hover: { bg: "gray.600" },
+            _active: { bg: "gray.600" },
+            bg: "gray.700",
+            color: `${props.colorScheme}.400`,
+          };
+        },
         ghost: defineStyle((props) => ({
           _hover: { bg: "gray.650" },
           color: props.colorScheme === "gray" ? undefined : `${props.colorScheme}.400`,
@@ -222,6 +232,7 @@ const theme = extendTheme({
             borderStyle: "solid",
             borderWidth: "1px",
             borderRadius: "6px",
+            overflow: "hidden",
           },
           header: {
             bg: "gray.850",

@@ -10,13 +10,5 @@ export const PackageLogo = ({ logoUrl, ...imageProps }: PackageLogoProps) => {
   const logoHref = useHref("/noLogo.png");
   const hasLogo = isDefined(logoUrl) && logoUrl !== "";
 
-  return (
-    <Image
-      bg={hasLogo ? "white" : "black"}
-      src={hasLogo ? logoUrl : logoHref}
-      fallbackSrc={logoHref}
-      borderRadius={"6px"}
-      {...imageProps}
-    />
-  );
+  return <Image src={hasLogo ? logoUrl : logoHref} fallbackSrc={logoHref} borderRadius={"6px"} {...imageProps} />;
 };

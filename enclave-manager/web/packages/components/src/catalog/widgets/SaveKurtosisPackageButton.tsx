@@ -81,6 +81,7 @@ const SaveKurtosisPackageButtonMemo = memo(
         <Button
           leftIcon={<MdBookmarkAdd />}
           size={"xs"}
+          variant={"savedSolid"}
           colorScheme={isPackageSaved ? "kurtosisGreen" : "darkBlue"}
           bg={isPackageSaved ? "#18371E" : undefined}
           onClick={onClick}
