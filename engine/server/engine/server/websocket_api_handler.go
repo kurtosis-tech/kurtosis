@@ -180,32 +180,25 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, cors cors.Cors, st
 		return
 	}
 	defer wsPump.Close()
-	go wsPump.StartPumping()
 
 	found, err := streamerPool.Consume(streaming.StreamerUUID(streamerUUID), func(logline *rpc_api.StarlarkRunResponseLine) error {
 		response, err := to_http.ToHttpStarlarkRunResponseLine(logline)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to convert value of type `%T` to http", logline)
 		}
-		wsPump.PumpMessage(response)
-		return nil
+		return wsPump.PumpMessage(response)
 	})
 
 	if !found {
-		wsPump.PumpResponseInfo(&notFoundErr)
+		if err := wsPump.PumpResponseInfo(&notFoundErr); err != nil {
+			logrus.WithError(err).Warn("Failed to send response.")
+		}
 	}
 
 	if err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
 			"streamerUUID": streamerUUID,
-			"stacktrace":   fmt.Sprintf("%+v", err),
 		}).Error("Failed to stream all data")
-		streamingErr := api_type.ResponseInfo{
-			Type:    api_type.ERROR,
-			Message: fmt.Sprintf("Log streaming '%s' failed while sending the data", streamerUUID),
-			Code:    http.StatusInternalServerError,
-		}
-		wsPump.PumpResponseInfo(&streamingErr)
 	}
 }
 
@@ -270,24 +263,15 @@ func streamServiceLogsWithWebsocket(ctx echo.Context, cors cors.Cors, streamer s
 		return
 	}
 	defer wsPump.Close()
-	go wsPump.StartPumping()
 
 	err = streamer.Consume(func(logline *api_type.ServiceLogs) error {
-		wsPump.PumpMessage(logline)
-		return nil
+		return wsPump.PumpMessage(logline)
 	})
 
 	if err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
-			"stacktrace": fmt.Sprintf("%+v", err),
-			"services":   streamer.GetRequestedServiceUuids(),
+			"services": streamer.GetRequestedServiceUuids(),
 		}).Error("Failed to stream all data")
-		streamingErr := api_type.ResponseInfo{
-			Type:    api_type.ERROR,
-			Message: "Log streaming failed while sending the data",
-			Code:    http.StatusInternalServerError,
-		}
-		wsPump.PumpResponseInfo(&streamingErr)
 	}
 }
 
