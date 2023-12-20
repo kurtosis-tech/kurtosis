@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.85.52](https://github.com/kurtosis-tech/kurtosis/compare/0.85.51...0.85.52) (2023-12-20)
+
+
+### Features
+
+* image build spec ([#1964](https://github.com/kurtosis-tech/kurtosis/issues/1964)) ([367d13b](https://github.com/kurtosis-tech/kurtosis/commit/367d13bc819fa2c049a3eed05bf2d10ddf5994a2))
+
+
+### Bug Fixes
+
+* bring back old enclave continuity ([#1990](https://github.com/kurtosis-tech/kurtosis/issues/1990)) ([723c81d](https://github.com/kurtosis-tech/kurtosis/commit/723c81d0b3ac6f27d481debb2023f998899eedcd))
+
 ## [0.85.51](https://github.com/kurtosis-tech/kurtosis/compare/0.85.50...0.85.51) (2023-12-19)
 
 
