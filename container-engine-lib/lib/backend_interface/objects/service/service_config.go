@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/stacktrace"
@@ -16,6 +17,10 @@ type ServiceConfig struct {
 
 type privateServiceConfig struct {
 	ContainerImageName string
+
+	// Configuration for container engine to build image for this service
+	// If nil, container engine won't be able to build image for this service
+	ImageBuildSpec *image_build_spec.ImageBuildSpec
 
 	PrivatePorts map[string]*port_spec.PortSpec
 
@@ -47,6 +52,7 @@ type privateServiceConfig struct {
 
 func CreateServiceConfig(
 	containerImageName string,
+	imageBuildSpec *image_build_spec.ImageBuildSpec,
 	privatePorts map[string]*port_spec.PortSpec,
 	publicPorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -68,6 +74,7 @@ func CreateServiceConfig(
 
 	internalServiceConfig := &privateServiceConfig{
 		ContainerImageName:        containerImageName,
+		ImageBuildSpec:            imageBuildSpec,
 		PrivatePorts:              privatePorts,
 		PublicPorts:               publicPorts,
 		EntrypointArgs:            entrypointArgs,
@@ -88,6 +95,10 @@ func CreateServiceConfig(
 
 func (serviceConfig *ServiceConfig) GetContainerImageName() string {
 	return serviceConfig.privateServiceConfig.ContainerImageName
+}
+
+func (serviceConfig *ServiceConfig) GetImageBuildSpec() *image_build_spec.ImageBuildSpec {
+	return serviceConfig.privateServiceConfig.ImageBuildSpec
 }
 
 func (serviceConfig *ServiceConfig) GetPrivatePorts() map[string]*port_spec.PortSpec {

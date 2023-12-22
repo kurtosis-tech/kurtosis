@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/require"
 	"net"
 	"testing"
@@ -14,7 +15,8 @@ import (
 
 type serviceConfigFullTestCaseBackwardCompatible struct {
 	*testing.T
-	serviceNetwork *service_network.MockServiceNetwork
+	serviceNetwork         *service_network.MockServiceNetwork
+	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
 func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFullBackwardCompatible() {
@@ -23,8 +25,9 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFullBackwardComp
 	)
 
 	suite.run(&serviceConfigFullTestCaseBackwardCompatible{
-		T:              suite.T(),
-		serviceNetwork: suite.serviceNetwork,
+		T:                      suite.T(),
+		serviceNetwork:         suite.serviceNetwork,
+		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
@@ -51,10 +54,16 @@ func (t *serviceConfigFullTestCaseBackwardCompatible) Assert(typeValue builtin_a
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
-	serviceConfig, err := serviceConfigStarlark.ToKurtosisType(t.serviceNetwork)
+	serviceConfig, err := serviceConfigStarlark.ToKurtosisType(
+		t.serviceNetwork,
+		testModulePackageId,
+		testModuleMainFileLocator,
+		t.packageContentProvider,
+		map[string]string{})
 	require.Nil(t, err)
 
 	require.Equal(t, testContainerImageName, serviceConfig.GetContainerImageName())
+	require.Nil(t, serviceConfig.GetImageBuildSpec())
 
 	waitDuration, errParseDuration := time.ParseDuration(testWaitConfiguration)
 	require.NoError(t, errParseDuration)

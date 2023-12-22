@@ -33,7 +33,7 @@ type importModuleWithLocalAbsoluteLocatorTestCase struct {
 }
 
 func (suite *KurtosisHelperTestSuite) TestImportFileWithLocalAbsoluteLocatorShouldNotBeValid() {
-	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(testModulePackageId, testModuleMainFileLocator, testModuleFileName, testNoPackageReplaceOptions).Return("", startosis_errors.NewInterpretationError(importModuleWithLocalAbsoluteLocatorExpectedErrorMsg))
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testModuleFileName, testNoPackageReplaceOptions).Return("", startosis_errors.NewInterpretationError(importModuleWithLocalAbsoluteLocatorExpectedErrorMsg))
 
 	// start with an empty cache to validate it gets populated
 	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
