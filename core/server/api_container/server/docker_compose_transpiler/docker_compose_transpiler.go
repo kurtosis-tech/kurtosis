@@ -47,7 +47,7 @@ const (
 
 	defRunStr = "def run(plan):\n"
 
-	newStarlarkLineFmtStr = "   %s\n"
+	newStarlarkLineFmtStr = "    %s\n"
 )
 
 type ComposeService types.ServiceConfig
@@ -58,7 +58,6 @@ var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtoco
 	"sctp": port_spec.TransportProtocol_SCTP,
 }
 
-// TODO: Make this return an interpretation error
 func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRelativeFilepath string) (string, error) {
 	composeAbsFilepath := path.Join(packageAbsDirpath, composeRelativeFilepath)
 
@@ -290,13 +289,11 @@ func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Servic
 			serviceConfigKwargs,
 		)
 		if interpretationErr != nil {
-			// TODO HANDLE THIS! interpretionerror vs go error
-			return nil, nil, nil, interpretationErr
+			return nil, nil, nil, stacktrace.Propagate(interpretationErr, "An starlark interpretation error was detected while attempting to create argument values for service config for service '%v'.", serviceName)
 		}
 		serviceConfigKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ServiceConfigTypeName, argumentValuesSet)
 		if interpretationErr != nil {
-			// TODO HANDLE THIS! interpretionerror vs go error
-			return nil, nil, nil, interpretationErr
+			return nil, nil, nil, stacktrace.Propagate(interpretationErr, "An starlark interpretation error was detected while attempting to create a service config for service '%v'.", serviceName)
 		}
 		serviceNameToStarlarkServiceConfig[serviceName] = serviceConfigKurtosisType
 	}
@@ -335,13 +332,11 @@ func getStarlarkImageBuildSpec(composeBuild *types.BuildConfig, serviceName stri
 		imageBuildSpecKwargs,
 	)
 	if interpretationErr != nil {
-		// TODO: interpretation err vs. golang err
-		return nil, interpretationErr
+		return nil, stacktrace.Propagate(interpretationErr, "An starlark interpretation error was detected while attempting to create argument values for image build spec for service '%v'.", serviceName)
 	}
 	imageBuildSpecKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ImageBuildSpecTypeName, imageBuildSpecArgumentValuesSet)
 	if interpretationErr != nil {
-		// TODO: interpretation err vs. golang err
-		return nil, interpretationErr
+		return nil, stacktrace.Propagate(interpretationErr, "An starlark interpretation error was detected while attempting to create an image build spec for '%v'.", serviceName)
 	}
 	return imageBuildSpecKurtosisType, nil
 }
@@ -384,7 +379,7 @@ func getStarlarkPortSpecs(composePorts []types.ServicePortConfig) (*starlark.Dic
 			return nil, stacktrace.Propagate(err, "An error occurred putting port #%d in Starlark dict", portIdx)
 		}
 
-		// TODO public ports??
+		// TODO: Support public ports
 	}
 
 	return portSpecs, nil
@@ -483,13 +478,11 @@ func getStarlarkPersistentDirectory(persistenceKey string) (starlark.Value, erro
 		directoryKwargs,
 	)
 	if interpretationErr != nil {
-		// TODO HANDLE THIS! interpretionerror vs go error
-		return nil, interpretationErr
+		return nil, stacktrace.Propagate(interpretationErr, "An starlark interpretation error was detected while attempting to create argument values for persistent directory.")
 	}
 	directoryKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(directory.DirectoryTypeName, argumentValuesSet)
 	if interpretationErr != nil {
-		// TODO FIX THIS! INTERPRETATION ERROR VS GO ERROR
-		return nil, interpretationErr
+		return nil, stacktrace.Propagate(interpretationErr, "An starlark interpretation error was detected while attempting to create a persistent directory.")
 	}
 
 	return directoryKurtosisType, nil
