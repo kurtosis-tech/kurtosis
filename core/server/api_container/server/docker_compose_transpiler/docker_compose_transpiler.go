@@ -531,7 +531,7 @@ func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Valu
 func sortServicesBasedOnDependencies(perServiceDependencies map[string][]string) ([]string, error) {
 	sortedServices := []string{}
 
-	for service, _ := range perServiceDependencies {
+	for service := range perServiceDependencies {
 		sortedServices = append(sortedServices, service)
 	}
 
