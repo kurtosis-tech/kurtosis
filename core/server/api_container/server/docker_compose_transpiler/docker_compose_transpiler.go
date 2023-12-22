@@ -37,6 +37,8 @@ const (
 
 	// Our project name should cede to the project name in the Compose
 	shouldOverrideComposeYamlKeyProjectName = false
+
+	builtImageSuffx = "-image"
 )
 
 var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtocol{
@@ -57,30 +59,32 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRe
 		return "", stacktrace.Propagate(err, "An error occurred reading Compose file '%v'", composeFilename)
 	}
 
-	// Use the envvars file next to the Compose if it exists
+	// Use the env vars file next to the Compose if it exists
 	envVarsFilepath := path.Join(packageAbsDirpath, envVarsFilename)
 	var envVars map[string]string
 	envVarsInFile, err := godotenv.Read(envVarsFilepath)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			return "", stacktrace.Propagate(err, "Failed to transpile Docker Compose package to Starlark; a %v file was detected in the package, but an error occurred reading", envVarsFilename)
+			return "", stacktrace.Propagate(err, "Failed to transpile Docker Compose package to Starlark; a %v file was detected in the package, but an error occurred reading it.", envVarsFilename)
 		}
 		envVarsInFile = map[string]string{}
 	}
 	envVars = envVarsInFile
 
-	script, err := convertComposeToStarlark(composeBytes, envVars)
+	starlarkScript, err := convertComposeToStarlark(composeBytes, envVars)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred transpiling Compose file '%v' to Starlark", composeFilename)
 	}
-	return script, nil
+	return starlarkScript, nil
 }
 
 // ====================================================================================================
-//                                   Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
-
 func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (string, error) {
+	// Convert composeBytes into compose data structure
 	composeParseConfig := types.ConfigDetails{ //nolint:exhaustruct
 		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
 		ConfigFiles: []types.ConfigFile{{
@@ -88,7 +92,6 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		}},
 		Environment: envVars,
 	}
-
 	setOptionsFunc := func(options *loader.Options) {
 		options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
 
@@ -98,36 +101,24 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		// We do want to convert Windows paths into Linux paths, since the APIC runs on Linux
 		options.ConvertWindowsPaths = true
 	}
-
 	compose, err := loader.Load(composeParseConfig, setOptionsFunc)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing the Compose file in preparation for Starlark transpilation")
 	}
 
-	perServiceDependencies := map[string]map[string]bool{}
-
-	// Mapping of services -> lines of Starlark that they need to run
-	perServiceLines := map[string][]string{}
+	// Convert each Compose Service into corresponding Starlark ServiceConfig object
+	perServiceDependencies := map[string]map[string]bool{} // Mapping of services -> services they depend on
+	perServiceLines := map[string][]string{}               // Mapping of services -> lines of Starlark that they need to run
 	numTotalServiceLines := 0
-
-	// List of sorted service names that we'll use to make sure we process depends_on correctly
-	sortedServiceNames := []string{}
-
+	sortedServiceNames := []string{} // List of sorted service names to make sure depends_on is processed  correctly
 	for _, serviceConfig := range compose.Services {
-		serviceName := serviceConfig.Name
-
-		// TODO(kevin): handle the dependencyType
-		dependencyServiceNames := map[string]bool{}
-		for dependencyName := range serviceConfig.DependsOn {
-			dependencyServiceNames[dependencyName] = true
-		}
-		perServiceDependencies[serviceName] = dependencyServiceNames
-
-		sortedServiceNames = append(sortedServiceNames, serviceName)
-
 		serviceConfigKwargs := []starlark.Tuple{}
 
-		// Image: use either serviceConfig.Image(docker compose) or ImageBuildSpec
+		// NAME
+		serviceName := serviceConfig.Name
+		sortedServiceNames = append(sortedServiceNames, serviceName)
+
+		// IMAGE: use either serviceConfig.Image(docker compose) or ImageBuildSpec
 		if serviceConfig.Image != "" {
 			serviceConfigKwargs = appendKwarg(
 				serviceConfigKwargs,
@@ -136,7 +127,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 			)
 		} else {
 			// Create ImageBuildSpec
-			imageBuildSpecKwargs, err := getImageBuildSpecKwargs(serviceConfig)
+			imageBuildSpecKwargs, err := getImageBuildSpecKwargs(serviceName, serviceConfig)
 			if err != nil {
 				return "", err
 			}
@@ -162,7 +153,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 			)
 		}
 
-		// Ports
+		// PORTS
 		portSpecsSLDict, err := getPortSpecsSLDict(serviceConfig)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred creating the port specs dict for service '%s'", serviceName)
@@ -182,7 +173,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 
 			serviceConfigKwargs = appendKwarg(
 				serviceConfigKwargs,
-				service_config.EnvVarsAttr,
+				service_config.EntrypointAttr,
 				starlark.NewList(entrypointSLStrs),
 			)
 		}
@@ -196,12 +187,12 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 
 			serviceConfigKwargs = appendKwarg(
 				serviceConfigKwargs,
-				service_config.EnvVarsAttr,
+				service_config.CmdAttr,
 				starlark.NewList(commandSLStrs),
 			)
 		}
 
-		// Env vars
+		// ENV VARS
 		if serviceConfig.Environment != nil {
 			enVarsSLDict := starlark.NewDict(len(serviceConfig.Environment))
 			for key, value := range serviceConfig.Environment {
@@ -223,16 +214,8 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 			)
 		}
 
-		// TODO uncomment
-		/*
-			memMinLimit := getMemoryMegabytesReservation(serviceConfig.Deploy)
-			cpuMinLimit := getMilliCpusReservation(serviceConfig.Deploy)
-		*/
-
-		// A map of relative_path_to_upload -> files_artifact_name
-		pathsToUpload := make(map[string]string)
-
-		// Volumes
+		// VOLUMES -> Files Artifacts
+		pathsToUpload := make(map[string]string) // Mapping of relative_path_to_upload -> files_artifact_name
 		if serviceConfig.Volumes != nil {
 			filesArgSLDict := starlark.NewDict(len(serviceConfig.Volumes))
 
@@ -281,6 +264,21 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 			)
 		}
 
+		// DEPENDS ON
+		// TODO(kevin): handle the dependencyType
+		dependencyServiceNames := map[string]bool{}
+		for dependencyName := range serviceConfig.DependsOn {
+			dependencyServiceNames[dependencyName] = true
+		}
+		perServiceDependencies[serviceName] = dependencyServiceNames
+
+		// TODO uncomment (why was it commented?)
+		// CPU allocation?
+		//memMinLimit := getMemoryMegabytesReservation(serviceConfig.Deploy)
+		//cpuMinLimit := getMilliCpusReservation(serviceConfig.Deploy)
+		//memory allocations?
+
+		// Whats
 		argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
 			service_config.ServiceConfigTypeName,
 			service_config.NewServiceConfigType().KurtosisBaseBuiltin.Arguments,
@@ -306,6 +304,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 			uploadFilesLine := fmt.Sprintf("plan.upload_files(src = \"%s\", name = \"%s\")", relativePath, filesArtifactName)
 			linesForService = append(linesForService, uploadFilesLine)
 		}
+
 		// TODO SWITCH FROM HARDCODING THESE TO DYNAMIC CONSTS
 		addServiceLine := fmt.Sprintf("plan.add_service(name = \"%s\", config = %s)", serviceName, serviceConfigStr)
 		linesForService = append(linesForService, addServiceLine)
@@ -316,8 +315,8 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 
 	sort.Strings(sortedServiceNames)
 
-	// TODO(kevin) SWITCH THIS TO BE A PROPER DAG!!! This doesn't catch circular depencies
-	// This is a superjanky, inefficient (but deterministic) topological sort
+	// TODO(kevin) SWITCH THIS TO BE A PROPER DAG!!! This doesn't catch circular dependencies
+	// This is a super janky, inefficient (but deterministic) topological sort
 	starlarkLines := make([]string, 0, numTotalServiceLines)
 	alreadyProcessedServices := map[string]bool{} // "Set" of service lines that we've already written
 	for len(alreadyProcessedServices) < len(perServiceLines) {
@@ -360,9 +359,17 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 }
 
 func getImageBuildSpecKwargs(
+	serviceName string,
 	serviceConfig types.ServiceConfig,
 ) ([]starlark.Tuple, error) {
 	var imageBuildSpecKwargs []starlark.Tuple
+
+	builtImageName := serviceName + builtImageSuffx
+	imageNameKwarg := []starlark.Value{
+		starlark.String(service_config.BuiltImageNameAttr),
+		starlark.String(builtImageName),
+	}
+	imageBuildSpecKwargs = append(imageBuildSpecKwargs, imageNameKwarg)
 
 	if serviceConfig.Build != nil && serviceConfig.Build.Context != "" {
 		contextDirKwarg := []starlark.Value{
