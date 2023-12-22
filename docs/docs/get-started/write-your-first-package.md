@@ -104,7 +104,7 @@ UUID   Name   Ports   Status
 
 Congratulations - you've written your first Kurtosis code!
 
-<details><summary>Review: Hello World</summary>
+<details><summary><b>Review: Hello World</b></summary>
 
 In this section, you created a `main.star` file that simply told Kurtosis to print `Hello, world`. The `.star` extension corresponds to [Starlark][starlark-reference], a Python dialect also used by Google and Meta for configuring build systems.
 
@@ -169,7 +169,7 @@ UUID           Name       Ports                                                S
 b6fc024deefe   postgres   postgres: 5432/tcp -> postgresql://127.0.0.1:59299   RUNNING
 ```
 
-<details><summary>Review: Run Postgres</summary>
+<details><summary><b>Review: Run Postgres</b></summary>
 
 So what actually happened? Three things actually:
 
@@ -350,7 +350,7 @@ psql -U app_user -d app_db -c '\dt'
 
 Feel free to explore the Postgres container. When you're done, run either `exit` or press Ctrl-D.
 
-<details><summary>Review: Add some data</summary>
+<details><summary><b>Review: Add some data</b></summary>
 
 So what just happened?
 
@@ -629,7 +629,7 @@ ce90b471a982   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59883   
 98094b33cd9a   api         http: 3000/tcp -> http://127.0.0.1:59887             RUNNING
 ```
 
-<details><summary>Review: Add an API</summary>
+<details><summary><b>Review: Add an API</b></summary>
 
 In this section, you spun up a new PostgREST service (that we named `api` for readability) with a dependency on the Postgres service. Normally, PostgREST needs to know the IP address or hostname of the Postgres service, and we said earlier that Starlark (the Interpretation phase) can never know Execution values. 
 
@@ -816,7 +816,7 @@ curl -XGET "http://127.0.0.1:$YOUR_PORT/actor?or=(last_name.eq.Buscemi,last_name
  {"actor_id":202,"first_name":"Steve","last_name":"Buscemi","last_update":"2023-03-15T02:29:53.454697"}]
 ```
 
-<details><summary>Review: Modifying data</summary>
+<details><summary><b>Review: Modifying data</b></summary>
 How did this work?
 
 Mechanically, we first created a JSON string of data using Starlark's `json.encode` builtin. Then we used [the `request` Starlark instruction][request-reference] to shove the string at PostgREST, which writes it to the database:
