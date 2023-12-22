@@ -2,6 +2,7 @@ package service_config
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -15,6 +16,7 @@ import (
 	starlark_port_spec "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
 	"math"
 	"path"
@@ -58,10 +60,8 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				{
 					Name:              ImageAttr,
 					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, ImageAttr)
-					},
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
+					Validator:         nil,
 				},
 				{
 					Name:              PortsAttr,
@@ -211,68 +211,33 @@ func (config *ServiceConfig) Copy() (builtin_argument.KurtosisValueType, error) 
 	}, nil
 }
 
-func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]string, serviceNetwork service_network.ServiceNetwork) (*service_directory.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
-	filesArtifactsExpansions := []args.FilesArtifactExpansion{}
-	serviceDirpathsToArtifactIdentifiers := map[string]string{}
-	expanderDirpathToUserServiceDirpathMap := map[string]string{}
-	for mountpointOnUserService, filesArtifactIdentifier := range filesArtifactsMountDirpathsMap {
-		dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactIdentifier)
-		expansion := args.FilesArtifactExpansion{
-			FilesIdentifier:   filesArtifactIdentifier,
-			DirPathToExpandTo: dirpathToExpandTo,
-		}
-		filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
-		serviceDirpathsToArtifactIdentifiers[mountpointOnUserService] = filesArtifactIdentifier
-		expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
-	}
-
-	// TODO: Sad that we need the service network here to get the APIC info. This is wrong, we should fix this by
-	//  passing the APIC info DOWN to the backend and have the backend create the expander itself.
-	//  Here writing those info into each service config is dumb
-	apiContainerInfo := serviceNetwork.GetApiContainerInfo()
-	filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
-		apiContainerInfo.GetIpAddress().String(),
-		apiContainerInfo.GetGrpcPortNum(),
-		filesArtifactsExpansions,
-	)
-	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("An error occurred creating files artifacts expander args")
-	}
-
-	expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
-	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
-	}
-
-	expanderImageAndTag := fmt.Sprintf(
-		"%v:%v",
-		filesArtifactsExpanderImage,
-		apiContainerInfo.GetVersion(),
-	)
-
-	return &service_directory.FilesArtifactsExpansion{
-		ExpanderImage:                        expanderImageAndTag,
-		ExpanderEnvVars:                      expanderEnvVars,
-		ServiceDirpathsToArtifactIdentifiers: serviceDirpathsToArtifactIdentifiers,
-		ExpanderDirpathsToServiceDirpaths:    expanderDirpathToUserServiceDirpathMap,
-	}, nil
-}
-
-func convertPersistentDirectoryMounts(persistentDirectoriesMap map[string]service_directory.PersistentDirectory) *service_directory.PersistentDirectories {
-	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
-}
-
-func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.ServiceNetwork) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
+func (config *ServiceConfig) ToKurtosisType(
+	serviceNetwork service_network.ServiceNetwork,
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string,
+) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
 	var ok bool
-	image, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, ImageAttr)
+
+	var imageName string
+	var maybeImageBuildSpec *image_build_spec.ImageBuildSpec
+	rawImageAttrValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](config.KurtosisValueTypeDefault, ImageAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if !found {
-		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			ImageAttr, ServiceConfigTypeName)
+		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'", ImageAttr, ServiceConfigTypeName)
 	}
-	imageName := image.GoString()
+	imageName, maybeImageBuildSpec, interpretationErr = convertImage(
+		rawImageAttrValue,
+		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		packageId,
+		packageContentProvider,
+		packageReplaceOptions)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
 
 	privatePorts := map[string]*port_spec.PortSpec{}
 	privatePortsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, PortsAttr)
@@ -460,6 +425,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
+		maybeImageBuildSpec,
 		privatePorts,
 		publicPorts,
 		entryPointArgs,
@@ -490,6 +456,57 @@ func (config *ServiceConfig) GetReadyCondition() (*ReadyCondition, *startosis_er
 	}
 
 	return readyConditions, nil
+}
+
+func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]string, serviceNetwork service_network.ServiceNetwork) (*service_directory.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
+	filesArtifactsExpansions := []args.FilesArtifactExpansion{}
+	serviceDirpathsToArtifactIdentifiers := map[string]string{}
+	expanderDirpathToUserServiceDirpathMap := map[string]string{}
+	for mountpointOnUserService, filesArtifactIdentifier := range filesArtifactsMountDirpathsMap {
+		dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactIdentifier)
+		expansion := args.FilesArtifactExpansion{
+			FilesIdentifier:   filesArtifactIdentifier,
+			DirPathToExpandTo: dirpathToExpandTo,
+		}
+		filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
+		serviceDirpathsToArtifactIdentifiers[mountpointOnUserService] = filesArtifactIdentifier
+		expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
+	}
+
+	// TODO: Sad that we need the service network here to get the APIC info. This is wrong, we should fix this by
+	//  passing the APIC info DOWN to the backend and have the backend create the expander itself.
+	//  Here writing those info into each service config is dumb
+	apiContainerInfo := serviceNetwork.GetApiContainerInfo()
+	filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
+		apiContainerInfo.GetIpAddress().String(),
+		apiContainerInfo.GetGrpcPortNum(),
+		filesArtifactsExpansions,
+	)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("An error occurred creating files artifacts expander args")
+	}
+
+	expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
+	}
+
+	expanderImageAndTag := fmt.Sprintf(
+		"%v:%v",
+		filesArtifactsExpanderImage,
+		apiContainerInfo.GetVersion(),
+	)
+
+	return &service_directory.FilesArtifactsExpansion{
+		ExpanderImage:                        expanderImageAndTag,
+		ExpanderEnvVars:                      expanderEnvVars,
+		ServiceDirpathsToArtifactIdentifiers: serviceDirpathsToArtifactIdentifiers,
+		ExpanderDirpathsToServiceDirpaths:    expanderDirpathToUserServiceDirpathMap,
+	}, nil
+}
+
+func convertPersistentDirectoryMounts(persistentDirectoriesMap map[string]service_directory.PersistentDirectory) *service_directory.PersistentDirectories {
+	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
 }
 
 func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value starlark.Value, dictForLogging *starlark.Dict) (string, *port_spec.PortSpec, *startosis_errors.InterpretationError) {
@@ -560,4 +577,32 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 		}
 	}
 	return filesArtifacts, persistentDirectories, nil
+}
+
+// If [image] is an ImageBuildSpec type, returns name for the image to build and ImageBuildSpec converted to KurtosisType
+// If [image] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
+func convertImage(
+	image starlark.Value,
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
+	imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := image.(*ImageBuildSpec)
+	if isImageBuildSpecStarlarkType {
+		imageBuildSpec, interpretationErr := imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
+		if interpretationErr != nil {
+			return "", nil, interpretationErr
+		}
+		imageName, interpretationErr := imageBuildSpecStarlarkType.GetImageName()
+		if interpretationErr != nil {
+			return "", nil, interpretationErr
+		}
+		return imageName, imageBuildSpec, nil
+	} else {
+		imageName, interpretationErr := kurtosis_types.SafeCastToString(image, ImageAttr)
+		if interpretationErr != nil {
+			return "", nil, interpretationErr
+		}
+		return imageName, nil, nil
+	}
 }

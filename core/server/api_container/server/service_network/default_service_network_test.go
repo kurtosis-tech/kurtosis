@@ -1213,6 +1213,7 @@ func testServiceConfig(t *testing.T, imageName string) *service.ServiceConfig {
 		nil,
 		nil,
 		nil,
+		nil,
 		0,
 		0,
 		"",
