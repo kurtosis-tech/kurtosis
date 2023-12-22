@@ -102,7 +102,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		return "", stacktrace.Propagate(err, "An error occurred converting compose bytes into a struct.")
 	}
 
-	serviceNameToStarlarkServiceConfig, perServiceDependencies, filesArtifactsToUpload, err := convertComposeServicesToStarlarkServiceConfigs(composeStruct.Services)
+	serviceNameToStarlarkServiceConfig, serviceDependencyGraph, filesArtifactsToUpload, err := convertComposeServicesToStarlarkServiceConfigs(composeStruct.Services)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting compose services to starlark service configs.")
 	}
@@ -116,8 +116,8 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		starlarkLines = append(starlarkLines, uploadFilesLine)
 	}
 
-	// Add add_service instructions in an order that respects `depends_on` in Compose
-	sortedServices, err := sortServicesBasedOnDependencies(perServiceDependencies)
+	// Add add_service instructions in an order that respects [serviceDependencyGraph] determined by 'depends_on' keys in Compose
+	sortedServices, err := sortServicesBasedOnDependencies(serviceDependencyGraph)
 	if err != nil {
 		return "", err // no need to wrap err
 	}
@@ -159,15 +159,11 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 	return compose, nil
 }
 
-// Turns DockerCompose Service into Kurtosis ServiceConfig + metadata needed for creating starlark script
-// Returns:
-// Map of service names to Kurtosis Service Configs
-// A graph of service dependencies based on depends_on key -> determines order in which to add services
-// Map of relative paths to files artifacts names that need to get uploaded -> determines files artifacts that need to be uploaded
+// Turns DockerCompose Service into Kurtosis ServiceConfig returns data needed for creating starlark script
 func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Services) (
-	map[string]*kurtosis_type_constructor.KurtosisValueTypeDefault,
-	map[string]map[string]bool,
-	map[string]string,
+	map[string]*kurtosis_type_constructor.KurtosisValueTypeDefault, // Map of service names to Kurtosis ServiceConfig's
+	map[string]map[string]bool, // Graph of service dependencies based on depends_on key (determines order in which to add services)
+	map[string]string, // Map of relative paths to files artifacts names that need to get uploaded (determines files artifacts that need to be uploaded)
 	error) {
 	serviceNameToStarlarkServiceConfig := map[string]*kurtosis_type_constructor.KurtosisValueTypeDefault{}
 	perServiceDependencies := map[string]map[string]bool{}

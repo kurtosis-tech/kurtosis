@@ -147,13 +147,16 @@ services:
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.upload_files(src = "~/data", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/data": "web--volume0", "/node_modules": Directory(persistent_key="volume1")}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], cmd=["echo", "Hello,", "World!"], env_vars={"NODE_ENV": "development"}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/data": "web--volume0", "/node_modules": Directory(persistent_key="volume1")}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], 
+, env_vars={"NODE_ENV": "development"}))
 `, builtImageSuffix)
 
 	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
+
+// TODO: Add test for an env var file
 
 func TestMultiServiceCompose(t *testing.T) {
 	composeBytes := []byte(`
@@ -401,6 +404,69 @@ services:
 }
 
 // From https://github.com/docker/awesome-compose/blob/master/elasticsearch-logstash-kibana
+func TestElasticSearchLogStashAndKibanaCompose(t *testing.T) {
+	composeBytes := []byte(`
+services:
+  elasticsearch:
+    image: elasticsearch:7.16.1
+    container_name: es
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    networks:
+      - elastic
+  logstash:
+    image: logstash:7.16.1
+    container_name: log
+    environment:
+      discovery.seed_hosts: logstash
+      LS_JAVA_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - ./logstash/pipeline/logstash-nginx.config:/usr/share/logstash/pipeline/logstash-nginx.config
+      - ./logstash/nginx.log:/home/nginx.log
+    ports:
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "5044:5044"
+      - "9600:9600"
+    depends_on:
+      - elasticsearch
+    networks:
+      - elastic
+    command: logstash -f /usr/share/logstash/pipeline/logstash-nginx.config
+  kibana:
+    image: kibana:7.16.1
+    container_name: kib
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - elastic
+networks:
+  elastic:
+    driver: bridge
+`)
+	expectedResult := `def run(plan):
+    plan.upload_files(src = "./logstash/pipeline/logstash-nginx.config", name = "logstash--volume0")
+    plan.upload_files(src = "./logstash/nginx.log:/home/nginx.log", name = "logstash--volume1")
+    plan.add_service(name = "elasticsearch", config = ServiceConfig(image="elasticsearch:7.16.1", ports={"port0": PortSpec(number=9200, transport_protocol="TCP"), "port1": PortSpec(number=9300, transport_protocol="TCP")}, env_vars={"discovery.type": "single-node", "ES_JAVA_OPTS": "-Xms512m -Xmx512m"}))
+    plan.add_service(name = "kibana", config = ServiceConfig(image="kibana:7.16.1",, ports={"port0": PortSpec(number=5601, transport_protocol="TCP")}))
+    plan.add_service(name = "logstash", config = ServiceConfig(image="logstash:7.16.1", ports={"port0": PortSpec(number=5000, transport_protocol="UDP"), "port1": PortSpec(number=5000, transport_protocol="TCP"), "port2": PortSpec(number=5044, transport_protocol="TCP"), "port3": PortSpec(number=9600, transport_protocol="TCP")}, files={"/usr/share/logstash/pipeline/logstash-nginx.config":"logstash-volume0", "/home/nginx.log":"logstash-volume1"}, env_vars={"discovery.seed_hosts": "logstash", "ES_JAVA_OPTS": "-Xms512m -Xmx512m"}, cmd=["logstash", "-f","/usr/share/logstash/pipeline/logstash-nginx.config"]))
+`
+
+	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
 
 // From https://github.com/docker/awesome-compose/blob/master/fastapi/compose.yaml
 
