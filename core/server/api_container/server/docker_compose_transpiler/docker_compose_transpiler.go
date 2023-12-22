@@ -38,8 +38,10 @@ const (
 	// Our project name should cede to the project name in the Compose
 	shouldOverrideComposeYamlKeyProjectName = false
 
-	builtImageSuffx = "-image"
+	builtImageSuffix = "-image"
 )
+
+type ComposeService types.ServiceConfig
 
 var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtocol{
 	"tcp":  port_spec.TransportProtocol_TCP,
@@ -51,7 +53,7 @@ var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtoco
 func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRelativeFilepath string) (string, error) {
 	composeAbsFilepath := path.Join(packageAbsDirpath, composeRelativeFilepath)
 
-	// Useful for logging, to not leak internals of APIC
+	// Useful for logging to prevent leaking internals of APIC
 	composeFilename := path.Base(composeRelativeFilepath)
 
 	composeBytes, err := os.ReadFile(composeAbsFilepath)
@@ -59,13 +61,13 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRe
 		return "", stacktrace.Propagate(err, "An error occurred reading Compose file '%v'", composeFilename)
 	}
 
-	// Use the env vars file next to the Compose if it exists
+	// Use env vars file next to Compose if it exists
 	envVarsFilepath := path.Join(packageAbsDirpath, envVarsFilename)
 	var envVars map[string]string
 	envVarsInFile, err := godotenv.Read(envVarsFilepath)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			return "", stacktrace.Propagate(err, "Failed to transpile Docker Compose package to Starlark; a %v file was detected in the package, but an error occurred reading it.", envVarsFilename)
+			return "", stacktrace.Propagate(err, "An %v file was found in the package, but an error occurred reading it.", envVarsFilename)
 		}
 		envVarsInFile = map[string]string{}
 	}
@@ -73,7 +75,7 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRe
 
 	starlarkScript, err := convertComposeToStarlark(composeBytes, envVars)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred transpiling Compose file '%v' to Starlark", composeFilename)
+		return "", stacktrace.Propagate(err, "An error occurred converting Compose file '%v' to a Starlark script.", composeFilename)
 	}
 	return starlarkScript, nil
 }
@@ -84,26 +86,14 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRe
 //
 // ====================================================================================================
 func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (string, error) {
-	// Convert composeBytes into compose data structure
-	composeParseConfig := types.ConfigDetails{ //nolint:exhaustruct
-		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
-		ConfigFiles: []types.ConfigFile{{
-			Content: composeBytes,
-		}},
-		Environment: envVars,
-	}
-	setOptionsFunc := func(options *loader.Options) {
-		options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
-
-		// We don't want to resolve paths; these should get resolved by our package content provider instead
-		options.ResolvePaths = false
-
-		// We do want to convert Windows paths into Linux paths, since the APIC runs on Linux
-		options.ConvertWindowsPaths = true
-	}
-	compose, err := loader.Load(composeParseConfig, setOptionsFunc)
+	composeStruct, err := convertComposeBytesToComposeStruct(composeBytes, envVars)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred parsing the Compose file in preparation for Starlark transpilation")
+		return "", stacktrace.Propagate(err, "An error occurred converting compose bytes into a struct.")
+	}
+
+	starlarkServiceConfigs, perServiceDependencides, pathsToUpload, err := convertComposeServicesToStarlarkServiceConfigs(composeStruct.Services)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred converting compose services to starlark service configs.")
 	}
 
 	// Convert each Compose Service into corresponding Starlark ServiceConfig object
@@ -111,7 +101,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 	perServiceLines := map[string][]string{}               // Mapping of services -> lines of Starlark that they need to run
 	numTotalServiceLines := 0
 	sortedServiceNames := []string{} // List of sorted service names to make sure depends_on is processed  correctly
-	for _, serviceConfig := range compose.Services {
+	for _, serviceConfig := range composeStruct.Services {
 		serviceConfigKwargs := []starlark.Tuple{}
 
 		// NAME
@@ -358,43 +348,219 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 	return script, nil
 }
 
-func getImageBuildSpecKwargs(
-	serviceName string,
-	serviceConfig types.ServiceConfig,
-) ([]starlark.Tuple, error) {
+func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]string) (*types.Project, error) {
+	composeParseConfig := types.ConfigDetails{ //nolint:exhaustruct
+		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
+		ConfigFiles: []types.ConfigFile{{
+			Content: composeBytes,
+		}},
+		Environment: envVars,
+	}
+	setOptionsFunc := func(options *loader.Options) {
+		options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
+
+		// Don't resolve paths as they should be resolved by package content provider
+		options.ResolvePaths = false
+
+		// Don't convert Windows paths to Linux paths as APIC runs on Linux
+		options.ConvertWindowsPaths = true
+	}
+	compose, err := loader.Load(composeParseConfig, setOptionsFunc)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing compose based on provided parsing config and set options function.")
+	}
+	return compose, nil
+}
+
+func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Services) (
+	[]*kurtosis_type_constructor.KurtosisValueTypeDefault,
+	map[string]map[string]bool,
+	map[string]string,
+	error) {
+	starlarkServiceConfigs := []*kurtosis_type_constructor.KurtosisValueTypeDefault{}
+	perServiceDependencies := map[string]map[string]bool{} // Mapping of services -> services they depend on
+	pathsToUpload := map[string]string{}
+
+	for _, service := range composeServices {
+		composeService := ComposeService(service)
+		serviceConfigKwargs := []starlark.Tuple{}
+
+		// NAME
+		serviceName := composeService.Name
+
+		// IMAGE
+		if composeService.Image != "" {
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.ImageAttr,
+				starlark.String(composeService.Image),
+			)
+		}
+
+		// IMAGE BUILD SPEC
+		if composeService.Build != nil {
+			imageBuildSpec, err := getStarlarkImageBuildSpec(composeService.Build, serviceName)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.ImageAttr,
+				imageBuildSpec,
+			)
+		}
+
+		// PORTS
+		if composeService.Ports != nil {
+			portSpecsDict, err := getStarlarkPortSpecs(composeService.Ports)
+			if err != nil {
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the port specs dict for service '%s'", serviceName)
+			}
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.PortsAttr,
+				portSpecsDict,
+			)
+		}
+
+		// ENTRYPOINT
+		if composeService.Entrypoint != nil {
+			entrypointList := getStarlarkEntrypoint(composeService.Entrypoint)
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.EntrypointAttr,
+				entrypointList,
+			)
+		}
+
+		// CMD
+		if composeService.Command != nil {
+			commandList := getStarlarkCommand(composeService.Command)
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.CmdAttr,
+				commandList,
+			)
+		}
+
+		// ENV VARS
+		if composeService.Environment != nil {
+			envVarsDict, err := getStarlarkEnvVars(composeService.Environment)
+			if err != nil {
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the env vars dict for service '%s'", serviceName)
+			}
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.EnvVarsAttr,
+				envVarsDict,
+			)
+		}
+
+		// VOLUMES -> FILES ARTIFACTS
+		if composeService.Volumes != nil {
+			filesDict, morePathsToUpload, err := getStarlarkFilesArtifacts(composeService.Volumes, serviceName)
+			if err != nil {
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the files dict for service '%s'", serviceName)
+			}
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.FilesAttr,
+				filesDict,
+			)
+			pathsToUpload = mergePathsToUplaod(pathsToUpload, morePathsToUpload)
+		}
+
+		if composeService.Deploy != nil {
+			// MIN MEMORY
+			memMinLimit := getStarlarkMemoryMegabytesReservation(composeService.Deploy)
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.MinMemoryMegaBytesAttr,
+				memMinLimit)
+
+			// MIN CPU
+			cpuMinLimit := getStarlarkMilliCpusReservation(composeService.Deploy)
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.MinCpuMilliCoresAttr,
+				cpuMinLimit)
+		}
+
+		// DEPENDS ON
+		dependencyServiceNames := map[string]bool{}
+		for dependencyName := range composeService.DependsOn {
+			dependencyServiceNames[dependencyName] = true
+		}
+		perServiceDependencies[serviceName] = dependencyServiceNames
+
+		// Finally, create Starlark Service Config object based on kwargs
+		argumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
+			service_config.ServiceConfigTypeName,
+			service_config.NewServiceConfigType().KurtosisBaseBuiltin.Arguments,
+			[]starlark.Value{},
+			serviceConfigKwargs,
+		)
+		if interpretationErr != nil {
+			// TODO HANDLE THIS! interpretionerror vs go error
+			return nil, nil, nil, interpretationErr
+		}
+		serviceConfigKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ServiceConfigTypeName, argumentValuesSet)
+		if interpretationErr != nil {
+			// TODO HANDLE THIS! interpretionerror vs go error
+			return nil, nil, nil, interpretationErr
+		}
+		starlarkServiceConfigs = append(starlarkServiceConfigs, serviceConfigKurtosisType)
+	}
+
+	return starlarkServiceConfigs, nil, nil, nil
+}
+
+func getStarlarkImageBuildSpec(composeBuild *types.BuildConfig, serviceName string) (starlark.Value, error) {
 	var imageBuildSpecKwargs []starlark.Tuple
 
-	builtImageName := serviceName + builtImageSuffx
+	builtImageName := serviceName + builtImageSuffix
 	imageNameKwarg := []starlark.Value{
 		starlark.String(service_config.BuiltImageNameAttr),
 		starlark.String(builtImageName),
 	}
 	imageBuildSpecKwargs = append(imageBuildSpecKwargs, imageNameKwarg)
-
-	if serviceConfig.Build != nil && serviceConfig.Build.Context != "" {
+	if composeBuild.Context != "" {
 		contextDirKwarg := []starlark.Value{
 			starlark.String(service_config.BuildContextAttr),
-			starlark.String(serviceConfig.Build.Context),
+			starlark.String(composeBuild.Context),
 		}
 		imageBuildSpecKwargs = append(imageBuildSpecKwargs, contextDirKwarg)
 	}
-
-	if serviceConfig.Build != nil && serviceConfig.Build.Target != "" {
+	if composeBuild.Target != "" {
 		targetStageKwarg := []starlark.Value{
 			starlark.String(service_config.TargetStageAttr),
-			starlark.String(serviceConfig.Build.Target),
+			starlark.String(composeBuild.Target),
 		}
 		imageBuildSpecKwargs = append(imageBuildSpecKwargs, targetStageKwarg)
 	}
 
-	return imageBuildSpecKwargs, nil
+	imageBuildSpecArgumentValuesSet, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(
+		service_config.ImageBuildSpecTypeName,
+		service_config.NewImageBuildSpecType().KurtosisBaseBuiltin.Arguments,
+		[]starlark.Value{},
+		imageBuildSpecKwargs,
+	)
+	if interpretationErr != nil {
+		// TODO: interpretation err vs. golang err
+		return nil, interpretationErr
+	}
+	imageBuildSpecKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(service_config.ImageBuildSpecTypeName, imageBuildSpecArgumentValuesSet)
+	if interpretationErr != nil {
+		// TODO: interpretation err vs. golang err
+		return nil, interpretationErr
+	}
+	return imageBuildSpecKurtosisType, nil
 }
 
-func getPortSpecsSLDict(
-	serviceConfig types.ServiceConfig,
-) (*starlark.Dict, error) {
-	portSpecs := starlark.NewDict(len(serviceConfig.Ports))
-	for portIdx, dockerPort := range serviceConfig.Ports {
+func getStarlarkPortSpecs(composePorts []types.ServicePortConfig) (*starlark.Dict, error) {
+	portSpecs := starlark.NewDict(len(composePorts))
+
+	for portIdx, dockerPort := range composePorts {
 		portName := fmt.Sprintf("port%d", portIdx)
 
 		dockerProto := dockerPort.Protocol
@@ -435,47 +601,82 @@ func getPortSpecsSLDict(
 	return portSpecs, nil
 }
 
-func getMemoryMegabytesReservation(deployConfig *types.DeployConfig) int {
-	if deployConfig == nil {
-		return 0
+func getStarlarkEntrypoint(composeEntrypoint types.ShellCommand) *starlark.List {
+	entrypointSLStrs := make([]starlark.Value, len(composeEntrypoint))
+	for idx, entrypointFragment := range composeEntrypoint {
+		entrypointSLStrs[idx] = starlark.String(entrypointFragment)
 	}
-	reservation := 0
-	if deployConfig.Resources.Reservations != nil {
-		reservation = int(deployConfig.Resources.Reservations.MemoryBytes) / bytesToMegabytes
-		logrus.Debugf("Converted '%v' bytes to '%v' megabytes", deployConfig.Resources.Reservations.MemoryBytes, reservation)
-	}
-	return reservation
+	return starlark.NewList(entrypointSLStrs)
 }
 
-func getMilliCpusReservation(deployConfig *types.DeployConfig) int {
-	if deployConfig == nil {
-		return 0
+func getStarlarkCommand(composeCommand types.ShellCommand) *starlark.List {
+	commandSLStrs := make([]starlark.Value, len(composeCommand))
+	for idx, commandFragment := range composeCommand {
+		commandSLStrs[idx] = starlark.String(commandFragment)
 	}
-	reservation := 0
-	if deployConfig.Resources.Reservations != nil {
-		reservationParsed, err := strconv.ParseFloat(deployConfig.Resources.Reservations.NanoCPUs, float64BitWidth)
-		if err == nil {
-			// Despite being called 'nano CPUs', they actually refer to a float representing percentage of one CPU
-			reservation = int(reservationParsed * cpuToMilliCpuConstant)
-			logrus.Debugf("Converted '%v' CPUs to '%v' milli CPUs", deployConfig.Resources.Reservations.NanoCPUs, reservation)
-		} else {
-			logrus.Warnf("Could not convert CPU reservation '%v' to integer, limits reservation", deployConfig.Resources.Reservations.NanoCPUs)
+	return starlark.NewList(commandSLStrs)
+}
+
+func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.Dict, error) {
+	enVarsSLDict := starlark.NewDict(len(composeEnvironment))
+	for key, value := range composeEnvironment {
+		if value == nil {
+			continue
+		}
+		if err := enVarsSLDict.SetKey(
+			starlark.String(key),
+			starlark.String(*value),
+		); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred setting key '%s' in environment variables Starlark dict.", key)
 		}
 	}
-	return reservation
+	return enVarsSLDict, nil
 }
 
-func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Value) []starlark.Tuple {
-	tuple := []starlark.Value{
-		starlark.String(argName),
-		argValue,
+func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, error) {
+	filesArgSLDict := starlark.NewDict(len(composeVolumes))
+	pathsToUpload := map[string]string{}
+
+	for volumeIdx, volume := range composeVolumes {
+		volumeType := volume.Type
+
+		var shouldPersist bool
+		switch volumeType {
+		case types.VolumeTypeBind:
+			source := volume.Source
+
+			// We guess that when the user specifies an absolute (not relative) path, they want to use the volume
+			// as a persistence layer. We further guess that relative paths are just read-only.
+			shouldPersist = path.IsAbs(source)
+		case types.VolumeTypeVolume:
+			shouldPersist = true
+		}
+
+		var filesDictValue starlark.Value
+		if shouldPersist {
+			persistenceKey := fmt.Sprintf("volume%d", volumeIdx)
+			persistentDirectory, err := getStarlarkPersistentDirectory(persistenceKey)
+			if err != nil {
+				return nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
+			}
+			filesDictValue = persistentDirectory
+		} else {
+			// If not persistent, do an upload_files
+			filesArtifactName := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
+			pathsToUpload[volume.Source] = filesArtifactName
+			filesDictValue = starlark.String(filesArtifactName)
+		}
+
+		if err := filesArgSLDict.SetKey(starlark.String(volume.Target), filesDictValue); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
+		}
 	}
-	return append(kwargs, tuple)
+
+	return filesArgSLDict, pathsToUpload, nil
 }
 
-func createPersistentDirectoryKurtosisType(persistenceKey string) (starlark.Value, error) {
+func getStarlarkPersistentDirectory(persistenceKey string) (starlark.Value, error) {
 	directoryKwargs := []starlark.Tuple{}
-
 	directoryKwargs = appendKwarg(
 		directoryKwargs,
 		directory.PersistentKeyAttr,
@@ -492,7 +693,6 @@ func createPersistentDirectoryKurtosisType(persistenceKey string) (starlark.Valu
 		// TODO HANDLE THIS! interpretionerror vs go error
 		return nil, interpretationErr
 	}
-
 	directoryKurtosisType, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(directory.DirectoryTypeName, argumentValuesSet)
 	if interpretationErr != nil {
 		// TODO FIX THIS! INTERPRETATION ERROR VS GO ERROR
@@ -500,4 +700,45 @@ func createPersistentDirectoryKurtosisType(persistenceKey string) (starlark.Valu
 	}
 
 	return directoryKurtosisType, nil
+}
+
+func getStarlarkMemoryMegabytesReservation(composeDeployConfig *types.DeployConfig) starlark.Int {
+	reservation := 0
+	if composeDeployConfig.Resources.Reservations != nil {
+		reservation = int(composeDeployConfig.Resources.Reservations.MemoryBytes) / bytesToMegabytes
+	}
+	return starlark.MakeInt(reservation)
+}
+
+func getStarlarkMilliCpusReservation(composeDeployConfig *types.DeployConfig) starlark.Int {
+	reservation := 0
+	if composeDeployConfig.Resources.Reservations != nil {
+		reservationParsed, err := strconv.ParseFloat(composeDeployConfig.Resources.Reservations.NanoCPUs, float64BitWidth)
+		if err == nil {
+			// Despite being called 'nano CPUs', they actually refer to a float representing percentage of one CPU
+			reservation = int(reservationParsed * cpuToMilliCpuConstant)
+		} else {
+			logrus.Warnf("Could not convert CPU reservation '%v' to integer, limits reservation", composeDeployConfig.Resources.Reservations.NanoCPUs)
+		}
+	}
+	return starlark.MakeInt(reservation)
+}
+
+func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Value) []starlark.Tuple {
+	tuple := []starlark.Value{
+		starlark.String(argName),
+		argValue,
+	}
+	return append(kwargs, tuple)
+}
+
+func mergePathsToUplaod(pathsToUpload map[string]string, morePathsToUpload map[string]string) map[string]string {
+	result := make(map[string]string)
+	for key, value := range pathsToUpload {
+		result[key] = value
+	}
+	for key, value := range morePathsToUpload {
+		result[key] = value
+	}
+	return result
 }
