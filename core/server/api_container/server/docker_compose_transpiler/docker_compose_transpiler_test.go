@@ -158,71 +158,91 @@ services:
 //func TestMultiServiceCompose(t *testing.T) {
 //	composeBytes := []byte(`
 //services:
-//  redis:
-//    image: 'redislabs/redismod'
-//    ports:
-//      - '6379:6379'
-//  web1:
-//    restart: on-failure
-//    build: ./web
-//    hostname: web1
-//    ports:
-//      - '81:5000'
-//  web2:
-//    restart: on-failure
-//    build: ./web
-//    hostname: web2
-//    ports:
-//      - '82:5000'
-//  nginx:
-//    build: ./nginx
-//    ports:
-//      - '80:80'
+// web1:
+//   restart: on-failure
+//   build: ./web
+//   hostname: web1
+//   ports:
+//     - '81:5000'
+// web2:
+//   restart: on-failure
+//   build: ./web
+//   hostname: web2
+//   ports:
+//     - '82:5000'
 //`)
 //	expectedResult := fmt.Sprintf(`def run(plan):
-//    plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
-//    plan.add_service(name = "web1", config = ServiceConfig(image=ImageBuildSpec(image_name="web1%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
-//    plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
-//    plan.add_service(name = "nginx", config = ServiceConfig(image=ImageBuildSpec(image_name="nginx%s", build_context_dir="./nginx"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
-//`, builtImageSuffix, builtImageSuffix, builtImageSuffix)
+//   plan.add_service(name = "web1", config = ServiceConfig(image=ImageBuildSpec(image_name="web1%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
+//   plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
+//`, builtImageSuffix, builtImageSuffix)
 //
 //	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
 //	require.NoError(t, err)
 //	require.Equal(t, expectedResult, result)
 //}
 
+func TestSortServiceBasedOnDependencies(t *testing.T) {
+	perServiceDependencies := map[string]map[string]bool{
+		"web":     {"nginx": true, "backend": true},
+		"nginx":   {"backend": true},
+		"backend": {},
+	}
+
+	expectedOrder := []string{"backend", "nginx", "web"}
+	sortOrder, err := sortServicesBasedOnDependencies(perServiceDependencies)
+
+	require.NoError(t, err)
+	require.Equal(t, expectedOrder, sortOrder)
+}
+
+func TestSortServiceBasedOnDependenciesWithCycle(t *testing.T) {
+	perServiceDependencies := map[string]map[string]bool{
+		"web":     {"nginx": true, "backend": true},
+		"nginx":   {"backend": true},
+		"backend": {"web": true},
+	}
+
+	_, err := sortServicesBasedOnDependencies(perServiceDependencies)
+	require.Error(t, err)
+}
+
+//
 //func TestMultiServiceComposeWithDependsOn(t *testing.T) {
 //	composeBytes := []byte(`
 //services:
-//  redis:
-//    image: 'redislabs/redismod'
-//    ports:
-//      - '6379:6379'
-//  web1:
-//    restart: on-failure
-//    build: ./web
-//    hostname: web1
-//    ports:
-//      - '81:5000'
-//  web2:
-//    restart: on-failure
-//    build: ./web
-//    hostname: web2
-//    ports:
-//      - '82:5000'
-//  nginx:
-//    build: ./nginx
-//    ports:
-//      - '80:80'
-//    depends_on:
-//    - web1
-//    - web2
+// redis:
+//   image: 'redislabs/redismod'
+//   ports:
+//     - '6379:6379'
+// web1:
+//   restart: on-failure
+//   build: ./web
+//   hostname: web1
+//   ports:
+//     - '81:5000'
+//   depends_on:
+//   - redis
+// web2:
+//   restart: on-failure
+//   build: ./web
+//   hostname: web2
+//   ports:
+//     - '82:5000'
+//   depends_on:
+//   - redis
+// nginx:
+//   build: ./nginx
+//   ports:
+//     - '80:80'
+//   depends_on:
+//   - web1
+//   - web2
 //`)
 //	expectedResult := fmt.Sprintf(`def run(plan):
-//    plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
-//    plan.add_service(name = "web1", config = ServiceConfig(image=ImageBuildSpec(image_name="web1%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
-//    plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
-//    plan.add_service(name = "nginx", config = ServiceConfig(image=ImageBuildSpec(image_name="nginx%s", build_context_dir="./nginx"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
+//   plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
+//   plan.add_service(name = "web1", config = ServiceConfig(image=ImageBuildSpec(image_name="web1%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
+//   plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
+//   plan.add_service(name = "nginx", config = ServiceConfig(image=ImageBuildSpec(image_name="nginx%s", build_context_dir="./nginx"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
 //`, builtImageSuffix, builtImageSuffix, builtImageSuffix)
 //
 //	result, err := convertComposeToStarlark(composeBytes, map[string]string{})

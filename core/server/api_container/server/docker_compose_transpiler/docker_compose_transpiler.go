@@ -47,7 +47,7 @@ const (
 
 	defRunStr = "def run(plan):\n"
 
-	newStarlarkLineFmtStr = "    %s\n"
+	newStarlarkLineFmtStr = "   %s\n"
 )
 
 type ComposeService types.ServiceConfig
@@ -164,11 +164,11 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 // Map of relative paths to files artifacts names that need to get uploaded -> determines files artifacts that need to be uploaded
 func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Services) (
 	map[string]*kurtosis_type_constructor.KurtosisValueTypeDefault,
-	map[string][]string,
+	map[string]map[string]bool,
 	map[string]string,
 	error) {
 	serviceNameToStarlarkServiceConfig := map[string]*kurtosis_type_constructor.KurtosisValueTypeDefault{}
-	perServiceDependencies := map[string][]string{}
+	perServiceDependencies := map[string]map[string]bool{}
 	pathsToUpload := map[string]string{}
 
 	for _, service := range composeServices {
@@ -276,9 +276,9 @@ func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Servic
 		}
 
 		// DEPENDS ON
-		dependencyServiceNames := []string{}
+		dependencyServiceNames := map[string]bool{}
 		for dependencyName := range composeService.DependsOn {
-			dependencyServiceNames = append(dependencyServiceNames, dependencyName)
+			dependencyServiceNames[dependencyName] = true
 		}
 		perServiceDependencies[serviceName] = dependencyServiceNames
 
@@ -526,16 +526,51 @@ func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Valu
 	return append(kwargs, tuple)
 }
 
-// Returns list of service names in an order that respects dependency orders by performing a topological sort
+// Returns list of service names in an order that respects dependencies by performing a topological sort (simple bfs)
 // Returns error if cyclical dependency is detected
-func sortServicesBasedOnDependencies(perServiceDependencies map[string][]string) ([]string, error) {
-	sortedServices := []string{}
-
-	for service := range perServiceDependencies {
-		sortedServices = append(sortedServices, service)
+// TODO: make this determinitic with a tie breaker
+func sortServicesBasedOnDependencies(perServiceDependencies map[string]map[string]bool) ([]string, error) {
+	dependencyCount := map[string]int{}
+	for _, dependencies := range perServiceDependencies {
+		for dependency := range dependencies {
+			dependencyCount[dependency]++
+		}
 	}
 
-	// breadth first search / kahns algorithm
+	queue := make([]string, 0)
+	for service := range perServiceDependencies {
+		if dependencyCount[service] == 0 {
+			queue = append(queue, service)
+		}
+	}
+
+	sortedServices := []string{}
+	for len(queue) > 0 {
+		dequeuedService := queue[0]
+		queue = queue[1:]
+
+		sortedServices = append(sortedServices, dequeuedService)
+
+		for service := range perServiceDependencies[dequeuedService] {
+			dependencyCount[service]--
+
+			if dependencyCount[service] == 0 {
+				queue = append(queue, service)
+			}
+		}
+	}
+
+	// Check for cycles
+	for _, incoming := range dependencyCount {
+		if incoming > 0 {
+			return nil, stacktrace.NewError("A cycle was found in the service dependency graph.")
+		}
+	}
+
+	// Reverse the result slice
+	for i, j := 0, len(sortedServices)-1; i < j; i, j = i+1, j-1 {
+		sortedServices[i], sortedServices[j] = sortedServices[j], sortedServices[i]
+	}
 
 	return sortedServices, nil
 }
