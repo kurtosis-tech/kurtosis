@@ -17,6 +17,7 @@ import (
 	"go.starlark.net/starlark"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -57,6 +58,8 @@ var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtoco
 	"udp":  port_spec.TransportProtocol_UDP,
 	"sctp": port_spec.TransportProtocol_SCTP,
 }
+
+var CyclicalDependencyError = stacktrace.NewError("A cycle was detected in the service dependency graph.")
 
 func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRelativeFilepath string) (string, error) {
 	composeAbsFilepath := path.Join(packageAbsDirpath, composeRelativeFilepath)
@@ -99,7 +102,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 		return "", stacktrace.Propagate(err, "An error occurred converting compose bytes into a struct.")
 	}
 
-	serviceNameToStarlarkServiceConfig, perServiceDependencies, pathsToUpload, err := convertComposeServicesToStarlarkServiceConfigs(composeStruct.Services)
+	serviceNameToStarlarkServiceConfig, perServiceDependencies, filesArtifactsToUpload, err := convertComposeServicesToStarlarkServiceConfigs(composeStruct.Services)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting compose services to starlark service configs.")
 	}
@@ -108,7 +111,7 @@ func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (s
 	starlarkLines := []string{}
 
 	// Add upload_files instructions
-	for relativePath, filesArtifactName := range pathsToUpload {
+	for relativePath, filesArtifactName := range filesArtifactsToUpload {
 		uploadFilesLine := fmt.Sprintf(uploadFilesLinesFmtStr, relativePath, filesArtifactName)
 		starlarkLines = append(starlarkLines, uploadFilesLine)
 	}
@@ -168,7 +171,7 @@ func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Servic
 	error) {
 	serviceNameToStarlarkServiceConfig := map[string]*kurtosis_type_constructor.KurtosisValueTypeDefault{}
 	perServiceDependencies := map[string]map[string]bool{}
-	pathsToUpload := map[string]string{}
+	filesArtifactsToUpload := map[string]string{}
 
 	for _, service := range composeServices {
 		composeService := ComposeService(service)
@@ -247,7 +250,7 @@ func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Servic
 
 		// VOLUMES -> FILES ARTIFACTS
 		if composeService.Volumes != nil {
-			filesDict, err := getStarlarkFilesArtifacts(composeService.Volumes, serviceName, pathsToUpload)
+			filesDict, artifactsToUpload, err := getStarlarkFilesArtifacts(composeService.Volumes, serviceName)
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the files dict for service '%s'", serviceName)
 			}
@@ -256,6 +259,7 @@ func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Servic
 				service_config.FilesAttr,
 				filesDict,
 			)
+			filesArtifactsToUpload = artifactsToUpload
 		}
 
 		if composeService.Deploy != nil {
@@ -298,7 +302,7 @@ func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Servic
 		serviceNameToStarlarkServiceConfig[serviceName] = serviceConfigKurtosisType
 	}
 
-	return serviceNameToStarlarkServiceConfig, perServiceDependencies, pathsToUpload, nil
+	return serviceNameToStarlarkServiceConfig, perServiceDependencies, filesArtifactsToUpload, nil
 }
 
 func getStarlarkImageBuildSpec(composeBuild *types.BuildConfig, serviceName string) (starlark.Value, error) {
@@ -341,6 +345,7 @@ func getStarlarkImageBuildSpec(composeBuild *types.BuildConfig, serviceName stri
 	return imageBuildSpecKurtosisType, nil
 }
 
+// TODO: Support public ports
 func getStarlarkPortSpecs(composePorts []types.ServicePortConfig) (*starlark.Dict, error) {
 	portSpecs := starlark.NewDict(len(composePorts))
 
@@ -360,26 +365,11 @@ func getStarlarkPortSpecs(composePorts []types.ServicePortConfig) (*starlark.Dic
 			"",  // Wait timeout (which Compose doesn't have a way to override)
 		)
 		if interpretationErr != nil {
-			logrus.Debugf(
-				"Interpretation error that occurred when creating a %s object from port #%d:\n%s",
-				port_spec_starlark.PortSpecTypeName,
-				portIdx,
-				interpretationErr.Error(),
-			)
-			return nil, stacktrace.NewError(
-				"An error occurred creating a %s object from port #%d",
-				port_spec_starlark.PortSpecTypeName,
-				portIdx,
-			)
+			return nil, stacktrace.Propagate(interpretationErr, "An error occurred creating a %s object from port #%d", port_spec_starlark.PortSpecTypeName, portIdx)
 		}
-		if err := portSpecs.SetKey(
-			starlark.String(portName),
-			portSpec,
-		); err != nil {
+		if err := portSpecs.SetKey(starlark.String(portName), portSpec); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred putting port #%d in Starlark dict", portIdx)
 		}
-
-		// TODO: Support public ports
 	}
 
 	return portSpecs, nil
@@ -417,15 +407,17 @@ func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.D
 	return enVarsSLDict, nil
 }
 
-// The 'volumes:' compose key supports named volumes and bind mounts
-// Named volumes are currently not supported TODO: Support named volumes https://docs.docker.com/storage/volumes/
-// bind mount semantics:
+// The 'volumes:' compose key supports named volumes and bind mounts https://docs.docker.com/storage/volumes/
+// bind mount semantics for starlark:
 // <rel path on host>:<path on container> := upload a files artifacts of <rel path on host>, mount the files artifacts on the container at <path on container>
 // <abs path on host>:<path on container>:= create a persistent directory on container at <path on container>
 // <abs path on host> := create a persistent directory on container at <abs path on host>
-// <rel path on host> := create a persistent directory on container at <abs path on host>
-func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string, pathsToUpload map[string]string) (starlark.Value, error) {
+// <rel path on host> := create a persistent directory on container at <rel path on host>
+// Named volumes are currently not supported
+// TODO: Support named volumes https://docs.docker.com/storage/volumes/
+func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, error) {
 	filesArgSLDict := starlark.NewDict(len(composeVolumes))
+	filesArtifactsToUpload := map[string]string{}
 
 	for volumeIdx, volume := range composeVolumes {
 		volumeType := volume.Type
@@ -445,22 +437,22 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 			persistenceKey := fmt.Sprintf("volume%d", volumeIdx)
 			persistentDirectory, err := getStarlarkPersistentDirectory(persistenceKey)
 			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
+				return nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
 			}
 			filesDictValue = persistentDirectory
 		} else {
 			// If not persistent, do an upload_files
 			filesArtifactName := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
-			pathsToUpload[volume.Source] = filesArtifactName
+			filesArtifactsToUpload[volume.Source] = filesArtifactName
 			filesDictValue = starlark.String(filesArtifactName)
 		}
 
 		if err := filesArgSLDict.SetKey(starlark.String(volume.Target), filesDictValue); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
+			return nil, nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
 		}
 	}
 
-	return filesArgSLDict, nil
+	return filesArgSLDict, filesArtifactsToUpload, nil
 }
 
 func getStarlarkPersistentDirectory(persistenceKey string) (starlark.Value, error) {
@@ -519,50 +511,53 @@ func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Valu
 	return append(kwargs, tuple)
 }
 
-// Returns list of service names in an order that respects dependencies by performing a topological sort (simple bfs)
+// Returns list of service names in an order that respects dependencies by performing a topological sort
 // Returns error if cyclical dependency is detected
-// TODO: make this determinitic with a tie breaker
-func sortServicesBasedOnDependencies(perServiceDependencies map[string]map[string]bool) ([]string, error) {
-	dependencyCount := map[string]int{}
-	for _, dependencies := range perServiceDependencies {
-		for dependency := range dependencies {
-			dependencyCount[dependency]++
-		}
-	}
-
-	queue := make([]string, 0)
-	for service := range perServiceDependencies {
-		if dependencyCount[service] == 0 {
-			queue = append(queue, service)
+// Implements Kahns algorithm https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm (sufficient for sparse graphs like compose service graph)
+// To ensure a deterministic sort, ties are broken lexicographically based on service name
+func sortServicesBasedOnDependencies(serviceDependencyGraph map[string]map[string]bool) ([]string, error) {
+	dependencyCount := map[string]int{} // track num dependencies for processing
+	initServices := []string{}          // start services with services that have no dependencies
+	for service, dependencies := range serviceDependencyGraph {
+		dependencyCount[service] = len(dependencies)
+		if len(dependencies) == 0 {
+			initServices = append(initServices, service)
 		}
 	}
 
 	sortedServices := []string{}
+	queue := []string{}
+	sort.Strings(initServices)
+	queue = append(queue, initServices...)
+
 	for len(queue) > 0 {
-		dequeuedService := queue[0]
+		processedService := queue[0]
 		queue = queue[1:]
+		sortedServices = append(sortedServices, processedService)
+		delete(serviceDependencyGraph, processedService)
 
-		sortedServices = append(sortedServices, dequeuedService)
+		servicesToQueue := []string{}
+		for service, dependencies := range serviceDependencyGraph {
+			// Reduce dependency count if service depended on processedService
+			if dependencies[processedService] {
+				dependencyCount[service]--
 
-		for service := range perServiceDependencies[dequeuedService] {
-			dependencyCount[service]--
-
-			if dependencyCount[service] == 0 {
-				queue = append(queue, service)
+				// add service to queue if all of its dependencies have been processed
+				if dependencyCount[service] == 0 {
+					servicesToQueue = append(servicesToQueue, service)
+				}
 			}
 		}
+
+		sort.Strings(servicesToQueue)
+		queue = append(queue, servicesToQueue...)
 	}
 
-	// Check for cycles
-	for _, incoming := range dependencyCount {
-		if incoming > 0 {
-			return nil, stacktrace.NewError("A cycle was found in the service dependency graph.")
+	// If there are still dependencies that need to be processed, a cycle exists
+	for _, count := range dependencyCount {
+		if count > 0 {
+			return nil, CyclicalDependencyError
 		}
-	}
-
-	// Reverse the result slice
-	for i, j := 0, len(sortedServices)-1; i < j; i, j = i+1, j-1 {
-		sortedServices[i], sortedServices[j] = sortedServices[j], sortedServices[i]
 	}
 
 	return sortedServices, nil

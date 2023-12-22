@@ -155,32 +155,45 @@ services:
 	require.Equal(t, expectedResult, result)
 }
 
-//func TestMultiServiceCompose(t *testing.T) {
-//	composeBytes := []byte(`
-//services:
-// web1:
-//   restart: on-failure
-//   build: ./web
-//   hostname: web1
-//   ports:
-//     - '81:5000'
-// web2:
-//   restart: on-failure
-//   build: ./web
-//   hostname: web2
-//   ports:
-//     - '82:5000'
-//`)
-//	expectedResult := fmt.Sprintf(`def run(plan):
-//    plan.add_service(name = "web1", config = ServiceConfig(image=ImageBuildSpec(image_name="web1%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
-//    plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
-//`, builtImageSuffix, builtImageSuffix)
-//
-//	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
-//	require.NoError(t, err)
-//	require.Equal(t, expectedResult, result)
-//}
+func TestMultiServiceCompose(t *testing.T) {
+	composeBytes := []byte(`
+services:
+ redis:
+  image: 'redislabs/redismod'
+  ports:
+    - '6379:6379'
+ web1:
+  restart: on-failure
+  build: ./web
+  hostname: web1
+  ports:
+    - '81:5000'
+ web2:
+  restart: on-failure
+  build: ./web
+  hostname: web2
+  ports:
+    - '82:5000'
+  depends_on:
+  - redis
+ nginx:
+  build: ./nginx
+  ports:
+    - '80:80'
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "nginx", config = ServiceConfig(image=ImageBuildSpec(image_name="nginx%s", build_context_dir="./nginx"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
+    plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
+    plan.add_service(name = "web1", config = ServiceConfig(image=ImageBuildSpec(image_name="web1%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
+    plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
+`, builtImageSuffix, builtImageSuffix, builtImageSuffix)
 
+	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
+// Simple tests for topological sort
 func TestSortServiceBasedOnDependencies(t *testing.T) {
 	perServiceDependencies := map[string]map[string]bool{
 		"web":     {"nginx": true, "backend": true},
@@ -189,6 +202,22 @@ func TestSortServiceBasedOnDependencies(t *testing.T) {
 	}
 
 	expectedOrder := []string{"backend", "nginx", "web"}
+	sortOrder, err := sortServicesBasedOnDependencies(perServiceDependencies)
+
+	require.NoError(t, err)
+	require.Equal(t, expectedOrder, sortOrder)
+}
+
+func TestSortServiceBasedOnDependenciesBreaksTiesDeterministically(t *testing.T) {
+	perServiceDependencies := map[string]map[string]bool{
+		"web":      {"nginx": true, "backend": true},
+		"nginx":    {"backend": true},
+		"backend":  {},
+		"database": {},
+	}
+
+	// backend and database have no dependencies, but backend should come before because of lexicographic order
+	expectedOrder := []string{"backend", "database", "nginx", "web"}
 	sortOrder, err := sortServicesBasedOnDependencies(perServiceDependencies)
 
 	require.NoError(t, err)
@@ -206,51 +235,114 @@ func TestSortServiceBasedOnDependenciesWithCycle(t *testing.T) {
 	require.Error(t, err)
 }
 
-//
-//func TestMultiServiceComposeWithDependsOn(t *testing.T) {
-//	composeBytes := []byte(`
-//services:
-// redis:
-//   image: 'redislabs/redismod'
-//   ports:
-//     - '6379:6379'
-// web1:
-//   restart: on-failure
-//   build: ./web
-//   hostname: web1
-//   ports:
-//     - '81:5000'
-//   depends_on:
-//   - redis
-// web2:
-//   restart: on-failure
-//   build: ./web
-//   hostname: web2
-//   ports:
-//     - '82:5000'
-//   depends_on:
-//   - redis
-// nginx:
-//   build: ./nginx
-//   ports:
-//     - '80:80'
-//   depends_on:
-//   - web1
-//   - web2
-//`)
-//	expectedResult := fmt.Sprintf(`def run(plan):
-//    plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
-//    plan.add_service(name = "web1", config = ServiceConfig(image=ImageBuildSpec(image_name="web1%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
-//    plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
-//    plan.add_service(name = "nginx", config = ServiceConfig(image=ImageBuildSpec(image_name="nginx%s", build_context_dir="./nginx"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
-//`, builtImageSuffix, builtImageSuffix, builtImageSuffix)
-//
-//	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
-//	require.NoError(t, err)
-//	require.Equal(t, expectedResult, result)
-//}
+func TestSortServiceBasedOnDependenciesWithNoDependencies(t *testing.T) {
+	perServiceDependencies := map[string]map[string]bool{
+		"web":     {},
+		"nginx":   {},
+		"backend": {},
+	}
+
+	// order should be alphabetical
+	expectedOrder := []string{"backend", "nginx", "web"}
+	actualOrder, err := sortServicesBasedOnDependencies(perServiceDependencies)
+
+	require.NoError(t, err)
+	require.Equal(t, expectedOrder, actualOrder)
+}
+
+func TestSortServiceBasedOnDependenciesWithLinearDependencies(t *testing.T) {
+	perServiceDependencies := map[string]map[string]bool{
+		"backend": {},
+		"web":     {"backend": true},
+		"nginx":   {"web": true},
+	}
+
+	expectedOrder := []string{"backend", "web", "nginx"}
+	actualOrder, err := sortServicesBasedOnDependencies(perServiceDependencies)
+
+	require.NoError(t, err)
+	require.Equal(t, expectedOrder, actualOrder)
+}
+
+func TestMultiServiceComposeWithDependsOn(t *testing.T) {
+	composeBytes := []byte(`
+services:
+ redis:
+  image: 'redislabs/redismod'
+  ports:
+    - '6379:6379'
+ web1:
+  restart: on-failure
+  build: ./web
+  hostname: web1
+  ports:
+    - '81:5000'
+  depends_on:
+  - redis
+ web2:
+  restart: on-failure
+  build: ./web
+  hostname: web2
+  ports:
+    - '82:5000'
+  depends_on:
+  - redis
+ nginx:
+  build: ./nginx
+  ports:
+    - '80:80'
+  depends_on:
+  - web1
+  - web2
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
+    plan.add_service(name = "web1", config = ServiceConfig(image=ImageBuildSpec(image_name="web1%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
+    plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
+    plan.add_service(name = "nginx", config = ServiceConfig(image=ImageBuildSpec(image_name="nginx%s", build_context_dir="./nginx"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
+`, builtImageSuffix, builtImageSuffix, builtImageSuffix)
+
+	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
 
 // Test depends on with circular dependency returns error
+func TestMultiServiceComposeWithCycleInDependsOn(t *testing.T) {
+	composeBytes := []byte(`
+services:
+ redis:
+  image: 'redislabs/redismod'
+  ports:
+    - '6379:6379'
+  depends_on:
+  - nginx
+ web1:
+  restart: on-failure
+  build: ./web
+  hostname: web1
+  ports:
+    - '81:5000'
+  depends_on:
+  - redis
+ web2:
+  restart: on-failure
+  build: ./web
+  hostname: web2
+  ports:
+    - '82:5000'
+ nginx:
+  build: ./nginx
+  ports:
+    - '80:80'
+  depends_on:
+  - web1
+  - web2
+`)
+	_, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	require.Error(t, err)
+	require.ErrorIs(t, CyclicalDependencyError, err)
+}
 
 // ====================================================================================================
 //
@@ -330,4 +422,4 @@ services:
 //
 // ====================================================================================================
 
-// From https://github.com/OffchainLabs/nitro-testnode/blob/release/docker-compose.yaml
+// TODO: Test this docker compose when named volumes are supported https://github.com/OffchainLabs/nitro-testnode/blob/release/docker-compose.yaml
