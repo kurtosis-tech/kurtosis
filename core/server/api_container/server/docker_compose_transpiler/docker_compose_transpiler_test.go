@@ -232,8 +232,6 @@ services:
 
 // Test depends on with circular dependency returns error
 
-//
-
 // ====================================================================================================
 //
 //	Tests for  docker-compose files in awesome-compose (https://github.com/docker/awesome-compose)
@@ -258,7 +256,7 @@ services:
 `)
 	expectedResult := `def run(plan):
     plan.upload_files(src = "~/minecraft_data", name = "minecraft--volume0")
-    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": "minecraft--volume0"}, env_vars={"EULA": "TRUE"}))
+    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": "minecraft--volume0"}, env_vars={"EULA": "TRUE"}, min_cpu=0, min_memory=0))
 `
 
 	result, err := convertComposeToStarlark(composeBytes, map[string]string{})

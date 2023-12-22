@@ -58,7 +58,7 @@ var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtoco
 	"sctp": port_spec.TransportProtocol_SCTP,
 }
 
-// TODO Make this return an interpretation error?
+// TODO: Make this return an interpretation error
 func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRelativeFilepath string) (string, error) {
 	composeAbsFilepath := path.Join(packageAbsDirpath, composeRelativeFilepath)
 
@@ -157,18 +157,18 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 	return compose, nil
 }
 
-// Turns DockerCompose Service into Kurtosis ServiceConfig + metadata needed for starlark script
+// Turns DockerCompose Service into Kurtosis ServiceConfig + metadata needed for creating starlark script
 // Returns:
 // Map of service names to Kurtosis Service Configs
-// A dependency graph of services
-// Map of relative paths to files artifacts names that need to get uploaded
+// A graph of service dependencies based on depends_on key -> determines order in which to add services
+// Map of relative paths to files artifacts names that need to get uploaded -> determines files artifacts that need to be uploaded
 func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Services) (
 	map[string]*kurtosis_type_constructor.KurtosisValueTypeDefault,
 	map[string][]string,
 	map[string]string,
 	error) {
 	serviceNameToStarlarkServiceConfig := map[string]*kurtosis_type_constructor.KurtosisValueTypeDefault{}
-	perServiceDependencies := map[string][]string{} // Mapping of services -> services they depend on
+	perServiceDependencies := map[string][]string{}
 	pathsToUpload := map[string]string{}
 
 	for _, service := range composeServices {
@@ -261,14 +261,14 @@ func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Servic
 
 		if composeService.Deploy != nil {
 			// MIN MEMORY
-			memMinLimit := getStarlarkMemoryMegabytesReservation(composeService.Deploy)
+			memMinLimit := getStarlarkMinMemory(composeService.Deploy)
 			serviceConfigKwargs = appendKwarg(
 				serviceConfigKwargs,
 				service_config.MinMemoryMegaBytesAttr,
 				memMinLimit)
 
 			// MIN CPU
-			cpuMinLimit := getStarlarkMilliCpusReservation(composeService.Deploy)
+			cpuMinLimit := getStarlarkMinCpus(composeService.Deploy)
 			serviceConfigKwargs = appendKwarg(
 				serviceConfigKwargs,
 				service_config.MinCpuMilliCoresAttr,
@@ -361,8 +361,8 @@ func getStarlarkPortSpecs(composePorts []types.ServicePortConfig) (*starlark.Dic
 		portSpec, interpretationErr := port_spec_starlark.CreatePortSpecUsingGoValues(
 			uint16(dockerPort.Target),
 			kurtosisProto,
-			nil, // Application protocol (which Compose doesn't have). Maybe we could guess it in the future?
-			"",  // Wait timeout (Compose doesn't have a way to override this)
+			nil, // Application protocol (which Compose doesn't have)
+			"",  // Wait timeout (which Compose doesn't have a way to override)
 		)
 		if interpretationErr != nil {
 			logrus.Debugf(
@@ -495,7 +495,8 @@ func getStarlarkPersistentDirectory(persistenceKey string) (starlark.Value, erro
 	return directoryKurtosisType, nil
 }
 
-func getStarlarkMemoryMegabytesReservation(composeDeployConfig *types.DeployConfig) starlark.Int {
+// TODO: Support max allocation
+func getStarlarkMinMemory(composeDeployConfig *types.DeployConfig) starlark.Int {
 	reservation := 0
 	if composeDeployConfig.Resources.Reservations != nil {
 		reservation = int(composeDeployConfig.Resources.Reservations.MemoryBytes) / bytesToMegabytes
@@ -503,7 +504,7 @@ func getStarlarkMemoryMegabytesReservation(composeDeployConfig *types.DeployConf
 	return starlark.MakeInt(reservation)
 }
 
-func getStarlarkMilliCpusReservation(composeDeployConfig *types.DeployConfig) starlark.Int {
+func getStarlarkMinCpus(composeDeployConfig *types.DeployConfig) starlark.Int {
 	reservation := 0
 	if composeDeployConfig.Resources.Reservations != nil {
 		reservationParsed, err := strconv.ParseFloat(composeDeployConfig.Resources.Reservations.NanoCPUs, float64BitWidth)
