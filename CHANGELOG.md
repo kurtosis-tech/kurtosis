@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.85.53](https://github.com/kurtosis-tech/kurtosis/compare/0.85.52...0.85.53) (2023-12-20)
+
+
+### Bug Fixes
+
+* change restart policy to always ([#1996](https://github.com/kurtosis-tech/kurtosis/issues/1996)) ([c41583d](https://github.com/kurtosis-tech/kurtosis/commit/c41583d7a6d07e9d39bdb5911627db2f7e9af7e5))
+* destroying the current reverse proxy if it can't be used to create a new one during the `CreateReverseProxy` process ([#1991](https://github.com/kurtosis-tech/kurtosis/issues/1991)) ([82d1565](https://github.com/kurtosis-tech/kurtosis/commit/82d156568655e908d715ea04f8f19bce555b4815))
+* nil pointer error found in the `kurtosis clean -a` cmd, adding remove reverse proxy container function when it already exists ([#1995](https://github.com/kurtosis-tech/kurtosis/issues/1995)) ([64eff3e](https://github.com/kurtosis-tech/kurtosis/commit/64eff3ee80a7159301a8266a0da45abe57754f9a))
+* websocket keep-alive ([#1993](https://github.com/kurtosis-tech/kurtosis/issues/1993)) ([509c508](https://github.com/kurtosis-tech/kurtosis/commit/509c508f84fc00b7a09911628fc795e3db94c2ec))
+
+## [0.85.52](https://github.com/kurtosis-tech/kurtosis/compare/0.85.51...0.85.52) (2023-12-20)
+
+
+### Features
+
+* image build spec ([#1964](https://github.com/kurtosis-tech/kurtosis/issues/1964)) ([367d13b](https://github.com/kurtosis-tech/kurtosis/commit/367d13bc819fa2c049a3eed05bf2d10ddf5994a2))
+
+
+### Bug Fixes
+
+* bring back old enclave continuity ([#1990](https://github.com/kurtosis-tech/kurtosis/issues/1990)) ([723c81d](https://github.com/kurtosis-tech/kurtosis/commit/723c81d0b3ac6f27d481debb2023f998899eedcd))
+
+## [0.85.51](https://github.com/kurtosis-tech/kurtosis/compare/0.85.50...0.85.51) (2023-12-19)
+
+
+### Features
+
+* catalog show run count ([#1975](https://github.com/kurtosis-tech/kurtosis/issues/1975)) ([5f29a12](https://github.com/kurtosis-tech/kurtosis/commit/5f29a12a891a18ddf8a0f48ed806acb125008fc2))
+* update api path and keep alive ([#1976](https://github.com/kurtosis-tech/kurtosis/issues/1976)) ([e026109](https://github.com/kurtosis-tech/kurtosis/commit/e0261098ae7870caa7804a120e7ee408d053854f))
+
+
+### Bug Fixes
+
+* fix nil pointer error when getting reverse proxy from the cluster ([#1980](https://github.com/kurtosis-tech/kurtosis/issues/1980)) ([f20c290](https://github.com/kurtosis-tech/kurtosis/commit/f20c290143e801d3f48fe8f29ea6399ed50ecb48))
+
 ## [0.85.50](https://github.com/kurtosis-tech/kurtosis/compare/0.85.49...0.85.50) (2023-12-18)
 
 
