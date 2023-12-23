@@ -53,6 +53,8 @@ const (
 
 type ComposeService types.ServiceConfig
 
+type StarlarkServiceConfig *kurtosis_type_constructor.KurtosisValueTypeDefault
+
 var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtocol{
 	"tcp":  port_spec.TransportProtocol_TCP,
 	"udp":  port_spec.TransportProtocol_UDP,
@@ -84,7 +86,7 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRe
 	}
 	envVars = envVarsInFile
 
-	starlarkScript, err := convertComposeToStarlark(composeBytes, envVars)
+	starlarkScript, err := convertComposeToStarlarkScript(composeBytes, envVars)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting Compose file '%v' to a Starlark script.", composeFilename)
 	}
@@ -96,43 +98,18 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRe
 //	Private Helper Functions
 //
 // ====================================================================================================
-func convertComposeToStarlark(composeBytes []byte, envVars map[string]string) (string, error) {
+func convertComposeToStarlarkScript(composeBytes []byte, envVars map[string]string) (string, error) {
 	composeStruct, err := convertComposeBytesToComposeStruct(composeBytes, envVars)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting compose bytes into a struct.")
 	}
 
-	serviceNameToStarlarkServiceConfig, serviceDependencyGraph, filesArtifactsToUpload, err := convertComposeServicesToStarlarkServiceConfigs(composeStruct.Services)
+	serviceNameToStarlarkServiceConfig, serviceDependencyGraph, perServiceFilesArtifactsToUpload, err := convertComposeServicesToStarlarkInfo(composeStruct.Services)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting compose services to starlark service configs.")
 	}
 
-	// Assemble Starlark script
-	starlarkLines := []string{}
-
-	// Add upload_files instructions
-	for relativePath, filesArtifactName := range filesArtifactsToUpload {
-		uploadFilesLine := fmt.Sprintf(uploadFilesLinesFmtStr, relativePath, filesArtifactName)
-		starlarkLines = append(starlarkLines, uploadFilesLine)
-	}
-
-	// Add add_service instructions in an order that respects [serviceDependencyGraph] determined by 'depends_on' keys in Compose
-	sortedServices, err := sortServicesBasedOnDependencies(serviceDependencyGraph)
-	if err != nil {
-		return "", err // no need to wrap err
-	}
-
-	for _, serviceName := range sortedServices {
-		starlarkServiceConfig := serviceNameToStarlarkServiceConfig[serviceName]
-		addServiceLine := fmt.Sprintf(addServiceLinesFmtStr, serviceName, starlarkServiceConfig.String())
-		starlarkLines = append(starlarkLines, addServiceLine)
-	}
-
-	script := defRunStr
-	for _, line := range starlarkLines {
-		script += fmt.Sprintf(newStarlarkLineFmtStr, line)
-	}
-	return script, nil
+	return createStarlarkScript(serviceNameToStarlarkServiceConfig, serviceDependencyGraph, perServiceFilesArtifactsToUpload)
 }
 
 func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]string) (*types.Project, error) {
@@ -141,6 +118,8 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 		ConfigFiles: []types.ConfigFile{{
 			Content: composeBytes,
 		}},
+		// TODO: To leverage this env file at the base of the project: need to parse referenced environment variables
+		// https://docs.docker.com/compose/environment-variables/set-environment-variables/#substitute-with-an-env-file
 		Environment: envVars,
 	}
 	setOptionsFunc := func(options *loader.Options) {
@@ -159,15 +138,55 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 	return compose, nil
 }
 
-// Turns DockerCompose Service into Kurtosis ServiceConfig returns data needed for creating starlark script
-func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Services) (
-	map[string]*kurtosis_type_constructor.KurtosisValueTypeDefault, // Map of service names to Kurtosis ServiceConfig's
+// Creates a starlark script based on starlark ServiceConfigs, the service dependency graph, and files artifacts to upload
+func createStarlarkScript(
+	serviceNameToStarlarkServiceConfig map[string]StarlarkServiceConfig,
+	serviceDependencyGraph map[string]map[string]bool,
+	servicesToFilesArtifactsToUpload map[string]map[string]string) (string, error) {
+	starlarkLines := []string{}
+
+	// Add add_service instructions in an order that respects [serviceDependencyGraph] determined by 'depends_on' keys in Compose
+	sortedServices, err := sortServicesBasedOnDependencies(serviceDependencyGraph)
+	if err != nil {
+		return "", err
+	}
+	for _, serviceName := range sortedServices {
+		// upload_files artifacts for service
+		// get and sort keys first for deterministic order
+		filesArtifactsToUpload := servicesToFilesArtifactsToUpload[serviceName]
+		sortedRelativePaths := []string{}
+		for relativePath := range filesArtifactsToUpload {
+			sortedRelativePaths = append(sortedRelativePaths, relativePath)
+		}
+		sort.Strings(sortedRelativePaths)
+		for _, relativePath := range sortedRelativePaths {
+			filesArtifactName := filesArtifactsToUpload[relativePath]
+			uploadFilesLine := fmt.Sprintf(uploadFilesLinesFmtStr, relativePath, filesArtifactName)
+			starlarkLines = append(starlarkLines, uploadFilesLine)
+		}
+
+		// add_service
+		starlarkServiceConfig := *serviceNameToStarlarkServiceConfig[serviceName]
+		addServiceLine := fmt.Sprintf(addServiceLinesFmtStr, serviceName, starlarkServiceConfig.String())
+		starlarkLines = append(starlarkLines, addServiceLine)
+	}
+
+	script := defRunStr
+	for _, line := range starlarkLines {
+		script += fmt.Sprintf(newStarlarkLineFmtStr, line)
+	}
+	return script, nil
+}
+
+// Turns DockerCompose Service into Kurtosis ServiceConfigs and returns info needed for creating a valid starlark script
+func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
+	map[string]StarlarkServiceConfig, // Map of service names to Kurtosis ServiceConfig's
 	map[string]map[string]bool, // Graph of service dependencies based on depends_on key (determines order in which to add services)
-	map[string]string, // Map of relative paths to files artifacts names that need to get uploaded (determines files artifacts that need to be uploaded)
+	map[string]map[string]string, // Map of service names to map of relative paths to files artifacts names that need to get uploaded for the service (determines files artifacts that need to be uploaded)
 	error) {
-	serviceNameToStarlarkServiceConfig := map[string]*kurtosis_type_constructor.KurtosisValueTypeDefault{}
+	serviceNameToStarlarkServiceConfig := map[string]StarlarkServiceConfig{}
 	perServiceDependencies := map[string]map[string]bool{}
-	filesArtifactsToUpload := map[string]string{}
+	servicesToFilesArtifactsToUpload := map[string]map[string]string{}
 
 	for _, service := range composeServices {
 		composeService := ComposeService(service)
@@ -255,7 +274,7 @@ func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Servic
 				service_config.FilesAttr,
 				filesDict,
 			)
-			filesArtifactsToUpload = artifactsToUpload
+			servicesToFilesArtifactsToUpload[serviceName] = artifactsToUpload
 		}
 
 		if composeService.Deploy != nil {
@@ -298,7 +317,7 @@ func convertComposeServicesToStarlarkServiceConfigs(composeServices types.Servic
 		serviceNameToStarlarkServiceConfig[serviceName] = serviceConfigKurtosisType
 	}
 
-	return serviceNameToStarlarkServiceConfig, perServiceDependencies, filesArtifactsToUpload, nil
+	return serviceNameToStarlarkServiceConfig, perServiceDependencies, servicesToFilesArtifactsToUpload, nil
 }
 
 func getStarlarkImageBuildSpec(composeBuild *types.BuildConfig, serviceName string) (starlark.Value, error) {
@@ -388,8 +407,15 @@ func getStarlarkCommand(composeCommand types.ShellCommand) *starlark.List {
 }
 
 func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.Dict, error) {
+	// make iteration order of [composeEnvironment] deterministic by getting the keys and sorting them
+	envVarKeys := []string{}
+	for key := range composeEnvironment {
+		envVarKeys = append(envVarKeys, key)
+	}
+	sort.Strings(envVarKeys)
 	enVarsSLDict := starlark.NewDict(len(composeEnvironment))
-	for key, value := range composeEnvironment {
+	for _, key := range envVarKeys {
+		value := composeEnvironment[key]
 		if value == nil {
 			continue
 		}
@@ -509,13 +535,11 @@ func appendKwarg(kwargs []starlark.Tuple, argName string, argValue starlark.Valu
 
 // Returns list of service names in an order that respects dependencies by performing a topological sort
 // Returns error if cyclical dependency is detected
-// Implements Kahns algorithm https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm (sufficient for sparse graphs like compose service graph)
+// o(n^2) but simpler variation of Kahns algorithm https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
 // To ensure a deterministic sort, ties are broken lexicographically based on service name
 func sortServicesBasedOnDependencies(serviceDependencyGraph map[string]map[string]bool) ([]string, error) {
-	dependencyCount := map[string]int{} // track num dependencies for processing
-	initServices := []string{}          // start services with services that have no dependencies
+	initServices := []string{} // start services with services that have no dependencies
 	for service, dependencies := range serviceDependencyGraph {
-		dependencyCount[service] = len(dependencies)
 		if len(dependencies) == 0 {
 			initServices = append(initServices, service)
 		}
@@ -534,12 +558,12 @@ func sortServicesBasedOnDependencies(serviceDependencyGraph map[string]map[strin
 
 		servicesToQueue := []string{}
 		for service, dependencies := range serviceDependencyGraph {
-			// Reduce dependency count if service depended on processedService
+			// Remove processedService if it was as a dependency
 			if dependencies[processedService] {
-				dependencyCount[service]--
+				delete(dependencies, processedService)
 
 				// add service to queue if all of its dependencies have been processed
-				if dependencyCount[service] == 0 {
+				if len(dependencies) == 0 {
 					servicesToQueue = append(servicesToQueue, service)
 				}
 			}
@@ -550,10 +574,8 @@ func sortServicesBasedOnDependencies(serviceDependencyGraph map[string]map[strin
 	}
 
 	// If there are still dependencies that need to be processed, a cycle exists
-	for _, count := range dependencyCount {
-		if count > 0 {
-			return nil, CyclicalDependencyError
-		}
+	if len(serviceDependencyGraph) > 0 {
+		return nil, CyclicalDependencyError
 	}
 
 	return sortedServices, nil

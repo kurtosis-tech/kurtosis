@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+// TODO: Create a test framework like starlark test framework
+
 func TestMinimalCompose(t *testing.T) {
 	composeBytes := []byte(`
 services:
@@ -19,7 +21,7 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image="app/server", ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
 `
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -36,7 +38,7 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app/server"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -55,7 +57,7 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -77,7 +79,7 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/data": "web--volume0"}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -98,7 +100,7 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/project/node_modules": Directory(persistent_key="volume0")}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -119,7 +121,7 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/node_modules": Directory(persistent_key="volume0")}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -147,16 +149,13 @@ services:
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.upload_files(src = "~/data", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/data": "web--volume0", "/node_modules": Directory(persistent_key="volume1")}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], 
-, env_vars={"NODE_ENV": "development"}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/data": "web--volume0", "/node_modules": Directory(persistent_key="volume1")}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], cmd=["echo", "Hello,", "World!"], env_vars={"NODE_ENV": "development"}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
-
-// TODO: Add test for an env var file
 
 func TestMultiServiceCompose(t *testing.T) {
 	composeBytes := []byte(`
@@ -191,7 +190,7 @@ services:
     plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
 `, builtImageSuffix, builtImageSuffix, builtImageSuffix)
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -305,7 +304,7 @@ services:
     plan.add_service(name = "nginx", config = ServiceConfig(image=ImageBuildSpec(image_name="nginx%s", build_context_dir="./nginx"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
 `, builtImageSuffix, builtImageSuffix, builtImageSuffix)
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -342,7 +341,7 @@ services:
   - web1
   - web2
 `)
-	_, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	_, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.Error(t, err)
 	require.ErrorIs(t, CyclicalDependencyError, err)
 }
@@ -374,7 +373,7 @@ services:
     plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": "minecraft--volume0"}, env_vars={"EULA": "TRUE"}, min_cpu=0, min_memory=0))
 `
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -398,7 +397,7 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="angular", target_stage="builder"), ports={"port0": PortSpec(number=4200, transport_protocol="TCP")}, files={"/project": "web--volume0", "/project/node_modules": Directory(persistent_key="volume1")}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -456,23 +455,134 @@ networks:
     driver: bridge
 `)
 	expectedResult := `def run(plan):
+    plan.add_service(name = "elasticsearch", config = ServiceConfig(image="elasticsearch:7.16.1", ports={"port0": PortSpec(number=9200, transport_protocol="TCP"), "port1": PortSpec(number=9300, transport_protocol="TCP")}, env_vars={"ES_JAVA_OPTS": "-Xms512m -Xmx512m", "discovery.type": "single-node"}))
+    plan.add_service(name = "kibana", config = ServiceConfig(image="kibana:7.16.1", ports={"port0": PortSpec(number=5601, transport_protocol="TCP")}, env_vars={}))
+    plan.upload_files(src = "./logstash/nginx.log", name = "logstash--volume1")
     plan.upload_files(src = "./logstash/pipeline/logstash-nginx.config", name = "logstash--volume0")
-    plan.upload_files(src = "./logstash/nginx.log:/home/nginx.log", name = "logstash--volume1")
-    plan.add_service(name = "elasticsearch", config = ServiceConfig(image="elasticsearch:7.16.1", ports={"port0": PortSpec(number=9200, transport_protocol="TCP"), "port1": PortSpec(number=9300, transport_protocol="TCP")}, env_vars={"discovery.type": "single-node", "ES_JAVA_OPTS": "-Xms512m -Xmx512m"}))
-    plan.add_service(name = "kibana", config = ServiceConfig(image="kibana:7.16.1",, ports={"port0": PortSpec(number=5601, transport_protocol="TCP")}))
-    plan.add_service(name = "logstash", config = ServiceConfig(image="logstash:7.16.1", ports={"port0": PortSpec(number=5000, transport_protocol="UDP"), "port1": PortSpec(number=5000, transport_protocol="TCP"), "port2": PortSpec(number=5044, transport_protocol="TCP"), "port3": PortSpec(number=9600, transport_protocol="TCP")}, files={"/usr/share/logstash/pipeline/logstash-nginx.config":"logstash-volume0", "/home/nginx.log":"logstash-volume1"}, env_vars={"discovery.seed_hosts": "logstash", "ES_JAVA_OPTS": "-Xms512m -Xmx512m"}, cmd=["logstash", "-f","/usr/share/logstash/pipeline/logstash-nginx.config"]))
+    plan.add_service(name = "logstash", config = ServiceConfig(image="logstash:7.16.1", ports={"port0": PortSpec(number=5000, transport_protocol="TCP"), "port1": PortSpec(number=5000, transport_protocol="UDP"), "port2": PortSpec(number=5044, transport_protocol="TCP"), "port3": PortSpec(number=9600, transport_protocol="TCP")}, files={"/home/nginx.log": "logstash--volume1", "/usr/share/logstash/pipeline/logstash-nginx.config": "logstash--volume0"}, cmd=["logstash", "-f", "/usr/share/logstash/pipeline/logstash-nginx.config"], env_vars={"LS_JAVA_OPTS": "-Xms512m -Xmx512m", "discovery.seed_hosts": "logstash"}))
 `
 
-	result, err := convertComposeToStarlark(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 // From https://github.com/docker/awesome-compose/blob/master/fastapi/compose.yaml
+func TestFastApiCompose(t *testing.T) {
+	composeBytes := []byte(`
+services:
+  api:
+    build:
+      context: .
+      target: builder
+    container_name: fastapi-application
+    environment:
+      PORT: 8000
+    ports:
+      - '8000:8000'
+    restart: "no"
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "api", config = ServiceConfig(image=ImageBuildSpec(image_name="api%v", build_context_dir=".", target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP")}, env_vars={"PORT": "8000"}))
+`, builtImageSuffix)
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
 
 // From https://github.com/docker/awesome-compose/blob/master/flask-redis/compose.yaml
+func TestFlaskRedisCompose(t *testing.T) {
+	composeBytes := []byte(`
+services:
+  redis:
+    image: redislabs/redismod
+    ports:
+      - '6379:6379'
+  web:
+    build:
+      context: .
+      target: builder
+    # flask requires SIGINT to stop gracefully
+    # (default stop signal from Compose is SIGTERM)
+    stop_signal: SIGINT
+    ports:
+      - '8000:8000'
+    volumes:
+      - .:/code
+    depends_on:
+      - redis
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
+    plan.upload_files(src = ".", name = "web--volume0")
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%v", build_context_dir=".", target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP")}, files={"/code": "web--volume0"}, env_vars={}))
+`, builtImageSuffix)
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
 
 // From https://github.com/docker/awesome-compose/blob/master/nextcloud-redis-mariadb/compose.yaml
+func TestNextCloudRedisMariaDBCompose(t *testing.T) {
+	composeBytes := []byte(`
+services:
+  nc:
+    image: nextcloud:apache
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - nc_data:/var/www/html
+    networks:
+      - redisnet
+      - dbnet
+    environment:
+      - REDIS_HOST=redis
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=nextcloud
+  redis:
+    image: redis:alpine
+    restart: always
+    networks:
+      - redisnet
+    expose:
+      - 6379
+  db:
+    image: mariadb:10.5
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - dbnet
+    environment:
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_ROOT_PASSWORD=nextcloud
+      - MYSQL_PASSWORD=nextcloud
+    expose:
+      - 3306
+volumes:
+  db_data:
+  nc_data:
+networks:
+  dbnet:
+  redisnet:
+`)
+	expectedResult := `def run(plan):
+    plan.add_service(name = "db", config = ServiceConfig(image="mariadb:10.5", files={"/var/lib/mysql": Directory(persistent_key="volume0")}, cmd=["--transaction-isolation=READ-COMMITTED", "--binlog-format=ROW"], env_vars={"MYSQL_DATABASE": "nextcloud", "MYSQL_PASSWORD": "nextcloud", "MYSQL_ROOT_PASSWORD": "nextcloud", "MYSQL_USER": "nextcloud"}))
+    plan.add_service(name = "nc", config = ServiceConfig(image="nextcloud:apache", ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/var/www/html": Directory(persistent_key="volume0")}, env_vars={"MYSQL_DATABASE": "nextcloud", "MYSQL_HOST": "db", "MYSQL_PASSWORD": "nextcloud", "MYSQL_USER": "nextcloud", "REDIS_HOST": "redis"}))
+    plan.add_service(name = "redis", config = ServiceConfig(image="redis:alpine", env_vars={}))
+`
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
 
 // From https://github.com/docker/awesome-compose/blob/master/nginx-aspnet-mysql/compose.yaml
 
