@@ -11,7 +11,6 @@ import (
 )
 
 type traefikReverseProxyContainer struct{}
-// TODO: Add uuid in here.
 
 func NewTraefikReverseProxyContainer() *traefikReverseProxyContainer {
 	return &traefikReverseProxyContainer{}
