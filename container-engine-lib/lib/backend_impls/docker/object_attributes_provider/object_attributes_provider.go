@@ -1,6 +1,8 @@
 package object_attributes_provider
 
 import (
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_object_name"
@@ -10,14 +12,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
-	"strings"
 )
 
 const (
 	engineServerNamePrefix = "kurtosis-engine"
 	logsAggregatorName     = "kurtosis-logs-aggregator"
 	logsStorageVolumeName  = "kurtosis-logs-storage"
-	reverseProxyName       = "kurtosis-reverse-proxy"
+	reverseProxyNamePrefix = "kurtosis-reverse-proxy"
 )
 
 type DockerObjectAttributesProvider interface {
@@ -29,7 +30,7 @@ type DockerObjectAttributesProvider interface {
 	ForEnclave(enclaveUuid enclave.EnclaveUUID) (DockerEnclaveObjectAttributesProvider, error)
 	ForLogsAggregator() (DockerObjectAttributes, error)
 	ForLogsStorageVolume() (DockerObjectAttributes, error)
-	ForReverseProxy() (DockerObjectAttributes, error)
+	ForReverseProxy(engineGuid engine.EngineGUID) (DockerObjectAttributes, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -137,14 +138,33 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsStorageVolume() (Dock
 	return objectAttributes, nil
 }
 
-func (provider *dockerObjectAttributesProviderImpl) ForReverseProxy() (DockerObjectAttributes, error) {
-	name, err := docker_object_name.CreateNewDockerObjectName(reverseProxyName)
+func (provider *dockerObjectAttributesProviderImpl) ForReverseProxy(engineGuid engine.EngineGUID) (DockerObjectAttributes, error) {
+
+	nameStr := strings.Join(
+		[]string{
+			reverseProxyNamePrefix,
+			string(engineGuid),
+		},
+		objectNameElementSeparator,
+	)
+	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", reverseProxyName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", nameStr)
+	}
+
+	idLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(engineGuid))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the reverse proxy GUID Docker label from string '%v'", engineGuid)
+	}
+	guidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(engineGuid))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the reverse proxy GUID Docker label from string '%v'", engineGuid)
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
 		docker_label_key.ContainerTypeDockerLabelKey: label_value_consts.ReverseProxyTypeDockerLabelValue,
+		docker_label_key.IDDockerLabelKey:            idLabelValue,
+		docker_label_key.GUIDDockerLabelKey:          guidLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

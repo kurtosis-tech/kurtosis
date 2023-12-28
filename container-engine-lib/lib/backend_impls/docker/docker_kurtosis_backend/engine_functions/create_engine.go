@@ -116,6 +116,7 @@ func CreateEngine(
 	reverseProxyContainer := traefik.NewTraefikReverseProxyContainer()
 	_, removeReverseProxyFunc, err := reverse_proxy_functions.CreateReverseProxy(
 		ctx,
+		engineGuid,
 		reverseProxyContainer,
 		dockerManager,
 		objAttrsProvider)
