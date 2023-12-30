@@ -34,7 +34,7 @@ func ConnectReverseProxyToNetwork(ctx context.Context, dockerManager *docker_man
 	if found {
 		return nil
 	}
-	
+
 	if err = dockerManager.ConnectContainerToNetwork(ctx, networkId, maybeReverseProxyContainerId, autoAssignIpAddressToReverseProxy, emptyAliasForReverseProxy); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while connecting container '%v' to the enclave network '%v'", maybeReverseProxyContainerId, networkId)
 	}
@@ -57,7 +57,7 @@ func DisconnectReverseProxyFromNetwork(ctx context.Context, dockerManager *docke
 	if !found {
 		return nil
 	}
-	
+
 	if err = dockerManager.DisconnectContainerFromNetwork(ctx, maybeReverseProxyContainerId, networkId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while disconnecting container '%v' from the enclave network '%v'", maybeReverseProxyContainerId, networkId)
 	}
