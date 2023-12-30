@@ -32,7 +32,6 @@ func ConnectReverseProxyToNetwork(ctx context.Context, dockerManager *docker_man
 
 	_, found := maybeReverseProxyObject.GetEnclaveNetworksIpAddress()[networkId]
 	if found {
-		logrus.Infof("The reverse proxy is already connected to network with id '%v'.", networkId)
 		return nil
 	}
 	
@@ -56,7 +55,6 @@ func DisconnectReverseProxyFromNetwork(ctx context.Context, dockerManager *docke
 
 	_, found := maybeReverseProxyObject.GetEnclaveNetworksIpAddress()[networkId]
 	if !found {
-		logrus.Infof("The reverse proxy is already disconnected from network with id '%v'.", networkId)
 		return nil
 	}
 	
