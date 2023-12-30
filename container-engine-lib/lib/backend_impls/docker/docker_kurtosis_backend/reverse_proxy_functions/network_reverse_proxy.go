@@ -20,16 +20,22 @@ var (
 )
 
 func ConnectReverseProxyToNetwork(ctx context.Context, dockerManager *docker_manager.DockerManager, networkId string) error {
-	_, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager)
+	maybeReverseProxyObject, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		logrus.Warnf("Attempted to connect reverse proxy to a network but no reverse proxy container was found.")
 		return nil
 	}
 
-	if maybeReverseProxyContainerId == "" {
+	if maybeReverseProxyObject == nil {
 		return nil
 	}
 
+	_, found := maybeReverseProxyObject.GetEnclaveNetworksIpAddress()[networkId]
+	if found {
+		logrus.Infof("The reverse proxy is already connected to network with id '%v'.", networkId)
+		return nil
+	}
+	
 	if err = dockerManager.ConnectContainerToNetwork(ctx, networkId, maybeReverseProxyContainerId, autoAssignIpAddressToReverseProxy, emptyAliasForReverseProxy); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while connecting container '%v' to the enclave network '%v'", maybeReverseProxyContainerId, networkId)
 	}
@@ -38,7 +44,7 @@ func ConnectReverseProxyToNetwork(ctx context.Context, dockerManager *docker_man
 }
 
 func DisconnectReverseProxyFromNetwork(ctx context.Context, dockerManager *docker_manager.DockerManager, networkId string) error {
-	_, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager)
+	maybeReverseProxyObject, maybeReverseProxyContainerId, err := getReverseProxyObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
 		logrus.Warnf("Attempted to disconnect reverse proxy from a network but no reverse proxy container was found.")
 		return nil
@@ -48,6 +54,12 @@ func DisconnectReverseProxyFromNetwork(ctx context.Context, dockerManager *docke
 		return nil
 	}
 
+	_, found := maybeReverseProxyObject.GetEnclaveNetworksIpAddress()[networkId]
+	if !found {
+		logrus.Infof("The reverse proxy is already disconnected from network with id '%v'.", networkId)
+		return nil
+	}
+	
 	if err = dockerManager.DisconnectContainerFromNetwork(ctx, maybeReverseProxyContainerId, networkId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while disconnecting container '%v' from the enclave network '%v'", maybeReverseProxyContainerId, networkId)
 	}
