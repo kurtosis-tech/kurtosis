@@ -320,8 +320,7 @@ func getMatchingEngineKubernetesResources(
 		if ingressesForId, found := ingresses[engineGuidStr]; found {
 			if len(ingressesForId) > 1 {
 				return nil, stacktrace.NewError(
-					"Expected at most one engine ingress in namespace '%v' for engine with GUID '%v' "+
-						"but found '%v'",
+					"Expected at most one engine ingress in namespace '%v' for engine with GUID '%v' but found '%v'",
 					namespaceName,
 					engineGuid,
 					len(ingresses),
