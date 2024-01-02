@@ -27,7 +27,6 @@ const (
 	//TODO: pass this parameter
 	enclaveManagerUIPort                        = 9711
 	enclaveManagerAPIPort                       = 8081
-	restAPIPort                                 = 9779 //TODO: pass this parameter
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 	logsStorageDirpath                          = "/var/log/kurtosis/"
@@ -159,12 +158,12 @@ func CreateEngine(
 		)
 	}
 
-	restAPIPortSpec, err := port_spec.NewPortSpec(uint16(restAPIPort), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	restAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the REST API server's http port spec object using number '%v' and protocol '%v'",
-			restAPIPort,
+			engine.RESTAPIPortAddr,
 			consts.EngineTransportProtocol.String(),
 		)
 	}
@@ -207,7 +206,7 @@ func CreateEngine(
 		privateGrpcDockerPort:       docker_manager.NewManualPublishingSpec(grpcPortNum),
 		enclaveManagerUIDockerPort:  docker_manager.NewManualPublishingSpec(uint16(enclaveManagerUIPort)),
 		enclaveManagerAPIDockerPort: docker_manager.NewManualPublishingSpec(uint16(enclaveManagerAPIPort)),
-		restAPIDockerPort:           docker_manager.NewManualPublishingSpec(uint16(restAPIPort)),
+		restAPIDockerPort:           docker_manager.NewManualPublishingSpec(engine.RESTAPIPortAddr),
 	}
 
 	bindMounts := map[string]string{

@@ -130,9 +130,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	// Get Service Attributes
 	apiContainerServiceAttributes, err := apiContainerAttributesProvider.ForApiContainerService(
 		consts.KurtosisInternalContainerGrpcPortSpecId,
-		privateGrpcPortSpec,
-		consts.KurtosisInternalContainerGrpcProxyPortSpecId,
-		nil)
+		privateGrpcPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
