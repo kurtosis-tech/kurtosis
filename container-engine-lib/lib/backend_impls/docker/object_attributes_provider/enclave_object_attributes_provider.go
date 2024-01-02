@@ -1,8 +1,6 @@
 package object_attributes_provider
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"net"
 	"strconv"
@@ -26,8 +24,7 @@ const (
 	networkPrefix          = "kt-"
 	apiContainerNamePrefix = "kurtosis-api"
 
-	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
-	persistentServiceDirectoryNameFragment = "spd"
+	artifactExpansionVolumeNameFragment = "files-artifact-expansion"
 
 	artifactsExpanderContainerNameFragment = "files-artifacts-expander"
 	logsCollectorFragment                  = "kurtosis-logs-collector"
@@ -333,15 +330,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSinglePersistentDi
 		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the persistent directory volume for service '%v'", serviceUuidStr)
 	}
 
-	hasher := md5.New()
-	hasher.Write([]byte(serviceUUID))
-	hasher.Write([]byte(persistentKey))
-	persistentKeyHash := hex.EncodeToString(hasher.Sum(nil))
-
 	name, err := provider.getNameForEnclaveObject([]string{
-		persistentServiceDirectoryNameFragment,
 		string(persistentKey),
-		persistentKeyHash,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object using GUID '%v' and service GUID '%v'", guidStr, serviceUuidStr)
