@@ -55,6 +55,7 @@ dependency_http_port = dependency.ports["http"]
 plan.add_service(
     name = "dependant",
     config = ServiceConfig(
+        image=ImageBuildSpec(image_name="dependant", build_context_dir="./"),
         env_vars = {
             "DEPENDENCY_URL": "http://{}:{}".format(dependency.ip_address, dependency_http_port.number),
         },

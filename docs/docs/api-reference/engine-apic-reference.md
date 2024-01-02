@@ -32,7 +32,7 @@ Creates a new Kurtosis enclave using the given parameters. The enclave will be c
 * `enclaveContext`: An [EnclaveContext][enclavecontext] object representing the new enclave.
 
 ### `createProductionEnclave(String enclaveName) -> [EnclaveContext][enclavecontext] enclaveContext`
-Same as above, but creates an enclave in production mode (services will restart upon failure)
+Same as above, but creates an enclave in production mode (services will restart if they die)
 
 
 ### `getEnclaveContext(String enclaveIdentifier) -> [EnclaveContext][enclavecontext] enclaveContext`

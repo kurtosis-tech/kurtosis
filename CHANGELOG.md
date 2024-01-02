@@ -1,5 +1,65 @@
 # Changelog
 
+## [0.85.53](https://github.com/kurtosis-tech/kurtosis/compare/0.85.52...0.85.53) (2023-12-20)
+
+
+### Bug Fixes
+
+* change restart policy to always ([#1996](https://github.com/kurtosis-tech/kurtosis/issues/1996)) ([c41583d](https://github.com/kurtosis-tech/kurtosis/commit/c41583d7a6d07e9d39bdb5911627db2f7e9af7e5))
+* destroying the current reverse proxy if it can't be used to create a new one during the `CreateReverseProxy` process ([#1991](https://github.com/kurtosis-tech/kurtosis/issues/1991)) ([82d1565](https://github.com/kurtosis-tech/kurtosis/commit/82d156568655e908d715ea04f8f19bce555b4815))
+* nil pointer error found in the `kurtosis clean -a` cmd, adding remove reverse proxy container function when it already exists ([#1995](https://github.com/kurtosis-tech/kurtosis/issues/1995)) ([64eff3e](https://github.com/kurtosis-tech/kurtosis/commit/64eff3ee80a7159301a8266a0da45abe57754f9a))
+* websocket keep-alive ([#1993](https://github.com/kurtosis-tech/kurtosis/issues/1993)) ([509c508](https://github.com/kurtosis-tech/kurtosis/commit/509c508f84fc00b7a09911628fc795e3db94c2ec))
+
+## [0.85.52](https://github.com/kurtosis-tech/kurtosis/compare/0.85.51...0.85.52) (2023-12-20)
+
+
+### Features
+
+* image build spec ([#1964](https://github.com/kurtosis-tech/kurtosis/issues/1964)) ([367d13b](https://github.com/kurtosis-tech/kurtosis/commit/367d13bc819fa2c049a3eed05bf2d10ddf5994a2))
+
+
+### Bug Fixes
+
+* bring back old enclave continuity ([#1990](https://github.com/kurtosis-tech/kurtosis/issues/1990)) ([723c81d](https://github.com/kurtosis-tech/kurtosis/commit/723c81d0b3ac6f27d481debb2023f998899eedcd))
+
+## [0.85.51](https://github.com/kurtosis-tech/kurtosis/compare/0.85.50...0.85.51) (2023-12-19)
+
+
+### Features
+
+* catalog show run count ([#1975](https://github.com/kurtosis-tech/kurtosis/issues/1975)) ([5f29a12](https://github.com/kurtosis-tech/kurtosis/commit/5f29a12a891a18ddf8a0f48ed806acb125008fc2))
+* update api path and keep alive ([#1976](https://github.com/kurtosis-tech/kurtosis/issues/1976)) ([e026109](https://github.com/kurtosis-tech/kurtosis/commit/e0261098ae7870caa7804a120e7ee408d053854f))
+
+
+### Bug Fixes
+
+* fix nil pointer error when getting reverse proxy from the cluster ([#1980](https://github.com/kurtosis-tech/kurtosis/issues/1980)) ([f20c290](https://github.com/kurtosis-tech/kurtosis/commit/f20c290143e801d3f48fe8f29ea6399ed50ecb48))
+
+## [0.85.50](https://github.com/kurtosis-tech/kurtosis/compare/0.85.49...0.85.50) (2023-12-18)
+
+
+### Bug Fixes
+
+* Rust version upgraded to v1.70.0 for fixing the publish Rust SDK CI job, ([#1977](https://github.com/kurtosis-tech/kurtosis/issues/1977)) ([6f7e1bb](https://github.com/kurtosis-tech/kurtosis/commit/6f7e1bb0d1c444e9ba3cc354179cdbb5deb64abb))
+
+## [0.85.49](https://github.com/kurtosis-tech/kurtosis/compare/0.85.48...0.85.49) (2023-12-18)
+
+
+### Features
+
+* add production mode to k8s ([#1963](https://github.com/kurtosis-tech/kurtosis/issues/1963)) ([b0e27e6](https://github.com/kurtosis-tech/kurtosis/commit/b0e27e6c0c6a73a0291bd6ca6eb5a1f48b4c2fc3))
+* persistent volumes work on multi node k8s clusters ([#1943](https://github.com/kurtosis-tech/kurtosis/issues/1943)) ([b2fd9f2](https://github.com/kurtosis-tech/kurtosis/commit/b2fd9f2488a6749c78c8974b6f08cf22b54b2358))
+* User service K8S ingresses for reverse proxy routing ([#1941](https://github.com/kurtosis-tech/kurtosis/issues/1941)) ([c37dd7f](https://github.com/kurtosis-tech/kurtosis/commit/c37dd7f1732a06705d899803fe7678203fa1e6f2))
+
+
+### Bug Fixes
+
+* adding remove logs aggregator container function when it already exists ([#1974](https://github.com/kurtosis-tech/kurtosis/issues/1974)) ([5d74d16](https://github.com/kurtosis-tech/kurtosis/commit/5d74d162019e95cf904c0dd4a2547039fe49af70))
+* Do not fail if the Traefik config dir path already exists ([#1966](https://github.com/kurtosis-tech/kurtosis/issues/1966)) ([4e6f7d7](https://github.com/kurtosis-tech/kurtosis/commit/4e6f7d7e1f5bd232990e5e8351d08ef93884216a))
+* ignore the current status of the service during a start/stop ([#1965](https://github.com/kurtosis-tech/kurtosis/issues/1965)) ([1c4863f](https://github.com/kurtosis-tech/kurtosis/commit/1c4863f4ec112e3c8ca6f095b3551883cbc8a213))
+* refactor the emui components to the shared package ([#1959](https://github.com/kurtosis-tech/kurtosis/issues/1959)) ([a406973](https://github.com/kurtosis-tech/kurtosis/commit/a4069737f364bd7e1a85edd29d33fe0acb2d15df))
+* Set the user service K8S ingress labels so it can be found ([#1962](https://github.com/kurtosis-tech/kurtosis/issues/1962)) ([9cc5f77](https://github.com/kurtosis-tech/kurtosis/commit/9cc5f7749fe151038818ecd6c2cb9a1f328db4ce))
+
 ## [0.85.48](https://github.com/kurtosis-tech/kurtosis/compare/0.85.47...0.85.48) (2023-12-14)
 
 

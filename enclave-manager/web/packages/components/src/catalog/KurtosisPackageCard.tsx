@@ -1,6 +1,6 @@
 import { Box, Flex, Icon, Image, Text } from "@chakra-ui/react";
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
-import { IoStar } from "react-icons/io5";
+import { IoPlay, IoStar } from "react-icons/io5";
 import { Link, useHref } from "react-router-dom";
 import { readablePackageName } from "./utils";
 import { RunKurtosisPackageButton } from "./widgets/RunKurtosisPackageButton";
@@ -57,9 +57,15 @@ export const KurtosisPackageCard = ({ kurtosisPackage, onRunClick }: KurtosisPac
                 <Text as={"span"} textTransform={"capitalize"}>
                   {kurtosisPackage.repositoryMetadata?.owner.replaceAll("-", " ") || "Unknown owner"}
                 </Text>
-                <Flex gap={"4px"} alignItems={"center"}>
-                  <Icon color="gray.  500" as={IoStar} />
-                  <Text as={"span"}>{kurtosisPackage.stars.toString()}</Text>
+                <Flex gap={"16px"}>
+                  <Flex gap={"4px"} alignItems={"center"}>
+                    <Icon color="gray.  500" as={IoStar} />
+                    <Text as={"span"}>{kurtosisPackage.stars.toString()}</Text>
+                  </Flex>
+                  <Flex gap={"4px"} alignItems={"center"}>
+                    <Icon color="gray.  500" as={IoPlay} />
+                    <Text as={"span"}>{kurtosisPackage.runCount.toString()}</Text>
+                  </Flex>
                 </Flex>
               </Flex>
             </Box>

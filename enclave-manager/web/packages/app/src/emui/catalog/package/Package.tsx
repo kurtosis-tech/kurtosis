@@ -1,7 +1,7 @@
 import { Box, Flex, Icon, Image, Input, InputGroup, InputRightElement, Text } from "@chakra-ui/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
-import { IoStar } from "react-icons/io5";
+import { IoPlay, IoStar } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
 
@@ -84,7 +84,7 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
             >
               View on Github
             </PackageSourceButton>
-            <Flex borderBottomWidth={"1px"} borderBottomColor={"whiteAlpha.300"} gap={"16px"} p={"16px"}>
+            <Flex borderBottomWidth={"1px"} borderBottomColor={"whiteAlpha.300"} gap={"32px"} p={"16px"}>
               <Flex gap={"16px"} flexDirection={"column"}>
                 <Flex gap={"8px"} color="gray.400" fontWeight={"bold"} alignItems={"center"}>
                   <Icon as={IoStar} w={"12px"} h={"12px"} />
@@ -94,6 +94,17 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
                 </Flex>
                 <Text as={"span"} fontWeight={"medium"} fontSize={"xl"}>
                   {kurtosisPackage.stars.toString()}
+                </Text>
+              </Flex>
+              <Flex gap={"16px"} flexDirection={"column"}>
+                <Flex gap={"8px"} color="gray.400" fontWeight={"bold"} alignItems={"center"}>
+                  <Icon as={IoPlay} w={"12px"} h={"12px"} />
+                  <Text as={"span"} textTransform={"uppercase"}>
+                    Run Count
+                  </Text>
+                </Flex>
+                <Text as={"span"} fontWeight={"medium"} fontSize={"xl"}>
+                  {kurtosisPackage.runCount.toString()}
                 </Text>
               </Flex>
             </Flex>

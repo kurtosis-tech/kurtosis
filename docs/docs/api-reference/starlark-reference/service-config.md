@@ -7,9 +7,30 @@ The `ServiceConfig` is used to configure a service when it is added to an enclav
 
 ```python
 config = ServiceConfig(
-    # The name of the container image that Kurtosis should use when creating the service’s container.
+    # The name of the container image that Kurtosis will use to create and start the service's container.
+    # This image can be pulled from a remote container registry, picked up from the local cache, or built by Kurtosis using
+    # the underlying container engine.
+    # If a string is provided, Kurtosis will by default detect if images exists locally, or pull from container registry if not.
+    # If an ImageBuildSpec is provided, Kurtosis will build the image.
     # MANDATORY
     image = "kurtosistech/example-datastore-server",
+    
+    OR
+    
+    image = ImageBuildSpec(
+        # Name to give built image
+        # MANDATORY
+        image_name="kurtosistech/example-datastore-server"
+        
+        # Locator to build context within the Kurtosis package
+        # As of now, Kurtosis expects a Dockerfile at the root of the build context
+        # MANDATORY
+        build_context_dir="./server"
+        
+        # Stage of image build to target for multi-stage container image
+        # OPTIONAL
+        target_stage=""
+    )
 
     # The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.
     # If no ports are provided, no ports will be exposed on the host machine, unless there is an EXPOSE in the Dockerfile
@@ -112,6 +133,9 @@ config = ServiceConfig(
     }
 )
 ```
+Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package.
+More info can be found on [locators referring to local resources here][locators] and how to turn your script into a Kurtosis [package][package] here.
+
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [Directory][directory] object or files artifact name.
@@ -160,3 +184,5 @@ labels:
 [directory]: ./directory.md
 [port-spec]: ./port-spec.md
 [ready-condition]: ./ready-condition.md
+[locators]: ../../advanced-concepts/locators.md
+[package]: ../../advanced-concepts/packages.md

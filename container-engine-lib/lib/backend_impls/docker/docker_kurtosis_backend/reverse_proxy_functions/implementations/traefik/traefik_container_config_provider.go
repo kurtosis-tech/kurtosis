@@ -51,7 +51,7 @@ func (traefik *traefikContainerConfigProvider) GetContainerArgs(
 	overrideCmd := []string{
 		shCmdFlag,
 		fmt.Sprintf(
-			"%v '%v' && %v '%v' > %v && %v",
+			"%v -p '%v' && %v '%v' > %v && %v",
 			mkdirCmdName,
 			configDirpath,
 			printfCmdName,

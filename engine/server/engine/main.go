@@ -79,9 +79,11 @@ const (
 	streamerPoolSize       = 1000
 	streamerExpirationTime = time.Hour * 2
 
-	pathToEnclaveSpecs   = "/api/specs/enclave"
-	pathToEngineSpecs    = "/api/specs/engine"
-	pathToWebsocketSpecs = "/api/specs/websocket"
+	pathToApiGroup = "/api"
+
+	pathToEnclaveSpecs   = "/specs/enclave"
+	pathToEngineSpecs    = "/specs/engine"
+	pathToWebsocketSpecs = "/specs/websocket"
 )
 
 var (
@@ -409,14 +411,15 @@ func restApiServer(
 
 	// This is how you set up a basic Echo router
 	echoRouter := echo.New()
-	echoRouter.Use(echomiddleware.Logger())
+	echoApiRouter := echoRouter.Group(pathToApiGroup)
+	echoApiRouter.Use(echomiddleware.Logger())
 
 	// Setup CORS policies for the REST API server
 	allowOrigins := utils.DerefWith(serverArgs.AllowedCORSOrigins, defaultCORSOrigins)
 	logrus.Infof("Setting-up CORS policy to accept requests from origins: %v", allowOrigins)
 
 	// nolint:exhaustruct
-	echoRouter.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+	echoApiRouter.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: allowOrigins,
 		AllowHeaders: defaultCORSHeaders,
 	}))
@@ -428,9 +431,14 @@ func restApiServer(
 		LogFileManager:  logFileManager,
 		MetricsClient:   metricsClient,
 	}
-	engineApi.RegisterHandlers(echoRouter, engineApi.NewStrictHandler(engineRuntime, nil))
+	engineApi.RegisterHandlers(echoApiRouter, engineApi.NewStrictHandler(engineRuntime, nil))
 
 	// ============================== Logging API ======================================
+	// nolint:exhaustruct
+	corsConfig := cors.New(cors.Options{
+		AllowedOrigins: allowOrigins,
+		AllowedMethods: defaultCORSHeaders,
+	})
 	webSocketRuntime := restApi.WebSocketRuntime{
 		ImageVersionTag:             serverArgs.ImageVersionTag,
 		EnclaveManager:              enclave_manager,
@@ -440,8 +448,9 @@ func restApiServer(
 		LogFileManager:              logFileManager,
 		MetricsClient:               metricsClient,
 		AsyncStarlarkLogs:           asyncStarlarkLogs,
+		CorsConfig:                  *corsConfig,
 	}
-	loggingApi.RegisterHandlers(echoRouter, webSocketRuntime)
+	loggingApi.RegisterHandlers(echoApiRouter, webSocketRuntime)
 
 	// ============================== Engine Management API ======================================
 	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, *enclave_manager, asyncStarlarkLogs, false)
@@ -449,7 +458,7 @@ func restApiServer(
 		newErr := stacktrace.Propagate(err, "Failed to initialize %T", enclaveRuntime)
 		return newErr
 	}
-	enclaveApi.RegisterHandlers(echoRouter, enclaveApi.NewStrictHandler(enclaveRuntime, nil))
+	enclaveApi.RegisterHandlers(echoApiRouter, enclaveApi.NewStrictHandler(enclaveRuntime, nil))
 
 	// ============================== Serve OpenAPI specs ======================================
 	// TODO (edgar) Move Spec service to Web Server
@@ -459,7 +468,7 @@ func restApiServer(
 		// Log and skip since this is non-essential
 		logrus.Errorf("Error loading swagger spec: %v", err)
 	} else {
-		server.ServeSwaggerUI(echoRouter, pathToEngineSpecs, server.NewSwaggerUIConfig(swaggerEngine))
+		server.ServeSwaggerUI(echoRouter, pathToApiGroup, pathToEngineSpecs, server.NewSwaggerUIConfig(swaggerEngine))
 	}
 
 	swaggerEnclave, err := enclaveApi.GetSwagger()
@@ -467,7 +476,7 @@ func restApiServer(
 		// Log and skip since this is non-essential
 		logrus.Errorf("Error loading swagger spec: %v", err)
 	} else {
-		server.ServeSwaggerUI(echoRouter, pathToEnclaveSpecs, server.NewSwaggerUIConfig(swaggerEnclave))
+		server.ServeSwaggerUI(echoRouter, pathToApiGroup, pathToEnclaveSpecs, server.NewSwaggerUIConfig(swaggerEnclave))
 	}
 
 	swaggerWebsocket, err := loggingApi.GetSwagger()
@@ -475,7 +484,7 @@ func restApiServer(
 		// Log and skip since this is non-essential
 		logrus.Errorf("Error loading swagger spec: %v", err)
 	} else {
-		server.ServeSwaggerUI(echoRouter, pathToWebsocketSpecs, server.NewSwaggerUIConfig(swaggerWebsocket))
+		server.ServeSwaggerUI(echoRouter, pathToApiGroup, pathToWebsocketSpecs, server.NewSwaggerUIConfig(swaggerWebsocket))
 	}
 
 	// ============================== Start Server ======================================

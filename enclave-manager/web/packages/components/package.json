@@ -1,6 +1,6 @@
 {
   "name": "kurtosis-ui-components",
-  "version": "0.0.1",
+  "version": "0.85.53",
   "private": false,
   "main": "build/index",
   "description": "This repo contains components used by Kurtosis UI applications.",
@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/kurtosis-tech/kurtosis",
   "scripts": {
+    "start": "tsc --watch --preserveWatchOutput",
     "build": "rm -rf build/; tsc"
   },
   "eslintConfig": {
