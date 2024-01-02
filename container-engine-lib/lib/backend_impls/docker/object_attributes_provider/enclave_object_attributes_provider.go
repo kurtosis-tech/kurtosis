@@ -27,7 +27,7 @@ const (
 	apiContainerNamePrefix = "kurtosis-api"
 
 	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
-	persistentServiceDirectoryNameFragment = "service-persistent-directory"
+	persistentServiceDirectoryNameFragment = "spd"
 
 	artifactsExpanderContainerNameFragment = "files-artifacts-expander"
 	logsCollectorFragment                  = "kurtosis-logs-collector"
@@ -340,6 +340,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSinglePersistentDi
 
 	name, err := provider.getNameForEnclaveObject([]string{
 		persistentServiceDirectoryNameFragment,
+		string(persistentKey),
 		persistentKeyHash,
 	})
 	if err != nil {

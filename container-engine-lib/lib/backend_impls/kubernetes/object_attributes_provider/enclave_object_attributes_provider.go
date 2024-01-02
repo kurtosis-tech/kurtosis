@@ -25,7 +25,7 @@ const (
 
 	enclaveDataDirFragment = "enclave-data-dir"
 
-	persistentServiceDirectoryNameFragment = "service-persistent-directory"
+	persistentServiceDirectoryNameFragment = "spd"
 
 	traefikIngressRouterEntrypointsValue = "web"
 )
@@ -264,7 +264,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForSinglePersiste
 	//No userServiceService annotations.
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
 
-	name, err := getKubernetesPersistentDirectoryName(persistentKeyHash)
+	name, err := getKubernetesPersistentDirectoryName(string(persistentKey), persistentKeyHash)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create service persistent directory name for hash: '%s'", persistentKeyHash)
 	}
@@ -329,12 +329,14 @@ func getKubernetesObjectName(
 }
 
 func getKubernetesPersistentDirectoryName(
-	persistentServiceDirectoryName string,
+	persistentKey string,
+	persistentKeyHash string,
 ) (*kubernetes_object_name.KubernetesObjectName, error) {
 	name, err := getCompositeKubernetesObjectName(
 		[]string{
 			persistentServiceDirectoryNameFragment,
-			persistentServiceDirectoryName,
+			persistentKey,
+			persistentKeyHash,
 		})
 	return name, err
 }
