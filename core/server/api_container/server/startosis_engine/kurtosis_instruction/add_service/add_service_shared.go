@@ -76,7 +76,7 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	if serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, artifactName := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
 			if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
-				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
+				return startosis_errors.NewValidationError("There was an error '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
 			}
 		}
 	}
