@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.85.54](https://github.com/kurtosis-tech/kurtosis/compare/0.85.53...0.85.54) (2024-01-02)
+
+
+### Bug Fixes
+
+* log file path formatting for week ([#2008](https://github.com/kurtosis-tech/kurtosis/issues/2008)) ([d032ff5](https://github.com/kurtosis-tech/kurtosis/commit/d032ff581432ac1871e5a8c304150e19a87d15ba))
+
 ## [0.85.53](https://github.com/kurtosis-tech/kurtosis/compare/0.85.52...0.85.53) (2023-12-20)
 
 
