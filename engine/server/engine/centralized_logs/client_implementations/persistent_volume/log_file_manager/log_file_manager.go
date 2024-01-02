@@ -206,25 +206,27 @@ func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLo
 	return nil
 }
 
-// TODO: Implement a FilePath Builder to remove exploding constructors
+// TODO: Implement a FilePath Builder to centralize log file path creation across the entire module
 // creates a filepath of format /<filepath_base>/year/week/<enclave>/serviceIdentifier.<filetype>
 func getFilepathStr(year, week int, enclaveUuid, serviceIdentifier string) string {
-	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceIdentifier, volume_consts.Filetype)
+	formattedWeekNum := fmt.Sprintf("%02d", week)
+	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceIdentifier, volume_consts.Filetype)
 }
 
 // creates a directory path of format /<filepath_base>/year/week/<enclave>/
 func getEnclaveLogsDirPath(year, week int, enclaveUuid string) string {
 	logsDirPathForYearAndWeek := getLogsDirPathForWeek(year, week)
-	return fmt.Sprintf("%s/%s/", logsDirPathForYearAndWeek, enclaveUuid)
+	return fmt.Sprintf("%s%s/", logsDirPathForYearAndWeek, enclaveUuid)
 }
 
 // creates a directory path of format /<filepath_base>/year/week/
 func getLogsDirPathForWeek(year, week int) string {
 	logsDirPathForYear := getLogsDirPathForYear(year)
-	return fmt.Sprintf("%s/%s/", logsDirPathForYear, strconv.Itoa(week))
+	formattedWeekNum := fmt.Sprintf("%02d", week)
+	return fmt.Sprintf("%s%s/", logsDirPathForYear, formattedWeekNum)
 }
 
 // creates a directory path of format /<filepath_base>/year/
 func getLogsDirPathForYear(year int) string {
-	return fmt.Sprintf("%s/%s/", volume_consts.LogsStorageDirpath, strconv.Itoa(year))
+	return fmt.Sprintf("%s%s/", volume_consts.LogsStorageDirpath, strconv.Itoa(year))
 }
