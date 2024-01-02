@@ -3,8 +3,8 @@ Business Source License 1.1
 Parameters
 
 Licensor:             Kurtosis Technologies, Inc.
-Licensed Work:        Kurtosis 0.85.53
-The Licensed Work is (c) 2023 Kurtosis Technologies, Inc.
+Licensed Work:        Kurtosis 0.85.54
+The Licensed Work is (c) 2024 Kurtosis Technologies, Inc.
 Additional Use Grant: You may make use of the Licensed Work, provided that
 you may not use the Licensed Work for an Environment Orchestration Service.
 
@@ -12,7 +12,7 @@ you may not use the Licensed Work for an Environment Orchestration Service.
                       allows third parties (other than your employees and
                       contractors) to create distributed system environments.
 
-Change Date:          2027-12-20
+Change Date:          2028-01-02
 
 Change License:       Apache 2.0 (Apache License, Version 2.0)
 
