@@ -8,10 +8,8 @@ const (
 	// * contain only lowercase alphanumeric characters or '-'
 	// * start with an alphabetic character
 	// * end with an alphanumeric character
-	// The adoption of RFC-1035 is to maintain compatability with current Kubernetes service and pod naming standards:
-	// We use this over RFC-1035 as persistent data require 1035 to be followed
+	// This is in order to stick to the 1035 standard which we enforce for all objects created
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
-	// https://kubernetes.io/docs/concepts/services-networking/service/
 	PersistentKeyRegex            = "[a-z]([-a-z0-9]{0,61}[a-z0-9])?"
 	WordWrappedPersistentKeyRegex = "^" + PersistentKeyRegex + "$"
 )
