@@ -38,6 +38,12 @@ const (
 	// Our project name should cede to the project name in the Compose
 	shouldOverrideComposeYamlKeyProjectName = false
 
+	// Don't resolve paths as they should be resolved by package content provider
+	shouldResolvePaths = false
+
+	// Convert Windows paths to Linux paths as APIC runs on Linux
+	shouldConvertWindowsPathsToLinux = true
+
 	builtImageSuffix = "-image"
 
 	// eg. plan.upload_files(src = "./data/project", name = "web-volume0")
@@ -76,7 +82,6 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRe
 
 	// Use env vars file next to Compose if it exists
 	envVarsFilepath := path.Join(packageAbsDirpath, envVarsFilename)
-	var envVars map[string]string
 	envVarsInFile, err := godotenv.Read(envVarsFilepath)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
@@ -84,9 +89,8 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRe
 		}
 		envVarsInFile = map[string]string{}
 	}
-	envVars = envVarsInFile
 
-	starlarkScript, err := convertComposeToStarlarkScript(composeBytes, envVars)
+	starlarkScript, err := convertComposeToStarlarkScript(composeBytes, envVarsInFile)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting Compose file '%v' to a Starlark script.", composeFilename)
 	}
@@ -124,12 +128,8 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 	}
 	setOptionsFunc := func(options *loader.Options) {
 		options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
-
-		// Don't resolve paths as they should be resolved by package content provider
-		options.ResolvePaths = false
-
-		// Don't convert Windows paths to Linux paths as APIC runs on Linux
-		options.ConvertWindowsPaths = true
+		options.ResolvePaths = shouldResolvePaths
+		options.ConvertWindowsPaths = shouldConvertWindowsPathsToLinux
 	}
 	compose, err := loader.Load(composeParseConfig, setOptionsFunc)
 	if err != nil {
