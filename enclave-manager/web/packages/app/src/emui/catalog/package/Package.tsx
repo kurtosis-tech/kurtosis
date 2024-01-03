@@ -64,8 +64,14 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
               size={"lg"}
               onClick={() => setShowConfigurePackage(true)}
             />
-            <InputGroup size={"lg"} variant={"solid "}>
-              <Input value={runCommand} textOverflow={"ellipsis"} fontFamily={"Inconsolata"} bgColor={"gray.850"} />
+            <InputGroup size={"lg"} variant={"solid"}>
+              <Input
+                value={runCommand}
+                textOverflow={"ellipsis"}
+                fontFamily={"Inconsolata"}
+                bgColor={"gray.850"}
+                readOnly
+              />
               <InputRightElement>
                 <CopyButton
                   contentName={"command"}
