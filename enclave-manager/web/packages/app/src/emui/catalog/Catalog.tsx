@@ -201,7 +201,7 @@ const CatalogSearchResults = ({
   const filteredCatalog = useMemo(
     () =>
       catalog.packages
-        .filter((kurtosisPackage) => kurtosisPackage.name.toLowerCase().indexOf(searchState.term) > -1)
+        .filter((kurtosisPackage) => kurtosisPackage.name.toLowerCase().indexOf(searchState.term.toLowerCase()) > -1)
         .filter((kurtosisPackage) => {
           if (searchState.filter.length === 0) {
             return true;
