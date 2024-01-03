@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.85.55](https://github.com/kurtosis-tech/kurtosis/compare/0.85.54...0.85.55) (2024-01-03)
+
+
+### Features
+
+* Engine K8S ingress for REST API reverse proxy routing ([#1970](https://github.com/kurtosis-tech/kurtosis/issues/1970)) ([4287f88](https://github.com/kurtosis-tech/kurtosis/commit/4287f88dafb3005cbc3400b093a391a84f87bf53))
+* match emui catalog to final designs ([#2012](https://github.com/kurtosis-tech/kurtosis/issues/2012)) ([c55fc7a](https://github.com/kurtosis-tech/kurtosis/commit/c55fc7af45368e250da437561aa051384e92bbfc))
+
+## [0.85.54](https://github.com/kurtosis-tech/kurtosis/compare/0.85.53...0.85.54) (2024-01-02)
+
+
+### Bug Fixes
+
+* log file path formatting for week ([#2008](https://github.com/kurtosis-tech/kurtosis/issues/2008)) ([d032ff5](https://github.com/kurtosis-tech/kurtosis/commit/d032ff581432ac1871e5a8c304150e19a87d15ba))
+
 ## [0.85.53](https://github.com/kurtosis-tech/kurtosis/compare/0.85.52...0.85.53) (2023-12-20)
 
 
