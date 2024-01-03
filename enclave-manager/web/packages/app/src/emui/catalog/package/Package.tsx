@@ -52,7 +52,7 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
         <PackageHeader kurtosisPackage={kurtosisPackage} />
         <Flex gap={"32px"} h={"100%"} w={"100%"}>
           <Flex gap={"32px"} flexDirection={"column"} maxW={"740px"} w={"100%"}>
-            <TitledCard title={"DESCRIPTION"}>
+            <TitledCard title={"DESCRIPTION"} h={"100%"}>
               <Box p={"0 15px 15px 15px"}>
                 <KurtosisMarkdown>{kurtosisPackage.description}</KurtosisMarkdown>
               </Box>

@@ -42,18 +42,21 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
 
   if (numberOfChildren === 1) {
     return (
-      <Box w={"100%"} h={preventPageScroll ? `100vh` : "100%"}>
+      <Box w={"100%"} h={preventPageScroll ? `100vh` : "100%"} flex={"1"}>
         <Flex
+          position={"absolute"}
+          top={"0"}
+          bottom={"0"}
           flexDirection={"column"}
-          flex={"1"}
           w={"100%"}
           h={"100%"}
+          minH={"100%"}
           maxWidth={MAIN_APP_MAX_WIDTH}
           pl={hasNavbar ? MAIN_APP_LEFT_PADDING_WITH_NAV : MAIN_APP_LEFT_PADDING_WITHOUT_NAV}
           pr={MAIN_APP_RIGHT_PADDING}
         >
           <KurtosisBreadcrumbs />
-          <Box
+          <Flex
             w={"100%"}
             h={"100%"}
             minH={preventPageScroll ? "0" : undefined}
@@ -63,7 +66,7 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
             flex={"1"}
           >
             {children}
-          </Box>
+          </Flex>
         </Flex>
       </Box>
     );

@@ -9,7 +9,6 @@ import {
   Flex,
   Heading,
   Icon,
-  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
@@ -139,15 +138,16 @@ const CatalogImpl = ({ catalog }: CatalogImplProps) => {
               onChange={(e) => setSearchState((searchTerm) => ({ ...searchTerm, term: e.target.value }))}
               placeholder={"Search"}
             />
-            <InputRightElement w={"unset"}>
+            <InputRightElement w={"unset"} mr={"8px"}>
               {isSearching ? (
-                <IconButton
-                  aria-label={"Clear search"}
+                <Button
                   variant="ghost"
-                  size={"sm"}
-                  icon={<SmallCloseIcon />}
+                  size={"xs"}
+                  rightIcon={<SmallCloseIcon />}
                   onClick={() => setSearchState((searchTerm) => ({ filter: [], term: "" }))}
-                />
+                >
+                  Clear
+                </Button>
               ) : (
                 <FindCommand whiteSpace={"nowrap"} pr={"10px"} />
               )}
