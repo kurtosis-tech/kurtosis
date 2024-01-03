@@ -1,14 +1,25 @@
 import { Image, ImageProps } from "@chakra-ui/react";
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { useHref } from "react-router-dom";
 import { isDefined } from "../../utils";
 
 type PackageLogoProps = ImageProps & {
-  logoUrl?: string;
+  kurtosisPackage: KurtosisPackage;
 };
 
-export const PackageLogo = ({ logoUrl, ...imageProps }: PackageLogoProps) => {
-  const logoHref = useHref("/noLogo.png");
-  const hasLogo = isDefined(logoUrl) && logoUrl !== "";
+export const PackageLogo = ({ kurtosisPackage, ...imageProps }: PackageLogoProps) => {
+  const noLogoHref = useHref("/noLogo.png");
+  const kurtosisLogoHref = useHref("/logo.png");
 
-  return <Image src={hasLogo ? logoUrl : logoHref} fallbackSrc={logoHref} borderRadius={"6px"} {...imageProps} />;
+  const hasLogo = isDefined(kurtosisPackage.iconUrl) && kurtosisPackage.iconUrl !== "";
+  const isKurtosisPackage = kurtosisPackage.repositoryMetadata?.owner === "kurtosis-tech";
+
+  return (
+    <Image
+      src={hasLogo ? kurtosisPackage.iconUrl : isKurtosisPackage ? kurtosisLogoHref : noLogoHref}
+      fallbackSrc={noLogoHref}
+      borderRadius={"6px"}
+      {...imageProps}
+    />
+  );
 };

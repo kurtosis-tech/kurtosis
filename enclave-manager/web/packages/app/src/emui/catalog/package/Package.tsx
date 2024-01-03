@@ -152,7 +152,7 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
 const PackageHeader = ({ kurtosisPackage }: PackageImplProps) => {
   return (
     <Flex gap={"22px"} w={"100%"}>
-      <PackageLogo logoUrl={kurtosisPackage.iconUrl} h={"120px"} w={"120px"} borderRadius={"9px"} />
+      <PackageLogo kurtosisPackage={kurtosisPackage} h={"120px"} w={"120px"} borderRadius={"9px"} />
       <Flex flexDirection={"column"} justifyContent={"space-between"} flex={"1"}>
         <Flex flexDirection={"column"} gap={"8px"}>
           <Text noOfLines={1} fontSize={"xl"}>

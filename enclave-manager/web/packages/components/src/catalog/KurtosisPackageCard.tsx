@@ -41,7 +41,7 @@ export const KurtosisPackageCard = ({ kurtosisPackage, onRunClick }: KurtosisPac
             variant={"ghost"}
           />
         </Box>
-        <PackageLogo logoUrl={kurtosisPackage.iconUrl} h={"80px"} w={"80px"} />
+        <PackageLogo kurtosisPackage={kurtosisPackage} h={"80px"} w={"80px"} />
         <Flex h={"80px"} gap={"8px"} width={"100%"}>
           <Flex flexDirection={"column"} flex={"1"} justifyContent={"space-between"}>
             <Text noOfLines={1} fontSize={"md"} fontWeight={"bold"}>
