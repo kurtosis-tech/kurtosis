@@ -35,12 +35,7 @@ export const PackageSourceButton = ({ source, children, ...buttonProps }: Enclav
 
       button = (
         <Link href={url} target="_blank" rel="noopener noreferrer" w={buttonProps.w || buttonProps.width}>
-          <Button
-            leftIcon={<Icon as={IoLogoGithub} color={"gray.400"} />}
-            variant={"ghost"}
-            size={"xs"}
-            {...buttonProps}
-          >
+          <Button leftIcon={<Icon as={IoLogoGithub} />} variant={"ghost"} size={"xs"} {...buttonProps}>
             {children || source.replace("github.com/", "")}
           </Button>
         </Link>

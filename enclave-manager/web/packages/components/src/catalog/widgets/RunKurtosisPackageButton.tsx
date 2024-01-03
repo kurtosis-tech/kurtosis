@@ -11,7 +11,7 @@ export const RunKurtosisPackageButton = ({ kurtosisPackage, ...buttonProps }: Ru
   return (
     <Button
       size={"xs"}
-      variant={"solidOutline"}
+      variant={"solid"}
       colorScheme={"kurtosisGreen"}
       leftIcon={<FiPlay />}
       {...buttonProps}

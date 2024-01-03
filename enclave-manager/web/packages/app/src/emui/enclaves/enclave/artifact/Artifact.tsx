@@ -136,7 +136,7 @@ const ArtifactImpl = ({ enclave, artifactName, files }: ArtifactImplProps) => {
 
   return (
     <AppPageLayout preventPageScroll>
-      <Flex w={"100%"} h={"100%"} gap={"32px"}>
+      <Flex w={"100%"} h={"100%"} gap={"32px"} flex={"1 1 auto"}>
         <TitledCard title={"FILES"} w={"328px"} fillContainer>
           <Flex>
             <FileTree
