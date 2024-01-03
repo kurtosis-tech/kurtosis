@@ -3,7 +3,6 @@ import { DateTime } from "luxon";
 import { useState } from "react";
 import { IoPlay, IoStar } from "react-icons/io5";
 import { useParams } from "react-router-dom";
-import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
 
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import {
@@ -151,8 +150,6 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
 };
 
 const PackageHeader = ({ kurtosisPackage }: PackageImplProps) => {
-  const client = useKurtosisClient();
-
   return (
     <Flex gap={"22px"} w={"100%"}>
       <PackageLogo logoUrl={kurtosisPackage.iconUrl} h={"120px"} w={"120px"} borderRadius={"9px"} />

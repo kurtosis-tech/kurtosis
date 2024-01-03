@@ -110,7 +110,7 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
           }
           return 0;
         }),
-    [searchTerm, catalog],
+    [searchTerm, catalog, savedPackages],
   );
 
   const mostStarredPackages = useMemo(
@@ -170,7 +170,7 @@ const CatalogImpl = ({ catalog, savedPackages }: CatalogImplProps) => {
     } else {
       setUrlSearchParams(params);
     }
-  }, [searchTerm]);
+  }, [searchTerm, setUrlSearchParams]);
 
   return (
     <AppPageLayout>
