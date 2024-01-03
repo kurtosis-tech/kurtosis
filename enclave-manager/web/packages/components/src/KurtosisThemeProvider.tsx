@@ -8,6 +8,7 @@ import {
   useColorMode,
 } from "@chakra-ui/react";
 import type { ChakraProviderProps } from "@chakra-ui/react/dist/chakra-provider";
+import { cssVar } from "@chakra-ui/styled-system";
 import { mode } from "@chakra-ui/theme-tools";
 import { PropsWithChildren, useEffect } from "react";
 import Fonts from "./theme/Fonts";
@@ -207,10 +208,17 @@ const theme = extendTheme({
       },
     },
     Card: {
+      baseStyle: {
+        container: { [cssVar("card-bg").variable]: "colors.gray.850" },
+      },
       variants: {
+        elevated: {
+          container: {
+            _dark: { [cssVar("card-bg").variable]: "colors.gray.850" },
+          },
+        },
         valueCard: {
           container: {
-            bg: "gray.850",
             borderRadius: "8px",
             padding: "16px",
             gap: "16px",
