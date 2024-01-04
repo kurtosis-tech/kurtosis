@@ -25,7 +25,7 @@ If an author wants to add their package to the catalog, they should add its name
 The CI's automatic jobs validate the following for each new Pull Request created:
 
 - That there are no duplicated names within the `kurtosis-package-catalog.yml` file, there cannot be two or more packages with the same name.
-- That the package repository exists.
+- That the package repository exists and it's a public repository.
 - That the repository contains the `kurtosis.yml` file.
 - That the name declared in the `kurtosis.yml` file corresponds to the name that is being added to the catalog
 - Only if the package contains an icon (you should upload an image file named `kurtosis-package-icon.png` in your package repository, at the same level as the `kurtosis.yml` file, is if you want to add an icon to be displayed in the catalog)
