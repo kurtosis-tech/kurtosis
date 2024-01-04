@@ -289,7 +289,28 @@ const theme = extendTheme({
         },
       })),
     },
+    Drawer: {
+      baseStyle: {
+        overlay: {
+          bg: "blackAlpha.100",
+        },
+        header: {
+          borderBottomWidth: "1px",
+          borderBottomColor: "gray.500",
+        },
+        body: { bg: "gray.900", h: "100%", p: "16px" },
+        footer: {
+          borderTopWidth: "1px",
+          borderTopColor: "gray.500",
+        },
+      },
+    },
     Form: formsTheme,
+    Input: {
+      baseStyle: {
+        field: { _dark: { bg: "gray.850" } },
+      },
+    },
     Menu: {
       baseStyle: {
         list: {
@@ -301,7 +322,7 @@ const theme = extendTheme({
         item: {
           borderRadius: "6px",
         },
-        icon: { color: "gray.400", "font-size": "18px !important" },
+        icon: { color: "gray.400", fontSize: "18px !important" },
       },
     },
     Popover: {

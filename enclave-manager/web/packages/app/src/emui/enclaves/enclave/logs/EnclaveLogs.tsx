@@ -130,8 +130,8 @@ export const EnclaveLogs = () => {
           <Flex justifyContent={"space-between"} alignItems={"center"} width={"100%"}>
             <ProgressSummary progress={progress} />
             <ButtonGroup>
-              <DeleteEnclavesButton enclaves={[enclave]} variant={"ghost"} size={"md"} />
-              <EditEnclaveButton enclave={enclave} variant={"ghost"} size={"md"} />
+              <DeleteEnclavesButton enclaves={[enclave]} size={"md"} />
+              <EditEnclaveButton enclave={enclave} size={"md"} />
             </ButtonGroup>
           </Flex>
         }

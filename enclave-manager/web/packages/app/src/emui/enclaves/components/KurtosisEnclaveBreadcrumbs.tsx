@@ -5,7 +5,7 @@ import {
   KurtosisBreadcrumbsImpl,
   RemoveFunctions,
 } from "kurtosis-ui-components";
-import { ReactElement, useMemo } from "react";
+import { Fragment, ReactElement, useMemo } from "react";
 import { Params, UIMatch } from "react-router-dom";
 import { EnclavesState, useEnclavesContext } from "../EnclavesContext";
 
@@ -67,7 +67,8 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
               )
             : null,
         )
-        .filter(isDefined),
+        .filter(isDefined)
+        .map((el, i) => <Fragment key={i}>{el}</Fragment>),
     [
       matches,
       enclaves,

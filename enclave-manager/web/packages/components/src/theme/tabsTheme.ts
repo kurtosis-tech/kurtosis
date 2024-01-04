@@ -10,7 +10,25 @@ export const tabsTheme = defineMultiStyleConfig({
     colorScheme: "kurtosisGreen",
   },
   variants: {
-    line: (props: StyleFunctionProps) => ({
+    line: {
+      root: {
+        display: "flex",
+        flexDirection: "column",
+      },
+      tabList: {
+        borderBottom: "none",
+      },
+      tab: {
+        color: "gray.100",
+      },
+      tabpanels: {
+        flex: "1",
+        borderRadius: "0 6px 6px 6px",
+        borderColor: "gray.500",
+        borderWidth: "1px",
+      },
+    },
+    kurtosisHeaderLine: (props: StyleFunctionProps) => ({
       root: {
         display: "flex",
         flexDirection: "column",

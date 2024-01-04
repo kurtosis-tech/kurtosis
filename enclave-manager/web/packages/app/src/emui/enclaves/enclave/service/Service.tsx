@@ -70,7 +70,7 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
   const instanceUUID = Cookies.get("_kurtosis_instance_id") || "";
 
   return (
-    <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
+    <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange} variant={"kurtosisHeaderLine"}>
       <AppPageLayout>
         <Flex alignItems={"center"} gap={"8px"}>
           <PageTitle>{service.name}</PageTitle>

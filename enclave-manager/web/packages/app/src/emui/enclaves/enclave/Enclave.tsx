@@ -54,7 +54,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   };
 
   return (
-    <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
+    <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange} variant={"kurtosisHeaderLine"}>
       <AppPageLayout preventPageScroll={activeTab === "logs"}>
         <Flex justifyContent={"space-between"} alignItems={"flex-end"} width={"100%"}>
           <Flex alignItems={"center"} gap={"8px"}>
