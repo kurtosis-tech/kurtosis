@@ -2,6 +2,8 @@ package engine_functions
 
 import (
 	"context"
+	"net"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_resource_collectors"
@@ -11,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	apiv1 "k8s.io/api/core/v1"
-	"net"
+	netv1 "k8s.io/api/networking/v1"
 )
 
 func getEngineObjectsFromKubernetesResources(allResources map[engine.EngineGUID]*engineKubernetesResources) (map[engine.EngineGUID]*engine.Engine, error) {
@@ -128,6 +130,7 @@ func getMatchingEngineKubernetesResources(
 				serviceAccount:     nil,
 				service:            nil,
 				pod:                nil,
+				ingress:            nil,
 			}
 		}
 		engineResources.namespace = namespacesForId[0]
@@ -163,6 +166,7 @@ func getMatchingEngineKubernetesResources(
 				serviceAccount:     nil,
 				service:            nil,
 				pod:                nil,
+				ingress:            nil,
 			}
 		}
 		engineResources.clusterRole = clusterRolesForId[0]
@@ -198,6 +202,7 @@ func getMatchingEngineKubernetesResources(
 				serviceAccount:     nil,
 				service:            nil,
 				pod:                nil,
+				ingress:            nil,
 			}
 		}
 		engineResources.clusterRoleBinding = clusterRoleBindingsForId[0]
@@ -297,9 +302,37 @@ func getMatchingEngineKubernetesResources(
 			pod = podsForId[0]
 		}
 
+		// Ingress
+		ingresses, err := kubernetes_resource_collectors.CollectMatchingIngresses(
+			ctx,
+			kubernetesManager,
+			namespaceName,
+			engineMatchLabels,
+			kubernetes_label_key.IDKubernetesLabelKey.GetString(),
+			map[string]bool{
+				engineGuidStr: true,
+			},
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting ingresses matching engine GUID '%v' in namespace '%v'", engineGuid, namespaceName)
+		}
+		var ingress *netv1.Ingress
+		if ingressesForId, found := ingresses[engineGuidStr]; found {
+			if len(ingressesForId) > 1 {
+				return nil, stacktrace.NewError(
+					"Expected at most one engine ingress in namespace '%v' for engine with GUID '%v' but found '%v'",
+					namespaceName,
+					engineGuid,
+					len(ingresses),
+				)
+			}
+			ingress = ingressesForId[0]
+		}
+
 		engineResources.service = service
 		engineResources.pod = pod
 		engineResources.serviceAccount = serviceAccount
+		engineResources.ingress = ingress
 	}
 
 	return result, nil

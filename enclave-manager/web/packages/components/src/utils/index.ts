@@ -64,6 +64,23 @@ export function stripAnsi(input: string): string {
   return input.replace(ansiRegex, "");
 }
 
+export const numberSummary = (val: number) => {
+  if (val < 1000) {
+    return `${val}`;
+  }
+  if (val < 10000) {
+    return `${(val / 1000).toFixed(1)}k`;
+  }
+  if (val < 1000000) {
+    return `${Math.round(val / 1000)}k`;
+  }
+  return `${Math.round(val / 1000000).toFixed(1)}m`;
+};
+
+export function maybeArrayToArray<T>(maybeArray: T | T[]): T[] {
+  return Array.isArray(maybeArray) ? maybeArray : [maybeArray];
+}
+
 export function range(until: number): number[];
 export function range(from: number, to: number): [];
 export function range(from: number, to: number, step: number): number[];

@@ -8,6 +8,7 @@ import {
   useColorMode,
 } from "@chakra-ui/react";
 import type { ChakraProviderProps } from "@chakra-ui/react/dist/chakra-provider";
+import { cssVar } from "@chakra-ui/styled-system";
 import { mode } from "@chakra-ui/theme-tools";
 import { PropsWithChildren, useEffect } from "react";
 import Fonts from "./theme/Fonts";
@@ -36,8 +37,7 @@ const theme = extendTheme({
   },
   colors: {
     kurtosisGreen: {
-      50: "#00371E",
-      100: "#005e11",
+      100: "#18371E",
       200: "#008c19",
       300: "#00bb22",
       400: "#00C223", // The true green
@@ -106,16 +106,13 @@ const theme = extendTheme({
           color: `${props.colorScheme}.400`,
           borderColor: "gray.300",
         }),
-        solidOutline: (props: StyleFunctionProps) => {
-          const outline = theme.components.Button.variants!.outline(props);
-          return {
-            ...outline,
-            _hover: { bg: `${props.colorScheme}.400`, color: "gray.900" },
-            _active: { bg: `${props.colorScheme}.400`, color: "gray.900" },
-            color: `${props.colorScheme}.400`,
-            borderColor: `${props.colorScheme}.400`,
-          };
-        },
+        activeFilterControl: (props: StyleFunctionProps) => ({
+          _hover: { borderColor: `${props.colorScheme}.200` },
+          borderColor: `${props.colorScheme}.400`,
+          borderWidth: "1px",
+          bg: `${props.colorScheme}.100`,
+          color: `${props.colorScheme}.400`,
+        }),
         kurtosisGroupOutline: (props: StyleFunctionProps) => {
           const outline = theme.components.Button.variants!.outline(props);
           return {
@@ -137,11 +134,18 @@ const theme = extendTheme({
           };
         },
         solid: defineStyle((props) => ({
-          _hover: { bg: "gray.600" },
-          _active: { bg: "gray.600" },
-          color: `${props.colorScheme}.400`,
-          bg: "gray.700",
+          color: `white`,
         })),
+        savedSolid: (props: StyleFunctionProps) => {
+          const solid = theme.components.Button.variants!.solid(props);
+          return {
+            ...solid,
+            _hover: { bg: "gray.600" },
+            _active: { bg: "gray.600" },
+            bg: "gray.700",
+            color: `${props.colorScheme}.400`,
+          };
+        },
         ghost: defineStyle((props) => ({
           _hover: { bg: "gray.650" },
           color: props.colorScheme === "gray" ? undefined : `${props.colorScheme}.400`,
@@ -200,10 +204,17 @@ const theme = extendTheme({
       },
     },
     Card: {
+      baseStyle: {
+        container: { [cssVar("card-bg").variable]: "colors.gray.850" },
+      },
       variants: {
+        elevated: {
+          container: {
+            _dark: { [cssVar("card-bg").variable]: "colors.gray.850" },
+          },
+        },
         valueCard: {
           container: {
-            bg: "gray.850",
             borderRadius: "8px",
             padding: "16px",
             gap: "16px",
@@ -225,6 +236,7 @@ const theme = extendTheme({
             borderStyle: "solid",
             borderWidth: "1px",
             borderRadius: "6px",
+            overflow: "hidden",
           },
           header: {
             bg: "gray.850",
@@ -267,7 +279,14 @@ const theme = extendTheme({
       baseStyle: {
         list: {
           minW: "unset",
+          padding: "4px",
+          boxShadow:
+            "0px 11.25px 30px 0px rgba(0, 0, 0, 0.40), 0px 3.75px 7.5px 0px rgba(0, 0, 0, 0.20), 0px 0px 0px 0.75px rgba(0, 0, 0, 0.10)",
         },
+        item: {
+          borderRadius: "6px",
+        },
+        icon: { color: "gray.400", "font-size": "18px !important" },
       },
     },
     Popover: {

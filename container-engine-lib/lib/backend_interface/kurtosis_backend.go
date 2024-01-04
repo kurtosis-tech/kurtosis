@@ -339,7 +339,7 @@ type KurtosisBackend interface {
 	// Destroy the logs collector for enclave with UUID
 	DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error
 
-	CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error)
+	CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error)
 
 	// Returns nil if logs aggregator was not found
 	GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error)
