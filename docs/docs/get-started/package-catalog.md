@@ -8,7 +8,7 @@ sidebar_position: 6
 Package catalog
 ---------------
 
-The Kurtosis package catalog if the public repository of Kurtosis packages where package authors can publish their packages which later can be found and used by any user.
+The Kurtosis package catalog is a public repository of Kurtosis packages where package authors can publish their packages which later can be found and used by any user.
 
 The catalog address is [catalog.kurtosis.com][package-catalog]
 
