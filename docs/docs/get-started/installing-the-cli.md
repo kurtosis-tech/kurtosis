@@ -4,6 +4,7 @@ id: installing-the-cli
 sidebar_label: Install Kurtosis
 slug: /install
 sidebar_position: 2
+hide_table_of_contents: true
 ---
 
 <!---------- START IMPORTS ------------>
