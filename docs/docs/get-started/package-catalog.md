@@ -13,7 +13,7 @@ The Kurtosis package catalog is a public repository of Kurtosis packages where p
 The Package Catalog can be found at: [catalog.kurtosis.com][package-catalog]
 
 
-How can authors add a new package into the catalog?
+How can do I add my package to the catalog?
 ---------------------------------------------------
 
 The catalog is made up of a curated list that is stored in the `kurtosis-package-catalog.yml` file within the [kurtosis-package-catalog repository.][package-catalog-repository]
