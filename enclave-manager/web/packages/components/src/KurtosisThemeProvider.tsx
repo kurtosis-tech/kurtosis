@@ -37,13 +37,13 @@ const theme = extendTheme({
   },
   colors: {
     kurtosisGreen: {
-      100: "#18371E",
-      200: "#008c19",
-      300: "#00bb22",
+      100: "#99f7aa",
+      200: "#66f27f",
+      300: "#33ee55",
       400: "#00C223", // The true green
-      500: "#33ee55",
-      600: "#66f27f",
-      700: "#99f7aa",
+      500: "#00bb22",
+      600: "#008c19",
+      700: "#18371E",
     },
     darkBlue: {
       200: "#516A77",
@@ -61,8 +61,20 @@ const theme = extendTheme({
       650: "#292929",
       700: "#1E1E1E",
       800: "#1D1D1D", // selected background
-      850: "#1B1B1D",
+      850: "#1B1B1D", // Accent background
       900: "#111111", // ui background
+    },
+    red: {
+      400: "#BD3737",
+      600: "#943031",
+    },
+    green: {
+      400: "#05A122",
+      600: "#0B7F21",
+    },
+    blue: {
+      400: "#2D6DAB",
+      600: "#285987",
     },
   },
   fontSizes: {
@@ -97,9 +109,15 @@ const theme = extendTheme({
     },
     Button: {
       defaultProps: {
-        variant: "outline",
+        variant: "solid",
       },
       variants: {
+        solid: (props: StyleFunctionProps) => ({
+          _hover: { bg: `${props.colorScheme}.400`, _disabled: { bg: `${props.colorScheme}.600` } },
+          _active: { bg: `${props.colorScheme}.400` },
+          bg: `${props.colorScheme}.600`,
+          color: `white`,
+        }),
         outline: (props: StyleFunctionProps) => ({
           _hover: { borderColor: `${props.colorScheme}.400`, bg: `gray.650` },
           _active: { bg: `gray.700` },
@@ -133,9 +151,6 @@ const theme = extendTheme({
             borderColor: "gray.300",
           };
         },
-        solid: defineStyle((props) => ({
-          color: `white`,
-        })),
         savedSolid: (props: StyleFunctionProps) => {
           const solid = theme.components.Button.variants!.solid(props);
           return {
