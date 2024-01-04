@@ -10,7 +10,7 @@ Package catalog
 
 The Kurtosis package catalog is a public repository of Kurtosis packages where package authors can publish their packages which later can be found and used by any user.
 
-The catalog address is [catalog.kurtosis.com][package-catalog]
+The Package Catalog can be found at: [catalog.kurtosis.com][package-catalog]
 
 
 How can authors add a new package into the catalog?
