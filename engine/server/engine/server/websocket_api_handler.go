@@ -198,7 +198,7 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, cors cors.Cors, st
 	if err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
 			"streamerUUID": streamerUUID,
-		}).Error("Failed to stream all data")
+		}).Warn("Failed to stream all data")
 	}
 }
 
@@ -271,7 +271,7 @@ func streamServiceLogsWithWebsocket(ctx echo.Context, cors cors.Cors, streamer s
 	if err != nil {
 		logrus.WithError(err).WithFields(logrus.Fields{
 			"services": streamer.GetRequestedServiceUuids(),
-		}).Error("Failed to stream all data")
+		}).Warn("Failed to stream all data")
 	}
 }
 

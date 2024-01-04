@@ -112,44 +112,45 @@ func (pump *WebsocketPump[T]) startPumping() {
 	// we also need a dummy reader loop.
 	go pump.readLoop()
 
+WRITE_LOOP:
 	for {
 		select {
 		case <-ticker.C:
 			if err := pump.websocket.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
-				logrus.Debug("Websocket connection did not meet the write deadline")
+				logrus.Error("Websocket connection did not meet the write deadline")
 				pump.connectionError = &err
-				return
+				break WRITE_LOOP
 			}
 			if err := pump.websocket.WriteMessage(websocket.PingMessage, nil); err != nil {
-				logrus.Debug("Websocket connection is likely closed, exiting keep alive process")
+				logrus.Error("Websocket connection is likely closed, exiting keep alive process")
 				pump.connectionError = &err
-				return
+				break WRITE_LOOP
 			}
 		case msg := <-pump.inputChan:
 			if err := pump.websocket.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
-				logrus.Debug("Websocket connection did not meet the write deadline")
+				logrus.Error("Websocket connection did not meet the write deadline")
 				pump.connectionError = &err
-				return
+				break WRITE_LOOP
 			}
 			if err := pump.websocket.WriteJSON(msg); err != nil {
-				logrus.WithError(stacktrace.Propagate(err, "Failed to send value of type `%T` via websocket", msg)).Errorf("Failed to write message to websocket, closing it.")
+				logrus.WithError(err).Warnf("Failed to send value of type `%T` via websocket", msg)
 				pump.connectionError = &err
-				return
+				break WRITE_LOOP
 			}
 		case msg := <-pump.infoChan:
 			if err := pump.websocket.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
-				logrus.Debug("Websocket connection did not meet the write deadline")
+				logrus.Error("Websocket connection did not meet the write deadline")
 				pump.connectionError = &err
-				return
+				break WRITE_LOOP
 			}
 			if err := pump.websocket.WriteJSON(msg); err != nil {
-				logrus.WithError(stacktrace.Propagate(err, "Failed to send value of type `%T` via websocket", msg)).Errorf("Failed to write message to websocket, closing it.")
+				logrus.WithError(err).Warnf("Failed to send value of type `%T` via websocket", msg)
 				pump.connectionError = &err
-				return
+				break WRITE_LOOP
 			}
 		case <-pump.ctx.Done():
 			logrus.Debug("Websocket pump has been asked to close, closing it.")
-			return
+			break WRITE_LOOP
 		}
 	}
 }
@@ -158,24 +159,45 @@ func (pump *WebsocketPump[T]) PumpResponseInfo(msg *api_type.ResponseInfo) error
 	if pump.closed {
 		if pump.connectionError != nil {
 			return stacktrace.Propagate(*pump.connectionError, "Websocket has been closed due connection error")
-
 		}
 		return nil
 	}
-	pump.infoChan <- msg
-	return nil
+
+	select {
+	case _, ok := <-pump.infoChan:
+		if !ok {
+			logrus.Debug("Worker channel closed, cannot send message")
+		}
+		if pump.connectionError != nil {
+			return stacktrace.Propagate(*pump.connectionError, "Websocket has been closed due connection error")
+		}
+		return stacktrace.NewError("Websocket has been closed due connection error")
+	case pump.infoChan <- msg:
+		return nil
+	}
 }
 
 func (pump *WebsocketPump[T]) PumpMessage(msg *T) error {
 	if pump.closed {
 		if pump.connectionError != nil {
 			return stacktrace.Propagate(*pump.connectionError, "Websocket has been closed due connection error")
-
 		}
 		return nil
 	}
-	pump.inputChan <- msg
-	return nil
+
+	select {
+	case _, ok := <-pump.inputChan:
+		if !ok {
+			logrus.Debug("Worker channel closed, cannot send message")
+		}
+		if pump.connectionError != nil {
+			return stacktrace.Propagate(*pump.connectionError, "Websocket has been closed due connection error")
+		}
+		return stacktrace.NewError("Websocket has been closed due connection error")
+	case pump.inputChan <- msg:
+		return nil
+	}
+
 }
 
 func (pump *WebsocketPump[T]) Close() {
