@@ -28,7 +28,7 @@ The CI's automatic jobs validate the following for each new Pull Request created
 - That the package repository exists and it's a public repository.
 - That the repository contains the `kurtosis.yml` file.
 - That the name declared in the `kurtosis.yml` file corresponds to the name that is being added to the catalog
-- Only if the package contains an icon (you should upload an image file named `kurtosis-package-icon.png` in your package repository, at the same level as the `kurtosis.yml` file, is if you want to add an icon to be displayed in the catalog)
+- If the package contains an icon (you should upload an image file named `kurtosis-package-icon.png` in your package repository, at the same level as the `kurtosis.yml` file, is if you want to add an icon to be displayed in the catalog), then:
     - It will be validated that its size is greater than 120px
     - It will be validated that its size is less than 1024px
     - If it validated that it contains a 1:1 aspect ratio, a square image.
