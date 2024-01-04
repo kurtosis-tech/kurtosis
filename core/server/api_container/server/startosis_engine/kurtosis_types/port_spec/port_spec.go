@@ -85,7 +85,7 @@ type PortSpec struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
 }
 
-func CreatePortSpec(
+func CreatePortSpecUsingGoValues(
 	portNumber uint16,
 	transportProtocol port_spec.TransportProtocol,
 	maybeApplicationProtocol *string,
