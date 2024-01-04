@@ -1,5 +1,5 @@
 ---
-title: Package catalog
+title: Package Catalog
 sidebar_label: Basic Concepts
 slug: '/package-catalog'
 sidebar_position: 6
