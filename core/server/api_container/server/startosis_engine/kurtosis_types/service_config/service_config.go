@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -463,15 +464,19 @@ func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string][]str
 	serviceDirpathsToArtifactIdentifiers := map[string][]string{}
 	expanderDirpathToUserServiceDirpathMap := map[string]string{}
 	for mountpointOnUserService, filesArtifactIdentifiers := range filesArtifactsMountDirpathsMap {
+		filesArtifactFolderUUIDStr, err := uuid_generator.GenerateUUIDString()
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError("An error occurred generating an UUID string for the file artifacts destination folder")
+		}
+		dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactFolderUUIDStr)
 		for _, filesArtifactIdentifier := range filesArtifactIdentifiers {
-			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactIdentifier)
 			expansion := args.FilesArtifactExpansion{
 				FilesIdentifier:   filesArtifactIdentifier,
 				DirPathToExpandTo: dirpathToExpandTo,
 			}
 			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
-			expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
 		}
+		expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
 		serviceDirpathsToArtifactIdentifiers[mountpointOnUserService] = filesArtifactIdentifiers
 	}
 
