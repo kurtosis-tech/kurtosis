@@ -307,7 +307,9 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 	}
 
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
-	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
+	// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
+	formattedWeekNum := fmt.Sprintf("%02d", startingWeek)
+	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
 	file1, err := underlyingFs.Create(file1PathStr)
 	require.NoError(t, err)
 	_, err = file1.WriteString(logLinesStr)
@@ -393,7 +395,8 @@ func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
 	logLinesStr := ""
 
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
-	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
+	formattedWeekNum := fmt.Sprintf("%02d", startingWeek)
+	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
 	file1, err := underlyingFs.Create(file1PathStr)
 	require.NoError(t, err)
 	_, err = file1.WriteString(logLinesStr)
@@ -452,13 +455,15 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 	week3logLinesStr := strings.Join(week3logLines, "\n") + "\n"
 	week4logLinesStr := strings.Join(week4logLines, "\n")
 
-	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(4), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	formattedWeekFour := fmt.Sprintf("%02d", 4)
+	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekFour, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	week4, err := underlyingFs.Create(week4filepath)
 	require.NoError(t, err)
 	_, err = week4.WriteString(week4logLinesStr)
 	require.NoError(t, err)
 
-	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(3), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	formattedWeekThree := fmt.Sprintf("%02d", 3)
+	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekThree, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	week3, err := underlyingFs.Create(week3filepath)
 	require.NoError(t, err)
 	_, err = week3.WriteString(week3logLinesStr)
@@ -519,13 +524,15 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 	week3logLinesStr := strings.Join(week3logLines, "\n") + "\n"
 	week4logLinesStr := strings.Join(week4logLines, "\n") + "\n"
 
-	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(4), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	formattedWeekFour := fmt.Sprintf("%02d", 4)
+	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekFour, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	week4, err := underlyingFs.Create(week4filepath)
 	require.NoError(t, err)
 	_, err = week4.WriteString(week4logLinesStr)
 	require.NoError(t, err)
 
-	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(3), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	formattedWeekThree := fmt.Sprintf("%02d", 3)
+	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekThree, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	week3, err := underlyingFs.Create(week3filepath)
 	require.NoError(t, err)
 	_, err = week3.WriteString(week3logLinesStr)
@@ -575,7 +582,8 @@ func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 
 	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
 
-	filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	formattedWeekNum := fmt.Sprintf("%02d", startingWeek)
+	filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	file, err := underlyingFs.Create(filepath)
 	require.NoError(t, err)
 	_, err = file.WriteString(timestampedLogLinesStr)
@@ -766,10 +774,11 @@ func createFilledPerWeekFilesystem(week int) volume_filesystem.VolumeFilesystem 
 	logLines := []string{logLine1, logLine2, logLine3a, logLine3b, logLine4, logLine5, logLine6, logLine7, logLine8}
 
 	logLinesStr := strings.Join(logLines, "\n")
-
-	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	file2PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
-	file3PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
+	// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
+	formattedWeekNum := fmt.Sprintf("%02d", week)
+	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file2PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
+	file3PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
 
 	mapFs := volume_filesystem.NewMockedVolumeFilesystem()
 
@@ -800,9 +809,11 @@ func createEmptyPerFileFilesystem() volume_filesystem.VolumeFilesystem {
 }
 
 func createEmptyPerWeekFilesystem(week int) volume_filesystem.VolumeFilesystem {
-	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	file2PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
-	file3PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
+	// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
+	formattedWeekNum := fmt.Sprintf("%02d", week)
+	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file2PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
+	file3PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), formattedWeekNum, testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
 
 	mapFs := volume_filesystem.NewMockedVolumeFilesystem()
 

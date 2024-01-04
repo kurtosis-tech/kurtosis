@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -26,7 +27,12 @@ const (
 	ServiceConfigArgName = "config"
 )
 
-func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewAddService(
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServiceBuiltinName,
@@ -45,10 +51,10 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*service_config.ServiceConfig],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						// we just try to convert the configs here to validate their shape, to avoid code duplication
-						// with Interpret
-						if _, _, err := validateAndConvertConfigAndReadyCondition(serviceNetwork, value); err != nil {
-							return err
+						// we just try to convert the configs here to validate their shape, to avoid code duplication with Interpret
+						_, ok := value.(*service_config.ServiceConfig)
+						if !ok {
+							return startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(value))
 						}
 						return nil
 					},
@@ -58,11 +64,13 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &AddServiceCapabilities{
-				serviceNetwork:    serviceNetwork,
-				runtimeValueStore: runtimeValueStore,
-
-				serviceName:   "",  // populated at interpretation time
-				serviceConfig: nil, // populated at interpretation time
+				serviceNetwork:         serviceNetwork,
+				runtimeValueStore:      runtimeValueStore,
+				packageId:              packageId,
+				packageContentProvider: packageContentProvider,
+				packageReplaceOptions:  packageReplaceOptions,
+				serviceName:            "",  // populated at interpretation time
+				serviceConfig:          nil, // populated at interpretation time
 
 				resultUuid:     "",  // populated at interpretation time
 				readyCondition: nil, // populated at interpretation time
@@ -84,10 +92,15 @@ type AddServiceCapabilities struct {
 	serviceConfig  *service.ServiceConfig
 	readyCondition *service_config.ReadyCondition
 
+	// These params are needed to successfully convert service config if an ImageBuildSpec was provided
+	packageId              string
+	packageContentProvider startosis_packages.PackageContentProvider
+	packageReplaceOptions  map[string]string
+
 	resultUuid string
 }
 
-func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
@@ -97,7 +110,14 @@ func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
-	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(builtin.serviceNetwork, serviceConfig)
+	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(
+		builtin.serviceNetwork,
+		serviceConfig,
+		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		builtin.packageId,
+		builtin.packageContentProvider,
+		builtin.packageReplaceOptions,
+	)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -212,12 +232,21 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 func validateAndConvertConfigAndReadyCondition(
 	serviceNetwork service_network.ServiceNetwork,
 	rawConfig starlark.Value,
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string,
 ) (*service.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
 	config, ok := rawConfig.(*service_config.ServiceConfig)
 	if !ok {
 		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
 	}
-	apiServiceConfig, interpretationErr := config.ToKurtosisType(serviceNetwork)
+	apiServiceConfig, interpretationErr := config.ToKurtosisType(
+		serviceNetwork,
+		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		packageId,
+		packageContentProvider,
+		packageReplaceOptions)
 	if interpretationErr != nil {
 		return nil, nil, interpretationErr
 	}

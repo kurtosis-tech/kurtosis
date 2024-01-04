@@ -28,6 +28,8 @@ const (
 	maxWaitForEngineContainerAvailabilityRetries         = 30
 	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
 	httpApplicationProtocol                              = "http"
+
+	restAPIPortHost = "engine"
 )
 
 var noWait *port_spec.Wait = nil

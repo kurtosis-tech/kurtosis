@@ -15,8 +15,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/net/websocket"
 
 	rpc_api "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	api_type "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types"
@@ -43,6 +43,9 @@ type WebSocketRuntime struct {
 
 	// Pool of Starlark log streamers create by package/script runs
 	AsyncStarlarkLogs streaming.StreamerPool[*rpc_api.StarlarkRunResponseLine]
+
+	// Allow CORS origins for websocket
+	CorsConfig cors.Cors
 }
 
 func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context, enclaveIdentifier api_type.EnclaveIdentifier, params api_type.GetEnclavesEnclaveIdentifierLogsParams) error {
@@ -74,7 +77,7 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierLogs(ctx echo.Context
 
 	if ctx.IsWebSocket() {
 		logrus.Infof("Starting log stream using Websocket")
-		streamServiceLogsWithWebsocket(ctx, *streamer)
+		streamServiceLogsWithWebsocket(ctx, engine.CorsConfig, *streamer)
 	} else {
 		logrus.Infof("Starting log stream using plain HTTP")
 		streamServiceLogsWithHTTP(ctx, *streamer)
@@ -113,7 +116,7 @@ func (engine WebSocketRuntime) GetEnclavesEnclaveIdentifierServicesServiceIdenti
 
 	if ctx.IsWebSocket() {
 		logrus.Infof("Starting log stream using Websocket")
-		streamServiceLogsWithWebsocket(ctx, *streamer)
+		streamServiceLogsWithWebsocket(ctx, engine.CorsConfig, *streamer)
 	} else {
 		logrus.Infof("Starting log stream using plain HTTP")
 		streamServiceLogsWithHTTP(ctx, *streamer)
@@ -128,7 +131,7 @@ func (engine WebSocketRuntime) GetStarlarkExecutionsStarlarkExecutionUuidLogs(ct
 
 	if ctx.IsWebSocket() {
 		logrus.Infof("Starting log stream using Websocket for streamer UUUID: %s", starlarkExecutionUuid)
-		streamStarlarkLogsWithWebsocket(ctx, engine.AsyncStarlarkLogs, asyncLogUuid)
+		streamStarlarkLogsWithWebsocket(ctx, engine.CorsConfig, engine.AsyncStarlarkLogs, asyncLogUuid)
 	} else {
 		logrus.Infof("Starting log stream using plain HTTP for streamer UUUID: %s", starlarkExecutionUuid)
 		streamStarlarkLogsWithHTTP(ctx, engine.AsyncStarlarkLogs, asyncLogUuid)
@@ -148,7 +151,7 @@ func writeResponseInfo(ctx echo.Context, response api_type.ResponseInfo) {
 	_ = enc.Encode(response)
 }
 
-func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
+func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, cors cors.Cors, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
 	notFoundErr := api_type.ResponseInfo{
 		Type:    api_type.INFO,
 		Message: fmt.Sprintf("Log streaming '%s' not found. Either it has been consumed or has expired.", streamerUUID),
@@ -160,40 +163,43 @@ func streamStarlarkLogsWithWebsocket[T any](ctx echo.Context, streamerPool strea
 		return
 	}
 
-	websocket.Handler(func(ws *websocket.Conn) {
-		defer ws.Close()
-		found, err := streamerPool.Consume(streaming.StreamerUUID(streamerUUID), func(logline *rpc_api.StarlarkRunResponseLine) error {
-			response, err := to_http.ToHttpStarlarkRunResponseLine(logline)
-			if err != nil {
-				return stacktrace.Propagate(err, "Failed to convert value of type `%T` to http", logline)
-			}
-			if err := websocket.JSON.Send(ws, response); err != nil {
-				return stacktrace.Propagate(err, "Failed to send value of type `%T` via websocket", logline)
-			}
-			return nil
+	wsPump, err := streaming.NewWebsocketPump[api_type.StarlarkRunResponseLine](ctx, cors)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to start websocket connection")
+		ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		enc := json.NewEncoder(ctx.Response())
+		ctx.Response().WriteHeader(http.StatusInternalServerError)
+		err = enc.Encode(api_type.ResponseInfo{
+			Type:    api_type.ERROR,
+			Message: "Failed to start websocket connection",
+			Code:    http.StatusInternalServerError,
 		})
-
-		if !found {
-			if err := websocket.JSON.Send(ws, notFoundErr); err != nil {
-				logrus.WithError(err).Errorf("Failed to send value via websocket")
-			}
-		}
-
 		if err != nil {
-			logrus.WithError(err).WithFields(logrus.Fields{
-				"streamerUUID": streamerUUID,
-				"stacktrace":   fmt.Sprintf("%+v", err),
-			}).Error("Failed to stream all data")
-			streamingErr := api_type.ResponseInfo{
-				Type:    api_type.ERROR,
-				Message: fmt.Sprintf("Log streaming '%s' failed while sending the data", streamerUUID),
-				Code:    http.StatusInternalServerError,
-			}
-			if err := websocket.JSON.Send(ws, streamingErr); err != nil {
-				logrus.WithError(err).Errorf("Failed to send value via websocket")
-			}
+			logrus.WithError(err).Error("Failed to encode error message")
 		}
-	}).ServeHTTP(ctx.Response(), ctx.Request())
+		return
+	}
+	defer wsPump.Close()
+
+	found, err := streamerPool.Consume(streaming.StreamerUUID(streamerUUID), func(logline *rpc_api.StarlarkRunResponseLine) error {
+		response, err := to_http.ToHttpStarlarkRunResponseLine(logline)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to convert value of type `%T` to http", logline)
+		}
+		return wsPump.PumpMessage(response)
+	})
+
+	if !found {
+		if err := wsPump.PumpResponseInfo(&notFoundErr); err != nil {
+			logrus.WithError(err).Warn("Failed to send response.")
+		}
+	}
+
+	if err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"streamerUUID": streamerUUID,
+		}).Error("Failed to stream all data")
+	}
 }
 
 func streamStarlarkLogsWithHTTP[T any](ctx echo.Context, streamerPool streaming.StreamerPool[T], streamerUUID streaming.StreamerUUID) {
@@ -245,32 +251,28 @@ func streamStarlarkLogsWithHTTP[T any](ctx echo.Context, streamerPool streaming.
 	}
 }
 
-func streamServiceLogsWithWebsocket(ctx echo.Context, streamer streaming.ServiceLogStreamer) {
-	websocket.Handler(func(ws *websocket.Conn) {
-		defer ws.Close()
-		err := streamer.Consume(func(logline *api_type.ServiceLogs) error {
-			err := websocket.JSON.Send(ws, logline)
-			if err != nil {
-				return err
-			}
-			return nil
+func streamServiceLogsWithWebsocket(ctx echo.Context, cors cors.Cors, streamer streaming.ServiceLogStreamer) {
+	wsPump, err := streaming.NewWebsocketPump[api_type.ServiceLogs](ctx, cors)
+	if err != nil {
+		logrus.WithError(err).Error("Failed to start websocket connection")
+		writeResponseInfo(ctx, api_type.ResponseInfo{
+			Type:    api_type.ERROR,
+			Message: "Failed to start websocket connection",
+			Code:    http.StatusInternalServerError,
 		})
+		return
+	}
+	defer wsPump.Close()
 
-		if err != nil {
-			logrus.WithError(err).WithFields(logrus.Fields{
-				"stacktrace": fmt.Sprintf("%+v", err),
-				"services":   streamer.GetRequestedServiceUuids(),
-			}).Error("Failed to stream all data")
-			streamingErr := api_type.ResponseInfo{
-				Type:    api_type.ERROR,
-				Message: "Log streaming failed while sending the data",
-				Code:    http.StatusInternalServerError,
-			}
-			if err := websocket.JSON.Send(ws, streamingErr); err != nil {
-				logrus.WithError(err).Errorf("Failed to send value via websocket")
-			}
-		}
-	}).ServeHTTP(ctx.Response(), ctx.Request())
+	err = streamer.Consume(func(logline *api_type.ServiceLogs) error {
+		return wsPump.PumpMessage(logline)
+	})
+
+	if err != nil {
+		logrus.WithError(err).WithFields(logrus.Fields{
+			"services": streamer.GetRequestedServiceUuids(),
+		}).Error("Failed to stream all data")
+	}
 }
 
 func streamServiceLogsWithHTTP(ctx echo.Context, streamer streaming.ServiceLogStreamer) {

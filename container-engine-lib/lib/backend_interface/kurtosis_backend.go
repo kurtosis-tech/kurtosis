@@ -2,6 +2,7 @@ package backend_interface
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"io"
 	"time"
 
@@ -338,7 +339,7 @@ type KurtosisBackend interface {
 	// Destroy the logs collector for enclave with UUID
 	DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error
 
-	CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error)
+	CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error)
 
 	// Returns nil if logs aggregator was not found
 	GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error)
@@ -347,4 +348,8 @@ type KurtosisBackend interface {
 
 	// GetAvailableCPUAndMemory - gets available memory in megabytes and cpu in millicores, the boolean indicates whether the information is complete
 	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error)
+
+	// BuildImage builds a container image based on the [imageBuildSpec] with [imageName]
+	// Returns image architecture and if error occurred
+	BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error)
 }

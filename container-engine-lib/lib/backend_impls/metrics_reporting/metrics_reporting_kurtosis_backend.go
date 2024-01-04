@@ -2,6 +2,7 @@ package metrics_reporting
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"io"
 	"time"
 
@@ -439,8 +440,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollectorForEnclave(c
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
-	return backend.underlying.CreateReverseProxy(ctx)
+func (backend *MetricsReportingKurtosisBackend) CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error) {
+	return backend.underlying.CreateReverseProxy(ctx, engineGuid)
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
@@ -457,4 +458,8 @@ func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx con
 		return 0, 0, false, stacktrace.Propagate(err, "An error occurred while fetching cpu & memory information from the underlying backend")
 	}
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
+	return backend.underlying.BuildImage(ctx, imageName, imageBuildSpec)
 }

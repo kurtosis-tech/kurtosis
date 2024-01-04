@@ -110,8 +110,8 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 // [getLogFilePaths] returns a list of log file paths containing logs for [serviceUuid] in [enclaveUuid]
 // going [retentionPeriodInWeeks] back from the [currentWeek].
 // Notes:
-// - File paths are of the format '/week/enclave uuid/service uuid.json' where 'week' is %W strftime specifier
-// - The list of file paths is returned in order of oldest logs to most recent logs e.g. [ 3/80124/1234.json, /4/801234/1234.json, ...]
+// - File paths are of the format '/week/enclave uuid/service uuid.json' where 'week' is %V strftime specifier
+// - The list of file paths is returned in order of oldest logs to most recent logs e.g. [ 03/80124/1234.json, /04/801234/1234.json, ...]
 // - If a file path does not exist, the function with exits and returns whatever file paths were found
 func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_filesystem.VolumeFilesystem, retentionPeriodInWeeks int, enclaveUuid, serviceUuid string) ([]string, error) {
 	var paths []string
@@ -121,7 +121,9 @@ func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_fil
 	firstWeekWithLogs := 0
 	for i := 0; i < retentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
-		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
+		// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
+		formattedWeekNum := fmt.Sprintf("%02d", week)
+		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err == nil {
 			paths = append(paths, filePathStr)
 			firstWeekWithLogs = i
@@ -137,7 +139,8 @@ func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_fil
 	// scan for remaining files as far back as they exist
 	for i := firstWeekWithLogs + 1; i < retentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
-		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
+		formattedWeekNum := fmt.Sprintf("%02d", week)
+		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err != nil {
 			break
 		}

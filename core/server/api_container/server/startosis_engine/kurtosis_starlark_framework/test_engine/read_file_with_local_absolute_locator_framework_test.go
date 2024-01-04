@@ -21,7 +21,7 @@ type readFileWithLocalAbsoluteLocatorTestCase struct {
 }
 
 func (suite *KurtosisHelperTestSuite) TestReadFileWithLocalAbsoluteLocatorShouldNotBeValid() {
-	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(testModulePackageId, testModuleMainFileLocator, testModuleFileName, testNoPackageReplaceOptions).Return("", startosis_errors.NewInterpretationError(readFileWithLocalAbsoluteLocatorExpectedErrorMsg))
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testModuleFileName, testNoPackageReplaceOptions).Return("", startosis_errors.NewInterpretationError(readFileWithLocalAbsoluteLocatorExpectedErrorMsg))
 
 	suite.runShouldFail(
 		testModuleMainFileLocator,

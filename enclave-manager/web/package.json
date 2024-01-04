@@ -37,9 +37,9 @@
     "build:cloudDev": "dotenv -e packages/app/.env.cloudDevelopment -- lerna run --stream build",
     "prettier": "prettier . --check",
     "prettier:fix": "prettier . --write",
-    "start": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-development lerna run --stream --scope @kurtosis/emui-app start",
-    "start:cloud": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-cloudDevelopment lerna run --stream --scope @kurtosis/emui-app start:cloud",
-    "start:prod": "lerna run --stream --scope @kurtosis/emui-app start:prod",
+    "start": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-development lerna run --stream --parallel start",
+    "start:cloud": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-cloudDevelopment lerna run --stream --parallel start:cloud",
+    "start:prod": "lerna run --stream --parallel start:prod",
     "test": "lerna run test"
   },
   "workspaces": {

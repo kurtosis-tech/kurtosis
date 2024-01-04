@@ -166,7 +166,7 @@ parameters:
   # the same version as the server
   rust-version:
     type: string
-    default: 1.68.2
+    default: 1.70.0
   api-node-version:
     type: string
     default: 16.13.0
@@ -664,9 +664,6 @@ jobs:
   test_old_enclave_continuity:
     executor: ubuntu_vm
     steps:
-      # TODO: Re-enable once Traefik has been released.
-      - <<: *abort_job
-
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
