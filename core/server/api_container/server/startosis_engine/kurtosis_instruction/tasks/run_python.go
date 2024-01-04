@@ -188,7 +188,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", FilesArgName)
 		}
 		if filesStarlark.Len() > 0 {
-			filesArtifactMountDirPaths, interpretationErr := kurtosis_types.SafeCastToMapStringString(filesStarlark, FilesArgName)
+			filesArtifactMountDirPaths, interpretationErr := kurtosis_types.SafeCastToMapStringStringSlice(filesStarlark, FilesArgName)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
@@ -233,7 +233,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 
 func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	// TODO add validation for python script
-	var serviceDirpathsToArtifactIdentifiers map[string]string
+	var serviceDirpathsToArtifactIdentifiers map[string][]string
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		serviceDirpathsToArtifactIdentifiers = builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers
 	}

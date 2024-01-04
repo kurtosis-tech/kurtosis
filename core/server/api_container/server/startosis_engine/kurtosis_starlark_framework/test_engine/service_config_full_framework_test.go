@@ -35,8 +35,8 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFull() {
 }
 
 func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
-	fileArtifact1 := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNameAttr, testFilesArtifactName1)
-	fileArtifact2 := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNameAttr, testFilesArtifactName2)
+	fileArtifact1 := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName1)
+	fileArtifact2 := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName2)
 	persistentDirectory := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.PersistentKeyAttr, testPersistentDirectoryKey)
 	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s, %s=%v)",
 		service_config.ServiceConfigTypeName,
@@ -90,9 +90,9 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	}
 	require.Equal(t, expectedPublicPorts, serviceConfig.GetPublicPorts())
 
-	expectedFilesArtifactMap := map[string]string{
-		testFilesArtifactPath1: testFilesArtifactName1,
-		testFilesArtifactPath2: testFilesArtifactName2,
+	expectedFilesArtifactMap := map[string][]string{
+		testFilesArtifactPath1: {testFilesArtifactName1},
+		testFilesArtifactPath2: {testFilesArtifactName2},
 	}
 	require.NotNil(t, serviceConfig.GetFilesArtifactsExpansion())
 	require.Equal(t, expectedFilesArtifactMap, serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
