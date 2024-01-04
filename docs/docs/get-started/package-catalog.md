@@ -18,7 +18,7 @@ How can do I add my package to the catalog?
 
 The catalog is made up of a curated list that is stored in the `kurtosis-package-catalog.yml` file within the [kurtosis-package-catalog repository.][package-catalog-repository]
 
-If an author wants to add their package to the catalog, they should add its name on the list inside the `kurtosis-package-catalog.yml` file and send a pull request to be validated by the CI validations and approved by a Kurtosis administrator.
+If an author wants to add their package to the catalog, they should add its name on the list inside the `kurtosis-package-catalog.yml` file and send a pull request to be validated by the CI validations and approved by a Kurtosis administrator. While we do not have any SLAs, the Kurtosis team will periodically review pull requests. Should you need any help or have questions, we're always available in our [Discord server](https://discord.gg/twRRs8GxMD).
 
 ### What validates the CI?
 
