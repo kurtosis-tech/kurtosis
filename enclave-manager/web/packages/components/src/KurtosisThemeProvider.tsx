@@ -66,16 +66,16 @@ const theme = extendTheme({
       900: "#111111", // ui background
     },
     red: {
-      400: "#BD3737",
-      600: "#943031",
+      450: "#BD3737",
+      650: "#943031",
     },
     green: {
-      400: "#05A122",
-      600: "#0B7F21",
+      450: "#05A122",
+      650: "#0B7F21",
     },
     blue: {
-      400: "#2D6DAB",
-      600: "#285987",
+      450: "#2D6DAB",
+      650: "#285987",
     },
   },
   fontSizes: {
@@ -113,18 +113,29 @@ const theme = extendTheme({
         variant: "solid",
       },
       variants: {
-        solid: (props: StyleFunctionProps) => ({
-          _hover: { bg: `${props.colorScheme}.400`, _disabled: { bg: `${props.colorScheme}.600` } },
-          _active: { bg: `${props.colorScheme}.400` },
-          bg: `${props.colorScheme}.600`,
-          color: `white`,
-        }),
-        outline: (props: StyleFunctionProps) => ({
-          _hover: { borderColor: `${props.colorScheme}.400`, bg: `gray.650` },
-          _active: { bg: `gray.700` },
-          color: `${props.colorScheme}.400`,
-          borderColor: "gray.300",
-        }),
+        solid: (props: StyleFunctionProps) => {
+          const bg = ["red", "green", "blue"].includes(props.colorScheme)
+            ? `${props.colorScheme}.650`
+            : `${props.colorScheme}.600`;
+          const bgInteraction = ["red", "green", "blue"].includes(props.colorScheme)
+            ? `${props.colorScheme}.450`
+            : `${props.colorScheme}.400`;
+          return {
+            _hover: { bg: bgInteraction, _disabled: { bg } },
+            _active: { bg: bgInteraction },
+            bg,
+            color: `white`,
+          };
+        },
+        outline: (props: StyleFunctionProps) => {
+          const color = props.colorScheme === "gray" ? "gray.100" : `${props.colorScheme}.400`;
+          return {
+            _hover: { borderColor: `${props.colorScheme}.400`, bg: `gray.650` },
+            _active: { bg: `gray.700` },
+            color,
+            borderColor: "gray.300",
+          };
+        },
         activeFilterControl: (props: StyleFunctionProps) => ({
           _hover: { borderColor: `${props.colorScheme}.200` },
           borderColor: `${props.colorScheme}.400`,

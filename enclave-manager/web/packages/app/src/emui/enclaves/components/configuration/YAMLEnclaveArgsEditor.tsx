@@ -1,7 +1,7 @@
 import { Flex } from "@chakra-ui/react";
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { CodeEditor, isDefined, KurtosisAlert, stringifyError } from "kurtosis-ui-components";
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import YAML from "yaml";
 import { transformFormArgsToKurtosisArgs } from "./utils";
 
@@ -11,12 +11,15 @@ type YAMLEditorProps = {
 };
 export type YAMLEditorImperativeAttributes = {
   getValues: () => Record<string, any> | null;
+  isDirty: () => void;
 };
 export const YAMLEnclaveArgsEditor = forwardRef<YAMLEditorImperativeAttributes, YAMLEditorProps>(
   ({ kurtosisPackage, values }: YAMLEditorProps, ref) => {
-    const [text, setText] = useState(
-      YAML.stringify(isDefined(values) ? transformFormArgsToKurtosisArgs(values, kurtosisPackage) : ""),
+    const initText = useMemo(
+      () => YAML.stringify(isDefined(values) ? transformFormArgsToKurtosisArgs(values, kurtosisPackage) : ""),
+      [values, kurtosisPackage],
     );
+    const [text, setText] = useState(initText);
     const [error, setError] = useState("");
 
     useImperativeHandle(
@@ -43,8 +46,9 @@ export const YAMLEnclaveArgsEditor = forwardRef<YAMLEditorImperativeAttributes, 
           }
           return null;
         },
+        isDirty: () => initText !== text,
       }),
-      [text, kurtosisPackage],
+      [initText, text, kurtosisPackage],
     );
 
     return (

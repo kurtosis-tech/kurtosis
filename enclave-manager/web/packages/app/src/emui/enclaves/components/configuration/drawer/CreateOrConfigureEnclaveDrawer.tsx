@@ -1,10 +1,11 @@
 import { Drawer, DrawerCloseButton, DrawerContent, DrawerOverlay } from "@chakra-ui/react";
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { isDefined } from "kurtosis-ui-components";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CatalogContextProvider } from "../../../../catalog/CatalogContext";
 import { EnclaveFullInfo } from "../../../types";
-import { EnclaveConfigureBody } from "./bodies/EnclaveConfigureBody";
+import { UnsavedChangesModal } from "../../modals/UnsavedChangesModal";
+import { EnclaveConfigureBody, EnclaveConfigureBodyAttributes } from "./bodies/EnclaveConfigureBody";
 import { PackageSelectBody } from "./bodies/PackageSelectBody";
 import { DrawerSizes } from "./types";
 
@@ -21,16 +22,34 @@ export const CreateOrConfigureEnclaveDrawer = ({
   kurtosisPackage: kurtosisPackageFromProps,
   existingEnclave,
 }: CreateOrConfigureEnclaveDrawerProps) => {
+  const configurationRef = useRef<EnclaveConfigureBodyAttributes>(null);
   const [drawerSize, setDrawerSize] = useState<DrawerSizes>("xl");
   const [kurtosisPackage, setKurtosisPackage] = useState<KurtosisPackage | null>(null);
+  const [showConfirmCloseModal, setShowConfirmCloseModal] = useState(false);
+
+  const handleCloseConfirmed = () => {
+    setShowConfirmCloseModal(false);
+    setKurtosisPackage(null);
+    onClose();
+  };
+
+  const handleClose = (skipDirtyCheck?: boolean) => {
+    if (skipDirtyCheck) {
+      handleCloseConfirmed();
+      return;
+    }
+
+    const valuesAreDirty = configurationRef.current?.isDirty() || false;
+
+    if (valuesAreDirty) {
+      setShowConfirmCloseModal(true);
+    } else {
+      handleCloseConfirmed();
+    }
+  };
 
   const handleToggleDrawerSize = () => {
     setDrawerSize((drawerSize) => (drawerSize === "xl" ? "full" : "xl"));
-  };
-
-  const handleClose = () => {
-    setKurtosisPackage(null);
-    onClose();
   };
 
   useEffect(() => {
@@ -55,6 +74,7 @@ export const CreateOrConfigureEnclaveDrawer = ({
           )}
           {isDefined(kurtosisPackage) && (
             <EnclaveConfigureBody
+              ref={configurationRef}
               kurtosisPackage={kurtosisPackage}
               onBackClicked={() => setKurtosisPackage(null)}
               onClose={handleClose}
@@ -65,6 +85,11 @@ export const CreateOrConfigureEnclaveDrawer = ({
           )}
         </CatalogContextProvider>
       </DrawerContent>
+      <UnsavedChangesModal
+        isOpen={showConfirmCloseModal}
+        onCancel={() => setShowConfirmCloseModal(false)}
+        onConfirm={handleCloseConfirmed}
+      />
     </Drawer>
   );
 };

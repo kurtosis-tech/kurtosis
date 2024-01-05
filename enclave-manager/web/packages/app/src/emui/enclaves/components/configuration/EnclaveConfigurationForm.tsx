@@ -1,4 +1,5 @@
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import { isDefined } from "kurtosis-ui-components";
 import { CSSProperties, forwardRef, PropsWithChildren, useImperativeHandle } from "react";
 import { FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import { ConfigureEnclaveForm } from "./types";
@@ -14,6 +15,7 @@ type EnclaveConfigurationFormProps = PropsWithChildren<{
 export type EnclaveConfigurationFormImperativeAttributes = {
   getValues: () => ConfigureEnclaveForm;
   setValues: (key: keyof ConfigureEnclaveForm, value: any) => void;
+  isDirty: () => boolean;
 };
 
 export const EnclaveConfigurationForm = forwardRef<
@@ -31,8 +33,15 @@ export const EnclaveConfigurationForm = forwardRef<
       setValues: (key: keyof ConfigureEnclaveForm, value: any) => {
         methods.setValue(key, value);
       },
+      isDirty: () => {
+        if (isDefined(initialValues)) {
+          return Object.keys(methods.formState.dirtyFields.args || {}).length > 0;
+        } else {
+          return Object.keys(methods.getValues().args || {}).length > 0;
+        }
+      },
     }),
-    [methods],
+    [methods, initialValues],
   );
 
   const handleSubmit: SubmitHandler<ConfigureEnclaveForm> = (data: { args: { [x: string]: any } }) => {
