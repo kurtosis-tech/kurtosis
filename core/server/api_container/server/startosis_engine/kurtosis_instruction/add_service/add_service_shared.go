@@ -71,12 +71,15 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
 	}
 
-	// TODO perhaps add AddPersistentKey DoesPersistentKeyExist methods to the validator environment checks for it  here
 	if persistentDirectories := serviceConfig.GetPersistentDirectories(); persistentDirectories != nil {
 		for _, directory := range persistentDirectories.ServiceDirpathToPersistentDirectory {
 			if !service_directory.IsPersistentKeyValid(directory.PersistentKey) {
 				return startosis_errors.NewValidationError(invalidPersistentKeyErrorText(directory.PersistentKey))
 			}
+			if validatorEnvironment.DoesPersistentKeyExist(directory.PersistentKey) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
+				return startosis_errors.NewValidationError("There was an error validating '%s' as persistent key '%s' already exists inside the enclave")
+			}
+			validatorEnvironment.AddPersistentKey(directory.PersistentKey)
 		}
 	}
 
