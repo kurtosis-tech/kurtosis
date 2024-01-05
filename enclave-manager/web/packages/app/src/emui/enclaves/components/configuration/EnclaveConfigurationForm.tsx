@@ -1,6 +1,5 @@
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
-import { isDefined } from "kurtosis-ui-components";
-import { CSSProperties, forwardRef, PropsWithChildren, useImperativeHandle } from "react";
+import { CSSProperties, forwardRef, PropsWithChildren, useEffect, useImperativeHandle, useState } from "react";
 import { FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
 import { ConfigureEnclaveForm } from "./types";
 import { transformFormArgsToKurtosisArgs } from "./utils";
@@ -22,7 +21,8 @@ export const EnclaveConfigurationForm = forwardRef<
   EnclaveConfigurationFormImperativeAttributes,
   EnclaveConfigurationFormProps
 >(({ children, kurtosisPackage, onSubmit, initialValues, style }: EnclaveConfigurationFormProps, ref) => {
-  const methods = useForm<ConfigureEnclaveForm>({ values: initialValues });
+  const [isDirty, setIsDirty] = useState(false);
+  const methods = useForm<ConfigureEnclaveForm>({ defaultValues: initialValues });
 
   useImperativeHandle(
     ref,
@@ -34,15 +34,21 @@ export const EnclaveConfigurationForm = forwardRef<
         methods.setValue(key, value);
       },
       isDirty: () => {
-        if (isDefined(initialValues)) {
-          return Object.keys(methods.formState.dirtyFields.args || {}).length > 0;
-        } else {
-          return Object.keys(methods.getValues().args || {}).length > 0;
-        }
+        return isDirty;
       },
     }),
-    [methods, initialValues],
+    [methods, initialValues, isDirty],
   );
+
+  useEffect(() => {
+    const { unsubscribe } = methods.watch((value) => {
+      // We manually track modified fields because we dynamically register values (this means that the
+      // isDirty field on the react-hook-form state cannot be used). Relying on the react-hook-form state isDirty field
+      // will actually trigger a cyclic setState (as it's secretly a getter method).
+      setIsDirty(true);
+    });
+    return () => unsubscribe();
+  }, [methods]);
 
   const handleSubmit: SubmitHandler<ConfigureEnclaveForm> = (data: { args: { [x: string]: any } }) => {
     onSubmit({
@@ -61,5 +67,6 @@ export const EnclaveConfigurationForm = forwardRef<
     </FormProvider>
   );
 });
+EnclaveConfigurationForm.displayName = "EnclaveConfigurationForm";
 
 export const useEnclaveConfigurationFormContext = () => useFormContext<ConfigureEnclaveForm>();

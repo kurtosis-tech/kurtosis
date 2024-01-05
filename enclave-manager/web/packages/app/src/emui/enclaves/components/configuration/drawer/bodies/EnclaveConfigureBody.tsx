@@ -348,13 +348,15 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
             </Tabs>
           </DrawerBody>
           <DrawerFooter>
-            <Flex justifyContent={"space-between"} gap={"12px"} width={"100%"}>
-              <Button color={"gray.100"} onClick={onBackClicked} isDisabled={isLoading}>
-                Back
-              </Button>
+            <Flex flexDirection={"row-reverse"} justifyContent={"space-between"} gap={"12px"} width={"100%"}>
               <Button type={"submit"} colorScheme={"kurtosisGreen"} isLoading={isLoading}>
                 {existingEnclave ? "Update" : "Run"}
               </Button>
+              {!isDefined(existingEnclave) && (
+                <Button color={"gray.100"} onClick={onBackClicked} isDisabled={isLoading}>
+                  Back
+                </Button>
+              )}
             </Flex>
           </DrawerFooter>
         </EnclaveConfigurationForm>
