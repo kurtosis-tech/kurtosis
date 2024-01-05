@@ -263,6 +263,7 @@ func streamServiceLogsWithWebsocket(ctx echo.Context, cors cors.Cors, streamer s
 		return
 	}
 	defer wsPump.Close()
+	wsPump.OnClose(func() { streamer.Close() })
 
 	err = streamer.Consume(func(logline *api_type.ServiceLogs) error {
 		return wsPump.PumpMessage(logline)

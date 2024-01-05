@@ -34,6 +34,7 @@ type WebsocketPump[T interface{}] struct {
 	cancelFunc      context.CancelFunc
 	closed          bool
 	connectionError *error
+	onCloseCallback func()
 }
 
 func NewWebsocketPump[T interface{}](ctx echo.Context, cors cors.Cors) (*WebsocketPump[T], error) {
@@ -52,12 +53,13 @@ func NewWebsocketPump[T interface{}](ctx echo.Context, cors cors.Cors) (*Websock
 	ctxWithCancel, cancelFunc := context.WithCancel(context.Background())
 
 	pump := &WebsocketPump[T]{
-		websocket:  conn,
-		inputChan:  make(chan *T),
-		infoChan:   make(chan *api_type.ResponseInfo),
-		ctx:        ctxWithCancel,
-		cancelFunc: cancelFunc,
-		closed:     false,
+		websocket:       conn,
+		inputChan:       make(chan *T),
+		infoChan:        make(chan *api_type.ResponseInfo),
+		ctx:             ctxWithCancel,
+		cancelFunc:      cancelFunc,
+		closed:          false,
+		onCloseCallback: func() {},
 	}
 
 	go pump.startPumping()
@@ -77,6 +79,7 @@ func (pump *WebsocketPump[T]) readLoop() {
 func (pump *WebsocketPump[T]) startPumping() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		pump.onCloseCallback()
 		ticker.Stop()
 		pump.websocket.Close()
 		close(pump.inputChan)
@@ -202,6 +205,10 @@ func (pump *WebsocketPump[T]) PumpMessage(msg *T) error {
 
 func (pump *WebsocketPump[T]) Close() {
 	pump.cancelFunc()
+}
+
+func (pump *WebsocketPump[T]) OnClose(callback func()) {
+	pump.onCloseCallback = callback
 }
 
 func (pump *WebsocketPump[T]) IsClosed() (bool, *error) {
