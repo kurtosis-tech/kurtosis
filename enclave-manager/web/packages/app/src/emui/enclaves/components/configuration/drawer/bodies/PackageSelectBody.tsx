@@ -47,7 +47,7 @@ export const PackageSelectBody = ({
     [catalog, searchTerm],
   );
 
-  const { savedPackages, togglePackageSaved } = useSavedPackages();
+  const { savedPackages } = useSavedPackages();
 
   const handleSearchTermChange = async (e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

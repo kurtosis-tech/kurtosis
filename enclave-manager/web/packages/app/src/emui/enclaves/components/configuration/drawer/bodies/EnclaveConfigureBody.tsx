@@ -21,7 +21,6 @@ import {
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { ArgumentValueType, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import {
-  assertDefined,
   CopyButton,
   HoverLineTabList,
   isDefined,
@@ -46,6 +45,8 @@ import { StringArgumentInput } from "../../inputs/StringArgumentInput";
 import { KurtosisArgumentFormControl } from "../../KurtosisArgumentFormControl";
 import { KurtosisPackageArgumentInput } from "../../KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../../types";
+import { transformKurtosisArgsToFormArgs } from "../../utils";
+import { YAMLEditorImperativeAttributes, YAMLEnclaveArgsEditor } from "../../YAMLEnclaveArgsEditor";
 import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../constants";
 import { DrawerExpandCollapseButton } from "../DrawerExpandCollapseButton";
 import { DrawerSizes } from "../types";
@@ -73,11 +74,20 @@ export const EnclaveConfigureBody = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
   const formRef = useRef<EnclaveConfigurationFormImperativeAttributes>(null);
+  const yamlRef = useRef<YAMLEditorImperativeAttributes>(null);
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Form");
 
   const handleTabChange = (index: number) => {
-    setActiveTab(tabs[index]);
+    const newTab = tabs[index];
+    if (newTab === "Form") {
+      const newArgs = yamlRef.current?.getValues();
+      if (!isDefined(newArgs)) {
+        return;
+      }
+      formRef.current?.setValues("args", transformKurtosisArgsToFormArgs(newArgs, kurtosisPackage));
+    }
+    setActiveTab(newTab);
   };
 
   const initialValues = useMemo(() => {
@@ -90,50 +100,11 @@ export const EnclaveConfigureBody = ({
       }
       try {
         const parsedArgs = JSON.parse(existingEnclave.starlarkRun.value.serializedParams);
-        const convertArgValue = (
-          argType: ArgumentValueType | undefined,
-          value: any,
-          innerType1?: ArgumentValueType,
-          innerType2?: ArgumentValueType,
-        ): any => {
-          switch (argType) {
-            case ArgumentValueType.BOOL:
-              return !!value ? "true" : isDefined(value) ? "false" : "";
-            case ArgumentValueType.INTEGER:
-              return isDefined(value) ? `${value}` : "";
-            case ArgumentValueType.STRING:
-              return value || "";
-            case ArgumentValueType.LIST:
-              assertDefined(innerType1, `Cannot parse a list argument type without knowing innerType1`);
-              return isDefined(value) ? value.map((v: any) => convertArgValue(innerType1, v)) : [];
-            case ArgumentValueType.DICT:
-              assertDefined(innerType2, `Cannot parse a dict argument type without knowing innterType2`);
-              return isDefined(value)
-                ? Object.entries(value).map(([k, v]) => ({ key: k, value: convertArgValue(innerType2, v) }), {})
-                : [];
-            case ArgumentValueType.JSON:
-            default:
-              // By default, a typeless parameter is JSON.
-              return isDefined(value) ? JSON.stringify(value) : "{}";
-          }
-        };
 
-        const args = kurtosisPackage.args.reduce(
-          (acc, arg) => ({
-            ...acc,
-            [arg.name]: convertArgValue(
-              arg.typeV2?.topLevelType,
-              parsedArgs[arg.name],
-              arg.typeV2?.innerType1,
-              arg.typeV2?.innerType2,
-            ),
-          }),
-          {},
-        );
         return {
           enclaveName: existingEnclave.name,
           restartServices: existingEnclave.mode === EnclaveMode.PRODUCTION,
-          args,
+          args: transformKurtosisArgsToFormArgs(parsedArgs, kurtosisPackage),
         } as ConfigureEnclaveForm;
       } catch (err: any) {
         setError(`Could not reuse previous configuration, got error: ${stringifyError(err)}`);
@@ -165,7 +136,7 @@ export const EnclaveConfigureBody = ({
         }
       });
     return parsedForm;
-  }, [existingEnclave, kurtosisPackage.args]);
+  }, [existingEnclave, kurtosisPackage]);
 
   const getLinkToCurrentConfig = () => {
     const params = new URLSearchParams({
@@ -179,21 +150,45 @@ export const EnclaveConfigureBody = ({
   const handleLoadSubmit: SubmitHandler<ConfigureEnclaveForm> = async (formData) => {
     setError(undefined);
 
-    try {
-      console.debug("formData", formData);
-      if (formData.args && formData.args.args) {
+    let submissionData = {};
+
+    if (activeTab === "YAML") {
+      const yamlValues = yamlRef.current?.getValues();
+      if (!isDefined(yamlValues)) {
+        return;
+      }
+      formData.args = yamlValues;
+    }
+
+    if (formData.args.args) {
+      try {
+        console.debug("formData", formData);
         formData.args.args = JSON.parse(formData.args.args);
         console.debug("successfully parsed args as proper JSON", formData.args.args);
+      } catch (err) {
+        toast({
+          title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(
+            err,
+          )}`,
+          colorScheme: "red",
+        });
+        return;
       }
-    } catch (err) {
-      toast({
-        title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(
-          err,
-        )}`,
-        colorScheme: "red",
-      });
-      return;
+
+      const { args, ...rest } = formData.args;
+
+      submissionData = {
+        ...args,
+        ...rest,
+      };
+      console.debug("formData has `args` field and is merged with other potential args", submissionData);
+    } else {
+      submissionData = {
+        ...formData.args,
+      };
+      console.debug("formData does not have Args field", submissionData);
     }
+    console.log("submissionData for runStarlarkPackage", submissionData);
 
     let enclave = existingEnclave;
     let enclaveUUID = existingEnclave?.shortenedUuid;
@@ -218,22 +213,6 @@ export const EnclaveConfigureBody = ({
       setError(`Cannot trigger starlark run as enclave info cannot be found`);
       return;
     }
-
-    let submissionData = {};
-    if (formData.args.args) {
-      const { args, ...rest } = formData.args;
-      submissionData = {
-        ...args,
-        ...rest,
-      };
-      console.debug("formData has `args` field and is merged with other potential args", submissionData);
-    } else {
-      submissionData = {
-        ...formData.args,
-      };
-      console.debug("formData does not have Args field", submissionData);
-    }
-    console.log("submissionData for runStarlarkPackage", submissionData);
 
     try {
       const logsIterator = await runStarlarkPackage(enclave, kurtosisPackage.name, submissionData);
@@ -324,7 +303,7 @@ export const EnclaveConfigureBody = ({
               </FormControl>
             </CardBody>
           </Card>
-          <Tabs onChange={handleTabChange}>
+          <Tabs onChange={handleTabChange} index={tabs.indexOf(activeTab)} isLazy>
             <HoverLineTabList tabs={tabs} activeTab={activeTab} />
             <TabPanels>
               <TabPanel>
@@ -334,7 +313,13 @@ export const EnclaveConfigureBody = ({
                   ))}
                 </Flex>
               </TabPanel>
-              <TabPanel>YAML coming soon</TabPanel>
+              <TabPanel>
+                <YAMLEnclaveArgsEditor
+                  ref={yamlRef}
+                  kurtosisPackage={kurtosisPackage}
+                  values={formRef.current?.getValues().args}
+                />
+              </TabPanel>
             </TabPanels>
           </Tabs>
         </DrawerBody>
