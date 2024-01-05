@@ -467,7 +467,7 @@ func (backend *KubernetesKurtosisBackend) GetReverseProxy(
 	return nil, stacktrace.NewError("Getting the reverse proxy isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
+func (backend *KubernetesKurtosisBackend) CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Creating the reverse proxy isn't yet implemented on Kubernetes")
 }

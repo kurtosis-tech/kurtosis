@@ -440,8 +440,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollectorForEnclave(c
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
-	return backend.underlying.CreateReverseProxy(ctx)
+func (backend *MetricsReportingKurtosisBackend) CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error) {
+	return backend.underlying.CreateReverseProxy(ctx, engineGuid)
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {

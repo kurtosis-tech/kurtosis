@@ -475,11 +475,12 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
+func (backend *DockerKurtosisBackend) CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error) {
 	reverseProxyContainer := traefik.NewTraefikReverseProxyContainer()
 
 	reverseProxy, _, err := reverse_proxy_functions.CreateReverseProxy(
 		ctx,
+		engineGuid,
 		reverseProxyContainer,
 		backend.dockerManager,
 		backend.objAttrsProvider,
