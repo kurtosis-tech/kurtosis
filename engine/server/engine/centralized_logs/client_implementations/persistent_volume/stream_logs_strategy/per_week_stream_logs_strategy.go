@@ -376,6 +376,10 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while attempting to tail the log file.")
 	}
+	defer func() {
+		logTail.Stop()
+		logTail.Cleanup()
+	}()
 
 	for {
 		select {
