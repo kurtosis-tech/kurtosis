@@ -44,9 +44,11 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 		availableCpuInMilliCores:      availableCpuInMilliCores,
 		availableMemoryInMegaBytes:    availableMemoryInMegaBytes,
 		isResourceInformationComplete: isResourceInformationComplete,
-		minMemoryByServiceName:        map[service.ServiceName]compute_resources.MemoryInMegaBytes{},
-		minCPUByServiceName:           map[service.ServiceName]compute_resources.CpuMilliCores{},
-		imageDownloadMode:             imageDownloadMode,
+		// TODO account for idempotent runs on this and make it pre-load the cache whenever we create a NewValidatorEnvironment
+		persistentKeys:         map[service_directory.DirectoryPersistentKey]ComponentExistence{},
+		minMemoryByServiceName: map[service.ServiceName]compute_resources.MemoryInMegaBytes{},
+		minCPUByServiceName:    map[service.ServiceName]compute_resources.CpuMilliCores{},
+		imageDownloadMode:      imageDownloadMode,
 	}
 }
 
