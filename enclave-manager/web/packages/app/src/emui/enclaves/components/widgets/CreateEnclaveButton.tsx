@@ -1,7 +1,7 @@
 import { Button, Menu, MenuButton, Tooltip } from "@chakra-ui/react";
 import { FiPlus } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { KURTOSIS_CREATE_ENCLAVE_URL_ARG } from "../modals/constants";
+import { KURTOSIS_CREATE_ENCLAVE_URL_ARG } from "../configuration/drawer/constants";
 
 export const CreateEnclaveButton = () => {
   const navigate = useNavigate();

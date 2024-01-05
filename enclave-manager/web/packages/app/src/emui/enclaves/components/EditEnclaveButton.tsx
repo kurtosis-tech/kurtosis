@@ -4,7 +4,7 @@ import { isDefined } from "kurtosis-ui-components";
 import { useState } from "react";
 import { FiEdit2 } from "react-icons/fi";
 import { EnclaveFullInfo } from "../types";
-import { ConfigureEnclaveModal } from "./modals/ConfigureEnclaveModal";
+import { CreateOrConfigureEnclaveDrawer } from "./configuration/drawer/CreateOrConfigureEnclaveDrawer";
 import { PackageLoadingModal } from "./modals/PackageLoadingModal";
 
 type EditEnclaveButtonProps = ButtonProps & {
@@ -58,7 +58,7 @@ export const EditEnclaveButton = ({ enclave, ...buttonProps }: EditEnclaveButton
         <PackageLoadingModal packageId={enclave.starlarkRun.value.packageId} onPackageLoaded={handlePackageLoaded} />
       )}
       {isDefined(kurtosisPackage) && (
-        <ConfigureEnclaveModal
+        <CreateOrConfigureEnclaveDrawer
           isOpen={true}
           onClose={() => setKurtosisPackage(undefined)}
           kurtosisPackage={kurtosisPackage}

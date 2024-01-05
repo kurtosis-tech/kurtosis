@@ -13,6 +13,7 @@ import { mode } from "@chakra-ui/theme-tools";
 import { PropsWithChildren, useEffect } from "react";
 import Fonts from "./theme/Fonts";
 import { formsTheme } from "./theme/formsTheme";
+import { progressTheme } from "./theme/progressTheme";
 import { tabsTheme } from "./theme/tabsTheme";
 import { tagTheme } from "./theme/tagsTheme";
 
@@ -333,6 +334,7 @@ const theme = extendTheme({
         },
       },
     },
+    Progress: progressTheme,
     Switch: {
       defaultProps: {
         colorScheme: "green",
