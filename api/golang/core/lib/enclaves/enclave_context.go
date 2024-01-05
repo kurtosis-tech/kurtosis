@@ -49,6 +49,17 @@ const (
 	dotRelativePathIndicatorString = "."
 )
 
+// TODO(kevin) Remove this once package ID is detected ONLY the APIC side (i.e. the CLI doesn't need to tell the APIC what package ID it's using)
+// Doing so requires that we upload completely anonymous packages to the APIC, and it figures things out from there
+var supportedDockerComposeYmlFilenames = []string{
+	"compose.yml",
+	"compose.yaml",
+	"docker-compose.yml",
+	"docker-compose.yaml",
+	"docker_compose.yml",
+	"docker_compose.yaml",
+}
+
 // Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
 type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
@@ -143,12 +154,50 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
-	kurtosisYml, err := getKurtosisYaml(packageRootPath)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis yaml file from path '%s'", packageRootPath)
+	var packageName string
+	var packageReplaceOptions map[string]string
+	// use kurtosis package if it exists
+	if _, err := os.Stat(path.Join(packageRootPath, kurtosisYamlFilename)); err == nil {
+		kurtosisYml, err := getKurtosisYaml(packageRootPath)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis yaml file from path '%s'", packageRootPath)
+		}
+		packageName = kurtosisYml.PackageName
+		packageReplaceOptions = kurtosisYml.PackageReplaceOptions
+	} else {
+		// use compose package, if it exists
+		composeAbsFilepath := ""
+		for _, candidateComposeFilename := range supportedDockerComposeYmlFilenames {
+			candidateComposeAbsFilepath := path.Join(packageRootPath, candidateComposeFilename)
+			if _, err := os.Stat(candidateComposeAbsFilepath); err == nil {
+				composeAbsFilepath = candidateComposeAbsFilepath
+				break
+			}
+		}
+		if composeAbsFilepath == "" {
+			return nil, nil, stacktrace.NewError(
+				"Neither a '%s' file nor one of the default Compose files (%s) was found in the package root; at least one of these is required",
+				kurtosisYamlFilename,
+				strings.Join(supportedDockerComposeYmlFilenames, ", "),
+			)
+		}
+
+		// TODO(kevin): This is a hack, to get around the "only Github URLs" validation!
+		packageName = "github.com/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE"
+		packageReplaceOptions = make(map[string]string)
 	}
 
-	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(kurtosisYml, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId, runConfig.ImageDownload)
+	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(
+		packageName,
+		runConfig.RelativePathToMainFile,
+		runConfig.MainFunctionName,
+		serializedParams,
+		runConfig.DryRun,
+		runConfig.Parallelism,
+		runConfig.ExperimentalFeatureFlags,
+		runConfig.CloudInstanceId,
+		runConfig.CloudUserId,
+		runConfig.ImageDownload)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
@@ -158,9 +207,9 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 		return nil, nil, stacktrace.Propagate(err, "Error uploading package '%s' prior to executing it", packageRootPath)
 	}
 
-	if len(kurtosisYml.PackageReplaceOptions) > 0 {
-		if err = enclaveCtx.uploadLocalStarlarkPackageDependencies(packageRootPath, kurtosisYml.PackageReplaceOptions); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred while uploading the local starlark package dependencies from the replace options '%+v'", kurtosisYml.PackageReplaceOptions)
+	if len(packageReplaceOptions) > 0 {
+		if err = enclaveCtx.uploadLocalStarlarkPackageDependencies(packageRootPath, packageReplaceOptions); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred while uploading the local starlark package dependencies from the replace options '%+v'", packageReplaceOptions)
 		}
 	}
 
@@ -523,7 +572,7 @@ func getErrFromStarlarkRunResult(result *StarlarkRunResult) error {
 }
 
 func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
-	kurtosisYaml *KurtosisYaml,
+	packageName string,
 	relativePathToMainFile string,
 	mainFunctionName string,
 	serializedParams string,
@@ -535,7 +584,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 ) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 
-	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId, imageDownloadMode), nil
+	return binding_constructors.NewRunStarlarkPackageArgs(packageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId, imageDownloadMode), nil
 }
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
