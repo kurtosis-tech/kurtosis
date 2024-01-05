@@ -77,7 +77,7 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 				return startosis_errors.NewValidationError(invalidPersistentKeyErrorText(directory.PersistentKey))
 			}
 			if validatorEnvironment.DoesPersistentKeyExist(directory.PersistentKey) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
-				return startosis_errors.NewValidationError("There was an error validating '%s' as persistent key '%s' already exists inside the enclave")
+				return startosis_errors.NewValidationError("There was an error validating '%s' as persistent key '%s' already exists inside the enclave", serviceName, directory.PersistentKey)
 			}
 			validatorEnvironment.AddPersistentKey(directory.PersistentKey)
 		}
