@@ -71,6 +71,7 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
 	}
 
+	// TODO perhaps add AddPersistentKey DoesPersistentKeyExist methods to the validator environment checks for it  here
 	if persistentDirectories := serviceConfig.GetPersistentDirectories(); persistentDirectories != nil {
 		for _, directory := range persistentDirectories.ServiceDirpathToPersistentDirectory {
 			if !service_directory.IsPersistentKeyValid(directory.PersistentKey) {
