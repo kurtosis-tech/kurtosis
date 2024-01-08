@@ -132,11 +132,15 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", FilesArgName)
 		}
 		if filesStarlark.Len() > 0 {
-			filesArtifactMountDirPaths, interpretationErr := kurtosis_types.SafeCastToMapStringStringSlice(filesStarlark, FilesArgName)
+			filesArtifactMountDirPaths, interpretationErr := kurtosis_types.SafeCastToMapStringString(filesStarlark, FilesArgName)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
+			multipleFilesArtifactsMountDirPaths := map[string][]string{}
+			for pathToFile, fileArtifactName := range filesArtifactMountDirPaths {
+				multipleFilesArtifactsMountDirPaths[pathToFile] = []string{fileArtifactName}
+			}
+			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(multipleFilesArtifactsMountDirPaths, builtin.serviceNetwork)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
