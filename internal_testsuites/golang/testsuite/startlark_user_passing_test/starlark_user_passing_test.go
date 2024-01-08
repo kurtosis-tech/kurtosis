@@ -51,7 +51,7 @@ func TestUserIDOverridesWork(t *testing.T) {
 	scriptRunResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, starlarkScriptWithUserIdPassed)
 	logrus.Infof("Test Output: %v", scriptRunResult)
 	require.NoError(t, err, "Unexpected error executing starlark script")
-	require.Nil(t, scriptRunResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
+	require.Nil(t, scriptRunResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, scriptRunResult.ValidationErrors, "Unexpected validation error")
 	require.Nil(t, scriptRunResult.ExecutionError, "Unexpected execution error")
 	expectedOutput := `Service 'besu-no-override' added with service UUID '[a-z0-9]{32}'
