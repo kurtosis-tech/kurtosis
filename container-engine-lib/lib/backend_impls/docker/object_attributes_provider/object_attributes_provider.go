@@ -198,57 +198,24 @@ func (provider *dockerObjectAttributesProviderImpl) ForReverseProxy(engineGuid e
 //	"traefik.http.services.engine-rest-api.loadbalancer.server.port": "<engine rest api port number>"
 func (provider *dockerObjectAttributesProviderImpl) getTraefikLabelsForEngine(restAPIPortSpec *port_spec.PortSpec) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error) {
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{}
+	labelKeyValuePairs := map[string]string{
+		fmt.Sprintf("http.routers.%s.rule", engineRESTAPIPortStr): fmt.Sprintf("Host(`%s`)", engine.RESTAPIPortHostHeader),
+		fmt.Sprintf("http.routers.%s.service", engineRESTAPIPortStr): engineRESTAPIPortStr,
+		fmt.Sprintf("http.services.%s.loadbalancer.server.port", engineRESTAPIPortStr): strconv.Itoa(int(restAPIPortSpec.GetNumber())),
+		"enable": "true",
+	}
 
-	// Header Host rule
-	ruleKeySuffix := fmt.Sprintf("http.routers.%s.rule", engineRESTAPIPortStr)
-	ruleLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(ruleKeySuffix)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the traefik rule label key with suffix '%v'", ruleKeySuffix)
+	for key, value := range labelKeyValuePairs {
+		labelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(key)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the traefik  label key with suffix '%v'", key)
+		}
+		labelValue, err := docker_label_value.CreateNewDockerLabelValue(value)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating the traefik  label value with value '%v'", value)
+		}
+		labels[labelKey] = labelValue
 	}
-	ruleValue := fmt.Sprintf("Host(`%s`)", engine.RESTAPIPortHostHeader)
-	ruleLabelValue, err := docker_label_value.CreateNewDockerLabelValue(ruleValue)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the traefik rule label value with value '%v'", ruleValue)
-	}
-	labels[ruleLabelKey] = ruleLabelValue
-
-	// Service name
-	serviceKeySuffix := fmt.Sprintf("http.routers.%s.service", engineRESTAPIPortStr)
-	serviceLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(serviceKeySuffix)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the traefik service label key with suffix '%v'", serviceKeySuffix)
-	}
-	serviceValue := engineRESTAPIPortStr
-	serviceLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceValue)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the traefik service label value with value '%v'", serviceValue)
-	}
-	labels[serviceLabelKey] = serviceLabelValue
-
-	// Service port number
-	portKeySuffix := fmt.Sprintf("http.services.%s.loadbalancer.server.port", engineRESTAPIPortStr)
-	portLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(portKeySuffix)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the traefik port label key with suffix '%v'", portKeySuffix)
-	}
-	portValue := strconv.Itoa(int(restAPIPortSpec.GetNumber()))
-	portLabelValue, err := docker_label_value.CreateNewDockerLabelValue(portValue)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the traefik port label value with value '%v'", portValue)
-	}
-	labels[portLabelKey] = portLabelValue
-
-	// Enable Traefik
-	traefikEnableLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey("enable")
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the traefik enable label key")
-	}
-	traefikEnableValue := "true"
-	traefikEnableLabelValue, err := docker_label_value.CreateNewDockerLabelValue(traefikEnableValue)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the traefik enable label value with value '%v'", traefikEnableValue)
-	}
-	labels[traefikEnableLabelKey] = traefikEnableLabelValue
 
 	return labels, nil
 }
