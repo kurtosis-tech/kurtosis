@@ -36,9 +36,7 @@ const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResp
       !isDefined(starlarkRun) || !isDefined(catalog)
         ? "loading"
         : starlarkRun.isOk && catalog.isOk
-        ? catalog.value.packages.find(
-            (kurtosisPackage) => `${kurtosisPackage.name}/` === starlarkRun.value.packageId,
-          ) || null
+        ? catalog.value.packages.find((kurtosisPackage) => kurtosisPackage.name === starlarkRun.value.packageId) || null
         : null,
     services: !isDefined(enclave.services)
       ? "loading"

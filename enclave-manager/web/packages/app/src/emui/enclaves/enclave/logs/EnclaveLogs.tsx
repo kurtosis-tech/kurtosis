@@ -135,7 +135,11 @@ export const EnclaveLogs = () => {
               <ProgressSummary progress={progress} />
               <ButtonGroup>
                 <DeleteEnclavesButton enclaves={[enclave]} size={"md"} />
-                <EditEnclaveButton enclave={enclave} size={"md"} />
+                <EditEnclaveButton
+                  enclave={enclave}
+                  size={"md"}
+                  isDisabled={["waiting", "validating", "executing"].includes(progress.stage)}
+                />
               </ButtonGroup>
             </Flex>
           }

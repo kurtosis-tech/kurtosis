@@ -30,6 +30,7 @@ import { DownloadButton } from "../DownloadButton";
 import { FindCommand } from "../KeyboardCommands";
 import { useKeyboardAction } from "../useKeyboardAction";
 import { isDefined, isNotEmpty, stringifyError, stripAnsi } from "../utils";
+import { logFontFamily } from "./constants";
 import { LogLine } from "./LogLine";
 import { LogLineMessage } from "./types";
 import { normalizeLogText } from "./utils";
@@ -77,6 +78,7 @@ export const LogViewer = ({
 }: LogViewerProps) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [logLines, setLogLines] = useState(propsLogLines);
+  const logLinesToShow = useMemo(() => logLines.filter(({ message }) => isDefined(message)), [logLines]);
   const [userIsScrolling, setUserIsScrolling] = useState(false);
   const [automaticScroll, setAutomaticScroll] = useState(true);
 
@@ -114,7 +116,7 @@ export const LogViewer = ({
   }, []);
 
   const getLogsValue = () => {
-    return logLines
+    return logLinesToShow
       .map(({ message }) => message)
       .filter(isDefined)
       .map(stripAnsi)
@@ -152,21 +154,35 @@ export const LogViewer = ({
         {isDefined(ProgressWidget) && ProgressWidget}
       </Flex>
       <Flex flexDirection={"column"} position={"relative"} h={"100%"} flex={"1"}>
-        <Virtuoso
-          ref={virtuosoRef}
-          followOutput={automaticScroll}
-          atBottomStateChange={handleBottomStateChange}
-          isScrolling={setUserIsScrolling}
-          style={{ height: "100%", flex: "1" }}
-          data={logLines.filter(({ message }) => isDefined(message))}
-          itemContent={(index, line) => (
-            <LogLine
-              {...line}
-              highlightPattern={searchState.type === "success" ? searchState.pattern : undefined}
-              selected={isIndexSelected(index)}
-            />
-          )}
-        />
+        {logLinesToShow.length === 0 ? (
+          <Flex
+            justifyContent={"center"}
+            alignItems={"center"}
+            fontSize={"sm"}
+            lineHeight="2"
+            fontWeight={400}
+            flex={"1"}
+            fontFamily={logFontFamily}
+          >
+            No logs to display
+          </Flex>
+        ) : (
+          <Virtuoso
+            ref={virtuosoRef}
+            followOutput={automaticScroll}
+            atBottomStateChange={handleBottomStateChange}
+            isScrolling={setUserIsScrolling}
+            style={{ height: "100%", flex: "1" }}
+            data={logLinesToShow}
+            itemContent={(index, line) => (
+              <LogLine
+                {...line}
+                highlightPattern={searchState.type === "success" ? searchState.pattern : undefined}
+                selected={isIndexSelected(index)}
+              />
+            )}
+          />
+        )}
         {isDefined(progressPercent) && (
           <Progress
             value={typeof progressPercent === "number" ? progressPercent : progressPercent === "failed" ? 100 : 0}

@@ -4,6 +4,7 @@ import Convert from "ansi-to-html";
 import parse from "html-react-parser";
 import { ReactElement } from "react";
 import { hasAnsi, isDefined } from "../utils";
+import { logFontFamily } from "./constants";
 import { LogLineMessage, LogStatus } from "./types";
 import { normalizeLogText } from "./utils";
 
@@ -13,8 +14,6 @@ type LogLineProps = LogLineMessage & {
   highlightPattern?: RegExp;
   selected?: boolean;
 };
-
-const logFontFamily = "Menlo, Monaco, Inconsolata, Consolas, Courier, monospace";
 
 export const LogLine = ({ timestamp, message, status, highlightPattern, selected }: LogLineProps) => {
   const statusToColor = (status?: LogStatus) => {
