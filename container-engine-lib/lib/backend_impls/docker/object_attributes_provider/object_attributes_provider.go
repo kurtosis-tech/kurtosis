@@ -199,8 +199,8 @@ func (provider *dockerObjectAttributesProviderImpl) ForReverseProxy(engineGuid e
 func (provider *dockerObjectAttributesProviderImpl) getTraefikLabelsForEngine(restAPIPortSpec *port_spec.PortSpec) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error) {
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{}
 	labelKeyValuePairs := map[string]string{
-		fmt.Sprintf("http.routers.%s.rule", engineRESTAPIPortStr): fmt.Sprintf("Host(`%s`)", engine.RESTAPIPortHostHeader),
-		fmt.Sprintf("http.routers.%s.service", engineRESTAPIPortStr): engineRESTAPIPortStr,
+		fmt.Sprintf("http.routers.%s.rule", engineRESTAPIPortStr):                      fmt.Sprintf("Host(`%s`)", engine.RESTAPIPortHostHeader),
+		fmt.Sprintf("http.routers.%s.service", engineRESTAPIPortStr):                   engineRESTAPIPortStr,
 		fmt.Sprintf("http.services.%s.loadbalancer.server.port", engineRESTAPIPortStr): strconv.Itoa(int(restAPIPortSpec.GetNumber())),
 		"enable": "true",
 	}
