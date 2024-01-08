@@ -270,6 +270,7 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		0,
 		0,
 		map[string]string{},
+		nil,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
