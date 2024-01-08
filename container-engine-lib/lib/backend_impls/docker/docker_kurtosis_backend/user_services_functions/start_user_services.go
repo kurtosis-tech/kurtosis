@@ -538,6 +538,7 @@ func createStartServiceOperation(
 		cpuAllocationMillicpus := serviceConfig.GetCPUAllocationMillicpus()
 		memoryAllocationMegabytes := serviceConfig.GetMemoryAllocationMegabytes()
 		privateIPAddrPlaceholder := serviceConfig.GetPrivateIPAddrPlaceholder()
+		user := serviceConfig.GetUser()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -691,7 +692,7 @@ func createStartServiceOperation(
 			fluentdLoggingDriverCnfg,
 		).WithRestartPolicy(
 			restartPolicy,
-		)
+		).WithUser(user)
 
 		if entrypointArgs != nil {
 			createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)

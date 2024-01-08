@@ -178,6 +178,7 @@ func createStarlarkScript(
 	return script, nil
 }
 
+// TODO add support for User here
 // Turns DockerCompose Service into Kurtosis ServiceConfigs and returns info needed for creating a valid starlark script
 func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 	map[string]StarlarkServiceConfig, // Map of service names to Kurtosis ServiceConfig's

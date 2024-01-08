@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -42,6 +43,7 @@ const (
 	MaxCpuMilliCoresAttr            = "max_cpu"
 	MaxMemoryMegaBytesAttr          = "max_memory"
 	LabelsAttr                      = "labels"
+	UserAttr                        = "user"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -179,6 +181,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.ServiceConfigLabels(value, LabelsAttr)
 					},
+				},
+				{
+					Name:              UserAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*User],
+					Validator:         nil,
 				},
 			},
 		},
@@ -424,6 +432,26 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	var serviceUser *service_user.ServiceUser
+	user, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*User](config.KurtosisValueTypeDefault, UserAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		uid, interpretationErr := user.GetUID()
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+		serviceUser = service_user.NewServiceUser(service_user.UID(uid))
+		gid, gidFound, interpretationErr := user.GetGIDIfSet()
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+		if gidFound {
+			serviceUser.SetGID(service_user.GID(gid))
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -440,6 +468,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		minCpu,
 		minMemory,
 		labels,
+		serviceUser,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
