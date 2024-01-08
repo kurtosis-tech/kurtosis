@@ -37,7 +37,7 @@ export const EnclaveConfigurationForm = forwardRef<
         return isDirty;
       },
     }),
-    [methods, initialValues, isDirty],
+    [methods, isDirty],
   );
 
   useEffect(() => {

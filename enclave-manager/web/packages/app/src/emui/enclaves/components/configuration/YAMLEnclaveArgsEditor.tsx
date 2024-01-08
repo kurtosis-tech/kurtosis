@@ -45,7 +45,7 @@ export const YAMLEnclaveArgsEditor = forwardRef<YAMLEditorImperativeAttributes, 
         },
         isDirty: () => initText !== text,
       }),
-      [initText, text, kurtosisPackage],
+      [initText, text, kurtosisPackage, onError],
     );
 
     return <CodeEditor text={text} fileName={"config.yml"} onTextChange={setText} />;
