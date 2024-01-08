@@ -1,5 +1,6 @@
 import { InfoIcon } from "@chakra-ui/icons";
 import {
+  Box,
   Button,
   ButtonGroup,
   Card,
@@ -285,9 +286,6 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
           }}
         >
           <DrawerBody as={Flex} p={"16px"} flexDirection={"column"} gap={"16px"}>
-            {isDefined(error) && (
-              <KurtosisAlert flex={"1 0 auto"} message={"Could not execute configuration"} details={error} />
-            )}
             <Card borderWidth={"1px"} borderColor={"gray.500"}>
               <CardBody p={"0"}>
                 <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"text"} p={"12px"}>
@@ -342,10 +340,16 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
                     ref={yamlRef}
                     kurtosisPackage={kurtosisPackage}
                     values={formRef.current?.getValues().args}
+                    onError={setError}
                   />
                 </TabPanel>
               </TabPanels>
             </Tabs>
+            {isDefined(error) && (
+              <Box position={"sticky"} bottom={"-16px"}>
+                <KurtosisAlert message={error} onClose={() => setError(undefined)} />
+              </Box>
+            )}
           </DrawerBody>
           <DrawerFooter>
             <Flex flexDirection={"row-reverse"} justifyContent={"space-between"} gap={"12px"} width={"100%"}>

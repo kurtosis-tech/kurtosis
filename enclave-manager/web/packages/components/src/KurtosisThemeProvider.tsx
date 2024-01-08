@@ -68,6 +68,7 @@ const theme = extendTheme({
     red: {
       450: "#BD3737",
       650: "#943031",
+      900: "#441C1C",
     },
     green: {
       450: "#05A122",
@@ -102,6 +103,16 @@ const theme = extendTheme({
     }),
   },
   components: {
+    Alert: {
+      baseStyle: defineStyle(({ colorScheme }) => ({
+        container: {
+          bg: `${colorScheme}.900`,
+        },
+        icon: {
+          color: `${colorScheme}.500`,
+        },
+      })),
+    },
     Badge: {
       baseStyle: {
         textTransform: "none",

@@ -15,7 +15,7 @@ export const tabsTheme = defineMultiStyleConfig({
         display: "flex",
         flexDirection: "column",
       },
-      tabList: {
+      tablist: {
         borderBottom: "none",
       },
       tab: {

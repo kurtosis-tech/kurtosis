@@ -1,12 +1,12 @@
-import { Flex } from "@chakra-ui/react";
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
-import { CodeEditor, isDefined, KurtosisAlert, stringifyError } from "kurtosis-ui-components";
+import { CodeEditor, isDefined, stringifyError } from "kurtosis-ui-components";
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import YAML from "yaml";
 import { transformFormArgsToKurtosisArgs } from "./utils";
 
 type YAMLEditorProps = {
   kurtosisPackage: KurtosisPackage;
+  onError: (error: string) => void;
   values?: Record<string, any>;
 };
 export type YAMLEditorImperativeAttributes = {
@@ -14,13 +14,12 @@ export type YAMLEditorImperativeAttributes = {
   isDirty: () => void;
 };
 export const YAMLEnclaveArgsEditor = forwardRef<YAMLEditorImperativeAttributes, YAMLEditorProps>(
-  ({ kurtosisPackage, values }: YAMLEditorProps, ref) => {
+  ({ kurtosisPackage, values, onError }: YAMLEditorProps, ref) => {
     const initText = useMemo(
       () => YAML.stringify(isDefined(values) ? transformFormArgsToKurtosisArgs(values, kurtosisPackage) : ""),
       [values, kurtosisPackage],
     );
     const [text, setText] = useState(initText);
-    const [error, setError] = useState("");
 
     useImperativeHandle(
       ref,
@@ -38,11 +37,9 @@ export const YAMLEnclaveArgsEditor = forwardRef<YAMLEditorImperativeAttributes, 
               throw new Error(`Some of these keys are not valid for this package: ${invalidKeys.join(", ")}`);
             }
             // TODO: consider implementing yaml validation using the djv library
-
-            setError("");
             return newValues;
           } catch (error: any) {
-            setError(stringifyError(error));
+            onError(stringifyError(error));
           }
           return null;
         },
@@ -51,11 +48,6 @@ export const YAMLEnclaveArgsEditor = forwardRef<YAMLEditorImperativeAttributes, 
       [initText, text, kurtosisPackage],
     );
 
-    return (
-      <Flex flexDirection={"column"} gap={"10px"}>
-        {error !== "" && <KurtosisAlert message={error} />}
-        <CodeEditor text={text} fileName={"config.yml"} onTextChange={setText} />
-      </Flex>
-    );
+    return <CodeEditor text={text} fileName={"config.yml"} onTextChange={setText} />;
   },
 );
