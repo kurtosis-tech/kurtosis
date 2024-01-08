@@ -31,7 +31,7 @@ def run(plan, args):
 		config = ServiceConfig(
 			image = IMAGE,
 			cmd = ["tail", "-f", "/dev/null"],
-			user = User(uid=0),
+			user = User(uid=0, gid=0),
 		)
 	)
 
