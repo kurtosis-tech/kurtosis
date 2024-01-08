@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -46,7 +47,7 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 			maybeWaitTimeout = port.GetWait().GetTimeout().String()
 		}
 
-		portSpec, interpretationErr := port_spec.CreatePortSpec(number, transportProtocol, maybeApplicationProtocol, maybeWaitTimeout)
+		portSpec, interpretationErr := port_spec.CreatePortSpecUsingGoValues(number, transportProtocol, maybeApplicationProtocol, maybeWaitTimeout)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -68,6 +69,18 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEnvironment, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) *startosis_errors.ValidationError {
 	if isValidServiceName := service.IsServiceNameValid(serviceName); !isValidServiceName {
 		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
+	}
+
+	if persistentDirectories := serviceConfig.GetPersistentDirectories(); persistentDirectories != nil {
+		for _, directory := range persistentDirectories.ServiceDirpathToPersistentDirectory {
+			if !service_directory.IsPersistentKeyValid(directory.PersistentKey) {
+				return startosis_errors.NewValidationError(invalidPersistentKeyErrorText(directory.PersistentKey))
+			}
+			if validatorEnvironment.DoesPersistentKeyExist(directory.PersistentKey) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
+				return startosis_errors.NewValidationError("There was an error validating '%s' as persistent key '%s' already exists inside the enclave", serviceName, directory.PersistentKey)
+			}
+			validatorEnvironment.AddPersistentKey(directory.PersistentKey)
+		}
 	}
 
 	if validatorEnvironment.DoesServiceNameExist(serviceName) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
@@ -116,6 +129,16 @@ func invalidServiceNameErrorText(
 		"Service name '%v' is invalid as it contains disallowed characters. Service names must adhere to the RFC 1035 standard, specifically implementing this regex and be 1-63 characters long: %s. This means the service name must only contain lowercase alphanumeric characters or '-', and must start with a lowercase alphabet and end with a lowercase alphanumeric character.",
 		serviceName,
 		service.WordWrappedServiceNameRegex,
+	)
+}
+
+func invalidPersistentKeyErrorText(
+	persistentKey service_directory.DirectoryPersistentKey,
+) string {
+	return fmt.Sprintf(
+		"Persistent Key '%v' is invalid as it contains disallowed characters. Persistent Key must adhere to the RFC 1035 standard, specifically implementing this regex and be 1-63 characters long: %s. This means the service name must only contain lowercase alphanumeric characters or '-', and must start with a lowercase alphabet and end with a lowercase alphanumeric character.",
+		persistentKey,
+		service_directory.WordWrappedPersistentKeyRegex,
 	)
 }
 
