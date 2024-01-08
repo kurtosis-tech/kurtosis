@@ -33,7 +33,7 @@ Check out an introductory demo video here:
 
 How do I get going?
 ===================
-To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install). _Note that we're working on a cloud-hosted version of Kurtosis that doesn't require any local installation; if this is interesting to you then let us know [here](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H) and we'll let you know when it's available._
+To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install) or visit [Kurtosis Cloud](https://cloud.kurtosis.com/) to provision a remote host.
 
 Then, run the [Redis voting app Kurtosis package](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app):
 
@@ -195,21 +195,21 @@ On MacOS:
 brew install docker
 ```
 
-#### Go (1.19 or above)
+#### Go (1.20 or above)
 
 On MacOS:
 ```bash
-brew install go@1.19
+brew install go@1.20
 # Add the Go binary dir to your PATH
-PATH="${BREW_PREFIX}/opt/go@1.19/bin:$PATH"
+PATH="${BREW_PREFIX}/opt/go@1.20/bin:$PATH"
 # Add the GOPATH bin dir to your PATH
 PATH="${HOME}/go/bin:$PATH"
 ```
 
 On Ubuntu:
 ```bash
-wget https://go.dev/dl/go1.19.13.linux-amd64.tar.gz
-tar -C /usr/local -zxf go1.19.13.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.20.8.linux-amd64.tar.gz
+tar -C /usr/local -zxf go1.20.8.linux-amd64.tar.gz
 # Add the following to your bashrc or equivalent.
 export PATH=$PATH:/usr/local/go/bin
 ```
@@ -271,6 +271,20 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
 yarn global add ts-protoc-gen
 yarn global add grpc-tools
+```
+
+#### OpenAPI generators for Go and Typescript
+
+On MacOS:
+```bash
+go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.16.2
+yarn global add openapi-typescript@7.0.0-next.5
+```
+
+On Ubuntu:
+```bash
+go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@v1.16.2
+yarn global add openapi-typescript@7.0.0-next.5
 ```
 
 Build Instructions

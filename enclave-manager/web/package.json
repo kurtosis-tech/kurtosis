@@ -1,82 +1,48 @@
 {
-  "name": "enclave-manager-ui",
-  "version": "0.1.0",
+  "name": "@kurtosis/root",
   "private": true,
-  "homepage": ".",
   "dependencies": {
     "@chakra-ui/icons": "^2.1.1",
     "@chakra-ui/react": "^2.8.1",
-    "@connectrpc/connect": "^0.13.0",
-    "@connectrpc/connect-web": "^0.13.0",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@monaco-editor/react": "^4.6.0",
-    "@tanstack/react-table": "^8.10.7",
-    "ansi-to-html": "^0.7.2",
-    "enclave-manager-sdk": "file:../api/typescript",
     "framer-motion": "^10.16.4",
-    "html-react-parser": "^4.2.2",
-    "js-cookie": "^3.0.5",
     "lodash": "^4.17.21",
     "luxon": "^3.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "^7.47.0",
     "react-icons": "^4.11.0",
-    "react-markdown": "^9.0.0",
-    "react-router-dom": "^6.17.0",
-    "react-scripts": "5.0.1",
-    "react-virtuoso": "^4.6.2",
-    "streamsaver": "^2.0.6",
     "true-myth": "^7.1.0"
   },
   "devDependencies": {
-    "@types/js-cookie": "^3.0.6",
+    "@craco/craco": "^7.1.0",
     "@types/luxon": "^3.3.3",
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
-    "@types/streamsaver": "^2.0.4",
     "dotenv-cli": "^6.0.0",
-    "monaco-editor": "^0.44.0",
+    "lerna": "^5.6.2",
     "prettier": "3.0.3",
     "prettier-plugin-organize-imports": "^3.2.3",
-    "serve": "^14.2.1",
-    "source-map-explorer": "^2.5.3",
+    "react-scripts": "5.0.1",
     "typescript": "^4.4.2"
   },
   "scripts": {
-    "analyze": "source-map-explorer 'build/static/js/*.js'",
-    "clean": "rm -rf build",
-    "cleanInstall": "rm -rf node_modules; yarn install",
-    "start": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-development PORT=4000 react-scripts start",
-    "start:cloud": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-cloudDevelopment BROWSER=none PUBLIC_URL=http://localhost:3000/emui-dev PORT=4000 dotenv -e ./.env.cloudDevelopment -- react-scripts start",
-    "start:prod": "serve -p 4000 -s build",
-    "prebuild": "rm -rf ../../engine/server/webapp",
-    "build": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags) react-scripts build",
-    "build:cloudDev": "dotenv -e ./.env.cloudDevelopment -- react-scripts build",
-    "postbuild": "cp -r build/ ../../engine/server/webapp",
+    "analyze": "lerna run analyze",
+    "cleanInstall": "rm -rf node_modules; rm -rf packages/*/node_modules; yarn install; lerna init",
+    "clean": "lerna run clean",
+    "build": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags) lerna run --stream build",
+    "build:cloudDev": "dotenv -e packages/app/.env.cloudDevelopment -- lerna run --stream build",
     "prettier": "prettier . --check",
     "prettier:fix": "prettier . --write",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-development lerna run --stream --parallel start",
+    "start:cloud": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags)-cloudDevelopment lerna run --stream --parallel start:cloud",
+    "start:prod": "lerna run --stream --parallel start:prod",
+    "test": "lerna run test"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
+  "workspaces": {
+    "packages": [
+      "packages/**"
     ]
   }
 }

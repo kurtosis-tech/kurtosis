@@ -93,6 +93,11 @@ const config = {
 						label: 'Kurtosis for Web3',
 					},
 					{
+						href: 'https://www.kurtosis.com/release-notes',
+						position: 'left',
+						label: 'Release Notes',
+					},
+					{
 						href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml',
 						position: 'right',
 						label: 'Report Docs Issue',

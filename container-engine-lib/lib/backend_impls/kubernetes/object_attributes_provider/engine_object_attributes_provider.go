@@ -23,8 +23,8 @@ type KubernetesEngineObjectAttributesProvider interface {
 
 	ForEngineService(privateGrpcPortId string,
 		privateGrpcPortSpec *port_spec.PortSpec,
-		privateGrpcProxyPortId string,
-		privateGrpcProxyPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
+		privateRESTAPIPortId string,
+		privateRESTAPIPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
 
 	ForEngineNamespace() (KubernetesObjectAttributes, error)
 
@@ -33,6 +33,8 @@ type KubernetesEngineObjectAttributesProvider interface {
 	ForEngineClusterRole() (KubernetesObjectAttributes, error)
 
 	ForEngineClusterRoleBindings() (KubernetesObjectAttributes, error)
+
+	ForEngineIngress() (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -77,8 +79,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEnginePod() (Ku
 
 func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(grpcPortId string,
 	grpcPortSpec *port_spec.PortSpec,
-	grpcProxyPortId string,
-	grpcProxyPortSpec *port_spec.PortSpec,
+	restAPIPortId string,
+	restAPIPortSpec *port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
 	name, err := provider.getEngineObjectName()
 	if err != nil {
@@ -91,7 +93,8 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineService(g
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
-		grpcPortId: grpcPortSpec,
+		grpcPortId:    grpcPortSpec,
+		restAPIPortId: restAPIPortSpec,
 	}
 	serializedPortsSpec, err := kubernetes_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {
@@ -194,6 +197,34 @@ func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineClusterRo
 
 	// No custom annotations for engine cluster role bindings
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+			"'%s' and labels '%+v', and annotations '%+v'", name.GetString(), labels, annotations)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesEngineObjectAttributesProviderImpl) ForEngineIngress() (KubernetesObjectAttributes, error) {
+	name, err := provider.getEngineObjectName()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Kubernetes object name for the engine ingress")
+	}
+
+	labels, err := provider.getEngineObjectLabels()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes labels")
+	}
+
+	traefikIngressRouterEntrypointsAnnotationValue, err := kubernetes_annotation_value.CreateNewKubernetesAnnotationValue(traefikIngressRouterEntrypointsValue)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the Traefik ingress router entrypoint annotation with value '%s'", traefikIngressRouterEntrypointsValue)
+	}
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{
+		kubernetes_annotation_key_consts.TraefikIngressRouterEntrypointsAnnotationKey: traefikIngressRouterEntrypointsAnnotationValue,
+	}
 
 	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
 	if err != nil {

@@ -12,14 +12,12 @@ import (
 )
 
 type kubernetesVolumeWithClaim struct {
-	VolumeName string
-
 	VolumeClaimName string
 }
 
 func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolume() *apiv1.Volume {
 	return &apiv1.Volume{
-		Name: volumeAndClaim.VolumeName,
+		Name: volumeAndClaim.VolumeClaimName,
 		VolumeSource: apiv1.VolumeSource{
 			HostPath:             nil,
 			EmptyDir:             nil,
@@ -59,7 +57,7 @@ func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolume() *apiv1.Volume {
 
 func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolumeMount(mountPath string) *apiv1.VolumeMount {
 	return &apiv1.VolumeMount{
-		Name:             volumeAndClaim.VolumeName,
+		Name:             volumeAndClaim.VolumeClaimName,
 		ReadOnly:         false,
 		MountPath:        mountPath,
 		SubPath:          "",
@@ -73,19 +71,18 @@ func preparePersistentDirectoriesResources(
 	namespace string,
 	serviceUuid service.ServiceUUID,
 	objAttributeProviders object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
-	serviceMountpointsToPersistentKey map[string]service_directory.DirectoryPersistentKey,
+	serviceMountpointsToPersistentKey map[string]service_directory.PersistentDirectory,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (map[string]*kubernetesVolumeWithClaim, error) {
-	shouldDeleteVolumesAndClaimsCreated := true
-	volumesCreated := map[string]*apiv1.PersistentVolume{}
+	shouldDeleteVolumeClaims := true
 	volumeClaimsCreated := map[string]*apiv1.PersistentVolumeClaim{}
 
 	persistentVolumesAndClaims := map[string]*kubernetesVolumeWithClaim{}
 
-	for dirPath, persistentKey := range serviceMountpointsToPersistentKey {
-		volumeAttrs, err := objAttributeProviders.ForSinglePersistentDirectoryVolume(serviceUuid, persistentKey)
+	for dirPath, persistentDirectory := range serviceMountpointsToPersistentKey {
+		volumeAttrs, err := objAttributeProviders.ForSinglePersistentDirectoryVolume(serviceUuid, persistentDirectory.PersistentKey)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating the labels for persist service directory '%s'", persistentKey)
+			return nil, stacktrace.Propagate(err, "An error occurred creating the labels for persist service directory '%s'", persistentDirectory.PersistentKey)
 		}
 
 		volumeName := volumeAttrs.GetName().GetString()
@@ -94,33 +91,25 @@ func preparePersistentDirectoriesResources(
 			volumeLabelsStrs[key.GetString()] = value.GetString()
 		}
 
-		var persistentVolume *apiv1.PersistentVolume
-		if persistentVolume, err = kubernetesManager.GetPersistentVolume(ctx, volumeName); err != nil {
-			persistentVolume, err = kubernetesManager.CreatePersistentVolume(ctx, namespace, volumeName, volumeLabelsStrs)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume for '%s'", persistentKey)
-			}
-			volumesCreated[persistentVolume.Name] = persistentVolume
-		}
+		persistentVolumeSize := int64(persistentDirectory.Size)
 
-		// For now, we have a 1:1 mapping between volume and volume claims, so it's fine giving it the same name
+		// This claim works with a dynamic driver - it will spin up its own volume - the volume will get deleted when said claims is deleted
 		var persistentVolumeClaim *apiv1.PersistentVolumeClaim
 		if persistentVolumeClaim, err = kubernetesManager.GetPersistentVolumeClaim(ctx, namespace, volumeName); err != nil {
-			persistentVolumeClaim, err = kubernetesManager.CreatePersistentVolumeClaim(ctx, namespace, volumeName, volumeLabelsStrs)
+			persistentVolumeClaim, err = kubernetesManager.CreatePersistentVolumeClaim(ctx, namespace, volumeName, volumeLabelsStrs, persistentVolumeSize)
 			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume claim for '%s'", persistentKey)
+				return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume claim for '%s'", persistentDirectory.PersistentKey)
 			}
 			volumeClaimsCreated[persistentVolumeClaim.Name] = persistentVolumeClaim
 		}
 
 		persistentVolumesAndClaims[dirPath] = &kubernetesVolumeWithClaim{
-			VolumeName:      persistentVolume.Name,
 			VolumeClaimName: persistentVolumeClaim.Name,
 		}
 	}
 
 	defer func() {
-		if !shouldDeleteVolumesAndClaimsCreated {
+		if !shouldDeleteVolumeClaims {
 			return
 		}
 		for volumeClaimNameStr := range volumeClaimsCreated {
@@ -134,19 +123,8 @@ func preparePersistentDirectoriesResources(
 				logrus.Warnf("You'll need to clean up volume claim '%v' manually!", volumeClaimNameStr)
 			}
 		}
-		for volumeNameStr := range volumesCreated {
-			// Background context so we still run this even if the input context was cancelled
-			if err := kubernetesManager.RemovePersistentVolumeClaim(context.Background(), namespace, volumeNameStr); err != nil {
-				logrus.Warnf(
-					"Creating persistent directory volumes didn't complete successfully so we tried to delete volume '%v' that we created, but doing so threw an error:\n%v",
-					volumeNameStr,
-					err,
-				)
-				logrus.Warnf("You'll need to clean up volume '%v' manually!", volumeNameStr)
-			}
-		}
 	}()
 
-	shouldDeleteVolumesAndClaimsCreated = false
+	shouldDeleteVolumeClaims = false
 	return persistentVolumesAndClaims, nil
 }

@@ -33,6 +33,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -101,11 +102,11 @@ type dumpPodResult struct {
 
 func NewApiContainerModeArgs(
 	ownEnclaveId enclave.EnclaveUUID,
-	ownNamespaceName string) *ApiContainerModeArgs {
+	ownNamespaceName string, storageClassName string) *ApiContainerModeArgs {
 	return &ApiContainerModeArgs{
 		ownEnclaveId:     ownEnclaveId,
 		ownNamespaceName: ownNamespaceName,
-		storageClassName: "",
+		storageClassName: storageClassName,
 		filesArtifactExpansionVolumeSizeInMegabytes: 0,
 	}
 }
@@ -140,6 +141,9 @@ type UserServiceKubernetesResources struct {
 
 	// This can be nil if the user hasn't started a pod for the service yet, or if the pod was deleted
 	Pod *apiv1.Pod
+
+	// This can be nil if the user hasn't started the service yet, or if the ingress was deleted
+	Ingress *netv1.Ingress
 }
 
 func GetEnclaveNamespaceName(
@@ -323,6 +327,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 			resultObj = &UserServiceKubernetesResources{
 				Service: nil,
 				Pod:     nil,
+				Ingress: nil,
 			}
 		}
 		resultObj.Service = kubernetesService
@@ -361,11 +366,46 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 				resultObj = &UserServiceKubernetesResources{
 					Service: nil,
 					Pod:     nil,
+					Ingress: nil,
 				}
 			}
 			resultObj.Pod = kubernetesPod
 			results[serviceUuid] = resultObj
 		}
+	}
+
+	// Get k8s ingresses
+	matchingKubernetesIngresses, err := kubernetes_resource_collectors.CollectMatchingIngresses(
+		ctx,
+		kubernetesManager,
+		namespaceName,
+		kubernetesResourceSearchLabels,
+		kubernetes_label_key.GUIDKubernetesLabelKey.GetString(),
+		postFilterLabelValues,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kubernetes ingresses matching service UUIDs: %+v", serviceUuids)
+	}
+	for serviceGuidStr, kubernetesIngressForGuid := range matchingKubernetesIngresses {
+		logrus.Tracef("Found Kubernetes ingress for GUID '%v': %+v", serviceGuidStr, kubernetesIngressForGuid)
+		serviceUuid := service.ServiceUUID(serviceGuidStr)
+
+		numIngressesForGuid := len(kubernetesIngressForGuid)
+		if numIngressesForGuid != 1 {
+			return nil, stacktrace.NewError("Found %v Kubernetes ingresses associated with service GUID '%v', but number of ingresses should be exactly 1; this is a bug in Kurtosis", numIngressesForGuid, serviceUuid)
+		}
+		kubernetesIngress := kubernetesIngressForGuid[0]
+
+		resultObj, found := results[serviceUuid]
+		if !found {
+			resultObj = &UserServiceKubernetesResources{
+				Service: nil,
+				Pod:     nil,
+				Ingress: nil,
+			}
+		}
+		resultObj.Ingress = kubernetesIngress
+		results[serviceUuid] = resultObj
 	}
 
 	return results, nil

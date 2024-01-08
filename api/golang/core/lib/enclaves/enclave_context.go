@@ -29,9 +29,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
+	"github.com/kurtosis-tech/kurtosis/utils"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -331,7 +331,7 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]servic
 
 // Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, services.FileArtifactName, error) {
-	content, contentSize, _, err := shared_utils.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
+	content, contentSize, _, err := utils.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err,
 			"There was an error compressing the file '%v' before upload",
@@ -540,7 +540,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
 	logrus.Infof("Compressing package '%v' at '%v' for upload", packageId, packageRootPath)
-	compressedModule, commpressedModuleSize, _, err := shared_utils.CompressPath(packageRootPath, enforceMaxFileSizeLimit)
+	compressedModule, commpressedModuleSize, _, err := utils.CompressPath(packageRootPath, enforceMaxFileSizeLimit)
 	if err != nil {
 		return stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", packageRootPath)
 	}

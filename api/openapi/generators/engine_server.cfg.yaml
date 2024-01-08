@@ -1,0 +1,12 @@
+package: engine_rest_api
+generate:
+  embedded-spec: true
+  echo-server: true
+  strict-server: true
+additional-imports:
+  - package: github.com/kurtosis-tech/kurtosis/api/golang/http_rest/api_types
+    alias: .
+output: api/golang/http_rest/server/engine_rest_api/engine_server.gen.go
+output-options:
+  include-tags:
+    - engine

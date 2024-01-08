@@ -19,42 +19,18 @@
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs;
             let
-              
-              renamed_grpc_tools = stdenv.mkDerivation {
-                name = "renamed-grpc-tools";
-                version = "0.1";
-                phases = [ "installPhase" ];
-                installPhase = ''
-                  mkdir -p $out/bin
-                  cp -r ${protobuf}/include/ $out/bin/
-                  cp "${grpc-tools}/bin/protoc" $out/bin/grpc_tools_node_protoc
-                  cp "${grpc-tools}/bin/grpc_node_plugin" $out/bin/grpc_tools_node_protoc_plugin
-                '';
-              };
-
-              ts_protoc = stdenv.mkDerivation rec {
-                name = "protoc-gen-ts-wksp";
-                src = fetchFromGitHub {
-                  owner = "thesayyn";
-                  repo = "protoc-gen-ts";
-                  rev = "0.8.7";
-                  hash = "sha256-PGprtSPMRTodt/SD6gpEr/n22jiNqB1/C6HJGlDndLg=";
-                };
-                buildInputs = [ git cacert nodejs bazel ];
-                buildPhase = ''
-                  export HOME=$(pwd)
-                  mkdir -p $out/bin
-                  npm ci
-                  bazel build package
-                '';
-                installPhase = ''
-                  cp bazel-bin/package/package/protoc-gen-ts.js $out/bin/protoc-gen-ts
-                '';
-              };
-
+              openapi-codegen-go =
+                import ./nix-pkgs/openapi-codegen.nix { inherit pkgs; };
+              grpc-tools-node =
+                import ./nix-pkgs/grpc-tools-node.nix { inherit pkgs; };
+              protoc-gen-ts =
+                import ./nix-pkgs/protoc-gen-ts.nix { inherit pkgs; };
+              openapi-typescript =
+                # import ./nix-pkgs/openapi-typescript.nix { inherit pkgs; };
+                import ./nix-pkgs/openapi-ts { inherit pkgs; };
             in [
               goreleaser
-              go_1_19
+              go_1_20
               gopls
               golangci-lint
               delve
@@ -67,6 +43,8 @@
               protoc-gen-connect-go
               protoc-gen-grpc-web
               grpc-tools
+              grpcui
+              openapi-codegen-go
               rustc
               cargo
               rustfmt
@@ -75,8 +53,9 @@
               libiconv
               bash-completion
               # local definition (see above)
-              renamed_grpc_tools
-              ts_protoc
+              grpc-tools-node
+              protoc-gen-ts
+              openapi-typescript
             ];
 
           shellHook = ''

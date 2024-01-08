@@ -42,6 +42,7 @@ type EngineManager struct {
 	clusterConfig                             *resolved_config.KurtosisClusterConfig
 	onBastionHost                             bool
 	enclaveEnvVars                            string
+	allowedCORSOrigins                        *[]string
 	// Make engine IP, port, and protocol configurable in the future
 }
 
@@ -98,9 +99,10 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 		kurtosisBackend:   kurtosisBackend,
 		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
 		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
-		clusterConfig:  clusterConfig,
-		onBastionHost:  onBastionHost,
-		enclaveEnvVars: enclaveEnvVars,
+		clusterConfig:      clusterConfig,
+		onBastionHost:      onBastionHost,
+		enclaveEnvVars:     enclaveEnvVars,
+		allowedCORSOrigins: nil,
 	}, nil
 }
 
@@ -191,6 +193,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		manager.onBastionHost,
 		poolSize,
 		manager.enclaveEnvVars,
+		manager.allowedCORSOrigins,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -222,6 +225,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		manager.onBastionHost,
 		poolSize,
 		manager.enclaveEnvVars,
+		manager.allowedCORSOrigins,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {

@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"io"
 	"net/http"
 	"net/url"
@@ -23,8 +24,9 @@ import (
 
 type addServicesTestCase struct {
 	*testing.T
-	serviceNetwork    *service_network.MockServiceNetwork
-	runtimeValueStore *runtime_value_store.RuntimeValueStore
+	serviceNetwork         *service_network.MockServiceNetwork
+	runtimeValueStore      *runtime_value_store.RuntimeValueStore
+	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
@@ -48,6 +50,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 
 			expectedServiceConfig1, err := service.CreateServiceConfig(
 				testContainerImageName,
+				nil,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
 				nil,
@@ -69,6 +72,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 
 			expectedServiceConfig2, err := service.CreateServiceConfig(
 				testContainerImageName,
+				nil,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
 				nil,
@@ -186,14 +190,20 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 	}, nil)
 
 	suite.run(&addServicesTestCase{
-		T:                 suite.T(),
-		serviceNetwork:    suite.serviceNetwork,
-		runtimeValueStore: suite.runtimeValueStore,
+		T:                      suite.T(),
+		serviceNetwork:         suite.serviceNetwork,
+		runtimeValueStore:      suite.runtimeValueStore,
+		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
 func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return add_service.NewAddServices(t.serviceNetwork, t.runtimeValueStore)
+	return add_service.NewAddServices(
+		t.serviceNetwork,
+		t.runtimeValueStore,
+		testModulePackageId,
+		t.packageContentProvider,
+		testNoPackageReplaceOptions)
 }
 
 func (t *addServicesTestCase) GetStarlarkCode() string {

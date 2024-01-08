@@ -2,6 +2,7 @@ package docker_kurtosis_backend
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"io"
 	"sync"
 
@@ -12,6 +13,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions/implementations/traefik"
 	user_service_functions "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -27,6 +30,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
@@ -225,7 +229,7 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 
 	var restartPolicy docker_manager.RestartPolicy = docker_manager.NoRestart
 	if backend.productionMode {
-		restartPolicy = docker_manager.RestartOnFailure
+		restartPolicy = docker_manager.RestartAlways
 	}
 
 	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
@@ -471,12 +475,68 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 	return nil
 }
 
+func (backend *DockerKurtosisBackend) CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error) {
+	reverseProxyContainer := traefik.NewTraefikReverseProxyContainer()
+
+	reverseProxy, _, err := reverse_proxy_functions.CreateReverseProxy(
+		ctx,
+		engineGuid,
+		reverseProxyContainer,
+		backend.dockerManager,
+		backend.objAttrsProvider,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the reverse proxy using the reverse proxy container '%+v'.", reverseProxyContainer)
+	}
+	return reverseProxy, nil
+}
+
+func (backend *DockerKurtosisBackend) GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
+	maybeReverseProxy, err := reverse_proxy_functions.GetReverseProxy(
+		ctx,
+		backend.dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the reverse proxy")
+	}
+
+	return maybeReverseProxy, nil
+}
+
+func (backend *DockerKurtosisBackend) DestroyReverseProxy(ctx context.Context) error {
+	if err := reverse_proxy_functions.DestroyReverseProxy(ctx, backend.dockerManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the reverse proxy")
+	}
+
+	return nil
+}
+
+func (backend *DockerKurtosisBackend) ConnectReverseProxyToNetwork(ctx context.Context, networkId string) error {
+	if err := reverse_proxy_functions.ConnectReverseProxyToNetwork(ctx, backend.dockerManager, networkId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred connecting the reverse proxy to the network with ID '%v'", networkId)
+	}
+
+	return nil
+}
+
+func (backend *DockerKurtosisBackend) DisconnectReverseProxyFromNetwork(ctx context.Context, networkId string) error {
+	if err := reverse_proxy_functions.DisconnectReverseProxyFromNetwork(ctx, backend.dockerManager, networkId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred disconnecting the reverse proxy from the network with ID '%v'", networkId)
+	}
+
+	return nil
+}
+
 func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
 		return 0, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
 	}
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
+}
+
+func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
+	return backend.dockerManager.BuildImage(ctx, imageName, imageBuildSpec)
 }
 
 // ====================================================================================================

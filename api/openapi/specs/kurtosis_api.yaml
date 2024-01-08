@@ -1,0 +1,1607 @@
+openapi: 3.0.0
+
+info:
+  title: Kurtosis RESTful API
+  version: 0.1.0
+
+servers:
+  
+  - url: http://engine.localhost:{port}/api
+    description: Local environment 
+    variables:
+      port:
+        enum:
+          - '9779'
+        default: '9779'
+
+  - url: https://engine-{engine_uuid}.cloud.kurtosis.com/api
+    description: Production Cloud environment 
+    variables:
+      engine_uuid:
+        default: "000000000000"
+
+paths:
+  # =========================================================================================================================
+  # =========================================================================================================================
+  # > > > > > > > > > > > > > > > > > > > > > > > >  Engine API  < < < < < < < < < < < < < < < < < < < < < < < < < < < < < <
+  # =========================================================================================================================
+  # =========================================================================================================================
+
+  /engine/info:
+    get:
+      tags:
+        - engine
+      summary: Get engine info
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EngineInfo"
+
+  /enclaves:
+    get:
+      tags:
+        - engine
+      summary: List enclaves
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/EnclaveInfo"
+
+    post:
+      tags:
+        - engine
+      summary: Create enclave
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEnclave"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnclaveInfo"
+
+    delete:
+      tags:
+        - engine
+      summary: Delete enclaves
+      description: |-
+        Delete stopped enclaves. TO delete all the enclaves use the query parameter `remove_all` 
+      parameters:
+        - $ref: "#/components/parameters/remove_all"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionSummary"
+
+  /enclaves/history:
+    get:
+      tags:
+        - engine
+      summary: List all enclave identifiers
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnclaveIdentifiers"
+
+  /enclaves/{enclave_identifier}:
+    get:
+      tags:
+        - engine
+      summary: Get enclave detailed info
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnclaveInfo"
+
+    delete:
+      tags:
+        - engine
+      summary: Destroy enclave
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+
+  /enclaves/{enclave_identifier}/status:
+    get:
+      tags:
+        - engine
+      summary: Get enclave status
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnclaveStatus"
+    post:
+      tags:
+        - engine
+      summary: Set enclave status
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnclaveTargetStatus"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+
+  # =========================================================================================================================
+  # =========================================================================================================================
+  # > > > > > > > > > > > > > > > > > > > > > > > >  Enclave API  < < < < < < < < < < < < < < < < < < < < < < < < < < < < < <
+  # =========================================================================================================================
+  # =========================================================================================================================
+
+  /enclaves/{enclave_identifier}/starlark:
+    get:
+      tags:
+        - enclave
+      summary: Get last Starlark run
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StarlarkDescription"
+
+  /enclaves/{enclave_identifier}/starlark/packages:
+    post:
+      tags:
+        - enclave
+      summary: Uploads a Starlark package
+      description: |-
+        Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      requestBody:
+        $ref: "#/components/requestBodies/fileUploadBody"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Success
+
+  /enclaves/{enclave_identifier}/starlark/packages/{package_id}:
+    post:
+      tags:
+        - enclave
+      summary: Executes a Starlark package on the user's behalf
+      description: |-
+        The endpoint will trigger the execution and deployment of a Starlark package. By default, it'll
+        return an async logs resource using `starlark_execution_uuid` that can be used to retrieve the logs
+        via streaming. It's also possible to block the call and wait for the execution to complete using the
+        query parameter `retrieve_logs_async`.
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/package_id"
+        - $ref: "#/components/parameters/retrieve_logs_async"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunStarlarkPackage"
+        required: true
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StarlarkRunResponse"
+
+  /enclaves/{enclave_identifier}/starlark/scripts:
+    post:
+      tags:
+        - enclave
+      summary: Executes a Starlark script on the user's behalf
+      description: |-
+        The endpoint will trigger the execution and deployment of a Starlark file. By default, it'll
+        return an async logs resource using `starlark_execution_uuid` that can be used to retrieve the logs
+        via streaming. It's also possible to block the call and wait for the execution to complete using the
+        query parameter `retrieve_logs_async`.
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/retrieve_logs_async"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunStarlarkScript"
+        required: true
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StarlarkRunResponse"
+
+  /enclaves/{enclave_identifier}/services/{service_identifier}:
+    get:
+      tags:
+        - enclave
+      summary: Returns detailed information about a specific service 
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/service_identifier"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceInfo"
+
+  /enclaves/{enclave_identifier}/services/history:
+    get:
+      tags:
+        - enclave
+      summary: Returns information about all existing & historical services
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceIdentifiers"
+
+  /enclaves/{enclave_identifier}/services:
+    get:
+      tags:
+        - enclave
+      summary: Returns detailed information about alls services within the enclave 
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - in: query
+          name: services
+          schema:
+            type: array
+            items:
+              type: string
+          description: Select services to get information
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/ServiceInfo"
+
+  /enclaves/{enclave_identifier}/services/{service_identifier}/command:
+    post:
+      tags:
+        - enclave
+      summary: Executes the given command inside a running service's container
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/service_identifier"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExecCommand"
+        description: Exec Command
+        required: true
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecCommandResult"
+
+  /enclaves/{enclave_identifier}/services/{service_identifier}/endpoints/{port_number}/availability:
+    get:
+      tags:
+        - enclave
+      summary: Check for service availability
+      description: Block until the given HTTP endpoint returns available, calling it through a HTTP request
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/service_identifier"
+        - $ref: "#/components/parameters/port_number"
+        - $ref: "#/components/parameters/http_method"
+        - $ref: "#/components/parameters/path"
+        - $ref: "#/components/parameters/initial_delay_milliseconds"
+        - $ref: "#/components/parameters/retries"
+        - $ref: "#/components/parameters/retries_delay_milliseconds"
+        - $ref: "#/components/parameters/expected_response"
+        - $ref: "#/components/parameters/request_body"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Success
+
+  /enclaves/{enclave_identifier}/artifacts:
+    get:
+      tags:
+        - enclave
+      summary: List all files artifacts
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileArtifactReference"
+
+  /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}:
+    get:
+      tags:
+        - enclave
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/artifact_identifier"
+      summary: Inspect the content of a file artifact
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileArtifactDescription"
+
+  /enclaves/{enclave_identifier}/artifacts/{artifact_identifier}/download:
+    get:
+      tags:
+        - enclave
+      summary: Downloads a files artifact from the Kurtosis File System
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/artifact_identifier"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /enclaves/{enclave_identifier}/artifacts/local-file:
+    post:
+      tags:
+        - enclave
+      summary: Uploads local file artifact to the Kurtosis File System
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      requestBody:
+        $ref: "#/components/requestBodies/fileUploadBody"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/FileArtifactUploadResult"
+
+  /enclaves/{enclave_identifier}/artifacts/remote-file:
+    post:
+      tags:
+        - enclave
+      summary: Add remote file to Kurtosis File System 
+      description: Tells the API container to download a files artifact from the web to the Kurtosis File System
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoreWebFilesArtifact"
+        description: Store Web Files Artifact
+        required: true
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileArtifactReference"
+
+  /enclaves/{enclave_identifier}/artifacts/services/{service_identifier}:
+    post:
+      tags:
+        - enclave
+      summary: Add service's file to Kurtosis File System 
+      description: Tells the API container to copy a files artifact from a service to the Kurtosis File System
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/service_identifier"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoreFilesArtifactFromService"
+        required: true
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileArtifactReference"
+
+  /enclaves/{enclave_identifier}/services/connection:
+    post:
+      tags:
+        - enclave
+      summary: User services port forwarding
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Connect"
+        required: true
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+
+  # =========================================================================================================================
+  # =========================================================================================================================
+  # > > > > > > > > > > > > > > > > > > > > > > > > Websocket API < < < < < < < < < < < < < < < < < < < < < < < < < < < < < <
+  # =========================================================================================================================
+  # =========================================================================================================================
+
+  /enclaves/{enclave_identifier}/logs:
+    get:
+      tags:
+        - streaming
+      summary: Get enclave's services logs
+      description: |-
+        Get multiple enclave services logs concurrently. This endpoint can stream the logs by either starting
+        a Websocket connection (recommended) or legacy HTTP streaming.
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/service_uuid_set"
+        - $ref: "#/components/parameters/follow_logs"
+        - $ref: "#/components/parameters/conjunctive_filters"
+        - $ref: "#/components/parameters/return_all_logs"
+        - $ref: "#/components/parameters/num_log_lines"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceLogs"
+
+  /enclaves/{enclave_identifier}/services/{service_identifier}/logs:
+    get:
+      tags:
+        - streaming
+      summary: Get service logs
+      description: |-
+        Get service logs. This endpoint can stream the logs by either starting
+        a Websocket connection (recommended) or legacy HTTP streaming.
+      parameters:
+        - $ref: "#/components/parameters/enclave_identifier"
+        - $ref: "#/components/parameters/service_identifier"
+        - $ref: "#/components/parameters/follow_logs"
+        - $ref: "#/components/parameters/conjunctive_filters"
+        - $ref: "#/components/parameters/return_all_logs"
+        - $ref: "#/components/parameters/num_log_lines"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceLogs"
+
+  /starlark/executions/{starlark_execution_uuid}/logs:
+    get:
+      tags:
+        - streaming
+      summary: Get Starlark execution logs
+      description: |-
+        Stream the logs of an Starlark execution that were initiated using `retrieve_logs_async`.
+        The async logs can be consumed only once and expire after consumption or 2 hours after creation.
+        This endpoint can stream the logs by either starting a Websocket connection (recommended) or
+        legacy HTTP streaming.
+      parameters:
+        - $ref: "#/components/parameters/starlark_execution_uuid"
+      responses:
+        default:
+          $ref: "#/components/responses/NotOk"
+        "200":
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StarlarkRunResponseLine"
+
+# =========================================================================================================================
+# =========================================================================================================================
+# > > > > > > > > > > > > > > > > > > > > > > > > Data Models < < < < < < < < < < < < < < < < < < < < < < < < < < < < < < <
+# =========================================================================================================================
+# =========================================================================================================================
+
+components:
+  responses:
+    NotOk:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ResponseInfo"
+            required: true
+
+  requestBodies:
+    fileUploadBody:
+      content:
+        multipart/form-data:
+          schema:
+            type: string
+            format: binary
+
+  parameters:
+    enclave_identifier:
+      name: enclave_identifier
+      in: path
+      required: true
+      description: UUID, shortened UUID, or name of the enclave
+      schema:
+        type: string
+
+    service_identifier:
+      in: path
+      name: service_identifier
+      schema:
+        type: string
+      description: The service identifier of the container that the command should be executed in
+      required: true
+
+    starlark_execution_uuid:
+      name: starlark_execution_uuid
+      in: path
+      schema:
+        type: string
+      description: The unique identifier to track the execution of a Starlark script or package
+      required: true
+
+    service_uuid_set:
+      name: service_uuid_set
+      in: query
+      required: true
+      schema:
+        type: array
+        items:
+          type: string
+
+    retrieve_logs_async:
+      name: retrieve_logs_async
+      in: query
+      required: false
+      description: If false, block http response until all logs are available. Default is true
+      schema:
+        type: boolean
+
+    remove_all:
+      name: remove_all
+      in: query
+      required: false
+      description: If true, remove all enclaves. Otherwise only remove stopped enclaves. Default is false
+      schema:
+        type: boolean
+
+    port_number:
+      in: path
+      name: port_number
+      schema:
+        type: integer
+        format: int32
+      description: The port number to check availability
+      required: true
+
+    http_method:
+      in: query
+      name: http_method
+      description: The HTTP method used to check availability. Default is GET.
+      schema:
+        $ref: "#/components/schemas/HttpMethodAvailability"
+
+    path:
+      in: query
+      name: path
+      description: The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+      schema:
+        type: string
+
+    initial_delay_milliseconds:
+      in: query
+      name: initial_delay_milliseconds
+      description: The number of milliseconds to wait until executing the first HTTP call
+      schema:
+        type: integer
+        format: int32
+
+    retries:
+      in: query
+      name: retries
+      description: Max number of HTTP call attempts that this will execute until giving up and returning an error
+      schema:
+        type: integer
+        format: int32
+
+    retries_delay_milliseconds:
+      in: query
+      name: retries_delay_milliseconds
+      description: Number of milliseconds to wait between retries
+      schema:
+        type: integer
+        format: int32
+
+    expected_response:
+      in: query
+      name: expected_response
+      description: If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+      schema:
+        type: string
+
+    request_body:
+      in: query
+      name: request_body
+      description: If the http_method is set to POST, this value will be send as the body of the availability request.
+      schema:
+        type: string
+
+    artifact_identifier:
+      in: path
+      name: artifact_identifier
+      schema:
+        type: string
+      description: The artifact name or uuid
+      required: true
+
+    package_id:
+      in: path
+      name: package_id
+      schema:
+        type: string
+      description: The package identifier that will be executed
+      required: true
+
+    follow_logs:
+      name: follow_logs
+      in: query
+      required: false
+      schema:
+        type: boolean
+
+    conjunctive_filters:
+      name: conjunctive_filters
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/LogLineFilter"
+
+    return_all_logs:
+      name: return_all_logs
+      in: query
+      required: false
+      schema:
+        type: boolean
+
+    num_log_lines:
+      name: num_log_lines
+      in: query
+      required: false
+      schema:
+        type: integer
+
+  schemas:
+    ResponseType:
+      type: string
+      enum:
+        - ERROR
+        - INFO
+        - WARNING
+
+    ResponseInfo:
+      type: object
+      properties:
+        type:
+          $ref: "#/components/schemas/ResponseType"
+        message:
+          type: string
+        code:
+          type: integer
+          format: uint32
+      required:
+        - type
+        - message
+        - code
+
+    EngineInfo:
+      type: object
+      properties:
+        engine_version:
+          type: string
+      required:
+        - engine_version
+
+    CreateEnclave:
+      type: object
+      properties:
+        enclave_name:
+          type: string
+        api_container_version_tag:
+          type: string
+        api_container_log_level:
+          type: string
+          description: Enclave log level, defaults to INFO
+        mode:
+          $ref: "#/components/schemas/EnclaveMode"
+          description: Enclave mode, defaults to TEST
+      required:
+        - enclave_name
+        - api_container_version_tag
+
+    EnclaveMode:
+      type: string
+      enum:
+        - TEST
+        - PRODUCTION
+
+    EnclaveStatus:
+      type: string
+      enum:
+        - RUNNING
+        - STOPPED
+        - EMPTY
+
+    EnclaveTargetStatus:
+      type: string
+      enum:
+        - STOP
+
+    ApiContainerStatus:
+      type: string
+      enum:
+        - RUNNING
+        - STOPPED
+        - NON_EXISTENT
+
+    EnclaveInfo:
+      type: object
+      properties:
+        enclave_uuid:
+          type: string
+        name:
+          type: string
+        shortened_uuid:
+          type: string
+        containers_status:
+          $ref: "#/components/schemas/EnclaveStatus"
+        api_container_status:
+          $ref: "#/components/schemas/ApiContainerStatus"
+        api_container_info:
+          $ref: "#/components/schemas/EnclaveAPIContainerInfo"
+        api_container_host_machine_info:
+          $ref: "#/components/schemas/EnclaveAPIContainerHostMachineInfo"
+        creation_time:
+          $ref: "#/components/schemas/Timestamp"
+        mode:
+          $ref: "#/components/schemas/EnclaveMode"
+      required:
+        - enclave_uuid
+        - name
+        - shortened_uuid
+        - containers_status
+        - api_container_status
+        - creation_time
+        - mode
+
+    EnclaveAPIContainerInfo:
+      type: object
+      properties:
+        container_id:
+          type: string
+        ip_inside_enclave:
+          type: string
+        grpc_port_inside_enclave:
+          type: integer
+        bridge_ip_address:
+          type: string
+      required:
+        - container_id
+        - ip_inside_enclave
+        - grpc_port_inside_enclave
+        - bridge_ip_address
+
+    EnclaveAPIContainerHostMachineInfo:
+      type: object
+      properties:
+        ip_on_host_machine:
+          type: string
+        grpc_port_on_host_machine:
+          type: integer
+      required:
+        - ip_on_host_machine
+        - grpc_port_on_host_machine
+
+    EnclaveIdentifiers:
+      type: object
+      properties:
+        enclave_uuid:
+          type: string
+        name:
+          type: string
+        shortened_uuid:
+          type: string
+      required:
+        - enclave_uuid
+        - name
+        - shortened_uuid
+
+    EnclaveNameAndUuid:
+      type: object
+      properties:
+        name:
+          type: string
+        uuid:
+          type: string
+      required:
+        - name
+        - uuid
+
+    DeletionSummary:
+      type: object
+      properties:
+        removed_enclave_name_and_uuids:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnclaveNameAndUuid"
+
+    Timestamp:
+      type: string
+      format: date-time
+
+    Port:
+      type: object
+      properties:
+        number:
+          type: integer
+          format: int32
+        transport_protocol:
+          $ref: "#/components/schemas/TransportProtocol"
+        application_protocol:
+          type: string
+        wait_timeout:
+          type: string
+          description: The wait timeout duration in string
+      required:
+        - number
+        - transport_protocol
+      description: Shared Objects (Used By Multiple Endpoints)
+
+    HttpMethodAvailability:
+      type: string
+      enum: [GET, POST]
+
+    Container:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/ContainerStatus"
+        image_name:
+          type: string
+        entrypoint_args:
+          type: array
+          items:
+            type: string
+        cmd_args:
+          type: array
+          items:
+            type: string
+        env_vars:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - status
+        - image_name
+        - entrypoint_args
+        - cmd_args
+        - env_vars
+
+    ServiceStatus:
+      type: string
+      enum:
+        - STOPPED
+        - RUNNING
+        - UNKNOWN
+      description: |-
+        0 - STOPPED 
+        1 - RUNNING 
+        2 - UNKNOWN
+
+    ImageDownloadMode:
+      type: string
+      enum:
+        - ALWAYS
+        - MISSING
+      description: |-
+        0 - ALWAYS 
+        1 - MISSING
+
+    ServiceInfo:
+      type: object
+      properties:
+        service_uuid:
+          type: string
+          description: UUID of the service
+        private_ip_addr:
+          type: string
+          description: The IP address of the service inside the enclave
+        private_ports:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Port"
+        public_ip_addr:
+          type: string
+          description: |-
+            Public IP address *outside* the enclave where the service is reachable
+            NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
+        public_ports:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Port"
+        name:
+          type: string
+          description: Name of the service
+        shortened_uuid:
+          type: string
+          description: Shortened uuid of the service
+        service_status:
+          $ref: "#/components/schemas/ServiceStatus"
+        container:
+          $ref: "#/components/schemas/Container"
+      required:
+        - service_uuid
+        - private_ip_addr
+        - private_ports
+        - name
+        - shortened_uuid
+        - service_status
+        - container
+
+    Connect:
+      type: string
+      enum:
+        - CONNECT
+        - NO_CONNECT
+      description: |-
+        0 - CONNECT // Best effort port forwarding
+        1 - NO_CONNECT // Port forwarding disabled
+
+    RunStarlarkScript:
+      type: object
+      properties:
+        serialized_script:
+          type: string
+        params:
+          type: object
+          additionalProperties: true
+          description: |-
+            Parameters data for the Starlark package main function
+        dry_run:
+          type: boolean
+          description: Defaults to false
+        parallelism:
+          type: integer
+          format: int32
+          description: Defaults to 4
+        main_function_name:
+          type: string
+          description: The name of the main function, the default value is "run"
+        experimental_features:
+          type: array
+          items:
+            $ref: "#/components/schemas/KurtosisFeatureFlag"
+        cloud_instance_id:
+          type: string
+          description: Defaults to empty
+        cloud_user_id:
+          type: string
+          description: Defaults to empty
+        image_download_mode:
+          $ref: "#/components/schemas/ImageDownloadMode"
+      required:
+        - serialized_script
+
+    RunStarlarkPackage:
+      type: object
+      properties:
+        params:
+          type: object
+          additionalProperties: true
+          description: |-
+            Parameters data for the Starlark package main function
+        dry_run:
+          type: boolean
+          description: Defaults to false
+        parallelism:
+          type: integer
+          format: int32
+          description: Defaults to 4
+        clone_package:
+          type: boolean
+          description: |-
+            Whether the package should be cloned or not.
+            If false, then the package will be pulled from the APIC local package store. If it's a local package then is must
+            have been uploaded using UploadStarlarkPackage prior to calling RunStarlarkPackage.
+            If true, then the package will be cloned from GitHub before execution starts
+        relative_path_to_main_file:
+          type: string
+          description: The relative main file filepath, the default value is the "main.star" file in the root of a package
+        main_function_name:
+          type: string
+          description: The name of the main function, the default value is "run"
+        experimental_features:
+          type: array
+          items:
+            $ref: "#/components/schemas/KurtosisFeatureFlag"
+        cloud_instance_id:
+          type: string
+          description: Defaults to empty
+        cloud_user_id:
+          type: string
+          description: Defaults to empty
+        image_download_mode:
+          $ref: "#/components/schemas/ImageDownloadMode"
+
+    KurtosisFeatureFlag:
+      type: string
+      enum:
+        - NO_INSTRUCTIONS_CACHING
+      description: |-
+        0 - NO_INSTRUCTIONS_CACHING
+
+    StarlarkRunLogs:
+      type: array
+      items:
+        $ref: "#/components/schemas/StarlarkRunResponseLine"
+      description: |-
+        Starlark Execution Logs
+
+    StarlarkRunResponseLine:
+      oneOf:
+        - $ref: "#/components/schemas/StarlarkInstruction"
+        - $ref: "#/components/schemas/StarlarkError"
+        - $ref: "#/components/schemas/StarlarkRunProgress"
+        - $ref: "#/components/schemas/StarlarkInstructionResult"
+        - $ref: "#/components/schemas/StarlarkRunFinishedEvent"
+        - $ref: "#/components/schemas/StarlarkWarning"
+        - $ref: "#/components/schemas/StarlarkInfo"
+      description: |-
+        Starlark Execution Response
+
+    StarlarkInfo:
+      type: object
+      properties:
+        info:
+          type: object
+          properties:
+            instruction:
+              type: object
+              properties:
+                info_message:
+                  type: string
+              required:
+                - info_message
+          required:
+            - instruction
+      required:
+        - info
+
+    StarlarkWarning:
+      type: object
+      properties:
+        warning:
+          type: object
+          properties:
+            warning_message:
+              type: string
+          required:
+            - warning_message
+      required:
+        - warning
+
+    StarlarkInstruction:
+      type: object
+      properties:
+        position:
+          $ref: "#/components/schemas/StarlarkInstructionPosition"
+        instruction_name:
+          type: string
+        arguments:
+          type: array
+          items:
+            $ref: "#/components/schemas/StarlarkInstructionArgument"
+        executable_instruction:
+          type: string
+        is_skipped:
+          type: boolean
+      required:
+        - instruction_name
+        - arguments
+        - executable_instruction
+        - is_skipped
+
+    StarlarkInstructionResult:
+      type: object
+      properties:
+        instruction_result:
+          type: object
+          properties:
+            serialized_instruction_result:
+              type: string
+          required:
+            - serialized_instruction_result
+      required:
+        - instruction_result
+
+    StarlarkInstructionArgument:
+      type: object
+      properties:
+        serialized_arg_value:
+          type: string
+        arg_name:
+          type: string
+        is_representative:
+          type: boolean
+      required:
+        - serialized_arg_value
+        - is_representative
+
+    StarlarkInstructionPosition:
+      type: object
+      properties:
+        filename:
+          type: string
+        line:
+          type: integer
+          format: int32
+        column:
+          type: integer
+          format: int32
+      required:
+        - filename
+        - line
+        - column
+
+    StarlarkError:
+      type: object
+      properties:
+        error:
+          oneOf:
+            - $ref: "#/components/schemas/StarlarkInterpretationError"
+            - $ref: "#/components/schemas/StarlarkValidationError"
+            - $ref: "#/components/schemas/StarlarkExecutionError"
+      required:
+        - error
+
+    StarlarkInterpretationError:
+      type: object
+      properties:
+        interpretation_error:
+          type: object
+          properties:
+            error_message:
+              type: string
+          required:
+            - error_message
+      required:
+        - interpretation_error
+
+    StarlarkValidationError:
+      type: object
+      properties:
+        validation_error:
+          type: object
+          properties:
+            error_message:
+              type: string
+          required:
+            - error_message
+      required:
+        - validation_error
+
+    StarlarkExecutionError:
+      type: object
+      properties:
+        execution_error:
+          type: object
+          properties:
+            error_message:
+              type: string
+          required:
+            - error_message
+      required:
+        - execution_error
+
+    StarlarkRunProgress:
+      type: object
+      properties:
+        progress_info:
+          type: object
+          properties:
+            current_step_info:
+              type: array
+              items:
+                type: string
+            total_steps:
+              type: integer
+              format: int32
+            current_step_number:
+              type: integer
+              format: int32
+          required:
+            - current_step_info
+            - total_steps
+            - current_step_number
+      required:
+        - progress_info
+
+    StarlarkRunFinishedEvent:
+      type: object
+      properties:
+        run_finished_event:
+          type: object
+          properties:
+            is_run_successful:
+              type: boolean
+            serialized_output:
+              type: string
+          required:
+            - is_run_successful
+      required:
+        - run_finished_event
+
+    AsyncStarlarkExecutionLogs:
+      type: object
+      properties:
+        async_starlark_execution_logs:
+          type: object
+          properties:
+            starlark_execution_uuid:
+              type: string
+          description: Execution UUID to asynchronously retrieve the execution logs
+          required:
+            - starlark_execution_uuid
+      description: Use it to asynchronously retrieve the execution logs via Websockets or http streaming
+      required:
+        - async_starlark_execution_logs
+
+    StarlarkRunResponse:
+      type: object
+      properties:
+        starlark_execution_logs:
+          oneOf:
+            - $ref: "#/components/schemas/AsyncStarlarkExecutionLogs"
+            - $ref: "#/components/schemas/StarlarkRunLogs"
+
+    ServiceIdentifiers:
+      type: object
+      properties:
+        service_uuid:
+          type: string
+          description: UUID of the service
+        name:
+          type: string
+          description: Name of the service
+        shortened_uuid:
+          type: string
+          description: The shortened uuid of the service
+      description: An service identifier is a collection of uuid, name and shortened uuid
+      required:
+        - service_uuid
+        - name
+        - shortened_uuid
+
+    ExecCommand:
+      type: object
+      properties:
+        command_args:
+          type: array
+          items:
+            type: string
+      description: Exec Command
+      required:
+        - command_args
+
+    ExecCommandResult:
+      type: object
+      properties:
+        exit_code:
+          type: integer
+          format: int32
+        log_output:
+          type: string
+          description: Assumes UTF-8 encoding
+      required:
+        - exit_code
+        - log_output
+
+    FileArtifactUploadResult:
+      type: object
+      properties:
+        file_artifact_upload_result:
+          oneOf:
+            - $ref: "#/components/schemas/FileArtifactReference"
+            - $ref: "#/components/schemas/ResponseInfo"
+
+    FileArtifactReference:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: UUID of the files artifact, for use when referencing it in the future
+        name:
+          type: string
+          description: UUID of the files artifact, for use when referencing it in the future
+      description: |-
+        Files Artifact identifier
+      required:
+        - uuid
+        - name
+
+    StoreWebFilesArtifact:
+      type: object
+      properties:
+        url:
+          type: string
+          description: URL to download the artifact from
+        name:
+          type: string
+          description: The name of the files artifact
+      required:
+        - url
+        - name
+      description: |-
+        Store Web Files Artifact
+
+    StoreFilesArtifactFromService:
+      type: object
+      properties:
+        source_path:
+          type: string
+          description: The absolute source path where the source files will be copied from
+        name:
+          type: string
+          description: The name of the files artifact
+      required:
+        - source_path
+        - name
+
+    FileArtifactDescription:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Path relative to the file artifact
+        size:
+          type: integer
+          format: int64
+          description: Size of the file, in bytes
+        text_preview:
+          type: string
+          description: A bit of text content, if the file allows (similar to UNIX's 'head')
+      required:
+        - path
+        - size
+
+    RestartPolicy:
+      type: string
+      enum:
+        - NEVER
+        - ALWAYS
+      description: |-
+        0 - NEVER 
+        1 - ALWAYS
+
+    StarlarkDescription:
+      type: object
+      properties:
+        package_id:
+          type: string
+        serialized_script:
+          type: string
+        serialized_params:
+          type: string
+        parallelism:
+          type: integer
+          format: int32
+        relative_path_to_main_file:
+          type: string
+        main_function_name:
+          type: string
+        experimental_features:
+          type: array
+          items:
+            $ref: "#/components/schemas/KurtosisFeatureFlag"
+        restart_policy:
+          $ref: "#/components/schemas/RestartPolicy"
+      required:
+        - package_id
+        - serialized_script
+        - serialized_params
+        - parallelism
+        - relative_path_to_main_file
+        - main_function_name
+        - experimental_features
+        - restart_policy
+
+    TransportProtocol:
+      type: string
+      enum:
+        - TCP
+        - SCTP
+        - UDP
+      description: |-
+        0 - TCP 
+        1 - SCTP 
+        2 - UDP
+
+    ContainerStatus:
+      type: string
+      enum:
+        - STOPPED
+        - RUNNING
+        - UNKNOWN
+      description: |-
+        0 - STOPPED 
+        1 - RUNNING 
+        2 - UNKNOWN
+
+    ServiceLogs:
+      type: object
+      properties:
+        service_logs_by_service_uuid:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/LogLine"
+        not_found_service_uuid_set:
+          type: array
+          items:
+            type: string
+
+    LogLine:
+      type: object
+      properties:
+        line:
+          type: array
+          items:
+            type: string
+        timestamp:
+          $ref: "#/components/schemas/Timestamp"
+      required:
+        - line
+        - timestamp
+
+    LogLineFilter:
+      type: object
+      properties:
+        operator:
+          $ref: "#/components/schemas/LogLineOperator"
+        text_pattern:
+          type: string
+      required:
+        - operator
+        - text_pattern
+
+    LogLineOperator:
+      type: string
+      enum:
+        - DOES_CONTAIN_TEXT
+        - DOES_NOT_CONTAIN_TEXT
+        - DOES_CONTAIN_MATCH_REGEX
+        - DOES_NOT_CONTAIN_MATCH_REGEX

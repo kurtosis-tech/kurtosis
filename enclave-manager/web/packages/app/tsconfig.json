@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["src"],
+  "references": [{
+    "path": "../components"
+  }],
+  "compilerOptions": {
+    "noEmit": true
+  }
+}

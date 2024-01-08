@@ -26,7 +26,13 @@ var (
 	testModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
 	testModuleRelativeLocator = "./helpers.star"
 
-	testContainerImageName = "kurtosistech/example-datastore-server"
+	testContainerImageName       = "kurtosistech/example-datastore-server"
+	testBuildContextDir          = "./"
+	testTargetStage              = "builder"
+	testBuildContextLocator      = testModulePackageId
+	testContainerImageLocator    = "github.com/kurtosistech/test-package/Dockerfile"
+	testOnDiskContextDirPath     = "kurtosis-data/test-package"
+	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"
 
 	testPrivatePortId              = "grpc"
 	testPrivatePortNumber          = uint16(1323)
@@ -48,6 +54,7 @@ var (
 	testFilesArtifactName2      = "file_2"
 	testPersistentDirectoryPath = "path/to/persistent/dir"
 	testPersistentDirectoryKey  = "persistent-dir-test"
+	testPersistentDirectorySize = int64(30)
 
 	testEntryPointSlice = []string{
 		"127.0.0.0",

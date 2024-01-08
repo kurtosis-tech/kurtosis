@@ -11,14 +11,15 @@ import (
 )
 
 type KubernetesBackendConfigSupplier struct {
+	storageClass string
 }
 
-func NewKubernetesKurtosisBackendConfigSupplier() KubernetesBackendConfigSupplier {
+func NewKubernetesKurtosisBackendConfigSupplier(storageClass string) KubernetesBackendConfigSupplier {
 	return KubernetesBackendConfigSupplier{
-		// More fields here when needed
+		storageClass: storageClass,
 	}
 }
 
 func (backendConfigSupplier KubernetesBackendConfigSupplier) getKurtosisBackendConfig() (args.KurtosisBackendType, interface{}) {
-	return args.KurtosisBackendType_Kubernetes, kurtosis_backend_config.KubernetesBackendConfig{}
+	return args.KurtosisBackendType_Kubernetes, kurtosis_backend_config.KubernetesBackendConfig{StorageClass: backendConfigSupplier.storageClass}
 }

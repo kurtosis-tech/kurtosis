@@ -21,7 +21,7 @@ def run(plan):
 		image=IMAGE,
 		files={
 			"/data": Directory(
-				persistent_key="persistent_data",
+				persistent_key="persistent-data",
 			),
 		},
 		min_cpu=%d,
