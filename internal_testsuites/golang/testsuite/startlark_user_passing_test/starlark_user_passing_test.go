@@ -9,13 +9,15 @@ import (
 )
 
 const (
-	testName = "starlark-user-passing-test"
+	testName                = "starlark-user-passing-test"
+	noOverrideServiceName   = "no-override"
+	userOverrideServiceName = "user-override"
 
 	starlarkScriptWithUserIdPassed = `
 IMAGE = "hyperledger/besu:latest"
 def run(plan, args):
 	no_override = plan.add_service(
-		name = "besu-no-override",
+		name = "` + noOverrideServiceName + `",
 		config = ServiceConfig(
 			image = IMAGE,
 			cmd = ["tail", "-f", "/dev/null"],
@@ -25,7 +27,7 @@ def run(plan, args):
 	plan.exec(service_name = no_override.name, recipe = ExecRecipe(command = ["whoami"]))
 
 	root_override = plan.add_service(
-		name = "besu-root-override",
+		name = "` + userOverrideServiceName + `",
 		config = ServiceConfig(
 			image = IMAGE,
 			cmd = ["tail", "-f", "/dev/null"],
@@ -54,13 +56,13 @@ func TestUserIDOverridesWork(t *testing.T) {
 	require.Nil(t, scriptRunResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, scriptRunResult.ValidationErrors, "Unexpected validation error")
 	require.Nil(t, scriptRunResult.ExecutionError, "Unexpected execution error")
-	expectedOutput := `Service 'besu-no-override' added with service UUID '[a-z0-9]{32}'
+	expectedOutput := `Service '` + noOverrideServiceName + `' added with service UUID '[a-z0-9]{32}'
 Command returned with exit code '0' and the following output:
 --------------------
 besu
 
 --------------------
-Service 'besu-root-override' added with service UUID '[a-z0-9]{32}'
+Service '` + userOverrideServiceName + `' added with service UUID '[a-z0-9]{32}'
 Command returned with exit code '0' and the following output:
 --------------------
 root
