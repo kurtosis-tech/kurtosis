@@ -1,14 +1,8 @@
 import { Flex, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import {
-  AppPageLayout,
-  FeatureNotImplementedModal,
-  HoverLineTabList,
-  KurtosisAlert,
-  PageTitle,
-} from "kurtosis-ui-components";
-import { FunctionComponent, useState } from "react";
+import { AppPageLayout, HoverLineTabList, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
+import { FunctionComponent } from "react";
 import { EditEnclaveButton } from "../components/EditEnclaveButton";
 import { DeleteEnclavesButton } from "../components/widgets/DeleteEnclavesButton";
 import { useFullEnclave } from "../EnclavesContext";
@@ -44,10 +38,6 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   const activeTab = params.activeTab || "overview";
   const activeIndex = tabs.findIndex((tab) => tab.path === activeTab);
 
-  const [unavailableModalState, setUnavailableModalState] = useState<
-    { isOpen: false } | { isOpen: true; featureName: string; message?: string; issueUrl: string }
-  >({ isOpen: false });
-
   const handleTabChange = (newTabIndex: number) => {
     const tab = tabs[newTabIndex];
     navigator(`/enclave/${enclave.shortenedUuid}/${tab.path}`);
@@ -65,13 +55,6 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
             <DeleteEnclavesButton enclaves={[enclave]} />
             <EditEnclaveButton enclave={enclave} />
           </Flex>
-          <FeatureNotImplementedModal
-            featureName={unavailableModalState.isOpen ? unavailableModalState.featureName : ""}
-            message={unavailableModalState.isOpen ? unavailableModalState.message : ""}
-            isOpen={unavailableModalState.isOpen}
-            issueUrl={unavailableModalState.isOpen ? unavailableModalState.issueUrl : ""}
-            onClose={() => setUnavailableModalState({ isOpen: false })}
-          />
         </Flex>
         <TabPanels>
           {tabs.map((tab) => (
