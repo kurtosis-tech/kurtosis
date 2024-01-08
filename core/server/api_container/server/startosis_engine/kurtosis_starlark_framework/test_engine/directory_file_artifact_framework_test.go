@@ -20,7 +20,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestDirectoryFileArtifact() {
 }
 
 func (t *directoryFileArtifactTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName1)
+	return fmt.Sprintf("%s(%s=[%q])", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName1)
 }
 
 func (t *directoryFileArtifactTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {

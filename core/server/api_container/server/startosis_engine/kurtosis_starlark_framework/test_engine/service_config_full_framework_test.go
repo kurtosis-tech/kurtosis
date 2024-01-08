@@ -35,8 +35,8 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFull() {
 }
 
 func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
-	fileArtifact1 := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName1)
-	fileArtifact2 := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName2)
+	fileArtifact1 := fmt.Sprintf("%s(%s=[%q])", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName1)
+	fileArtifact2 := fmt.Sprintf("%s(%s=[%q])", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName2)
 	persistentDirectory := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.PersistentKeyAttr, testPersistentDirectoryKey)
 	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s, %s=%v)",
 		service_config.ServiceConfigTypeName,

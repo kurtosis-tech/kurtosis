@@ -58,7 +58,7 @@ config = ServiceConfig(
     files = {
         "path/to/files/artifact_1/": files_artifact_1,
         "path/to/files/artifact_2/": Directory(
-            artifact_name=files_artifact_2,
+            artifact_names=[files_artifact_2],
         ),
         "path/to/persistent/directory/": Directory(
             persistent_key="data-directory",

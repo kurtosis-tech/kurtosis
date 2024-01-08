@@ -30,8 +30,10 @@ func NewDirectoryType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				{
 					Name:              ArtifactNamesAttr,
 					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
-					Validator:         nil, //TODO should add a validator?
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringListWithNotEmptyValues(value, ArtifactNamesAttr)
+					},
 				},
 				{
 					Name:              PersistentKeyAttr,

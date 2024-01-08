@@ -5,19 +5,14 @@ sidebar_label: Directory
 
 The `Directory` constructor creates a `Directory` object that represents a directory inside an existing service (see
 the [ServiceConfig][service-config] object).
-Directory object can be either one or many files artifacts or a persistent directory, depending on the arguments passed to the 
+Directory object can be a files artifacts list or a persistent directory, depending on the arguments passed to the 
 constructor.
 
 ```python
-# composed with only one file artifact:
-file_artifact_directory = Directory(
-    artifact_names=files_artifact_1,
-)
-# Or composed with multiple file artifacts:
 file_artifact_directory = Directory(
     artifact_names=[files_artifact_1, files_artifact_2] 
 )
-# Or defining a persistent directory:
+# Or:
 persistent_directory = Directory(
     persistent_key="data-directory"
 )
