@@ -131,6 +131,13 @@ config = ServiceConfig(
         # Examples
         "name": "alice",
     }
+
+    # The user id and group id to start the container with
+    # Some containers are configured to start with users other than root by default; this allows you to override to root or other
+    # users if you choose to.
+    # Note that the `gid` field is optional
+    # OPTIONAL
+    user = User(uid=0, gid=0),
 )
 ```
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package.
@@ -179,6 +186,8 @@ labels:
 ```
 :::
 
+The `user` field expects a `User`[user] object being passed.
+
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service
 [directory]: ./directory.md
@@ -186,3 +195,4 @@ labels:
 [ready-condition]: ./ready-condition.md
 [locators]: ../../advanced-concepts/locators.md
 [package]: ../../advanced-concepts/packages.md
+[user]: ./user.md
