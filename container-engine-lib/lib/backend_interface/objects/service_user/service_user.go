@@ -1,5 +1,7 @@
 package service_user
 
+import "errors"
+
 type UID int64
 type GID int64
 
@@ -22,8 +24,11 @@ func (su *ServiceUser) GetUID() UID {
 	return su.uid
 }
 
-func (su *ServiceUser) GetGID() GID {
-	return su.gid
+func (su *ServiceUser) GetGID() (GID, error) {
+	if !su.isGIDSet {
+		return 0, errors.New("GID is not set")
+	}
+	return su.gid, nil
 }
 
 func (su *ServiceUser) SetGID(gid GID) {

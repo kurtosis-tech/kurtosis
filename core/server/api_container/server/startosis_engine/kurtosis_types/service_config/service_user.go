@@ -1,4 +1,4 @@
-package service_user
+package service_config
 
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
