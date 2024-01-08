@@ -1,8 +1,8 @@
 import { Button, ButtonGroup, Flex } from "@chakra-ui/react";
 import { AppPageLayout, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { useEffect, useMemo, useState } from "react";
-import { CreateEnclaveButton } from "./components/CreateEnclaveButton";
 import { EnclavesTable } from "./components/tables/EnclavesTable";
+import { CreateEnclaveButton } from "./components/widgets/CreateEnclaveButton";
 import { DeleteEnclavesButton } from "./components/widgets/DeleteEnclavesButton";
 import { useFullEnclaves } from "./EnclavesContext";
 import { EnclaveFullInfo } from "./types";
@@ -43,7 +43,7 @@ export const EnclaveList = () => {
           <CreateEnclaveButton />
         </Flex>
       </Flex>
-      <Flex direction="column" pt={"24px"} width={"100%"}>
+      <Flex direction="column" pt={"24px"} width={"100%"} flex={"1"}>
         {enclaves.isOk && (
           <EnclavesTable
             enclavesData={enclaves.value}

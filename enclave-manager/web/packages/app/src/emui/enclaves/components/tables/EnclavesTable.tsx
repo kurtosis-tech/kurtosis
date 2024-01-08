@@ -2,36 +2,42 @@ import { Button, Checkbox, Text } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { EnclaveContainersStatus } from "enclave-manager-sdk/build/engine_service_pb";
-import { DataTable, FormatDateTime, isDefined, PackageSourceButton } from "kurtosis-ui-components";
+import { GetPackagesResponse, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import { DataTable, FormatDateTime, isDefined } from "kurtosis-ui-components";
 import { DateTime } from "luxon";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Result } from "true-myth";
+import { useKurtosisPackageIndexerClient } from "../../../../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { EnclaveFullInfo } from "../../types";
 import { EnclaveArtifactsSummary } from "../widgets/EnclaveArtifactsSummary";
 import { EnclaveServicesSummary } from "../widgets/EnclaveServicesSummary";
 import { EnclaveStatus } from "../widgets/EnclaveStatus";
+import { PackageLinkButton } from "../widgets/PackageLinkButton";
 
 type EnclaveTableRow = {
   uuid: string;
   name: string;
   status: EnclaveContainersStatus;
   created: DateTime | null;
-  source: "loading" | string | null;
+  source: "loading" | KurtosisPackage | null;
   services: "loading" | ServiceInfo[] | null;
   artifacts: "loading" | FilesArtifactNameAndUuid[] | null;
 };
 
-const enclaveToRow = (enclave: EnclaveFullInfo): EnclaveTableRow => {
+const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResponse, string>): EnclaveTableRow => {
+  const starlarkRun = enclave.starlarkRun;
   return {
     uuid: enclave.shortenedUuid,
     name: enclave.name,
     status: enclave.containersStatus,
     created: enclave.creationTime ? DateTime.fromJSDate(enclave.creationTime.toDate()) : null,
-    source: !isDefined(enclave.starlarkRun)
-      ? "loading"
-      : enclave.starlarkRun.isOk
-      ? enclave.starlarkRun.value.packageId
-      : null,
+    source:
+      !isDefined(starlarkRun) || !isDefined(catalog)
+        ? "loading"
+        : starlarkRun.isOk && catalog.isOk
+        ? catalog.value.packages.find((kurtosisPackage) => kurtosisPackage.name === starlarkRun.value.packageId) || null
+        : null,
     services: !isDefined(enclave.services)
       ? "loading"
       : enclave.services.isOk
@@ -54,7 +60,9 @@ type EnclavesTableProps = {
 };
 
 export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: EnclavesTableProps) => {
-  const enclaves = enclavesData.map(enclaveToRow);
+  const packageIndexerClient = useKurtosisPackageIndexerClient();
+  const [catalog, setCatalog] = useState<Result<GetPackagesResponse, string>>();
+  const enclaves = enclavesData.map((enclave) => enclaveToRow(enclave, catalog));
 
   const rowSelection = useMemo(() => {
     const selectedUUIDs = new Set<string>(selection.map(({ enclaveUuid }) => enclaveUuid));
@@ -114,7 +122,7 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
       }),
       columnHelper.accessor("source", {
         header: "Source",
-        cell: (sourceCell) => <PackageSourceButton source={sourceCell.getValue()} />,
+        cell: (sourceCell) => <PackageLinkButton source={sourceCell.getValue()} />,
       }),
       columnHelper.accessor("services", {
         cell: (servicesCell) => <EnclaveServicesSummary services={servicesCell.getValue()} />,
@@ -128,6 +136,12 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
     ],
     [],
   );
+
+  useEffect(() => {
+    (async () => {
+      setCatalog(await packageIndexerClient.getPackages());
+    })();
+  }, [packageIndexerClient]);
 
   return (
     <DataTable

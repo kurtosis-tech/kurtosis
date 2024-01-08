@@ -31,7 +31,8 @@ type EngineRuntime struct {
 // Delete Enclaves
 // (DELETE /enclaves)
 func (engine EngineRuntime) DeleteEnclaves(ctx context.Context, request api.DeleteEnclavesRequestObject) (api.DeleteEnclavesResponseObject, error) {
-	removedEnclaveUuidsAndNames, err := engine.EnclaveManager.Clean(ctx, *request.Params.RemoveAll)
+	removeAll := utils.DerefWith(request.Params.RemoveAll, false)
+	removedEnclaveUuidsAndNames, err := engine.EnclaveManager.Clean(ctx, removeAll)
 	if err != nil {
 		response := internalErrorResponseInfof(err, "An error occurred while cleaning enclaves")
 		return api.DeleteEnclavesdefaultJSONResponse{
@@ -39,7 +40,7 @@ func (engine EngineRuntime) DeleteEnclaves(ctx context.Context, request api.Dele
 			StatusCode: int(response.Code),
 		}, nil
 	}
-	if *request.Params.RemoveAll {
+	if removeAll {
 		if err = engine.LogFileManager.RemoveAllLogs(); err != nil {
 			response := internalErrorResponseInfof(err, "An error occurred removing all logs")
 			return api.DeleteEnclavesdefaultJSONResponse{

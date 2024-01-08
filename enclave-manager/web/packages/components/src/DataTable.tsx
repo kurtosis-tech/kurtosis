@@ -69,6 +69,7 @@ export function DataTable<Data extends object>({
     <Box
       w={"100%"}
       h={"100%"}
+      flex={"1"}
       borderRadius={"6px"}
       border={"1px solid"}
       borderColor={"whiteAlpha.300"}

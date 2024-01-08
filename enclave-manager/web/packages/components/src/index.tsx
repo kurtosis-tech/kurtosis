@@ -4,7 +4,6 @@ export * from "./CodeEditor";
 export * from "./CopyButton";
 export * from "./DataTable";
 export * from "./DownloadButton";
-export * from "./FeatureNotImplementedModal";
 export * from "./FileDisplay";
 export * from "./FileSize";
 export * from "./FileTree";
