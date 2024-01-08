@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.1](https://github.com/kurtosis-tech/kurtosis/compare/0.86.0...0.86.1) (2024-01-08)
+
+
+### Features
+
+* add ability to set uid and gid ([#2024](https://github.com/kurtosis-tech/kurtosis/issues/2024)) ([2102164](https://github.com/kurtosis-tech/kurtosis/commit/2102164e3ed62b62fcca8a08d4733cf65716322d))
+
 ## [0.86.0](https://github.com/kurtosis-tech/kurtosis/compare/0.85.56...0.86.0) (2024-01-08)
 
 
