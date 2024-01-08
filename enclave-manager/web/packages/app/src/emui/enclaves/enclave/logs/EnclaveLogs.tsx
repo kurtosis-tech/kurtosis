@@ -3,8 +3,9 @@ import { StarlarkRunResponseLine } from "enclave-manager-sdk/build/api_container
 import { AppPageLayout, isAsyncIterable, LogLineMessage, LogViewer, stringifyError } from "kurtosis-ui-components";
 import { useEffect, useState } from "react";
 import { FiCheck, FiX } from "react-icons/fi";
-import { Location, useLocation, useNavigate } from "react-router-dom";
+import { Location, useBlocker, useLocation, useNavigate } from "react-router-dom";
 import { EditEnclaveButton } from "../../components/EditEnclaveButton";
+import { LogNavigationWarningModal } from "../../components/modals/LogNavigationWarningModal";
 import { DeleteEnclavesButton } from "../../components/widgets/DeleteEnclavesButton";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { useEnclaveFromParams } from "../EnclaveRouteContext";
@@ -46,6 +47,8 @@ export const EnclaveLogs = () => {
   const location = useLocation() as Location<{ logs: AsyncIterable<StarlarkRunResponseLine> }>;
   const [progress, setProgress] = useState<EnclaveLogStage>({ stage: "waiting" });
   const [logLines, setLogLines] = useState<LogLineMessage[]>([]);
+
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => currentLocation.pathname !== nextLocation.pathname);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,21 +125,36 @@ export const EnclaveLogs = () => {
 
   return (
     <AppPageLayout preventPageScroll>
-      <LogViewer
-        logLines={logLines}
-        progressPercent={progressPercent}
-        copyLogsEnabled
-        ProgressWidget={
-          <Flex justifyContent={"space-between"} alignItems={"center"} width={"100%"}>
-            <ProgressSummary progress={progress} />
-            <ButtonGroup>
-              <DeleteEnclavesButton enclaves={[enclave]} size={"md"} />
-              <EditEnclaveButton enclave={enclave} size={"md"} />
-            </ButtonGroup>
-          </Flex>
-        }
-        logsFileName={`${enclave.name.replaceAll(/\s+/g, "_")}-logs.txt`}
-      />
+      <>
+        <LogViewer
+          logLines={logLines}
+          progressPercent={progressPercent}
+          copyLogsEnabled
+          ProgressWidget={
+            <Flex justifyContent={"space-between"} alignItems={"center"} width={"100%"}>
+              <ProgressSummary progress={progress} />
+              <ButtonGroup>
+                <DeleteEnclavesButton enclaves={[enclave]} size={"md"} />
+                <EditEnclaveButton enclave={enclave} size={"md"} />
+              </ButtonGroup>
+            </Flex>
+          }
+          logsFileName={`${enclave.name.replaceAll(/\s+/g, "_")}-logs.txt`}
+        />
+        <LogNavigationWarningModal
+          isOpen={blocker.state === "blocked"}
+          onCancel={() => {
+            if (blocker.state === "blocked") {
+              blocker.reset();
+            }
+          }}
+          onConfirm={() => {
+            if (blocker.state === "blocked") {
+              blocker.proceed();
+            }
+          }}
+        />
+      </>
     </AppPageLayout>
   );
 };
