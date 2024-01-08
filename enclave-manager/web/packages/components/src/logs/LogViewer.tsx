@@ -10,6 +10,7 @@ import {
   FormErrorMessage,
   FormLabel,
   Icon,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
@@ -348,14 +349,7 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
     return (
       <FormControl isInvalid={searchState.type === "error"}>
         <Flex gap={"16px"} alignItems={"center"}>
-          <InputGroup
-            size="md"
-            width={"296px"}
-            bg={"gray.650"}
-            color={"gray.150"}
-            variant={"filled"}
-            borderRadius={"6px"}
-          >
+          <InputGroup size="md" width={"296px"} color={"gray.150"} variant={"filled"} borderRadius={"6px"}>
             <InputLeftElement pointerEvents="none">
               <Icon as={FiSearch} color="gray.100" />
             </InputLeftElement>
@@ -365,48 +359,50 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
               value={searchState.rawSearchTerm}
               onChange={handleOnChange}
               placeholder={"Search"}
+              _dark={{ bg: "gray.650" }}
             />
             {searchState.type !== "init" && (
               <InputRightElement>
-                <SmallCloseIcon onClick={handleClearSearch} />
+                <IconButton
+                  variant={"ghost"}
+                  icon={<SmallCloseIcon />}
+                  size={"sm"}
+                  onClick={handleClearSearch}
+                  aria-label={"Clear search"}
+                />
               </InputRightElement>
             )}
           </InputGroup>
-          <ButtonGroup>
+          <ButtonGroup size="xs" colorScheme={"darkBlue"} variant={"outline"}>
             <Button
-              size={"sm"}
               ml={2}
               onClick={handlePriorMatchClick}
               isDisabled={searchState.type !== "success" || searchState.searchMatchesIndices.length === 0}
-              colorScheme={"darkBlue"}
               leftIcon={<MdArrowBackIosNew />}
             >
               Previous
             </Button>
             <Button
-              size={"sm"}
               ml={2}
               onClick={handleNextMatchClick}
               isDisabled={searchState.type !== "success" || searchState.searchMatchesIndices.length === 0}
-              colorScheme={"darkBlue"}
               rightIcon={<MdArrowForwardIos />}
             >
               Next
             </Button>
           </ButtonGroup>
           {searchState.rawSearchTerm.length > 0 && (
-            <Flex ml={2} alignItems={"center"}>
+            <Flex alignItems={"center"}>
               {searchState.type === "success" && (
-                <Text
-                  align={"left"}
-                  color={searchState.searchMatchesIndices.length === 0 ? "red" : "kurtosisGreen.400"}
-                >
+                <Text align={"left"} fontSize={"xs"} fontWeight={"semibold"}>
                   {searchState.searchMatchesIndices.length > 0 && searchState.currentSearchIndex !== undefined && (
                     <span>
                       <Editable
                         display={"inline"}
-                        p={0}
-                        m={"0 4px 0 0"}
+                        borderWidth={"1px"}
+                        p={"2px 6px"}
+                        borderColor={"gray.500"}
+                        borderRadius={"6px"}
                         size={"sm"}
                         value={`${searchState.currentSearchIndex + 1}`}
                         onChange={handleIndexInputChange}
@@ -414,9 +410,9 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
                         <Tooltip label="Click to edit" shouldWrapChildren={true}>
                           <EditablePreview />
                         </Tooltip>
-                        <EditableInput p={1} width={"50px"} />
+                        <EditableInput width={"50px"} />
                       </Editable>
-                      <>/ </>
+                      <> of </>
                     </span>
                   )}
                   <span>{searchState.searchMatchesIndices.length} matches</span>

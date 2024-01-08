@@ -39,7 +39,7 @@ export const LogLine = ({ timestamp, message, status, highlightPattern, selected
           fontWeight={600}
           fontFamily={logFontFamily}
           color={"grey"}
-          minW={"200px"}
+          minW={"140px"}
         >
           <>{timestamp.toLocal().toFormat("yyyy-MM-dd HH:mm:ss ZZZZ")}</>
         </Box>
