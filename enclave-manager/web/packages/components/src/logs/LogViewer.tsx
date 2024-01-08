@@ -171,7 +171,7 @@ export const LogViewer = ({
             value={typeof progressPercent === "number" ? progressPercent : progressPercent === "failed" ? 100 : 0}
             isIndeterminate={progressPercent === "indeterminate"}
             height={"4px"}
-            colorScheme={progressPercent === "failed" ? "red" : progressPercent === 100 ? "green" : "blue"}
+            colorScheme={progressPercent === "failed" ? "red" : progressPercent === 100 ? "kurtosisGreen" : "blue"}
           />
         )}
       </Flex>

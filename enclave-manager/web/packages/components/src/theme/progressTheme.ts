@@ -35,7 +35,7 @@ const baseStyleLabel = defineStyle({
 
 const baseStyleTrack = defineStyle((props) => {
   return {
-    bg: mode(`${props.colorScheme}.100`, "whiteAlpha.300")(props),
+    bg: `${props.colorScheme}.100`,
   };
 });
 
