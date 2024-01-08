@@ -12,16 +12,16 @@ const (
 
 func (suite *StartosisDirectoryTestSuite) TestAddServiceWithMultipleArtifactsDirectory() {
 	ctx := context.Background()
-	rulResult, err := suite.RunPackage(ctx, multipleArtifactsDirectoryPackage)
+	runResult, err := suite.RunPackage(ctx, multipleArtifactsDirectoryPackage)
 
 	t := suite.T()
-	logrus.Infof("Test Output: %v", rulResult.RunOutput)
+	logrus.Infof("Test Output: %v", runResult.RunOutput)
 	require.NoError(t, err, "Unexpected error executing starlark package")
-	require.Nil(t, rulResult.InterpretationError, "Unexpected interpretation error.")
-	require.Empty(t, rulResult.ValidationErrors, "Unexpected validation error")
-	require.Nil(t, rulResult.ExecutionError, "Unexpected execution error")
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
 	// This checks the output of the `cat both files` at the end.
-	require.Contains(t, rulResult.RunOutput, "hello")
-	require.Contains(t, rulResult.RunOutput, "world")
+	require.Contains(t, runResult.RunOutput, "hello")
+	require.Contains(t, runResult.RunOutput, "world")
 }
