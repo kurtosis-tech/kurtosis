@@ -1738,7 +1738,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
-	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
+	//  if the Dockerfile *does* have and EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
 
 	containerHostConfigPtr := &container.HostConfig{

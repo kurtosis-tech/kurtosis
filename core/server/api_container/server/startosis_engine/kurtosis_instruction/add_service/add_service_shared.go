@@ -87,9 +87,11 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		return startosis_errors.NewValidationError("There was an error validating '%s' as service with the name '%s' already exists inside the package. Adding two different services with the same name isn't allowed; we recommend prefixing/suffixing the two service names or using two different names entirely.", AddServiceBuiltinName, serviceName)
 	}
 	if serviceConfig.GetFilesArtifactsExpansion() != nil {
-		for _, artifactName := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-			if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
-				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
+		for _, artifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, artifactName := range artifactNames {
+				if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
+					return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
+				}
 			}
 		}
 	}

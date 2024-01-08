@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -276,7 +277,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		return nil, interpretationErr
 	}
 	if found {
-		var filesArtifactsMountDirpathsMap map[string]string
+		var filesArtifactsMountDirpathsMap map[string][]string
 		filesArtifactsMountDirpathsMap, persistentDirectoriesDirpathsMap, interpretationErr := convertFilesArguments(FilesAttr, filesStarlark)
 		if interpretationErr != nil {
 			return nil, interpretationErr
@@ -458,19 +459,25 @@ func (config *ServiceConfig) GetReadyCondition() (*ReadyCondition, *startosis_er
 	return readyConditions, nil
 }
 
-func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]string, serviceNetwork service_network.ServiceNetwork) (*service_directory.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
+func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string][]string, serviceNetwork service_network.ServiceNetwork) (*service_directory.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
 	filesArtifactsExpansions := []args.FilesArtifactExpansion{}
-	serviceDirpathsToArtifactIdentifiers := map[string]string{}
+	serviceDirpathsToArtifactIdentifiers := map[string][]string{}
 	expanderDirpathToUserServiceDirpathMap := map[string]string{}
-	for mountpointOnUserService, filesArtifactIdentifier := range filesArtifactsMountDirpathsMap {
-		dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactIdentifier)
-		expansion := args.FilesArtifactExpansion{
-			FilesIdentifier:   filesArtifactIdentifier,
-			DirPathToExpandTo: dirpathToExpandTo,
+	for mountpointOnUserService, filesArtifactIdentifiers := range filesArtifactsMountDirpathsMap {
+		filesArtifactFolderUUIDStr, err := uuid_generator.GenerateUUIDString()
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError("An error occurred generating an UUID string for the file artifacts destination folder")
 		}
-		filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
-		serviceDirpathsToArtifactIdentifiers[mountpointOnUserService] = filesArtifactIdentifier
+		dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactFolderUUIDStr)
+		for _, filesArtifactIdentifier := range filesArtifactIdentifiers {
+			expansion := args.FilesArtifactExpansion{
+				FilesIdentifier:   filesArtifactIdentifier,
+				DirPathToExpandTo: dirpathToExpandTo,
+			}
+			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
+		}
 		expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
+		serviceDirpathsToArtifactIdentifiers[mountpointOnUserService] = filesArtifactIdentifiers
 	}
 
 	// TODO: Sad that we need the service network here to get the APIC info. This is wrong, we should fix this by
@@ -525,8 +532,8 @@ func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value st
 	return keyStr.GoString(), servicePortSpec, nil
 }
 
-func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) (map[string]string, map[string]service_directory.PersistentDirectory, *startosis_errors.InterpretationError) {
-	filesArtifacts := map[string]string{}
+func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) (map[string][]string, map[string]service_directory.PersistentDirectory, *startosis_errors.InterpretationError) {
+	filesArtifacts := map[string][]string{}
 	persistentDirectories := map[string]service_directory.PersistentDirectory{}
 	for _, fileItem := range filesDict.Items() {
 		rawDirPath := fileItem[0]
@@ -536,20 +543,21 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 		}
 
 		var interpretationErr *startosis_errors.InterpretationError
-		rawDirectoryObj := fileItem[1]
-		directoryObj, isDirectoryArg := rawDirectoryObj.(*directory.Directory)
+		rawFileValue := fileItem[1]
+		directoryObj, isDirectoryArg := rawFileValue.(*directory.Directory)
 		if !isDirectoryArg {
+
 			// we're also supporting raw strings as well and transform them into files artifact name.
-			directoryObjAsStr, isSimpleStringArg := rawDirectoryObj.(starlark.String)
+			fileArtifactNameStr, isSimpleStringArg := rawFileValue.(starlark.String)
 			if !isSimpleStringArg {
 				return nil, nil, startosis_errors.NewInterpretationError("Unable to convert value of '%s' dictionary '%v' to a Directory object", attrNameForLogging, filesDict)
 			}
-			directoryObj, interpretationErr = directory.CreateDirectoryFromFilesArtifact(directoryObjAsStr.GoString())
+			directoryObj, interpretationErr = directory.CreateDirectoryFromFilesArtifact(fileArtifactNameStr.GoString())
 			if interpretationErr != nil {
 				return nil, nil, interpretationErr
 			}
 		}
-		artifactName, artifactNameSet, interpretationErr := directoryObj.GetArtifactNameIfSet()
+		artifactNames, artifactNameSet, interpretationErr := directoryObj.GetArtifactNamesIfSet()
 		if interpretationErr != nil {
 			return nil, nil, interpretationErr
 		}
@@ -564,10 +572,10 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 		if artifactNameSet == persistentKeySet {
 			// this condition is a XOR
 			return nil, nil, startosis_errors.NewInterpretationError("Parameter '%s' and '%s' cannot be set on the same '%s' object: '%s'",
-				directory.ArtifactNameAttr, directory.PersistentKeyAttr, directory.DirectoryTypeName, directoryObj.String())
+				directory.ArtifactNamesAttr, directory.PersistentKeyAttr, directory.DirectoryTypeName, directoryObj.String())
 		}
 		if artifactNameSet {
-			filesArtifacts[dirPath.GoString()] = artifactName
+			filesArtifacts[dirPath.GoString()] = artifactNames
 		} else {
 			// persistentKey is necessarily set since we checked the exclusivity above
 			persistentDirectories[dirPath.GoString()] = service_directory.PersistentDirectory{
