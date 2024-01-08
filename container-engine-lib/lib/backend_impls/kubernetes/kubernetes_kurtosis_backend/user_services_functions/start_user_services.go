@@ -700,6 +700,7 @@ func getUserServicePodContainerSpecs(
 		uid := int64(user.GetUID())
 
 		gid, gidIsSet := user.GetGID()
+		// nolint: exhaustruct
 		securityContext := &apiv1.SecurityContext{
 			RunAsUser: &uid,
 		}
