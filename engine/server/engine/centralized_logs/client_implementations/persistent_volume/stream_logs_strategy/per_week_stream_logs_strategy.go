@@ -377,7 +377,9 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 		return stacktrace.Propagate(err, "An error occurred while attempting to tail the log file.")
 	}
 	defer func() {
-		logTail.Stop()
+		if err := logTail.Stop(); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{filepath: filepath}).Error("Failed to stop reading log file")
+		}
 		logTail.Cleanup()
 	}()
 
