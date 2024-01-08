@@ -64,6 +64,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				0,
 				0,
 				map[string]string{},
+				nil,
 			)
 			require.NoError(suite.T(), err)
 
@@ -86,6 +87,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				0,
 				0,
 				map[string]string{},
+				nil,
 			)
 			require.NoError(suite.T(), err)
 
