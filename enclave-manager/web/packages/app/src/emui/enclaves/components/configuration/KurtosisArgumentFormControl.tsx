@@ -1,18 +1,28 @@
-import { Badge, Flex, FormControl, FormErrorMessage, FormHelperText, FormLabel } from "@chakra-ui/react";
+import {
+  Badge,
+  Flex,
+  FormControl,
+  FormControlProps,
+  FormErrorMessage,
+  FormHelperText,
+  FormLabel,
+} from "@chakra-ui/react";
 import { isDefined, KurtosisMarkdown } from "kurtosis-ui-components";
 import { PropsWithChildren } from "react";
 import { FieldError, FieldPath } from "react-hook-form";
 import { useEnclaveConfigurationFormContext } from "./EnclaveConfigurationForm";
 import { ConfigureEnclaveForm } from "./types";
 
-type KurtosisArguementFormControlProps = PropsWithChildren<{
-  name: FieldPath<ConfigureEnclaveForm>;
-  label: string;
-  type: string;
-  helperText?: string;
-  disabled?: boolean;
-  isRequired?: boolean;
-}>;
+type KurtosisArguementFormControlProps = PropsWithChildren<
+  FormControlProps & {
+    name: FieldPath<ConfigureEnclaveForm>;
+    label: string;
+    type: string;
+    helperText?: string;
+    disabled?: boolean;
+    isRequired?: boolean;
+  }
+>;
 export const KurtosisArgumentFormControl = ({
   name,
   label,
@@ -21,6 +31,7 @@ export const KurtosisArgumentFormControl = ({
   disabled,
   isRequired,
   children,
+  ...formControlProps
 }: KurtosisArguementFormControlProps) => {
   const {
     formState: { errors },
@@ -31,9 +42,9 @@ export const KurtosisArgumentFormControl = ({
     .reduce((e, part) => (isDefined(e) ? e[part] : undefined), errors as Record<string, any>) as FieldError | undefined;
 
   return (
-    <FormControl isInvalid={isDefined(error)} isDisabled={disabled} isRequired={isRequired}>
+    <FormControl isInvalid={isDefined(error)} isDisabled={disabled} isRequired={isRequired} {...formControlProps}>
       <Flex alignItems={"center"}>
-        <FormLabel>{label}</FormLabel>
+        <FormLabel fontWeight={"bold"}>{label}</FormLabel>
         <Badge mb={2}>{type}</Badge>
       </Flex>
       {children}

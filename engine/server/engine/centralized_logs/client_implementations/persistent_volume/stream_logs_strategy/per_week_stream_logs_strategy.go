@@ -6,6 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/hpcloud/tail"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -16,11 +22,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
-	"io"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -99,7 +100,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 
 	if shouldFollowLogs {
 		latestLogFile := paths[len(paths)-1]
-		if err := strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+		if err := strategy.followLogs(ctx, latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 			streamErrChan <- stacktrace.Propagate(err, "An error occurred creating following logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 			return
 		}
@@ -353,6 +354,7 @@ func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine *logl
 
 // Continue streaming log lines as they are written to log file (tail -f [filepath])
 func (strategy *PerWeekStreamLogsStrategy) followLogs(
+	ctx context.Context,
 	filepath string,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	serviceUuid service.ServiceUUID,
@@ -374,22 +376,33 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while attempting to tail the log file.")
 	}
+	defer func() {
+		if err := logTail.Stop(); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{filepath: filepath}).Error("Failed to stop reading log file")
+		}
+		logTail.Cleanup()
+	}()
 
-	for logLine := range logTail.Lines {
-		if logLine.Err != nil {
-			return stacktrace.Propagate(logLine.Err, "hpcloud/tail encountered an error with the following log line: %v", logLine.Text)
-		}
-		jsonLog, err := convertStringToJson(logLine.Text)
-		if err != nil {
-			// if tail package fails to parse a valid new line, fail fast
-			return stacktrace.NewError("hpcloud/tail returned the following line: '%v' that was not valid json.\nThis is potentially a bug in tailing package.", logLine.Text)
-		}
-		err = strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
+	for {
+		select {
+		case <-ctx.Done():
+			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v'", serviceUuid)
+			return nil
+		case logLine := <-logTail.Lines:
+			if logLine.Err != nil {
+				return stacktrace.Propagate(logLine.Err, "hpcloud/tail encountered an error with the following log line: %v", logLine.Text)
+			}
+			jsonLog, err := convertStringToJson(logLine.Text)
+			if err != nil {
+				// if tail package fails to parse a valid new line, fail fast
+				return stacktrace.NewError("hpcloud/tail returned the following line: '%v' that was not valid json.\nThis is potentially a bug in tailing package.", logLine.Text)
+			}
+			err = strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
+			}
 		}
 	}
-	return nil
 }
 
 func convertStringToJson(line string) (JsonLog, error) {

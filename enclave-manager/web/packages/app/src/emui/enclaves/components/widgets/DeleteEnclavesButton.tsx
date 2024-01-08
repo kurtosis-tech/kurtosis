@@ -33,6 +33,7 @@ export const DeleteEnclavesButton = ({ enclaves, ...buttonProps }: DeleteEnclave
           leftIcon={<FiTrash2 />}
           onClick={() => setShowModal(true)}
           size={"sm"}
+          variant={"solid"}
           {...buttonProps}
         >
           Delete

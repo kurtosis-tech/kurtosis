@@ -57,13 +57,19 @@ export const ListArgumentInput = ({ valueType, ...otherProps }: ListArgumentInpu
               size={"sm"}
             />
           </KurtosisArgumentSubtypeFormControl>
-          <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"}>
+          <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"} variant={"outline"}>
             Delete
           </Button>
         </Flex>
       ))}
       <Flex>
-        <Button onClick={() => append({ value: "" })} leftIcon={<FiPlus />} colorScheme={"kurtosisGreen"} size={"sm"}>
+        <Button
+          onClick={() => append({ value: "" })}
+          leftIcon={<FiPlus />}
+          colorScheme={"kurtosisGreen"}
+          size={"sm"}
+          variant={"outline"}
+        >
           Add
         </Button>
       </Flex>
