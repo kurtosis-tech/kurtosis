@@ -26,10 +26,10 @@ func (t *directoryPersistentDirectoryTestCase) Assert(typeValue builtin_argument
 	directoryStarlark, ok := typeValue.(*directory.Directory)
 	require.True(t, ok)
 
-	artifactName, found, err := directoryStarlark.GetArtifactNameIfSet()
+	artifactNames, found, err := directoryStarlark.GetArtifactNamesIfSet()
 	require.Nil(t, err)
 	require.False(t, found)
-	require.Empty(t, artifactName)
+	require.Empty(t, artifactNames)
 
 	persistentKey, found, err := directoryStarlark.GetPersistentKeyIfSet()
 	require.Nil(t, err)

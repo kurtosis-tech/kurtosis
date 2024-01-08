@@ -19,7 +19,7 @@ import {
   SaveKurtosisPackageButton,
   TitledCard,
 } from "kurtosis-ui-components";
-import { ConfigureEnclaveModal } from "../../enclaves/components/modals/ConfigureEnclaveModal";
+import { CreateOrConfigureEnclaveDrawer } from "../../enclaves/components/configuration/drawer/CreateOrConfigureEnclaveDrawer";
 import { EnclavesContextProvider } from "../../enclaves/EnclavesContext";
 import { useKurtosisPackage } from "../CatalogContext";
 
@@ -143,7 +143,7 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
         </Flex>
         {showConfigurePackage && (
           <EnclavesContextProvider skipInitialLoad>
-            <ConfigureEnclaveModal
+            <CreateOrConfigureEnclaveDrawer
               isOpen={true}
               onClose={() => setShowConfigurePackage(false)}
               kurtosisPackage={kurtosisPackage}

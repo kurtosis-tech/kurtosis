@@ -209,10 +209,12 @@ func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 	// We check if there has been some updates to the files it's mounting. If that's the case, it should be rerun
 	filesArtifactsExpansion := builtin.serviceConfig.GetFilesArtifactsExpansion()
 	if filesArtifactsExpansion != nil {
-		for _, filesArtifactName := range filesArtifactsExpansion.ServiceDirpathsToArtifactIdentifiers {
-			if enclaveComponents.HasFilesArtifactBeenUpdated(filesArtifactName) {
-				enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsUpdated)
-				return enclave_structure.InstructionIsUpdate
+		for _, filesArtifactNames := range filesArtifactsExpansion.ServiceDirpathsToArtifactIdentifiers {
+			for _, filesArtifactName := range filesArtifactNames {
+				if enclaveComponents.HasFilesArtifactBeenUpdated(filesArtifactName) {
+					enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsUpdated)
+					return enclave_structure.InstructionIsUpdate
+				}
 			}
 		}
 	}

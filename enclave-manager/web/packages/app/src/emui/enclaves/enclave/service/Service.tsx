@@ -4,6 +4,8 @@ import Cookies from "js-cookie";
 import { AppPageLayout, HoverLineTabList, isDefined, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { FunctionComponent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { EditEnclaveButton } from "../../components/EditEnclaveButton";
+import { DeleteEnclavesButton } from "../../components/widgets/DeleteEnclavesButton";
 import { EnclaveFullInfo } from "../../types";
 import { useEnclaveFromParams } from "../EnclaveRouteContext";
 import { ServiceLogs } from "./logs/ServiceLogs";
@@ -70,11 +72,17 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
   const instanceUUID = Cookies.get("_kurtosis_instance_id") || "";
 
   return (
-    <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
+    <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange} variant={"kurtosisHeaderLine"}>
       <AppPageLayout>
-        <Flex alignItems={"center"} gap={"8px"}>
-          <PageTitle>{service.name}</PageTitle>
-          <HoverLineTabList tabs={tabs.map(({ path }) => path)} activeTab={activeTab} />
+        <Flex justifyContent={"space-between"} alignItems={"flex-end"} width={"100%"}>
+          <Flex alignItems={"center"} gap={"8px"}>
+            <PageTitle>{service.name}</PageTitle>
+            <HoverLineTabList tabs={tabs.map(({ path }) => path)} activeTab={activeTab} />
+          </Flex>
+          <Flex gap={"8px"} alignItems={"center"} pb={"16px"}>
+            <DeleteEnclavesButton enclaves={[enclave]} />
+            <EditEnclaveButton enclave={enclave} />
+          </Flex>
         </Flex>
         <TabPanels>
           {tabs.map((tab) => (

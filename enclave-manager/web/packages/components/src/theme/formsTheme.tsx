@@ -20,9 +20,9 @@ const baseStyleHelperText = defineStyle({
   _dark: {
     [$fg.variable]: "colors.whiteAlpha.600",
   },
-  color: $fg.reference,
+  color: "gray.100",
   lineHeight: "normal",
-  fontSize: "sm",
+  fontSize: "xs",
 });
 
 const baseStyle = definePartsStyle({

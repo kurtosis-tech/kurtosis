@@ -1,9 +1,8 @@
-import { ArgumentValueType, KurtosisPackage, PackageArg } from "kurtosis-cloud-indexer-sdk";
-import { isDefined, isStringTrue } from "kurtosis-ui-components";
-import { CSSProperties, forwardRef, PropsWithChildren, useImperativeHandle } from "react";
+import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import { CSSProperties, forwardRef, PropsWithChildren, useEffect, useImperativeHandle, useState } from "react";
 import { FormProvider, SubmitHandler, useForm, useFormContext } from "react-hook-form";
-import YAML from "yaml";
 import { ConfigureEnclaveForm } from "./types";
+import { transformFormArgsToKurtosisArgs } from "./utils";
 
 type EnclaveConfigurationFormProps = PropsWithChildren<{
   onSubmit: SubmitHandler<ConfigureEnclaveForm>;
@@ -14,13 +13,16 @@ type EnclaveConfigurationFormProps = PropsWithChildren<{
 
 export type EnclaveConfigurationFormImperativeAttributes = {
   getValues: () => ConfigureEnclaveForm;
+  setValues: (key: keyof ConfigureEnclaveForm, value: any) => void;
+  isDirty: () => boolean;
 };
 
 export const EnclaveConfigurationForm = forwardRef<
   EnclaveConfigurationFormImperativeAttributes,
   EnclaveConfigurationFormProps
 >(({ children, kurtosisPackage, onSubmit, initialValues, style }: EnclaveConfigurationFormProps, ref) => {
-  const methods = useForm<ConfigureEnclaveForm>({ values: initialValues });
+  const [isDirty, setIsDirty] = useState(false);
+  const methods = useForm<ConfigureEnclaveForm>({ defaultValues: initialValues });
 
   useImperativeHandle(
     ref,
@@ -28,77 +30,33 @@ export const EnclaveConfigurationForm = forwardRef<
       getValues: () => {
         return methods.getValues();
       },
+      setValues: (key: keyof ConfigureEnclaveForm, value: any) => {
+        methods.setValue(key, value);
+      },
+      isDirty: () => {
+        return isDirty;
+      },
     }),
-    [methods],
+    [methods, isDirty],
   );
 
+  useEffect(() => {
+    const { unsubscribe } = methods.watch((value) => {
+      // We manually track modified fields because we dynamically register values (this means that the
+      // isDirty field on the react-hook-form state cannot be used). Relying on the react-hook-form state isDirty field
+      // will actually trigger a cyclic setState (as it's secretly a getter method).
+      setIsDirty(true);
+    });
+    return () => unsubscribe();
+  }, [methods]);
+
   const handleSubmit: SubmitHandler<ConfigureEnclaveForm> = (data: { args: { [x: string]: any } }) => {
-    const transformValue = (
-      valueType: ArgumentValueType | undefined,
-      value: any,
-      innerValuetype?: ArgumentValueType,
-    ) => {
-      // The DICT type is stored as an array of {key, value} objects, before passing it up we should correct
-      // any instances of it to be Record<string, any> objects
-      const transformRecordsToObject = (records: { key: string; value: any }[], valueType?: ArgumentValueType) =>
-        records.reduce(
-          (acc, { key, value }) => ({
-            ...acc,
-            [key]: valueType === ArgumentValueType.BOOL ? isStringTrue(value) : value,
-          }),
-          {},
-        );
-
-      switch (valueType) {
-        case ArgumentValueType.DICT:
-          if (!isDefined(value)) return {};
-          else return transformRecordsToObject(value, innerValuetype);
-        case ArgumentValueType.LIST:
-          return value.map((v: any) => transformValue(innerValuetype, v));
-        case ArgumentValueType.BOOL:
-          return isDefined(value) ? isStringTrue(value) : null;
-        case ArgumentValueType.INTEGER:
-          return isNaN(value) || isNaN(parseFloat(value)) ? null : parseFloat(value);
-        case ArgumentValueType.STRING:
-          return value;
-        case ArgumentValueType.JSON:
-          return YAML.parse(value);
-        default:
-          return value;
-      }
-    };
-
-    const newArgs: Record<string, any> = kurtosisPackage.args
-      .filter((arg) => arg.name !== "plan") // plan args needs to be filtered out as it's not an actual arg
-      .map((arg): [PackageArg, any] => [
-        arg,
-        transformValue(
-          arg.typeV2?.topLevelType,
-          data.args[arg.name],
-          arg.typeV2?.topLevelType === ArgumentValueType.LIST ? arg.typeV2?.innerType1 : arg.typeV2?.innerType2,
-        ),
-      ])
-      .filter(([arg, value]) => {
-        switch (arg.typeV2?.topLevelType) {
-          case ArgumentValueType.DICT:
-            return Object.keys(value).length > 0;
-          case ArgumentValueType.LIST:
-            return value.length > 0;
-          case ArgumentValueType.STRING:
-            return isDefined(value) && value.length > 0;
-          default:
-            return isDefined(value);
-        }
-      })
-      .reduce(
-        (acc, [arg, value]) => ({
-          ...acc,
-          [arg.name]: value,
-        }),
-        {},
-      );
-
-    onSubmit({ enclaveName: "", restartServices: false, ...data, args: newArgs });
+    onSubmit({
+      enclaveName: "",
+      restartServices: false,
+      ...data,
+      args: transformFormArgsToKurtosisArgs(data.args, kurtosisPackage),
+    });
   };
 
   return (
@@ -109,5 +67,6 @@ export const EnclaveConfigurationForm = forwardRef<
     </FormProvider>
   );
 });
+EnclaveConfigurationForm.displayName = "EnclaveConfigurationForm";
 
 export const useEnclaveConfigurationFormContext = () => useFormContext<ConfigureEnclaveForm>();

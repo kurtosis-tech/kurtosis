@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.86.0](https://github.com/kurtosis-tech/kurtosis/compare/0.85.56...0.86.0) (2024-01-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* allow to mount multiple artifacts to the same folder in a service. Users will need to replace the `Directory.artifac_name` field key with `Directory.artifac_names` ([#2025](https://github.com/kurtosis-tech/kurtosis/issues/2025))
+* change persistent directory name to deterministic value ([#2006](https://github.com/kurtosis-tech/kurtosis/issues/2006))
+
+### Features
+
+* allow to mount multiple artifacts to the same folder in a service. Users will need to replace the `Directory.artifac_name` field key with `Directory.artifac_names` ([#2025](https://github.com/kurtosis-tech/kurtosis/issues/2025)) ([b51df93](https://github.com/kurtosis-tech/kurtosis/commit/b51df9359f573058268b4b8431fd892d5b4a6840))
+* emui design updates ([#2028](https://github.com/kurtosis-tech/kurtosis/issues/2028)) ([0e480cf](https://github.com/kurtosis-tech/kurtosis/commit/0e480cf7ef3e0077e4c5c352bc0dc2fa76c9ea8e))
+* Engine Traefik Docker labels for REST API reverse proxy routing ([#2019](https://github.com/kurtosis-tech/kurtosis/issues/2019)) ([6541884](https://github.com/kurtosis-tech/kurtosis/commit/6541884dd761fa2901f767e1a0c88b72f2f4874e))
+
+
+### Bug Fixes
+
+* change persistent directory name to deterministic value ([#2006](https://github.com/kurtosis-tech/kurtosis/issues/2006)) ([fa08707](https://github.com/kurtosis-tech/kurtosis/commit/fa08707437c88ffd11d643d3bee7b151121fd6c0)), closes [#1998](https://github.com/kurtosis-tech/kurtosis/issues/1998)
+* log streaming resource leaks ([#2026](https://github.com/kurtosis-tech/kurtosis/issues/2026)) ([7f8db9b](https://github.com/kurtosis-tech/kurtosis/commit/7f8db9bbec29921d7da45b39cf29a00305cd1cc3))
+
+## [0.85.56](https://github.com/kurtosis-tech/kurtosis/compare/0.85.55...0.85.56) (2024-01-05)
+
+
+### Features
+
+* docker compose integration([#2001](https://github.com/kurtosis-tech/kurtosis/issues/2001)) ([385833d](https://github.com/kurtosis-tech/kurtosis/commit/385833de9d7620f4c65473adc763bb38df8fb995))
+
+
+### Bug Fixes
+
+* in api/golang go.mod use a fixed version of the new utils sub package ([#2022](https://github.com/kurtosis-tech/kurtosis/issues/2022)) ([05099e5](https://github.com/kurtosis-tech/kurtosis/commit/05099e5670046332e9db98b5f956650f57dcd77c))
+* Make the reverse proxy connect and disconnect to and from the enclave network idempotent ([#2004](https://github.com/kurtosis-tech/kurtosis/issues/2004)) ([3cc68eb](https://github.com/kurtosis-tech/kurtosis/commit/3cc68eb5fabd30cf04d61755b5dba18525ceb8a2))
+
 ## [0.85.55](https://github.com/kurtosis-tech/kurtosis/compare/0.85.54...0.85.55) (2024-01-03)
 
 

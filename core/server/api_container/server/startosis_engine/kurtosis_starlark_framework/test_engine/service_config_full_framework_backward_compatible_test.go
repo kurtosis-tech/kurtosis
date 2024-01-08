@@ -82,9 +82,9 @@ func (t *serviceConfigFullTestCaseBackwardCompatible) Assert(typeValue builtin_a
 	}
 	require.Equal(t, expectedPublicPorts, serviceConfig.GetPublicPorts())
 
-	expectedFilesArtifactMap := map[string]string{
-		testFilesArtifactPath1: testFilesArtifactName1,
-		testFilesArtifactPath2: testFilesArtifactName2,
+	expectedFilesArtifactMap := map[string][]string{
+		testFilesArtifactPath1: {testFilesArtifactName1},
+		testFilesArtifactPath2: {testFilesArtifactName2},
 	}
 	require.NotNil(t, serviceConfig.GetFilesArtifactsExpansion())
 	require.Equal(t, expectedFilesArtifactMap, serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
