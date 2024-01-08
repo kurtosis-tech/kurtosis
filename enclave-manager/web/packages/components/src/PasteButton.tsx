@@ -52,6 +52,7 @@ export const PasteButton = <IsIconButton extends boolean>({
         leftIcon={<FiClipboard />}
         size={"xs"}
         colorScheme={"darkBlue"}
+        variant={"outline"}
         onClick={handlePasteClick}
         isLoading={isLoading}
         {...buttonProps}

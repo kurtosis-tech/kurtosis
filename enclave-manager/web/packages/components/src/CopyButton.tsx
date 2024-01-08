@@ -49,7 +49,14 @@ export const CopyButton = <IsIconButton extends boolean>({
     );
   } else {
     return (
-      <Button leftIcon={<FiCopy />} size={"xs"} colorScheme={"darkBlue"} onClick={handleCopyClick} {...buttonProps}>
+      <Button
+        leftIcon={<FiCopy />}
+        size={"xs"}
+        colorScheme={"darkBlue"}
+        variant={"outline"}
+        onClick={handleCopyClick}
+        {...buttonProps}
+      >
         {text || "Copy"}
       </Button>
     );
