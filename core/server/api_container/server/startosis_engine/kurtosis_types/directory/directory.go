@@ -18,7 +18,8 @@ const (
 	PersistentKeyAttr = "persistent_key"
 	SizeKeyAttr       = "size"
 
-	atleastOneMegabyte = 1
+	atleastOneMegabyte       = 1
+	megaByteToByteMultiplier = 1024 * 1024
 )
 
 func NewDirectoryType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -159,5 +160,5 @@ func (directory *Directory) GetSizeOrDefault() (int64, *startosis_errors.Interpr
 	if !ok {
 		return 0, startosis_errors.NewInterpretationError("Couldn't convert size '%v' to int64", size)
 	}
-	return sizeInt64, nil
+	return sizeInt64 * megaByteToByteMultiplier, nil
 }
