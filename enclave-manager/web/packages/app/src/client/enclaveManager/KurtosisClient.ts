@@ -23,11 +23,20 @@ import {
   InspectFilesArtifactContentsRequest,
   RunStarlarkPackageRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
+import { components, paths } from "kurtosis-sdk/src/engine/rest_api_bindings/types";
 import { assertDefined, asyncResult, isDefined, RemoveFunctions } from "kurtosis-ui-components";
+import createClient from "openapi-fetch";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
+import { createWSClient } from "./websocketClient/WebSocketClient";
+
+type KurtosisRestClient = ReturnType<typeof createClient<paths>>;
+type KurtosisWebsocketClient = ReturnType<typeof createWSClient<paths>>;
+export type KurtosisRestApiTypes = components["schemas"];
 
 export abstract class KurtosisClient {
   protected readonly client: PromiseClient<typeof KurtosisEnclaveManagerServer>;
+  protected readonly restClient: KurtosisRestClient;
+  protected readonly websocketClient: KurtosisWebsocketClient;
 
   /* Full URL of the browser containing the EM UI covering two use cases:
    * In local-mode this is: http://localhost:9711, http://localhost:3000 (with `yarn start` / dev mode)
@@ -45,8 +54,16 @@ export abstract class KurtosisClient {
    * */
   protected readonly baseApplicationUrl: URL;
 
-  constructor(client: PromiseClient<typeof KurtosisEnclaveManagerServer>, parentUrl: URL, childUrl: URL) {
+  constructor(
+    client: PromiseClient<typeof KurtosisEnclaveManagerServer>,
+    restClient: KurtosisRestClient,
+    websocketClient: KurtosisWebsocketClient,
+    parentUrl: URL,
+    childUrl: URL,
+  ) {
     this.client = client;
+    this.restClient = restClient;
+    this.websocketClient = websocketClient;
     this.cloudUrl = parentUrl;
     this.baseApplicationUrl = childUrl;
     this.getParentRequestedRoute();
@@ -73,7 +90,45 @@ export abstract class KurtosisClient {
   }
 
   async checkHealth() {
+    console.log(await this.restClient.GET("/engine/info"));
     return asyncResult(this.client.check({}, this.getHeaderOptions()));
+  }
+
+  async *getServiceLogsWS(
+    abortController: AbortController,
+    enclave: RemoveFunctions<EnclaveFullInfo>,
+    serviceUUID: string,
+    followLogs?: boolean,
+    numLogLines?: number,
+    returnAllLogs?: boolean,
+    conjunctiveFilters?: LogLineFilter[],
+  ): AsyncGenerator<KurtosisRestApiTypes["ServiceLogs"]> {
+    // TODO (edgar) do proper filter conversion
+    // const filters: KurtosisRestApiTypes["LogLineFilter"][] = conjunctiveFilters!.map(x => {return {operator: x.operator, text_pattern: x.textPattern};});
+    const logs = this.websocketClient.WS("/enclaves/{enclave_identifier}/services/{service_identifier}/logs", {
+      params: {
+        path: {
+          enclave_identifier: enclave.enclaveUuid,
+          service_identifier: serviceUUID,
+        },
+        query: {
+          follow_logs: followLogs,
+          num_log_lines: numLogLines,
+          return_all_logs: returnAllLogs,
+          // conjunctive_filters: filters
+        },
+      },
+      abortSignal: abortController.signal,
+    });
+
+    for await (const lineGroup of logs) {
+      if (lineGroup.error) {
+        return;
+      }
+      if (lineGroup.data) {
+        yield lineGroup.data;
+      }
+    }
   }
 
   async getEnclaves() {

@@ -43,19 +43,19 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
   const handleGetAllLogs = useCallback(
     async function* () {
       const abortController = new AbortController();
-      const logs = await kurtosisClient.getServiceLogs(abortController, enclave, [service], false, 0, true);
+      const logs = kurtosisClient.getServiceLogsWS(abortController, enclave, service.serviceUuid, false, 0, true);
       try {
         for await (const lineGroup of logs) {
-          const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
+          const lineGroupForService = lineGroup.service_logs_by_service_uuid![service.serviceUuid];
           assertDefined(
             lineGroupForService,
-            `Log line response included a line group withouth service ${
-              service.serviceUuid
-            }: ${lineGroup.toJsonString()}`,
+            `Log line response included a line group without service ${service.serviceUuid}: ${JSON.stringify(
+              lineGroup,
+            )}`,
           );
           const parsedLogLines = serviceLogLineToLogLineMessage(
             lineGroupForService.line,
-            lineGroupForService.timestamp,
+            Timestamp.fromDate(new Date(lineGroupForService.timestamp)),
           );
           yield parsedLogLines.map((line) => line.message || "").join("\n");
         }
@@ -75,11 +75,19 @@ export const ServiceLogs = ({ enclave, service }: ServiceLogsProps) => {
       if (isRetry) setLogLines([]);
       console.info("Created a new logging stream");
       try {
-        for await (const lineGroup of await kurtosisClient.getServiceLogs(abortController, enclave, [service])) {
+        for await (const lineGroup of kurtosisClient.getServiceLogsWS(
+          abortController,
+          enclave,
+          service.serviceUuid,
+          true,
+        )) {
           if (canceled) return;
-          const lineGroupForService = lineGroup.serviceLogsByServiceUuid[service.serviceUuid];
+          const lineGroupForService = lineGroup.service_logs_by_service_uuid![service.serviceUuid];
           if (!isDefined(lineGroupForService)) continue;
-          const parsedLines = serviceLogLineToLogLineMessage(lineGroupForService.line, lineGroupForService.timestamp);
+          const parsedLines = serviceLogLineToLogLineMessage(
+            lineGroupForService.line,
+            Timestamp.fromDate(new Date(lineGroupForService.timestamp)),
+          );
           setLogLines((logLines) => [...logLines, ...parsedLines]);
         }
       } catch (error: any) {
