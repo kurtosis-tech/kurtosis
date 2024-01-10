@@ -738,7 +738,7 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	packageIdFromArgs string,
 	clonePackage bool,
 	moduleContentIfLocal []byte, // empty if clonePackage is set to true
-	requestedRelativePathToMainFile string, // could be empty
+	relativePathToMainFile string, // could be empty
 ) (
 	string, // Entrypoint script to execute
 	string, // Detected relative path (from package root) to main script
@@ -746,18 +746,15 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	map[string]string, // Replace options detected from [clonePackage] or [moduleContentIfLocal]
 	*startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
-	actualRelativePathToMainFile := requestedRelativePathToMainFile
 	var interpretationError *startosis_errors.InterpretationError
 
 	if clonePackage {
 		packageRootPathOnDisk, interpretationError = apicService.packageContentProvider.ClonePackage(packageIdFromArgs)
 	} else if moduleContentIfLocal != nil {
-		// TODO: remove this once UploadStarlarkPackage is called prior to calling RunStarlarkPackage by all consumers
-		//  of this API
+		// TODO: remove this once UploadStarlarkPackage is called prior to calling RunStarlarkPackage by all consumers of this API
 		packageRootPathOnDisk, interpretationError = apicService.packageContentProvider.StorePackageContents(packageIdFromArgs, bytes.NewReader(moduleContentIfLocal), doOverwriteExistingModule)
 	} else {
-		// We just need to retrieve the absolute path, the content will not be stored here since it has been uploaded
-		// prior to this call
+		// We just need to retrieve the absolute path, the content will not be stored here since it has been uploaded prior to this call
 		// This is used in the flow where we `replace` with a local call, in which case we need to store multiple packages on the APIC
 		// before we actually do the run
 		packageRootPathOnDisk, interpretationError = apicService.packageContentProvider.GetOnDiskAbsolutePackagePath(packageIdFromArgs)
@@ -766,17 +763,17 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 		return "", "", "", nil, interpretationError
 	}
 
-	// If kurtosis.yml exists in root, parse normally
+	// If kurtosis.yml exists in root, treat as kurtosis package
 	candidateKurtosisYmlAbsFilepath := path.Join(packageRootPathOnDisk, startosis_constants.KurtosisYamlName)
 	if _, err := os.Stat(candidateKurtosisYmlAbsFilepath); err == nil {
 		kurtosisYml, interpretationError := apicService.packageContentProvider.GetKurtosisYaml(packageRootPathOnDisk)
 		if interpretationError != nil {
 			return "", "", "", nil, interpretationError
 		}
-		if requestedRelativePathToMainFile == "" {
-			actualRelativePathToMainFile = startosis_constants.MainFileName
+		if relativePathToMainFile == "" {
+			relativePathToMainFile = startosis_constants.MainFileName
 		}
-		pathToMainFile := path.Join(packageRootPathOnDisk, actualRelativePathToMainFile)
+		pathToMainFile := path.Join(packageRootPathOnDisk, relativePathToMainFile)
 		if _, err := os.Stat(pathToMainFile); err != nil {
 			return "", "", "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageIdFromArgs, pathToMainFile)
 		}
@@ -784,19 +781,19 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 		if err != nil {
 			return "", "", "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageIdFromArgs, pathToMainFile)
 		}
-		return string(mainScriptToExecuteBytes), actualRelativePathToMainFile, kurtosisYml.PackageName, kurtosisYml.PackageReplaceOptions, nil
+		return string(mainScriptToExecuteBytes), relativePathToMainFile, kurtosisYml.PackageName, kurtosisYml.PackageReplaceOptions, nil
 	}
 
-	// If kurtosis.yml doesn't exist, assume that it's a Compose and treat as compose package
-	if requestedRelativePathToMainFile == "" { // what's this check doing? what is [relativePathToMainFile] for a docker compose package
+	// If kurtosis.yml doesn't exist, assume a Compose package and transpile compose into starlark
+	if relativePathToMainFile == "" {
 		for _, defaultComposeFilename := range defaultComposeFilenames {
 			candidateComposeAbsFilepath := path.Join(packageRootPathOnDisk, defaultComposeFilename)
 			if _, err := os.Stat(candidateComposeAbsFilepath); err == nil {
-				actualRelativePathToMainFile = defaultComposeFilename
+				relativePathToMainFile = defaultComposeFilename
 				break
 			}
 		}
-		if actualRelativePathToMainFile == "" {
+		if relativePathToMainFile == "" {
 			return "", "", "", nil, startosis_errors.NewInterpretationError(
 				"No '%s' file was found in the package root so fell back to Docker Compose package, but no "+
 					"default Compose files (%s) were found. Either add a '%s' file to the package root or add one of the "+
@@ -807,13 +804,13 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 			)
 		}
 	}
-	mainScriptToExecute, transpilationErr := docker_compose_transpiler.TranspileDockerComposePackageToStarlark(packageRootPathOnDisk, actualRelativePathToMainFile)
+	mainScriptToExecute, transpilationErr := docker_compose_transpiler.TranspileDockerComposePackageToStarlark(packageRootPathOnDisk, relativePathToMainFile)
 	if transpilationErr != nil {
 		return "", "", "", nil, startosis_errors.WrapWithInterpretationError(transpilationErr, "An error occurred transpiling the Docker Compose package '%v' to Starlark", packageIdFromArgs)
 	}
 
 	replacesForComposePackage := map[string]string{}
-	return mainScriptToExecute, actualRelativePathToMainFile, packageIdFromArgs, replacesForComposePackage, nil
+	return mainScriptToExecute, relativePathToMainFile, packageIdFromArgs, replacesForComposePackage, nil
 }
 
 func (apicService *ApiContainerService) runStarlark(

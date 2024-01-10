@@ -47,6 +47,9 @@ const (
 	osPathSeparatorString = string(os.PathSeparator)
 
 	dotRelativePathIndicatorString = "."
+
+	// TODO(kevin): This is a hack to get around the "only Github URLs" validation
+	composePackageIdPlaceholder = "github.com/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE"
 )
 
 // TODO(kevin) Remove this once package ID is detected ONLY the APIC side (i.e. the CLI doesn't need to tell the APIC what package ID it's using)
@@ -227,7 +230,10 @@ func getPackageNameAndReplaceOptions(packageRootPath string) (string, map[string
 				strings.Join(supportedDockerComposeYmlFilenames, ", "),
 			)
 		}
+		packageName = composePackageIdPlaceholder
+		packageReplaceOptions = map[string]string{}
 	}
+
 	return packageName, packageReplaceOptions, nil
 }
 

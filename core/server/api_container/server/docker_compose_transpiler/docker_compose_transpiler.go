@@ -69,11 +69,11 @@ var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtoco
 
 var CyclicalDependencyError = stacktrace.NewError("A cycle was detected in the service dependency graph.")
 
-func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRelativeFilepath string) (string, error) {
-	composeAbsFilepath := path.Join(packageAbsDirpath, composeRelativeFilepath)
+func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, relativePathToComposeFile string) (string, error) {
+	composeAbsFilepath := path.Join(packageAbsDirpath, relativePathToComposeFile)
 
 	// Useful for logging to prevent leaking internals of APIC
-	composeFilename := path.Base(composeRelativeFilepath)
+	composeFilename := path.Base(relativePathToComposeFile)
 
 	composeBytes, err := os.ReadFile(composeAbsFilepath)
 	if err != nil {
