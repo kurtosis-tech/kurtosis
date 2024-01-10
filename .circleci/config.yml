@@ -8,6 +8,13 @@ filters_ignore_main: &filters_ignore_main
       ignore:
         - main
 
+# Don't run on tags
+filters_ignore_tags: &filters_ignore_tags
+  filters:
+    branches:
+      ignore: /.*/
+    tags:
+      only: /^[0-9]+\.[0-9]+\.[0-9]+$/
 
 # cli cluster param used to run test suites against docker/kubernetes tests
 param_cli_cluster_backend: &param_cli_cluster_backend
@@ -92,7 +99,7 @@ run_prepare_testing_docker: &run_prepare_testing_docker
 # Steps to prepare a job for Docker testing
 steps_prepare_testing_docker: &steps_prepare_testing_docker
   steps:
-    - <<: *run_prepare_testing_docker 
+    - <<: *run_prepare_testing_docker
 
 # Run steps to dump kurtosis enclaves from docker
 run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
@@ -204,6 +211,9 @@ parameters:
   file-artifacts-expander-image-filename:
     type: string
     default: "file-artifacts-expander-image.tgz"
+  enclave-manager-yarn-cache-key-prefix:
+    type: string
+    default: "enclave-manager_yarn"
   engine-server-image-filename:
     type: string
     default: "engine-server-image.tgz"
@@ -418,6 +428,33 @@ jobs:
           paths:
             - "<< pipeline.parameters.core-server-image-filename >>"
 
+  build_enclave_manager_webapp:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.enclave-manager-yarn-cache-key-prefix>>-{{ checksum "enclave-manager/api/typescript/yarn.lock" }}-{{ checksum "enclave-manager/web/yarn.lock" }}
+
+      - run: npm install -g yarn
+
+      - run: |
+          enclave-manager/scripts/build.sh
+
+      - save_cache:
+          key: << pipeline.parameters.enclave-manager-yarn-cache-key-prefix>>-{{ checksum "enclave-manager/api/typescript/yarn.lock" }}-{{ checksum "enclave-manager/web/yarn.lock" }}
+          paths:
+            - "/home/circleci/.cache/yarn"
+
+      - persist_to_workspace:
+          root: engine/server
+          paths:
+            - webapp
+
   build_engine_launcher:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version >>"
@@ -439,6 +476,11 @@ jobs:
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
+
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - run: cp -R << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/webapp engine/server/webapp
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
@@ -936,7 +978,7 @@ jobs:
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
-      
+
       # Set up Kurtosis
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
@@ -980,7 +1022,7 @@ jobs:
           condition:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
-            # Restart the engine and make sure Traefik restarted and reconfigured properly 
+            # Restart the engine and make sure Traefik restarted and reconfigured properly
             - run: |
                 ${KURTOSIS_BINPATH} engine restart
                 enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
@@ -1178,6 +1220,10 @@ jobs:
           version="$(cat version.txt)"
           "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $version
 
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - run: cp -R << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/webapp engine/server/webapp
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -1353,6 +1399,9 @@ workflows:
               ignore:
                 - main
 
+      - build_enclave_manager_webapp:
+          <<: *filters_ignore_main
+
       - build_engine_launcher:
           filters:
             branches:
@@ -1361,6 +1410,8 @@ workflows:
       - build_engine_server:
           context:
             - docker-user
+          requires:
+            - build_enclave_manager_webapp
           filters:
             branches:
               ignore:
@@ -1486,16 +1537,14 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
+  publish:
+    jobs:
       # -- Artifact-publishing jobs --------------------------------
       - publish_kurtosis_sdk_rust:
           context:
             - crates-publisher
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
 
       - publish_kurtosis_api_typescript:
           context:
@@ -1510,39 +1559,28 @@ workflows:
           context:
             - npmjs-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
       - publish_files_artifacts_expander_image:
           context:
             - docker-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
       - publish_api_container_server_image:
           context:
             - docker-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
+
+      - build_enclave_manager_webapp:
+          <<: *filters_ignore_tags
 
       - publish_engine_server_image:
           context:
             - docker-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          requires:
+            - build_enclave_manager_webapp
+          <<: *filters_ignore_tags
 
       - push_cli_artifacts:
           context:
@@ -1555,10 +1593,6 @@ workflows:
             - publish_api_container_server_image
             - publish_engine_server_image
             - publish_files_artifacts_expander_image
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
 
       # -- End artifact-publishing jobs ----------------------------
