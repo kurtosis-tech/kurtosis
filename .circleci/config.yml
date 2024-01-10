@@ -433,8 +433,6 @@ jobs:
     steps:
       - checkout
 
-      - <<: *abort_job_if_only_docs_changes
-
       # Cache our dependencies
       - restore_cache:
           keys:
