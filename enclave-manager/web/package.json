@@ -31,6 +31,8 @@
     "analyze": "lerna run analyze",
     "cleanInstall": "rm -rf node_modules; rm -rf packages/*/node_modules; yarn install; lerna init",
     "clean": "lerna run clean",
+    "prebuild": "rm -rf ../../engine/server/webapp",
+    "postbuild": "cp -r packages/app/build/ ../../engine/server/webapp",
     "build": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags) lerna run --stream build",
     "build:cloudDev": "dotenv -e packages/app/.env.cloudDevelopment -- lerna run --stream build",
     "prettier": "prettier . --check",
