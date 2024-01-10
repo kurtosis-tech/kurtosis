@@ -40,7 +40,7 @@ import { HiStar } from "react-icons/hi";
 import { IoFilterSharp, IoPlay } from "react-icons/io5";
 import { MdBookmarkAdded } from "react-icons/md";
 import { useSearchParams } from "react-router-dom";
-import { ConfigureEnclaveModal } from "../enclaves/components/modals/ConfigureEnclaveModal";
+import { CreateOrConfigureEnclaveDrawer } from "../enclaves/components/configuration/drawer/CreateOrConfigureEnclaveDrawer";
 import { EnclavesContextProvider } from "../enclaves/EnclavesContext";
 import { useCatalogContext } from "./CatalogContext";
 
@@ -171,7 +171,7 @@ const CatalogImpl = ({ catalog }: CatalogImplProps) => {
         )}
         {configuringPackage && (
           <EnclavesContextProvider skipInitialLoad>
-            <ConfigureEnclaveModal
+            <CreateOrConfigureEnclaveDrawer
               isOpen={true}
               onClose={() => setConfiguringPackage(undefined)}
               kurtosisPackage={configuringPackage}

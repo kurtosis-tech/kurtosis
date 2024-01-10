@@ -1,6 +1,7 @@
 package docker_manager
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"net"
 
 	"github.com/docker/go-connections/nat"
@@ -32,6 +33,7 @@ type CreateAndStartContainerArgs struct {
 	containerInitEnabled                     bool
 	restartPolicy                            RestartPolicy
 	imageDownloadMode                        image_download_mode.ImageDownloadMode
+	user                                     *service_user.ServiceUser
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -59,6 +61,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	containerInitEnabled                     bool
 	restartPolicy                            RestartPolicy
 	imageDownloadMode                        image_download_mode.ImageDownloadMode
+	user                                     *service_user.ServiceUser
 }
 
 /*
@@ -93,6 +96,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		containerInitEnabled:                     false,
 		restartPolicy:                            NoRestart,
 		imageDownloadMode:                        image_download_mode.ImageDownloadMode_Missing,
+		user:                                     nil,
 	}
 }
 
@@ -121,6 +125,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		containerInitEnabled:                     builder.containerInitEnabled,
 		restartPolicy:                            builder.restartPolicy,
 		imageDownloadMode:                        builder.imageDownloadMode,
+		user:                                     builder.user,
 	}
 }
 
@@ -263,5 +268,10 @@ func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageAlways
 
 func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageIfMissing() *CreateAndStartContainerArgsBuilder {
 	builder.imageDownloadMode = image_download_mode.ImageDownloadMode_Missing
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithUser(user *service_user.ServiceUser) *CreateAndStartContainerArgsBuilder {
+	builder.user = user
 	return builder
 }

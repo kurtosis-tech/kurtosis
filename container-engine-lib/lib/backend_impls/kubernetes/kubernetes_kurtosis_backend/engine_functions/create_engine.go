@@ -28,8 +28,6 @@ const (
 	maxWaitForEngineContainerAvailabilityRetries         = 30
 	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
 	httpApplicationProtocol                              = "http"
-
-	restAPIPortHost = "engine"
 )
 
 var noWait *port_spec.Wait = nil
@@ -584,7 +582,7 @@ func getEngineIngressRules(
 ) ([]netv1.IngressRule, error) {
 	var ingressRules []netv1.IngressRule
 	ingressRule := netv1.IngressRule{
-		Host: restAPIPortHost,
+		Host: engine.RESTAPIPortHostHeader,
 		IngressRuleValue: netv1.IngressRuleValue{
 			HTTP: &netv1.HTTPIngressRuleValue{
 				Paths: []netv1.HTTPIngressPath{

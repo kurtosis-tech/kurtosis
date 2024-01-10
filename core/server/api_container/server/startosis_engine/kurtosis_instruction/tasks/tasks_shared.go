@@ -134,7 +134,7 @@ func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.S
 	return result
 }
 
-func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string]string, imageName string) *startosis_errors.ValidationError {
+func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string][]string, imageName string) *startosis_errors.ValidationError {
 	if storeSpecList != nil {
 		if err := validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList); err != nil {
 			return startosis_errors.WrapWithValidationError(err, "error occurred while validating file paths to copy into file artifact")
@@ -145,9 +145,11 @@ func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvi
 		}
 	}
 
-	for _, artifactName := range serviceDirpathsToArtifactIdentifiers {
-		if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
-			return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunPythonBuiltinName, artifactName)
+	for _, artifactNames := range serviceDirpathsToArtifactIdentifiers {
+		for _, artifactName := range artifactNames {
+			if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
+				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunPythonBuiltinName, artifactName)
+			}
 		}
 	}
 
@@ -268,6 +270,7 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		0,
 		0,
 		map[string]string{},
+		nil,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
