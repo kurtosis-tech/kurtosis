@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.4](https://github.com/kurtosis-tech/kurtosis/compare/0.86.3...0.86.4) (2024-01-10)
+
+
+### Bug Fixes
+
+* Don't abort build_enclave_manager_webapp with abort_job_if_only_docs_changes ([#2038](https://github.com/kurtosis-tech/kurtosis/issues/2038)) ([150eb5f](https://github.com/kurtosis-tech/kurtosis/commit/150eb5ffb9aee97d12e109454455797c1f0d7f3a))
+
 ## [0.86.3](https://github.com/kurtosis-tech/kurtosis/compare/0.86.2...0.86.3) (2024-01-10)
 
 
