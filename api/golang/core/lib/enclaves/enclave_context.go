@@ -154,37 +154,9 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
-	var packageName string
-	var packageReplaceOptions map[string]string
-	// use kurtosis package if it exists
-	if _, err := os.Stat(path.Join(packageRootPath, kurtosisYamlFilename)); err == nil {
-		kurtosisYml, err := getKurtosisYaml(packageRootPath)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis yaml file from path '%s'", packageRootPath)
-		}
-		packageName = kurtosisYml.PackageName
-		packageReplaceOptions = kurtosisYml.PackageReplaceOptions
-	} else {
-		// use compose package, if it exists
-		composeAbsFilepath := ""
-		for _, candidateComposeFilename := range supportedDockerComposeYmlFilenames {
-			candidateComposeAbsFilepath := path.Join(packageRootPath, candidateComposeFilename)
-			if _, err := os.Stat(candidateComposeAbsFilepath); err == nil {
-				composeAbsFilepath = candidateComposeAbsFilepath
-				break
-			}
-		}
-		if composeAbsFilepath == "" {
-			return nil, nil, stacktrace.NewError(
-				"Neither a '%s' file nor one of the default Compose files (%s) was found in the package root; at least one of these is required",
-				kurtosisYamlFilename,
-				strings.Join(supportedDockerComposeYmlFilenames, ", "),
-			)
-		}
-
-		// TODO(kevin): This is a hack, to get around the "only Github URLs" validation!
-		packageName = "github.com/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE"
-		packageReplaceOptions = make(map[string]string)
+	packageName, packageReplaceOptions, err := getPackageNameAndReplaceOptions(packageRootPath)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(
@@ -221,6 +193,42 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 	go runReceiveStarlarkResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
 	executionStartedSuccessfully = true
 	return starlarkResponseLineChan, cancelCtxFunc, nil
+}
+
+// Determines the package name and replace options based on [packageRootPath]
+// If a kurtosis.yml is detected, package is a kurtosis package
+// If a valid [supportedDockerComposeYaml] is detected, package is a docker compose package
+func getPackageNameAndReplaceOptions(packageRootPath string) (string, map[string]string, error) {
+	var packageName string
+	var packageReplaceOptions map[string]string
+
+	// use kurtosis package if it exists
+	if _, err := os.Stat(path.Join(packageRootPath, kurtosisYamlFilename)); err == nil {
+		kurtosisYml, err := getKurtosisYaml(packageRootPath)
+		if err != nil {
+			return "", map[string]string{}, stacktrace.Propagate(err, "An error occurred getting Kurtosis yaml file from path '%s'", packageRootPath)
+		}
+		packageName = kurtosisYml.PackageName
+		packageReplaceOptions = kurtosisYml.PackageReplaceOptions
+	} else {
+		// use compose package if it exists
+		composeAbsFilepath := ""
+		for _, candidateComposeFilename := range supportedDockerComposeYmlFilenames {
+			candidateComposeAbsFilepath := path.Join(packageRootPath, candidateComposeFilename)
+			if _, err := os.Stat(candidateComposeAbsFilepath); err == nil {
+				composeAbsFilepath = candidateComposeAbsFilepath
+				break
+			}
+		}
+		if composeAbsFilepath == "" {
+			return "", map[string]string{}, stacktrace.NewError(
+				"Neither a '%s' file nor one of the default Compose files (%s) was found in the package root; at least one of these is required",
+				kurtosisYamlFilename,
+				strings.Join(supportedDockerComposeYmlFilenames, ", "),
+			)
+		}
+	}
+	return packageName, packageReplaceOptions, nil
 }
 
 func (enclaveCtx *EnclaveContext) uploadLocalStarlarkPackageDependencies(packageRootPath string, packageReplaceOptions map[string]string) error {
