@@ -72,10 +72,10 @@ services:
     ports: 
       - '80:80'
     volumes:
-     - ~/data:/data
+     - ./data:/data
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
-    plan.upload_files(src = "~/data", name = "web--volume0")
+    plan.upload_files(src = "./data", name = "web--volume0")
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/data": "web--volume0"}, env_vars={}))
 `, builtImageSuffix)
 
@@ -139,7 +139,7 @@ services:
     environment:
      NODE_ENV: "development"
     volumes:
-     - ~/data:/data
+     - ./data:/data
      - /project/node_modules:/node_modules
     entrypoint:
      - /bin/echo
@@ -148,7 +148,7 @@ services:
     command: ["echo", "Hello,", "World!"]
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
-    plan.upload_files(src = "~/data", name = "web--volume0")
+    plan.upload_files(src = "./data", name = "web--volume0")
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/data": "web--volume0", "/node_modules": Directory(persistent_key="volume1")}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], cmd=["echo", "Hello,", "World!"], env_vars={"NODE_ENV": "development"}))
 `, builtImageSuffix)
 
