@@ -1,37 +1,39 @@
 /// <reference types="cypress" />
-// ***********************************************
-// This example commands.ts shows you how to
-// create various custom commands and overwrite
-// existing commands.
-//
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-//
-//
-// -- This is a parent command --
-// Cypress.Commands.add('login', (email, password) => { ... })
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add('drag', { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add('dismiss', { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-//
-// declare global {
-//   namespace Cypress {
-//     interface Chainable {
-//       login(email: string, password: string): Chainable<void>
-//       drag(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-//       dismiss(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-//       visit(originalFn: CommandOriginalFn, url: string, options: Partial<VisitOptions>): Chainable<Element>
-//     }
-//   }
-// }
+
+export {};
+
+Cypress.Commands.add("goToEnclaveList", () => {
+  return cy.visit("http://localhost:9711")
+})
+
+Cypress.Commands.add('focusInputWithLabel', (label: string) => {
+  cy.contains("label", label, {matchCase: false})
+    .parents(".chakra-form-control")
+    .first()
+    .find("input")
+    .click()
+})
+
+Cypress.Commands.add('findCardWithName', (name: string) => {
+  return cy.contains(".chakra-card", name, {matchCase: false})
+})
+
+Cypress.Commands.add('deleteEnclave', (enclaveName: string) => {
+  cy.goToEnclaveList();
+  cy.contains("tr", enclaveName).find(".chakra-checkbox").click()
+  cy.contains("button", "Delete").click();
+  cy.contains("[role='dialog'] button", "Delete").click();
+  cy.contains("[role='dialog']", "Delete", {timeout: 10 * 1000}).should("not.exist")
+  cy.contains("tr", enclaveName).should("not.exist")
+})
+
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      deleteEnclave(enclaveName: string): Chainable<void>
+      focusInputWithLabel(label: string): Chainable<void>
+      findCardWithName(label: string): Chainable<JQuery<HTMLElement>>
+      goToEnclaveList(): Chainable<AUTWindow>
+    }
+  }
+}
