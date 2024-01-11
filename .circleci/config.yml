@@ -436,7 +436,7 @@ jobs:
       - run: |
           # If the current commit is not a tag and if there is no change (compared to main) of anything but docs, then skip this
           if (! git describe --exact-match) && git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md' ; then
-            echo Hello #circleci-agent step halt
+            circleci-agent step halt
           fi
 
       # Cache our dependencies
