@@ -121,7 +121,7 @@ test("Test valid Docker Compose package", async () => {
         expect(runResult.value.interpretationError).not.toBeUndefined()
         expect(runResult.value.validationErrors).toEqual([])
         expect(runResult.value.executionError).toBeUndefined()
-        expect(runResult.value.instructions).toHaveLength(3)
+        expect(runResult.value.instructions).toHaveLength(4)
     } finally {
         stopEnclaveFunction()
     }
