@@ -10,7 +10,7 @@ const VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME = "valid-package-with-input"
 const VALID_PACKAGE_WITH_PACKAGE_INPUT_REL_PATH = "../../../../starlark/valid-kurtosis-package-with-input"
 
 const DOCKER_COMPOSE_PACKAGE_TEST_NAME = "docker-compose-package"
-const DOCKER_COMPOSE_PACKAGE_REL_PATH = "../../../starlark/docker-compose-package"
+const DOCKER_COMPOSE_PACKAGE_REL_PATH = "../../../../starlark/docker-compose-package"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
@@ -118,7 +118,7 @@ test("Test valid Docker Compose package", async () => {
             throw runResult.error
         }
 
-        expect(runResult.value.interpretationError).not.toBeUndefined()
+        expect(runResult.value.interpretationError).toBeUndefined()
         expect(runResult.value.validationErrors).toEqual([])
         expect(runResult.value.executionError).toBeUndefined()
         expect(runResult.value.instructions).toHaveLength(4)
