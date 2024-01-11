@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	imageBuildSpecPackageRelPath = "../../../starlark/image-build-package"
+	imageBuildSpecPackageRelPath              = "../../../starlark/image-build-package"
+	imageBuildSpecDockerComposePackageRelPath = "../../../starlark/docker-compose-package-img-build"
 )
 
 func (suite *StartosisPackageTestSuite) TestStartosisPackage_ImageBuildSpec() {

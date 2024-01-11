@@ -368,14 +368,10 @@ services:
    volumes:
      - "~/minecraft_data:/data"
 `)
-	expectedResult := `def run(plan):
-    plan.upload_files(src = "~/minecraft_data", name = "minecraft--volume0")
-    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": "minecraft--volume0"}, env_vars={"EULA": "TRUE"}, min_cpu=0, min_memory=0))
-`
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
-	require.NoError(t, err)
-	require.Equal(t, expectedResult, result)
+	// Returns error because '~' indicates the user is trying to reference their home path which is outside of the package
+	_, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	require.Error(t, err)
 }
 
 // https://github.com/docker/awesome-compose/tree/master/angular
@@ -509,13 +505,13 @@ services:
     ports:
       - '8000:8000'
     volumes:
-      - .:/code
+      - ./code:/code
     depends_on:
       - redis
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
-    plan.upload_files(src = ".", name = "web--volume0")
+    plan.upload_files(src = "./code", name = "web--volume0")
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%v", build_context_dir=".", target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP")}, files={"/code": "web--volume0"}, env_vars={}))
 `, builtImageSuffix)
 

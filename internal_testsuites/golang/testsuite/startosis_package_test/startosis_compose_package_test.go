@@ -6,8 +6,7 @@ import (
 )
 
 const (
-	simpleDockerComposePackageRelPath         = "../../../starlark/docker-compose-package"
-	imageBuildSpecDockerComposePackageRelPath = "../../../starlark/docker-compose-package-img-build"
+	simpleDockerComposePackageRelPath = "../../../starlark/docker-compose-package"
 )
 
 func (suite *StartosisPackageTestSuite) TestStartosisPackage_DockerComposePackage() {
@@ -25,5 +24,5 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_DockerComposePackag
 	expectedScriptOutputSubstring := `Service 'simple' added with service UUID `
 
 	require.Contains(t, string(runResult.RunOutput), expectedScriptOutputSubstring)
-	require.Len(t, runResult.Instructions, 4)
+	require.Len(t, runResult.Instructions, 3)
 }
