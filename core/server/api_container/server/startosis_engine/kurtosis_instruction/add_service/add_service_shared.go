@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -70,13 +71,27 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
 	}
 
+	if persistentDirectories := serviceConfig.GetPersistentDirectories(); persistentDirectories != nil {
+		for _, directory := range persistentDirectories.ServiceDirpathToPersistentDirectory {
+			if !service_directory.IsPersistentKeyValid(directory.PersistentKey) {
+				return startosis_errors.NewValidationError(invalidPersistentKeyErrorText(directory.PersistentKey))
+			}
+			if validatorEnvironment.DoesPersistentKeyExist(directory.PersistentKey) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
+				return startosis_errors.NewValidationError("There was an error validating '%s' as persistent key '%s' already exists inside the enclave", serviceName, directory.PersistentKey)
+			}
+			validatorEnvironment.AddPersistentKey(directory.PersistentKey)
+		}
+	}
+
 	if validatorEnvironment.DoesServiceNameExist(serviceName) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
 		return startosis_errors.NewValidationError("There was an error validating '%s' as service with the name '%s' already exists inside the package. Adding two different services with the same name isn't allowed; we recommend prefixing/suffixing the two service names or using two different names entirely.", AddServiceBuiltinName, serviceName)
 	}
 	if serviceConfig.GetFilesArtifactsExpansion() != nil {
-		for _, artifactName := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-			if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
-				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
+		for _, artifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, artifactName := range artifactNames {
+				if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
+					return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
+				}
 			}
 		}
 	}
@@ -114,6 +129,16 @@ func invalidServiceNameErrorText(
 		"Service name '%v' is invalid as it contains disallowed characters. Service names must adhere to the RFC 1035 standard, specifically implementing this regex and be 1-63 characters long: %s. This means the service name must only contain lowercase alphanumeric characters or '-', and must start with a lowercase alphabet and end with a lowercase alphanumeric character.",
 		serviceName,
 		service.WordWrappedServiceNameRegex,
+	)
+}
+
+func invalidPersistentKeyErrorText(
+	persistentKey service_directory.DirectoryPersistentKey,
+) string {
+	return fmt.Sprintf(
+		"Persistent Key '%v' is invalid as it contains disallowed characters. Persistent Key must adhere to the RFC 1035 standard, specifically implementing this regex and be 1-63 characters long: %s. This means the service name must only contain lowercase alphanumeric characters or '-', and must start with a lowercase alphabet and end with a lowercase alphanumeric character.",
+		persistentKey,
+		service_directory.WordWrappedPersistentKeyRegex,
 	)
 }
 
@@ -187,6 +212,7 @@ func replaceMagicStrings(
 		serviceConfig.GetMinCPUAllocationMillicpus(),
 		serviceConfig.GetMinMemoryAllocationMegabytes(),
 		serviceConfig.GetLabels(),
+		serviceConfig.GetUser(),
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating a service config")

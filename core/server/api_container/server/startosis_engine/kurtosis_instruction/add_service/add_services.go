@@ -259,9 +259,11 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 		// Check whether one file as been updated - if yes the instruction will need to be rerun
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
 		if filesArtifactsExpansion != nil {
-			for _, filesArtifactName := range filesArtifactsExpansion.ServiceDirpathsToArtifactIdentifiers {
-				if enclaveComponents.HasFilesArtifactBeenUpdated(filesArtifactName) {
-					atLeastOneFileHasBeenUpdated = true
+			for _, filesArtifactNames := range filesArtifactsExpansion.ServiceDirpathsToArtifactIdentifiers {
+				for _, filesArtifactName := range filesArtifactNames {
+					if enclaveComponents.HasFilesArtifactBeenUpdated(filesArtifactName) {
+						atLeastOneFileHasBeenUpdated = true
+					}
 				}
 			}
 		}

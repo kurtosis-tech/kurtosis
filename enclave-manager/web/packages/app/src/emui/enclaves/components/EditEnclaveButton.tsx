@@ -4,7 +4,7 @@ import { isDefined } from "kurtosis-ui-components";
 import { useState } from "react";
 import { FiEdit2 } from "react-icons/fi";
 import { EnclaveFullInfo } from "../types";
-import { ConfigureEnclaveModal } from "./modals/ConfigureEnclaveModal";
+import { CreateOrConfigureEnclaveDrawer } from "./configuration/drawer/CreateOrConfigureEnclaveDrawer";
 import { PackageLoadingModal } from "./modals/PackageLoadingModal";
 
 type EditEnclaveButtonProps = ButtonProps & {
@@ -13,11 +13,13 @@ type EditEnclaveButtonProps = ButtonProps & {
 
 export const EditEnclaveButton = ({ enclave, ...buttonProps }: EditEnclaveButtonProps) => {
   const [showPackageLoader, setShowPackageLoader] = useState(false);
+  const [showEnclaveConfiguration, setShowEnclaveConfiguration] = useState(false);
   const [kurtosisPackage, setKurtosisPackage] = useState<KurtosisPackage>();
 
   const handlePackageLoaded = (kurtosisPackage: KurtosisPackage) => {
     setShowPackageLoader(false);
     setKurtosisPackage(kurtosisPackage);
+    setShowEnclaveConfiguration(true);
   };
 
   if (!isDefined(enclave.starlarkRun)) {
@@ -57,14 +59,15 @@ export const EditEnclaveButton = ({ enclave, ...buttonProps }: EditEnclaveButton
       {showPackageLoader && (
         <PackageLoadingModal packageId={enclave.starlarkRun.value.packageId} onPackageLoaded={handlePackageLoaded} />
       )}
-      {isDefined(kurtosisPackage) && (
-        <ConfigureEnclaveModal
-          isOpen={true}
-          onClose={() => setKurtosisPackage(undefined)}
-          kurtosisPackage={kurtosisPackage}
-          existingEnclave={enclave}
-        />
-      )}
+      <CreateOrConfigureEnclaveDrawer
+        isOpen={showEnclaveConfiguration}
+        onClose={() => {
+          setKurtosisPackage(undefined);
+          setShowEnclaveConfiguration(false);
+        }}
+        kurtosisPackage={kurtosisPackage}
+        existingEnclave={enclave}
+      />
     </>
   );
 };

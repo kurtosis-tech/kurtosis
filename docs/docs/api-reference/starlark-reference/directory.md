@@ -5,12 +5,12 @@ sidebar_label: Directory
 
 The `Directory` constructor creates a `Directory` object that represents a directory inside an existing service (see
 the [ServiceConfig][service-config] object).
-Directory object can be either a files artifact or a persistent directory, depending on the arguments passed to the 
+Directory object can be a files artifacts list or a persistent directory, depending on the arguments passed to the 
 constructor.
 
 ```python
 file_artifact_directory = Directory(
-    artifact_name=files_artifact_1,
+    artifact_names=[files_artifact_1, files_artifact_2] 
 )
 # Or:
 persistent_directory = Directory(
@@ -18,13 +18,16 @@ persistent_directory = Directory(
 )
 ```
 
-A directory composed of a files artifact will be automatically provisioned with the given files artifact content. In 
-the above example, `files_artifact_1` is a files artifact name. (see [upload_files][upload-files-reference], 
+A directory composed of one or many files artifacts will be automatically provisioned with the given files artifacts content. In 
+the above examples, `files_artifact_1` and `files_artifact_2` are files artifact names. (see [upload_files][upload-files-reference], 
 [render_templates][render-templates-reference] and [store_service_files][store-service-reference] to learn more about 
 on how to create file artifacts). 
 
+:::warning
+Take into account when using multiple file artifacts, like the example, if both files artifact contains a file or folder with the same name this will end up overwritten.
+
 A persistent directory, as its name indicates, persists over service updates and restarts. It is uniquely identified 
-by its `persistent_key` and the service ID on which it is being used (a persistent directory cannot be shared across
+by its `persistent_key` (a persistent directory cannot be shared across
 multiple services). When it is first created, it will be empty. The service can write anything in it. When the service 
 gets updated, the data in it persists. It is particularly useful for a service's data directory, logs directory, etc.
 

@@ -15,6 +15,9 @@ const (
 	//  be stored in the port spec label
 	KurtosisInternalContainerGrpcPortId = "grpc"
 
+	// The ID of the REST API port.
+	KurtosisInternalContainerRESTAPIPortId = "rest-api"
+
 	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported)
 	EngineTransportProtocol = port_spec.TransportProtocol_TCP
 

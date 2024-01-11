@@ -3,7 +3,7 @@ import { useState } from "react";
 import { isDefined } from "./utils";
 
 type HoverLineTabListProps = {
-  tabs: string[];
+  tabs: readonly string[];
   activeTab: string;
 };
 

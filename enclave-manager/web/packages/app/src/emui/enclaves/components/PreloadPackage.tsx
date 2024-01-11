@@ -1,7 +1,7 @@
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { isDefined } from "kurtosis-ui-components";
 import { useSearchParams } from "react-router-dom";
-import { KURTOSIS_PACKAGE_ID_URL_ARG } from "./modals/constants";
+import { KURTOSIS_PACKAGE_ID_URL_ARG } from "./configuration/drawer/constants";
 import { PackageLoadingModal } from "./modals/PackageLoadingModal";
 
 type PreloadEnclaveProps = {

@@ -36,7 +36,7 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/itchyny/gojq v0.12.9
 	github.com/joho/godotenv v1.5.1
-	github.com/kurtosis-tech/kurtosis/utils v0.0.0-00010101000000-000000000000
+	github.com/kurtosis-tech/kurtosis/utils v0.0.0-20240104153602-385833de9d76
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
@@ -55,7 +55,7 @@ require (
 	github.com/acomagu/bufpipe v1.0.3 // indirect
 	github.com/bytedance/sonic v1.10.0-rc3 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
-	github.com/cloudflare/circl v1.3.3 // indirect
+	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/containerd/containerd v1.7.2 // indirect
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect

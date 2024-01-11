@@ -88,7 +88,13 @@ const JsonAndYamlCodeEditor = <
     <Flex flexDirection={"column"} gap={"10px"}>
       <ButtonGroup>
         <FormatButton size="xs" onClick={handleFormatClick} isLoading={isWorking} />
-        <Button size={"xs"} colorScheme={"darkBlue"} onClick={handleConvertClick} leftIcon={<FiCode />}>
+        <Button
+          size={"xs"}
+          colorScheme={"darkBlue"}
+          variant={"outline"}
+          onClick={handleConvertClick}
+          leftIcon={<FiCode />}
+        >
           Switch to {isProbablyJson ? "YAML" : "JSON"}
         </Button>
       </ButtonGroup>

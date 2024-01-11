@@ -48,13 +48,14 @@ var (
 	testPublicPortProtocol        = port_spec.TransportProtocol_TCP
 	testPublicApplicationProtocol = "https"
 
-	testFilesArtifactPath1      = "path/to/file/1"
-	testFilesArtifactName1      = "file_1"
-	testFilesArtifactPath2      = "path/to/file/2"
-	testFilesArtifactName2      = "file_2"
-	testPersistentDirectoryPath = "path/to/persistent/dir"
-	testPersistentDirectoryKey  = "persistent-dir-test"
-	testPersistentDirectorySize = int64(30)
+	testFilesArtifactPath1             = "path/to/file/1"
+	testFilesArtifactName1             = "file_1"
+	testFilesArtifactPath2             = "path/to/file/2"
+	testFilesArtifactName2             = "file_2"
+	testPersistentDirectoryPath        = "path/to/persistent/dir"
+	testPersistentDirectoryKey         = "persistent-dir-test"
+	testPersistentDirectorySize        = int64(30)
+	testPersistentDirectorySizeInBytes = testPersistentDirectorySize * 1024 * 1024
 
 	testEntryPointSlice = []string{
 		"127.0.0.0",

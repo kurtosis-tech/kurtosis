@@ -36,7 +36,7 @@ const SaveKurtosisPackageButtonImpl = <IsIconButton extends boolean>({
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.preventDefault();
+      e.stopPropagation();
       togglePackageSaved(kurtosisPackage);
     },
     [togglePackageSaved, kurtosisPackage],
