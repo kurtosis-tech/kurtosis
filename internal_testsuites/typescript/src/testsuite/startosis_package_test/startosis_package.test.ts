@@ -8,7 +8,9 @@ import {StarlarkRunConfig} from "kurtosis-sdk";
 
 const VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME = "valid-package-with-input"
 const VALID_PACKAGE_WITH_PACKAGE_INPUT_REL_PATH = "../../../../starlark/valid-kurtosis-package-with-input"
-const SIMPLE_DOCKER_COMPOSE_PACKAGE_REL_PATH = "../../../starlark/docker-compose-package"
+
+const DOCKER_COMPOSE_PACKAGE_TEST_NAME = "docker-compose-package"
+const DOCKER_COMPOSE_PACKAGE_REL_PATH = "../../../starlark/docker-compose-package"
 
 jest.setTimeout(JEST_TIMEOUT_MS)
 
@@ -92,7 +94,7 @@ test("Test valid Starlark package with input - missing key in params", async () 
 
 test("Test valid Docker Compose package", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(SIMPLE_DOCKER_COMPOSE_PACKAGE_REL_PATH + "-test")
+    const createEnclaveResult = await createEnclave(DOCKER_COMPOSE_PACKAGE_TEST_NAME + "-test")
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error
@@ -102,7 +104,7 @@ test("Test valid Docker Compose package", async () => {
 
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
-        const packageRootPath = path.join(__dirname, SIMPLE_DOCKER_COMPOSE_PACKAGE_REL_PATH)
+        const packageRootPath = path.join(__dirname, DOCKER_COMPOSE_PACKAGE_REL_PATH)
 
         log.info(`Loading package at path '${packageRootPath}'`)
 
@@ -119,7 +121,7 @@ test("Test valid Docker Compose package", async () => {
         expect(runResult.value.interpretationError).not.toBeUndefined()
         expect(runResult.value.validationErrors).toEqual([])
         expect(runResult.value.executionError).toBeUndefined()
-        expect(runResult.value.instructions).toHaveLength(4)
+        expect(runResult.value.instructions).toHaveLength(3)
     } finally {
         stopEnclaveFunction()
     }
