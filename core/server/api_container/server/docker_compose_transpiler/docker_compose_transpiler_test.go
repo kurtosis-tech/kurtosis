@@ -369,7 +369,7 @@ services:
      - "~/minecraft_data:/data"
 `)
 
-	// Returns error because '~' indicates the user is trying to reference their home path which is outside of the package
+	// Returns error because '~' indicates the user is trying to reference their home path which is outside the package
 	_, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.Error(t, err)
 }
