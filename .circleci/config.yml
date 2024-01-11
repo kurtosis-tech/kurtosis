@@ -774,6 +774,41 @@ jobs:
               false
             fi
 
+  test_enclave_manager_web_ui:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      # Set up Kurtosis
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kurtosis-cli
+      # We don't send metrics to avoid polluting our logs
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      - run: "${KURTOSIS_BINPATH} analytics disable"
+
+      - <<: *run_prepare_testing_docker
+
+      - run: npm install -g yarn
+
+      - run: enclave-manager/api/scripts/build.sh
+
+      - run:
+          command: yarn cleanInstall
+          working_directory: enclave-manager/web
+
+      - run:
+          command: yarn cypress:ete
+          working_directory: enclave-manager/web
+
+
   test_basic_cli_functionality:
     executor: ubuntu_vm
     parameters:

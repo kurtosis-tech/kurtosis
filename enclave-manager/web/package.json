@@ -33,6 +33,7 @@
     "cleanInstall": "rm -rf node_modules; rm -rf packages/*/node_modules; yarn install; lerna init",
     "clean": "lerna run clean",
     "cypress:open": "cypress open",
+    "cypress:ete": "cypress run --browser chrome",
     "prebuild": "rm -rf ../../engine/server/webapp",
     "postbuild": "cp -r packages/app/build/ ../../engine/server/webapp",
     "build": "REACT_APP_VERSION=$(git fetch origin --tags -q && git describe --dirty --match '[0-9]*' --tags) lerna run --stream build",
