@@ -21,7 +21,7 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_DockerComposePackag
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
 
-	expectedScriptOutputSubstring := `Service 'simple' added with service UUID `
+	expectedScriptOutputSubstring := `Service 'pgadmin' added with service UUID `
 
 	require.Contains(t, string(runResult.RunOutput), expectedScriptOutputSubstring)
 	require.Len(t, runResult.Instructions, 3)
