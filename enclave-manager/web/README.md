@@ -58,6 +58,15 @@ to auto apply prettier changes on file save, see instructions:
 - [Here](https://plugins.jetbrains.com/plugin/10456-prettier) for Intellij
 - [Here](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for vscode
 
+### `yarn cypress:ete`
+
+Run the cypress ETE tests
+
+### `yarn cypress:open`
+
+Open the cypress console for debugging/developing new cypress tests. The cypress test suite runs against the locally
+served EMUI from port 9711.
+
 ### `yarn eject`
 
 **Note: this is a one-way operation. Once you `eject`, you can’t go back!**
