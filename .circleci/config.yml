@@ -433,6 +433,11 @@ jobs:
     steps:
       - checkout
 
+      - run: |
+          if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
+            circleci-agent step halt
+          fi 
+
       # Cache our dependencies
       - restore_cache:
           keys:
