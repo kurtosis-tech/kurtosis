@@ -1452,6 +1452,18 @@ workflows:
 
       - build_cli:
           <<: *filters_ignore_main
+
+      - test_enclave_manager_web_ui:
+          name: "Test Basic Web UI Functionality in Docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
           cli-cluster-backend: "docker"
