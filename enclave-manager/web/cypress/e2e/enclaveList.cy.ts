@@ -10,30 +10,7 @@ describe("Enclave List", () => {
   });
 
   it("Can create and update an enclave", () => {
-    cy.goToEnclaveList();
-    cy.contains("Enclaves");
-
-    // Create a Postgres enclave
-    cy.contains("New Enclave").click();
-    cy.focused().type("postgres");
-    const configurationDrawer = cy.contains("[role='dialog']", "Enclave Configuration");
-    configurationDrawer.contains("Postgres Package").click();
-
-    configurationDrawer.focusInputWithLabel("Enclave name").type(enclaveName);
-
-    cy.contains("button", "Run").click();
-
-    cy.url({ timeout: 10 * 1000 }).should("match", /enclave\/[^/]+\/logs/);
-
-    cy.contains("button", "Edit").should("be.disabled");
-    cy.contains("Validating", { timeout: 10 * 1000 });
-    cy.contains("Script completed", { timeout: 10 * 1000 });
-    cy.contains("button", "Edit").should("be.enabled");
-
-    // Go to the enclave overview
-    cy.contains("Go to Enclave Overview").click();
-    cy.contains("[role='dialog'] button", "Continue").click();
-    cy.url().should("match", /enclave\/[^/]+/);
+    cy.createAndGoToEnclave(enclaveName);
     cy.findCardWithName("Name").contains(enclaveName);
     cy.contains("table", "postgres");
     cy.get("table").contains("button", "postgres").click();
@@ -47,5 +24,18 @@ describe("Enclave List", () => {
     cy.focusInputWithLabel("Max CPU").type("1024");
     cy.contains("button", "Update").click();
     cy.contains("Script completed", { timeout: 10 * 1000 });
+  });
+
+  it.only("Shows a new enclave in the list", () => {
+    cy.goToEnclaveList();
+    cy.contains("tr", enclaveName).should("not.exist");
+
+    cy.createAndGoToEnclave(enclaveName);
+
+    cy.goToEnclaveList();
+
+    cy.contains("tr", enclaveName).should("exist");
+    cy.contains("tr", enclaveName).contains("Running");
+    cy.contains("tr", enclaveName).contains("Postgres Package");
   });
 });
