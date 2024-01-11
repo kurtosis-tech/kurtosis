@@ -20,4 +20,4 @@ services:
     image: alpine:latest
     entrypoint: ["cat", "/tmp/file.txt"]
     volumes:
-      - "./internal_testsuites/resources/docker_import_cli_test/volume/:/tmp"
+      - "./volume:/tmp"
