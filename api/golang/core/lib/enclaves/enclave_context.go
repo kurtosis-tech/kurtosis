@@ -48,11 +48,11 @@ const (
 
 	dotRelativePathIndicatorString = "."
 
-	// TODO(kevin): This is a hack to get around the "only Github URLs" validation
+	// required to get around "only Github URLs" validation
 	composePackageIdPlaceholder = "github.com/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE"
 )
 
-// TODO(kevin) Remove this once package ID is detected ONLY the APIC side (i.e. the CLI doesn't need to tell the APIC what package ID it's using)
+// TODO Remove this once package ID is detected ONLY the APIC side (i.e. the CLI doesn't need to tell the APIC what package ID it's using)
 // Doing so requires that we upload completely anonymous packages to the APIC, and it figures things out from there
 var supportedDockerComposeYmlFilenames = []string{
 	"compose.yml",
