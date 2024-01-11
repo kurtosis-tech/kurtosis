@@ -234,10 +234,10 @@ parameters:
     default: "internal_testsuites/resources/render_template_cli_test/template.txt"
   dockerimport-cli-dotenv-relative-path:
     type: string
-    default: "internal_testsuites/starlark/docker-compose-package/.env"
+    default: "internal_testsuites/resources/docker_import_cli_test/.env"
   dockerimport-cli-dockerfile-relative-path:
     type: string
-    default: "internal_testsuites/starlark/docker-compose-package/docker-compose.yml"
+    default: "internal_testsuites/resources/docker_import_cli_test/docker-compose.yml"
   rendertemplate-cli-test-data-json-relative-path:
     type: string
     default: "internal_testsuites/resources/render_template_cli_test/data.json"
