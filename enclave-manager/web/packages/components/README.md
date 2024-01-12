@@ -1,7 +1,7 @@
 # Kurtosis UI Components
 
 This guide provides instructions and code snippets to help you get started with the Kurtosis UI Components. This library
-can be used to create 
+can be used to create
 
 ## Setting Up
 

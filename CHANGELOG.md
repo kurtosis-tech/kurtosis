@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.86.4](https://github.com/kurtosis-tech/kurtosis/compare/0.86.3...0.86.4) (2024-01-10)
+
+
+### Bug Fixes
+
+* Don't abort build_enclave_manager_webapp with abort_job_if_only_docs_changes ([#2038](https://github.com/kurtosis-tech/kurtosis/issues/2038)) ([150eb5f](https://github.com/kurtosis-tech/kurtosis/commit/150eb5ffb9aee97d12e109454455797c1f0d7f3a))
+
+## [0.86.3](https://github.com/kurtosis-tech/kurtosis/compare/0.86.2...0.86.3) (2024-01-10)
+
+
+### Bug Fixes
+
+* emui build ([#1826](https://github.com/kurtosis-tech/kurtosis/issues/1826)) ([9ebd0df](https://github.com/kurtosis-tech/kurtosis/commit/9ebd0df155c208f97896878f87102a1cf481ff51))
+
+## [0.86.2](https://github.com/kurtosis-tech/kurtosis/compare/0.86.1...0.86.2) (2024-01-09)
+
+
+### Bug Fixes
+
+* treat size value as megabytes ([#2030](https://github.com/kurtosis-tech/kurtosis/issues/2030)) ([af687cb](https://github.com/kurtosis-tech/kurtosis/commit/af687cb8797a4116a5dddff4fcc47ab10bc31633))
+
 ## [0.86.1](https://github.com/kurtosis-tech/kurtosis/compare/0.86.0...0.86.1) (2024-01-08)
 
 
