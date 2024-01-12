@@ -175,7 +175,8 @@ func getOnDiskImageBuildSpecPaths(
 
 	// get on disk directory path of Dockerfile
 	containerImageAbsoluteLocator := path.Join(contextDirAbsoluteLocator, defaultContainerImageFileName)
-	containerImagePathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsoluteFilePath(containerImageAbsoluteLocator)
+
+	containerImagePathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsolutePackageFilePath(containerImageAbsoluteLocator)
 	if interpretationErr != nil {
 		return "", "", interpretationErr
 	}
