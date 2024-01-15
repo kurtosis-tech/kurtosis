@@ -55,6 +55,9 @@ const (
 	defRunStr = "def run(plan):\n"
 
 	newStarlarkLineFmtStr = "    %s\n"
+
+	unixHomePathSymbol         = "~"
+	upstreamRelativePathSymbol = ".."
 )
 
 type ComposeService types.ServiceConfig
@@ -69,11 +72,11 @@ var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtoco
 
 var CyclicalDependencyError = stacktrace.NewError("A cycle was detected in the service dependency graph.")
 
-func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRelativeFilepath string) (string, error) {
-	composeAbsFilepath := path.Join(packageAbsDirpath, composeRelativeFilepath)
+func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, relativePathToComposeFile string) (string, error) {
+	composeAbsFilepath := path.Join(packageAbsDirpath, relativePathToComposeFile)
 
 	// Useful for logging to prevent leaking internals of APIC
-	composeFilename := path.Base(composeRelativeFilepath)
+	composeFilename := path.Base(relativePathToComposeFile)
 
 	composeBytes, err := os.ReadFile(composeAbsFilepath)
 	if err != nil {
@@ -436,8 +439,7 @@ func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.D
 // <abs path on host>:<path on container>:= create a persistent directory on container at <path on container>
 // <abs path on host> := create a persistent directory on container at <abs path on host>
 // <rel path on host> := create a persistent directory on container at <rel path on host>
-// Named volumes are currently not supported
-// TODO: Support named volumes https://docs.docker.com/storage/volumes/
+// Named volumes are treated https://docs.docker.com/storage/volumes/ as absolute paths persistence layers, and thus a persistent directory is created
 func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, error) {
 	filesArgSLDict := starlark.NewDict(len(composeVolumes))
 	filesArtifactsToUpload := map[string]string{}
@@ -448,6 +450,21 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 		var shouldPersist bool
 		switch volumeType {
 		case types.VolumeTypeBind:
+			// Handle case where home path is reference
+			if strings.Contains(volume.Source, unixHomePathSymbol) {
+				return nil, map[string]string{}, stacktrace.NewError(
+					"Volume path '%v' uses '%v', likely referencing home path on a unix filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
+						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path",
+					volume.Source, unixHomePathSymbol, volume.Source)
+			}
+			// Handle case where upstream relative path is reference
+			if strings.Contains(volume.Source, upstreamRelativePathSymbol) {
+				return nil, map[string]string{}, stacktrace.NewError(
+					"Volume path '%v' uses '%v', likely referencing an upstream path on a filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
+						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path within the package.",
+					volume.Source, upstreamRelativePathSymbol, volume.Source)
+			}
+
 			// Assume that if an absolute path is specified, user wants to use volume as a persistence layer
 			// Additionally, assume relative paths are read-only
 			shouldPersist = path.IsAbs(volume.Source)
