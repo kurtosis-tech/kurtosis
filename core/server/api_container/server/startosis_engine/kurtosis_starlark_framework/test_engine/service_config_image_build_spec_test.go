@@ -26,7 +26,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSp
 		Return(testBuildContextLocator, nil)
 
 	suite.packageContentProvider.EXPECT().
-		GetOnDiskAbsoluteFilePath(testContainerImageLocator).
+		GetOnDiskAbsolutePackageFilePath(testContainerImageLocator).
 		Times(1).
 		Return(testOnDiskContainerImagePath, nil)
 

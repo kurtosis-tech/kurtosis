@@ -622,7 +622,7 @@ The `upload_files` instruction packages the files specified by the [locator][loc
 ```python
 artifact_name = plan.upload_files(
     # The file to upload into a files artifact
-    # Must be a Kurtosis locator.
+    # Must be any GitHub URL without the '/blob/main' part.
     # MANDATORY
     src = "github.com/foo/bar/static/example.txt",
 
