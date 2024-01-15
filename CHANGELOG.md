@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.5](https://github.com/kurtosis-tech/kurtosis/compare/0.86.4...0.86.5) (2024-01-15)
+
+
+### Features
+
+* docker compose integration pt. 2 ([#2043](https://github.com/kurtosis-tech/kurtosis/issues/2043)) ([2a2793b](https://github.com/kurtosis-tech/kurtosis/commit/2a2793bfd6014ff375fc0bb27018df77a5af330f))
+
 ## [0.86.4](https://github.com/kurtosis-tech/kurtosis/compare/0.86.3...0.86.4) (2024-01-10)
 
 
