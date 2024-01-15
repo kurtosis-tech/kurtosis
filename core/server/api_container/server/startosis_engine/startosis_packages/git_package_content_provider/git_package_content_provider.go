@@ -127,20 +127,22 @@ func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(repositoryPathU
 		return "", interpretationError
 	}
 
-	if shouldOnlyAcceptsPackageFilePath {
-		// check whether kurtosis yaml exists in the path
-		maybeKurtosisYamlPath, interpretationError := getKurtosisYamlPathForFileUrl(pathToFileOnDisk, provider.repositoriesDir)
-		if interpretationError != nil {
-			return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while verifying whether '%v' belongs to a Kurtosis package.", repositoryPathURL)
-		}
+	if !shouldOnlyAcceptsPackageFilePath {
+		return pathToFileOnDisk, nil
+	}
 
-		if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
-			return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, repositoryPathURL, user_support_constants.HowImportWorksLink)
-		}
+	// check whether kurtosis yaml exists in the path
+	maybeKurtosisYamlPath, interpretationError := getKurtosisYamlPathForFileUrl(pathToFileOnDisk, provider.repositoriesDir)
+	if interpretationError != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while verifying whether '%v' belongs to a Kurtosis package.", repositoryPathURL)
+	}
 
-		if _, interpretationError = validateAndGetKurtosisYaml(maybeKurtosisYamlPath, provider.repositoriesDir); interpretationError != nil {
-			return "", interpretationError
-		}
+	if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
+		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, repositoryPathURL, user_support_constants.HowImportWorksLink)
+	}
+
+	if _, interpretationError = validateAndGetKurtosisYaml(maybeKurtosisYamlPath, provider.repositoriesDir); interpretationError != nil {
+		return "", interpretationError
 	}
 
 	return pathToFileOnDisk, nil
@@ -311,7 +313,7 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 		depth = depthAssumingBranchTagsCommitsAreSpecified
 	}
 
-	//TODO evaluate to use the GitHub client GetContents call instead, because we are cloning the entire repository with this approach
+	//TODO evaluate to use the GitHub client GetContents call instead, because we are cloning the entire repository's workspace with this approach
 	//TODO and the startosis package could be just a small sub-folder inside a giant mono-repository
 	//TODO and even now, in the upload_files instruction, we are allowing to upload files or a folder for any repository, but we are cloning the entire repository for this
 	repo, err := git.PlainClone(gitClonePath, isNotBareClone, &git.CloneOptions{
