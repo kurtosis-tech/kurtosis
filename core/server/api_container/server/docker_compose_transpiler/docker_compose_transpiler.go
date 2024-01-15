@@ -56,7 +56,8 @@ const (
 
 	newStarlarkLineFmtStr = "    %s\n"
 
-	unixHomePathSymbol = "~"
+	unixHomePathSymbol         = "~"
+	upstreamRelativePathSymbol = ".."
 )
 
 type ComposeService types.ServiceConfig
@@ -452,9 +453,16 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 			// Handle case where home path is reference
 			if strings.Contains(volume.Source, unixHomePathSymbol) {
 				return nil, map[string]string{}, stacktrace.NewError(
-					"Volume path '%v' uses '%v', likely referencing home path on a unix filesystem. Currently, Kurtosis does not support uploading from host filesystem."+
+					"Volume path '%v' uses '%v', likely referencing home path on a unix filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
 						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path",
 					volume.Source, unixHomePathSymbol, volume.Source)
+			}
+			// Handle case where upstream relative path is reference
+			if strings.Contains(volume.Source, upstreamRelativePathSymbol) {
+				return nil, map[string]string{}, stacktrace.NewError(
+					"Volume path '%v' uses '%v', likely referencing an upstream path on a filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
+						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path within the package.",
+					volume.Source, upstreamRelativePathSymbol, volume.Source)
 			}
 
 			// Assume that if an absolute path is specified, user wants to use volume as a persistence layer
