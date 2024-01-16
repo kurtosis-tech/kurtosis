@@ -108,7 +108,7 @@ export const PackageSelectBody = ({
 
   useEffect(() => {
     startCheckSinglePackage(searchTerm);
-  }, [searchTerm]);
+  }, [startCheckSinglePackage, searchTerm]);
 
   if (searchResults.isErr) {
     return (

@@ -44,9 +44,12 @@ export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
     });
   }, []);
 
-  const getSinglePackage = useCallback(async (packageName: string) => {
-    return await packageIndexerClient.readPackage(packageName);
-  }, []);
+  const getSinglePackage = useCallback(
+    async (packageName: string) => {
+      return await packageIndexerClient.readPackage(packageName);
+    },
+    [packageIndexerClient],
+  );
 
   useEffect(() => {
     refreshCatalog();
