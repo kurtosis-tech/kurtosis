@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
+	"net/mail"
 	"reflect"
 	"regexp"
 	"strings"
@@ -18,6 +19,17 @@ func NonEmptyString(value starlark.Value, argNameForLogging string) *startosis_e
 	}
 	if len(valueStr.GoString()) == 0 {
 		return startosis_errors.NewInterpretationError("Value for '%s' was an empty string. This is disallowed", argNameForLogging)
+	}
+	return nil
+}
+
+func ValidEmailString(value starlark.Value, argNameForLogging string) *startosis_errors.InterpretationError {
+	valueStr, ok := value.(starlark.String)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a starlark.String but was '%s'", argNameForLogging, reflect.TypeOf(value))
+	}
+	if _, err := mail.ParseAddress(valueStr.GoString()); err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "An error occurred while validating email address '%v' passed via attr '%v'", valueStr, argNameForLogging)
 	}
 	return nil
 }

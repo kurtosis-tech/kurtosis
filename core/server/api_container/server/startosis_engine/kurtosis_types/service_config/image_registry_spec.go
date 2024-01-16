@@ -7,29 +7,29 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
-	"net/mail"
 )
 
 const (
-	ImageRegistrySpecType = "ImageRegistrySpec"
+	ImageRegistrySpecTypeName = "ImageRegistrySpec"
 
-	RegistryAddrAttr = "registry"
-	UsernameAttr     = "username"
-	PasswordAttr     = "password"
-	EmailAttr        = "email"
+	RegistryImageAttr    = "image"
+	RegistryAddrAttr     = "registry"
+	RegistryUsernameAttr = "username"
+	RegistryPasswordAttr = "password"
+	RegistryEmailAttr    = "email"
 )
 
 func NewImageRegistrySpec() *kurtosis_type_constructor.KurtosisTypeConstructor {
 	return &kurtosis_type_constructor.KurtosisTypeConstructor{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
-			Name: ImageRegistrySpecType,
+			Name: ImageRegistrySpecTypeName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
-					Name:              ImageAttr,
+					Name:              RegistryImageAttr,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, ImageAttr)
+						return builtin_argument.NonEmptyString(value, RegistryImageAttr)
 					},
 				},
 				{
@@ -41,35 +41,27 @@ func NewImageRegistrySpec() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					},
 				},
 				{
-					Name:              EmailAttr,
+					Name:              RegistryEmailAttr,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						interpretationErr := builtin_argument.NonEmptyString(value, EmailAttr)
-						if interpretationErr != nil {
-							return interpretationErr
-						}
-						emailAddressAsStr := value.String()
-						if _, err := mail.ParseAddress(emailAddressAsStr); err != nil {
-							return startosis_errors.WrapWithInterpretationError(err, "An error occurred while validating email address '%v' passed via attr '%v'", emailAddressAsStr, EmailAttr)
-						}
-						return nil
+						return builtin_argument.ValidEmailString(value, RegistryEmailAttr)
 					},
 				},
 				{
-					Name:              UsernameAttr,
+					Name:              RegistryUsernameAttr,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, UsernameAttr)
+						return builtin_argument.NonEmptyString(value, RegistryUsernameAttr)
 					},
 				},
 				{
-					Name:              PasswordAttr,
+					Name:              RegistryPasswordAttr,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, UsernameAttr)
+						return builtin_argument.NonEmptyString(value, RegistryUsernameAttr)
 					},
 				},
 			},
@@ -79,7 +71,7 @@ func NewImageRegistrySpec() *kurtosis_type_constructor.KurtosisTypeConstructor {
 }
 
 func instantiateImageRegistrySpec(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
-	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ImageRegistrySpecType, arguments)
+	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ImageRegistrySpecTypeName, arguments)
 	if err != nil {
 		return nil, err
 	}
@@ -105,13 +97,13 @@ func (irs *ImageRegistrySpec) Copy() (builtin_argument.KurtosisValueType, error)
 
 // GetImage returns the image that needs to be pulled
 func (irs *ImageRegistrySpec) GetImage() (string, *startosis_errors.InterpretationError) {
-	image, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](ImageRegistrySpec{}.KurtosisValueTypeDefault, ImageAttr)
+	image, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](irs.KurtosisValueTypeDefault, RegistryImageAttr)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if !found {
 		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			ImageAttr, ImageRegistrySpecType)
+			RegistryImageAttr, ImageRegistrySpecTypeName)
 	}
 	imageStr := image.GoString()
 	return imageStr, nil
@@ -119,13 +111,13 @@ func (irs *ImageRegistrySpec) GetImage() (string, *startosis_errors.Interpretati
 
 // GetEmail returns the email address of the account for the registry
 func (irs *ImageRegistrySpec) GetEmail() (string, *startosis_errors.InterpretationError) {
-	email, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](ImageRegistrySpec{}.KurtosisValueTypeDefault, EmailAttr)
+	email, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](irs.KurtosisValueTypeDefault, RegistryEmailAttr)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if !found {
 		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			EmailAttr, ImageRegistrySpecType)
+			RegistryEmailAttr, ImageRegistrySpecTypeName)
 	}
 	emailStr := email.GoString()
 	return emailStr, nil
@@ -133,13 +125,13 @@ func (irs *ImageRegistrySpec) GetEmail() (string, *startosis_errors.Interpretati
 
 // GetPassword returns the password of the account for the registry
 func (irs *ImageRegistrySpec) GetPassword() (string, *startosis_errors.InterpretationError) {
-	password, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](ImageRegistrySpec{}.KurtosisValueTypeDefault, PasswordAttr)
+	password, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](irs.KurtosisValueTypeDefault, RegistryPasswordAttr)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if !found {
 		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			PasswordAttr, ImageRegistrySpecType)
+			RegistryPasswordAttr, ImageRegistrySpecTypeName)
 	}
 	passwordStr := password.GoString()
 	return passwordStr, nil
@@ -147,13 +139,13 @@ func (irs *ImageRegistrySpec) GetPassword() (string, *startosis_errors.Interpret
 
 // GetRegistryAddr returns the address of the registry from which the image has to be pulled
 func (irs *ImageRegistrySpec) GetRegistryAddr() (string, *startosis_errors.InterpretationError) {
-	registryAddr, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](ImageRegistrySpec{}.KurtosisValueTypeDefault, RegistryAddrAttr)
+	registryAddr, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](irs.KurtosisValueTypeDefault, RegistryAddrAttr)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if !found {
 		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			RegistryAddrAttr, ImageRegistrySpecType)
+			RegistryAddrAttr, ImageRegistrySpecTypeName)
 	}
 	registryAddrStr := registryAddr.GoString()
 	return registryAddrStr, nil
@@ -161,13 +153,13 @@ func (irs *ImageRegistrySpec) GetRegistryAddr() (string, *startosis_errors.Inter
 
 // GetUsername returns the address of the registry from which the image has to be pulled
 func (irs *ImageRegistrySpec) GetUsername() (string, *startosis_errors.InterpretationError) {
-	registryAddr, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](ImageRegistrySpec{}.KurtosisValueTypeDefault, UsernameAttr)
+	registryAddr, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](irs.KurtosisValueTypeDefault, RegistryUsernameAttr)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if !found {
 		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			UsernameAttr, ImageRegistrySpecType)
+			RegistryUsernameAttr, ImageRegistrySpecTypeName)
 	}
 	registryAddrStr := registryAddr.GoString()
 	return registryAddrStr, nil
