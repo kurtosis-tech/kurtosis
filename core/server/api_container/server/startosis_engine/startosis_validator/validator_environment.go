@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -14,6 +15,7 @@ import (
 type ValidatorEnvironment struct {
 	imagesToPull                  map[string]bool // "set" of images that need to be downloaded
 	imagesToBuild                 map[string]*image_build_spec.ImageBuildSpec
+	imagesToPullWithAuth          map[string]*image_registry_spec.ImageRegistrySpec
 	serviceNames                  map[service.ServiceName]ComponentExistence
 	artifactNames                 map[string]ComponentExistence
 	persistentKeys                map[service_directory.DirectoryPersistentKey]ComponentExistence
@@ -49,6 +51,7 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 		minMemoryByServiceName: map[service.ServiceName]compute_resources.MemoryInMegaBytes{},
 		minCPUByServiceName:    map[service.ServiceName]compute_resources.CpuMilliCores{},
 		imageDownloadMode:      imageDownloadMode,
+		imagesToPullWithAuth:   map[string]*image_registry_spec.ImageRegistrySpec{},
 	}
 }
 
@@ -58,6 +61,10 @@ func (environment *ValidatorEnvironment) AppendRequiredImagePull(containerImage 
 
 func (environment *ValidatorEnvironment) AppendRequiredImageBuild(containerImage string, imageBuildSpec *image_build_spec.ImageBuildSpec) {
 	environment.imagesToBuild[containerImage] = imageBuildSpec
+}
+
+func (environmemt *ValidatorEnvironment) AppendImageToPullWithAuth(containerImage string, registrySpec *image_registry_spec.ImageRegistrySpec) {
+	environmemt.imagesToPullWithAuth[containerImage] = registrySpec
 }
 
 func (environment *ValidatorEnvironment) GetNumberOfContainerImagesToProcess() uint32 {
