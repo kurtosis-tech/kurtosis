@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.7](https://github.com/kurtosis-tech/kurtosis/compare/0.86.6...0.86.7) (2024-01-16)
+
+
+### Bug Fixes
+
+* emui enable exact package name searching ([#2052](https://github.com/kurtosis-tech/kurtosis/issues/2052)) ([69c57ec](https://github.com/kurtosis-tech/kurtosis/commit/69c57ec4384ab85f87090ddd75037343ae99fee2))
+
 ## [0.86.6](https://github.com/kurtosis-tech/kurtosis/compare/0.86.5...0.86.6) (2024-01-16)
 
 
