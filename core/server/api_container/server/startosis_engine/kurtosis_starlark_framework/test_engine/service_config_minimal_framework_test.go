@@ -47,6 +47,7 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		nil,
+		nil,
 		map[string]*port_spec.PortSpec{},
 		map[string]*port_spec.PortSpec{},
 		nil,

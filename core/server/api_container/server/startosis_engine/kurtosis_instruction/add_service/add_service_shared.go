@@ -199,6 +199,7 @@ func replaceMagicStrings(
 	renderedServiceConfig, err := service.CreateServiceConfig(
 		serviceConfig.GetContainerImageName(),
 		serviceConfig.GetImageBuildSpec(),
+		serviceConfig.GetImageRegistrySpec(),
 		serviceConfig.GetPrivatePorts(),
 		serviceConfig.GetPublicPorts(),
 		entrypoints,
