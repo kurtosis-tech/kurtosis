@@ -63,9 +63,12 @@ export function transformFormArgsToKurtosisArgs(data: Record<string, any>, kurto
       case ArgumentValueType.STRING:
         return value;
       case ArgumentValueType.JSON:
-        return YAML.parse(value);
       default:
-        return value;
+        try {
+          return YAML.parse(value);
+        } catch (error: any) {
+          return value;
+        }
     }
   };
 
