@@ -3,6 +3,7 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"io"
 	"sync"
 
@@ -86,6 +87,10 @@ func NewDockerKurtosisBackend(
 
 func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	return backend.dockerManager.FetchImage(ctx, image, downloadMode)
+}
+
+func (backend *DockerKurtosisBackend) FetchImageWithAuth(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+	return false, "", nil
 }
 
 func (backend *DockerKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
