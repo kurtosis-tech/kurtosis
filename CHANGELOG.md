@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.86.6](https://github.com/kurtosis-tech/kurtosis/compare/0.86.5...0.86.6) (2024-01-16)
+
+
+### Features
+
+* allow any GitHub path on the `upload_files` instruction ([#2044](https://github.com/kurtosis-tech/kurtosis/issues/2044)) ([75fcf3f](https://github.com/kurtosis-tech/kurtosis/commit/75fcf3f208fc00c9352fc457b952d46c2c774bb2))
+
+
+### Bug Fixes
+
+* Make sure that the tags are fetched before testing with git describe ([#2047](https://github.com/kurtosis-tech/kurtosis/issues/2047)) ([b8e7afb](https://github.com/kurtosis-tech/kurtosis/commit/b8e7afb3e1fb3fc30c915b0e255e695cfb4ef3b9))
+
 ## [0.86.5](https://github.com/kurtosis-tech/kurtosis/compare/0.86.4...0.86.5) (2024-01-15)
 
 
