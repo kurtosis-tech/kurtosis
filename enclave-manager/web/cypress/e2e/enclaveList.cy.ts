@@ -26,7 +26,7 @@ describe("Enclave List", () => {
     cy.contains("Script completed", { timeout: 10 * 1000 });
   });
 
-  it.only("Shows a new enclave in the list", () => {
+  it("Shows a new enclave in the list", () => {
     cy.goToEnclaveList();
     cy.contains("tr", enclaveName).should("not.exist");
 

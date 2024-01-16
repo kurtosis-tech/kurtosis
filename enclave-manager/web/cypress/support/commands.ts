@@ -3,7 +3,7 @@
 export {};
 
 Cypress.Commands.add("goToEnclaveList", () => {
-  return cy.visit("http://localhost:9711");
+  return cy.visit("http://localhost:4000");
 });
 
 Cypress.Commands.add("goToCatalog", () => {
