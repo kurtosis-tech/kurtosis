@@ -2186,6 +2186,7 @@ func pullImage(dockerClient *client.Client, imageName string, registrySpec *imag
 		authConfig := registry.AuthConfig{
 			Username:      registrySpec.GetUsername(),
 			Password:      registrySpec.GetPassword(),
+			Email:         "",
 			Auth:          "",
 			ServerAddress: registrySpec.GetRegistryAddr(),
 			IdentityToken: "",
