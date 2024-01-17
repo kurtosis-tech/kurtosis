@@ -3,6 +3,9 @@ title: Packages
 sidebar_label: Packages
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 :::info
 Packages are a part of the Kurtosis package system. To read about the package system in detail, [see here][how-do-kurtosis-imports-work-explanation].
 :::
@@ -130,7 +133,7 @@ kurtosis run github.com/YOUR-USER/YOUR-REPO '{"some_parameter": 5, "some_other_p
 For detailed instructions on passing arguments via the CLI, see the ["Arguments" section of the `kurtosis run` documentation][kurtosis-run-arguments].
 
 </TabItem>
-<TabItem value="starlark" label="Starlark" default>
+<TabItem value="starlark" label="Starlark">
 
 ```python
 your_package = import_module("github.com/YOUR-USER/YOUR-REPO/main.star")
@@ -142,6 +145,12 @@ def run(plan):
 </TabItem>
 </Tabs>
 
+### Package Icons
+
+Once your package is [published], it will appear in the Kurtosis package catalog found in the web UI. By default a plain
+icon is shown - but you can select your own icon by including a `kurtosis-package-icon.png` file alongside your
+`kurtosis.yml` file. The image should be square and at least `150px x 150px`. 
+
 <!-------------------- ONLY LINKS BELOW HERE -------------------------->
 [kurtosis-yml]: ./kurtosis-yml.md
 [locators]: ./locators.md
@@ -149,3 +158,4 @@ def run(plan):
 [how-do-kurtosis-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md
 [plan]: ./plan.md
 [kurtosis-run-arguments]: ../cli-reference/run.md#arguments
+[published]: /quickstart-write-a-package#publishing-your-kurtosis-package-for-others-to-use
