@@ -145,12 +145,6 @@ def run(plan):
 </TabItem>
 </Tabs>
 
-### Package Icons
-
-Once your package is [published], it will appear in the Kurtosis package catalog found in the web UI. By default a plain
-icon is shown - but you can select your own icon by including a `kurtosis-package-icon.png` file alongside your
-`kurtosis.yml` file. The image should be square and at least `150px x 150px`. 
-
 <!-------------------- ONLY LINKS BELOW HERE -------------------------->
 [kurtosis-yml]: ./kurtosis-yml.md
 [locators]: ./locators.md
