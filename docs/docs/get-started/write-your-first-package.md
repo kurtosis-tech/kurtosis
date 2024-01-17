@@ -534,7 +534,7 @@ Here, Kurtosis is telling us that the `add_service` instruction on line `54` of 
 #### Investigating the issue
 If you check the service's logs, printed in the error message right after this header `== SERVICE 'api' LOGS ===================================`, you will see that there is an authentication error  
 
-The enclave state is usually a good place to find mor clues. If you look at the bottom of your output you'll see the following state of the enclave:
+The enclave state is usually a good place to find more clues. If you look at the bottom of your output you'll see the following state of the enclave:
 
 ```text
 
