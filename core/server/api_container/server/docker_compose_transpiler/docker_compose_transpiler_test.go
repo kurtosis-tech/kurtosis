@@ -126,6 +126,36 @@ services:
 	require.Equal(t, expectedResult, result)
 }
 
+func TestMinimalComposeWithPersistentVolumeAtProvidedPathAreUnique(t *testing.T) {
+	composeBytes := []byte(`
+services:
+  web2: 
+    build:
+      context: app
+      target: builder
+    ports: 
+      - '80:80'
+    volumes:
+     - /project/node_modules:/node_modules
+  web3: 
+    build:
+      context: app
+      target: builder
+    ports: 
+      - '80:80'
+    volumes:
+     - /project/node_modules:/node_modules
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/node_modules": Directory(persistent_key="web2--volume0")}, env_vars={}))
+    plan.add_service(name = "web3", config = ServiceConfig(image=ImageBuildSpec(image_name="web3%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/node_modules": Directory(persistent_key="web3--volume0")}, env_vars={}))
+`, builtImageSuffix, builtImageSuffix)
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
 // Tests all supported compose functionalities for a single service
 func TestFullCompose(t *testing.T) {
 	composeBytes := []byte(`
