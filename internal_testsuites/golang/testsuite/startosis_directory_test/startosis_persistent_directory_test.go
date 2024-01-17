@@ -24,7 +24,7 @@ def run(plan):
 	)
 	service = plan.add_service(name=SERVICE_NAME, config=service_config)
 
-	plan.exec(w
+	plan.exec(
         service_name=SERVICE_NAME,
         recipe=ExecRecipe([
             "/bin/sh",
