@@ -42,6 +42,8 @@ const (
 	isResourceInformationComplete = true
 )
 
+var noImageRegistrySpec *image_registry_spec.ImageRegistrySpec = nil
+
 type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
 
@@ -86,11 +88,11 @@ func NewDockerKurtosisBackend(
 }
 
 func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
-	return backend.dockerManager.FetchImage(ctx, image, downloadMode)
+	return backend.dockerManager.FetchImage(ctx, image, noImageRegistrySpec, downloadMode)
 }
 
 func (backend *DockerKurtosisBackend) FetchImageWithAuth(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
-	return false, "", nil
+	return backend.dockerManager.FetchImage(ctx, image, registrySpec, downloadMode)
 }
 
 func (backend *DockerKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {

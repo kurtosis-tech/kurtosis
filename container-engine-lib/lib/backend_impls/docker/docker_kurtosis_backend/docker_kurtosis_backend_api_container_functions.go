@@ -2,6 +2,7 @@ package docker_kurtosis_backend
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"net"
 	"time"
 
@@ -33,6 +34,8 @@ const (
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
+var emptyRegistrySpecAsPublicImage *image_registry_spec.ImageRegistrySpec = nil
 
 func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
@@ -183,7 +186,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
 
-	if _, err = backend.dockerManager.FetchImageIfMissing(ctx, image); err != nil {
+	if _, err = backend.dockerManager.FetchImageIfMissing(ctx, image, emptyRegistrySpecAsPublicImage); err != nil {
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version. Error:\n%v", image, err)
 	}
 

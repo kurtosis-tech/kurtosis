@@ -40,6 +40,7 @@ func NewImageRegistrySpec() *kurtosis_type_constructor.KurtosisTypeConstructor {
 						return builtin_argument.NonEmptyString(value, RegistryAddrAttr)
 					},
 				},
+				// TODO make this optional
 				{
 					Name:              RegistryEmailAttr,
 					IsOptional:        false,
