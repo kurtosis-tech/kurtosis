@@ -1,33 +1,63 @@
 package image_registry_spec
 
+import (
+	"encoding/json"
+	"github.com/kurtosis-tech/stacktrace"
+)
+
 type ImageRegistrySpec struct {
-	image        string
-	username     string
-	password     string
-	registryAddr string
+	// we do this way in order to have exported fields which can be marshalled
+	// and an unexported type for encapsulation
+	privateRegistrySpec *privateImageRegistrySpec
+}
+
+type privateImageRegistrySpec struct {
+	Image        string
+	Username     string
+	Password     string
+	RegistryAddr string
 }
 
 func NewImageRegistrySpec(image, username, password, registryAddr string) *ImageRegistrySpec {
-	return &ImageRegistrySpec{
-		image:        image,
-		username:     username,
-		password:     password,
-		registryAddr: registryAddr,
+	internalRegistrySpec := &privateImageRegistrySpec{
+		Image:        image,
+		Username:     username,
+		Password:     password,
+		RegistryAddr: registryAddr,
 	}
+	return &ImageRegistrySpec{privateRegistrySpec: internalRegistrySpec}
 }
 
 func (irs *ImageRegistrySpec) GetImage() string {
-	return irs.image
+	return irs.privateRegistrySpec.Image
 }
 
 func (irs *ImageRegistrySpec) GetUsername() string {
-	return irs.username
+	return irs.privateRegistrySpec.Username
 }
 
 func (irs *ImageRegistrySpec) GetPassword() string {
-	return irs.password
+	return irs.privateRegistrySpec.Password
 }
 
 func (irs *ImageRegistrySpec) GetRegistryAddr() string {
-	return irs.registryAddr
+	return irs.privateRegistrySpec.RegistryAddr
+}
+
+func (irs *ImageRegistrySpec) MarshalJSON() ([]byte, error) {
+	return json.Marshal(irs.privateRegistrySpec)
+}
+
+func (irs *ImageRegistrySpec) UnmarshalJSON(data []byte) error {
+
+	// Suppressing exhaustruct requirement because we want an object with zero values
+	// nolint: exhaustruct
+	unmarshalledPrivateStructPtr := &privateImageRegistrySpec{}
+
+	if err := json.Unmarshal(data, unmarshalledPrivateStructPtr); err != nil {
+		return stacktrace.Propagate(err, "An error occurred unmarshalling the private struct")
+	}
+
+	irs.privateRegistrySpec = unmarshalledPrivateStructPtr
+	return nil
 }
