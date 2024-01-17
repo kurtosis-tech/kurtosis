@@ -1,5 +1,6 @@
 export * from "./KurtosisPackageCard";
 export * from "./KurtosisPackageCardGrid";
+export * from "./KurtosisPackageCardHorizontal";
 export * from "./KurtosisPackageCardRow";
 export * from "./SavedPackages";
 export * from "./utils";

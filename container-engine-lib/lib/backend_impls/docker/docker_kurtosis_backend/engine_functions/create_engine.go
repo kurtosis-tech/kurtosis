@@ -173,6 +173,8 @@ func CreateEngine(
 		engineGuid,
 		consts.KurtosisInternalContainerGrpcPortId,
 		privateGrpcPortSpec,
+		consts.KurtosisInternalContainerRESTAPIPortId,
+		restAPIPortSpec,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(

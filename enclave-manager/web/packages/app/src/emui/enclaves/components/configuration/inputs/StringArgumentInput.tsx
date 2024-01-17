@@ -1,17 +1,30 @@
-import { Input } from "@chakra-ui/react";
+import { Input, InputProps } from "@chakra-ui/react";
 import { useEnclaveConfigurationFormContext } from "../EnclaveConfigurationForm";
 import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-export const StringArgumentInput = (props: KurtosisArgumentTypeInputImplProps) => {
+type StringArgumentInputProps = KurtosisArgumentTypeInputImplProps & InputProps;
+
+export const StringArgumentInput = ({
+  name,
+  placeholder,
+  isRequired,
+  validate,
+  disabled,
+  width,
+  size,
+  tabIndex,
+  ...inputProps
+}: StringArgumentInputProps) => {
   const { register } = useEnclaveConfigurationFormContext();
 
   return (
     <Input
-      {...register(props.name, { disabled: props.disabled, required: props.isRequired, validate: props.validate })}
-      placeholder={props.placeholder}
-      width={props.width}
-      size={props.size || "lg"}
-      tabIndex={props.tabIndex}
+      {...register(name, { disabled: disabled, required: isRequired, validate: validate })}
+      placeholder={placeholder}
+      width={width}
+      size={size || "lg"}
+      tabIndex={tabIndex}
+      {...inputProps}
     />
   );
 };

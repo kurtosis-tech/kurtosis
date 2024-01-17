@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
@@ -13,11 +14,12 @@ import (
 const (
 	DirectoryTypeName = "Directory"
 
-	ArtifactNameAttr  = "artifact_name"
+	ArtifactNamesAttr = "artifact_names"
 	PersistentKeyAttr = "persistent_key"
 	SizeKeyAttr       = "size"
 
-	atleastOneMegabyte = 1
+	atleastOneMegabyte       = 1
+	megaByteToByteMultiplier = 1024 * 1024
 )
 
 func NewDirectoryType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -27,11 +29,11 @@ func NewDirectoryType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
-					Name:              ArtifactNameAttr,
+					Name:              ArtifactNamesAttr,
 					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, ArtifactNameAttr)
+						return builtin_argument.StringListWithNotEmptyValues(value, ArtifactNamesAttr)
 					},
 				},
 				{
@@ -39,7 +41,7 @@ func NewDirectoryType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, ArtifactNameAttr)
+						return builtin_argument.NonEmptyString(value, ArtifactNamesAttr)
 					},
 				},
 				{
@@ -84,7 +86,7 @@ func CreateDirectoryFromFilesArtifact(
 
 	argumentDefinitions := NewDirectoryType().KurtosisBaseBuiltin.Arguments
 	argumentValuesSet := builtin_argument.NewArgumentValuesSet(argumentDefinitions, args)
-	kurtosisDefaultValue, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ArtifactNameAttr, argumentValuesSet)
+	kurtosisDefaultValue, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ArtifactNamesAttr, argumentValuesSet)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -103,16 +105,34 @@ func (directory *Directory) Copy() (builtin_argument.KurtosisValueType, error) {
 	}, nil
 }
 
-func (directory *Directory) GetArtifactNameIfSet() (string, bool, *startosis_errors.InterpretationError) {
-	fileArtifact, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](
-		directory.KurtosisValueTypeDefault, ArtifactNameAttr)
-	if interpretationErr != nil {
-		return "", false, interpretationErr
-	}
+func (directory *Directory) GetArtifactNamesIfSet() ([]string, bool, *startosis_errors.InterpretationError) {
+	artifactNames := []string{}
+	fileArtifacts, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
+		directory.KurtosisValueTypeDefault, ArtifactNamesAttr)
 	if !found {
-		return "", false, nil
+		return nil, false, nil
 	}
-	return fileArtifact.GoString(), true, nil
+	if interpretationErr != nil {
+		var fileArtifact starlark.String
+		fileArtifact, found, interpretationErr = kurtosis_type_constructor.ExtractAttrValue[starlark.String](
+			directory.KurtosisValueTypeDefault, ArtifactNamesAttr)
+		if interpretationErr != nil {
+			return nil, false, interpretationErr
+		}
+		if !found {
+			return nil, false, nil
+		}
+		artifactNames = append(artifactNames, fileArtifact.GoString())
+	} else {
+		if fileArtifacts.Len() > 0 {
+			artifactNames, interpretationErr = kurtosis_types.SafeCastToStringSlice(fileArtifacts, ArtifactNamesAttr)
+			if interpretationErr != nil {
+				return nil, false, interpretationErr
+			}
+		}
+	}
+
+	return artifactNames, true, nil
 }
 
 func (directory *Directory) GetPersistentKeyIfSet() (string, bool, *startosis_errors.InterpretationError) {
@@ -140,5 +160,5 @@ func (directory *Directory) GetSizeOrDefault() (int64, *startosis_errors.Interpr
 	if !ok {
 		return 0, startosis_errors.NewInterpretationError("Couldn't convert size '%v' to int64", size)
 	}
-	return sizeInt64, nil
+	return sizeInt64 * megaByteToByteMultiplier, nil
 }

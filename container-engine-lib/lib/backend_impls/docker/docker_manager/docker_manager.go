@@ -557,6 +557,11 @@ func (manager *DockerManager) CreateAndStartContainer(
 		usedPortsSet[port] = struct{}{}
 	}
 
+	var userStr string
+	if args.user != nil {
+		userStr = args.user.GetUIDGIDPairAsStr()
+	}
+
 	containerConfigPtr, err := manager.getContainerCfg(
 		dockerImage,
 		isInteractiveMode,
@@ -565,6 +570,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.cmdArgs,
 		args.envVariables,
 		args.labels,
+		userStr,
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure container from service.")
@@ -1738,7 +1744,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
-	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
+	//  if the Dockerfile *does* have and EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
 
 	containerHostConfigPtr := &container.HostConfig{
@@ -1798,7 +1804,8 @@ func (manager *DockerManager) getContainerCfg(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVariables map[string]string,
-	labels map[string]string) (config *container.Config, err error) {
+	labels map[string]string,
+	user string) (config *container.Config, err error) {
 
 	envVariablesSlice := make([]string, 0, len(envVariables))
 	for key, val := range envVariables {
@@ -1808,7 +1815,7 @@ func (manager *DockerManager) getContainerCfg(
 	nodeConfigPtr := &container.Config{
 		Hostname:        "",
 		Domainname:      "",
-		User:            "",
+		User:            user,
 		AttachStdin:     isInteractiveMode, // Analogous to `-a STDIN` option to `docker run`
 		AttachStdout:    isInteractiveMode, // Analogous to `-a STDOUT` option to `docker run`
 		AttachStderr:    isInteractiveMode, // Analogous to `-a STDERR` option to `docker run`

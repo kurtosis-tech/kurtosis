@@ -52,6 +52,7 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		0,
 		0,
 		map[string]string{},
+		nil,
 	)
 	require.NoError(t, err)
 
@@ -94,6 +95,7 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 		0,
 		0,
 		map[string]string{},
+		nil,
 	)
 	require.NoError(t, err)
 
@@ -138,6 +140,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 		0,
 		0,
 		map[string]string{},
+		nil,
 	)
 	require.NoError(t, err)
 
@@ -183,6 +186,7 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 		0,
 		0,
 		map[string]string{},
+		nil,
 	)
 	require.NoError(t, err)
 

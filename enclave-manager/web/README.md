@@ -46,6 +46,27 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 
 Serve your local build on port 4000.
 
+### `yarn prettier`
+
+Runs `prettier --check` to check that the code matches the formatting that [`prettier`](https://prettier.io/) would apply.
+
+### `yarn prettier:fix`
+
+Applies any formatting changes prettier wants to apply to this application. For ease of use you can use IDE integrations
+to auto apply prettier changes on file save, see instructions:
+
+- [Here](https://plugins.jetbrains.com/plugin/10456-prettier) for Intellij
+- [Here](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for vscode
+
+### `yarn cypress:ete`
+
+Run the cypress ETE tests
+
+### `yarn cypress:open`
+
+Open the cypress console for debugging/developing new cypress tests. The cypress test suite runs against the locally
+served EMUI from port 9711.
+
 ### `yarn eject`
 
 **Note: this is a one-way operation. Once you `eject`, you can’t go back!**

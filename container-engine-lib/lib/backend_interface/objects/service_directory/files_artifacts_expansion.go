@@ -9,8 +9,8 @@ type FilesArtifactsExpansion struct {
 	// its operation
 	ExpanderEnvVars map[string]string
 
-	// Map of dirpaths on the target service to the artificat identifier that will be mounted at this location
-	ServiceDirpathsToArtifactIdentifiers map[string]string
+	// Map of dirpaths on the target service to the artifact identifier that will be mounted at this location
+	ServiceDirpathsToArtifactIdentifiers map[string][]string
 
 	// Map of dirpaths that the expander container expects (which the expander will expand into), mapped to
 	// dirpaths on the user service container where those same directories should be made available

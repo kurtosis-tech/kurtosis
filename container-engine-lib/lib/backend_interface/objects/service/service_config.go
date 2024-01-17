@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -48,6 +49,8 @@ type privateServiceConfig struct {
 	MinMemoryAllocationMegabytes uint64
 
 	Labels map[string]string
+
+	User *service_user.ServiceUser
 }
 
 func CreateServiceConfig(
@@ -66,6 +69,7 @@ func CreateServiceConfig(
 	minCpuMilliCores uint64,
 	minMemoryMegaBytes uint64,
 	labels map[string]string,
+	user *service_user.ServiceUser,
 ) (*ServiceConfig, error) {
 
 	if err := ValidateServiceConfigLabels(labels); err != nil {
@@ -89,6 +93,7 @@ func CreateServiceConfig(
 		MinCpuAllocationMilliCpus:    minCpuMilliCores,
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
 		Labels:                       labels,
+		User:                         user,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -149,6 +154,10 @@ func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
 // only available for Kubernetes
 func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.privateServiceConfig.MinMemoryAllocationMegabytes
+}
+
+func (serviceConfig *ServiceConfig) GetUser() *service_user.ServiceUser {
+	return serviceConfig.privateServiceConfig.User
 }
 
 func (serviceConfig *ServiceConfig) GetLabels() map[string]string {
