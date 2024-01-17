@@ -115,13 +115,8 @@ func NewCLIModeKubernetesKurtosisBackend(
 	)
 }
 
-func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
-	logrus.Warnf("FetchImage isn't implemented for Kubernetes yet")
-	return false, "", nil
-}
-
-func (backend *KubernetesKurtosisBackend) FetchImageWithAuth(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
-	logrus.Warnf("FetchImageWithAuth isn't implemented for Kubernetes Yet")
+func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+	logrus.Warnf("FetchImage isn't implemented for Kubernetes Yet")
 	return false, "", nil
 }
 

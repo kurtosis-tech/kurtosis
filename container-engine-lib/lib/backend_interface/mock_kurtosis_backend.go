@@ -959,69 +959,8 @@ func (_c *MockKurtosisBackend_DumpKurtosis_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// FetchImage provides a mock function with given fields: ctx, image, downloadMode
-func (_m *MockKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
-	ret := _m.Called(ctx, image, downloadMode)
-
-	var r0 bool
-	var r1 string
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, image_download_mode.ImageDownloadMode) (bool, string, error)); ok {
-		return rf(ctx, image, downloadMode)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, image_download_mode.ImageDownloadMode) bool); ok {
-		r0 = rf(ctx, image, downloadMode)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, image_download_mode.ImageDownloadMode) string); ok {
-		r1 = rf(ctx, image, downloadMode)
-	} else {
-		r1 = ret.Get(1).(string)
-	}
-
-	if rf, ok := ret.Get(2).(func(context.Context, string, image_download_mode.ImageDownloadMode) error); ok {
-		r2 = rf(ctx, image, downloadMode)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// MockKurtosisBackend_FetchImage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FetchImage'
-type MockKurtosisBackend_FetchImage_Call struct {
-	*mock.Call
-}
-
-// FetchImage is a helper method to define mock.On call
-//   - ctx context.Context
-//   - image string
-//   - downloadMode image_download_mode.ImageDownloadMode
-func (_e *MockKurtosisBackend_Expecter) FetchImage(ctx interface{}, image interface{}, downloadMode interface{}) *MockKurtosisBackend_FetchImage_Call {
-	return &MockKurtosisBackend_FetchImage_Call{Call: _e.mock.On("FetchImage", ctx, image, downloadMode)}
-}
-
-func (_c *MockKurtosisBackend_FetchImage_Call) Run(run func(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode)) *MockKurtosisBackend_FetchImage_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(image_download_mode.ImageDownloadMode))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_FetchImage_Call) Return(_a0 bool, _a1 string, _a2 error) *MockKurtosisBackend_FetchImage_Call {
-	_c.Call.Return(_a0, _a1, _a2)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_FetchImage_Call) RunAndReturn(run func(context.Context, string, image_download_mode.ImageDownloadMode) (bool, string, error)) *MockKurtosisBackend_FetchImage_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// FetchImageWithAuth provides a mock function with given fields: ctx, image, registrySpec, downloadMode
-func (_m *MockKurtosisBackend) FetchImageWithAuth(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+// FetchImage provides a mock function with given fields: ctx, image, registrySpec, downloadMode
+func (_m *MockKurtosisBackend) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	ret := _m.Called(ctx, image, registrySpec, downloadMode)
 
 	var r0 bool
@@ -1051,33 +990,33 @@ func (_m *MockKurtosisBackend) FetchImageWithAuth(ctx context.Context, image str
 	return r0, r1, r2
 }
 
-// MockKurtosisBackend_FetchImageWithAuth_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FetchImageWithAuth'
-type MockKurtosisBackend_FetchImageWithAuth_Call struct {
+// MockKurtosisBackend_FetchImage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FetchImage'
+type MockKurtosisBackend_FetchImage_Call struct {
 	*mock.Call
 }
 
-// FetchImageWithAuth is a helper method to define mock.On call
+// FetchImage is a helper method to define mock.On call
 //   - ctx context.Context
 //   - image string
 //   - registrySpec *image_registry_spec.ImageRegistrySpec
 //   - downloadMode image_download_mode.ImageDownloadMode
-func (_e *MockKurtosisBackend_Expecter) FetchImageWithAuth(ctx interface{}, image interface{}, registrySpec interface{}, downloadMode interface{}) *MockKurtosisBackend_FetchImageWithAuth_Call {
-	return &MockKurtosisBackend_FetchImageWithAuth_Call{Call: _e.mock.On("FetchImageWithAuth", ctx, image, registrySpec, downloadMode)}
+func (_e *MockKurtosisBackend_Expecter) FetchImage(ctx interface{}, image interface{}, registrySpec interface{}, downloadMode interface{}) *MockKurtosisBackend_FetchImage_Call {
+	return &MockKurtosisBackend_FetchImage_Call{Call: _e.mock.On("FetchImage", ctx, image, registrySpec, downloadMode)}
 }
 
-func (_c *MockKurtosisBackend_FetchImageWithAuth_Call) Run(run func(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode)) *MockKurtosisBackend_FetchImageWithAuth_Call {
+func (_c *MockKurtosisBackend_FetchImage_Call) Run(run func(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode)) *MockKurtosisBackend_FetchImage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*image_registry_spec.ImageRegistrySpec), args[3].(image_download_mode.ImageDownloadMode))
 	})
 	return _c
 }
 
-func (_c *MockKurtosisBackend_FetchImageWithAuth_Call) Return(_a0 bool, _a1 string, _a2 error) *MockKurtosisBackend_FetchImageWithAuth_Call {
+func (_c *MockKurtosisBackend_FetchImage_Call) Return(_a0 bool, _a1 string, _a2 error) *MockKurtosisBackend_FetchImage_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *MockKurtosisBackend_FetchImageWithAuth_Call) RunAndReturn(run func(context.Context, string, *image_registry_spec.ImageRegistrySpec, image_download_mode.ImageDownloadMode) (bool, string, error)) *MockKurtosisBackend_FetchImageWithAuth_Call {
+func (_c *MockKurtosisBackend_FetchImage_Call) RunAndReturn(run func(context.Context, string, *image_registry_spec.ImageRegistrySpec, image_download_mode.ImageDownloadMode) (bool, string, error)) *MockKurtosisBackend_FetchImage_Call {
 	_c.Call.Return(run)
 	return _c
 }

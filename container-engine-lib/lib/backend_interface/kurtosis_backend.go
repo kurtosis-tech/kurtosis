@@ -35,10 +35,7 @@ type KurtosisBackend interface {
 	// If retrieving the latest [dockerImage] fails, the local image will be used.
 	// Returns True is it was retrieved from cloud or False if it's a local image
 	// Returns a string that represents the architecture of the image
-	FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error)
-
-	// FetchImageWithAuth this is used to pull images from private registries
-	FetchImageWithAuth(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error)
+	FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error)
 
 	PruneUnusedImages(ctx context.Context) ([]string, error)
 
