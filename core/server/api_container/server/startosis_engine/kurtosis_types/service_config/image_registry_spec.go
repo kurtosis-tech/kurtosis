@@ -16,7 +16,6 @@ const (
 	RegistryAddrAttr     = "registry"
 	RegistryUsernameAttr = "username"
 	RegistryPasswordAttr = "password"
-	RegistryEmailAttr    = "email"
 )
 
 func NewImageRegistrySpec() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -38,15 +37,6 @@ func NewImageRegistrySpec() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, RegistryAddrAttr)
-					},
-				},
-				// TODO make this optional
-				{
-					Name:              RegistryEmailAttr,
-					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.ValidEmailString(value, RegistryEmailAttr)
 					},
 				},
 				{
@@ -110,20 +100,6 @@ func (irs *ImageRegistrySpec) GetImage() (string, *startosis_errors.Interpretati
 	return imageStr, nil
 }
 
-// GetEmail returns the email address of the account for the registry
-func (irs *ImageRegistrySpec) GetEmail() (string, *startosis_errors.InterpretationError) {
-	email, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](irs.KurtosisValueTypeDefault, RegistryEmailAttr)
-	if interpretationErr != nil {
-		return "", interpretationErr
-	}
-	if !found {
-		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			RegistryEmailAttr, ImageRegistrySpecTypeName)
-	}
-	emailStr := email.GoString()
-	return emailStr, nil
-}
-
 // GetPassword returns the password of the account for the registry
 func (irs *ImageRegistrySpec) GetPassword() (string, *startosis_errors.InterpretationError) {
 	password, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](irs.KurtosisValueTypeDefault, RegistryPasswordAttr)
@@ -172,11 +148,6 @@ func (irs *ImageRegistrySpec) ToKurtosisType() (*image_registry_spec.ImageRegist
 		return nil, err
 	}
 
-	email, err := irs.GetEmail()
-	if err != nil {
-		return nil, err
-	}
-
 	username, err := irs.GetUsername()
 	if err != nil {
 		return nil, err
@@ -192,5 +163,5 @@ func (irs *ImageRegistrySpec) ToKurtosisType() (*image_registry_spec.ImageRegist
 		return nil, err
 	}
 
-	return image_registry_spec.NewImageRegistrySpec(image, email, username, password, registryAddr), nil
+	return image_registry_spec.NewImageRegistrySpec(image, username, password, registryAddr), nil
 }

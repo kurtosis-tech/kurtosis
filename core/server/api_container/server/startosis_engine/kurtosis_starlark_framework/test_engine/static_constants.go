@@ -34,10 +34,9 @@ var (
 	testOnDiskContextDirPath     = "kurtosis-data/test-package"
 	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"
 
-	testRegistryAddr         = "http://registry.test.io"
-	testRegistryUsername     = "kurtosis"
-	testRegistryEmailAddress = "kurtosis@kurtosis.com"
-	testRegistryPassword     = "password"
+	testRegistryAddr     = "http://registry.test.io"
+	testRegistryUsername = "kurtosis"
+	testRegistryPassword = "password"
 
 	testPrivatePortId              = "grpc"
 	testPrivatePortNumber          = uint16(1323)

@@ -28,14 +28,12 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageRegistr
 }
 
 func (t *serviceConfigImageRegistrySpecTest) GetStarlarkCode() string {
-	imageRegistrySpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q, %s=%q)",
+	imageRegistrySpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q)",
 		service_config.ImageRegistrySpecTypeName,
 		service_config.ImageAttr,
 		testContainerImageName,
 		service_config.RegistryAddrAttr,
 		testRegistryAddr,
-		service_config.RegistryEmailAttr,
-		testRegistryEmailAddress,
 		service_config.RegistryUsernameAttr,
 		testRegistryUsername,
 		service_config.RegistryPasswordAttr,
@@ -58,7 +56,7 @@ func (t *serviceConfigImageRegistrySpecTest) Assert(typeValue builtin_argument.K
 		testNoPackageReplaceOptions)
 	require.Nil(t, interpretationErr)
 
-	expectedImageRegistrySpec := image_registry_spec.NewImageRegistrySpec(testContainerImageName, testRegistryEmailAddress, testRegistryUsername, testRegistryPassword, testRegistryAddr)
+	expectedImageRegistrySpec := image_registry_spec.NewImageRegistrySpec(testContainerImageName, testRegistryUsername, testRegistryPassword, testRegistryAddr)
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		nil,
