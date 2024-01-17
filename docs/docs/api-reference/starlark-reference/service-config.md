@@ -12,6 +12,7 @@ config = ServiceConfig(
     # the underlying container engine.
     # If a string is provided, Kurtosis will by default detect if images exists locally, or pull from container registry if not.
     # If an ImageBuildSpec is provided, Kurtosis will build the image.
+    # If an ImageRegistrySpec is provided, Kurtosis will pull the image from the given registry with the given credentials
     # MANDATORY
     image = "kurtosistech/example-datastore-server",
     
@@ -30,6 +31,24 @@ config = ServiceConfig(
         # Stage of image build to target for multi-stage container image
         # OPTIONAL
         target_stage=""
+    )
+
+    OR
+
+    image = ImageRegistrySpec(
+        #  The name of the image that needs to be pulled qualified with the registry
+        # MANDATORY
+        name = "my.registry.io/my-user/my-image",
+
+        # The username that will be used to pull the image from the given registry
+        # MANDATORY
+        usernamee = "my-user",
+
+        # The password that will be used to pull the image from the given registry
+        password = "password",
+
+        # The URL of the registry
+        registry = "http://my.registry.io/"
     )
 
     # The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.
