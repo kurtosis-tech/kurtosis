@@ -1624,6 +1624,49 @@ func (_c *MockKurtosisBackend_GetUserServices_Call) RunAndReturn(run func(contex
 	return _c
 }
 
+// LoadImage provides a mock function with given fields: ctx, image
+func (_m *MockKurtosisBackend) LoadImage(ctx context.Context, image io.ReadCloser) error {
+	ret := _m.Called(ctx, image)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, io.ReadCloser) error); ok {
+		r0 = rf(ctx, image)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockKurtosisBackend_LoadImage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LoadImage'
+type MockKurtosisBackend_LoadImage_Call struct {
+	*mock.Call
+}
+
+// LoadImage is a helper method to define mock.On call
+//   - ctx context.Context
+//   - image io.ReadCloser
+func (_e *MockKurtosisBackend_Expecter) LoadImage(ctx interface{}, image interface{}) *MockKurtosisBackend_LoadImage_Call {
+	return &MockKurtosisBackend_LoadImage_Call{Call: _e.mock.On("LoadImage", ctx, image)}
+}
+
+func (_c *MockKurtosisBackend_LoadImage_Call) Run(run func(ctx context.Context, image io.ReadCloser)) *MockKurtosisBackend_LoadImage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(io.ReadCloser))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_LoadImage_Call) Return(_a0 error) *MockKurtosisBackend_LoadImage_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_LoadImage_Call) RunAndReturn(run func(context.Context, io.ReadCloser) error) *MockKurtosisBackend_LoadImage_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // PruneUnusedImages provides a mock function with given fields: ctx
 func (_m *MockKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
 	ret := _m.Called(ctx)

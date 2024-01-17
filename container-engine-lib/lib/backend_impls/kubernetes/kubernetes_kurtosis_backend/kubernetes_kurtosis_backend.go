@@ -2,9 +2,11 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"io"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	apiv1 "k8s.io/api/core/v1"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/engine_functions"
@@ -481,6 +483,11 @@ func (backend *KubernetesKurtosisBackend) DestroyReverseProxy(ctx context.Contex
 func (backend *KubernetesKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
 	// TODO IMPLEMENT
 	return "", stacktrace.NewError("Building images isn't yet implemented in Kubernetes.")
+}
+
+func (backend *KubernetesKurtosisBackend) LoadImage(ctx context.Context, image io.ReadCloser) error {
+	// TODO IMPLEMENT
+	return stacktrace.NewError("Loading images isn't yet implemented in Kubernetes.")
 }
 
 // ====================================================================================================

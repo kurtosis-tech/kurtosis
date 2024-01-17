@@ -2,10 +2,11 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"io"
 	"sync"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 
 	"github.com/sirupsen/logrus"
 
@@ -534,6 +535,10 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 		return 0, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
 	}
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
+}
+
+func (backend *DockerKurtosisBackend) LoadImage(ctx context.Context, image io.ReadCloser) error {
+	return backend.dockerManager.LoadImage(ctx, image)
 }
 
 func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {

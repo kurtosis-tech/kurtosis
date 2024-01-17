@@ -11,19 +11,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/docker/docker/api/types/registry"
-	"github.com/docker/go-units"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/kurtosis/utils"
 	"io"
+	"io/ioutil"
 	"math"
 	"net"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/go-units"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/utils"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -1310,6 +1312,16 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, regi
 	}
 
 	return pulledFromRemote, imageArchitecture, nil
+}
+
+func (manager *DockerManager) LoadImage(ctx context.Context, image io.ReadCloser) error {
+	response, err := manager.dockerClient.ImageLoad(ctx, image, true)
+	if err != nil {
+		return stacktrace.Propagate(err, "Fail to load docker image")
+	}
+	responseBody, err := ioutil.ReadAll(response.Body)
+	logrus.Infof("Docker image loaded: %s", responseBody)
+	return nil
 }
 
 func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
