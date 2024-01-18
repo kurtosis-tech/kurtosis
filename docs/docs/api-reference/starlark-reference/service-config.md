@@ -13,6 +13,8 @@ config = ServiceConfig(
     # If a string is provided, Kurtosis will by default detect if images exists locally, or pull from container registry if not.
     # If an ImageBuildSpec is provided, Kurtosis will build the image.
     # If an ImageRegistrySpec is provided, Kurtosis will pull the image from the given registry with the given credentials
+    # Note for now ImageRegistrySpec is Docker only and the authentication gets ignored on Kubernetes
+    # Reach out to the team if you want to run Kurtosis with private images on Kubernetes
     # MANDATORY
     image = "kurtosistech/example-datastore-server",
     
