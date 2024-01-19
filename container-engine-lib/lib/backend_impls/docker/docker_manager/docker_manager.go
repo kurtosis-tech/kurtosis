@@ -1675,7 +1675,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		capabilityStr := string(capability)
 		addedCapabilitiesSlice = append(addedCapabilitiesSlice, capabilityStr)
 	}
-
+	addedCapabilitiesSlice = append(addedCapabilitiesSlice, "SYS_PTRACE") //TODO fix this
 	extraHosts := []string{}
 	if needsToAccessDockerHostMachine {
 		// This explicit specification is necessary because in Docker-for-Linux, the magic "host.docker.internal"
@@ -1777,7 +1777,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Privileged:      false,
 		PublishAllPorts: false,
 		ReadonlyRootfs:  false,
-		SecurityOpt:     nil,
+		SecurityOpt:     []string{"apparmor=unconfined"}, //TODO fix this
 		StorageOpt:      nil,
 		Tmpfs:           nil,
 		UTSMode:         "",

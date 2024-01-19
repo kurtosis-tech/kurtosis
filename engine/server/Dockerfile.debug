@@ -1,0 +1,20 @@
+# Final stage
+FROM alpine:3.19
+
+RUN apk update && apk add bash
+
+EXPOSE 40000
+
+ARG TARGETARCH
+
+WORKDIR /run
+
+ADD ./webapp ./webapp
+
+COPY ./build/kurtosis-engine.$TARGETARCH ./kurtosis-engine
+
+COPY ./build/dlv.$TARGETARCH /dlv
+
+CMD ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "./kurtosis-engine"]
+
+

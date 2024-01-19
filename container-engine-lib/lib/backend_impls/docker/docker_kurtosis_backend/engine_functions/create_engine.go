@@ -205,11 +205,14 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the Enclave Manager API port spec to a Docker port")
 	}
 
+	delvePort := nat.Port("40000/tcp") //TODO fix
+
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort:       docker_manager.NewManualPublishingSpec(grpcPortNum),
 		enclaveManagerUIDockerPort:  docker_manager.NewManualPublishingSpec(uint16(enclaveManagerUIPort)),
 		enclaveManagerAPIDockerPort: docker_manager.NewManualPublishingSpec(uint16(enclaveManagerAPIPort)),
 		restAPIDockerPort:           docker_manager.NewManualPublishingSpec(engine.RESTAPIPortAddr),
+		delvePort:                   docker_manager.NewManualPublishingSpec(uint16(40000)), //TODO fix
 	}
 
 	bindMounts := map[string]string{
@@ -274,7 +277,7 @@ func CreateEngine(
 		}
 	}()
 
-	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
+	/*if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		ctx,
 		dockerManager,
 		containerId,
@@ -283,7 +286,7 @@ func CreateEngine(
 		timeBetweenWaitForEngineAvailabilityRetries,
 	); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc port to become available")
-	}
+	}*/
 
 	result, err := getEngineObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
 	if err != nil {
