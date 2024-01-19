@@ -474,7 +474,7 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 
 		var filesDictValue starlark.Value
 		if shouldPersist {
-			persistenceKey := fmt.Sprintf("volume%d", volumeIdx)
+			persistenceKey := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			persistentDirectory, err := getStarlarkPersistentDirectory(persistenceKey)
 			if err != nil {
 				return nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
