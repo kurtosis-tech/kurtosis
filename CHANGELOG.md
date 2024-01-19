@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.8](https://github.com/kurtosis-tech/kurtosis/compare/0.86.7...0.86.8) (2024-01-18)
+
+
+### Bug Fixes
+
+* make compose persistent directory keys unique ([#2056](https://github.com/kurtosis-tech/kurtosis/issues/2056)) ([bb92cba](https://github.com/kurtosis-tech/kurtosis/commit/bb92cba84da7c48cbbf3526b118d8a2e769e7354))
+
 ## [0.86.7](https://github.com/kurtosis-tech/kurtosis/compare/0.86.6...0.86.7) (2024-01-16)
 
 
