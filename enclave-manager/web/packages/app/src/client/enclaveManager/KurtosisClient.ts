@@ -202,13 +202,14 @@ export abstract class KurtosisClient {
     apicInfo: RemoveFunctions<EnclaveAPIContainerInfo>,
     packageId: string,
     args: Record<string, any>,
+    dryRun: boolean = false,
   ) {
     // Not currently using asyncResult as the return type here is an asyncIterable
     const request = new RunStarlarkPackageRequest({
       apicIpAddress: apicInfo.bridgeIpAddress,
       apicPort: apicInfo.grpcPortInsideEnclave,
       RunStarlarkPackageArgs: new RunStarlarkPackageArgs({
-        dryRun: false,
+        dryRun,
         packageId: packageId,
         serializedParams: JSON.stringify(args),
       }),
