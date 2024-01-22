@@ -2,9 +2,12 @@ package startosis_validator
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"sync"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_load"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
@@ -57,6 +60,10 @@ func (validator *ImagesValidator) Validate(
 	for imageName, imageBuildSpec := range environment.imagesToBuild {
 		wg.Add(1)
 		go validator.buildImageUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, imageBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
+	}
+	for imageName, imageLoad := range environment.imagesToLoad {
+		wg.Add(1)
+		go validator.loadImageUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, imageLoad, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
 	wg.Wait()
 	logrus.Debug("All image validation submitted, currently in progress.")
@@ -112,6 +119,39 @@ func (validator *ImagesValidator) buildImageUsingBackend(
 	if err != nil {
 		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())
 		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageName)
+		return
+	}
+	logrus.Debugf("Container image '%s' successfully built", imageName)
+}
+
+func (validator *ImagesValidator) loadImageUsingBackend(
+	ctx context.Context,
+	wg *sync.WaitGroup,
+	imageCurrentlyLoading chan bool,
+	backend *backend_interface.KurtosisBackend,
+	imageName string,
+	imageLoad *image_load.ImageLoad,
+	buildErrors chan<- error,
+	imageLoadStarted chan<- string,
+	imageLoadFinished chan<- *ValidatedImage) {
+
+	logrus.Debugf("Requesting to load image: '%s'", imageName)
+	var imageArch string
+	imageBuiltLocally := true
+	imagePulledFromRemote := false
+	defer wg.Done()
+	imageCurrentlyLoading <- true
+	imageLoadStarted <- imageName
+	defer func() {
+		<-imageCurrentlyLoading
+		imageLoadFinished <- NewValidatedImage(imageName, imagePulledFromRemote, imageBuiltLocally, imageArch)
+	}()
+
+	logrus.Debugf("Starting the build of image: '%s'", imageName)
+	err := (*backend).LoadImage(ctx, imageLoad)
+	if err != nil {
+		logrus.Warnf("Container image '%s' failed to load. Error was: '%s'", imageName, err.Error())
+		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to load the required image '%v'.", imageName)
 		return
 	}
 	logrus.Debugf("Container image '%s' successfully built", imageName)

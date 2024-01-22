@@ -2,15 +2,18 @@ package service
 
 import (
 	"encoding/json"
+
+	"testing"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_load"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
-	"testing"
-	"time"
 )
 
 func TestServiceConfigMarshallers(t *testing.T) {
@@ -64,6 +67,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 		imageName,
 		testImageBuildSpec(),
 		testImageRegistrySpec(),
+		testImageLoad(),
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},
@@ -199,4 +203,8 @@ func testToleration() []v1.Toleration {
 		Effect:            v1.TaintEffectNoExecute,
 		TolerationSeconds: &tolerationSeconds,
 	}}
+}
+
+func testImageLoad() *image_load.ImageLoad {
+	return image_load.NewImageLoad("/path/to/image")
 }

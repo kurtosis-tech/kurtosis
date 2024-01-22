@@ -2,7 +2,9 @@ package service
 
 import (
 	"encoding/json"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_load"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -28,7 +30,11 @@ type privateServiceConfig struct {
 	// Configuration for container engine to pull an in a private registry behind authentication
 	// If nil, we will use the ContainerImageName and not use any auth
 	// Mutually exclusive from ImageBuildSpec, ContainerImageName
+
 	ImagerRegistrySpec *image_registry_spec.ImageRegistrySpec
+	// Reference to a image file that can be loaded into a backend image
+	// This is one of the options to reference a image and this value is optional (i.e. nil)
+	ImageLoad *image_load.ImageLoad
 
 	PrivatePorts map[string]*port_spec.PortSpec
 
@@ -67,6 +73,7 @@ func CreateServiceConfig(
 	containerImageName string,
 	imageBuildSpec *image_build_spec.ImageBuildSpec,
 	imageRegistrySpec *image_registry_spec.ImageRegistrySpec,
+	imageLoad *image_load.ImageLoad,
 	privatePorts map[string]*port_spec.PortSpec,
 	publicPorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -122,6 +129,10 @@ func (serviceConfig *ServiceConfig) GetImageBuildSpec() *image_build_spec.ImageB
 
 func (serviceConfig *ServiceConfig) GetImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
 	return serviceConfig.privateServiceConfig.ImagerRegistrySpec
+}
+
+func (serviceConfig *ServiceConfig) GetImageLoad() *image_load.ImageLoad {
+	return serviceConfig.privateServiceConfig.ImageLoad
 }
 
 func (serviceConfig *ServiceConfig) GetPrivatePorts() map[string]*port_spec.PortSpec {

@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_load"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -15,6 +16,7 @@ import (
 type ValidatorEnvironment struct {
 	imagesToPull                  map[string]*image_registry_spec.ImageRegistrySpec // "set" of images that need to be downloaded
 	imagesToBuild                 map[string]*image_build_spec.ImageBuildSpec
+	imagesToLoad                  map[string]*image_load.ImageLoad
 	serviceNames                  map[service.ServiceName]ComponentExistence
 	artifactNames                 map[string]ComponentExistence
 	persistentKeys                map[service_directory.DirectoryPersistentKey]ComponentExistence
@@ -39,6 +41,7 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 	return &ValidatorEnvironment{
 		imagesToPull:                  map[string]*image_registry_spec.ImageRegistrySpec{},
 		imagesToBuild:                 map[string]*image_build_spec.ImageBuildSpec{},
+		imagesToLoad:                  map[string]*image_load.ImageLoad{},
 		serviceNames:                  serviceNamesWithComponentExistence,
 		artifactNames:                 artifactNamesWithComponentExistence,
 		serviceNameToPrivatePortIDs:   serviceNameToPrivatePortIds,
@@ -65,8 +68,12 @@ func (environmemt *ValidatorEnvironment) AppendImageToPullWithAuth(containerImag
 	environmemt.imagesToPull[containerImage] = registrySpec
 }
 
+func (environment *ValidatorEnvironment) AppendRequiredImageLoad(containerImage string, imageBuildSpec *image_load.ImageLoad) {
+	environment.imagesToLoad[containerImage] = imageBuildSpec
+}
+
 func (environment *ValidatorEnvironment) GetNumberOfContainerImagesToProcess() uint32 {
-	return uint32(len(environment.imagesToPull) + len(environment.imagesToBuild))
+	return uint32(len(environment.imagesToPull) + len(environment.imagesToBuild) + len(environment.imagesToLoad))
 }
 
 func (environment *ValidatorEnvironment) AddServiceName(serviceName service.ServiceName) {

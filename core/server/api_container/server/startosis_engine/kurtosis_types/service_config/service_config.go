@@ -2,7 +2,12 @@ package service_config
 
 import (
 	"fmt"
+
+	"math"
+	"path"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_load"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -22,8 +27,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
 	v1 "k8s.io/api/core/v1"
-	"math"
-	"path"
 )
 
 const (
@@ -243,6 +246,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	var imageName string
 	var maybeImageBuildSpec *image_build_spec.ImageBuildSpec
 	var maybeImageRegistrySpec *image_registry_spec.ImageRegistrySpec
+	var maybeImageLoad *image_load.ImageLoad
 	rawImageAttrValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](config.KurtosisValueTypeDefault, ImageAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -250,7 +254,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'", ImageAttr, ServiceConfigTypeName)
 	}
-	imageName, maybeImageBuildSpec, maybeImageRegistrySpec, interpretationErr = convertImage(
+	imageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeImageLoad, interpretationErr = convertImage(
 		rawImageAttrValue,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageId,
@@ -480,6 +484,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		imageName,
 		maybeImageBuildSpec,
 		maybeImageRegistrySpec,
+		maybeImageLoad,
 		privatePorts,
 		publicPorts,
 		entryPointArgs,
@@ -650,32 +655,48 @@ func convertImage(
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *image_registry_spec.ImageRegistrySpec, *startosis_errors.InterpretationError) {
+	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *image_registry_spec.ImageRegistrySpec, *image_load.ImageLoad, *startosis_errors.InterpretationError) {
+
 	imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := image.(*ImageBuildSpec)
 	imageRegistrySpecStarlarkType, isImageRegistrySpecStarlarkType := image.(*ImageRegistrySpec)
 	if isImageBuildSpecStarlarkType {
 		imageBuildSpec, interpretationErr := imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {
-			return "", nil, nil, interpretationErr
+			return "", nil, nil, nil, interpretationErr
 		}
 		imageName, interpretationErr := imageBuildSpecStarlarkType.GetImageName()
 		if interpretationErr != nil {
-			return "", nil, nil, interpretationErr
+			return "", nil, nil, nil, interpretationErr
 		}
-		return imageName, imageBuildSpec, nil, nil
+		return imageName, imageBuildSpec, nil, nil, nil
 	} else if isImageRegistrySpecStarlarkType {
 		imageRegistrySpec, interpretationErr := imageRegistrySpecStarlarkType.ToKurtosisType()
 		if interpretationErr != nil {
-			return "", nil, nil, interpretationErr
+			return "", nil, nil, nil, interpretationErr
 		}
-		return imageRegistrySpec.GetImageName(), nil, imageRegistrySpec, nil
+		return imageRegistrySpec.GetImageName(), nil, imageRegistrySpec, nil, nil
 	} else {
 		imageName, interpretationErr := kurtosis_types.SafeCastToString(image, ImageAttr)
 		if interpretationErr != nil {
-			return "", nil, nil, interpretationErr
+			return "", nil, nil, nil, interpretationErr
 		}
-		return imageName, nil, nil, nil
+		return imageName, nil, nil, nil, nil
 	}
+
+	imageLoadStarlarkType, isImageLoadStarlarkType := image.(*ImageLoad)
+	if isImageLoadStarlarkType {
+		imagePathOnDisk, interpretationErr := imageLoadStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
+		if interpretationErr != nil {
+			return "", nil, nil, nil, interpretationErr
+		}
+		return "", nil, nil, imagePathOnDisk, nil
+	}
+
+	imageName, interpretationErr := kurtosis_types.SafeCastToString(image, ImageAttr)
+	if interpretationErr != nil {
+		return "", nil, nil, nil, interpretationErr
+	}
+	return imageName, nil, nil, nil, nil
 }
 
 func convertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *startosis_errors.InterpretationError) {
