@@ -41,6 +41,7 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 		[]string{"-- " + runtimeValue},
 		nil,
 		nil,
@@ -81,6 +82,7 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 	serviceName := service.ServiceName("example-datastore-server-2")
 	serviceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -129,6 +131,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 		map[string]string{
 			"PORT": runtimeValue,
 		},
@@ -172,6 +175,7 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 	serviceName := service.ServiceName(stringRuntimeValue)
 	serviceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
+		nil,
 		nil,
 		nil,
 		nil,
