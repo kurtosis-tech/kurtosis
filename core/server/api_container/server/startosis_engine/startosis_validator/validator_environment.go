@@ -68,7 +68,7 @@ func (environmemt *ValidatorEnvironment) AppendImageToPullWithAuth(containerImag
 }
 
 func (environment *ValidatorEnvironment) GetNumberOfContainerImagesToProcess() uint32 {
-	return uint32(len(environment.imagesToPull) + len(environment.imagesToBuild))
+	return uint32(len(environment.imagesToPull) + len(environment.imagesToBuild) + len(environment.imagesToPullWithAuth))
 }
 
 func (environment *ValidatorEnvironment) AddServiceName(serviceName service.ServiceName) {

@@ -645,7 +645,7 @@ func convertImage(
 		if interpretationErr != nil {
 			return "", nil, nil, interpretationErr
 		}
-		return imageRegistrySpec.GetImage(), nil, imageRegistrySpec, nil
+		return imageRegistrySpec.GetImageName(), nil, imageRegistrySpec, nil
 	} else {
 		imageName, interpretationErr := kurtosis_types.SafeCastToString(image, ImageAttr)
 		if interpretationErr != nil {

@@ -28,7 +28,7 @@ func NewImageRegistrySpec(image, username, password, registryAddr string) *Image
 	return &ImageRegistrySpec{privateRegistrySpec: internalRegistrySpec}
 }
 
-func (irs *ImageRegistrySpec) GetImage() string {
+func (irs *ImageRegistrySpec) GetImageName() string {
 	return irs.privateRegistrySpec.Image
 }
 
