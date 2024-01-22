@@ -44,7 +44,7 @@ config = ServiceConfig(
 
         # The username that will be used to pull the image from the given registry
         # MANDATORY
-        usernamee = "my-user",
+        username = "my-user",
 
         # The password that will be used to pull the image from the given registry
         password = "password",
