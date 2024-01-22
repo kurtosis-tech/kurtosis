@@ -87,4 +87,4 @@ if(destroyEnclaveResponse.isErr()) {
 }
 ```
 
-These instructions should help you get started with using the Kurtosis Typescript SDK to create and manage enclaves for your projects. If you need further assistance or ahve questions, please open a [Github Discussion](https://github.com/kurtosis-tech/kurtosis/discussions/categories/q-a) or ping us in [Discord](https://discord.com/invite/HUapYX9RvV).
+These instructions should help you get started with using the Kurtosis Typescript SDK to create and manage enclaves for your projects. If you need further assistance or have questions, please open a [Github Discussion](https://github.com/kurtosis-tech/kurtosis/discussions/categories/q-a) or ping us in [Discord](https://discord.com/invite/HUapYX9RvV).
