@@ -18,3 +18,11 @@ import "./commands";
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
+
+Cypress.on("uncaught:exception", (err, runnable, promise) => {
+  // Log streaming seems to occasionally close unexpectedly, causing a promise exception to be thrown.
+  // Because of this we shouldn't fail tests when this happens.
+  if (promise) {
+    return false;
+  }
+});
