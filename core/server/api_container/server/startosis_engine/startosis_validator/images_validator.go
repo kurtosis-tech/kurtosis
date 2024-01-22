@@ -24,8 +24,6 @@ func NewImagesValidator(kurtosisBackend *backend_interface.KurtosisBackend) *Ima
 	}
 }
 
-var emptyImageRegistrySpecForPublicImages *image_registry_spec.ImageRegistrySpec = nil
-
 // Validate validates all container images by downloading them. It is an async function, and it takes as input a
 // WaitGroup that will unblock once the function is complete (as opposed to when the function returns). It allows the
 // consumer to run this function synchronously by calling it and then waiting for wait group to resolve.
@@ -52,17 +50,13 @@ func (validator *ImagesValidator) Validate(
 	}()
 
 	wg := &sync.WaitGroup{}
-	for imageName := range environment.imagesToPull {
+	for imageName, maybeImageRegistrySpec := range environment.imagesToPull {
 		wg.Add(1)
-		go fetchImageFromBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, emptyImageRegistrySpecForPublicImages, environment.imageDownloadMode, imageValidationErrors, imageValidationStarted, imageValidationFinished)
+		go fetchImageFromBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, maybeImageRegistrySpec, environment.imageDownloadMode, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
 	for imageName, imageBuildSpec := range environment.imagesToBuild {
 		wg.Add(1)
 		go validator.buildImageUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, imageBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
-	}
-	for imageName, imageRegistrySpec := range environment.imagesToPullWithAuth {
-		wg.Add(1)
-		go fetchImageFromBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, imageRegistrySpec, environment.imageDownloadMode, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
 	wg.Wait()
 	logrus.Debug("All image validation submitted, currently in progress.")

@@ -13,9 +13,8 @@ import (
 
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
 type ValidatorEnvironment struct {
-	imagesToPull                  map[string]bool // "set" of images that need to be downloaded
+	imagesToPull                  map[string]*image_registry_spec.ImageRegistrySpec // "set" of images that need to be downloaded
 	imagesToBuild                 map[string]*image_build_spec.ImageBuildSpec
-	imagesToPullWithAuth          map[string]*image_registry_spec.ImageRegistrySpec
 	serviceNames                  map[service.ServiceName]ComponentExistence
 	artifactNames                 map[string]ComponentExistence
 	persistentKeys                map[service_directory.DirectoryPersistentKey]ComponentExistence
@@ -38,7 +37,7 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 		artifactNamesWithComponentExistence[artifactName] = ComponentExistedBeforePackageRun
 	}
 	return &ValidatorEnvironment{
-		imagesToPull:                  map[string]bool{},
+		imagesToPull:                  map[string]*image_registry_spec.ImageRegistrySpec{},
 		imagesToBuild:                 map[string]*image_build_spec.ImageBuildSpec{},
 		serviceNames:                  serviceNamesWithComponentExistence,
 		artifactNames:                 artifactNamesWithComponentExistence,
@@ -51,12 +50,11 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 		minMemoryByServiceName: map[service.ServiceName]compute_resources.MemoryInMegaBytes{},
 		minCPUByServiceName:    map[service.ServiceName]compute_resources.CpuMilliCores{},
 		imageDownloadMode:      imageDownloadMode,
-		imagesToPullWithAuth:   map[string]*image_registry_spec.ImageRegistrySpec{},
 	}
 }
 
 func (environment *ValidatorEnvironment) AppendRequiredImagePull(containerImage string) {
-	environment.imagesToPull[containerImage] = true
+	environment.imagesToPull[containerImage] = nil
 }
 
 func (environment *ValidatorEnvironment) AppendRequiredImageBuild(containerImage string, imageBuildSpec *image_build_spec.ImageBuildSpec) {
@@ -64,11 +62,11 @@ func (environment *ValidatorEnvironment) AppendRequiredImageBuild(containerImage
 }
 
 func (environmemt *ValidatorEnvironment) AppendImageToPullWithAuth(containerImage string, registrySpec *image_registry_spec.ImageRegistrySpec) {
-	environmemt.imagesToPullWithAuth[containerImage] = registrySpec
+	environmemt.imagesToPull[containerImage] = registrySpec
 }
 
 func (environment *ValidatorEnvironment) GetNumberOfContainerImagesToProcess() uint32 {
-	return uint32(len(environment.imagesToPull) + len(environment.imagesToBuild) + len(environment.imagesToPullWithAuth))
+	return uint32(len(environment.imagesToPull) + len(environment.imagesToBuild))
 }
 
 func (environment *ValidatorEnvironment) AddServiceName(serviceName service.ServiceName) {
