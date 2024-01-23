@@ -60,8 +60,6 @@ github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-202112070208
 github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6/go.mod h1:LB2yqaqWgd0oSew+GsdpcI1jRTq3W7toM7tX8rcS7c4=
 github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2 h1:izciXrFyFR+ihJ7nLTOkoIX5GzBPIp8gVKlw94gIc98=
 github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2/go.mod h1:bWSMQK3WHVTGHX9CjxPAb/LtzcmfOxID2wdzakSWQxo=
-github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230818184218-f4e3e773463b h1:hMoIM99QKcYQqsnK4AF7Lovi9ZD9ac6lZLZ5D/jx2x8=
-github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230818184218-f4e3e773463b/go.mod h1:4pFdrRwDz5R+Fov2ZuTaPhAVgjA2jhGh1Izf832sX7A=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/mholt/archiver v3.1.1+incompatible h1:1dCVxuqs0dJseYEhi5pl7MYPH9zDa1wBi7mF09cbNkU=

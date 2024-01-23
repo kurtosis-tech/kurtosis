@@ -111,7 +111,7 @@ require (
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
-	github.com/kurtosis-tech/kurtosis/utils v0.0.0-20240104153602-385833de9d76 // indirect
+	github.com/kurtosis-tech/kurtosis/utils v0.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect

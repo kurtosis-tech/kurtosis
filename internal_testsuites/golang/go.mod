@@ -4,6 +4,7 @@ go 1.20
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/utils => ../../utils
 )
@@ -21,7 +22,7 @@ require (
 )
 
 require (
-	github.com/kurtosis-tech/kurtosis/utils v0.0.0-20240104153602-385833de9d76
+	github.com/kurtosis-tech/kurtosis/utils v0.0.0 // Local dependency
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	k8s.io/utils v0.0.0-20230711102312-30195339c3c7
 )
@@ -37,7 +38,7 @@ require (
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2 // indirect
-	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230818184218-f4e3e773463b // indirect
+	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // indirect
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect

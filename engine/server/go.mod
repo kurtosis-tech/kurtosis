@@ -4,24 +4,27 @@ go 1.20
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/cloud/api/golang => ../../cloud/api/golang
 	github.com/kurtosis-tech/kurtosis/connect-server => ../../connect-server
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../../core/launcher
+	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang => ../../enclave-manager/api/golang
 	github.com/kurtosis-tech/kurtosis/enclave-manager/server => ../../enclave-manager/server
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../launcher
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang => ../../metrics-library/golang
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
 	github.com/kurtosis-tech/kurtosis/utils => ../../utils
 )
 
 require (
-	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10
-	github.com/kurtosis-tech/kurtosis/connect-server v0.0.0
+	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/connect-server v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // local dependency
-	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0
+	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.3
@@ -59,9 +62,9 @@ require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/hpcloud/tail v1.0.0
-	github.com/kurtosis-tech/kurtosis/enclave-manager/server v0.0.0-00010101000000-000000000000
-	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0-20230803130419-099ee7a4e3dc
-	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
+	github.com/kurtosis-tech/kurtosis/enclave-manager/server v0.0.0
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0
 	github.com/labstack/echo/v4 v4.11.3
 	github.com/rs/cors v1.9.0
 	github.com/spf13/afero v1.10.0
@@ -93,11 +96,11 @@ require (
 	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230828153722-32770ca96513 // indirect
+	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0 // indirect
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // indirect
-	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang v0.0.0-20230828153722-32770ca96513 // indirect
+	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang v0.0.0 // indirect
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect
-	github.com/kurtosis-tech/kurtosis/utils v0.0.0-00010101000000-000000000000 // indirect
+	github.com/kurtosis-tech/kurtosis/utils v0.0.0 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

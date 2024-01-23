@@ -2,9 +2,11 @@ module github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang
 
 go 1.20
 
+replace github.com/kurtosis-tech/kurtosis/api/golang => ../../../api/golang
+
 require (
 	connectrpc.com/connect v1.11.1
-	github.com/kurtosis-tech/kurtosis/api/golang v0.81.9
+	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // Local dependency
 	google.golang.org/grpc v1.56.3
 	google.golang.org/protobuf v1.31.0
 )
