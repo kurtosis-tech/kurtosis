@@ -15,6 +15,5 @@ COPY ./build/kurtosis-engine.$TARGETARCH ./kurtosis-engine
 
 COPY ./build/dlv.$TARGETARCH /dlv
 
-CMD ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "./kurtosis-engine"]
-
+CMD ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "--continue", "./kurtosis-engine"]
 

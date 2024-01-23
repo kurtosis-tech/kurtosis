@@ -277,7 +277,7 @@ func CreateEngine(
 		}
 	}()
 
-	/*if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
+	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		ctx,
 		dockerManager,
 		containerId,
@@ -286,7 +286,7 @@ func CreateEngine(
 		timeBetweenWaitForEngineAvailabilityRetries,
 	); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc port to become available")
-	}*/
+	}
 
 	result, err := getEngineObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
 	if err != nil {
