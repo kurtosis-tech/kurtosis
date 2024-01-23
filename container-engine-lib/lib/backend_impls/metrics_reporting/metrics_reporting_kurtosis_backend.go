@@ -215,9 +215,8 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating an API container from image '%v' with envvars: %+v",
+			"An error occurred creating an API container from image '%v'",
 			image,
-			customEnvVars,
 		)
 	}
 	return result, nil
