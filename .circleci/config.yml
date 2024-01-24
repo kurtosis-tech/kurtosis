@@ -565,6 +565,7 @@ jobs:
           paths:
             - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
             - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+            - "./<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
 
   build_golang_testsuite:
     executor: ubuntu_vm
@@ -1121,8 +1122,6 @@ jobs:
     parameters:
       <<: *param_cli_cluster_backend
     steps:
-      - checkout
-
       - <<: *abort_job_if_only_docs_changes
 
       # Set up Kurtosis
