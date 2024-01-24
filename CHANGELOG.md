@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.11](https://github.com/kurtosis-tech/kurtosis/compare/0.86.10...0.86.11) (2024-01-24)
+
+
+### Features
+
+* adding error logs when K8s resource creation fails in the create enclave workflow ([#2074](https://github.com/kurtosis-tech/kurtosis/issues/2074)) ([a35e0a2](https://github.com/kurtosis-tech/kurtosis/commit/a35e0a2cee4bb771ccf095271d4b8bb08cc0bcf4))
+
 ## [0.86.10](https://github.com/kurtosis-tech/kurtosis/compare/0.86.9...0.86.10) (2024-01-24)
 
 
