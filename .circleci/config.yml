@@ -30,66 +30,63 @@ steps_install_go: &steps_install_go
       sudo rm -rf /usr/local/go
       sudo tar -C /usr/local -xzf go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz
 
-prepare_testing_k8s_k3s:  &prepare_testing_k8s_k3s
-  - run:
-      name: Install K3D and create the K3D/K3S cluster on Docker
-      command: |
-        curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-        k3d cluster create -p "<< pipeline.parameters.reverse-proxy-entrypoint-web-port >>:80@loadbalancer" --servers 1 --wait --verbose
-  - run:
-      name: Load Kurtosis images into the K3S cluster
-      # First load the image into Docker and then import the images into K3S by taking the image from Docker
-      command: |
-        kurtosis_version="$(./scripts/get-docker-tag.sh)"
-        
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
-        
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
-        
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-        
-        k3d image import "kurtosistech/core:$kurtosis_version" "kurtosistech/engine:$kurtosis_version" "kurtosistech/files-artifacts-expander:$kurtosis_version"
-  # Edit the Kurtosis config file in order to have K3S cluster configuration
-  - run:
-      name: Add K3S cluster config in Kurtosis config file
-      command: |
-        KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
-        cat \<< EOF > "$KURTOSIS_CONFIG_FILEPATH"
-        config-version: 2
-        should-send-metrics: true
-        kurtosis-clusters:
-          docker:
-            type: docker
-          k3d-k3s-default:
-            type: kubernetes
-            config:
-              kubernetes-cluster-name: k3d-k3s-default
-              storage-class: local-path
-              enclave-size-in-megabytes: 2048
-        EOF
-  # Set the K3S cluster with some previous steps to force this cluster type in the cluster-setting file. This save us to start the engine with the cluster set command
-  # because we are going to start it on the next step
-  - run:
-      name: Set K3S Kurtosis cluster
-      command: |
-        KURTOSIS_CLUSTER_SETTING_FILEPATH="<< pipeline.parameters.kurtosis-cluster-setting-abs-filepath >>"
-        echo -n "k3d-k3s-default" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
-        echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
-        ${KURTOSIS_BINPATH} cluster set k3d-k3s-default --cli-log-level trace
-  - run:
-      name: Start Kurtosis engine in K8s backend
-      command: |
-        ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
-  - run:
-      name: Run Kurtosis gateway
-      command: "${KURTOSIS_BINPATH} gateway"
-      background: true
-
-
 # Steps to prepare a job for Kubernetes testing (with K3S K8S distribution)
 steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
   steps:
-    - <<: *prepare_testing_k8s_k3s
+    - run:
+        name: Install K3D and create the K3D/K3S cluster on Docker
+        command: |
+          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+          k3d cluster create -p "<< pipeline.parameters.reverse-proxy-entrypoint-web-port >>:80@loadbalancer" --servers 1 --wait --verbose
+    - run:
+        name: Load Kurtosis images into the K3S cluster
+        # First load the image into Docker and then import the images into K3S by taking the image from Docker
+        command: |
+          kurtosis_version="$(./scripts/get-docker-tag.sh)"
+          
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+          
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+          
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+          
+          k3d image import "kurtosistech/core:$kurtosis_version" "kurtosistech/engine:$kurtosis_version" "kurtosistech/files-artifacts-expander:$kurtosis_version"
+    # Edit the Kurtosis config file in order to have K3S cluster configuration
+    - run:
+        name: Add K3S cluster config in Kurtosis config file
+        command: |
+          KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
+          cat \<< EOF > "$KURTOSIS_CONFIG_FILEPATH"
+          config-version: 2
+          should-send-metrics: true
+          kurtosis-clusters:
+            docker:
+              type: docker
+            k3d-k3s-default:
+              type: kubernetes
+              config:
+                kubernetes-cluster-name: k3d-k3s-default
+                storage-class: local-path
+                enclave-size-in-megabytes: 2048
+          EOF
+    # Set the K3S cluster with some previous steps to force this cluster type in the cluster-setting file. This save us to start the engine with the cluster set command
+    # because we are going to start it on the next step
+    - run:
+        name: Set K3S Kurtosis cluster
+        command: |
+          KURTOSIS_CLUSTER_SETTING_FILEPATH="<< pipeline.parameters.kurtosis-cluster-setting-abs-filepath >>"
+          echo -n "k3d-k3s-default" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
+          echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
+          ${KURTOSIS_BINPATH} cluster set k3d-k3s-default --cli-log-level trace
+    - run:
+        name: Start Kurtosis engine in K8s backend
+        command: |
+          ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
+    - run:
+        name: Run Kurtosis gateway
+        command: "${KURTOSIS_BINPATH} gateway"
+        background: true
+
 
 run_prepare_testing_docker: &run_prepare_testing_docker
   - run:
@@ -925,9 +922,6 @@ jobs:
       - run: "${KURTOSIS_BINPATH} engine restart"
       - run: "${KURTOSIS_BINPATH} engine status"
 
-      # test that passing toleration doesn't affect Docker
-      - run: "${KURTOSIS_BINPATH} run --enclave with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
-
       # Test APIC restart
       - when:
           condition:
@@ -1125,6 +1119,8 @@ jobs:
 
   test_taints_and_tolerations:
     executor: ubuntu_vm
+    parameters:
+      <<: *param_cli_cluster_backend
     steps:
       - checkout
 
@@ -1134,16 +1130,28 @@ jobs:
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
-      - <<: *prepare_testing_k8s_k3s
+      # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
+      - when:
+          condition:
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s_k3s
 
-      - run: "sudo snap install kubectl --classic"
-      - run: "kubectl taint nodes k3d-k3s-default-server-0 foo=bar:NoSchedule"
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
+
+      - when:
+          condition:
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+          steps:
+            - run: "sudo snap install kubectl --classic"
+            - run: "kubectl taint nodes k3d-k3s-default-server-0 foo=bar:NoSchedule"
+            # test that without passing toleration the container doesn't get started
+            - run: "! ${KURTOSIS_BINPATH} run --enclave without-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >> --args {\"with_tolerations\": false}"
 
       # test that with toleration the container gets started
       - run: "${KURTOSIS_BINPATH} run --enclave with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
-
-      # test that without passing toleration the container doesnt get started
-      - run: "! ${KURTOSIS_BINPATH} run --enclave without-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >> --args {\"with_tolerations\": false}"
 
 
   # -- End build jobs ---------------------------------------
@@ -1624,6 +1632,19 @@ workflows:
 
       - test_taints_and_tolerations:
           name: "Tests taints and tolerations against Kubernetes"
+          cli-cluster-backend: "kubernetes"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
+      - test_taints_and_tolerations:
+          name: "Tests taints and tolerations against Docker"
+          cli-cluster-backend: "docker"
           context:
             - docker-user
           requires:
