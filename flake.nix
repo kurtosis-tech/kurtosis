@@ -10,7 +10,7 @@
     gomod2nix.inputs.flake-utils.follows = "flake-utils";
   };
 
-  outputs = { nixpkgs, unstable, flake-utils, gomod2nix, ... }:
+  outputs = { self, nixpkgs, unstable, flake-utils, gomod2nix, ... }:
     let utils = flake-utils;
     in utils.lib.eachDefaultSystem (system:
       let
@@ -20,10 +20,15 @@
           inherit pkgs system;
           nodejs = pkgs.nodejs_20;
         };
+        rev = "${self.shortRev or self.dirtyRev or "dirty"}";
       in {
         formatter = pkgs.nixpkgs-fmt;
 
         packages.default = pkgs.callPackage ./engine/server/. {
+          inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
+        };
+        packages.enclave-manager = pkgs.callPackage ./enclave-manager/server/. {
+          inherit rev;
           inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
         };
         devShell = pkgs.mkShell {
