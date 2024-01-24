@@ -926,7 +926,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} engine status"
 
       # test that passing toleration doesn't affect Docker
-      - run: "${KURTOSIS_BINPATH} run --enclave-with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
+      - run: "${KURTOSIS_BINPATH} run --enclave with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
 
       # Test APIC restart
       - when:
@@ -1137,13 +1137,13 @@ jobs:
       - <<: *prepare_testing_k8s_k3s
 
       - run: "sudo snap install kubectl --classic"
-      - run: "kubectl taint nodes k3d-k3s-default-server-0 foo:bar:NoSchedule"
+      - run: "kubectl taint nodes k3d-k3s-default-server-0 foo=bar:NoSchedule"
 
       # test that with toleration the container gets started
-      - run: "${KURTOSIS_BINPATH} run --enclave-with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
+      - run: "${KURTOSIS_BINPATH} run --enclave with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
 
       # test that without passing toleration the container doesnt get started
-      - run: "! ${KURTOSIS_BINPATH} run --enclave-without-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >> --args {\"with_tolerations\": false}"
+      - run: "! ${KURTOSIS_BINPATH} run --enclave without-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >> --args {\"with_tolerations\": false}"
 
 
   # -- End build jobs ---------------------------------------
