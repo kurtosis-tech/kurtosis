@@ -1130,7 +1130,7 @@ jobs:
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
-      - <<: *steps_prepare_testing_k8s_k3s
+      <<: *steps_prepare_testing_k8s_k3s
 
       - run: "sudo snap install kubectl --classic"
       - run: "kubectl taint nodes k3d-k3s-default-server-0 foo:bar:NoSchedule"
