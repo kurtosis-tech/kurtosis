@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.86.9](https://github.com/kurtosis-tech/kurtosis/compare/0.86.8...0.86.9) (2024-01-22)
+
+
+### Features
+
+* added support for private registries on docker ([#2058](https://github.com/kurtosis-tech/kurtosis/issues/2058)) ([7cda3d0](https://github.com/kurtosis-tech/kurtosis/commit/7cda3d08e4867352cca5c52f7766e04daa73d029))
+* emui strong indicator for form optional/required ([#2062](https://github.com/kurtosis-tech/kurtosis/issues/2062)) ([f0f51b4](https://github.com/kurtosis-tech/kurtosis/commit/f0f51b416221e30c489a2540057af0ba912f1cdf))
+
 ## [0.86.8](https://github.com/kurtosis-tech/kurtosis/compare/0.86.7...0.86.8) (2024-01-18)
 
 
