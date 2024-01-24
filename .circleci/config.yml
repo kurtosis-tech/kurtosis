@@ -223,6 +223,9 @@ parameters:
   starlark-test-args-file-test-main-star-relative-path:
     type: string
     default: "internal_testsuites/starlark/ci_tests/simple_arg_test/main.star"
+  starlark-test-taints-and-tolerations:
+    type: string
+    default: "internal_testsuites/starlark/taints_and_tolerations/taints_and_toleration_test.star"
   starlark-test-args-file-test-args-json-relative-path:
     type: string
     default: "internal_testsuites/starlark/ci_tests/simple_arg_test/args.json"
@@ -918,6 +921,9 @@ jobs:
       - run: "${KURTOSIS_BINPATH} engine restart"
       - run: "${KURTOSIS_BINPATH} engine status"
 
+      # test that passing toleration doesn't affect Docker
+      - run: "${KURTOSIS_BINPATH} run --enclave-with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
+
       # Test APIC restart
       - when:
           condition:
@@ -1112,6 +1118,25 @@ jobs:
 
       # running a broken package fails
       - run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package@25ecb4c271f870d6fdf8745169a142519e49aab8"
+
+  test_taints_and_tolerations:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+      - <<: *abort_job_if_only_docs_changes
+      - <<: *steps_prepare_testing_k8s_k3s
+      # Set up Kurtosis
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+      - run: "sudo snap install kubectl --classic"
+      - run: "kubectl taint nodes k3d-k3s-default-server-0 foo:bar:NoSchedule"
+
+      # test that with toleration the container gets started
+      - run: "${KURTOSIS_BINPATH} run --enclave-with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
+
+      # test that without passing toleration the container doesnt get started
+      - run: "! ${KURTOSIS_BINPATH} run --enclave-without-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >> --args {\"with_tolerations\": false}"
+
 
   # -- End build jobs ---------------------------------------
 
@@ -1588,6 +1613,19 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_main
+
+      - test_taints_and_tolerations:
+          name: "Tests taints and tolerations against Kubernetes"
+          cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
 
   publish:
     jobs:
