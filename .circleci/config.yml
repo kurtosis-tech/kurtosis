@@ -87,7 +87,6 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
 
-
 run_prepare_testing_docker: &run_prepare_testing_docker
   - run:
       name: Load the engine, apic and file artifacts images and start the engine
@@ -1129,6 +1128,9 @@ jobs:
       # Set up Kurtosis
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"          
 
       # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
