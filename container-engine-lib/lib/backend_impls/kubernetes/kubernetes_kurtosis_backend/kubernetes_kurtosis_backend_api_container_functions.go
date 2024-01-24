@@ -41,6 +41,8 @@ const (
 )
 
 var noWait *port_spec.Wait = nil
+
+// TODO add support for passing toleration to APIC
 var noTolerations []apiv1.Toleration = nil
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE

@@ -32,6 +32,7 @@ const (
 
 var noWait *port_spec.Wait = nil
 
+// TODO add support for passing toleration to Engine
 var noToleration []apiv1.Toleration = nil
 
 func CreateEngine(

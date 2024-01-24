@@ -15,7 +15,9 @@ toleration = Toleration(
 )
 ```
 
-Note all of the fields are completely optional and follow the rules as laid out in the Kubernetes doc linked above. 
+Note all of the fields are completely optional and follow the rules as laid out in the Kubernetes doc linked above.
+
+Note you need at least one untainted node to use Kurtosis with Kubernetes.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [service-config]: ./service-config.md
