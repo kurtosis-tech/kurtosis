@@ -41,6 +41,7 @@ const (
 )
 
 var noWait *port_spec.Wait = nil
+var noTolerations []apiv1.Toleration = nil
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
@@ -462,6 +463,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		apiContainerVolumes,
 		apiContainerServiceAccountName,
 		apiContainerRestartPolicy,
+		noTolerations,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
