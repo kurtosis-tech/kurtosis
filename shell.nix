@@ -3,9 +3,10 @@
   inherit ((fromJSON (readFile ./flake.lock)).nodes) nixpkgs gomod2nix;
 in import (fetchTree nixpkgs.locked) {
   overlays = [ (import "${fetchTree gomod2nix.locked}/overlay.nix") ];
-}), gomod2nix ? pkgs.gomod2nix, rev ? "dirty" }:
+}), mkGoEnv ? pkgs.mkGoEnv, gomod2nix ? pkgs.gomod2nix, rev ? "dirty" }:
 let
-
+  goEngineEnv = mkGoEnv { pwd = ./engine/server/.; };
+  goCoreEnv = mkGoEnv { pwd = ./core/server/.; };
 in pkgs.mkShell {
   nativeBuildInputs = with pkgs;
     let
@@ -17,6 +18,9 @@ in pkgs.mkShell {
         import ./nix-pkgs/openapi-codegen.nix { inherit pkgs; };
       grpc-tools-node = import ./nix-pkgs/grpc-tools-node.nix { inherit pkgs; };
     in [
+      goCoreEnv
+      goEngineEnv
+
       goreleaser
       go_1_20
       gopls

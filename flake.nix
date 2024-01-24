@@ -17,10 +17,12 @@
         pkgs = nixpkgs.legacyPackages.${system};
         unstable_pkgs = unstable.legacyPackages.${system};
         rev = "${self.shortRev or self.dirtyRev or "dirty"}";
-      in {
+      in rec {
         formatter = pkgs.nixpkgs-fmt;
 
-        packages.default = pkgs.callPackage ./cli/cli/. {
+        packages.default = packages.cli;
+
+        packages.cli = pkgs.callPackage ./cli/cli/. {
           inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
         };
 
@@ -33,9 +35,20 @@
           inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
         };
 
+        packages.core = pkgs.callPackage ./core/server/. {
+          inherit rev;
+          inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
+        };
+
+        packages.files_artifacts_expander =
+          pkgs.callPackage ./core/files_artifacts_expander/. {
+            inherit rev;
+            inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
+          };
+
         devShells.default = pkgs.callPackage ./shell.nix {
           inherit rev;
-          inherit (gomod2nix.legacyPackages.${system}) gomod2nix;
+          inherit (gomod2nix.legacyPackages.${system}) mkGoEnv gomod2nix;
         };
 
       });
