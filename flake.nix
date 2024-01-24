@@ -20,7 +20,11 @@
       in {
         formatter = pkgs.nixpkgs-fmt;
 
-        packages.default = pkgs.callPackage ./engine/server/. {
+        packages.default = pkgs.callPackage ./cli/cli/. {
+          inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
+        };
+
+        packages.engine = pkgs.callPackage ./engine/server/. {
           inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
         };
 
