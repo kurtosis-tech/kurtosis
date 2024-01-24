@@ -181,7 +181,7 @@ func (serviceConfig *ServiceConfig) GetLabels() map[string]string {
 	return serviceConfig.privateServiceConfig.Labels
 }
 
-func (serviceConfig *ServiceConfig) GetToleration() []v1.Toleration {
+func (serviceConfig *ServiceConfig) GetTolerations() []v1.Toleration {
 	return serviceConfig.privateServiceConfig.Tolerations
 }
 

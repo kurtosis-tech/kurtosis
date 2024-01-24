@@ -686,7 +686,7 @@ func convertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *start
 
 	var index = 0
 	for iterator.Next(&item) {
-		toleration, ok := item.(Toleration)
+		toleration, ok := item.(*Toleration)
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError("Expected item at index '%v' of the tolerations list passed via '%v' attr to be a '%v' but it wasn't", index, TolerationsAttr, TolerationTypeName)
 		}

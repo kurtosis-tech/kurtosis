@@ -88,7 +88,7 @@ func (toleration *Toleration) Copy() (builtin_argument.KurtosisValueType, error)
 	if err != nil {
 		return nil, err
 	}
-	return &User{
+	return &Toleration{
 		KurtosisValueTypeDefault: copiedValueType,
 	}, nil
 }
@@ -102,7 +102,7 @@ func (toleration *Toleration) GetKeyIfSet() (string, bool, *startosis_errors.Int
 	if !found {
 		return "", false, nil
 	}
-	return keyValue.String(), true, nil
+	return keyValue.GoString(), true, nil
 }
 
 func (toleration *Toleration) GetOperatorIfSet() (string, bool, *startosis_errors.InterpretationError) {
@@ -114,7 +114,7 @@ func (toleration *Toleration) GetOperatorIfSet() (string, bool, *startosis_error
 	if !found {
 		return "", false, nil
 	}
-	return attrValue.String(), true, nil
+	return attrValue.GoString(), true, nil
 }
 
 func (toleration *Toleration) GetValueIfExists() (string, bool, *startosis_errors.InterpretationError) {
@@ -126,7 +126,7 @@ func (toleration *Toleration) GetValueIfExists() (string, bool, *startosis_error
 	if !found {
 		return "", false, nil
 	}
-	return attrValue.String(), true, nil
+	return attrValue.GoString(), true, nil
 }
 
 func (toleration *Toleration) GetEffectIfExist() (string, bool, *startosis_errors.InterpretationError) {
@@ -138,7 +138,7 @@ func (toleration *Toleration) GetEffectIfExist() (string, bool, *startosis_error
 	if !found {
 		return "", false, nil
 	}
-	return attrValue.String(), true, nil
+	return attrValue.GoString(), true, nil
 }
 
 func (toleration *Toleration) GetTolerationSecondsIfExists() (int64, bool, *startosis_errors.InterpretationError) {
@@ -169,7 +169,7 @@ func (toleration *Toleration) ToKubeType() (*v1.Toleration, *startosis_errors.In
 		returnValue.Key = key
 	}
 
-	operator, operatorFound, err := toleration.GetKeyIfSet()
+	operator, operatorFound, err := toleration.GetOperatorIfSet()
 	if err != nil {
 		return nil, err
 	}
