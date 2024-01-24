@@ -165,7 +165,7 @@ config = ServiceConfig(
     # This has no effect on Docker
     # As of 2024-01-24 Taints and Tolerations to work with Kubernetes you need at least one untainted node
     # OPTIONAL
-    toleration = [
+    tolerations = [
         Toleration(
             key = "test-key",
             value = "test-value",
