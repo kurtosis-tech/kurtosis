@@ -59,7 +59,7 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 		metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 			metrics_client.NewMetricsClientCreatorOption(
 				source.KurtosisCLISource,
-				kurtosis_version.KurtosisVersion,
+				kurtosis_version.GetVersion(),
 				metricsUserId,
 				clusterType,
 				didUserAcceptSendingMetricsValueForMetricsClientCreation,
