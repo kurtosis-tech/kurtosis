@@ -216,6 +216,7 @@ func replaceMagicStrings(
 		serviceConfig.GetMinMemoryAllocationMegabytes(),
 		serviceConfig.GetLabels(),
 		serviceConfig.GetUser(),
+		serviceConfig.GetToleration(),
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating a service config")

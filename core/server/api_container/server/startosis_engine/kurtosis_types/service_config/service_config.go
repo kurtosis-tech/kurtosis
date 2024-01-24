@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
+	v1 "k8s.io/api/core/v1"
 	"math"
 	"path"
 )
@@ -45,6 +46,7 @@ const (
 	MaxMemoryMegaBytesAttr          = "max_memory"
 	LabelsAttr                      = "labels"
 	UserAttr                        = "user"
+	TolerationsAttr                 = "tolerations"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -188,6 +190,14 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*User],
 					Validator:         nil,
+				},
+				{
+					Name:              TolerationsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return nil
+					},
 				},
 			},
 		},
@@ -454,6 +464,18 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	var tolerations []v1.Toleration
+	tolerationsStarlarkList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, TolerationsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		tolerations, interpretationErr = convertTolerations(tolerationsStarlarkList)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -472,6 +494,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		minMemory,
 		labels,
 		serviceUser,
+		tolerations,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
@@ -653,4 +676,28 @@ func convertImage(
 		}
 		return imageName, nil, nil, nil
 	}
+}
+
+func convertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *startosis_errors.InterpretationError) {
+	var outputValue []v1.Toleration
+	iterator := tolerationsList.Iterate()
+	defer iterator.Done()
+	var item starlark.Value
+
+	var index = 0
+	for iterator.Next(&item) {
+		toleration, ok := item.(Toleration)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("Expected item at index '%v' of the tolerations list passed via '%v' attr to be a '%v' but it wasn't", index, TolerationsAttr, TolerationTypeName)
+		}
+
+		tolerationKubeType, err := toleration.ToKubeType()
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Error occurred while converting object at '%v' of '%v' list to internal type", index, TolerationsAttr)
+		}
+		outputValue = append(outputValue, *tolerationKubeType)
+		index += 1
+	}
+
+	return outputValue, nil
 }
