@@ -1122,6 +1122,9 @@ jobs:
     parameters:
       <<: *param_cli_cluster_backend
     steps:
+      # need this for something that k3s uses
+      - checkout
+
       - <<: *abort_job_if_only_docs_changes
 
       # Set up Kurtosis
