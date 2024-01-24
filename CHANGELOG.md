@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.86.10](https://github.com/kurtosis-tech/kurtosis/compare/0.86.9...0.86.10) (2024-01-24)
+
+
+### Features
+
+* emui centered layout ([#2070](https://github.com/kurtosis-tech/kurtosis/issues/2070)) ([3cf2f59](https://github.com/kurtosis-tech/kurtosis/commit/3cf2f596bc559df667d6ce680f4233b542473169))
+
+
+### Bug Fixes
+
+* remove log printing env vars ([#2069](https://github.com/kurtosis-tech/kurtosis/issues/2069)) ([9d9292b](https://github.com/kurtosis-tech/kurtosis/commit/9d9292b11307d9c1586f13bb2deeb1d306167083))
+
 ## [0.86.9](https://github.com/kurtosis-tech/kurtosis/compare/0.86.8...0.86.9) (2024-01-22)
 
 
