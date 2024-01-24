@@ -158,6 +158,7 @@ func (toleration *Toleration) GetTolerationSecondsIfExists() (int64, bool, *star
 }
 
 func (toleration *Toleration) ToKubeType() (*v1.Toleration, *startosis_errors.InterpretationError) {
+	//nolint :exhaustruct
 	returnValue := &v1.Toleration{}
 
 	key, keyFound, err := toleration.GetKeyIfSet()

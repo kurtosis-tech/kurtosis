@@ -58,7 +58,7 @@ func (t *serviceConfigTolerationTest) Assert(typeValue builtin_argument.Kurtosis
 		t.packageContentProvider,
 		testNoPackageReplaceOptions)
 	require.Nil(t, interpretationErr)
-	expectedTolerations := []v1.Toleration{{testTolerationKey, v1.TolerationOpEqual, testTolerationValue, v1.TaintEffectNoSchedule, &testTolerationSeconds}}
+	expectedTolerations := []v1.Toleration{{Key: testTolerationKey, Operator: v1.TolerationOpEqual, Value: testTolerationValue, Effect: v1.TaintEffectNoSchedule, TolerationSeconds: &testTolerationSeconds}}
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		nil,
