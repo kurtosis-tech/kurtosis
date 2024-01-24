@@ -1,5 +1,5 @@
 def run(plan, with_tolerations=True):
-    if with_toleration:
+    if with_tolerations:
         config = ServiceConfig(
             image="kurtosistech/example-datastore-server",
             tolerations=[
