@@ -22,6 +22,11 @@
           inherit rev;
           inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
         };
+        packages.files_artifacts_expander =
+          callPackage ./files_artifacts_expander/. {
+            inherit rev;
+            inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
+          };
         devShells.default = callPackage ./shell.nix {
           inherit rev;
           inherit (gomod2nix.legacyPackages.${system}) mkGoEnv gomod2nix;
