@@ -9,12 +9,12 @@ This guide assumes that you have [Kurtosis installed](../get-started/installing-
 
 :::warn Experimental Feature
 This is an experimental feature still under development and some Docker Compose setups are not yet supported. 
-See below for full list of features not yet supported in Kurtosis. If you'd like support for your Docker Compose setup, let us know at our [Github](github.com/kurtosis-tech/kurtosis/issues)!
+See below for list of features not yet supported in Kurtosis. If you'd like support for your Docker Compose setup, let us know at our [Github](github.com/kurtosis-tech/kurtosis/issues)!
 :::
 
 ### 1. Setup Docker Compose project
 
-Navigate to the root of your project with a `docker-compose.yml` or if the project is hosted on Github grab the Github link where the Docker Compose exists. For this guide, we'll go off of the [nextcloud-redis-mariadb`](https://github.com/docker/awesome-compose/blob/master/nextcloud-redis-mariadb/compose.yaml) compose in the [`awesome-compose`](https://github.com/docker/awesome-compose/tree/master) repo.
+Navigate to the root of your project with a `docker-compose.yml` or if the project is hosted on Github, grab the Github link where the Docker Compose exists. For this guide, we'll go off of the [`nextcloud-redis-mariadb`](https://github.com/docker/awesome-compose/blob/master/nextcloud-redis-mariadb/compose.yaml) compose in the [`awesome-compose`](https://github.com/docker/awesome-compose/tree/master) repo.
 
 ```
 services:
@@ -67,14 +67,17 @@ networks:
 ### 2. Run!
 
 In the root of your project, run the following command:
+
 ```
 kurtosis run .
 ```
 OR using github link:
 ```
-kurtosis run github.com/awesome-compose/elasticsearch-logstash-kibana
+kurtosis run github.com/awesome-compose/nextcloud-redis-mariadb
 ```
+
 Behind the scenes, Kurtosis will interpret your Docker Compose setup as a Kurtosis [package](../get-started/basic-concepts.md#package) and convert it into [starlark](../advanced-concepts/starlark.md) that is executed on an [enclave](../get-started/basic-concepts.md#enclave). The output will look like this:
+
 ```bash
 INFO[2024-01-25T13:56:29-05:00] Creating a new enclave for Starlark to run inside...
 INFO[2024-01-25T13:56:33-05:00] Enclave 'blue-ravine' created successfully
@@ -114,10 +117,11 @@ UUID           Name    Ports                              Status
 c30843ea60b8   nc      port0: 80/tcp -> 127.0.0.1:62938   RUNNING
 26dceba15800   redis   <none>                             RUNNING
 ```
-Congrats! You now have your Docker Compose setup running in Kurtosis. Now, run `kurtosis web` to view your environment via Kurtosis' GUI!
+
+Congrats! You now have your Docker Compose setup running in Kurtosis. Now, run `kurtosis web` to view your environment in Kurtosis' GUI!
 
 ![compose env](../../static/img/guides/compose-env.jpg)
 
 ### Note: Docker Compose features not supported
 
-- 
+# TODO(tedi)
