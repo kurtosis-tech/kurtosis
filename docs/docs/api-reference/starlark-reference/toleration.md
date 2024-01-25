@@ -3,7 +3,8 @@ title: Toleration
 sidebar_label: Toleration
 ---
 
-The `Toleration` constructor creates a `Toleration` object that represents a Kubernetes [Toleration](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)
+The `Toleration` constructor creates a `Toleration` object that represents a Kubernetes [Toleration](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) that
+can be used with a [ServiceConfig][service-config] object.
 
 ```python
 toleration = Toleration(
@@ -15,7 +16,7 @@ toleration = Toleration(
 )
 ```
 
-Note all of the fields are completely optional and follow the rules as laid out in the Kubernetes doc linked above.
+Note all fields are completely optional and follow the rules as laid out in the Kubernetes doc linked above.
 
 Note you need at least one untainted node to use Kurtosis with Kubernetes.
 
