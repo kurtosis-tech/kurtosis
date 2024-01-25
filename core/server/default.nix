@@ -20,4 +20,5 @@ in buildGoApplication {
   pwd = ./.;
   src = ./.;
   modules = ./gomod2nix.toml;
+  CGO_ENABLED = 0;
 }
