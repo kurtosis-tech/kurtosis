@@ -2,7 +2,6 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -10,48 +9,45 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
 	"testing"
 )
 
-type serviceConfigImageBuildSpecTestCase struct {
+type serviceConfigTolerationTest struct {
 	*testing.T
 	serviceNetwork         *service_network.MockServiceNetwork
 	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
-func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSpec() {
-	suite.packageContentProvider.EXPECT().
-		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
-		Times(1).
-		Return(testBuildContextLocator, nil)
-
-	suite.packageContentProvider.EXPECT().
-		GetOnDiskAbsolutePackageFilePath(testContainerImageLocator).
-		Times(1).
-		Return(testOnDiskContainerImagePath, nil)
-
-	suite.run(&serviceConfigImageBuildSpecTestCase{
+func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithTolerationTest() {
+	suite.run(&serviceConfigTolerationTest{
 		T:                      suite.T(),
 		serviceNetwork:         suite.serviceNetwork,
 		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
-func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
-	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
-		service_config.ImageBuildSpecTypeName,
-		service_config.BuiltImageNameAttr,
-		testContainerImageName,
-		service_config.BuildContextAttr,
-		testBuildContextDir,
-		service_config.TargetStageAttr,
-		testTargetStage)
-	return fmt.Sprintf("%s(%s=%s)",
+func (t *serviceConfigTolerationTest) GetStarlarkCode() string {
+	toleration := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q, %s=%v)",
+		service_config.TolerationTypeName,
+		service_config.KeyAttr,
+		testTolerationKey,
+		service_config.OperatorAttr,
+		v1.TolerationOpEqual,
+		service_config.ValueAttr,
+		testTolerationValue,
+		service_config.EffectAttr,
+		v1.TaintEffectNoSchedule,
+		service_config.TolerationSecondsAttr,
+		testTolerationSeconds,
+	)
+	return fmt.Sprintf("%s(%s=%q, %s=[%s])",
 		service_config.ServiceConfigTypeName,
-		service_config.ImageAttr, imageBuildSpec)
+		service_config.ImageAttr, testContainerImageName,
+		service_config.TolerationsAttr, toleration)
 }
 
-func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
+func (t *serviceConfigTolerationTest) Assert(typeValue builtin_argument.KurtosisValueType) {
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
@@ -62,14 +58,10 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		t.packageContentProvider,
 		testNoPackageReplaceOptions)
 	require.Nil(t, interpretationErr)
-
-	expectedImageBuildSpec := image_build_spec.NewImageBuildSpec(
-		testOnDiskContextDirPath,
-		testOnDiskContainerImagePath,
-		testTargetStage)
+	expectedTolerations := []v1.Toleration{{Key: testTolerationKey, Operator: v1.TolerationOpEqual, Value: testTolerationValue, Effect: v1.TaintEffectNoSchedule, TolerationSeconds: &testTolerationSeconds}}
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
-		expectedImageBuildSpec,
+		nil,
 		nil,
 		map[string]*port_spec.PortSpec{},
 		map[string]*port_spec.PortSpec{},
@@ -85,9 +77,9 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		0,
 		map[string]string{},
 		nil,
-		nil,
+		expectedTolerations,
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
-	require.Equal(t, expectedImageBuildSpec, serviceConfig.GetImageBuildSpec())
+	require.Equal(t, expectedTolerations, serviceConfig.GetTolerations())
 }

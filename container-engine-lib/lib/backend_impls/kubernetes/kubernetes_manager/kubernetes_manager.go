@@ -1048,6 +1048,7 @@ func (manager *KubernetesManager) CreatePod(
 	podVolumes []apiv1.Volume,
 	podServiceAccountName string,
 	restartPolicy apiv1.RestartPolicy,
+	tolerations []apiv1.Toleration,
 ) (*apiv1.Pod, error) {
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespaceName)
 
@@ -1096,7 +1097,7 @@ func (manager *KubernetesManager) CreatePod(
 		Subdomain:                 "",
 		Affinity:                  nil,
 		SchedulerName:             "",
-		Tolerations:               nil,
+		Tolerations:               tolerations,
 		HostAliases:               nil,
 		PriorityClassName:         "",
 		Priority:                  nil,

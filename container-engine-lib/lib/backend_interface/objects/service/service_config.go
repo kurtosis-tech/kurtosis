@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/stacktrace"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Config options for the underlying container of a service
@@ -57,6 +58,9 @@ type privateServiceConfig struct {
 	Labels map[string]string
 
 	User *service_user.ServiceUser
+
+	// TODO replace this with an abstraction that we own
+	Tolerations []v1.Toleration
 }
 
 func CreateServiceConfig(
@@ -77,6 +81,7 @@ func CreateServiceConfig(
 	minMemoryMegaBytes uint64,
 	labels map[string]string,
 	user *service_user.ServiceUser,
+	tolerations []v1.Toleration,
 ) (*ServiceConfig, error) {
 
 	if err := ValidateServiceConfigLabels(labels); err != nil {
@@ -102,6 +107,7 @@ func CreateServiceConfig(
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
 		Labels:                       labels,
 		User:                         user,
+		Tolerations:                  tolerations,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -174,6 +180,10 @@ func (serviceConfig *ServiceConfig) GetUser() *service_user.ServiceUser {
 
 func (serviceConfig *ServiceConfig) GetLabels() map[string]string {
 	return serviceConfig.privateServiceConfig.Labels
+}
+
+func (serviceConfig *ServiceConfig) GetTolerations() []v1.Toleration {
+	return serviceConfig.privateServiceConfig.Tolerations
 }
 
 func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {

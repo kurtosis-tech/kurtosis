@@ -117,4 +117,8 @@ var (
 		testServiceConfigLabelsKey1: testServiceConfigLabelsValue1,
 		testServiceConfigLabelsKey2: testServiceConfigLabelsValue2,
 	}
+
+	testTolerationKey     = "test-key"
+	testTolerationValue   = "test-value"
+	testTolerationSeconds = int64(64)
 )
