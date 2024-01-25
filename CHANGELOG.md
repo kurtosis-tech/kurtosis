@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.86.12](https://github.com/kurtosis-tech/kurtosis/compare/0.86.11...0.86.12) (2024-01-25)
+
+
+### Features
+
+* emui add report a bug and info dialog to nav ([#2080](https://github.com/kurtosis-tech/kurtosis/issues/2080)) ([7045ca5](https://github.com/kurtosis-tech/kurtosis/commit/7045ca5d0ed89b8d56c04ce26f9ef01007eb1c25)), closes [#2078](https://github.com/kurtosis-tech/kurtosis/issues/2078) [#2077](https://github.com/kurtosis-tech/kurtosis/issues/2077)
+* support passing toleration to kubernetes ([#2071](https://github.com/kurtosis-tech/kurtosis/issues/2071)) ([7a36ea3](https://github.com/kurtosis-tech/kurtosis/commit/7a36ea35145bdf3f41a7b5c8e357ffd9a4cdfbc6)), closes [#2048](https://github.com/kurtosis-tech/kurtosis/issues/2048)
+
 ## [0.86.11](https://github.com/kurtosis-tech/kurtosis/compare/0.86.10...0.86.11) (2024-01-24)
 
 
