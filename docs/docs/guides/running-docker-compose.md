@@ -83,8 +83,8 @@ INFO[2024-01-25T13:56:29-05:00] Creating a new enclave for Starlark to run insid
 INFO[2024-01-25T13:56:33-05:00] Enclave 'blue-ravine' created successfully
 
 Container images used in this run:
-> nextcloud:apache - locally cached
-> mariadb:10.5 - locally cached
+> nextcloud:apache - remotely downloaded
+> mariadb:10.5 - locally built
 > redis:alpine - locally cached
 
 > add_service name="db" config=ServiceConfig(image="mariadb:10.5", files={"/var/lib/mysql": Directory(persistent_key="db--volume0")}, cmd=["--transaction-isolation=READ-COMMITTED", "--binlog-format=ROW"], env_vars={"MYSQL_DATABASE": "nextcloud", "MYSQL_PASSWORD": "nextcloud", "MYSQL_ROOT_PASSWORD": "nextcloud", "MYSQL_USER": "nextcloud"})
@@ -124,8 +124,10 @@ Congrats! You now have your Docker Compose setup running in Kurtosis. Now, run `
 
 ### Notes on Docker Compose to Kurtosis conversion
 
-#TODO(tedi)
-
-### Docker Compose features not supported
-
-#TODO(tedi)
+- Named volumes are converted to a [Persistent Directory](../api-reference/starlark-reference/directory.md) in Kurtosis - a Kurtosis managed directory that persists on services through multiple runs.
+- Kurtosis handles creating an isolated network inside an enclave [`network`](https://docs.docker.com/compose/compose-file/05-services/#networks) key is found in compose specifying custom networks, the config will be ignored, potentially altering network behavior in the environment.
+- Services with a `_` in the name must be renamed as Kurtosis naming follows [RFC-1035](../best-practices.md) standard.
+- Service level [`env_file`](https://docs.docker.com/compose/compose-file/05-services/#env_file) key is not yet supported ([`environment`](https://docs.docker.com/compose/compose-file/compose-file-v3/#environment) is supported)
+- [`secret`](https://docs.docker.com/compose/compose-file/05-services/#secrets) key is not yet supported
+- For`volumes`, absolute path mappings (e.g. `/opt/data:/var/lib/mysql`) are not supported as Kurtosis packages cannot reference files outside a Kurtosis package. You can move the contents inside the package and convert to a regular path to get it to work in Kurtosis.
+- Referencing a service's name in a hostname elsewhere in the Docker Compose (e.g. `postgres://db:5431`) is not supported
