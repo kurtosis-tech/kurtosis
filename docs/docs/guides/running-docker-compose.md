@@ -122,6 +122,10 @@ Congrats! You now have your Docker Compose setup running in Kurtosis. Now, run `
 
 ![compose env](../../static/img/guides/compose-env.jpg)
 
-### Note: Docker Compose features not supported
+### Notes on Docker Compose to Kurtosis conversion
 
-# TODO(tedi)
+#TODO(tedi)
+
+### Docker Compose features not supported
+
+#TODO(tedi)
