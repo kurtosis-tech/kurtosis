@@ -59,6 +59,7 @@ type privateServiceConfig struct {
 
 	User *service_user.ServiceUser
 
+	// TODO replace this with an abstraction that we own
 	Tolerations []v1.Toleration
 }
 
