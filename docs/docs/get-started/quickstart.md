@@ -19,8 +19,8 @@ Before you get started, make sure you have:
 This guide will have you writing Kurtosis Starlark. You can optionally install [the VSCode plugin](https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension) to get syntax highlighting, autocomplete, and documentation.
 :::
 
-:::tip
-Have a Docker Compose setup already? Check out this [guide][running-docker-compose] to see how you can use Kurtosis to run your Docker Compose setup in one line!
+:::tip Have a Docker Compose setup?
+Check out this [guide][running-docker-compose] to run your Docker Compose setup with Kurtosis in one line!
 :::
 
 Run a basic package from Github
