@@ -9,7 +9,7 @@ This guide assumes that you have [Kurtosis installed](../get-started/installing-
 
 :::info Experimental Feature
 This is an experimental feature still under development and some Docker Compose setups are not yet supported. 
-See below for list of features not yet supported in Kurtosis. If you'd like support for your Docker Compose setup, let us know at our [Github](https://github.com/kurtosis-tech/kurtosis/issues)!
+See below for list of features not yet supported in Kurtosis. If you'd like support for your Docker Compose setup, let us know on [Github](https://github.com/kurtosis-tech/kurtosis/issues)!
 :::
 
 ### 1. Setup Docker Compose project
