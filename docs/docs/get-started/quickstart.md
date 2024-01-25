@@ -205,7 +205,7 @@ Now that you've use the Kurtosis CLI to run a package, inspect the resulting env
 [basic-files-artifact]: ../get-started/basic-concepts.md#files-artifact
 [write-your-first-package]: ../get-started/write-your-first-package.md
 [running-in-k8s]: ../guides/running-in-k8s.md
-[running-docker-compose] ../guides/running-docker-compose.md
+[running-docker-compose]: ../guides/running-docker-compose.md
 
 <!--------------------------- Advanced Concepts ------------------------------------>
 [architecture-explanation]: ../advanced-concepts/architecture.md
