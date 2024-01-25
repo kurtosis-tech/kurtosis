@@ -1153,7 +1153,7 @@ jobs:
             - run: "sudo snap install kubectl --classic"
             - run: "kubectl taint nodes k3d-k3s-default-server-0 foo=bar:NoSchedule"
             # test that without passing toleration the container doesn't get started
-            - run: "! ${KURTOSIS_BINPATH} run --enclave without-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >> {\"with_tolerations\": false}"
+            - run: "! ${KURTOSIS_BINPATH} run --enclave without-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >> '{\"with_tolerations\": false}'"
             # TODO make the k3s cluster multi node and have a better test for taints and tolerations
             # TODO perhaps add support for tolerations for APIC and test that
 
