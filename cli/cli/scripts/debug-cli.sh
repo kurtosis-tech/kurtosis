@@ -15,9 +15,8 @@ source "${script_dirpath}/_constants.sh"
 #                                             Main Logic
 # ==================================================================================================
 
-# Check and install Go Delve is debug mode is on
-# if developers are using Nix it should be installed, but it's better to check first because the script could be executed from outside the Nix scope
-
+# Check and install Go Delve
+# it should be installed if you are using Nix, but it's better to check first because the script could be executed from outside the Nix scope
 echo "Checking for Delve..."
 if ! dlv version ; then
   echo "Delve binary was no found, we recommend you whether to execute this script inside the Nix scope (if you are using Nix) or install the Delve binary with this cmd: 'go install github.com/go-delve/delve/cmd/dlv@latest'"

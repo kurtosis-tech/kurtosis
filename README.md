@@ -346,7 +346,7 @@ A Kurtosis engine is running with the following info:
 Version:   0.X.Y
 ```
 
-1. Run `test.sh` script
+3. Run `test.sh` script
 
 ```console
 $ ./internal_testsuites/scripts/test.sh
@@ -371,6 +371,45 @@ alias kurtosis="$(pwd)/cli/cli/scripts/launch-cli.sh"
 kurtosis enclave add
 ```
 
+Run Debug Instructions (for Golang code so far)
+----------------------------------------------
+
+For running CLI with Golang remote debug:
+
+1. Build the CLI dev binary and run the command you want to debug (kurtosis version in this example), this will start the debug server and will wait for a client connection
+```bash
+cli/cli/scripts/build.sh
+source ./scripts/set_kt_alias.sh
+ktdebug version
+```
+2. Open the command's file you want to debug
+3. Add the breakpoint in the line where you want to stop the cursor
+<img src="./readme-static-files/goland-breakpoint.png" />
+4. Then choose the "CLI-remote-debug" run configuration in the "run panel"
+5. Press the "debug" button
+<img src="./readme-static-files/goland-debug-button.png" />
+6. Use the debug panel to inspect the variables value and continue with the debug flow
+<img src="./readme-static-files/goland-debug-panel.png" />
+
+
+For running CLI with Delve debug client:
+1. Build the CLI dev binary and run the command you want to debug (kurtosis version in this example), but first pass "dlv-terminal" as the first argument (this will start the Delve client in the terminal)
+```bash
+cli/cli/scripts/build.sh
+source ./scripts/set_kt_alias.sh
+ktdebug dlv-terminal version
+```
+2. You can add a new breakpoint using the terminal client and the `break` command
+```bash
+(dlv) break version.run:1
+```
+3. You can move the cursos to the breakpoint with the `continue` command
+```bash
+(dlv) continue
+```
+<img src="./readme-static-files/dlv-terminal.png" />
+4. You can see the [more Delve commands here][delve-docs]
+
 </details>
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
@@ -383,3 +422,4 @@ kurtosis enclave add
 [twitter]: https://twitter.com/KurtosisTech
 [starlark-explanation]: https://docs.kurtosis.com/explanations/starlark
 [stackoverflow-2022-developer-survey--other-tools]: https://survey.stackoverflow.co/2022/#most-popular-technologies-tools-tech-prof
+[delve-docs]: https://github.com/go-delve/delve/blob/master/Documentation/cli/README.md
