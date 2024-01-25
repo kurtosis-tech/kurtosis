@@ -323,6 +323,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 			"test-second-label-key": "test-second-label-value",
 		},
 		nil,
+		nil,
 	)
 	require.NoError(t, err)
 	return serviceConfig

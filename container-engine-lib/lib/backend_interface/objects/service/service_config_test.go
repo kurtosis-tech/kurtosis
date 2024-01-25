@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
 	"testing"
 	"time"
 )
@@ -80,6 +81,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 			"test-second-label-key": "test-second-label-value",
 		},
 		testServiceUser(),
+		testToleration(),
 	)
 	require.NoError(t, err)
 	return serviceConfig
@@ -186,4 +188,15 @@ func testServiceUser() *service_user.ServiceUser {
 	su := service_user.NewServiceUser(100)
 	su.SetGID(100)
 	return su
+}
+
+func testToleration() []v1.Toleration {
+	tolerationSeconds := int64(6)
+	return []v1.Toleration{{
+		Key:               "testKey",
+		Operator:          v1.TolerationOpEqual,
+		Value:             "testValue",
+		Effect:            v1.TaintEffectNoExecute,
+		TolerationSeconds: &tolerationSeconds,
+	}}
 }
