@@ -20,6 +20,11 @@
       in rec {
         formatter = pkgs.nixpkgs-fmt;
 
+        devShells.default = pkgs.callPackage ./shell.nix {
+          inherit rev;
+          inherit (gomod2nix.legacyPackages.${system}) mkGoEnv gomod2nix;
+        };
+
         packages.default = packages.cli;
 
         packages.cli = pkgs.callPackage ./cli/cli/. {
@@ -46,10 +51,36 @@
             inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
           };
 
-        devShells.default = pkgs.callPackage ./shell.nix {
-          inherit rev;
-          inherit (gomod2nix.legacyPackages.${system}) mkGoEnv gomod2nix;
+        packages.container.amd64 = let
+          server = packages.default.overrideAttrs (old:
+            old // {
+              GOOS = "linux";
+              GOARCH = "amd64";
+              doCheck = false;
+            });
+        in pkgs.dockerTools.buildImage {
+          name = "kurtosis-cloud-backend";
+          tag = rev;
+          created = "now";
+          contents = server;
+          architecture = "amd64";
+          config.Cmd = [ "${server}/bin/linux_amd64/server" ];
         };
 
+        packages.container.arm64 = let
+          server = packages.default.overrideAttrs (old:
+            old // {
+              GOOS = "linux";
+              GOARCH = "arm64";
+              doCheck = false;
+            });
+        in pkgs.dockerTools.buildImage {
+          name = "kurtosis-cloud-backend";
+          tag = rev;
+          created = "now";
+          contents = server;
+          architecture = "arm64";
+          config.Cmd = [ "${server}/bin/linux_arm64/server" ];
+        };
       });
 }
