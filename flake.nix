@@ -72,9 +72,9 @@
                   @@   @@@    @@@    @@      
                     @@@         @@@@@@@@     
             \u001b[0m
-            Starting Kurtosis dev shell. Setup the alias to local compiled Kurtosis cli command "ktdev" by running:
+            Starting Kurtosis dev shell. Setup the alias to local compiled Kurtosis cli command "ktdev" and "ktdebug" by running:
             \e[32m
-            source ./scripts/set_ktdev.sh
+            source ./scripts/set_kt_alias.sh
             \e[0m
             '
           '';
