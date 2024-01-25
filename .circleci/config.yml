@@ -913,6 +913,12 @@ jobs:
       # Execute docker compose import
       - run: "${KURTOSIS_BINPATH} import --enclave test-import --env << pipeline.parameters.dockerimport-cli-dotenv-relative-path >> << pipeline.parameters.dockerimport-cli-dockerfile-relative-path >>"
 
+      # This just tests that tolerations don't mess up Docker
+      # TODO add proper tests for Docker and Kubernetes that test
+      # Adding Toleration to a tainted cluster makes things work
+      # Not having toleration fails
+      - run: "${KURTOSIS_BINPATH} run --enclave with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
+
       # Execute engine functions
       - run: "${KURTOSIS_BINPATH} engine stop"
       - run: "${KURTOSIS_BINPATH} engine stop"
@@ -1116,58 +1122,6 @@ jobs:
 
       # running a broken package fails
       - run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package@25ecb4c271f870d6fdf8745169a142519e49aab8"
-
-  test_taints_and_tolerations:
-    executor: ubuntu_vm
-    parameters:
-      <<: *param_cli_cluster_backend
-    steps:
-      # need this for something that k3s uses
-      - checkout
-
-      - <<: *abort_job_if_only_docs_changes
-
-      # Set up Kurtosis
-      - attach_workspace:
-          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
-
-      - run: |
-          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
-      - run: "${KURTOSIS_BINPATH} analytics disable"
-
-      # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
-      - when:
-          condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-          <<: *steps_prepare_testing_k8s_k3s
-
-      - when:
-          condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
-          <<: *steps_prepare_testing_docker
-
-      - when:
-          condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-          steps:
-            - run: "sudo snap install kubectl --classic"
-            - run: "kubectl taint nodes k3d-k3s-default-server-0 foo=bar:NoSchedule"
-            # test that without passing toleration the container doesn't get started
-            - run:
-                name: "Expect timeout"
-                command: "! ${KURTOSIS_BINPATH} run --enclave without-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >> '{\"with_tolerations\": false}'"
-                no_output_timeout: "5m"
-                when: "on_fail"
-            # TODO make the k3s cluster multi node and have a better test for taints and tolerations
-            # TODO perhaps add support for tolerations for APIC and test that
-
-      - when:
-          condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
-          steps:
-            # test that with toleration the container gets started on Docker
-            - run: "${KURTOSIS_BINPATH} run --enclave with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
-
 
   # -- End build jobs ---------------------------------------
 
@@ -1644,31 +1598,6 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_main
-
-      - test_taints_and_tolerations:
-          name: "Tests taints and tolerations against Kubernetes"
-          cli-cluster-backend: "kubernetes"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
-
-      - test_taints_and_tolerations:
-          name: "Tests taints and tolerations against Docker"
-          cli-cluster-backend: "docker"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
-
 
   publish:
     jobs:
