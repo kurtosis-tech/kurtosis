@@ -51,7 +51,11 @@
             inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
           };
 
-        packages.container.amd64 = let
+        checks.cli = packages.cli;
+        checks.core = packages.core;
+        checks.engine = packages.engine;
+
+        container.image.amd64 = let
           server = packages.default.overrideAttrs (old:
             old // {
               GOOS = "linux";
@@ -67,7 +71,7 @@
           config.Cmd = [ "${server}/bin/linux_amd64/server" ];
         };
 
-        packages.container.arm64 = let
+        container.image.arm64 = let
           server = packages.default.overrideAttrs (old:
             old // {
               GOOS = "linux";
