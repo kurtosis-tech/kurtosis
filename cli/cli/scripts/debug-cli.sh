@@ -56,4 +56,4 @@ if [ "${first_argument}" == "dlv-terminal" ]; then
   cli_arguments=${2+"${@:2}"}
 fi
 
-dlv --listen="127.0.0.1:${CLI_DEBUG_SERVER_PORT}" --headless="${headless_val}" --api-version=2 --check-go-version=false --only-same-user=false exec "${cli_binary_filepath}" ${cli_arguments}
+dlv --listen="127.0.0.1:${CLI_DEBUG_SERVER_PORT}" --headless="${headless_val}" --api-version=2 --check-go-version=false --only-same-user=false exec "${cli_binary_filepath}" ${cli_arguments} -- "--debug-mode"

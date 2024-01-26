@@ -19,7 +19,7 @@ var EngineCmd = &cobra.Command{
 }
 
 func init() {
-	EngineCmd.AddCommand(start.StartCmd)
+	EngineCmd.AddCommand(start.StartCmd.MustGetCobraCommand())
 	EngineCmd.AddCommand(status.StatusCmd)
 	EngineCmd.AddCommand(stop.StopCmd)
 	EngineCmd.AddCommand(restart.RestartCmd)

@@ -8,6 +8,7 @@ import (
 
 const (
 	uintBase   = 10
+	uint8Bits  = 8
 	uint32Bits = 32
 )
 
@@ -24,6 +25,7 @@ type flagTypeProcessor func(
 // Completeness enforced via unit test
 var AllFlagTypeProcessors = map[FlagType]flagTypeProcessor{
 	FlagType_String: processStringFlag,
+	FlagType_Uint8:  processUint8Flag,
 	FlagType_Uint32: processUint32Flag,
 	FlagType_Bool:   processBoolFlag,
 }
@@ -40,6 +42,33 @@ func processStringFlag(
 		flagKey,
 		shorthand,
 		defaultValueStr,
+		usage,
+	)
+	return nil
+}
+
+func processUint8Flag(
+	flagKey string,
+	shorthand string,
+	defaultValueStr string,
+	usage string,
+	cobraFlagSet *flag.FlagSet,
+) error {
+	defaultValueUint64, err := strconv.ParseUint(defaultValueStr, uintBase, uint8Bits)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"Could not parse default value string '%v' of flag '%v' to a uint8 using base %v and bits %v",
+			defaultValueStr,
+			flagKey,
+			uintBase,
+			uint8Bits,
+		)
+	}
+	cobraFlagSet.Uint8P(
+		flagKey,
+		shorthand,
+		uint8(defaultValueUint64),
 		usage,
 	)
 	return nil

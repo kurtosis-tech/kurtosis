@@ -25,9 +25,9 @@ MAIN_BINARY_OUTPUT_FILEPATH="${engine_root_dirpath}/${BUILD_DIRNAME}/${MAIN_BINA
 DELVE_BINARY_FILENAME="dlv"
 DELVE_BINARY_OUTPUT_FILEPATH="${engine_root_dirpath}/${BUILD_DIRNAME}/${DELVE_BINARY_FILENAME}"
 
-# =============================================================================
-#                                 Main Code
-# =============================================================================
+# ==================================================================================================
+#                                       Arg Parsing & Validation
+# ==================================================================================================
 show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") skip_docker_image_building, architecture_to_build, debug_image..."
     echo ""
@@ -56,6 +56,10 @@ if [ "${debug_image}" != "true" ] && [ "${debug_image}" != "false" ]; then
     echo "Error: Invalid debug_image arg: '${debug_image}'" >&2
     show_helptext_and_exit
 fi
+
+# =============================================================================
+#                                 Main Code
+# =============================================================================
 
 # Checks if dockerignore file is in the root path
 if ! [ -f "${engine_root_dirpath}"/.dockerignore ]; then
@@ -140,6 +144,11 @@ if "${debug_image}"; then
 fi
 
 image_name="${IMAGE_ORG_AND_REPO}:${docker_tag}"
+# specifying that this is a image for debugging
+if "${debug_image}"; then
+  image_name="${image_name}-${DOCKER_DEBUG_IMAGE_NAME_SUFFIX}"
+fi
+
 load_not_push_image=false
 docker_build_script_cmd="${git_repo_dirpath}/scripts/docker-image-builder.sh ${load_not_push_image} ${dockerfile_filepath} ${image_name}"
 if ! eval "${docker_build_script_cmd}"; then
