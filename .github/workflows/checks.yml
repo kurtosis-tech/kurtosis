@@ -8,10 +8,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - name: Check Nix flake inputs
-        uses: DeterminateSystems/flake-checker-action@v5
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v4
-      - uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Set Nix cache on GH Actions
+        uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Check Nix flake inputs
+        uses: DeterminateSystems/flake-checker-action@v5
       - name: Build Nix package
         run: nix flake check
