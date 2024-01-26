@@ -223,9 +223,9 @@ labels:
 ```
 :::
 
-The `user` field expects a `User`[user] object being passed.
+The `user` field expects a [`User`][user] object being passed.
 
-The `tolerations` field expects a list of `Toleration`[toleration] objects being passed.
+The `tolerations` field expects a list of [`Toleration`][toleration] objects being passed.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service
