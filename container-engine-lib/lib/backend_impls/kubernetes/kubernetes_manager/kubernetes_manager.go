@@ -1867,15 +1867,7 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 				podStateStr,
 			)
 		case apiv1.PodSucceeded:
-			podStateStr := manager.getPodInfoBlockStr(ctx, namespaceName, pod)
-			// NOTE: We'll need to change this if we ever expect to run one-off pods
-			return stacktrace.NewError(
-				"Expected state of pod '%v' to arrive at '%v' but the pod instead landed in '%v' with the following state:\n%v",
-				podName,
-				apiv1.PodRunning,
-				apiv1.PodSucceeded,
-				podStateStr,
-			)
+			return nil
 		}
 		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
 	}
