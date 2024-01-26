@@ -3,8 +3,10 @@ package service
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -60,6 +62,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 	serviceConfig, err := CreateServiceConfig(
 		imageName,
 		testImageBuildSpec(),
+		testImageRegistrySpec(),
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},
@@ -76,7 +79,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 			"test-label-key":        "test-label-value",
 			"test-second-label-key": "test-second-label-value",
 		},
-		nil,
+		testServiceUser(),
 	)
 	require.NoError(t, err)
 	return serviceConfig
@@ -173,4 +176,14 @@ func testImageBuildSpec() *image_build_spec.ImageBuildSpec {
 		"test-image",
 		"path",
 		"")
+}
+
+func testImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
+	return image_registry_spec.NewImageRegistrySpec("test-image", "test-userename", "test-password", "test-registry.io")
+}
+
+func testServiceUser() *service_user.ServiceUser {
+	su := service_user.NewServiceUser(100)
+	su.SetGID(100)
+	return su
 }

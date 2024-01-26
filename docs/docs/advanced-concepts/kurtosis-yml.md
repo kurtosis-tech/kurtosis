@@ -78,7 +78,7 @@ Go programmers will identify the similarities with the `replace` directive in th
 
 ### Replace In kurtosis.yml Of Dependencies
 `replace` instructions are only evaluated in the `kurtosis.yml` of the root package being called, and are ignored in the `kurtosis.yml`s of package dependencies.
-For example, suppose we had two packages, Dependency and Consumer`, that both use `github.com/kurtosis-tech/postgres-package` in their Starlark.
+For example, suppose we had two packages, Dependency and Consumer, that both use `github.com/kurtosis-tech/postgres-package` in their Starlark.
 Additionally, Consumer depends on Dependency in its Starlark code.
 Their `kurtosis.yml` files look like so:
 

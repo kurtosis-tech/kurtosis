@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
@@ -22,6 +23,11 @@ type privateServiceConfig struct {
 	// Configuration for container engine to build image for this service
 	// If nil, container engine won't be able to build image for this service
 	ImageBuildSpec *image_build_spec.ImageBuildSpec
+
+	// Configuration for container engine to pull an in a private registry behind authentication
+	// If nil, we will use the ContainerImageName and not use any auth
+	// Mutually exclusive from ImageBuildSpec, ContainerImageName
+	ImagerRegistrySpec *image_registry_spec.ImageRegistrySpec
 
 	PrivatePorts map[string]*port_spec.PortSpec
 
@@ -56,6 +62,7 @@ type privateServiceConfig struct {
 func CreateServiceConfig(
 	containerImageName string,
 	imageBuildSpec *image_build_spec.ImageBuildSpec,
+	imageRegistrySpec *image_registry_spec.ImageRegistrySpec,
 	privatePorts map[string]*port_spec.PortSpec,
 	publicPorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -79,6 +86,7 @@ func CreateServiceConfig(
 	internalServiceConfig := &privateServiceConfig{
 		ContainerImageName:        containerImageName,
 		ImageBuildSpec:            imageBuildSpec,
+		ImagerRegistrySpec:        imageRegistrySpec,
 		PrivatePorts:              privatePorts,
 		PublicPorts:               publicPorts,
 		EntrypointArgs:            entrypointArgs,
@@ -104,6 +112,10 @@ func (serviceConfig *ServiceConfig) GetContainerImageName() string {
 
 func (serviceConfig *ServiceConfig) GetImageBuildSpec() *image_build_spec.ImageBuildSpec {
 	return serviceConfig.privateServiceConfig.ImageBuildSpec
+}
+
+func (serviceConfig *ServiceConfig) GetImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
+	return serviceConfig.privateServiceConfig.ImagerRegistrySpec
 }
 
 func (serviceConfig *ServiceConfig) GetPrivatePorts() map[string]*port_spec.PortSpec {

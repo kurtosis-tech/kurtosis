@@ -10,15 +10,29 @@ import {
   InputGroup,
   InputLeftElement,
   InputRightElement,
+  Spinner,
   Text,
 } from "@chakra-ui/react";
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
-import { FindCommand, KurtosisAlert, KurtosisPackageCardHorizontal, useSavedPackages } from "kurtosis-ui-components";
-import { ChangeEvent, useMemo, useRef, useState } from "react";
+import {
+  FindCommand,
+  isDefined,
+  KurtosisAlert,
+  KurtosisPackageCardHorizontal,
+  parsePackageUrl,
+  useSavedPackages,
+} from "kurtosis-ui-components";
+import { debounce } from "lodash";
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { useCatalogContext } from "../../../../../catalog/CatalogContext";
 import { DrawerExpandCollapseButton } from "../DrawerExpandCollapseButton";
 import { DrawerSizes } from "../types";
+
+type ExactMatchState =
+  | { type: "loading"; url: string }
+  | { type: "loaded"; package: KurtosisPackage }
+  | { type: "error"; error: string };
 
 type PackageSelectBodyProps = {
   onPackageSelected: (kurtosisPackage: KurtosisPackage) => void;
@@ -35,7 +49,46 @@ export const PackageSelectBody = ({
   const searchRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { catalog } = useCatalogContext();
+  const [exactMatch, setExactMatch] = useState<ExactMatchState>();
+  const { catalog, getSinglePackage } = useCatalogContext();
+
+  const checkSinglePackageDebounced = useMemo(
+    () =>
+      debounce(
+        async (packageName: string) => {
+          const singlePackageResult = await getSinglePackage(packageName);
+          if (singlePackageResult.isErr) {
+            setExactMatch({ type: "error", error: singlePackageResult.error });
+            return;
+          }
+          if (isDefined(singlePackageResult.value.package)) {
+            setExactMatch({ type: "loaded", package: singlePackageResult.value.package });
+          }
+        },
+        1000,
+        { trailing: true, leading: false },
+      ),
+    [getSinglePackage],
+  );
+
+  const startCheckSinglePackage = useCallback(
+    async (packageName: string) => {
+      let isKurtosisPackageName = false;
+      try {
+        parsePackageUrl(packageName);
+        isKurtosisPackageName = true;
+      } catch (error: any) {
+        // This packageName isn't a kurtosis package url
+      }
+      if (isKurtosisPackageName) {
+        setExactMatch({ type: "loading", url: packageName });
+        checkSinglePackageDebounced(packageName);
+      } else {
+        setExactMatch(undefined);
+      }
+    },
+    [checkSinglePackageDebounced],
+  );
 
   const searchResults = useMemo(
     () =>
@@ -52,6 +105,10 @@ export const PackageSelectBody = ({
   const handleSearchTermChange = async (e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
+
+  useEffect(() => {
+    startCheckSinglePackage(searchTerm);
+  }, [startCheckSinglePackage, searchTerm]);
 
   if (searchResults.isErr) {
     return (
@@ -92,6 +149,28 @@ export const PackageSelectBody = ({
             )}
           </InputRightElement>
         </InputGroup>
+        {isDefined(exactMatch) && (
+          <Flex flexDirection={"column"} gap={"10px"}>
+            <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
+              Exact Match
+            </Text>
+            {exactMatch.type === "loading" && (
+              <Flex flexDirection={"column"} alignItems={"center"}>
+                <Spinner />
+                <Text>Looking for a Kurtosis Package at {exactMatch.url}</Text>
+              </Flex>
+            )}
+            {exactMatch.type === "loaded" && (
+              <KurtosisPackageCardHorizontal
+                kurtosisPackage={exactMatch.package}
+                onClick={() => onPackageSelected(exactMatch.package)}
+              />
+            )}
+            {exactMatch.type === "error" && (
+              <KurtosisAlert message={"Error looking up package"} details={exactMatch.error} />
+            )}
+          </Flex>
+        )}
         {(searchTerm.length > 0 || savedPackages.length === 0) && (
           <Flex flexDirection={"column"} gap={"10px"}>
             <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>

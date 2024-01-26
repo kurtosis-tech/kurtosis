@@ -403,12 +403,12 @@ ktdebug dlv-terminal version
 ```bash
 (dlv) break version.run:1
 ```
-3. You can move the cursos to the breakpoint with the `continue` command
+3. You can move the cursor to the breakpoint created in the previous step with the `continue` command
 ```bash
 (dlv) continue
 ```
 <img src="./readme-static-files/dlv-terminal.png" />
-4. You can see the [more Delve commands here][delve-docs]
+4. You can see [more Delve commands here][delve-docs]
 
 </details>
 

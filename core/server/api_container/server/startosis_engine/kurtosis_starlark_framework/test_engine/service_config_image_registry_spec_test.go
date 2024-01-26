@@ -2,7 +2,7 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -13,45 +13,38 @@ import (
 	"testing"
 )
 
-type serviceConfigImageBuildSpecTestCase struct {
+type serviceConfigImageRegistrySpecTest struct {
 	*testing.T
 	serviceNetwork         *service_network.MockServiceNetwork
 	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
-func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSpec() {
-	suite.packageContentProvider.EXPECT().
-		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
-		Times(1).
-		Return(testBuildContextLocator, nil)
-
-	suite.packageContentProvider.EXPECT().
-		GetOnDiskAbsolutePackageFilePath(testContainerImageLocator).
-		Times(1).
-		Return(testOnDiskContainerImagePath, nil)
-
-	suite.run(&serviceConfigImageBuildSpecTestCase{
+func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageRegistrySpec() {
+	suite.run(&serviceConfigImageRegistrySpecTest{
 		T:                      suite.T(),
 		serviceNetwork:         suite.serviceNetwork,
 		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
-func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
-	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
-		service_config.ImageBuildSpecTypeName,
-		service_config.BuiltImageNameAttr,
+func (t *serviceConfigImageRegistrySpecTest) GetStarlarkCode() string {
+	imageRegistrySpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q)",
+		service_config.ImageRegistrySpecTypeName,
+		service_config.ImageAttr,
 		testContainerImageName,
-		service_config.BuildContextAttr,
-		testBuildContextDir,
-		service_config.TargetStageAttr,
-		testTargetStage)
+		service_config.RegistryAddrAttr,
+		testRegistryAddr,
+		service_config.RegistryUsernameAttr,
+		testRegistryUsername,
+		service_config.RegistryPasswordAttr,
+		testRegistryPassword,
+	)
 	return fmt.Sprintf("%s(%s=%s)",
 		service_config.ServiceConfigTypeName,
-		service_config.ImageAttr, imageBuildSpec)
+		service_config.ImageAttr, imageRegistrySpec)
 }
 
-func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
+func (t *serviceConfigImageRegistrySpecTest) Assert(typeValue builtin_argument.KurtosisValueType) {
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
@@ -63,14 +56,11 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		testNoPackageReplaceOptions)
 	require.Nil(t, interpretationErr)
 
-	expectedImageBuildSpec := image_build_spec.NewImageBuildSpec(
-		testOnDiskContextDirPath,
-		testOnDiskContainerImagePath,
-		testTargetStage)
+	expectedImageRegistrySpec := image_registry_spec.NewImageRegistrySpec(testContainerImageName, testRegistryUsername, testRegistryPassword, testRegistryAddr)
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
-		expectedImageBuildSpec,
 		nil,
+		expectedImageRegistrySpec,
 		map[string]*port_spec.PortSpec{},
 		map[string]*port_spec.PortSpec{},
 		nil,
@@ -88,5 +78,5 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
-	require.Equal(t, expectedImageBuildSpec, serviceConfig.GetImageBuildSpec())
+	require.Equal(t, expectedImageRegistrySpec, serviceConfig.GetImageRegistrySpec())
 }
