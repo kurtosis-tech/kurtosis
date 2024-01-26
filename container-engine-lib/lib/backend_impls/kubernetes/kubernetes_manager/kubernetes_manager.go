@@ -1842,6 +1842,8 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 			// not impl - skipping
 		case apiv1.PodRunning:
 			return nil
+		case apiv1.PodSucceeded:
+			return nil
 		case apiv1.PodPending:
 			for _, containerStatus := range pod.Status.ContainerStatuses {
 				containerName := containerStatus.Name
@@ -1866,8 +1868,6 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 				podName,
 				podStateStr,
 			)
-		case apiv1.PodSucceeded:
-			return nil
 		}
 		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
 	}
