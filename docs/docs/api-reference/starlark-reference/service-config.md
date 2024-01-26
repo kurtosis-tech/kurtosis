@@ -164,6 +164,7 @@ config = ServiceConfig(
     # This refers to Kubernetes Tolerations https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
     # This has no effect on Docker
     # As of 2024-01-24 Taints and Tolerations to work with Kubernetes you need at least one untainted node
+    # Refer to the Toleration docs linked near the end of the page to learn more
     # OPTIONAL
     tolerations = [
         Toleration(
@@ -224,7 +225,7 @@ labels:
 
 The `user` field expects a `User`[user] object being passed.
 
-The `tolerations` field expects a list of `toleration[toleration]` object being passed.
+The `tolerations` field expects a list of `Toleration`[toleration] objects being passed.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service
