@@ -1,7 +1,7 @@
 on:
   push:
 
-name: release-please
+name: full-check
 jobs:
   nix_build:
     name: Build Nix targets
