@@ -118,16 +118,17 @@ c30843ea60b8   nc      port0: 80/tcp -> 127.0.0.1:62938   RUNNING
 26dceba15800   redis   <none>                             RUNNING
 ```
 
-Congrats! You now have your Docker Compose setup running in Kurtosis. Now, run `kurtosis web` to view your environment in Kurtosis' GUI!
+Congrats! You now have your Docker Compose setup running in Kurtosis. Now, run `kurtosis web` to view your environment in Kurtosis' GUI! 
 
 ![compose env](../../static/img/guides/compose-env.jpg)
 
 ### Notes on Docker Compose to Kurtosis conversion
 
-- Named volumes are converted to a [Persistent Directory](../api-reference/starlark-reference/directory.md) in Kurtosis - a Kurtosis managed directory that persists on services through multiple runs.
-- Kurtosis handles creating an isolated network inside an enclave [`network`](https://docs.docker.com/compose/compose-file/05-services/#networks) key is found in compose specifying custom networks, the config will be ignored, potentially altering network behavior in the environment.
-- Services with a `_` in the name must be renamed as Kurtosis naming follows [RFC-1035](../best-practices.md) standard.
+- Named volumes are converted to a [Persistent Directory](../api-reference/starlark-reference/directory.md) in Kurtosis - a Kurtosis managed directory that persists on services through multiple runs
+- Kurtosis handles creating an isolated network inside an enclave. If the `network` key specifies custom networks, the config is ignored, potentially altering network behavior in the environment
+- Services names with a `_` must be renamed as Kurtosis naming follows [RFC-1035](../best-practices.md) standard
 - Service level [`env_file`](https://docs.docker.com/compose/compose-file/05-services/#env_file) key is not yet supported ([`environment`](https://docs.docker.com/compose/compose-file/compose-file-v3/#environment) is supported)
 - [`secret`](https://docs.docker.com/compose/compose-file/05-services/#secrets) key is not yet supported
-- For`volumes`, absolute path mappings (e.g. `/opt/data:/var/lib/mysql`) are not supported as Kurtosis packages cannot reference files outside a Kurtosis package. You can move the contents inside the package and convert to a regular path to get it to work in Kurtosis.
+- For`volumes`, absolute path mappings (e.g. `/opt/data:/var/lib/mysql`) are not supported as Kurtosis packages cannot reference files outside a Kurtosis package. You can move the contents inside the package and convert to a relative path so Kurtosis can access the files
 - Referencing a service's name in a hostname elsewhere in the Docker Compose (e.g. `postgres://db:5431`) is not supported
+- `reservations` for `cpus` and `memory` are supported, but other container level config such as `restart`, `limits`, etc. are not yet supported
