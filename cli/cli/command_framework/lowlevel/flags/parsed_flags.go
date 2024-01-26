@@ -24,6 +24,19 @@ func (flags *ParsedFlags) GetString(name string) (string, error) {
 	}
 	return value, nil
 }
+
+func (flags *ParsedFlags) GetStringSlice(name string) ([]string, error) {
+	value, err := flags.cmdFlagsSet.GetStringSlice(name)
+	if err != nil {
+		return []string{}, stacktrace.Propagate(
+			err,
+			"An error occurred getting string slice flag '%v'",
+			name,
+		)
+	}
+	return value, nil
+}
+
 func (flags *ParsedFlags) GetUint32(name string) (uint32, error) {
 	value, err := flags.cmdFlagsSet.GetUint32(name)
 	if err != nil {
@@ -34,6 +47,7 @@ func (flags *ParsedFlags) GetUint32(name string) (uint32, error) {
 	}
 	return value, nil
 }
+
 func (flags *ParsedFlags) GetBool(name string) (bool, error) {
 	value, err := flags.cmdFlagsSet.GetBool(name)
 	if err != nil {
