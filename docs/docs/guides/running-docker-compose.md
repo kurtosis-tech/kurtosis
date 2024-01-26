@@ -118,7 +118,7 @@ c30843ea60b8   nc      port0: 80/tcp -> 127.0.0.1:62938   RUNNING
 26dceba15800   redis   <none>                             RUNNING
 ```
 
-Congrats! You now have your Docker Compose setup running in Kurtosis. Now, run `kurtosis web` to view your environment in Kurtosis' GUI! 
+Congrats! You now have your Docker Compose setup running in Kurtosis. Run `kurtosis web` to view your environment in Kurtosis' GUI. Additionally, you can configure the Kurtosis engine to run over Kubernetes and run the same command to get your Docker Compose setup running in a K8s cluster. Check out this [guide](./running-in-k8s.md) on how to se tup Kurtosis over K8s! 
 
 ![compose env](../../static/img/guides/compose-env.jpg)
 
