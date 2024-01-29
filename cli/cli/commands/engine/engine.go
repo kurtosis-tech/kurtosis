@@ -22,6 +22,6 @@ func init() {
 	EngineCmd.AddCommand(start.StartCmd.MustGetCobraCommand())
 	EngineCmd.AddCommand(status.StatusCmd)
 	EngineCmd.AddCommand(stop.StopCmd)
-	EngineCmd.AddCommand(restart.RestartCmd)
+	EngineCmd.AddCommand(restart.RestartCmd.MustGetCobraCommand())
 	EngineCmd.AddCommand(logs.EngineLogsCmd.MustGetCobraCommand())
 }

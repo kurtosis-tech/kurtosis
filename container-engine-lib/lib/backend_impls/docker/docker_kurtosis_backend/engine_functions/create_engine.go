@@ -27,6 +27,7 @@ const (
 	//TODO: pass this parameter
 	enclaveManagerUIPort                        = 9711
 	enclaveManagerAPIPort                       = 8081
+	engineDebugServerPort                       = 50102 // in ClI this is 50101 and 50103 for the APIC
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 	logsStorageDirpath                          = "/var/log/kurtosis/"
@@ -185,6 +186,21 @@ func CreateEngine(
 		)
 	}
 
+	debugServerPortSpec, err := port_spec.NewPortSpec(
+		uint16(engineDebugServerPort),
+		consts.EngineTransportProtocol,
+		consts.HttpApplicationProtocol,
+		defaultWait,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the Engine's debug server port spec object using number '%v' and protocol '%v'",
+			engineDebugServerPort,
+			consts.EngineTransportProtocol.String(),
+		)
+	}
+
 	privateGrpcDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateGrpcPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
@@ -205,14 +221,17 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the Enclave Manager API port spec to a Docker port")
 	}
 
-	delvePort := nat.Port("40000/tcp") //TODO fix
+	debugServerDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(debugServerPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the debug server port spec to a Docker port")
+	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort:       docker_manager.NewManualPublishingSpec(grpcPortNum),
 		enclaveManagerUIDockerPort:  docker_manager.NewManualPublishingSpec(uint16(enclaveManagerUIPort)),
 		enclaveManagerAPIDockerPort: docker_manager.NewManualPublishingSpec(uint16(enclaveManagerAPIPort)),
 		restAPIDockerPort:           docker_manager.NewManualPublishingSpec(engine.RESTAPIPortAddr),
-		delvePort:                   docker_manager.NewManualPublishingSpec(uint16(40000)), //TODO fix
+		debugServerDockerPort:       docker_manager.NewManualPublishingSpec(uint16(engineDebugServerPort)),
 	}
 
 	bindMounts := map[string]string{

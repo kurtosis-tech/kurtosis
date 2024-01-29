@@ -70,7 +70,7 @@ var StartCmd = &lowlevel.LowlevelKurtosisCommand{
 	PostValidationAndRunFunc: nil,
 }
 
-func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
+func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error {
 	ctx := context.Background()
 
 	enclavePoolSize, err := flags.GetUint8(enclavePoolSizeFlagKey)
@@ -113,7 +113,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	if engineVersion == defaultEngineVersion && isDebugMode {
 		engineDebugVersion := fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
 
-		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineDebugVersion)
+		logrus.Infof("Starting Kurtosis engine in debug mode from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineDebugVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineDebugVersion, logLevel, enclavePoolSize)
 	} else if engineVersion == defaultEngineVersion {
 
