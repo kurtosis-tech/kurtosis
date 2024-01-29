@@ -61,7 +61,7 @@ type APIContainerArgs struct {
 var skipValidation = map[string]bool{
 	"cloud_instance_id": true,
 	"cloud_user_id":     true,
-	"git_auth_empty":    true,
+	"git_auth_token":    true,
 }
 
 func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
