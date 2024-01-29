@@ -55,12 +55,13 @@ type APIContainerArgs struct {
 	// The Cloud Instance ID of the current user if available
 	CloudInstanceID metrics_client.CloudInstanceID `json:"cloud_instance_id"`
 
-	GitAuthToken string `json:git_auth_token,omitempty`
+	GitAuthToken string `json:"git_auth_token"`
 }
 
 var skipValidation = map[string]bool{
 	"cloud_instance_id": true,
 	"cloud_user_id":     true,
+	"git_auth_empty":    true,
 }
 
 func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
