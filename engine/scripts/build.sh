@@ -10,12 +10,14 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
+DEFAULT_DEBUG_IMAGE=false
+SET_ARCH_AUTOMATICALLY=""
+DEFAULT_SKIP_DOCKER_IMAGE_BUILDING=false
+
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "launcher/scripts/build.sh"
     "server/scripts/build.sh"
 )
-
-DEFAULT_DEBUG_IMAGE="false"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -40,7 +42,7 @@ fi
 # ==================================================================================================
 for build_script_rel_filepath in "${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
     build_script_abs_filepath="${root_dirpath}/${build_script_rel_filepath}"
-    if ! bash "${build_script_abs_filepath} ${debug_image}"; then
+    if ! bash "${build_script_abs_filepath}" "${DEFAULT_SKIP_DOCKER_IMAGE_BUILDING}" "${SET_ARCH_AUTOMATICALLY}" "${debug_image}"; then
         echo "Error: Build script '${build_script_abs_filepath}' failed" >&2
         exit 1
     fi

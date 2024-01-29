@@ -32,6 +32,11 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "cli/scripts/build.sh"
 )
 
+# projects with debug mode list
+BUILD_DEBUG_SCRIPT_RELATIVE_FILEPATHS=(
+    "engine/scripts/build.sh"
+)
+
 DEFAULT_DEBUG_IMAGE="false"
 
 # ==================================================================================================
@@ -55,9 +60,14 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-for build_script_rel_filepath in "${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
+build_script_rel_filepaths=("${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}")
+if "${debug_image}"; then
+  build_script_rel_filepaths=("${BUILD_DEBUG_SCRIPT_RELATIVE_FILEPATHS[@]}")
+fi
+
+for build_script_rel_filepath in "${build_script_rel_filepaths[@]}"; do
     build_script_abs_filepath="${root_dirpath}/${build_script_rel_filepath}"
-    if ! bash "${build_script_abs_filepath} ${debug_image}" ; then
+    if ! bash "${build_script_abs_filepath}" "${debug_image}" ; then
         echo "Error: Build script '${build_script_abs_filepath}' failed" >&2
         exit 1
     fi
