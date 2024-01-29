@@ -92,6 +92,11 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
 ) {
+	var gitAuthPassword string
+	if gitAuth != nil {
+		gitAuthPassword = gitAuth.Password
+	}
+
 	kurtosisBackendType, kurtosisBackendConfig := backendConfigSupplier.getKurtosisBackendConfig()
 	argsObj, err := args.NewAPIContainerArgs(
 		imageVersionTag,
@@ -108,7 +113,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		isCI,
 		cloudUserID,
 		cloudInstanceID,
-		gitAuth.Password,
+		gitAuthPassword,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
