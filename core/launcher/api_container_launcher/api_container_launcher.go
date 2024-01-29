@@ -7,6 +7,7 @@ package api_container_launcher
 import (
 	"context"
 	"fmt"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -45,6 +46,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	gitAuth *http.BasicAuth,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -63,6 +65,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		isCI,
 		cloudUserID,
 		cloudInstanceID,
+		gitAuth,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -84,6 +87,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	gitAuth *http.BasicAuth,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -104,6 +108,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		isCI,
 		cloudUserID,
 		cloudInstanceID,
+		gitAuth.Password,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")

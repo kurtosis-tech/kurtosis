@@ -7,6 +7,7 @@ package engine_server_launcher
 
 import (
 	"context"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"net"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -45,6 +46,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
 	allowedCORSOrigins *[]string,
+	gitAuth *http.BasicAuth,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -65,6 +67,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		cloudUserID,
 		cloudInstanceID,
 		allowedCORSOrigins,
+		gitAuth,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -87,12 +90,14 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
 	allowedCORSOrigins *[]string,
+	gitAuth *http.BasicAuth,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
 	kurtosisBackendType, kurtosisBackendConfig := backendConfigSupplier.getKurtosisBackendConfig()
+
 	argsObj, err := args.NewEngineServerArgs(
 		grpcListenPortNum,
 		logLevel.String(),
@@ -108,6 +113,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		cloudUserID,
 		cloudInstanceID,
 		allowedCORSOrigins,
+		gitAuth.Password,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")

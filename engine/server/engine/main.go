@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	git "github.com/go-git/go-git/v5/plumbing/transport/http"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/core_rest_api"
@@ -177,7 +179,29 @@ func runMain() error {
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
 	logFileManager.StartLogFileManagement(ctx)
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, serverArgs.IsCI, serverArgs.CloudUserID, serverArgs.CloudInstanceID, serverArgs.KurtosisLocalBackendConfig)
+	// setup git auth
+	var gitAuth *git.BasicAuth
+	if serverArgs.GitAuthToken != "" {
+		gitAuth = &git.BasicAuth{
+			Username: "token",
+			Password: serverArgs.GitAuthToken,
+		}
+	}
+
+	enclaveManager, err := getEnclaveManager(
+		kurtosisBackend,
+		serverArgs.KurtosisBackendType,
+		serverArgs.ImageVersionTag,
+		serverArgs.PoolSize,
+		serverArgs.EnclaveEnvVars,
+		logFileManager,
+		serverArgs.MetricsUserID,
+		serverArgs.DidUserAcceptSendingMetrics,
+		serverArgs.IsCI,
+		serverArgs.CloudUserID,
+		serverArgs.CloudInstanceID,
+		serverArgs.KurtosisLocalBackendConfig,
+		gitAuth)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -300,6 +324,7 @@ func getEnclaveManager(
 	cloudUserId metrics_client.CloudUserID,
 	cloudInstanceId metrics_client.CloudInstanceID,
 	kurtosisLocalBackendConfig interface{},
+	gitAuth *git.BasicAuth,
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
@@ -328,6 +353,7 @@ func getEnclaveManager(
 		isCI,
 		cloudUserId,
 		cloudInstanceId,
+		gitAuth,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave manager for backend type '%+v' using pool-size '%v' and engine version '%v'", kurtosisBackendType, poolSize, engineVersion)

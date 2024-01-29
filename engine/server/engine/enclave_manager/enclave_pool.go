@@ -3,6 +3,7 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"strings"
 	"time"
 
@@ -37,6 +38,7 @@ type EnclavePool struct {
 	isCI                        bool
 	cloudUserID                 metrics_client.CloudUserID
 	cloudInstanceID             metrics_client.CloudInstanceID
+	gitAuth                     *http.BasicAuth
 }
 
 // CreateEnclavePool will do the following:
@@ -56,7 +58,7 @@ func CreateEnclavePool(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
-
+	gitAuth *http.BasicAuth,
 ) (*EnclavePool, error) {
 
 	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
@@ -104,6 +106,7 @@ func CreateEnclavePool(
 		isCI:                        isCI,
 		cloudUserID:                 cloudUserID,
 		cloudInstanceID:             cloudInstanceID,
+		gitAuth:                     gitAuth,
 	}
 
 	go enclavePool.run(ctxWithCancel)
@@ -291,6 +294,7 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*types.Encla
 		pool.cloudUserID,
 		pool.cloudInstanceID,
 		args.KurtosisBackendType_Kubernetes, // enclave pool only available for k8s
+		pool.gitAuth,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(

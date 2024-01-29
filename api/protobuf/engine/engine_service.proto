@@ -8,7 +8,7 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 service EngineService {
-  // Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
+  // Endpoint for getting information about the   engine, which is also what we use to verify that the engine has become available
   rpc GetEngineInfo(google.protobuf.Empty) returns (GetEngineInfoResponse) {};
 
   // ==============================================================================================

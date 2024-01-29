@@ -6,6 +6,7 @@
 package enclave_data_directory
 
 import (
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
@@ -66,7 +67,7 @@ func (dir EnclaveDataDirectory) GetFilesArtifactStore() (*FilesArtifactStore, er
 	return currentFilesArtifactStore, dbError
 }
 
-func (dir EnclaveDataDirectory) GetGitPackageContentProvider(enclaveDb *enclave_db.EnclaveDB) (*git_package_content_provider.GitPackageContentProvider, error) {
+func (dir EnclaveDataDirectory) GetGitPackageContentProvider(enclaveDb *enclave_db.EnclaveDB, gitAuth *http.BasicAuth) (*git_package_content_provider.GitPackageContentProvider, error) {
 	repositoriesStoreDirpath := path.Join(dir.absMountDirpath, repositoriesStoreDirname)
 	if err := ensureDirpathExists(repositoriesStoreDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the repositories store dirpath '%v' exists.", repositoriesStoreDirpath)
@@ -77,5 +78,5 @@ func (dir EnclaveDataDirectory) GetGitPackageContentProvider(enclaveDb *enclave_
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the temporary repositories store dirpath '%v' exists.", tempRepositoriesStoreDirpath)
 	}
 
-	return git_package_content_provider.NewGitPackageContentProvider(repositoriesStoreDirpath, tempRepositoriesStoreDirpath, enclaveDb), nil
+	return git_package_content_provider.NewGitPackageContentProvider(repositoriesStoreDirpath, tempRepositoriesStoreDirpath, enclaveDb, gitAuth), nil
 }

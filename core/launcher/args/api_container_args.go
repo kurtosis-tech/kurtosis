@@ -54,6 +54,8 @@ type APIContainerArgs struct {
 
 	// The Cloud Instance ID of the current user if available
 	CloudInstanceID metrics_client.CloudInstanceID `json:"cloud_instance_id"`
+
+	GitAuthToken string `json:git_auth_token,omitempty`
 }
 
 var skipValidation = map[string]bool{
@@ -110,6 +112,7 @@ func NewAPIContainerArgs(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	gitAuthToken string,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		Version:                     version,
@@ -126,6 +129,7 @@ func NewAPIContainerArgs(
 		IsCI:                        isCI,
 		CloudUserID:                 cloudUserID,
 		CloudInstanceID:             cloudInstanceID,
+		GitAuthToken:                gitAuthToken,
 	}
 
 	if err := result.validate(); err != nil {

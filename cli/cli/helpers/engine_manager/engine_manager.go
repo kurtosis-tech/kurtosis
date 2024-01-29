@@ -2,6 +2,7 @@ package engine_manager
 
 import (
 	"context"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"strings"
 	"time"
 
@@ -174,7 +175,11 @@ func (manager *EngineManager) GetEngineStatus(
 }
 
 // StartEngineIdempotentlyWithDefaultVersion Starts an engine if one doesn't exist already, and returns a client to it
-func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx context.Context, logLevel logrus.Level, poolSize uint8) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
+	ctx context.Context,
+	logLevel logrus.Level,
+	poolSize uint8,
+	gitAuth *http.BasicAuth) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -194,6 +199,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		poolSize,
 		manager.enclaveEnvVars,
 		manager.allowedCORSOrigins,
+		gitAuth,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -205,7 +211,12 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 }
 
 // StartEngineIdempotentlyWithCustomVersion Starts an engine if one doesn't exist already, and returns a client to it
-func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context, engineImageVersionTag string, logLevel logrus.Level, poolSize uint8) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
+	ctx context.Context,
+	engineImageVersionTag string,
+	logLevel logrus.Level,
+	poolSize uint8,
+	gitAuth *http.BasicAuth) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -226,6 +237,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		poolSize,
 		manager.enclaveEnvVars,
 		manager.allowedCORSOrigins,
+		gitAuth,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
@@ -342,9 +354,11 @@ func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, log
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	if versionOfNewEngine != defaultEngineVersion {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize)
+		// TODO: figure out git auth here
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize, nil)
 	} else {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize)
+		// TODO: figure out git auth here
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize, nil)
 	}
 	if restartEngineErr != nil {
 		return nil, nil, stacktrace.Propagate(restartEngineErr, "An error occurred starting a new engine")

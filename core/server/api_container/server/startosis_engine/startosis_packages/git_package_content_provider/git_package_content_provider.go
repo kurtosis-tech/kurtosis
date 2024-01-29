@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
@@ -48,13 +49,16 @@ type GitPackageContentProvider struct {
 	repositoriesTmpDir              string
 	repositoriesDir                 string
 	packageReplaceOptionsRepository *packageReplaceOptionsRepository
+
+	gitAuth *http.BasicAuth
 }
 
-func NewGitPackageContentProvider(repositoriesDir string, tmpDir string, enclaveDb *enclave_db.EnclaveDB) *GitPackageContentProvider {
+func NewGitPackageContentProvider(repositoriesDir string, tmpDir string, enclaveDb *enclave_db.EnclaveDB, gitAuth *http.BasicAuth) *GitPackageContentProvider {
 	return &GitPackageContentProvider{
 		repositoriesDir:                 repositoriesDir,
 		repositoriesTmpDir:              tmpDir,
 		packageReplaceOptionsRepository: newPackageReplaceOptionsRepository(enclaveDb),
+		gitAuth:                         gitAuth,
 	}
 }
 
@@ -318,7 +322,7 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 	//TODO and even now, in the upload_files instruction, we are allowing to upload files or a folder for any repository, but we are cloning the entire repository for this
 	repo, err := git.PlainClone(gitClonePath, isNotBareClone, &git.CloneOptions{
 		URL:               parsedURL.GetGitURL(),
-		Auth:              nil,
+		Auth:              provider.gitAuth,
 		RemoteName:        "",
 		ReferenceName:     "",
 		SingleBranch:      false,
