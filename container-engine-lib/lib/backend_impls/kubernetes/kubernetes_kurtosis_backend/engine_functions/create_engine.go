@@ -40,6 +40,7 @@ func CreateEngine(
 	envVars map[string]string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
+	_ bool, //TODO enable debug mode in Kubernetes Backend
 ) (
 	*engine.Engine,
 	error,

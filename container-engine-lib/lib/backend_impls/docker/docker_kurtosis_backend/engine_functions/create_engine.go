@@ -42,6 +42,7 @@ func CreateEngine(
 	envVars map[string]string,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+	shouldStartInDebugMode bool,
 ) (
 	*engine.Engine,
 	error,
@@ -259,7 +260,7 @@ func CreateEngine(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
 		engineAttrs.GetName().GetString(),
 		targetNetworkId,
@@ -273,7 +274,23 @@ func CreateEngine(
 		usedPorts,
 	).WithLabels(
 		labelStrs,
-	).Build()
+	)
+
+	if shouldStartInDebugMode {
+		// Adding systrace capabilities when starting the debug server in the engine's container
+		capabilities := map[docker_manager.ContainerCapability]bool{
+			docker_manager.SysPtrace: true,
+		}
+		createAndStartArgsBuilder.WithAddedCapabilities(capabilities)
+
+		// Setting security for debugging the engine's container
+		securityOpts := map[docker_manager.ContainerSecurityOpt]bool{
+			docker_manager.AppArmorUnconfined: true,
+		}
+		createAndStartArgsBuilder.WithSecurityOpts(securityOpts)
+	}
+
+	createAndStartArgs := createAndStartArgsBuilder.Build()
 
 	containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
