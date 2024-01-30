@@ -38,6 +38,28 @@ let
           "bnPFXs38IXjL2EdpkthkCa/+SXOxERnXyV///rQj1wyidJmw21wOvqpucuIh25YnPtdrUItcIFFDVCoKPkuCPQ==";
       };
     };
+    "@connectrpc/connect-1.3.0" = {
+      name = "_at_connectrpc_slash_connect";
+      packageName = "@connectrpc/connect";
+      version = "1.3.0";
+      src = fetchurl {
+        url =
+          "https://registry.npmjs.org/@connectrpc/connect/-/connect-1.3.0.tgz";
+        sha512 =
+          "kTeWxJnLLtxKc2ZSDN0rIBgwfP8RwcLknthX4AKlIAmN9ZC4gGnCbwp+3BKcP/WH5c8zGBAWqSY3zeqCM+ah7w==";
+      };
+    };
+    "@connectrpc/protoc-gen-connect-es-1.3.0" = {
+      name = "_at_connectrpc_slash_protoc-gen-connect-es";
+      packageName = "@connectrpc/protoc-gen-connect-es";
+      version = "1.3.0";
+      src = fetchurl {
+        url =
+          "https://registry.npmjs.org/@connectrpc/protoc-gen-connect-es/-/protoc-gen-connect-es-1.3.0.tgz";
+        sha512 =
+          "UbQN48c0zafo5EFSsh3POIJP6ofYiAgKE1aFOZ2Er4W3flUYihydZdM6TQauPkn7jDj4w9jjLSTTZ9//ecUbPA==";
+      };
+    };
     "@typescript/vfs-1.5.0" = {
       name = "_at_typescript_slash_vfs";
       packageName = "@typescript/vfs";
@@ -88,6 +110,8 @@ let
       sources."@bufbuild/protobuf-1.7.1"
       sources."@bufbuild/protoc-gen-es-1.7.1"
       sources."@bufbuild/protoplugin-1.7.1"
+      sources."@connectrpc/connect-1.3.0"
+      sources."@connectrpc/protoc-gen-connect-es-1.3.0"
       sources."@typescript/vfs-1.5.0"
       sources."debug-4.3.4"
       sources."ms-2.1.2"

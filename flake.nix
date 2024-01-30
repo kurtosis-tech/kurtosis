@@ -13,7 +13,10 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         unstable_pkgs = unstable.legacyPackages.${system};
-        node-devtools = import ./nix-pkgs/node-tools/. { inherit pkgs system; };
+        node-devtools = import ./nix-pkgs/node-tools/. {
+          inherit pkgs system;
+          nodejs = pkgs.nodejs_20;
+        };
       in {
         formatter = pkgs.nixpkgs-fmt;
 
