@@ -13,6 +13,7 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         unstable_pkgs = unstable.legacyPackages.${system};
+        node-devtools = import ./nix-pkgs/node-tools/. { inherit pkgs system; };
       in {
         formatter = pkgs.nixpkgs-fmt;
 
@@ -55,6 +56,7 @@
               # local definition (see above)
               grpc-tools-node
               protoc-gen-ts
+              node-devtools.nodeDependencies
               openapi-typescript
             ];
 
