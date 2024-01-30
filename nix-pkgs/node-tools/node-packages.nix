@@ -185,6 +185,17 @@ let
           "f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==";
       };
     };
+    "google-protobuf-3.21.2" = {
+      name = "google-protobuf";
+      packageName = "google-protobuf";
+      version = "3.21.2";
+      src = fetchurl {
+        url =
+          "https://registry.npmjs.org/google-protobuf/-/google-protobuf-3.21.2.tgz";
+        sha512 =
+          "3MSOYFO5U9mPGikIYCzK0SaThypfGgS6bHqrUGXG3DPHCrb+txNqeEcns1W0lkGfk0rCyNXm7xB9rMxnCiZOoA==";
+      };
+    };
     "iconv-lite-0.6.3" = {
       name = "iconv-lite";
       packageName = "iconv-lite";
@@ -311,17 +322,6 @@ let
           "Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==";
       };
     };
-    "protoc-gen-ts-0.8.7" = {
-      name = "protoc-gen-ts";
-      packageName = "protoc-gen-ts";
-      version = "0.8.7";
-      src = fetchurl {
-        url =
-          "https://registry.npmjs.org/protoc-gen-ts/-/protoc-gen-ts-0.8.7.tgz";
-        sha512 =
-          "jr4VJey2J9LVYCV7EVyVe53g1VMw28cCmYJhBe5e3YX5wiyiDwgxWxeDf9oTqAe4P1bN/YGAkW2jhlH8LohwiQ==";
-      };
-    };
     "punycode-2.3.1" = {
       name = "punycode";
       packageName = "punycode";
@@ -373,6 +373,17 @@ let
         url = "https://registry.npmjs.org/tr46/-/tr46-0.0.3.tgz";
         sha512 =
           "N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==";
+      };
+    };
+    "ts-protoc-gen-0.15.0" = {
+      name = "ts-protoc-gen";
+      packageName = "ts-protoc-gen";
+      version = "0.15.0";
+      src = fetchurl {
+        url =
+          "https://registry.npmjs.org/ts-protoc-gen/-/ts-protoc-gen-0.15.0.tgz";
+        sha512 =
+          "TycnzEyrdVDlATJ3bWFTtra3SCiEP0W0vySXReAuEygXCUr1j2uaVyL0DhzjwuUdQoW5oXPwk6oZWeA0955V+g==";
       };
     };
     "typescript-4.5.2" = {
@@ -475,6 +486,7 @@ let
       sources."debug-4.3.4"
       sources."encoding-0.1.13"
       sources."fast-deep-equal-3.1.3"
+      sources."google-protobuf-3.21.2"
       sources."iconv-lite-0.6.3"
       sources."js-levenshtein-1.1.6"
       sources."js-yaml-4.1.0"
@@ -489,12 +501,12 @@ let
       })
       sources."openapi-typescript-helpers-0.0.5"
       sources."pluralize-8.0.0"
-      sources."protoc-gen-ts-0.8.7"
       sources."punycode-2.3.1"
       sources."require-from-string-2.0.2"
       sources."safer-buffer-2.1.2"
       sources."supports-color-9.4.0"
       sources."tr46-0.0.3"
+      sources."ts-protoc-gen-0.15.0"
       sources."typescript-4.5.2"
       sources."uri-js-4.4.1"
       sources."webidl-conversions-3.0.1"
