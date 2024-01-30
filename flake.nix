@@ -27,8 +27,6 @@
                 import ./nix-pkgs/openapi-codegen.nix { inherit pkgs; };
               grpc-tools-node =
                 import ./nix-pkgs/grpc-tools-node.nix { inherit pkgs; };
-              openapi-typescript =
-                import ./nix-pkgs/openapi-ts { inherit pkgs; };
             in [
               goreleaser
               go_1_20
@@ -46,7 +44,6 @@
               protoc-gen-grpc-web
               grpc-tools
               grpcui
-              openapi-codegen-go
               rustc
               cargo
               rustfmt
@@ -55,9 +52,9 @@
               libiconv
               bash-completion
               # local definition (see above)
+              openapi-codegen-go
               grpc-tools-node
               node-devtools.nodeDependencies
-              openapi-typescript
             ];
 
           shellHook = ''
