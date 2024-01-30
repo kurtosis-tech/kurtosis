@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/zalando/go-keyring"
 	"strings"
 )
 
@@ -89,15 +90,29 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", logLevelStr)
 	}
 
-	// setup git authentication
-	gitAuth := &http.BasicAuth{
-		Username: "token",
-		Password: gitAuthTokenStr,
+	// set password
+	err = keyring.Set("kurtosis-git", "tedi", "***REMOVED***")
+	if err != nil {
+		logrus.Errorf("Unable to set token for keyring")
 	}
+	logrus.Infof("Successfully set git token in keyring")
+
+	// get password
+	secret, err := keyring.Get("kurtosis-git", "tedi")
+	if err != nil {
+		logrus.Errorf("Unable to get token for keyring")
+	}
+	logrus.Infof("Successfully retrieved git token from keyring")
 
 	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager")
+	}
+
+	// setup git authentication
+	gitAuth := &http.BasicAuth{
+		Username: "token",
+		Password: secret,
 	}
 
 	var engineClientCloseFunc func() error
