@@ -3,6 +3,7 @@ package start
 import (
 	"context"
 	"fmt"
+	"github.com/cli/go-gh/v2/pkg/browser"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/engine/common"
@@ -13,7 +14,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/zalando/go-keyring"
+	"os"
 	"strings"
 )
 
@@ -91,18 +92,25 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	// set password
-	err = keyring.Set("kurtosis-git", "tedi", "***REMOVED***")
-	if err != nil {
-		logrus.Errorf("Unable to set token for keyring")
-	}
-	logrus.Infof("Successfully set git token in keyring")
+	//err = keyring.Set("kurtosis-git", "tedi", "***REMOVED***")
+	//if err != nil {
+	//	logrus.Errorf("Unable to set token for keyring")
+	//}
+	//logrus.Infof("Successfully set git token in keyring")
+	//
+	//// get password
+	//secret, err := keyring.Get("kurtosis-git", "tedi")
+	//if err != nil {
+	//	logrus.Errorf("Unable to get token for keyring")
+	//}
+	//logrus.Infof("Successfully retrieved git token from keyring")
 
-	// get password
-	secret, err := keyring.Get("kurtosis-git", "tedi")
+	// TODO: get oauthHost, IO streams, notice string, and browser info
+	secret, userLogin, err := AuthFlow("github.com", "", []string{}, true, *browser.New("", os.Stdin, os.Stdout)) // TODO: figure out what browser new is
 	if err != nil {
-		logrus.Errorf("Unable to get token for keyring")
+		return stacktrace.Propagate(err, "An error occurred authenticating with github")
 	}
-	logrus.Infof("Successfully retrieved git token from keyring")
+	logrus.Infof("Successfully logged in user: %v", userLogin)
 
 	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
