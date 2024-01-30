@@ -5,6 +5,17 @@
 
 let
   sources = {
+    "@bufbuild/protobuf-1.5.1" = {
+      name = "_at_bufbuild_slash_protobuf";
+      packageName = "@bufbuild/protobuf";
+      version = "1.5.1";
+      src = fetchurl {
+        url =
+          "https://registry.npmjs.org/@bufbuild/protobuf/-/protobuf-1.5.1.tgz";
+        sha512 =
+          "LX+MeB1AzlbqgJXkq83lilQpLGnPvsAMj7SH8KtJAmQfBc55ee78Stxuff/HMw0xLMYJN3P1FBh5TENgjJof1w==";
+      };
+    };
     "@bufbuild/protobuf-1.7.1" = {
       name = "_at_bufbuild_slash_protobuf";
       packageName = "@bufbuild/protobuf";
@@ -16,48 +27,48 @@ let
           "UlI3lKLFBjZQJ0cHf47YUH6DzZxZYWk3sf6dKYyPUaXrfXq4z+zZqNO3q0lPUzyJgh14s6VscjcNFBaQBhYd9Q==";
       };
     };
-    "@bufbuild/protoc-gen-es-1.7.1" = {
+    "@bufbuild/protoc-gen-es-1.5.1" = {
       name = "_at_bufbuild_slash_protoc-gen-es";
       packageName = "@bufbuild/protoc-gen-es";
-      version = "1.7.1";
+      version = "1.5.1";
       src = fetchurl {
         url =
-          "https://registry.npmjs.org/@bufbuild/protoc-gen-es/-/protoc-gen-es-1.7.1.tgz";
+          "https://registry.npmjs.org/@bufbuild/protoc-gen-es/-/protoc-gen-es-1.5.1.tgz";
         sha512 =
-          "N1diiVcDkTTNX+b9rDY8EVgOXu0W8kRmf2w3nbYi8q/hfM6vBg4zry0m4v3ARSgKp60bCey1WUDBuiynm5+PqQ==";
+          "o4NNOf49QEjowhpQxm3fq/yv+LstO9aMmNlEE3fz4WlD5fBE8OZ7q38O+WMUVoB4Y41joxk24v7IIm61trwRyg==";
       };
     };
-    "@bufbuild/protoplugin-1.7.1" = {
+    "@bufbuild/protoplugin-1.5.1" = {
       name = "_at_bufbuild_slash_protoplugin";
       packageName = "@bufbuild/protoplugin";
-      version = "1.7.1";
+      version = "1.5.1";
       src = fetchurl {
         url =
-          "https://registry.npmjs.org/@bufbuild/protoplugin/-/protoplugin-1.7.1.tgz";
+          "https://registry.npmjs.org/@bufbuild/protoplugin/-/protoplugin-1.5.1.tgz";
         sha512 =
-          "bnPFXs38IXjL2EdpkthkCa/+SXOxERnXyV///rQj1wyidJmw21wOvqpucuIh25YnPtdrUItcIFFDVCoKPkuCPQ==";
+          "4qQD3UIEXflPYCEPZxyvi9yoQiX3ONWgLw24uLJrw9AnbY7Pw1xT5v8yIMXIVccBEZNSpvIF6qD/JXfIapjRtw==";
       };
     };
-    "@connectrpc/connect-1.3.0" = {
+    "@connectrpc/connect-0.13.2" = {
       name = "_at_connectrpc_slash_connect";
       packageName = "@connectrpc/connect";
-      version = "1.3.0";
+      version = "0.13.2";
       src = fetchurl {
         url =
-          "https://registry.npmjs.org/@connectrpc/connect/-/connect-1.3.0.tgz";
+          "https://registry.npmjs.org/@connectrpc/connect/-/connect-0.13.2.tgz";
         sha512 =
-          "kTeWxJnLLtxKc2ZSDN0rIBgwfP8RwcLknthX4AKlIAmN9ZC4gGnCbwp+3BKcP/WH5c8zGBAWqSY3zeqCM+ah7w==";
+          "KZg6EH8gYnQZm/d2IXXMVB2mom/A1dCD8+7JScm2tKN9OQyQSeCJOLqtv/M4M5XVS0Y9JM2/VCbiUwfhl9Rqmg==";
       };
     };
-    "@connectrpc/protoc-gen-connect-es-1.3.0" = {
+    "@connectrpc/protoc-gen-connect-es-0.13.2" = {
       name = "_at_connectrpc_slash_protoc-gen-connect-es";
       packageName = "@connectrpc/protoc-gen-connect-es";
-      version = "1.3.0";
+      version = "0.13.2";
       src = fetchurl {
         url =
-          "https://registry.npmjs.org/@connectrpc/protoc-gen-connect-es/-/protoc-gen-connect-es-1.3.0.tgz";
+          "https://registry.npmjs.org/@connectrpc/protoc-gen-connect-es/-/protoc-gen-connect-es-0.13.2.tgz";
         sha512 =
-          "UbQN48c0zafo5EFSsh3POIJP6ofYiAgKE1aFOZ2Er4W3flUYihydZdM6TQauPkn7jDj4w9jjLSTTZ9//ecUbPA==";
+          "XGV6TN1y36g6RVDzn+YPDE4Q3QCaobwPNo/N93QXEeql/qI4ROTNbIyl0EfAPlsXITMG3k9WBOg49+rF21mMbg==";
       };
     };
     "@redocly/ajv-8.11.0" = {
@@ -445,10 +456,14 @@ let
     src = ./.;
     dependencies = [
       sources."@bufbuild/protobuf-1.7.1"
-      sources."@bufbuild/protoc-gen-es-1.7.1"
-      sources."@bufbuild/protoplugin-1.7.1"
-      sources."@connectrpc/connect-1.3.0"
-      sources."@connectrpc/protoc-gen-connect-es-1.3.0"
+      (sources."@bufbuild/protoc-gen-es-1.5.1" // {
+        dependencies = [ sources."@bufbuild/protobuf-1.5.1" ];
+      })
+      (sources."@bufbuild/protoplugin-1.5.1" // {
+        dependencies = [ sources."@bufbuild/protobuf-1.5.1" ];
+      })
+      sources."@connectrpc/connect-0.13.2"
+      sources."@connectrpc/protoc-gen-connect-es-0.13.2"
       sources."@redocly/ajv-8.11.0"
       sources."@redocly/openapi-core-1.8.1"
       sources."@typescript/vfs-1.5.0"
