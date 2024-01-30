@@ -25,7 +25,7 @@ func ConnectReverseProxyToNetwork(ctx context.Context, dockerManager *docker_man
 	}
 
 	if maybeReverseProxyObject == nil {
-		return stacktrace.Propagate(err, "An error occurred while connecting the reverse proxy to the enclave network '%v' because no reverse proxy was found", networkId)
+		return stacktrace.NewError("An error occurred while connecting the reverse proxy to the enclave network '%v' because no reverse proxy was found", networkId)
 	}
 
 	_, found := maybeReverseProxyObject.GetEnclaveNetworksIpAddress()[networkId]
@@ -48,7 +48,7 @@ func DisconnectReverseProxyFromNetwork(ctx context.Context, dockerManager *docke
 	}
 
 	if maybeReverseProxyObject == nil {
-		return stacktrace.Propagate(err, "An error occurred while disconnecting the reverse proxy from the enclave network '%v' because no reverse proxy was found", networkId)
+		return stacktrace.NewError("An error occurred while disconnecting the reverse proxy from the enclave network '%v' because no reverse proxy was found", networkId)
 	}
 
 	_, found := maybeReverseProxyObject.GetEnclaveNetworksIpAddress()[networkId]
