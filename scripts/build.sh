@@ -18,8 +18,14 @@ set -u
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
+# These scripts will be executed always
+MANDATORY_BUILD_SCRIPT_RELATIVE_FILEPATHS=(
+  "scripts/generate-kurtosis-version.sh"
+  "cli/scripts/build.sh"
+)
+
+# for regular builds
 BUILD_SCRIPT_RELATIVE_FILEPATHS=(
-    "scripts/generate-kurtosis-version.sh"
     "container-engine-lib/scripts/build.sh"
     "contexts-config-store/scripts/build.sh"
     "grpc-file-transfer/scripts/build.sh"
@@ -29,10 +35,9 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "core/scripts/build.sh"
     "enclave-manager/scripts/build.sh"
     "engine/scripts/build.sh"
-    "cli/scripts/build.sh"
 )
 
-# projects with debug mode list
+# projects with debug mode enabled
 BUILD_DEBUG_SCRIPT_RELATIVE_FILEPATHS=(
     "engine/scripts/build.sh"
 )
@@ -60,6 +65,16 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
+# run mandatory scripts first
+for build_script_rel_filepath in "${MANDATORY_BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}"; do
+    build_script_abs_filepath="${root_dirpath}/${build_script_rel_filepath}"
+    if ! bash "${build_script_abs_filepath}"; then
+        echo "Error: Build script '${build_script_abs_filepath}' failed" >&2
+        exit 1
+    fi
+done
+
+# then run the remaining scripts
 build_script_rel_filepaths=("${BUILD_SCRIPT_RELATIVE_FILEPATHS[@]}")
 if "${debug_image}"; then
   build_script_rel_filepaths=("${BUILD_DEBUG_SCRIPT_RELATIVE_FILEPATHS[@]}")
