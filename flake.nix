@@ -27,10 +27,7 @@
                 import ./nix-pkgs/openapi-codegen.nix { inherit pkgs; };
               grpc-tools-node =
                 import ./nix-pkgs/grpc-tools-node.nix { inherit pkgs; };
-              protoc-gen-ts =
-                import ./nix-pkgs/protoc-gen-ts.nix { inherit pkgs; };
               openapi-typescript =
-                # import ./nix-pkgs/openapi-typescript.nix { inherit pkgs; };
                 import ./nix-pkgs/openapi-ts { inherit pkgs; };
             in [
               goreleaser
@@ -40,6 +37,7 @@
               delve
               enumer
               nodejs_20
+              node2nix
               yarn
               protobuf
               protoc-gen-go
@@ -58,7 +56,6 @@
               bash-completion
               # local definition (see above)
               grpc-tools-node
-              protoc-gen-ts
               node-devtools.nodeDependencies
               openapi-typescript
             ];

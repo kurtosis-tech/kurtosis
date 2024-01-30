@@ -90,6 +90,17 @@ let
           "sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==";
       };
     };
+    "protoc-gen-ts-0.8.7" = {
+      name = "protoc-gen-ts";
+      packageName = "protoc-gen-ts";
+      version = "0.8.7";
+      src = fetchurl {
+        url =
+          "https://registry.npmjs.org/protoc-gen-ts/-/protoc-gen-ts-0.8.7.tgz";
+        sha512 =
+          "jr4VJey2J9LVYCV7EVyVe53g1VMw28cCmYJhBe5e3YX5wiyiDwgxWxeDf9oTqAe4P1bN/YGAkW2jhlH8LohwiQ==";
+      };
+    };
     "typescript-4.5.2" = {
       name = "typescript";
       packageName = "typescript";
@@ -115,6 +126,7 @@ let
       sources."@typescript/vfs-1.5.0"
       sources."debug-4.3.4"
       sources."ms-2.1.2"
+      sources."protoc-gen-ts-0.8.7"
       sources."typescript-4.5.2"
     ];
     buildInputs = globalBuildInputs;
