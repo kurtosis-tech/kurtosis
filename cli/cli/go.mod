@@ -61,6 +61,7 @@ require (
 	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230406131103-c466e04f1b89
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/xlab/treeprint v1.2.0
+	github.com/zalando/go-keyring v0.2.3
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -72,6 +73,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
+	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/aymanbagabas/go-osc52 v1.0.3 // indirect
 	github.com/bytedance/sonic v1.10.0-rc3 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
@@ -83,6 +85,7 @@ require (
 	github.com/containerd/containerd v1.7.2 // indirect
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
+	github.com/danieljoos/wincred v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/distribution/distribution/v3 v3.0.0-20230214150026-36d8c594d7aa // indirect
@@ -104,6 +107,7 @@ require (
 	github.com/go-openapi/jsonreference v0.20.1 // indirect
 	github.com/go-openapi/swag v0.22.4 // indirect
 	github.com/go-playground/validator/v10 v10.14.1 // indirect
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
