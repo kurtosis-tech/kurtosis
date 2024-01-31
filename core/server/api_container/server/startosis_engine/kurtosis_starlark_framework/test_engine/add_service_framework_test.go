@@ -35,6 +35,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 			expectedServiceConfig, err := service.CreateServiceConfig(
 				testContainerImageName,
 				nil,
+				nil,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
 				nil,
@@ -48,6 +49,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 				0,
 				0,
 				map[string]string{},
+				nil,
 				nil,
 			)
 			require.NoError(suite.T(), err)

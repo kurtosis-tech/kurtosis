@@ -70,6 +70,7 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		expectedImageBuildSpec,
+		nil,
 		map[string]*port_spec.PortSpec{},
 		map[string]*port_spec.PortSpec{},
 		nil,
@@ -83,6 +84,7 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		0,
 		0,
 		map[string]string{},
+		nil,
 		nil,
 	)
 	require.NoError(t, err)

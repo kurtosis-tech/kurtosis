@@ -254,6 +254,7 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		nil,
 		nil,
 		nil,
+		nil,
 		// This make sure that the container does not stop as soon as it starts
 		// This only is needed for kubernetes at the moment
 		// TODO: Instead of creating a service and running exec commands
@@ -270,6 +271,7 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		0,
 		0,
 		map[string]string{},
+		nil,
 		nil,
 	)
 	if err != nil {

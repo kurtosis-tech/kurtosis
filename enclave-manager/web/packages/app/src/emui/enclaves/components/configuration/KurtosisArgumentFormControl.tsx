@@ -6,6 +6,7 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
+  Tag,
 } from "@chakra-ui/react";
 import { isDefined, KurtosisMarkdown } from "kurtosis-ui-components";
 import { PropsWithChildren } from "react";
@@ -43,9 +44,16 @@ export const KurtosisArgumentFormControl = ({
 
   return (
     <FormControl isInvalid={isDefined(error)} isDisabled={disabled} isRequired={isRequired} {...formControlProps}>
-      <Flex alignItems={"center"}>
-        <FormLabel fontWeight={"bold"}>{label}</FormLabel>
-        <Badge mb={2}>{type}</Badge>
+      <Flex justifyContent={"space-between"}>
+        <Flex alignItems={"center"}>
+          <FormLabel fontWeight={"bold"}>{label}</FormLabel>
+          <Badge mb={2}>{type}</Badge>
+        </Flex>
+        <Flex flexDirection={"column"} justifyContent={"center"} alignItems={"center"}>
+          <Tag colorScheme={isRequired ? "red" : "gray"} variant={"square"}>
+            {isRequired ? "Required" : "Optional"}
+          </Tag>
+        </Flex>
       </Flex>
       {children}
       <FormHelperText>

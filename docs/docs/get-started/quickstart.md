@@ -15,6 +15,14 @@ Before you get started, make sure you have:
 * [Installed Docker](https://docs.docker.com/get-docker/) and ensure the Docker Daemon is running on your machine (e.g. open Docker Desktop). You can quickly check if Docker is running by running: `docker image ls` from your terminal to see all your Docker images.
 * [Installed Kurtosis](https://docs.kurtosis.com/install/#ii-install-the-cli) or [upgrade Kurtosis to the latest version](https://docs.kurtosis.com/upgrade). You can check if Kurtosis is running using the command: `kurtosis version`, which will print your current Kurtosis engine version and CLI version.
 
+:::tip
+This guide will have you writing Kurtosis Starlark. You can optionally install [the VSCode plugin](https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension) to get syntax highlighting, autocomplete, and documentation.
+:::
+
+:::tip Have a Docker Compose setup?
+Check out this [guide][running-docker-compose] to run your Docker Compose setup with Kurtosis in one line!
+:::
+
 Run a basic package from Github
 ---------------------------------------
 
@@ -197,6 +205,7 @@ Now that you've use the Kurtosis CLI to run a package, inspect the resulting env
 [basic-files-artifact]: ../get-started/basic-concepts.md#files-artifact
 [write-your-first-package]: ../get-started/write-your-first-package.md
 [running-in-k8s]: ../guides/running-in-k8s.md
+[running-docker-compose]: ../guides/running-docker-compose.md
 
 <!--------------------------- Advanced Concepts ------------------------------------>
 [architecture-explanation]: ../advanced-concepts/architecture.md

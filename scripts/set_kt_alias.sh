@@ -1,5 +1,6 @@
 # Add alias to compiled CLI
-alias ktdev="$(pwd)/cli/cli/scripts/launch-cli.sh" 
+alias ktdev="$(pwd)/cli/cli/scripts/launch-cli.sh"
+alias ktdebug="$(pwd)/cli/cli/scripts/debug-cli.sh"
 
 CURRENT_SHELL=$(sh -c 'ps -p $$ -o ppid=' | xargs ps -o comm= -p) 
 SHELL_NAME=$(basename -- $CURRENT_SHELL)
@@ -16,6 +17,6 @@ zsh)  echo "Setting $SHELL_NAME completion"
     source <(ktdev completion zsh)
     compdef __start_kurtosis ktdev
     ;;
-*) echo "Sheel $SHELL_NAME is not supported"
+*) echo "Shell $SHELL_NAME is not supported"
    ;;
 esac

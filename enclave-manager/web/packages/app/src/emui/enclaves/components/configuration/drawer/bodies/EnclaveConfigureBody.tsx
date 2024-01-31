@@ -17,7 +17,6 @@ import {
   Tabs,
   Text,
   Tooltip,
-  useToast,
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { ArgumentValueType, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
@@ -86,7 +85,6 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
     const [error, setError] = useState<string>();
     const formRef = useRef<EnclaveConfigurationFormImperativeAttributes>(null);
     const yamlRef = useRef<YAMLEditorImperativeAttributes>(null);
-    const toast = useToast();
     const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Form");
     const [dryRunPreviewArgs, setDryRunPreviewArgs] = useState<Record<string, any>>();
 
@@ -195,20 +193,6 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
       }
 
       if (formData.args.args) {
-        try {
-          console.debug("formData", formData);
-          formData.args.args = JSON.parse(formData.args.args);
-          console.debug("successfully parsed args as proper JSON", formData.args.args);
-        } catch (err) {
-          toast({
-            title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(
-              err,
-            )}`,
-            colorScheme: "red",
-          });
-          return;
-        }
-
         const { args, ...rest } = formData.args;
 
         submissionData = {

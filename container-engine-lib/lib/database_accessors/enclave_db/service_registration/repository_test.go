@@ -305,6 +305,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		nil,
+		nil,
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},
@@ -321,6 +322,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 			"test-label-key":        "test-label-value",
 			"test-second-label-key": "test-second-label-value",
 		},
+		nil,
 		nil,
 	)
 	require.NoError(t, err)

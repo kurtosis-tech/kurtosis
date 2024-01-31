@@ -23,7 +23,7 @@ describe("Enclave List", () => {
     cy.contains("button", "Edit").click();
     cy.focusInputWithLabel("Max CPU").type("1024");
     cy.contains("button", "Update").click();
-    cy.contains("Script completed", { timeout: 10 * 1000 });
+    cy.contains("Script completed", { timeout: 30 * 1000 });
   });
 
   it("Shows a new enclave in the list", () => {

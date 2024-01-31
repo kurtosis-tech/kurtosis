@@ -1,6 +1,7 @@
 package docker_manager
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"net"
 
@@ -34,6 +35,7 @@ type CreateAndStartContainerArgs struct {
 	restartPolicy                            RestartPolicy
 	imageDownloadMode                        image_download_mode.ImageDownloadMode
 	user                                     *service_user.ServiceUser
+	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -62,6 +64,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	restartPolicy                            RestartPolicy
 	imageDownloadMode                        image_download_mode.ImageDownloadMode
 	user                                     *service_user.ServiceUser
+	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
 }
 
 /*
@@ -97,6 +100,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		restartPolicy:                            NoRestart,
 		imageDownloadMode:                        image_download_mode.ImageDownloadMode_Missing,
 		user:                                     nil,
+		imageRegistrySpec:                        nil,
 	}
 }
 
@@ -126,6 +130,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		restartPolicy:                            builder.restartPolicy,
 		imageDownloadMode:                        builder.imageDownloadMode,
 		user:                                     builder.user,
+		imageRegistrySpec:                        builder.imageRegistrySpec,
 	}
 }
 
@@ -273,5 +278,10 @@ func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageIfMiss
 
 func (builder *CreateAndStartContainerArgsBuilder) WithUser(user *service_user.ServiceUser) *CreateAndStartContainerArgsBuilder {
 	builder.user = user
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithImageRegistrySpec(imageRegistrySpec *image_registry_spec.ImageRegistrySpec) *CreateAndStartContainerArgsBuilder {
+	builder.imageRegistrySpec = imageRegistrySpec
 	return builder
 }

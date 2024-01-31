@@ -34,6 +34,10 @@ var (
 	testOnDiskContextDirPath     = "kurtosis-data/test-package"
 	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"
 
+	testRegistryAddr     = "http://registry.test.io"
+	testRegistryUsername = "kurtosis"
+	testRegistryPassword = "password"
+
 	testPrivatePortId              = "grpc"
 	testPrivatePortNumber          = uint16(1323)
 	testPrivatePortProtocolStr     = "TCP"
@@ -113,4 +117,8 @@ var (
 		testServiceConfigLabelsKey1: testServiceConfigLabelsValue1,
 		testServiceConfigLabelsKey2: testServiceConfigLabelsValue2,
 	}
+
+	testTolerationKey     = "test-key"
+	testTolerationValue   = "test-value"
+	testTolerationSeconds = int64(64)
 )
