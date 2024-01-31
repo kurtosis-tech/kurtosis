@@ -21,10 +21,31 @@ api_go_mod_rel_file="golang/go.mod"
 # Typescript
 api_typescript_rel_dir="typescript"
 
+NODE_ES_TOOLS_PROTOC_BIN_FILENAME="protoc-gen-es"
+
+NODE_CONNECT_ES_TOOLS_PROTOC_BIN_FILENAME="protoc-gen-connect-es"
+
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
 
+if ! node_es_protoc_bin_filepath="$(which "${NODE_ES_TOOLS_PROTOC_BIN_FILENAME}")"; then
+    echo "Error: Couldn't find Node gRPC tools protoc plugin binary '${NODE_ES_TOOLS_PROTOC_BIN_FILENAME}' on the PATH" >&2
+    return 1
+fi
+if [ -z "${node_es_protoc_bin_filepath}" ]; then
+    echo "Error: Got an empty filepath when looking for the Node gRPC tools protoc plugin binary '${NODE_ES_TOOLS_PROTOC_BIN_FILENAME}'" >&2
+    return 1
+fi
+
+if ! node_connect_es_protoc_bin_filepath="$(which "${NODE_CONNECT_ES_TOOLS_PROTOC_BIN_FILENAME}")"; then
+    echo "Error: Couldn't find Node gRPC tools protoc plugin binary '${NODE_CONNECT_ES_TOOLS_PROTOC_BIN_FILENAME}' on the PATH" >&2
+    return 1
+fi
+if [ -z "${node_connect_es_protoc_bin_filepath}" ]; then
+    echo "Error: Got an empty filepath when looking for the Node gRPC tools protoc plugin binary '${NODE_CONNECT_ES_TOOLS_PROTOC_BIN_FILENAME}'" >&2
+    return 1
+fi
 # Dependencies from other modules
 api_golang_engine="${repo_root_dirpath}/api/protobuf/engine"
 api_golang_core="${repo_root_dirpath}/api/protobuf/core"
@@ -47,10 +68,10 @@ protoc \
   --go-grpc_opt=require_unimplemented_servers=false \
   --connect-go_out="${api_golang_proto_generated_abs_dir}" \
   --connect-go_opt=module="${api_golang_module}" \
-  --plugin=protoc-gen-es="${api_typescript_abs_dir}/node_modules/.bin/protoc-gen-es" \
+  --plugin=protoc-gen-es="${node_es_protoc_bin_filepath}" \
   --es_out="${api_typescript_abs_dir}/src/" \
   --es_opt=target=ts \
-  --plugin=protoc-gen-connect-es="${api_typescript_abs_dir}/node_modules/.bin/protoc-gen-connect-es" \
+  --plugin=protoc-gen-connect-es="${node_connect_es_protoc_bin_filepath}" \
   --connect-es_out="${api_typescript_abs_dir}/src/" \
   --connect-es_opt=target=ts \
   "${api_proto_abs_dir}"/*.proto
