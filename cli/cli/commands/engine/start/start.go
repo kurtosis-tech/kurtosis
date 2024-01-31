@@ -100,7 +100,7 @@ func run(cmd *cobra.Command, args []string) error {
 	//userLogin := os.Getenv("GIT_USER")
 	secret, err := keyring.Get("kurtosis-git", "tedim52")
 	if err != nil {
-		logrus.Errorf("Unable to get token from keyring")
+		logrus.Debugf("Unable to get token from keyring")
 	}
 	logrus.Debugf("Successfully retrieved git token from keyring.")
 	logrus.Infof("Successfully retrieved git auth info for user: %v", "tedim52")
