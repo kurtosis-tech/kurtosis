@@ -19,18 +19,16 @@ import { CopyButton, NavButton, Navigation, NavigationDivider } from "kurtosis-u
 import { useState } from "react";
 import { FiHome, FiPackage } from "react-icons/fi";
 import { GoBug } from "react-icons/go";
-import { MdInfoOutline, MdOutlineBuild } from "react-icons/md";
+import { MdInfoOutline } from "react-icons/md";
 import { PiLinkSimpleBold } from "react-icons/pi";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { KURTOSIS_CLOUD_CONNECT_URL } from "../client/constants";
 import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
-import { KURTOSIS_BUILD_ENCLAVE_URL_ARG } from "./enclaves/components/configuration/drawer/constants";
 import { settingKeys, useSettings } from "./settings";
 
 export const Navbar = () => {
   const { updateSetting, settings } = useSettings();
   const location = useLocation();
-  const navigate = useNavigate();
   const kurtosisClient = useKurtosisClient();
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const kurtosisVersion = process.env.REACT_APP_VERSION || "Unknown";
@@ -51,13 +49,6 @@ export const Navbar = () => {
         <Link to={KURTOSIS_CLOUD_CONNECT_URL}>
           <NavButton label={"Link your CLI"} Icon={<PiLinkSimpleBold />} />
         </Link>
-      )}
-      {settings.ENABLE_EXPERIMENTAL_BUILD_ENCLAVE && (
-        <NavButton
-          label={"Build Enclave"}
-          Icon={<MdOutlineBuild />}
-          onClick={() => navigate(`${window.location.search}#${KURTOSIS_BUILD_ENCLAVE_URL_ARG}`)}
-        />
       )}
       <NavigationDivider />
       <Link
