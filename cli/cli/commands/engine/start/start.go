@@ -14,7 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/zalando/go-keyring"
-	"os"
 	"strings"
 )
 
@@ -98,13 +97,13 @@ func run(cmd *cobra.Command, args []string) error {
 
 	// TODO: make this work if no secret is returned
 	// get password
-	userLogin := os.Getenv("GIT_USER")
-	secret, err := keyring.Get("kurtosis-git", userLogin)
+	//userLogin := os.Getenv("GIT_USER")
+	secret, err := keyring.Get("kurtosis-git", "tedim52")
 	if err != nil {
 		logrus.Errorf("Unable to get token from keyring")
 	}
 	logrus.Debugf("Successfully retrieved git token from keyring.")
-	logrus.Infof("Successfully retrieved git auth info for user: %v", userLogin)
+	logrus.Infof("Successfully retrieved git auth info for user: %v", "tedim52")
 
 	// setup git authentication
 	gitAuth := &http.BasicAuth{

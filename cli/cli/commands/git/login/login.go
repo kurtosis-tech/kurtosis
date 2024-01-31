@@ -28,7 +28,7 @@ func run(cmd *cobra.Command, args []string) error {
 	logrus.Infof("Successfully authorized git user: %v", userLogin)
 
 	//set password
-	err = keyring.Set("kurtosis-git", userLogin, secret)
+	err = keyring.Set("kurtosis-git", "tedim52", secret)
 	if err != nil {
 		logrus.Errorf("Unable to set token for keyring")
 	}
@@ -37,6 +37,6 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting git user env var.")
 	}
 	logrus.Debugf("Successfully set git token in keyring: %v", secret)
-	logrus.Infof("Successfully set git auth info for user: %v", userLogin)
+	logrus.Infof("Successfully set git auth info for user: %v", "tedim52")
 	return nil
 }

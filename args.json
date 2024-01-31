@@ -1,0 +1,18 @@
+{
+  "certificate_password": "",
+  "ec2_key_pair_name": "kurtosis-cloud-instance-production-2023-08-30",
+  "ec2_launch_region": "us-east-1",
+  "ec2_launch_template_id": "lt-0c9c52409bd18cd9e",
+  "ec2_launch_template_version": "$Latest",
+  "ec2_ssh_private_key": "",
+  "ec2_ssh_user_name": "ubuntu",
+  "payment_key": "",
+  "payment_product_id": "prod_OlAkcdTzmaMrg3",
+  "aws_access_key_id": "",
+  "aws_secret_access_key": "",
+  "aws_region": "us-east-1",
+  "registry_url": "258623609258.dkr.ecr.us-east-1.amazonaws.com",
+  "registry_username": "AWS",
+  "registry_password": "",
+  "registry_image": "258623609258.dkr.ecr.us-east-1.amazonaws.com/kurtosistech/kurtosis-cloud-backend"
+}
