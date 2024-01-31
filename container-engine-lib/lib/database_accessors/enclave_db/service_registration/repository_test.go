@@ -2,6 +2,12 @@ package service_registration
 
 import (
 	"fmt"
+	"math/rand"
+	"net"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -9,11 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"math/rand"
-	"net"
-	"os"
-	"testing"
-	"time"
 )
 
 const (
@@ -304,6 +305,7 @@ func getServiceRegistrationWithDataForTest(
 func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceConfig {
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
+		nil,
 		nil,
 		nil,
 		testPrivatePorts(t),

@@ -73,6 +73,7 @@ func CreateServiceConfig(
 	containerImageName string,
 	imageBuildSpec *image_build_spec.ImageBuildSpec,
 	imageRegistrySpec *image_registry_spec.ImageRegistrySpec,
+	nixBuildSpec *nix_build_spec.NixBuildSpec,
 	privatePorts map[string]*port_spec.PortSpec,
 	publicPorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -99,6 +100,7 @@ func CreateServiceConfig(
 		ContainerImageName:        containerImageName,
 		ImageBuildSpec:            imageBuildSpec,
 		ImagerRegistrySpec:        imageRegistrySpec,
+		NixBuildSpec:              nixBuildSpec,
 		PrivatePorts:              privatePorts,
 		PublicPorts:               publicPorts,
 		EntrypointArgs:            entrypointArgs,
@@ -130,6 +132,10 @@ func (serviceConfig *ServiceConfig) GetImageBuildSpec() *image_build_spec.ImageB
 
 func (serviceConfig *ServiceConfig) GetImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
 	return serviceConfig.privateServiceConfig.ImagerRegistrySpec
+}
+
+func (serviceConfig *ServiceConfig) GetNixBuildSpec() *nix_build_spec.NixBuildSpec {
+	return serviceConfig.privateServiceConfig.NixBuildSpec
 }
 
 func (serviceConfig *ServiceConfig) GetPrivatePorts() map[string]*port_spec.PortSpec {
