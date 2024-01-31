@@ -14,7 +14,6 @@ if [ -z "${IN_NIX_SHELL}" ]; then
 fi
 set -u
 
-# TODO crear un array con los scripts que tienen debug configuration y solo usar esos cuando se setee debug mode
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
