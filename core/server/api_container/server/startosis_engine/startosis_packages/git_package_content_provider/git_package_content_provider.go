@@ -317,6 +317,7 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 		depth = depthAssumingBranchTagsCommitsAreSpecified
 	}
 
+	logrus.Info("USING THE FOLLOWING GIT AUTH TOKEN TO AUTHENTICATE: %v", provider.gitAuth.Password)
 	//TODO evaluate to use the GitHub client GetContents call instead, because we are cloning the entire repository's workspace with this approach
 	//TODO and the startosis package could be just a small sub-folder inside a giant mono-repository
 	//TODO and even now, in the upload_files instruction, we are allowing to upload files or a folder for any repository, but we are cloning the entire repository for this
