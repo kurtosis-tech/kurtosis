@@ -3,8 +3,8 @@ on:
 
 name: full-check
 jobs:
-  nix_build:
-    name: Build Nix targets
+  full_check:
+    name: Run test on all assets
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
