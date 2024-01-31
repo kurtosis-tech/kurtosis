@@ -5,7 +5,7 @@ import { isDefined, SavedPackagesProvider } from "kurtosis-ui-components";
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
 import { Result } from "true-myth";
 import { useKurtosisPackageIndexerClient } from "../../client/packageIndexer/KurtosisPackageIndexerClientContext";
-import { loadSavedPackageNames, storeSavedPackages } from "./storage";
+import { settingKeys, useSettings } from "../settings";
 
 export type CatalogState = {
   catalog: Result<GetPackagesResponse, string>;
@@ -16,6 +16,7 @@ export type CatalogState = {
 const CatalogContext = createContext<CatalogState>(null as any);
 
 export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
+  const { settings, updateSetting } = useSettings();
   const packageIndexerClient = useKurtosisPackageIndexerClient();
   const [catalog, setCatalog] = useState<Result<GetPackagesResponse, string>>();
   const [savedPackages, setSavedPackages] = useState<KurtosisPackage[]>([]);
@@ -26,23 +27,29 @@ export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
     setCatalog(catalog);
 
     if (catalog.isOk) {
-      const savedPackageNames = new Set(loadSavedPackageNames());
+      const savedPackageNames = new Set(settings.SAVED_PACKAGES);
       setSavedPackages(catalog.value.packages.filter((kurtosisPackage) => savedPackageNames.has(kurtosisPackage.name)));
     }
 
     return catalog;
-  }, [packageIndexerClient]);
+  }, [packageIndexerClient, settings.SAVED_PACKAGES]);
 
-  const togglePackageSaved = useCallback((kurtosisPackage: KurtosisPackage) => {
-    setSavedPackages((savedPackages) => {
-      const packageSavedAlready = savedPackages.some((p) => p.name === kurtosisPackage.name);
-      const newSavedPackages: KurtosisPackage[] = packageSavedAlready
-        ? savedPackages.filter((p) => p.name !== kurtosisPackage.name)
-        : [...savedPackages, kurtosisPackage];
-      storeSavedPackages(newSavedPackages);
-      return newSavedPackages;
-    });
-  }, []);
+  const togglePackageSaved = useCallback(
+    (kurtosisPackage: KurtosisPackage) => {
+      setSavedPackages((savedPackages) => {
+        const packageSavedAlready = savedPackages.some((p) => p.name === kurtosisPackage.name);
+        const newSavedPackages: KurtosisPackage[] = packageSavedAlready
+          ? savedPackages.filter((p) => p.name !== kurtosisPackage.name)
+          : [...savedPackages, kurtosisPackage];
+        updateSetting(
+          settingKeys.SAVED_PACKAGES,
+          newSavedPackages.map((kurtosisPackage) => kurtosisPackage.name),
+        );
+        return newSavedPackages;
+      });
+    },
+    [updateSetting],
+  );
 
   const getSinglePackage = useCallback(
     async (packageName: string) => {

@@ -38,7 +38,6 @@ import { useNavigate } from "react-router-dom";
 import { useKurtosisClient } from "../../../../../../client/enclaveManager/KurtosisClientContext";
 import { useEnclavesContext } from "../../../../EnclavesContext";
 import { EnclaveFullInfo } from "../../../../types";
-import { DryRunVisualiseModal } from "../../../modals/DryRunVisualiseModal";
 import { allowedEnclaveNamePattern, isEnclaveNameAllowed } from "../../../utils";
 import { EnclaveConfigurationForm, EnclaveConfigurationFormImperativeAttributes } from "../../EnclaveConfigurationForm";
 import { BooleanArgumentInput } from "../../inputs/BooleanArgumentInput";
@@ -46,7 +45,7 @@ import { StringArgumentInput } from "../../inputs/StringArgumentInput";
 import { KurtosisArgumentFormControl } from "../../KurtosisArgumentFormControl";
 import { KurtosisPackageArgumentInput } from "../../KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../../types";
-import { transformFormArgsToKurtosisArgs, transformKurtosisArgsToFormArgs } from "../../utils";
+import { transformKurtosisArgsToFormArgs } from "../../utils";
 import { YAMLEditorImperativeAttributes, YAMLEnclaveArgsEditor } from "../../YAMLEnclaveArgsEditor";
 import { KURTOSIS_PACKAGE_ID_URL_ARG, KURTOSIS_PACKAGE_PARAMS_URL_ARG } from "../constants";
 import { DrawerExpandCollapseButton } from "../DrawerExpandCollapseButton";
@@ -86,7 +85,6 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
     const formRef = useRef<EnclaveConfigurationFormImperativeAttributes>(null);
     const yamlRef = useRef<YAMLEditorImperativeAttributes>(null);
     const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Form");
-    const [dryRunPreviewArgs, setDryRunPreviewArgs] = useState<Record<string, any>>();
 
     const handleTabChange = (index: number) => {
       const newTab = tabs[index];
@@ -98,15 +96,6 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
         formRef.current?.setValues("args", transformKurtosisArgsToFormArgs(newArgs, kurtosisPackage));
       }
       setActiveTab(newTab);
-    };
-
-    const handleOpenDryRun = () => {
-      if (activeTab === "YAML" && isDefined(yamlRef.current)) {
-        setDryRunPreviewArgs(yamlRef.current.getValues() || {});
-      }
-      if (activeTab === "Form" && isDefined(formRef.current)) {
-        setDryRunPreviewArgs(transformFormArgsToKurtosisArgs(formRef.current.getValues().args, kurtosisPackage));
-      }
     };
 
     useImperativeHandle(
@@ -351,20 +340,12 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
               <Button type={"submit"} colorScheme={"kurtosisGreen"} isLoading={isLoading}>
                 {existingEnclave ? "Update" : "Run"}
               </Button>
-              <Button onClick={handleOpenDryRun}>Preview</Button>
               {!isDefined(existingEnclave) && (
                 <Button color={"gray.100"} onClick={onBackClicked} isDisabled={isLoading}>
                   Back
                 </Button>
               )}
             </Flex>
-            <DryRunVisualiseModal
-              isOpen={isDefined(dryRunPreviewArgs)}
-              onClose={() => setDryRunPreviewArgs(undefined)}
-              packageId={kurtosisPackage.name}
-              args={dryRunPreviewArgs}
-              enclave={existingEnclave}
-            />
           </DrawerFooter>
         </EnclaveConfigurationForm>
       </ErrorBoundary>

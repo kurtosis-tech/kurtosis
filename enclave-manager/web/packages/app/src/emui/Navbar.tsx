@@ -1,5 +1,7 @@
 import {
   Button,
+  FormControl,
+  FormLabel,
   Input,
   InputGroup,
   InputRightElement,
@@ -10,20 +12,25 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Switch,
   Text,
 } from "@chakra-ui/react";
 import { CopyButton, NavButton, Navigation, NavigationDivider } from "kurtosis-ui-components";
 import { useState } from "react";
 import { FiHome, FiPackage } from "react-icons/fi";
 import { GoBug } from "react-icons/go";
-import { MdInfoOutline } from "react-icons/md";
+import { MdInfoOutline, MdOutlineBuild } from "react-icons/md";
 import { PiLinkSimpleBold } from "react-icons/pi";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { KURTOSIS_CLOUD_CONNECT_URL } from "../client/constants";
 import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
+import { KURTOSIS_BUILD_ENCLAVE_URL_ARG } from "./enclaves/components/configuration/drawer/constants";
+import { settingKeys, useSettings } from "./settings";
 
 export const Navbar = () => {
+  const { updateSetting, settings } = useSettings();
   const location = useLocation();
+  const navigate = useNavigate();
   const kurtosisClient = useKurtosisClient();
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const kurtosisVersion = process.env.REACT_APP_VERSION || "Unknown";
@@ -44,6 +51,13 @@ export const Navbar = () => {
         <Link to={KURTOSIS_CLOUD_CONNECT_URL}>
           <NavButton label={"Link your CLI"} Icon={<PiLinkSimpleBold />} />
         </Link>
+      )}
+      {settings.ENABLE_EXPERIMENTAL_BUILD_ENCLAVE && (
+        <NavButton
+          label={"Build Enclave"}
+          Icon={<MdOutlineBuild />}
+          onClick={() => navigate(`#${KURTOSIS_BUILD_ENCLAVE_URL_ARG}`)}
+        />
       )}
       <NavigationDivider />
       <Link
@@ -78,7 +92,32 @@ export const Navbar = () => {
                 />
               </InputRightElement>
             </InputGroup>
-            <Text></Text>
+            <Text
+              as={"h2"}
+              fontSize={"lg"}
+              m={"16px 0"}
+              pt={"16px"}
+              borderTopWidth={"1px"}
+              borderTopColor={"gray.60"}
+              fontWeight={"semibold"}
+            >
+              Settings:
+            </Text>
+            <FormControl display="flex" alignItems="center">
+              <FormLabel htmlFor="experimental-build" mb="0">
+                Enable experimental enclave builder interface?
+              </FormLabel>
+              <Switch
+                id="experimental-build"
+                onChange={() =>
+                  updateSetting(
+                    settingKeys.ENABLE_EXPERIMENTAL_BUILD_ENCLAVE,
+                    !settings.ENABLE_EXPERIMENTAL_BUILD_ENCLAVE,
+                  )
+                }
+                isChecked={settings.ENABLE_EXPERIMENTAL_BUILD_ENCLAVE}
+              />
+            </FormControl>
           </ModalBody>
 
           <ModalFooter>
