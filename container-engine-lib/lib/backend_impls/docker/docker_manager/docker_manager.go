@@ -578,6 +578,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 	}
 	containerHostConfigPtr, err := manager.getContainerHostConfig(
 		args.addedCapabilities,
+		args.securityOpts,
 		args.networkMode,
 		args.bindMounts,
 		args.volumeMounts,
@@ -1613,6 +1614,7 @@ Args:
 */
 func (manager *DockerManager) getContainerHostConfig(
 	addedCapabilities map[ContainerCapability]bool,
+	securityOpts map[ContainerSecurityOpt]bool,
 	networkMode DockerManagerNetworkMode,
 	bindMounts map[string]string,
 	volumeMounts map[string]string,
@@ -1675,6 +1677,12 @@ func (manager *DockerManager) getContainerHostConfig(
 	for capability := range addedCapabilities {
 		capabilityStr := string(capability)
 		addedCapabilitiesSlice = append(addedCapabilitiesSlice, capabilityStr)
+	}
+
+	securityOptsSlice := []string{}
+	for securityOpt := range securityOpts {
+		securityOptStr := string(securityOpt)
+		securityOptsSlice = append(securityOptsSlice, securityOptStr)
 	}
 
 	extraHosts := []string{}
@@ -1778,7 +1786,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Privileged:      false,
 		PublishAllPorts: false,
 		ReadonlyRootfs:  false,
-		SecurityOpt:     nil,
+		SecurityOpt:     securityOptsSlice,
 		StorageOpt:      nil,
 		Tmpfs:           nil,
 		UTSMode:         "",

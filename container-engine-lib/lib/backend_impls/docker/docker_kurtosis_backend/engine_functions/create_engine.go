@@ -27,6 +27,7 @@ const (
 	//TODO: pass this parameter
 	enclaveManagerUIPort                        = 9711
 	enclaveManagerAPIPort                       = 8081
+	engineDebugServerPort                       = 50102 // in ClI this is 50101 and 50103 for the APIC
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 	logsStorageDirpath                          = "/var/log/kurtosis/"
@@ -41,6 +42,7 @@ func CreateEngine(
 	envVars map[string]string,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
+	shouldStartInDebugMode bool,
 ) (
 	*engine.Engine,
 	error,
@@ -185,6 +187,21 @@ func CreateEngine(
 		)
 	}
 
+	debugServerPortSpec, err := port_spec.NewPortSpec(
+		uint16(engineDebugServerPort),
+		consts.EngineTransportProtocol,
+		consts.HttpApplicationProtocol,
+		defaultWait,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the Engine's debug server port spec object using number '%v' and protocol '%v'",
+			engineDebugServerPort,
+			consts.EngineTransportProtocol.String(),
+		)
+	}
+
 	privateGrpcDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateGrpcPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
@@ -205,11 +222,17 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the Enclave Manager API port spec to a Docker port")
 	}
 
+	debugServerDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(debugServerPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the debug server port spec to a Docker port")
+	}
+
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort:       docker_manager.NewManualPublishingSpec(grpcPortNum),
 		enclaveManagerUIDockerPort:  docker_manager.NewManualPublishingSpec(uint16(enclaveManagerUIPort)),
 		enclaveManagerAPIDockerPort: docker_manager.NewManualPublishingSpec(uint16(enclaveManagerAPIPort)),
 		restAPIDockerPort:           docker_manager.NewManualPublishingSpec(engine.RESTAPIPortAddr),
+		debugServerDockerPort:       docker_manager.NewManualPublishingSpec(uint16(engineDebugServerPort)),
 	}
 
 	bindMounts := map[string]string{
@@ -237,7 +260,7 @@ func CreateEngine(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
 		engineAttrs.GetName().GetString(),
 		targetNetworkId,
@@ -251,7 +274,23 @@ func CreateEngine(
 		usedPorts,
 	).WithLabels(
 		labelStrs,
-	).Build()
+	)
+
+	if shouldStartInDebugMode {
+		// Adding systrace capabilities when starting the debug server in the engine's container
+		capabilities := map[docker_manager.ContainerCapability]bool{
+			docker_manager.SysPtrace: true,
+		}
+		createAndStartArgsBuilder.WithAddedCapabilities(capabilities)
+
+		// Setting security for debugging the engine's container
+		securityOpts := map[docker_manager.ContainerSecurityOpt]bool{
+			docker_manager.AppArmorUnconfined: true,
+		}
+		createAndStartArgsBuilder.WithSecurityOpts(securityOpts)
+	}
+
+	createAndStartArgs := createAndStartArgsBuilder.Build()
 
 	containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {

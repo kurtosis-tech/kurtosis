@@ -8,6 +8,7 @@ package engine_server_launcher
 import (
 	"context"
 	"net"
+	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -21,6 +22,8 @@ import (
 const (
 	// TODO This should come from the same logic that builds the server image!!!!!
 	containerImage = "kurtosistech/engine"
+
+	debugModeContainerImageVersionSuffix = "debug"
 )
 
 type EngineServerLauncher struct {
@@ -118,15 +121,22 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
 
+	shouldStartInDebugMode := automaticallyDetectIfShouldRunInDebugMode(imageVersionTag)
+
 	engine, err := launcher.kurtosisBackend.CreateEngine(
 		ctx,
 		containerImage,
 		imageVersionTag,
 		grpcListenPortNum,
 		envVars,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%+v'", envVars)
 	}
 	return engine.GetPublicIPAddress(), engine.GetPublicGRPCPort(), nil
+}
+
+func automaticallyDetectIfShouldRunInDebugMode(engineImageVersionTag string) bool {
+	return strings.HasSuffix(engineImageVersionTag, debugModeContainerImageVersionSuffix)
 }

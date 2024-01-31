@@ -393,6 +393,7 @@ ktdebug version
 
 
 For running CLI with Delve debug client:
+
 1. Build the CLI dev binary and run the command you want to debug (kurtosis version in this example), but first pass "dlv-terminal" as the first argument (this will start the Delve client in the terminal)
 ```bash
 cli/cli/scripts/build.sh
@@ -409,6 +410,48 @@ ktdebug dlv-terminal version
 ```
 <img src="./readme-static-files/dlv-terminal.png" />
 4. You can see [more Delve commands here][delve-docs]
+
+
+For running Kurtosis engine with Golang remote debug:
+
+1. Run the main build script with the first argument `debug_mode` as true. This will generate a new Kurtosis engine container image which will contain the `debug` suffix in the name.
+```bash
+scripts/build.sh true 
+```
+2. Add the breakpoint in the line where you want to stop the cursor
+   <img src="./readme-static-files/goland-engine-breakpoint.png" />
+3. Run the engine in debug mode with the `ktdev engine start --debug-mode` or the `ktdev engine restart --debug-mode` commands
+```bash
+source ./scripts/set_kt_alias.sh
+ktdev engine start --debug-mode 
+```
+4. Then choose the "Engine-remote-debug" run configuration in the "run panel"
+5. Press the "debug" button
+   <img src="./readme-static-files/goland-engine-debug-button.png" />
+6. Use the debug panel to inspect the variables value and continue with the debug flow
+      <img src="./readme-static-files/goland-debug-panel.png" />
+7. Make a call to the engine's server (you can use the Kurtosis CLI or Postman) in order to reach out the breakpoint in the code
+8. You can debug the CLI and the Kurtosis engine's server at the same time by running it with `ktdebug` instead of `ktdev` mentioned in a previous step, remember to run both remote debug configuration in the Goland IDE.
+```bash
+source ./scripts/set_kt_alias.sh
+ktdebug engine start
+```
+
+Additional steps if you are debugging Kurtosis engine in K8s:
+
+1. Upload the engine's image for debug to the K8s cluster
+```bash
+# for example:
+k3d image load kurtosistech/engine:5ec6eb-dirty-debug
+```
+2. Run the port-forward script before pressing the debug button in Golang (in another terminal instance) to bind the host's port to the container's debug server port
+```bash
+scripts/port-forward-engine-debug.sh
+```
+3. Do not forget to run the Kurtosis gateway after calling the engine's server (in another terminal instance also)
+```bash
+ktdev gateway
+```
 
 </details>
 
