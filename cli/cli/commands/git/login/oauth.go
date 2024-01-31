@@ -29,7 +29,7 @@ func AuthFlow(oauthHost string, notice string, additionalScopes []string, isInte
 
 	httpClient := &http.Client{}
 
-	minimumScopes := []string{"repo", "admin:org", "gist", "project"}
+	minimumScopes := []string{"repo", "admin:org", "gist"}
 	scopes := append(minimumScopes, additionalScopes...)
 
 	callbackURI := "http://127.0.0.1/callback"
