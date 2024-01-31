@@ -17,9 +17,8 @@ import (
 )
 
 var (
-	// TODO: Get oath client ID and secret for Kurtosis CLI
-	// The "GitHub CLI" OAuth app
-	oauthClientID = "178c6fc778ccc68e1d6a"
+	// The "Kurtosis CLI" OAuth app
+	oauthClientID = "ff28fd26dcaf1be48c45"
 	// This value is safe to be embedded in version control
 	oauthClientSecret = "***REMOVED***"
 
