@@ -2,8 +2,10 @@ package service
 
 import (
 	"encoding/json"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
@@ -29,6 +31,8 @@ type privateServiceConfig struct {
 	// If nil, we will use the ContainerImageName and not use any auth
 	// Mutually exclusive from ImageBuildSpec, ContainerImageName
 	ImagerRegistrySpec *image_registry_spec.ImageRegistrySpec
+
+	NixBuildSpec *nix_build_spec.NixBuildSpec
 
 	PrivatePorts map[string]*port_spec.PortSpec
 
