@@ -18,4 +18,3 @@ COPY ./build/dlv.$TARGETARCH /dlv
 
 # Make sure that you changed the port inside the engine's code before changing it here
 CMD ["/dlv", "--listen=:50102", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "--continue", "./kurtosis-engine"]
-

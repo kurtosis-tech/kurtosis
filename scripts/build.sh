@@ -31,7 +31,6 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "name_generator/scripts/build.sh"
     "api/scripts/build.sh"
     "metrics-library/scripts/build.sh"
-    "core/scripts/build.sh"
     "enclave-manager/scripts/build.sh"
     "engine/scripts/build.sh"
 )
@@ -39,6 +38,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
 # projects with debug mode enabled
 BUILD_DEBUG_SCRIPT_RELATIVE_FILEPATHS=(
     "engine/scripts/build.sh"
+    "core/scripts/build.sh"
 )
 
 DEFAULT_DEBUG_IMAGE="false"

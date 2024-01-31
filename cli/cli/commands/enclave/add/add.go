@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -91,6 +92,15 @@ func run(
 	apiContainerVersion, err := flags.GetString(apiContainerVersionFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the API Container Version using flag with key '%v'; this is a bug in Kurtosis", apiContainerVersionFlagKey)
+	}
+
+	isDebugMode, err := flags.GetBool(defaults.DebugModeFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
+	}
+
+	if isDebugMode && apiContainerVersion == defaults.DefaultAPIContainerVersion {
+		apiContainerVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
 	}
 
 	kurtosisLogLevelStr, err := flags.GetString(apiContainerLogLevelFlagKey)
