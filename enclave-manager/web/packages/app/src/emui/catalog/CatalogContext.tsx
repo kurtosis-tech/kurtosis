@@ -2,7 +2,7 @@ import { Flex, Heading, Spinner } from "@chakra-ui/react";
 import { GetPackagesResponse, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { ReadPackageResponse } from "kurtosis-cloud-indexer-sdk/build/kurtosis_package_indexer_pb";
 import { isDefined, SavedPackagesProvider } from "kurtosis-ui-components";
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useLayoutEffect, useState } from "react";
 import { Result } from "true-myth";
 import { useKurtosisPackageIndexerClient } from "../../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { settingKeys, useSettings } from "../settings";
@@ -57,7 +57,8 @@ export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
     refreshCatalog();
   }, [refreshCatalog]);
 
-  useEffect(() => {
+  // Use a Layout effect so that the saved packages are set before first render.
+  useLayoutEffect(() => {
     if (isDefined(catalog) && catalog.isOk) {
       const savedPackageNames = new Set(settings.SAVED_PACKAGES);
       setSavedPackages(catalog.value.packages.filter((kurtosisPackage) => savedPackageNames.has(kurtosisPackage.name)));
