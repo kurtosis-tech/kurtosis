@@ -26,13 +26,8 @@ export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
     const catalog = await packageIndexerClient.getPackages();
     setCatalog(catalog);
 
-    if (catalog.isOk) {
-      const savedPackageNames = new Set(settings.SAVED_PACKAGES);
-      setSavedPackages(catalog.value.packages.filter((kurtosisPackage) => savedPackageNames.has(kurtosisPackage.name)));
-    }
-
     return catalog;
-  }, [packageIndexerClient, settings.SAVED_PACKAGES]);
+  }, [packageIndexerClient]);
 
   const togglePackageSaved = useCallback(
     (kurtosisPackage: KurtosisPackage) => {
@@ -61,6 +56,13 @@ export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
   useEffect(() => {
     refreshCatalog();
   }, [refreshCatalog]);
+
+  useEffect(() => {
+    if (isDefined(catalog) && catalog.isOk) {
+      const savedPackageNames = new Set(settings.SAVED_PACKAGES);
+      setSavedPackages(catalog.value.packages.filter((kurtosisPackage) => savedPackageNames.has(kurtosisPackage.name)));
+    }
+  }, [catalog, settings.SAVED_PACKAGES]);
 
   if (!isDefined(catalog)) {
     return (
