@@ -20,6 +20,7 @@ import {
   KurtosisAlert,
   KurtosisPackageCardHorizontal,
   parsePackageUrl,
+  useKeyboardAction,
   useSavedPackages,
 } from "kurtosis-ui-components";
 import { debounce } from "lodash";
@@ -105,6 +106,8 @@ export const PackageSelectBody = ({
   const handleSearchTermChange = async (e: ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
+
+  useKeyboardAction(useMemo(() => ({ find: () => searchRef.current?.focus() }), [searchRef]));
 
   useEffect(() => {
     startCheckSinglePackage(searchTerm);

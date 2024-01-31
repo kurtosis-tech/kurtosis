@@ -56,7 +56,7 @@ export const Navbar = () => {
         <NavButton
           label={"Build Enclave"}
           Icon={<MdOutlineBuild />}
-          onClick={() => navigate(`#${KURTOSIS_BUILD_ENCLAVE_URL_ARG}`)}
+          onClick={() => navigate(`${window.location.search}#${KURTOSIS_BUILD_ENCLAVE_URL_ARG}`)}
         />
       )}
       <NavigationDivider />
