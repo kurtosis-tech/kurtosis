@@ -197,6 +197,16 @@ export const PackageSelectBody = ({
                 onClick={() => onPackageSelected(kurtosisPackage)}
               />
             ))}
+            <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
+              All Packages
+            </Text>
+            {searchResults.value.map((kurtosisPackage) => (
+              <KurtosisPackageCardHorizontal
+                key={kurtosisPackage.name}
+                kurtosisPackage={kurtosisPackage}
+                onClick={() => onPackageSelected(kurtosisPackage)}
+              />
+            ))}
           </Flex>
         )}
       </DrawerBody>
