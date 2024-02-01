@@ -17,6 +17,9 @@ const (
 
 	metricsUserIDFilename = "metrics-user-id"
 
+	githubUsernameFilename  = "github-username"
+	githubAuthTokenFilename = "github-auth-token"
+
 	userSendMetricsElection = "user-send-metrics-election"
 
 	LastPesteredUserAboutOldVersionFilename = "last-pestered-user-about-old-version"
@@ -145,6 +148,24 @@ func GetPortalPidFilePath() (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal PID file path using '%s'", xdgRelFilepath)
 	}
 	return portalPidFilePath, nil
+}
+
+func GetGithubUserFilePath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(githubUsernameFilename)
+	githubUsernameFilePath, err := xdg.StateFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis github auth token file path using '%s'", xdgRelFilepath)
+	}
+	return githubUsernameFilePath, nil
+}
+
+func GitGithubAuthTokenFilePath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(githubAuthTokenFilename)
+	githubAuthTokenFilePath, err := xdg.StateFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis github username file path using '%s'", xdgRelFilepath)
+	}
+	return githubAuthTokenFilePath, nil
 }
 
 // ====================================================================================================

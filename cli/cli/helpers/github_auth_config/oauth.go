@@ -1,41 +1,36 @@
-package login
+package github_auth_config
 
 import (
 	"bufio"
 	"fmt"
 	"github.com/cli/cli/v2/api"
 	"github.com/cli/go-gh/v2/pkg/browser"
-	"github.com/henvic/httpretty"
+	"github.com/cli/oauth"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
-	"strings"
-
-	"github.com/cli/oauth"
 )
 
 var (
 	// The "Kurtosis CLI" OAuth app
 	oauthClientID = "ff28fd26dcaf1be48c45"
 	// This value is safe to be embedded in version control
+	//TODO: verify that it's okay to embed client secret into version control
 	oauthClientSecret = "***REMOVED***"
 
-	jsonTypeRE = regexp.MustCompile(`[/+]json($|;)`)
+	githubHostname = "github.com"
 )
 
 func AuthFlow(oauthHost string, notice string, additionalScopes []string, isInteractive bool, b browser.Browser) (string, string, error) {
-
 	httpClient := &http.Client{}
 
-	minimumScopes := []string{"repo", "admin:org", "gist"}
+	minimumScopes := []string{"repo", "read:org", "gist"}
 	scopes := append(minimumScopes, additionalScopes...)
 
 	callbackURI := "http://127.0.0.1/callback"
-
 	flow := &oauth.Flow{
-		Host:         oauth.GitHubHost("https://github.com"), // TODO: REPLACE THIS
+		Host:         oauth.GitHubHost(githubHostname),
 		ClientID:     oauthClientID,
 		ClientSecret: oauthClientSecret,
 		CallbackURI:  callbackURI,
@@ -115,31 +110,6 @@ func waitForEnter(r io.Reader) error {
 	scanner := bufio.NewScanner(r)
 	scanner.Scan()
 	return scanner.Err()
-}
-
-func verboseLog(out io.Writer, logTraffic bool, colorize bool) func(http.RoundTripper) http.RoundTripper {
-	logger := &httpretty.Logger{
-		Time:            true,
-		TLS:             false,
-		Colors:          colorize,
-		RequestHeader:   logTraffic,
-		RequestBody:     logTraffic,
-		ResponseHeader:  logTraffic,
-		ResponseBody:    logTraffic,
-		Formatters:      []httpretty.Formatter{&httpretty.JSONFormatter{}},
-		MaxResponseBody: 10000,
-	}
-	logger.SetOutput(out)
-	logger.SetBodyFilter(func(h http.Header) (skip bool, err error) {
-		return !inspectableMIMEType(h.Get("Content-Type")), nil
-	})
-	return logger.RoundTripper
-}
-
-func inspectableMIMEType(t string) bool {
-	return strings.HasPrefix(t, "text/") ||
-		strings.HasPrefix(t, "application/x-www-form-urlencoded") ||
-		jsonTypeRE.MatchString(t)
 }
 
 const oauthSuccessPage = `

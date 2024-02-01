@@ -164,6 +164,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 
 	maybeCloudUserId, maybeCloudInstanceId := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
 
+	// get git config
+
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(

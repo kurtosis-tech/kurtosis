@@ -1,42 +1,33 @@
 package login
 
 import (
-	"github.com/cli/go-gh/v2/pkg/browser"
+	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/github_auth_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/zalando/go-keyring"
-	"os"
 )
 
 var LoginCmd = &cobra.Command{
 	Use:   "login",
-	Short: "Authorizes Kurtosis CLI on behalf of a git user",
-	Long:  "Authorizes Kurtosis CLI's git operations",
+	Short: "Authorizes Kurtosis CLI on behalf of a Github user.",
+	Long:  "Authorizes Kurtosis CLI to perform git operations on behalf of the user such as retrieving packages in private Github repositories.",
 	RunE:  run,
 }
 
-func init() {
-}
-
 func run(cmd *cobra.Command, args []string) error {
-
-	secret, userLogin, err := AuthFlow("github.com", "", []string{}, true, *browser.New("", os.Stdout, os.Stderr))
+	gitAuthCfg, err := github_auth_config.GetGithubAuthConfig()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred in the user login flow.")
+		return stacktrace.Propagate(err, "An error occurred retrieving github auth configuration.")
 	}
-	logrus.Infof("Successfully authorized git user: %v", userLogin)
-
-	//set password
-	err = keyring.Set("kurtosis-git", "tedim52", secret)
+	if gitAuthCfg.GetCurrentUser() != "" {
+		out.PrintOutLn(fmt.Sprintf("Logged in as github user: '%v'", gitAuthCfg.GetCurrentUser()))
+		return nil
+	}
+	username, err := gitAuthCfg.Login()
 	if err != nil {
-		logrus.Errorf("Unable to set token for keyring")
+		return stacktrace.Propagate(err, "An error occurred logging user in.")
 	}
-	err = os.Setenv("GIT_USER", userLogin)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred setting git user env var.")
-	}
-	logrus.Debugf("Successfully set git token in keyring: %v", secret)
-	logrus.Infof("Successfully set git auth info for user: %v", "tedim52")
+	out.PrintOutLn(fmt.Sprintf("Successfully logged in github user: '%v'", username))
 	return nil
 }
