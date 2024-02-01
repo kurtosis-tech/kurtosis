@@ -124,4 +124,8 @@ Cargo.lock
 # Lerna debug
 lerna-debug.log
 
+# Nix outputs
 result
+
+# Nix VM disk image
+nixos.qcow2

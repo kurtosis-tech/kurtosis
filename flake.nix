@@ -86,5 +86,20 @@
           architecture = "arm64";
           config.Cmd = [ "${server}/bin/linux_arm64/server" ];
         };
+
+        testingVMs = import ./internal_testsuites/vm_modules.nix {
+          inherit nixpkgs;
+          engine_image = container.image.arm64;
+        };
+
+        packages.x86_64-linux.linuxVM =
+          testingVMs.nixosConfigurations.linuxVM.config.system.build.vm;
+
+        packages.aarch64-darwin.darwinVM =
+          testingVMs.nixosConfigurations.darwinVM.config.system.build.vm;
+
+        packages.aarch64-darwin.testVM =
+          import ./internal_testsuites/vm_tests.nix
+          (self.inputs // { inherit pkgs nixpkgs; });
       });
 }
