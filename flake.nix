@@ -98,8 +98,7 @@
         packages.aarch64-darwin.darwinVM =
           testingVMs.nixosConfigurations.darwinVM.config.system.build.vm;
 
-        packages.aarch64-darwin.testVM =
-          import ./internal_testsuites/vm_tests.nix
+        packages.testVM = import ./internal_testsuites/vm_tests.nix
           (self.inputs // { inherit pkgs nixpkgs; });
       });
 }
