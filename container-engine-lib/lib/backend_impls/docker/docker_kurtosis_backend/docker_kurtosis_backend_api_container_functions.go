@@ -48,6 +48,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (*api_container.APIContainer, error) {
 	logrus.Debugf("Creating the APIC for enclave '%v'", enclaveUuid)
 
@@ -210,19 +211,19 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).WithRestartPolicy(docker_manager.RestartOnFailure)
 
-	//if shouldStartInDebugMode { //TODO uncomment
-	// Adding systrace capabilities when starting the debug server in the engine's container
-	capabilities := map[docker_manager.ContainerCapability]bool{
-		docker_manager.SysPtrace: true,
-	}
-	createAndStartArgsBuilder.WithAddedCapabilities(capabilities)
+	if shouldStartInDebugMode { //TODO uncomment
+		// Adding systrace capabilities when starting the debug server in the engine's container
+		capabilities := map[docker_manager.ContainerCapability]bool{
+			docker_manager.SysPtrace: true,
+		}
+		createAndStartArgsBuilder.WithAddedCapabilities(capabilities)
 
-	// Setting security for debugging the engine's container
-	securityOpts := map[docker_manager.ContainerSecurityOpt]bool{
-		docker_manager.AppArmorUnconfined: true,
+		// Setting security for debugging the engine's container
+		securityOpts := map[docker_manager.ContainerSecurityOpt]bool{
+			docker_manager.AppArmorUnconfined: true,
+		}
+		createAndStartArgsBuilder.WithSecurityOpts(securityOpts)
 	}
-	createAndStartArgsBuilder.WithSecurityOpts(securityOpts)
-	//}
 
 	createAndStartArgs := createAndStartArgsBuilder.Build()
 
