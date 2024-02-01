@@ -49,6 +49,12 @@ export type EnclavesState = {
     args: Record<string, any>,
     dryRun?: boolean,
   ) => Promise<AsyncIterable<StarlarkRunResponseLine>>;
+  runStarlarkScript: (
+    enclave: RemoveFunctions<EnclaveInfo>,
+    script: string,
+    args: Record<string, any>,
+    dryRun?: boolean,
+  ) => Promise<AsyncIterable<StarlarkRunResponseLine>>;
   updateStarlarkFinishedInEnclave: (enclave: RemoveFunctions<EnclaveInfo>) => void;
 };
 
@@ -183,6 +189,21 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
     [kurtosisClient],
   );
 
+  const runStarlarkScript = useCallback(
+    async (
+      enclave: RemoveFunctions<EnclaveInfo>,
+      script: string,
+      args: Record<string, any>,
+      dryRun: boolean = false,
+    ) => {
+      setState((state) => ({ ...state, starlarkRunningInEnclaves: [...state.starlarkRunningInEnclaves, enclave] }));
+      assertDefined(enclave.apiContainerInfo, `apic info not defined in enclave ${enclave.name}`);
+      const resp = await kurtosisClient.runStarlarkScript(enclave.apiContainerInfo, script, args, dryRun);
+      return resp;
+    },
+    [kurtosisClient],
+  );
+
   const updateStarlarkFinishedInEnclave = useCallback((enclave: RemoveFunctions<EnclaveInfo>) => {
     setState((state) => ({
       ...state,
@@ -223,6 +244,7 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
         createEnclave,
         destroyEnclaves,
         runStarlarkPackage,
+        runStarlarkScript,
         updateStarlarkFinishedInEnclave,
       }}
     >

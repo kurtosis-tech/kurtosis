@@ -3,6 +3,7 @@ import {
   DownloadFilesArtifactArgs,
   FilesArtifactNameAndUuid,
   RunStarlarkPackageArgs,
+  RunStarlarkScriptArgs,
   ServiceInfo,
 } from "enclave-manager-sdk/build/api_container_service_pb";
 import {
@@ -22,6 +23,7 @@ import {
   GetStarlarkRunRequest,
   InspectFilesArtifactContentsRequest,
   RunStarlarkPackageRequest,
+  RunStarlarkScriptRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import { assertDefined, asyncResult, isDefined, RemoveFunctions } from "kurtosis-ui-components";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
@@ -215,5 +217,24 @@ export abstract class KurtosisClient {
       }),
     });
     return this.client.runStarlarkPackage(request, this.getHeaderOptions());
+  }
+
+  async runStarlarkScript(
+    apicInfo: RemoveFunctions<EnclaveAPIContainerInfo>,
+    serializedScript: string,
+    args: Record<string, any> = {},
+    dryRun: boolean = false,
+  ) {
+    // Not currently using asyncResult as the return type here is an asyncIterable
+    const request = new RunStarlarkScriptRequest({
+      apicIpAddress: apicInfo.bridgeIpAddress,
+      apicPort: apicInfo.grpcPortInsideEnclave,
+      RunStarlarkScriptArgs: new RunStarlarkScriptArgs({
+        dryRun,
+        serializedScript,
+        serializedParams: JSON.stringify(args),
+      }),
+    });
+    return this.client.runStarlarkScript(request, this.getHeaderOptions());
   }
 }
