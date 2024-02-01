@@ -87,12 +87,12 @@ export class KurtosisContext {
     }
 
     // Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
-    public async createEnclave(enclaveName: string): Promise<Result<EnclaveContext, Error>> {
-        const subnetworkDisableBecauseItIsDeprecated = false
+    public async createEnclave(enclaveName: string, shouldApicRunInDebugMode: boolean): Promise<Result<EnclaveContext, Error>> {
         const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
             enclaveName,
             DEFAULT_API_CONTAINER_VERSION_TAG,
             API_CONTAINER_LOG_LEVEL,
+            shouldApicRunInDebugMode,
         );
 
         const getEnclaveResponseResult = await this.client.createEnclaveResponse(enclaveArgs)
