@@ -94,7 +94,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager")
 	}
 
-	// TODO: just pass git token from string
+	// TODO: pass git token as string
 	gitAuth := &http.BasicAuth{
 		Username: "token",
 		Password: gitAuthTokenStr,

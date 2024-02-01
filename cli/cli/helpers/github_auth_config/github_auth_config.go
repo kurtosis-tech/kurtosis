@@ -7,9 +7,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/zalando/go-keyring"
 	"os"
+	"sync"
 )
 
 const (
+	// Check what file permissions are needed
 	githubUsernameFilePermission  os.FileMode = 0644
 	githubAuthTokenFilePermission os.FileMode = 0644
 
@@ -17,66 +19,103 @@ const (
 )
 
 type GithubAuthConfig struct {
-	// Empty string if no user is logged in
+	// GithubAuthConfig is protected by a mutex
+	// do we need to protect ?
+	mutex *sync.RWMutex
+
+	// Empty string if no user is currently logged in
 	currentUsername string
 }
 
 func GetGithubAuthConfig() (*GithubAuthConfig, error) {
-	// Existence of github user filepath determines whether a user is logged in or not
-	var curentUsername string
-	isUserLoggedIn, err := doesGithubUserFilepathExist()
+	// Existence of GitHub user filepath determines whether a user is logged in or not
+	var currentUsername string
+	isUserLoggedIn, err := doesGithubUsernameFilepathExist()
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "An error occurred verifying existence of a github user exists.")
 	}
 	if isUserLoggedIn {
-
+		username, err := getGithubUsernameFromFile()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "GitHub user found but error occurred getting username.")
+		}
+		currentUsername = username
 	}
 	return &GithubAuthConfig{
-		currentUsername: curentUsername,
+		currentUsername: currentUsername,
 	}, nil
 }
 
-// what happens if you login two accounts?
 func (git *GithubAuthConfig) Login() (string, error) {
+	git.mutex.Lock()
+	defer git.mutex.Unlock()
 
-	secret, userLogin, err := AuthFlow("github.com", "", []string{}, true, *browser.New("", os.Stdout, os.Stderr))
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred in the user login flow.")
+	// Don't log in if user already exists
+	if git.currentUsername != "" {
+		return git.currentUsername, nil
 	}
-	logrus.Infof("Successfully authorized git user: %v", userLogin)
 
-	// set password
-	err = keyring.Set("kurtosis-git", "tedim52", secret)
+	authToken, userLogin, err := AuthFlow("github.com", "", []string{}, true, *browser.New("", os.Stdout, os.Stderr))
 	if err != nil {
-		logrus.Errorf("Unable to set token for keyring")
+		return "", stacktrace.Propagate(err, "An error occurred in the Github OAuth flow.")
 	}
-	err = os.Setenv("GIT_USER", userLogin)
+
+	err = saveGithubUsernameFile(userLogin)
+	shouldRemoveUsernameFile := true
+	defer func() {
+		if shouldRemoveUsernameFile {
+			err := removeGithubUsernameFile()
+			if err != nil {
+				logrus.Errorf("Failed to remove github username file after initial login failed!!! GitHub auth could be in a bad state.")
+			}
+		}
+	}()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred setting git user env var.")
+		return "", stacktrace.Propagate(err, "An error occurred saving github username file fo user: %v.", userLogin)
 	}
-	logrus.Debugf("Successfully set git token in keyring: %v", secret)
-	logrus.Infof("Successfully set git auth info for user: %v", "tedim52")
-	return "", nil
+
+	err = setAuthToken(userLogin, authToken)
+	shouldRemoveAuthToken := true
+	defer func() {
+		if shouldRemoveAuthToken {
+			err = unsetAuthToken(git.currentUsername)
+			if err != nil {
+				logrus.Errorf("Failed to unset git auth token after setting the auth token failed!! GitHub auth could be in a bad state.")
+			}
+		}
+	}()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred setting auth token for user: %v.", userLogin)
+	}
+
+	git.currentUsername = userLogin
+
+	shouldRemoveAuthToken = false
+	shouldRemoveUsernameFile = false
+	return git.currentUsername, nil
 }
 
 // Logout "logs out" a GitHub user from Kurtosis by:
-// - removing the auth token associated with [currentUsername] from keyring or plain text file
+// -removing the auth token associated with [currentUsername] from keyring or plain text file
 // -removing the GitHub username file
+// -set [currentUsername] to empty string
 func (git *GithubAuthConfig) Logout() error {
-
+	// TODO
 	return nil
 }
 
 func (git *GithubAuthConfig) GetCurrentUser() string {
-	return ""
+	return git.currentUsername
 }
 
-// GetAuthToken retrieves git auth token of currentUser
+// GetAuthToken retrieves git auth token of currentUsername
 // First, checks if auth token exists in keyring
 // If not found in keyring, attempts to retrieve auth token from plain text file
-// Returns empty string if no auth token found
-func (git *GithubAuthConfig) GetAuthToken() string {
-	return ""
+// Returns empty string if no user is logged in
+// Returns err if user is logged in but no auth token is associated with them
+func (git *GithubAuthConfig) GetAuthToken() (string, error) {
+	// TODO
+	return "", nil
 }
 
 // ====================================================================================================
@@ -84,7 +123,7 @@ func (git *GithubAuthConfig) GetAuthToken() string {
 //	Private Helper Functions
 //
 // ====================================================================================================
-func doesGithubUserFilepathExist() (bool, error) {
+func doesGithubUsernameFilepathExist() (bool, error) {
 	filepath, err := host_machine_directories.GetGithubUserFilePath()
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the metrics user id filepath")
@@ -151,6 +190,20 @@ func removeGithubUsernameFile() error {
 	return nil
 }
 
+// SetAuthToken attempts to set the git auth token for username
+// Will attempt to store in secure system credential storage, but if it is not found will resort to storing in a plain text file
+func setAuthToken(username, authToken string) error {
+	// TODO
+	return nil
+}
+
+// SetAuthToken attempts to set the git auth token for username
+// Will attempt to store in secure system credential storage, but if it is not found will resort to storing in a plain text file
+func unsetAuthToken(username string) error {
+	// TODO
+	return nil
+}
+
 func doesGitAuthTokenFilepathExist() (bool, error) {
 	return false, nil
 }
@@ -172,6 +225,9 @@ func saveGitAuthTokenFile(authToken string) error {
 	logrus.Debugf("Metrics user id file saved")
 	return nil
 }
+
+// TODO: implement get auth token from file
+// TODO: implement remove auth token file
 
 func getAuthTokenFromKeyring(username string) (string, error) {
 	authToken, err := keyring.Get(kurtosisCliKeyringServiceName, username)
