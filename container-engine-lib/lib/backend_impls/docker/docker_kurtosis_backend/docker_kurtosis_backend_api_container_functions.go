@@ -134,21 +134,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		)
 	}
 
-	debugServerPortSpec, err := port_spec.NewPortSpec(
-		uint16(apicDebugServerPort),
-		apiContainerTransportProtocol,
-		consts.HttpApplicationProtocol,
-		defaultWait,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating the API container's debug server port spec object using number '%v' and protocol '%v'",
-			apicDebugServerPort,
-			apiContainerTransportProtocol,
-		)
-	}
-
 	enclaveObjAttrProvider, err := backend.objAttrsProvider.ForEnclave(enclaveUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveUuid)
@@ -168,14 +153,32 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
 
-	debugServerDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(debugServerPortSpec)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the debug server port spec to a Docker port")
-	}
-
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort: docker_manager.NewAutomaticPublishingSpec(),
-		debugServerDockerPort: docker_manager.NewManualPublishingSpec(uint16(apicDebugServerPort)),
+	}
+
+	if shouldStartInDebugMode {
+		debugServerPortSpec, err := port_spec.NewPortSpec(
+			uint16(apicDebugServerPort),
+			apiContainerTransportProtocol,
+			consts.HttpApplicationProtocol,
+			defaultWait,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred creating the API container's debug server port spec object using number '%v' and protocol '%v'",
+				apicDebugServerPort,
+				apiContainerTransportProtocol,
+			)
+		}
+
+		debugServerDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(debugServerPortSpec)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred transforming the debug server port spec to a Docker port")
+		}
+
+		usedPorts[debugServerDockerPort] = docker_manager.NewManualPublishingSpec(uint16(apicDebugServerPort))
 	}
 
 	bindMounts := map[string]string{
@@ -211,7 +214,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).WithRestartPolicy(docker_manager.RestartOnFailure)
 
-	if shouldStartInDebugMode { //TODO uncomment
+	if shouldStartInDebugMode {
 		// Adding systrace capabilities when starting the debug server in the engine's container
 		capabilities := map[docker_manager.ContainerCapability]bool{
 			docker_manager.SysPtrace: true,

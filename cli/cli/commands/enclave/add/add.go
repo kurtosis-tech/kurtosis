@@ -99,8 +99,10 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
 	}
 
+	shouldApicRunInDebugMode := defaults.DefaultEnableDebugMode
 	if isDebugMode && apiContainerVersion == defaults.DefaultAPIContainerVersion {
 		apiContainerVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
+		shouldApicRunInDebugMode = true
 	}
 
 	kurtosisLogLevelStr, err := flags.GetString(apiContainerLogLevelFlagKey)
@@ -141,10 +143,11 @@ func run(
 	}
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveName:            &enclaveName,
-		ApiContainerVersionTag: &apiContainerVersion,
-		ApiContainerLogLevel:   &kurtosisLogLevelStr,
-		Mode:                   &mode,
+		EnclaveName:              &enclaveName,
+		ApiContainerVersionTag:   &apiContainerVersion,
+		ApiContainerLogLevel:     &kurtosisLogLevelStr,
+		Mode:                     &mode,
+		ShouldApicRunInDebugMode: &shouldApicRunInDebugMode,
 	}
 	createdEnclaveResponse, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {

@@ -108,9 +108,10 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 func (kurtosisCtx *KurtosisContext) CreateEnclave(
 	ctx context.Context,
 	enclaveName string,
+	shouldApicRunInDebugMode bool,
 ) (*enclaves.EnclaveContext, error) {
 
-	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValues(enclaveName)
+	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValues(enclaveName, shouldApicRunInDebugMode)
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
@@ -129,9 +130,10 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 func (kurtosisCtx *KurtosisContext) CreateProductionEnclave(
 	ctx context.Context,
 	enclaveName string,
+	shouldApicRunInDebugMode bool,
 ) (*enclaves.EnclaveContext, error) {
 
-	createEnclaveArgs := newCreateProductionEnclaveWithDefaultValues(enclaveName)
+	createEnclaveArgs := newCreateProductionEnclaveWithDefaultValues(enclaveName, shouldApicRunInDebugMode)
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
@@ -589,33 +591,35 @@ func newServiceLogsStreamContentFromGrpcStreamResponse(
 	return newServiceLogsStreamContentObj
 }
 
-func newCreateEnclaveArgsWithDefaultValues(enclaveName string) *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs {
+func newCreateEnclaveArgsWithDefaultValues(enclaveName string, shouldApicRunInDebugMode bool) *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs {
 
 	defaultApiContainerVersionTag := defaultApiContainerVersionTagStr
 	defaultApiContainerLogLevel := defaultApiContainerLogLevelStr
 	defaultEnclaveMode := kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveName:            &enclaveName,
-		ApiContainerVersionTag: &defaultApiContainerVersionTag,
-		ApiContainerLogLevel:   &defaultApiContainerLogLevel,
-		Mode:                   &defaultEnclaveMode,
+		EnclaveName:              &enclaveName,
+		ApiContainerVersionTag:   &defaultApiContainerVersionTag,
+		ApiContainerLogLevel:     &defaultApiContainerLogLevel,
+		Mode:                     &defaultEnclaveMode,
+		ShouldApicRunInDebugMode: &shouldApicRunInDebugMode,
 	}
 
 	return createEnclaveArgs
 }
 
-func newCreateProductionEnclaveWithDefaultValues(enclaveName string) *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs {
+func newCreateProductionEnclaveWithDefaultValues(enclaveName string, shouldApicRunInDebugMode bool) *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs {
 
 	defaultApiContainerVersionTag := defaultApiContainerVersionTagStr
 	defaultApiContainerLogLevel := defaultApiContainerLogLevelStr
 	defaultEnclaveMode := kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveName:            &enclaveName,
-		ApiContainerVersionTag: &defaultApiContainerVersionTag,
-		ApiContainerLogLevel:   &defaultApiContainerLogLevel,
-		Mode:                   &defaultEnclaveMode,
+		EnclaveName:              &enclaveName,
+		ApiContainerVersionTag:   &defaultApiContainerVersionTag,
+		ApiContainerLogLevel:     &defaultApiContainerLogLevel,
+		Mode:                     &defaultEnclaveMode,
+		ShouldApicRunInDebugMode: &shouldApicRunInDebugMode,
 	}
 
 	return createEnclaveArgs

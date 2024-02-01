@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"io"
 	"net/http"
@@ -562,9 +563,9 @@ func getOrCreateEnclaveContext(
 	var enclaveContext *enclaves.EnclaveContext
 	var err error
 	if isProduction {
-		enclaveContext, err = kurtosisContext.CreateProductionEnclave(ctx, enclaveIdentifierOrName)
+		enclaveContext, err = kurtosisContext.CreateProductionEnclave(ctx, enclaveIdentifierOrName, defaults.DefaultEnableDebugMode)
 	} else {
-		enclaveContext, err = kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName)
+		enclaveContext, err = kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName, defaults.DefaultEnableDebugMode)
 	}
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
