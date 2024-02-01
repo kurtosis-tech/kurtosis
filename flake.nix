@@ -92,11 +92,11 @@
           engine_image = container.image.arm64;
         };
 
-        packages.x86_64-linux.linuxVM =
-          testingVMs.nixosConfigurations.linuxVM.config.system.build.vm;
+        # testingVMs.x86_64-linux.linuxVM =
+        #   testingVMs.nixosConfigurations.linuxVM.config.system.build.vm;
 
-        packages.aarch64-darwin.darwinVM =
-          testingVMs.nixosConfigurations.darwinVM.config.system.build.vm;
+        # packages.aarch64-darwin.darwinVM =
+        #   testingVMs.nixosConfigurations.darwinVM.config.system.build.vm;
 
         packages.testVM = import ./internal_testsuites/vm_tests.nix
           (self.inputs // { inherit pkgs nixpkgs; });
