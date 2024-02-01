@@ -74,6 +74,9 @@ type engineExistenceGuarantor struct {
 	enclaveEnvVars string
 
 	allowedCORSOrigins *[]string
+
+	// Whether the engine's should run with the debug server to receive a remote debug connection
+	shouldRunInDebugMode bool
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -89,6 +92,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	poolSize uint8,
 	enclaveEnvVars string,
 	allowedCORSOrigins *[]string,
+	shouldRunInDebugMode bool,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -104,6 +108,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		poolSize,
 		enclaveEnvVars,
 		allowedCORSOrigins,
+		shouldRunInDebugMode,
 	)
 }
 
@@ -121,6 +126,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	poolSize uint8,
 	enclaveEnvVars string,
 	allowedCORSOrigins *[]string,
+	shouldRunInDebugMode bool,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -138,6 +144,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		poolSize:                                  poolSize,
 		enclaveEnvVars:                            enclaveEnvVars,
 		allowedCORSOrigins:                        allowedCORSOrigins,
+		shouldRunInDebugMode:                      shouldRunInDebugMode,
 	}
 }
 
@@ -173,6 +180,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			maybeCloudUserId,
 			maybeCloudInstanceId,
 			guarantor.allowedCORSOrigins,
+			guarantor.shouldRunInDebugMode,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -190,6 +198,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			maybeCloudUserId,
 			maybeCloudInstanceId,
 			guarantor.allowedCORSOrigins,
+			guarantor.shouldRunInDebugMode,
 		)
 	}
 	if engineLaunchErr != nil {
