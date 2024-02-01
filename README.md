@@ -228,13 +228,13 @@ sudo apt update
 sudo apt install goreleaser
 ```
 
-#### Node (16.14 or above) and Yarn
+#### Node (20.* or above) and Yarn
 
 On MacOS, using `NVM`:
 ```bash
 brew install nvm
 mkdir ~/.nvm
-nvm install 16.14.0
+nvm install 20.11.0
 npm install -g yarn
 ```
 
@@ -242,7 +242,7 @@ On Ubuntu, using `NVM`:
 ```bash
 curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
 source ~/.bashrc
-nvm install 16.14.0
+nvm install 20.11.0
 npm install -g yarn
 ```
 
