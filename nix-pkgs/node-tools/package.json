@@ -1,0 +1,12 @@
+{
+  "name": "kurtosis-node-tools",
+  "version": "1.0.0",
+  "description": "NodeJS dev tools used in the development",
+  "dependencies": {
+    "@bufbuild/protoc-gen-es": "1.5.1",
+    "@connectrpc/protoc-gen-connect-es": "0.13.2",
+    "ts-protoc-gen": "0.15.0",
+    "openapi-typescript": "7.0.0-next.5",
+    "openapi-fetch": "0.8.2"
+  }
+}

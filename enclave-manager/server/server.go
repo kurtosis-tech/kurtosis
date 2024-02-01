@@ -217,17 +217,18 @@ func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *con
 	return resp, nil
 }
 
-func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
+func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], responseStream *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
-	runPackageArgs := req.Msg.RunStarlarkPackageArgs
-	shouldClonePackage := true
-	runPackageArgs.ClonePackage = &shouldClonePackage
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
 	runStarlarkRequest := &connect.Request[kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs]{
 		Msg: req.Msg.RunStarlarkPackageArgs,
 	}
+
+	runPackageArgs := req.Msg.RunStarlarkPackageArgs
+	shouldClonePackage := true // ktoday: Why do we coerce the "clone" to true?
+	runPackageArgs.ClonePackage = &shouldClonePackage
 
 	starlarkLogsStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, runStarlarkRequest)
 	if err != nil {
@@ -236,13 +237,43 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 
 	for starlarkLogsStream.Receive() {
 		resp := starlarkLogsStream.Msg()
-		err = str.Send(resp)
+		err = responseStream.Send(resp)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to send run starlark package logs.")
+			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to return logs from running the Starlark package.")
 		}
 	}
 	if err = starlarkLogsStream.Err(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to receive run starlark package logs.")
+		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to return logs from running the Starlark package.")
+	}
+
+	return nil
+}
+
+func (c *WebServer) RunStarlarkScript(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkScriptRequest], responseStream *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
+	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to create the APIC client")
+	}
+
+	runScriptArgs := req.Msg.RunStarlarkScriptArgs
+	runStarlarkRequest := &connect.Request[kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs]{
+		Msg: req.Msg.RunStarlarkScriptArgs,
+	}
+
+	starlarkLogsStream, err := (*apiContainerServiceClient).RunStarlarkScript(ctx, runStarlarkRequest)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to run the following Starlark script:\n%s", runScriptArgs.SerializedScript)
+	}
+
+	for starlarkLogsStream.Receive() {
+		resp := starlarkLogsStream.Msg()
+		err = responseStream.Send(resp)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to return logs from running the Starlark script.")
+		}
+	}
+	if err = starlarkLogsStream.Err(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to return logs from running the Starlark script.")
 	}
 
 	return nil
