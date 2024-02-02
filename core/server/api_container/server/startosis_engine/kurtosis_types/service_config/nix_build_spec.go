@@ -17,12 +17,12 @@ import (
 const (
 	NixBuildSpecTypeName = "NixBuildSpec"
 
-	NixNameAttr    = "nix_name"
-	NixContextAttr = "build_context_dir"
-	FlakeAttr      = "target_stage"
+	FlakeLocationDir = "flake_location_dir"
+	FlakeOutputAttr  = "flake_output"
+	NixContextAttr   = "build_context_dir"
 
 	// Currently only supports container nixs named Dockerfile
-	defaultContainerNixFileName = "Dockerfile"
+	defaultNixFlakeFilePath = "flake.nix"
 )
 
 func NewNixBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -31,11 +31,11 @@ func NewNixBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 			Name: NixBuildSpecTypeName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
-					Name:              NixNameAttr,
+					Name:              FlakeLocationDir,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, NixNameAttr)
+						return builtin_argument.NonEmptyString(value, FlakeLocationDir)
 					},
 				},
 				{
@@ -47,11 +47,11 @@ func NewNixBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					},
 				},
 				{
-					Name:              FlakeAttr,
+					Name:              FlakeOutputAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, FlakeAttr)
+						return builtin_argument.NonEmptyString(value, FlakeOutputAttr)
 					},
 				},
 			},
@@ -85,20 +85,6 @@ func (nixBuildSpec *NixBuildSpec) Copy() (builtin_argument.KurtosisValueType, er
 	}, nil
 }
 
-// Name to give nix built from NixBuildSpec
-func (nixBuildSpec *NixBuildSpec) GetNixName() (string, *startosis_errors.InterpretationError) {
-	nixName, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](nixBuildSpec.KurtosisValueTypeDefault, NixNameAttr)
-	if interpretationErr != nil {
-		return "", interpretationErr
-	}
-	if !found {
-		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			NixNameAttr, NixBuildSpecTypeName)
-	}
-	nixNameStr := nixName.GoString()
-	return nixNameStr, nil
-}
-
 // Relative locator of build context directory
 func (nixBuildSpec *NixBuildSpec) GetBuildContextLocator() (string, *startosis_errors.InterpretationError) {
 	buildContextLocator, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](nixBuildSpec.KurtosisValueTypeDefault, NixContextAttr)
@@ -113,19 +99,26 @@ func (nixBuildSpec *NixBuildSpec) GetBuildContextLocator() (string, *startosis_e
 	return buildContextLocatorStr, nil
 }
 
-// GetTargetStage is used for specifying which stage of a multi-stage container nix build to execute
-// Default value is the empty string for single stage nix builds (common case)
-// Info on target stage and multi-stag builds for Docker nixs: https://docs.docker.com/build/building/multi-stage/
-func (nixBuildSpec *NixBuildSpec) GetTargetStage() (string, *startosis_errors.InterpretationError) {
-	targetStage, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](nixBuildSpec.KurtosisValueTypeDefault, FlakeAttr)
+func (nixBuildSpec *NixBuildSpec) GetFlakeOutput() (string, *startosis_errors.InterpretationError) {
+	flakeOutput, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](nixBuildSpec.KurtosisValueTypeDefault, FlakeOutputAttr)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if !found {
 		return "", nil
 	}
-	targetStageStr := targetStage.GoString()
-	return targetStageStr, nil
+	return flakeOutput.GoString(), nil
+}
+
+func (nixBuildSpec *NixBuildSpec) GetFlakeLocationDir() (string, *startosis_errors.InterpretationError) {
+	flakeLocator, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](nixBuildSpec.KurtosisValueTypeDefault, FlakeLocationDir)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if !found {
+		return "", nil
+	}
+	return flakeLocator.GoString(), nil
 }
 
 func (nixBuildSpec *NixBuildSpec) ToKurtosisType(
@@ -139,8 +132,14 @@ func (nixBuildSpec *NixBuildSpec) ToKurtosisType(
 		return nil, interpretationErr
 	}
 
-	buildContextDirPathOnDisk, containerNixFilePathOnDisk, interpretationErr := getOnDiskNixBuildSpecPaths(
+	flakeLocationDir, interpretationErr := nixBuildSpec.GetFlakeLocationDir()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	buildContextDirPathOnDisk, flakeNixFilePathOnDisk, interpretationErr := getOnDiskNixBuildSpecPaths(
 		buildContextLocator,
+		flakeLocationDir,
 		packageId,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageContentProvider,
@@ -149,17 +148,18 @@ func (nixBuildSpec *NixBuildSpec) ToKurtosisType(
 		return nil, interpretationErr
 	}
 
-	targetStageStr, interpretationErr := nixBuildSpec.GetTargetStage()
+	flakeOutputStr, interpretationErr := nixBuildSpec.GetFlakeOutput()
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	return nix_build_spec.NewNixBuildSpec(buildContextDirPathOnDisk, containerNixFilePathOnDisk, targetStageStr), nil
+	return nix_build_spec.NewNixBuildSpec(buildContextDirPathOnDisk, flakeNixFilePathOnDisk, flakeOutputStr), nil
 }
 
-// Returns the filepath of the build context directory and container nix on APIC based on package info
+// Returns the filepath of the build context directory and flake nix on APIC based on package info
 func getOnDiskNixBuildSpecPaths(
 	buildContextLocator string,
+	flakeLocationDir string,
 	packageId string,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageContentProvider startosis_packages.PackageContentProvider,
@@ -175,15 +175,15 @@ func getOnDiskNixBuildSpecPaths(
 	}
 
 	// get on disk directory path of Dockerfile
-	containerNixAbsoluteLocator := path.Join(contextDirAbsoluteLocator, defaultContainerNixFileName)
+	flakeNixAbsoluteLocator := path.Join(contextDirAbsoluteLocator, flakeLocationDir, defaultNixFlakeFilePath)
 
-	containerNixPathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsolutePackageFilePath(containerNixAbsoluteLocator)
+	flakeNixPathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsolutePackageFilePath(flakeNixAbsoluteLocator)
 	if interpretationErr != nil {
 		return "", "", interpretationErr
 	}
 
-	// Assume, that container nix sits at the same level as context directory to get context dir path on disk
-	contextDirPathOnDisk := filepath.Dir(containerNixPathOnDisk)
+	// Assume, that flake nix sits at the same level as context directory to get context dir path on disk
+	contextDirPathOnDisk := filepath.Dir(flakeNixPathOnDisk)
 
-	return contextDirPathOnDisk, containerNixPathOnDisk, nil
+	return contextDirPathOnDisk, flakeNixPathOnDisk, nil
 }

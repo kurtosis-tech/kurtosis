@@ -16,19 +16,19 @@ type NixBuildSpec struct {
 type privateNixBuildSpec struct {
 	ContainerNixFilePath string
 	ContextDirPath       string
-	Flake                string
+	flakeOutput          string
 }
 
-func NewNixBuildSpec(contextDirPath string, containerNixFilePath string, flake string) *NixBuildSpec {
+func NewNixBuildSpec(contextDirPath string, containerNixFilePath string, flakeOutput string) *NixBuildSpec {
 	internalNixBuildSpec := &privateNixBuildSpec{
 		ContainerNixFilePath: containerNixFilePath,
 		ContextDirPath:       contextDirPath,
-		Flake:                flake,
+		flakeOutput:          flakeOutput,
 	}
 	return &NixBuildSpec{internalNixBuildSpec}
 }
 
-func (nixBuildSpec *NixBuildSpec) GetContainerNixFilePath() string {
+func (nixBuildSpec *NixBuildSpec) GetNixFlakeFilePath() string {
 	return nixBuildSpec.privateNixBuildSpec.ContainerNixFilePath
 }
 
@@ -36,8 +36,8 @@ func (nixBuildSpec *NixBuildSpec) GetBuildContextDir() string {
 	return nixBuildSpec.privateNixBuildSpec.ContextDirPath
 }
 
-func (nixBuildSpec *NixBuildSpec) GetFlake() string {
-	return nixBuildSpec.privateNixBuildSpec.Flake
+func (nixBuildSpec *NixBuildSpec) GetFlakeOutput() string {
+	return nixBuildSpec.privateNixBuildSpec.flakeOutput
 }
 
 func (nixBuildSpec *NixBuildSpec) MarshalJSON() ([]byte, error) {

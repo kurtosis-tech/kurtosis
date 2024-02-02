@@ -701,7 +701,7 @@ func convertImage(
 		if interpretationErr != nil {
 			return "", nil, nil, nil, interpretationErr
 		}
-		return nixBuildSpec.GetFlake(), nil, nil, nixBuildSpec, nil
+		return nixBuildSpec.GetFlakeOutput(), nil, nil, nixBuildSpec, nil
 	} else {
 		imageName, interpretationErr := kurtosis_types.SafeCastToString(image, ImageAttr)
 		if interpretationErr != nil {

@@ -60,9 +60,10 @@ func (validator *ImagesValidator) Validate(
 		wg.Add(1)
 		go validator.buildImageUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, imageBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
-	for imageName, imageBuildSpec := range environment.nixToBuild {
+	for imageName, nixBuildSpec := range environment.nixToBuild {
 		wg.Add(1)
-		go validator.nixBuildUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, imageBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
+		logrus.Warnf("%v - %v", imageName, nixBuildSpec)
+		go validator.nixBuildUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, nixBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
 	wg.Wait()
 	logrus.Debug("All image validation submitted, currently in progress.")

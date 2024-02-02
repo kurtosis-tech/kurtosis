@@ -34,6 +34,13 @@ var (
 	testOnDiskContextDirPath     = "kurtosis-data/test-package"
 	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"
 
+	testNixContextDir           = "./"
+	testNixFlakeOutput          = ".#foo"
+	testNixFlakeLocationDir     = "./"
+	testOnDiskNixContextDirPath = "kurtosis-data/test-package"
+	testOnDiskNixFlakePath      = "kurtosis-data/test-package/flake.nix"
+	testNixFlakeLocator         = "kurtosis-data/test-package/flake.nix"
+
 	testRegistryAddr     = "http://registry.test.io"
 	testRegistryUsername = "kurtosis"
 	testRegistryPassword = "password"
