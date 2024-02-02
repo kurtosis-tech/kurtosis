@@ -1,30 +1,30 @@
 import { Button, ButtonGroup, Flex, useToast } from "@chakra-ui/react";
-import { ArgumentValueType } from "kurtosis-cloud-indexer-sdk";
 
 import { CopyButton, PasteButton, stringifyError } from "kurtosis-ui-components";
+import { ReactElement } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { FiDelete, FiPlus } from "react-icons/fi";
-import { KurtosisArgumentSubtypeFormControl } from "../KurtosisArgumentFormControl";
-import { ConfigureEnclaveForm } from "../types";
-import { KurtosisArgumentTypeInput, KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
+import { KurtosisSubtypeFormControl } from "./KurtosisFormControl";
+import { KurtosisFormInputProps } from "./types";
 
-type DictArgumentInputProps = KurtosisArgumentTypeInputImplProps & {
-  keyType: ArgumentValueType;
-  valueType: ArgumentValueType;
+type DictArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel> & {
+  renderKeyFieldInput: (props: KurtosisFormInputProps<DataModel>) => ReactElement;
+  renderValueFieldInput: (props: KurtosisFormInputProps<DataModel>) => ReactElement;
 };
 
-export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArgumentInputProps) => {
+export const DictArgumentInput = <DataModel extends object>({
+  renderKeyFieldInput,
+  renderValueFieldInput,
+  ...otherProps
+}: DictArgumentInputProps<DataModel>) => {
   const toast = useToast();
-  const { getValues, setValue } = useFormContext<ConfigureEnclaveForm>();
+  const { getValues, setValue } = useFormContext<DataModel>();
   const { fields, append, remove } = useFieldArray({ name: otherProps.name });
 
   const handleValuePaste = (value: string) => {
     try {
       const parsed = JSON.parse(value);
-      setValue(
-        otherProps.name,
-        Object.entries(parsed).map(([key, value]) => ({ key, value })),
-      );
+      setValue(otherProps.name, Object.entries(parsed).map(([key, value]) => ({ key, value })) as any);
     } catch (err: any) {
       toast({
         title: `Could not read pasted input, was it a json object? Got error: ${stringifyError(err)}`,
@@ -40,7 +40,7 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
           contentName={"value"}
           valueToCopy={() =>
             JSON.stringify(
-              getValues(otherProps.name).reduce(
+              (getValues(otherProps.name) as any[]).reduce(
                 (acc: Record<string, any>, { key, value }: { key: string; value: any }) => ({ ...acc, [key]: value }),
                 {},
               ),
@@ -51,34 +51,32 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
       </ButtonGroup>
       {fields.map((field, i) => (
         <Flex key={i} gap={"10px"}>
-          <KurtosisArgumentSubtypeFormControl
+          <KurtosisSubtypeFormControl
             name={`${otherProps.name as `args.${string}`}.${i}.key`}
             disabled={otherProps.disabled}
             isRequired={otherProps.isRequired}
           >
-            <KurtosisArgumentTypeInput
-              type={keyType}
-              name={`${otherProps.name as `args.${string}`}.${i}.key`}
-              validate={otherProps.validate}
-              isRequired
-              size={"sm"}
-              width={"222px"}
-            />
-          </KurtosisArgumentSubtypeFormControl>
-          <KurtosisArgumentSubtypeFormControl
+            {renderKeyFieldInput({
+              name: `${otherProps.name}.${i}.key` as any,
+              validate: otherProps.validate,
+              isRequired: true,
+              size: "sm",
+              width: "222px",
+            })}
+          </KurtosisSubtypeFormControl>
+          <KurtosisSubtypeFormControl
             name={`${otherProps.name as `args.${string}`}.${i}.value`}
             disabled={otherProps.disabled}
             isRequired={otherProps.isRequired}
           >
-            <KurtosisArgumentTypeInput
-              type={valueType}
-              name={`${otherProps.name as `args.${string}`}.${i}.value`}
-              validate={otherProps.validate}
-              isRequired
-              size={"sm"}
-              width={"222px"}
-            />
-          </KurtosisArgumentSubtypeFormControl>
+            {renderValueFieldInput({
+              name: `${otherProps.name}.${i}.value` as any,
+              validate: otherProps.validate,
+              isRequired: true,
+              size: "sm",
+              width: "222px",
+            })}
+          </KurtosisSubtypeFormControl>
           <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"} variant={"outline"}>
             Delete
           </Button>
@@ -86,7 +84,7 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
       ))}
       <Flex>
         <Button
-          onClick={() => append({})}
+          onClick={() => append({} as any)}
           leftIcon={<FiPlus />}
           size={"sm"}
           colorScheme={"kurtosisGreen"}

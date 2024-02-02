@@ -12,14 +12,15 @@ import { FieldPath, FieldValues } from "react-hook-form/dist/types";
 import { ControllerRenderProps } from "react-hook-form/dist/types/controller";
 import { FiCode } from "react-icons/fi";
 import YAML from "yaml";
-import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-export const JSONArgumentInput = (props: KurtosisArgumentTypeInputImplProps) => {
+import { KurtosisFormInputProps } from "./types";
+
+export const JSONArgumentInput = <DataModel extends object>(props: KurtosisFormInputProps<DataModel>) => {
   return (
     <Controller
       render={({ field }) => <JsonAndYamlCodeEditor field={field} />}
       name={props.name}
-      defaultValue={"{}"}
+      defaultValue={"{}" as any}
       rules={{
         required: props.isRequired,
         validate: (value: string) => {
