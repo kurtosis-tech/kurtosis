@@ -30,7 +30,7 @@ jobs:
       - name: Check Nix flake inputs
         uses: DeterminateSystems/flake-checker-action@v5
       - name: ETE Test with VM
-        run: nix run .#testVM
+        run: nix run .#integrationTest
 
   full_test:
     name: Run test on all assets

@@ -55,7 +55,7 @@
         checks.core = packages.core;
         checks.engine = packages.engine;
 
-        container.image.amd64 = let
+        container.image.x86_64 = let
           server = packages.default.overrideAttrs (old:
             old // {
               GOOS = "linux";
@@ -71,7 +71,7 @@
           config.Cmd = [ "${server}/bin/linux_amd64/server" ];
         };
 
-        container.image.arm64 = let
+        container.image.aarch64 = let
           server = packages.default.overrideAttrs (old:
             old // {
               GOOS = "linux";
@@ -87,18 +87,10 @@
           config.Cmd = [ "${server}/bin/linux_arm64/server" ];
         };
 
-        testingVMs = import ./internal_testsuites/vm_modules.nix {
-          inherit nixpkgs;
-          engine_image = container.image.arm64;
-        };
-
-        # testingVMs.x86_64-linux.linuxVM =
-        #   testingVMs.nixosConfigurations.linuxVM.config.system.build.vm;
-
-        # packages.aarch64-darwin.darwinVM =
-        #   testingVMs.nixosConfigurations.darwinVM.config.system.build.vm;
-
-        packages.testVM = import ./internal_testsuites/vm_tests.nix
-          (self.inputs // { inherit pkgs nixpkgs; });
+        packages.integrationTest = import ./internal_testsuites/vm_tests.nix
+          (self.inputs // {
+            inherit pkgs nixpkgs;
+            containers = container;
+          });
       });
 }

@@ -1,5 +1,9 @@
-{ nixpkgs, pkgs, ... }:
-let nixos-lib = import (nixpkgs + "/nixos/lib") { };
+{ nixpkgs, pkgs, containers, ... }:
+let
+  nixos-lib = import (nixpkgs + "/nixos/lib") { };
+  vm_modules = import ./vm_modules.nix { inherit nixpkgs; };
+  architecture =
+    builtins.head (builtins.match "(.*)-.*" pkgs.stdenv.hostPlatform.system);
 in nixos-lib.runTest rec {
   name = "demo-test";
 
@@ -13,18 +17,18 @@ in nixos-lib.runTest rec {
   };
 
   nodes.machine = { config, pkgs, ... }: {
-    users.users.alice = {
-      isNormalUser = true;
-      extraGroups = [ "wheel" ];
-      packages = with pkgs; [ tree ];
-    };
-    system.stateVersion = "23.11";
-    virtualisation.vmVariant.virtualisation.graphics = false;
+    imports = vm_modules.nixosConfigurations.${architecture}.modules;
   };
 
   testScript = ''
-    machine.wait_for_unit("default.target")
-    machine.succeed("su -- alice -c 'which firefox'")
-    machine.fail("su -- root -c 'which firefox'")
+    start_all()
+    machine.wait_for_unit("k3s")
+    machine.succeed("k3s kubectl cluster-info")
+
+    machine.succeed("docker load < ${containers.image.${architecture}}")
+    with subtest("Check that module fails the right way"):
+        images, stdout = machine.execute("docker images 2>&1")
+        assert 1 == 2, f"Expected: `images` but got {stdout}"
+
   '';
 }

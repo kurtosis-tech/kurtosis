@@ -1,11 +1,16 @@
 {
-  outputs = { self, nixpkgs, }:
-    let vms = import ./vm_modules.nix { inherit nixpkgs; };
-    in {
-      packages.x86_64-linux.linuxVM =
-        vms.nixosConfigurations.linuxVM.config.system.build.vm;
 
-      packages.aarch64-darwin.darwinVM =
-        vms.nixosConfigurations.darwinVM.config.system.build.vm;
-    };
+  inputs.flake-utils.url = "github:numtide/flake-utils";
+
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+        vms = import ./vm_modules.nix { inherit nixpkgs; };
+        architecture = builtins.head (builtins.match "(.*)-.*" system);
+      in {
+        packages.shellVM =
+          vms.nixosConfigurations.${architecture}.VM.config.system.build.vm;
+      });
+
 }
