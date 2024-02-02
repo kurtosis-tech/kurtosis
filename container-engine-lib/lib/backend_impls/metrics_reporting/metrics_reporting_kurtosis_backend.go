@@ -52,6 +52,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
 		ctx,
@@ -59,9 +60,10 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		envVars,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v'", imageOrgAndRepo, imageVersionTag)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v' and debug mode '%v'", imageOrgAndRepo, imageVersionTag, shouldStartInDebugMode)
 	}
 	return result, nil
 }

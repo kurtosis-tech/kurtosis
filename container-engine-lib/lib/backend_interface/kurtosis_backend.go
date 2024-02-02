@@ -46,6 +46,7 @@ type KurtosisBackend interface {
 		imageVersionTag string,
 		grpcPortNum uint16,
 		envVars map[string]string,
+		shouldStartInDebugMode bool,
 	) (
 		*engine.Engine,
 		error,

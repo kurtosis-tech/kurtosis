@@ -147,7 +147,7 @@ func SetContext(
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager for the new context.")
 	}
 
-	_, engineClientCloseFunc, startEngineErr := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultGitAuthTokenOverride)
+	_, engineClientCloseFunc, startEngineErr := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultGitHubAuthTokenOverride)
 	if startEngineErr != nil {
 		logrus.Warnf("The context was successfully set to '%s' but Kurtosis failed to start an engine in "+
 			"this new context. A new engine should be started manually with '%s %s %s'. The error was:\n%v",

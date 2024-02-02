@@ -7,8 +7,6 @@ package engine_server_launcher
 
 import (
 	"context"
-	"net"
-
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
@@ -16,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 )
 
 const (
@@ -45,8 +44,8 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
 	allowedCORSOrigins *[]string,
-	gitAuthToken string,
-) (
+	shouldStartInDebugMode bool,
+	githubAuthToken string) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
@@ -66,7 +65,8 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		cloudUserID,
 		cloudInstanceID,
 		allowedCORSOrigins,
-		gitAuthToken,
+		shouldStartInDebugMode,
+		githubAuthToken,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -89,8 +89,8 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
 	allowedCORSOrigins *[]string,
-	gitAuthToken string,
-) (
+	shouldStartInDebugMode bool,
+	githubAuthToken string) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
@@ -112,7 +112,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		cloudUserID,
 		cloudInstanceID,
 		allowedCORSOrigins,
-		gitAuthToken,
+		githubAuthToken,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")
@@ -129,6 +129,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		imageVersionTag,
 		grpcListenPortNum,
 		envVars,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%+v'", envVars)

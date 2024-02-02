@@ -36,6 +36,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/twitter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/web"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election"
@@ -106,6 +107,11 @@ func init() {
 		cliLogLevelStrFlag,
 		defaultLogLevelStr,
 		"Sets the level that the CLI will log at ("+strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|")+")",
+	)
+	RootCmd.PersistentFlags().Bool(
+		defaults.DebugModeFlagKey,
+		defaults.DefaultEnableDebugMode,
+		"Whether should enable Kurtosis in debug mode. The debug mode will use the Kurtosis container debug images version (only enabled for the engine server so far)",
 	)
 
 	RootCmd.AddCommand(analytics.AnalyticsCmd.MustGetCobraCommand())

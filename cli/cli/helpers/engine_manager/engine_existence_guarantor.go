@@ -76,7 +76,11 @@ type engineExistenceGuarantor struct {
 
 	allowedCORSOrigins *[]string
 
-	gitAuthTokenOverride string
+	// Whether the engine's should run with the debug server to receive a remote debug connection
+	shouldRunInDebugMode bool
+
+	// token with git auth to override existing GitHub auth if there is any
+	githubAuthTokenOverride string
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -92,7 +96,8 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	poolSize uint8,
 	enclaveEnvVars string,
 	allowedCORSOrigins *[]string,
-	gitAuthTokenOverride string,
+	shouldRunInDebugMode bool,
+	githubAuthTokenOverride string,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -108,7 +113,8 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		poolSize,
 		enclaveEnvVars,
 		allowedCORSOrigins,
-		gitAuthTokenOverride,
+		shouldRunInDebugMode,
+		githubAuthTokenOverride,
 	)
 }
 
@@ -126,7 +132,8 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	poolSize uint8,
 	enclaveEnvVars string,
 	allowedCORSOrigins *[]string,
-	gitAuthTokenOverride string,
+	shouldRunInDebugMode bool,
+	githubAuthTokenOverride string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -144,7 +151,8 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		poolSize:                                  poolSize,
 		enclaveEnvVars:                            enclaveEnvVars,
 		allowedCORSOrigins:                        allowedCORSOrigins,
-		gitAuthTokenOverride:                      gitAuthTokenOverride,
+		shouldRunInDebugMode:                      shouldRunInDebugMode,
+		githubAuthTokenOverride:                   githubAuthTokenOverride,
 	}
 }
 
@@ -164,19 +172,20 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 
 	maybeCloudUserId, maybeCloudInstanceId := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
 
-	// Configure git authentication
-	var gitAuthToken string
-	if guarantor.gitAuthTokenOverride != "" {
-		gitAuthToken = guarantor.gitAuthTokenOverride
+	// Configure GitHub authentication
+	var githubAuthToken string
+	// If override was provided, use it, else use existing GitHub auth config if it exists
+	if guarantor.githubAuthTokenOverride != "" {
+		githubAuthToken = guarantor.githubAuthTokenOverride
 	} else {
-		gitAuthConfig, err := github_auth_config.GetGithubAuthConfig()
+		githubAuthConfig, err := github_auth_config.GetGithubAuthConfig()
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred retrieving GitHub config.")
 		}
-		if gitAuthConfig.GetCurrentUser() != "" {
-			gitAuthToken, err = gitAuthConfig.GetAuthToken()
+		if githubAuthConfig.GetCurrentUser() != "" {
+			githubAuthToken, err = githubAuthConfig.GetAuthToken()
 			if err != nil {
-				return stacktrace.Propagate(err, "Detected GitHub user '%v' is logged in but error occurred retrieving auth token.", gitAuthConfig.GetCurrentUser())
+				return stacktrace.Propagate(err, "Detected GitHub user '%v' is logged in but error occurred retrieving auth token.", githubAuthConfig.GetCurrentUser())
 			}
 		}
 	}
@@ -197,7 +206,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			maybeCloudUserId,
 			maybeCloudInstanceId,
 			guarantor.allowedCORSOrigins,
-			gitAuthToken,
+			guarantor.shouldRunInDebugMode,
+			githubAuthToken,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -215,7 +225,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			maybeCloudUserId,
 			maybeCloudInstanceId,
 			guarantor.allowedCORSOrigins,
-			gitAuthToken,
+			guarantor.shouldRunInDebugMode,
+			githubAuthToken,
 		)
 	}
 	if engineLaunchErr != nil {
