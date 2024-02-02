@@ -21,7 +21,6 @@ import (
 const (
 	clusterNameArgKey                     = "cluster-name"
 	emptyClusterFromNeverHavingClusterSet = ""
-	emptyGitAuthTokenOverride             = ""
 )
 
 var SetCmd = &lowlevel.LowlevelKurtosisCommand{
