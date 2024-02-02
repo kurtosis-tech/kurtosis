@@ -164,6 +164,10 @@ func (_m *MockKurtosisBackend) CreateAPIContainer(ctx context.Context, image str
 		panic("no return value specified for CreateAPIContainer")
 	}
 
+	if len(ret) == 0 {
+		panic("no return value specified for CreateAPIContainer")
+	}
+
 	var r0 *api_container.APIContainer
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string, bool) (*api_container.APIContainer, error)); ok {
