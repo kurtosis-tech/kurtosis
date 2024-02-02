@@ -23,7 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/feedback"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/git"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github"
 	_import "github.com/kurtosis-tech/kurtosis/cli/cli/commands/import"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lint"
@@ -139,7 +139,7 @@ func init() {
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(web.WebCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(_package.PackageCmd)
-	RootCmd.AddCommand(git.GitCmd)
+	RootCmd.AddCommand(github.GitHubCmd)
 }
 
 // ====================================================================================================
