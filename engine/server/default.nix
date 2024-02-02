@@ -13,8 +13,10 @@ let
     "-X github.com/kurtosis-tech/kurtosis/kurtosis_version.Commit=${rev}"
   ]);
 in buildGoApplication {
-  inherit pname ldflags;
-  name = pname;
+  # pname has to match the location (folder) where the main function is or use
+  # subPackges to specify the file (e.g. subPackages = ["some/folder/main.go"];)
+  inherit pname rev ldflags;
+  version = "${rev}";
   pwd = ./.;
   src = ./.;
   modules = ./gomod2nix.toml;
