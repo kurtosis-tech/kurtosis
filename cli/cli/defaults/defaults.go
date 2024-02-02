@@ -17,6 +17,8 @@ const (
 
 	// engine-enclave-pool-size = 0 means that enclave pool feat will be disabled
 	DefaultEngineEnclavePoolSize uint8 = 0
+
+	DefaultGitAuthTokenOverride = ""
 )
 
 var DefaultApiContainerLogLevel = logrus.DebugLevel

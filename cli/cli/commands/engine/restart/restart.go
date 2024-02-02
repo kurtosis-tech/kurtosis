@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	engineVersionArg    = "version"
-	logLevelArg         = "log-level"
-	enclavePoolSizeFlag = "enclave-pool-size"
+	engineVersionArg         = "version"
+	logLevelArg              = "log-level"
+	enclavePoolSizeFlag      = "enclave-pool-size"
+	gitAuthTokenOverrideFlag = "git-auth-token"
 
 	defaultEngineVersion                   = ""
 	restartEngineOnSameVersionIfAnyRunning = false
@@ -26,6 +27,7 @@ const (
 var engineVersion string
 var logLevelStr string
 var enclavePoolSize uint8
+var gitAuthTokenOverride string
 
 // RestartCmd Suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
@@ -64,6 +66,12 @@ func init() {
 			defaults.DefaultEngineEnclavePoolSize,
 		),
 	)
+	RestartCmd.Flags().StringVar(
+		&gitAuthTokenOverride,
+		gitAuthTokenOverrideFlag,
+		"",
+		"Git personal access token for providing authorization for github operation. If existing github user is logged into Kurtosis CLI, the provided personal access token will override the user.",
+	)
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -87,7 +95,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, gitAuthTokenOverride)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}

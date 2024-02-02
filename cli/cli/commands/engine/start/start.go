@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	engineVersionArg    = "version"
-	logLevelArg         = "log-level"
-	enclavePoolSizeFlag = "enclave-pool-size"
-	gitAuthTokenArg     = "git-auth-token"
+	engineVersionArg         = "version"
+	logLevelArg              = "log-level"
+	enclavePoolSizeFlag      = "enclave-pool-size"
+	gitAuthTokenOverrideFlag = "git-auth-token"
 
 	defaultEngineVersion          = ""
 	kurtosisTechEngineImagePrefix = "kurtosistech/engine"

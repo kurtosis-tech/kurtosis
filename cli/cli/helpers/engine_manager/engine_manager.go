@@ -328,7 +328,13 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 // If no optionalVersionToUse is passed, then the new engine will take the default version, unless
 // restartEngineOnSameVersionIfAnyRunning is set to true in which case it will take the version of the currently
 // running engine
-func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, logLevel logrus.Level, optionalVersionToUse string, restartEngineOnSameVersionIfAnyRunning bool, poolSize uint8) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) RestartEngineIdempotently(
+	ctx context.Context,
+	logLevel logrus.Level,
+	optionalVersionToUse string,
+	restartEngineOnSameVersionIfAnyRunning bool,
+	poolSize uint8,
+	gitAuthTokenOverride string) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	var versionOfNewEngine string
 	// We try to do our best to restart an engine on the same version the current on is on
 	_, _, currentEngineVersion, err := manager.GetEngineStatus(ctx)
@@ -353,9 +359,9 @@ func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, log
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	if versionOfNewEngine != defaultEngineVersion {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize, "")
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize, gitAuthTokenOverride)
 	} else {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize, "")
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize, gitAuthTokenOverride)
 	}
 	if restartEngineErr != nil {
 		return nil, nil, stacktrace.Propagate(restartEngineErr, "An error occurred starting a new engine")
