@@ -14,10 +14,10 @@ import (
 
 var (
 	// The "Kurtosis CLI" OAuth app
-	oauthClientID = "ff28fd26dcaf1be48c45"
+	oauthClientID = ""
 	// This value is safe to be embedded in version control
 	//TODO: verify that it's okay to embed client secret into version control
-	oauthClientSecret = "***REMOVED***"
+	oauthClientSecret = ""
 
 	githubHostname = "github.com"
 )
