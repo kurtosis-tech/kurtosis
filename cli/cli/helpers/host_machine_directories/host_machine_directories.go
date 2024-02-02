@@ -150,20 +150,20 @@ func GetPortalPidFilePath() (string, error) {
 	return portalPidFilePath, nil
 }
 
-func GetGithubUserFilePath() (string, error) {
+func GetGitHubUsernameFilePath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForXDG(githubUsernameFilename)
 	githubUsernameFilePath, err := xdg.StateFile(xdgRelFilepath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis github auth token file path using '%s'", xdgRelFilepath)
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis GitHub username file path using '%s'", xdgRelFilepath)
 	}
 	return githubUsernameFilePath, nil
 }
 
-func GitGithubAuthTokenFilePath() (string, error) {
+func GetGitHubAuthTokenFilePath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForXDG(githubAuthTokenFilename)
 	githubAuthTokenFilePath, err := xdg.StateFile(xdgRelFilepath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis github username file path using '%s'", xdgRelFilepath)
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis GitHub auth token file path using '%s'", xdgRelFilepath)
 	}
 	return githubAuthTokenFilePath, nil
 }

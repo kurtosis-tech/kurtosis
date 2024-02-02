@@ -23,7 +23,7 @@ var LogoutCmd = &lowlevel.LowlevelKurtosisCommand{
 }
 
 func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
-	githubAuthCfg, err := github_auth_config.GetGithubAuthConfig()
+	githubAuthCfg, err := github_auth_config.GetGitHubAuthConfig()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred retrieving GitHub auth configuration.")
 	}

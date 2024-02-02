@@ -178,7 +178,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	if guarantor.githubAuthTokenOverride != "" {
 		githubAuthToken = guarantor.githubAuthTokenOverride
 	} else {
-		githubAuthConfig, err := github_auth_config.GetGithubAuthConfig()
+		githubAuthConfig, err := github_auth_config.GetGitHubAuthConfig()
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred retrieving GitHub config.")
 		}
