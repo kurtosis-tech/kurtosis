@@ -77,9 +77,12 @@ export const KurtosisArgumentTypeInput = ({
             <KurtosisArgumentTypeInput
               type={subType1}
               {...props}
-              name={props.name as `args.${string}.${number}.value`}
+              name={`${props.name}.value` as `args.${string}.${number}.value`}
+              width={"411px"}
+              size={"sm"}
             />
           )}
+          createNewValue={() => ({ value: "" })}
           {...childProps}
         />
       );

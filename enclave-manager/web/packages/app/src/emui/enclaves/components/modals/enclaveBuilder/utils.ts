@@ -43,11 +43,25 @@ export function generateStarlarkFromGraph(
   let starlark = "def run(plan):\n";
 
   for (const node of nodes) {
-    const serviceName = node.data.name.replace(/\s/g, "").toLowerCase();
+    const serviceName = node.data.serviceName.replace(/\s/g, "").toLowerCase();
     starlark += `    ${serviceName} = plan.add_service(\n`;
-    starlark += `        name = "${node.data.name}",\n`;
+    starlark += `        name = "${node.data.serviceName}",\n`;
     starlark += `        config = ServiceConfig (\n`;
-    starlark += `            image = "${node.data.image}"\n`;
+    starlark += `            image = "${node.data.image}",\n`;
+    starlark += `            ports = {\n`;
+    for (const { portName, port, applicationProtocol, transportProtocol } of node.data.ports) {
+      starlark += `                "${portName}": PortSpec(\n`;
+      starlark += `                    number = ${port},\n`;
+      starlark += `                    transport_protocol = "${transportProtocol}",\n`;
+      starlark += `                    application_protocol = "${applicationProtocol}",\n`;
+      starlark += `                ),\n`;
+    }
+    starlark += `            },\n`;
+    starlark += `            env_vars = {\n`;
+    for (const { key, value } of node.data.env) {
+      starlark += `                "${key}": "${value}",\n`;
+    }
+    starlark += `            },\n`;
     starlark += `        ),\n`;
     starlark += `    )\n\n`;
   }
@@ -55,7 +69,7 @@ export function generateStarlarkFromGraph(
   // Delete any services from any existing enclave that aren't defined anymore
   if (isDefined(existingEnclave) && existingEnclave.services?.isOk) {
     for (const existingService of Object.values(existingEnclave.services.value.serviceInfo)) {
-      if (!nodes.some((node) => node.data.name === existingService.name)) {
+      if (!nodes.some((node) => node.data.serviceName === existingService.name)) {
         starlark += `    plan.remove_service(name = "${existingService.name}")\n`;
       }
     }

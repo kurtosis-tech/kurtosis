@@ -1,21 +1,25 @@
-import { Flex, IconButton, Text } from "@chakra-ui/react";
+import { Flex, Grid, GridItem, IconButton, Text } from "@chakra-ui/react";
 import { memo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { FiTrash } from "react-icons/fi";
 import { RxCornerBottomRight } from "react-icons/rx";
 import { NodeProps, NodeResizeControl, useReactFlow } from "reactflow";
 import { DictArgumentInput } from "../../form/DictArgumentInput";
+import { IntegerArgumentInput } from "../../form/IntegerArgumentInput";
 import { KurtosisFormControl } from "../../form/KurtosisFormControl";
+import { ListArgumentInput } from "../../form/ListArgumentInput";
+import { OptionsArgumentInput } from "../../form/OptionArgumentInput";
 import { StringArgumentInput } from "../../form/StringArgumentInput";
 
 type KurtosisPort = {
+  portName: string;
   port: number;
   transportProtocol: "TCP" | "UDP";
   applicationProtocol: string;
 };
 
 export type KurtosisServiceNodeData = {
-  name: string;
+  serviceName: string;
   image: string;
   env: { key: string; value: string }[];
   ports: KurtosisPort[];
@@ -31,14 +35,10 @@ export const KurtosisServiceNode = memo(({ id, data, isConnectable, selected }: 
 
   const { deleteElements, setNodes } = useReactFlow<KurtosisServiceNodeData>();
 
-  const handleDeleteNode = () => {
+  const handleDeleteNode = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
     deleteElements({ nodes: [{ id }] });
-  };
-
-  const handleDataUpdate = <K extends keyof KurtosisServiceNodeData>(key: K, value: KurtosisServiceNodeData[K]) => {
-    setNodes((nodes) =>
-      nodes.map((node) => (node.id !== id ? node : { ...node, data: { ...node.data, [key]: value } })),
-    );
   };
 
   const handleBlur = async () => {
@@ -70,8 +70,8 @@ export const KurtosisServiceNode = memo(({ id, data, isConnectable, selected }: 
         {/*  isConnectable={isConnectable}*/}
         {/*/>*/}
         <NodeResizeControl
-          minWidth={200}
-          maxWidth={600}
+          minWidth={600}
+          maxWidth={800}
           minHeight={100}
           style={{ background: "transparent", border: "none" }}
         >
@@ -79,7 +79,7 @@ export const KurtosisServiceNode = memo(({ id, data, isConnectable, selected }: 
         </NodeResizeControl>
 
         <Flex justifyContent={"space-between"} alignItems={"center"} minH={"0"}>
-          <Text fontWeight={"semibold"}>{data.name}</Text>
+          <Text fontWeight={"semibold"}>{data.serviceName || <i>Unnamed Service</i>}</Text>
           <IconButton
             aria-label={"Delete node"}
             icon={<FiTrash />}
@@ -98,9 +98,9 @@ export const KurtosisServiceNode = memo(({ id, data, isConnectable, selected }: 
           className={"nodrag nowheel"}
           gap={"8px"}
         >
-          <KurtosisFormControl<KurtosisServiceNodeData> name={"name"} label={"Service Name"} isRequired>
+          <KurtosisFormControl<KurtosisServiceNodeData> name={"serviceName"} label={"Service Name"} isRequired>
             <StringArgumentInput
-              name={"name"}
+              name={"serviceName"}
               isRequired
               validate={(val) => {
                 if (typeof val !== "string") {
@@ -140,6 +140,51 @@ export const KurtosisServiceNode = memo(({ id, data, isConnectable, selected }: 
               name={"env"}
               renderKeyFieldInput={StringArgumentInput}
               renderValueFieldInput={StringArgumentInput}
+            />
+          </KurtosisFormControl>
+          <KurtosisFormControl<KurtosisServiceNodeData> name={"ports"} label={"Ports"}>
+            <ListArgumentInput
+              name={"ports"}
+              renderFieldInput={(props) => (
+                <Grid gridTemplateColumns={"1fr 1fr"} gridGap={"8px"} p={"8px"} bgColor={"gray.650"}>
+                  <GridItem>
+                    <StringArgumentInput<KurtosisServiceNodeData>
+                      {...props}
+                      size={"sm"}
+                      placeholder={"Port Name (eg postgres)"}
+                      name={`${props.name as `ports.${number}`}.portName`}
+                    />
+                  </GridItem>
+                  <GridItem>
+                    <StringArgumentInput<KurtosisServiceNodeData>
+                      {...props}
+                      size={"sm"}
+                      placeholder={"Application Protocol (eg postgresql)"}
+                      name={`${props.name as `ports.${number}`}.applicationProtocol`}
+                    />
+                  </GridItem>
+                  <GridItem>
+                    <OptionsArgumentInput<KurtosisServiceNodeData>
+                      {...props}
+                      options={["TCP", "UDP"]}
+                      name={`${props.name as `ports.${number}`}.transportProtocol`}
+                    />
+                  </GridItem>
+                  <GridItem>
+                    <IntegerArgumentInput<KurtosisServiceNodeData>
+                      {...props}
+                      name={`${props.name as `ports.${number}`}.port`}
+                      size={"sm"}
+                    />
+                  </GridItem>
+                </Grid>
+              )}
+              createNewValue={(): KurtosisPort => ({
+                portName: "",
+                applicationProtocol: "",
+                transportProtocol: "TCP",
+                port: 0,
+              })}
             />
           </KurtosisFormControl>
         </Flex>

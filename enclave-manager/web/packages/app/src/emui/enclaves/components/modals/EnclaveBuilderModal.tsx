@@ -29,6 +29,7 @@ import {
   useReactFlow,
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { v4 as uuidv4 } from "uuid";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 import { KurtosisServiceNode, KurtosisServiceNodeData } from "./enclaveBuilder/KurtosisServiceNode";
@@ -102,10 +103,12 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
   return (
     <Modal isOpen={isOpen} onClose={!isLoading ? onClose : () => null}>
       <ModalOverlay />
-      <ModalContent h={"90vh"} minW={"1024px"}>
-        <ModalHeader>Build an Enclave</ModalHeader>
+      <ModalContent h={"90vh"} minW={"1300px"}>
+        <ModalHeader>
+          {isDefined(existingEnclave) ? `Editing ${existingEnclave.name}` : "Build a new Enclave"}
+        </ModalHeader>
         <ModalCloseButton />
-        <ModalBody>
+        <ModalBody paddingInline={"0"}>
           <ReactFlowProvider>
             <Visualiser
               ref={visualiserRef}
@@ -155,9 +158,6 @@ const getLayoutedElements = <T extends object>(nodes: Node<T>[], edges: Edge<any
   };
 };
 
-let id = 1;
-const getId = () => `${id++}`;
-
 type VisualiserImperativeAttributes = {
   getStarlark: () => string;
 };
@@ -170,7 +170,8 @@ type VisualiserProps = {
 
 const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
   ({ initialNodes, initialEdges, existingEnclave }, ref) => {
-    const { fitView, addNodes } = useReactFlow<KurtosisServiceNodeData>();
+    const insertOffset = useRef(0);
+    const { fitView, addNodes, getViewport } = useReactFlow<KurtosisServiceNodeData>();
     const [nodes, setNodes, onNodesChange] = useNodesState<KurtosisServiceNodeData>(initialNodes || []);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
 
@@ -188,12 +189,16 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
     }, [nodes, edges, fitView, setEdges, setNodes]);
 
     const handleAddNode = () => {
+      const viewport = getViewport();
+      console.log(viewport);
       addNodes({
-        id: getId(),
-        position: { x: 0, y: 0 },
+        id: uuidv4(),
+        position: { x: -viewport.x + insertOffset.current * 20 + 400, y: -viewport.y + insertOffset.current * 20 },
+        width: 600,
         type: "serviceNode",
-        data: { name: "Unnamed Service", image: "", ports: [], env: [], isValid: false },
+        data: { serviceName: "", image: "", ports: [], env: [], isValid: false },
       });
+      insertOffset.current += 1;
     };
 
     useImperativeHandle(
@@ -207,21 +212,21 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
     );
 
     return (
-      <Flex flexDirection={"column"} h={"100%"}>
-        <ButtonGroup>
+      <Flex flexDirection={"column"} h={"100%"} gap={"8px"}>
+        <ButtonGroup paddingInline={6}>
           <Button onClick={onLayout}>Do Layout</Button>
           <Button leftIcon={<FiPlusCircle />} onClick={handleAddNode}>
             Add Node
           </Button>
         </ButtonGroup>
-        <Box bg={"gray.850"} flex={"1"}>
+        <Box bg={"gray.900"} flex={"1"}>
           <ReactFlow
             maxZoom={1}
             nodeDragThreshold={3}
             nodes={nodes}
             edges={edges}
-            onInit={onLayout}
             proOptions={{ hideAttribution: true }}
+            onMove={() => (insertOffset.current = 1)}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             nodeTypes={nodeTypes}
