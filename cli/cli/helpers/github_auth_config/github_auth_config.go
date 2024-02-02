@@ -80,7 +80,7 @@ func (git *GithubAuthConfig) Login() error {
 		if shouldRemoveAuthToken {
 			err = removeAuthToken(git.username)
 			if err != nil {
-				logrus.Errorf("Failed to unset git auth token after setting the auth token failed!! GitHub auth could be in a bad state.")
+				logrus.Errorf("Failed to remove git auth token after setting the auth token failed!! GitHub auth could be in a bad state.")
 			}
 		}
 	}()
