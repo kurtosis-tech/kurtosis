@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
@@ -333,6 +334,14 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 		Tags:              0,
 		InsecureSkipTLS:   false,
 		CABundle:          nil,
+		Mirror:            false,
+		ShallowSubmodules: false,
+		ProxyOptions: transport.ProxyOptions{
+			URL:      "",
+			Username: "",
+			Password: "",
+		},
+		Shared: false,
 	})
 	if err != nil {
 		// TODO remove public repository from error after we support private repositories
