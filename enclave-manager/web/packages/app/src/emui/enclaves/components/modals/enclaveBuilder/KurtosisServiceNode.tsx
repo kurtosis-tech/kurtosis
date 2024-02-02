@@ -1,18 +1,12 @@
-import {
-  Button,
-  Editable,
-  EditableInput,
-  EditablePreview,
-  Flex,
-  FormControl,
-  FormLabel, Grid, GridItem,
-  IconButton,
-  Input,
-} from "@chakra-ui/react";
-import {Fragment, memo} from "react";
-import {FiDelete, FiPlus, FiTrash} from "react-icons/fi";
+import { Flex, IconButton, Text } from "@chakra-ui/react";
+import { memo } from "react";
+import { FormProvider, useForm } from "react-hook-form";
+import { FiTrash } from "react-icons/fi";
 import { RxCornerBottomRight } from "react-icons/rx";
 import { NodeProps, NodeResizeControl, useReactFlow } from "reactflow";
+import { DictArgumentInput } from "../../form/DictArgumentInput";
+import { KurtosisFormControl } from "../../form/KurtosisFormControl";
+import { StringArgumentInput } from "../../form/StringArgumentInput";
 
 type KurtosisPort = {
   port: number;
@@ -25,9 +19,16 @@ export type KurtosisServiceNodeData = {
   image: string;
   env: { key: string; value: string }[];
   ports: KurtosisPort[];
+  isValid: boolean;
 };
 
 export const KurtosisServiceNode = memo(({ id, data, isConnectable, selected }: NodeProps<KurtosisServiceNodeData>) => {
+  const formMethods = useForm<KurtosisServiceNodeData>({
+    defaultValues: data,
+    mode: "onBlur",
+    shouldFocusError: false,
+  });
+
   const { deleteElements, setNodes } = useReactFlow<KurtosisServiceNodeData>();
 
   const handleDeleteNode = () => {
@@ -40,80 +41,109 @@ export const KurtosisServiceNode = memo(({ id, data, isConnectable, selected }: 
     );
   };
 
-  return (
-    <Flex
-      flexDirection={"column"}
-      height={"100%"}
-      borderRadius={"8px"}
-      p={selected ? "8px" : "10px"}
-      bg={"gray.600"}
-      borderWidth={selected ? "3px" : "1px"}
-      borderColor={selected ? "gray.850" : "gray.850"}
-    >
-      {/*<Handle*/}
-      {/*  type="target"*/}
-      {/*  position={Position.Left}*/}
-      {/*  style={{ background: "#555" }}*/}
-      {/*  onConnect={(params) => console.log("handle onConnect", params)}*/}
-      {/*  isConnectable={isConnectable}*/}
-      {/*/>*/}
-      <NodeResizeControl minWidth={200} minHeight={100} style={{ background: "transparent", border: "none" }}>
-        <RxCornerBottomRight style={{ position: "absolute", right: 5, bottom: 5 }} />
-      </NodeResizeControl>
+  const handleBlur = async () => {
+    const isValid = await formMethods.trigger();
+    setNodes((nodes) =>
+      nodes.map((node) => (node.id !== id ? node : { ...node, data: { ...formMethods.getValues(), isValid } })),
+    );
+  };
 
-      <Flex justifyContent={"space-between"}>
-        <Editable
-          fontSize={"md"}
-          fontWeight={"semibold"}
-          value={data.name}
-          onChange={(e) => handleDataUpdate("name", e)}
+  return (
+    <FormProvider {...formMethods}>
+      <Flex
+        as={"form"}
+        flexDirection={"column"}
+        height={"100%"}
+        borderRadius={"8px"}
+        p={selected ? "8px" : "10px"}
+        bg={"gray.600"}
+        borderWidth={selected ? "3px" : "1px"}
+        borderColor={selected ? "gray.850" : "gray.850"}
+        onBlur={handleBlur}
+        gap={"8px"}
+      >
+        {/*<Handle*/}
+        {/*  type="target"*/}
+        {/*  position={Position.Left}*/}
+        {/*  style={{ background: "#555" }}*/}
+        {/*  onConnect={(params) => console.log("handle onConnect", params)}*/}
+        {/*  isConnectable={isConnectable}*/}
+        {/*/>*/}
+        <NodeResizeControl
+          minWidth={200}
+          maxWidth={600}
+          minHeight={100}
+          style={{ background: "transparent", border: "none" }}
         >
-          <EditablePreview />
-          <EditableInput />
-        </Editable>
-        <IconButton
-          aria-label={"Delete node"}
-          icon={<FiTrash />}
-          colorScheme={"red"}
-          variant={"ghost"}
-          size={"xs"}
-          onClick={handleDeleteNode}
-        />
+          <RxCornerBottomRight style={{ position: "absolute", right: 5, bottom: 5 }} />
+        </NodeResizeControl>
+
+        <Flex justifyContent={"space-between"} alignItems={"center"} minH={"0"}>
+          <Text fontWeight={"semibold"}>{data.name}</Text>
+          <IconButton
+            aria-label={"Delete node"}
+            icon={<FiTrash />}
+            colorScheme={"red"}
+            variant={"ghost"}
+            size={"sm"}
+            onClick={handleDeleteNode}
+          />
+        </Flex>
+        <Flex
+          flexDirection={"column"}
+          bg={"gray.800"}
+          p={"5px 16px"}
+          flex={"1"}
+          overflowY={"scroll"}
+          className={"nodrag nowheel"}
+          gap={"8px"}
+        >
+          <KurtosisFormControl<KurtosisServiceNodeData> name={"name"} label={"Service Name"} isRequired>
+            <StringArgumentInput
+              name={"name"}
+              isRequired
+              validate={(val) => {
+                if (typeof val !== "string") {
+                  return "Value should be a string";
+                }
+                if (!val.match(/^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$/)) {
+                  return (
+                    "Service names must adhere to the RFC 1035 standard, specifically implementing this regex and" +
+                    " be 1-63 characters long: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$. This means the service name must " +
+                    "only contain lowercase alphanumeric characters or '-', and must start with a lowercase alphabet " +
+                    "and end with a lowercase alphanumeric"
+                  );
+                }
+              }}
+            />
+          </KurtosisFormControl>
+          <KurtosisFormControl<KurtosisServiceNodeData> name={"image"} label={"Container Image"} isRequired>
+            <StringArgumentInput
+              name={"image"}
+              isRequired
+              validate={(val) => {
+                if (typeof val !== "string") {
+                  return "Value should be a string";
+                }
+                if (
+                  !val.match(
+                    /^(?<repository>[\w.\-_]+((?::\d+|)(?=\/[a-z0-9._-]+\/[a-z0-9._-]+))|)(?:\/|)(?<image>[a-z0-9.\-_]+(?:\/[a-z0-9.\-_]+|))(:(?<tag>[\w.\-_]{1,127})|)$/gim,
+                  )
+                ) {
+                  return "Value does not look like a docker image";
+                }
+              }}
+            />
+          </KurtosisFormControl>
+          <KurtosisFormControl<KurtosisServiceNodeData> name={"env"} label={"Environment Variables"}>
+            <DictArgumentInput
+              name={"env"}
+              renderKeyFieldInput={StringArgumentInput}
+              renderValueFieldInput={StringArgumentInput}
+            />
+          </KurtosisFormControl>
+        </Flex>
       </Flex>
-      <Flex flexDirection={"column"} bg={"gray.800"} p={"5px 16px"} flex={"1"}>
-        <FormControl>
-          <FormLabel fontSize={"xs"} fontWeight={"bold"}>
-            Container
-          </FormLabel>
-          <Input size={"xs"} value={data.image} onChange={(e) => handleDataUpdate("image", e.target.value)} />
-        </FormControl>
-        <FormControl>
-          <FormLabel fontSize={"xs"} fontWeight={"bold"}>
-            Environment Variables
-          </FormLabel>
-          <Grid gridTemplateColumns={"1fr 1fr auto"} gridGap={"6px"}>
-          {data.env.map(({key, value}, i) => <Fragment key={i}>
-            <GridItem>
-              <Input value={key} size={"sm"} onChange={e => handleDataUpdate('env', data.env.map((envVar, j) => i !== j ? envVar : {...envVar, key: e.target.value}))}/>
-            </GridItem> <GridItem>
-            <Input value={value} size={"sm"} onChange={e => handleDataUpdate('env', data.env.map((envVar, j) => i !== j ? envVar : {...envVar, value: e.target.value}))}/>
-          </GridItem>
-            <Button onClick={() => handleDataUpdate('env', data.env.filter((_, j) => i !== j))} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"} variant={"outline"}>
-              Delete
-            </Button>
-          </Fragment>)}
-          </Grid>
-          <Button
-              onClick={() => handleDataUpdate("env", [...data.env, {key: "", value: ""}])}
-              leftIcon={<FiPlus />}
-              size={"sm"}
-              colorScheme={"kurtosisGreen"}
-              variant={"outline"}
-          >
-            Add
-          </Button>
-        </FormControl>
-      </Flex>
-    </Flex>
+    </FormProvider>
   );
 });

@@ -1,7 +1,8 @@
 import {
   Box,
   Button,
-  ButtonGroup, Flex,
+  ButtonGroup,
+  Flex,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -106,7 +107,12 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
         <ModalCloseButton />
         <ModalBody>
           <ReactFlowProvider>
-            <Visualiser ref={visualiserRef} initialNodes={initialNodes} initialEdges={initialEdges} />
+            <Visualiser
+              ref={visualiserRef}
+              initialNodes={initialNodes}
+              initialEdges={initialEdges}
+              existingEnclave={existingEnclave}
+            />
           </ReactFlowProvider>
         </ModalBody>
         <ModalFooter>
@@ -159,10 +165,11 @@ type VisualiserImperativeAttributes = {
 type VisualiserProps = {
   initialNodes: Node<KurtosisServiceNodeData>[];
   initialEdges: Edge<any>[];
+  existingEnclave?: RemoveFunctions<EnclaveFullInfo>;
 };
 
 const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
-  ({ initialNodes, initialEdges }, ref) => {
+  ({ initialNodes, initialEdges, existingEnclave }, ref) => {
     const { fitView, addNodes } = useReactFlow<KurtosisServiceNodeData>();
     const [nodes, setNodes, onNodesChange] = useNodesState<KurtosisServiceNodeData>(initialNodes || []);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
@@ -185,7 +192,7 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
         id: getId(),
         position: { x: 0, y: 0 },
         type: "serviceNode",
-        data: { name: "Unnamed Service", image: "", ports: [], env: [] },
+        data: { name: "Unnamed Service", image: "", ports: [], env: [], isValid: false },
       });
     };
 
@@ -193,10 +200,10 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
       ref,
       () => ({
         getStarlark: () => {
-          return generateStarlarkFromGraph(nodes, edges);
+          return generateStarlarkFromGraph(nodes, edges, existingEnclave);
         },
       }),
-      [nodes, edges],
+      [nodes, edges, existingEnclave],
     );
 
     return (
@@ -209,6 +216,8 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
         </ButtonGroup>
         <Box bg={"gray.850"} flex={"1"}>
           <ReactFlow
+            maxZoom={1}
+            nodeDragThreshold={3}
             nodes={nodes}
             edges={edges}
             onInit={onLayout}

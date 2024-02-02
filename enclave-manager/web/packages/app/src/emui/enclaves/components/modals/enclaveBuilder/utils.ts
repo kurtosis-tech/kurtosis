@@ -35,9 +35,12 @@ export function getInitialGraphStateFromEnclave<T extends object>(
   }
 }
 
-export function generateStarlarkFromGraph(nodes: Node<KurtosisServiceNodeData>[], edges: Edge[]): string {
+export function generateStarlarkFromGraph(
+  nodes: Node<KurtosisServiceNodeData>[],
+  edges: Edge[],
+  existingEnclave?: RemoveFunctions<EnclaveFullInfo>,
+): string {
   let starlark = "def run(plan):\n";
-  starlark += "    plan.print('Executing starlark generated from EMUI Enclave builder')\n";
 
   for (const node of nodes) {
     const serviceName = node.data.name.replace(/\s/g, "").toLowerCase();
@@ -47,6 +50,15 @@ export function generateStarlarkFromGraph(nodes: Node<KurtosisServiceNodeData>[]
     starlark += `            image = "${node.data.image}"\n`;
     starlark += `        ),\n`;
     starlark += `    )\n\n`;
+  }
+
+  // Delete any services from any existing enclave that aren't defined anymore
+  if (isDefined(existingEnclave) && existingEnclave.services?.isOk) {
+    for (const existingService of Object.values(existingEnclave.services.value.serviceInfo)) {
+      if (!nodes.some((node) => node.data.name === existingService.name)) {
+        starlark += `    plan.remove_service(name = "${existingService.name}")\n`;
+      }
+    }
   }
 
   starlark += `\n\n# ${EMUI_BUILD_STATE_KEY}=${btoa(JSON.stringify({ nodes, edges }))}`;

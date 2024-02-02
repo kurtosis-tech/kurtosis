@@ -57,7 +57,7 @@ export const KurtosisFormControl = <DataModel extends object>({
       <FormHelperText>
         <KurtosisMarkdown>{helperText}</KurtosisMarkdown>
       </FormHelperText>
-      <FormErrorMessage>{error?.message}</FormErrorMessage>
+      <FormErrorMessage>{error?.type === "required" ? "This field is required" : error?.message}</FormErrorMessage>
     </FormControl>
   );
 };
