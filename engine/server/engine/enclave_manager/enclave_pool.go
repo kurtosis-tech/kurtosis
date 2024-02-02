@@ -363,8 +363,7 @@ func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 	}
 
 	if engineVersion == apiContainerVersion &&
-		apiContainerLogLevel == defaultApiContainerLogLevel &&
-		shouldAPICRunInDebugMode == defaultApicDebugModeForEnclavesInThePool {
+		apiContainerLogLevel == defaultApiContainerLogLevel && !shouldAPICRunInDebugMode {
 		return true
 	}
 
