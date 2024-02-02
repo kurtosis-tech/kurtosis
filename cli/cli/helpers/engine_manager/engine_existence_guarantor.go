@@ -3,7 +3,7 @@ package engine_manager
 import (
 	"context"
 	"fmt"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/github_auth_config"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -76,7 +76,7 @@ type engineExistenceGuarantor struct {
 
 	allowedCORSOrigins *[]string
 
-	gitAuth *http.BasicAuth
+	gitAuthTokenOverride string
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -92,7 +92,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	poolSize uint8,
 	enclaveEnvVars string,
 	allowedCORSOrigins *[]string,
-	gitAuth *http.BasicAuth,
+	gitAuthTokenOverride string,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -108,7 +108,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		poolSize,
 		enclaveEnvVars,
 		allowedCORSOrigins,
-		gitAuth,
+		gitAuthTokenOverride,
 	)
 }
 
@@ -126,7 +126,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	poolSize uint8,
 	enclaveEnvVars string,
 	allowedCORSOrigins *[]string,
-	gitAuth *http.BasicAuth,
+	gitAuthTokenOverride string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -144,7 +144,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		poolSize:                                  poolSize,
 		enclaveEnvVars:                            enclaveEnvVars,
 		allowedCORSOrigins:                        allowedCORSOrigins,
-		gitAuth:                                   gitAuth,
+		gitAuthTokenOverride:                      gitAuthTokenOverride,
 	}
 }
 
@@ -164,7 +164,22 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 
 	maybeCloudUserId, maybeCloudInstanceId := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
 
-	// get git config
+	// Configure git authentication
+	var gitAuthToken string
+	if guarantor.gitAuthTokenOverride != "" {
+		gitAuthToken = guarantor.gitAuthTokenOverride
+	} else {
+		gitAuthConfig, err := github_auth_config.GetGithubAuthConfig()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred retrieving GitHub config.")
+		}
+		if gitAuthConfig.GetCurrentUser() != "" {
+			gitAuthToken, err = gitAuthConfig.GetAuthToken()
+			if err != nil {
+				return stacktrace.Propagate(err, "Detected GitHub user '%v' is logged in but error occurred retrieving auth token.", gitAuthConfig.GetCurrentUser())
+			}
+		}
+	}
 
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
@@ -182,7 +197,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			maybeCloudUserId,
 			maybeCloudInstanceId,
 			guarantor.allowedCORSOrigins,
-			guarantor.gitAuth,
+			gitAuthToken,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -200,7 +215,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			maybeCloudUserId,
 			maybeCloudInstanceId,
 			guarantor.allowedCORSOrigins,
-			guarantor.gitAuth,
+			gitAuthToken,
 		)
 	}
 	if engineLaunchErr != nil {

@@ -186,7 +186,7 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 		//  commands only access the Kurtosis APIs, we can remove this.
 		kurtosisBackend := engineManager.GetKurtosisBackend()
 
-		engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize, nil)
+		engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize, "")
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 		}
