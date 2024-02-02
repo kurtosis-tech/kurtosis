@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github/login"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github/logout"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github/status"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github/token"
 	"github.com/spf13/cobra"
 )
 
@@ -20,5 +21,5 @@ func init() {
 	GitHubCmd.AddCommand(login.LoginCmd.MustGetCobraCommand())
 	GitHubCmd.AddCommand(logout.LogoutCmd.MustGetCobraCommand())
 	GitHubCmd.AddCommand(status.StatusCmd.MustGetCobraCommand())
-	GitHubCmd.AddCommand(status.StatusCmd.MustGetCobraCommand())
+	GitHubCmd.AddCommand(token.TokenCmd.MustGetCobraCommand())
 }

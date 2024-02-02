@@ -11,7 +11,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-var LogoutCmd = &lowlevel.LowlevelKurtosisCommand{
+var TokenCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.GitHubTokenCmdStr,
 	ShortDescription:         "Displays GitHub auth token used if a user is logged in",
 	LongDescription:          "Displays GitHub auth token used if a user is logged in",

@@ -40,7 +40,7 @@ func GetGitHubAuthConfig() (*GitHubAuthConfig, error) {
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "GitHub user found but error occurred getting username.")
 		}
-		// TODO: verify an auth token exists
+		// TODO: verify an auth token exists for this user
 	}
 	return &GitHubAuthConfig{
 		mutex:    &sync.RWMutex{},
