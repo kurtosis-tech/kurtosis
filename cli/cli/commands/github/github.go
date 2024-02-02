@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// GitHubCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// nolint: exhaustruct
 var GitHubCmd = &cobra.Command{
 	Use:   command_str_consts.GitHubCmdStr,
 	Short: "Manage GitHub login",
