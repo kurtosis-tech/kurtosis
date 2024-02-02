@@ -6,7 +6,7 @@ in import (fetchTree nixpkgs.locked) {
 }), buildGoApplication ? pkgs.buildGoApplication, rev ? "dirty" }:
 let
   kurtosis_version = (builtins.readFile ../../kurtosis_version.txt);
-  pname = "cli";
+  pname = "kurtosis";
   ldflags = pkgs.lib.concatStringsSep "\n" ([
     "-X github.com/kurtosis-tech/kurtosis/kurtosis_version.AppName=${pname}"
     "-X github.com/kurtosis-tech/kurtosis/kurtosis_version.Version=${kurtosis_version}"
