@@ -31,6 +31,7 @@ const (
 	StoreFilesArgName = "store"
 	WaitArgName       = "wait"
 	FilesArgName      = "files"
+	EnvVarsArgName    = "env_vars"
 
 	newlineChar = "\n"
 
@@ -248,7 +249,11 @@ func resultMapToString(resultMap map[string]starlark.Comparable, builtinNameForL
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
 }
 
-func getServiceConfig(image string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion) (*service.ServiceConfig, error) {
+func getServiceConfig(
+	image string,
+	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
+	envVars *map[string]string,
+) (*service.ServiceConfig, error) {
 	serviceConfig, err := service.CreateServiceConfig(
 		image,
 		nil,
@@ -262,7 +267,7 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		//  command is completed
 		runTailCommandToPreventContainerToStopOnCreating,
 		nil,
-		nil,
+		*envVars,
 		filesArtifactExpansion,
 		nil,
 		0,
