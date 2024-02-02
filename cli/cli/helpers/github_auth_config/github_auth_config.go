@@ -32,7 +32,7 @@ func GetGithubAuthConfig() (*GithubAuthConfig, error) {
 	var currentUsername string
 	isUserLoggedIn, err := doesGithubUsernameFilepathExist()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred verifying existence of a github user exists.")
+		return nil, stacktrace.Propagate(err, "An error occurred verifying existence of a GitHub user.")
 	}
 	if isUserLoggedIn {
 		username, err := getGithubUsernameFromFile()
@@ -46,18 +46,18 @@ func GetGithubAuthConfig() (*GithubAuthConfig, error) {
 	}, nil
 }
 
-func (git *GithubAuthConfig) Login() (string, error) {
+func (git *GithubAuthConfig) Login() error {
 	git.mutex.Lock()
 	defer git.mutex.Unlock()
 
 	// Don't log in if user already exists
 	if git.currentUsername != "" {
-		return git.currentUsername, nil
+		return nil
 	}
 
 	authToken, userLogin, err := AuthFlow("github.com", "", []string{}, true, *browser.New("", os.Stdout, os.Stderr))
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred in the Github OAuth flow.")
+		return stacktrace.Propagate(err, "An error occurred in the Github OAuth flow.")
 	}
 
 	err = saveGithubUsernameFile(userLogin)
@@ -71,7 +71,7 @@ func (git *GithubAuthConfig) Login() (string, error) {
 		}
 	}()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred saving github username file fo user: %v.", userLogin)
+		return stacktrace.Propagate(err, "An error occurred saving github username file fo user: %v.", userLogin)
 	}
 
 	err = setAuthToken(userLogin, authToken)
@@ -85,30 +85,34 @@ func (git *GithubAuthConfig) Login() (string, error) {
 		}
 	}()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred setting auth token for user: %v.", userLogin)
+		return stacktrace.Propagate(err, "An error occurred setting auth token for user: %v.", userLogin)
 	}
 
 	git.currentUsername = userLogin
 
 	shouldRemoveAuthToken = false
 	shouldRemoveUsernameFile = false
-	return git.currentUsername, nil
+	return nil
 }
 
 // Logout "logs out" a GitHub user from Kurtosis by:
 // -removing the auth token associated with [currentUsername] from keyring or plain text file
 // -removing the GitHub username file
-// -set [currentUsername] to empty string
+// -setting [currentUsername] to empty string
 func (git *GithubAuthConfig) Logout() error {
 	// TODO
 	return nil
+}
+
+func (git *GithubAuthConfig) IsLoggedIn() bool {
+	return git.currentUsername != ""
 }
 
 func (git *GithubAuthConfig) GetCurrentUser() string {
 	return git.currentUsername
 }
 
-// GetAuthToken retrieves git auth token of currentUsername
+// GetAuthToken retrieves git auth token of [currentUsername]
 // First, checks if auth token exists in keyring
 // If not found in keyring, attempts to retrieve auth token from plain text file
 // Returns empty string if no user is logged in

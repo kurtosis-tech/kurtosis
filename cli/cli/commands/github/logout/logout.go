@@ -6,6 +6,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/github_auth_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 var LogoutCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -20,6 +23,18 @@ var LogoutCmd = &lowlevel.LowlevelKurtosisCommand{
 }
 
 func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
-	// TODO
+	githubAuthCfg, err := github_auth_config.GetGithubAuthConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred retrieving GitHub auth configuration.")
+	}
+	if !githubAuthCfg.IsLoggedIn() {
+		out.PrintOutLn("No GitHub user currently logged in.")
+		return nil
+	}
+	err = githubAuthCfg.Logout()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred logging out GitHub user: %v", githubAuthCfg.GetCurrentUser())
+	}
+	out.PrintOutLn("Successfully logged GitHub user out of Kurtosis CLI")
 	return nil
 }
