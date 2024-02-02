@@ -98,6 +98,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	allowedCORSOrigins *[]string,
 	shouldRunInDebugMode bool,
 	githubAuthTokenOverride string,
+
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
