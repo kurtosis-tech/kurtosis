@@ -23,13 +23,13 @@ var (
 )
 
 func AuthFlow(oauthHost string, notice string, additionalScopes []string, isInteractive bool, b browser.Browser) (string, string, error) {
-	httpClient := &http.Client{}
+	httpClient := &http.Client{} // nolint: exhaustruct
 
 	minimumScopes := []string{"repo", "read:org", "gist"}
 	scopes := append(minimumScopes, additionalScopes...)
 
 	callbackURI := "http://127.0.0.1/callback"
-	flow := &oauth.Flow{
+	flow := &oauth.Flow{ // nolint: exhaustruct
 		Host:         oauth.GitHubHost(githubHostname),
 		ClientID:     oauthClientID,
 		ClientSecret: oauthClientSecret,
@@ -95,7 +95,7 @@ func (c cfg) ActiveToken(hostname string) (string, string) {
 }
 
 func getViewer(hostname, token string, logWriter io.Writer) (string, error) {
-	opts := api.HTTPClientOptions{
+	opts := api.HTTPClientOptions{ // nolint: exhaustruct
 		Config: cfg{token: token},
 		Log:    logWriter,
 	}

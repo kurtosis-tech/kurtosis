@@ -12,23 +12,23 @@ import (
 )
 
 const (
-	// Check what file permissions are needed
+	// TODO: check what file permissions are needed
 	githubUsernameFilePermission  os.FileMode = 0644
 	githubAuthTokenFilePermission os.FileMode = 0644
 
 	kurtosisCliKeyringServiceName = "kurtosis-cli"
 )
 
-// GitH
-type GithubAuthConfig struct {
-	// GithubAuthConfig is protected by a mutex
+// GitHubAuthConfig represents information regarding a GitHub user authorized with Kurtosis CLI, if one exists
+// Only one user can be logged in at a time
+type GitHubAuthConfig struct {
 	mutex *sync.RWMutex
 
 	// Empty string if no user is logged in
 	username string
 }
 
-func GetGitHubAuthConfig() (*GithubAuthConfig, error) {
+func GetGitHubAuthConfig() (*GitHubAuthConfig, error) {
 	// Existence of GitHub user filepath determines whether a user is logged in or not
 	var username string
 	isUserLoggedIn, err := doesGitHubUsernameFileExist()
@@ -40,13 +40,15 @@ func GetGitHubAuthConfig() (*GithubAuthConfig, error) {
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "GitHub user found but error occurred getting username.")
 		}
+		// TODO: verify an auth token exists
 	}
-	return &GithubAuthConfig{
+	return &GitHubAuthConfig{
+		mutex:    &sync.RWMutex{},
 		username: username,
 	}, nil
 }
 
-func (git *GithubAuthConfig) Login() error {
+func (git *GitHubAuthConfig) Login() error {
 	git.mutex.Lock()
 	defer git.mutex.Unlock()
 
@@ -99,7 +101,7 @@ func (git *GithubAuthConfig) Login() error {
 // -removing the auth token associated with [username] from keyring or plain text file
 // -removing the GitHub username file
 // -setting [username] to empty string
-func (git *GithubAuthConfig) Logout() error {
+func (git *GitHubAuthConfig) Logout() error {
 	// Don't log out if no user exists
 	if git.isLoggedIn() {
 		return nil
@@ -116,18 +118,18 @@ func (git *GithubAuthConfig) Logout() error {
 	return nil
 }
 
-func (git *GithubAuthConfig) IsLoggedIn() bool {
+func (git *GitHubAuthConfig) IsLoggedIn() bool {
 	return git.isLoggedIn()
 }
 
-func (git *GithubAuthConfig) GetCurrentUser() string {
+func (git *GitHubAuthConfig) GetCurrentUser() string {
 	return git.username
 }
 
 // GetAuthToken retrieves git auth token of [username]
 // Returns empty string if no user is logged in
 // Returns err if err occurred getting auth token or no auth token found
-func (git *GithubAuthConfig) GetAuthToken() (string, error) {
+func (git *GitHubAuthConfig) GetAuthToken() (string, error) {
 	if git.isLoggedIn() {
 		return "", nil
 	}
@@ -139,7 +141,7 @@ func (git *GithubAuthConfig) GetAuthToken() (string, error) {
 //	Private Helper Functions
 //
 // ====================================================================================================
-func (git *GithubAuthConfig) isLoggedIn() bool {
+func (git *GitHubAuthConfig) isLoggedIn() bool {
 	return git.username != ""
 }
 
