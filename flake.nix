@@ -55,6 +55,21 @@
         checks.core = packages.core;
         checks.engine = packages.engine;
 
+        packages.cli-binaries = let
+          architectures = [ "amd64" "arm64" ];
+          OSs = [ "linux" "darwin" "windows" ];
+          all = pkgs.lib.lists.crossLists (arch: os: {
+            "${toString arch}-${toString os}" = packages.cli.overrideAttrs (old:
+              old // {
+                GOOS = os;
+                GOARCH = arch;
+                # CGO_ENABLED = disabled breaks the CLI compilation 
+                # CGO_ENABLED = 0;
+                doCheck = false;
+              });
+          }) [ architectures OSs ];
+        in pkgs.lib.foldl' (set: acc: acc // set) { } all;
+
         container.image.x86_64 = let
           server = packages.default.overrideAttrs (old:
             old // {
