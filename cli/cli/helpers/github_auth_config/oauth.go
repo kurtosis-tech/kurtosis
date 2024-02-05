@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/cli/cli/v2/api"
-	"github.com/cli/go-gh/v2/pkg/browser"
+	gitbrowser "github.com/cli/go-gh/v2/pkg/browser"
 	"github.com/cli/oauth"
 	"io"
 	"net/http"
@@ -18,13 +18,21 @@ var (
 	// This value is safe to be embedded in version control
 	//TODO: verify that it's okay to embed client secret into version control
 	oauthClientSecret = ""
+
+	isInteractive   = true
+	oauthHost       = "github.com"
+	emptyNotice     = ""
+	defaultLauncher = ""
 )
 
-func AuthFlow(oauthHost string, notice string, additionalScopes []string, isInteractive bool, b browser.Browser) (string, string, error) {
+var (
+	browser = *gitbrowser.New(defaultLauncher, os.Stdout, os.Stderr)
+)
+
+func AuthFlow() (string, string, error) {
 	httpClient := &http.Client{} // nolint: exhaustruct
 
 	minimumScopes := []string{"repo", "read:org", "gist"}
-	scopes := append(minimumScopes, additionalScopes...)
 
 	callbackURI := "http://127.0.0.1/callback"
 	flow := &oauth.Flow{ // nolint: exhaustruct
@@ -32,9 +40,9 @@ func AuthFlow(oauthHost string, notice string, additionalScopes []string, isInte
 		ClientID:     oauthClientID,
 		ClientSecret: oauthClientSecret,
 		CallbackURI:  callbackURI,
-		Scopes:       scopes,
+		Scopes:       minimumScopes,
 		DisplayCode: func(code, verificationURL string) error {
-			fmt.Fprintf(os.Stdout, "%s First copy your one-time code: %s\n", "!", code)
+			fmt.Fprintf(os.Stdout, "First copy your one-time code: %s\n", code)
 			return nil
 		},
 		BrowseURL: func(authURL string) error {
@@ -54,7 +62,7 @@ func AuthFlow(oauthHost string, notice string, additionalScopes []string, isInte
 			fmt.Fprintf(os.Stdout, "%s to open %s in your browser... ", "Press Enter", oauthHost)
 			_ = waitForEnter(os.Stdin)
 
-			if err := b.Browse(authURL); err != nil {
+			if err := browser.Browse(authURL); err != nil {
 				fmt.Fprintf(os.Stdout, "%s Failed opening a web browser at %s\n", "!", authURL)
 				fmt.Fprintf(os.Stdout, "  %s\n", err)
 				fmt.Fprint(os.Stdout, "  Please try entering the URL in your browser manually\n")
@@ -69,7 +77,7 @@ func AuthFlow(oauthHost string, notice string, additionalScopes []string, isInte
 		Stdout:     os.Stdout,
 	}
 
-	fmt.Fprintln(os.Stdout, notice)
+	fmt.Fprintln(os.Stdout, emptyNotice)
 
 	token, err := flow.DetectFlow()
 	if err != nil {

@@ -2,7 +2,6 @@ package github_auth_config
 
 import (
 	"errors"
-	"github.com/cli/go-gh/v2/pkg/browser"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -12,14 +11,22 @@ import (
 )
 
 const (
-	// TODO: check what file permissions are needed
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// DO NOT CHANGE THIS VALUE
+	// Changing this value could leak tokens in a users keyring/make Kurtosis unable to retrieve/remove them.
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	kurtosisCliKeyringServiceName = "kurtosis-cli"
+
 	githubUsernameFilePermission  os.FileMode = 0644
 	githubAuthTokenFilePermission os.FileMode = 0644
-
-	kurtosisCliKeyringServiceName = "kurtosis-cli"
 )
 
-// GitHubAuthConfig represents information regarding a GitHub user authorized with Kurtosis CLI, if one exists
+var (
+	NoTokenFound = errors.New("no token found for user in system credential store or plain text file")
+)
+
+// GitHubAuthConfig is an in memory representation of current state of GiHub authorization.
+// Represents a GitHub user authorized with Kurtosis CLI, if one exists
 // Only one user can be logged in at a time
 type GitHubAuthConfig struct {
 	mutex *sync.RWMutex
@@ -40,7 +47,14 @@ func GetGitHubAuthConfig() (*GitHubAuthConfig, error) {
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "GitHub user found but error occurred getting username.")
 		}
-		// TODO: verify an auth token exists for this user
+		// verify auth token exists for username to ensure GitHub auth is in a good state
+		_, err = getAuthToken(username)
+		if err != nil && !errors.Is(err, NoTokenFound) {
+			return nil, stacktrace.Propagate(err, "GitHub user detected but an error occurred retrieving auth token for user: %v", username)
+		}
+		if errors.Is(err, NoTokenFound) {
+			return nil, stacktrace.Propagate(err, "GitHub user '%v' detected but no auth token was found. This means GitHub auth is in a bad state.", username)
+		}
 	}
 	return &GitHubAuthConfig{
 		mutex:    &sync.RWMutex{},
@@ -57,7 +71,7 @@ func (git *GitHubAuthConfig) Login() error {
 		return nil
 	}
 
-	authToken, userLogin, err := AuthFlow("github.com", "", []string{}, true, *browser.New("", os.Stdout, os.Stderr))
+	authToken, userLogin, err := AuthFlow()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred in the Github OAuth flow.")
 	}
@@ -102,27 +116,39 @@ func (git *GitHubAuthConfig) Login() error {
 // -removing the GitHub username file
 // -setting [username] to empty string
 func (git *GitHubAuthConfig) Logout() error {
+	git.mutex.Lock()
+	defer git.mutex.Unlock()
+
 	// Don't log out if no user is logged in
 	if !git.isLoggedIn() {
 		return nil
 	}
+
 	err := removeAuthToken(git.username)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing auth token for GitHub user: %v", git.username)
 	}
+
 	err = removeGitHubUsernameFile()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing username for GitHub user: %v", git.username)
 	}
+
 	git.username = ""
 	return nil
 }
 
 func (git *GitHubAuthConfig) IsLoggedIn() bool {
+	git.mutex.Lock()
+	defer git.mutex.Unlock()
+
 	return git.isLoggedIn()
 }
 
 func (git *GitHubAuthConfig) GetCurrentUser() string {
+	git.mutex.Lock()
+	defer git.mutex.Unlock()
+
 	return git.username
 }
 
@@ -130,9 +156,13 @@ func (git *GitHubAuthConfig) GetCurrentUser() string {
 // Returns empty string if no user is logged in
 // Returns err if err occurred getting auth token or no auth token found
 func (git *GitHubAuthConfig) GetAuthToken() (string, error) {
-	if git.isLoggedIn() {
+	git.mutex.Lock()
+	defer git.mutex.Unlock()
+
+	if !git.isLoggedIn() {
 		return "", nil
 	}
+
 	return getAuthToken(git.username)
 }
 
@@ -229,7 +259,7 @@ func getAuthToken(username string) (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred verifying if GitHub auth token file exists for GitHub user: %v.", username)
 	}
 	if !githubAuthTokenFileExists {
-		return "", stacktrace.NewError("No GitHub auth token found in keyring OR in plain text file for user '%v'.", username)
+		return "", NoTokenFound
 	}
 	authToken, err = getGitHubAuthTokenFromFile()
 	if err != nil {
@@ -248,7 +278,7 @@ func setAuthToken(username, authToken string) error {
 	logrus.Debugf("An error occurred setting GitHub auth token in keyring: %v\nFalling back to setting token in plain text file.", err)
 	err = saveGitHubAuthTokenFile(authToken)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred attempting to store GitHub auth token in plain text file after failing to store in keying.")
+		return stacktrace.Propagate(err, "An error occurred attempting to store GitHub auth token in plain text file after failing to store in keyring.")
 	}
 	return nil
 }
@@ -311,7 +341,6 @@ func getGitHubAuthTokenFromFile() (string, error) {
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the GitHub auth token filepath")
 	}
-	logrus.Debugf("Github username filepath: '%v'", filepath)
 
 	fileContentBytes, err := os.ReadFile(filepath)
 	if err != nil {
