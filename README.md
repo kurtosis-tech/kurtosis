@@ -428,10 +428,10 @@ ktdev engine start --debug-mode
 4. Then choose the "Engine-remote-debug" run configuration in the "run panel"
 5. Press the "debug" button
    <img src="./readme-static-files/goland-engine-debug-button.png" />
-6. Use the debug panel to inspect the variables value and continue with the debug flow
-      <img src="./readme-static-files/goland-debug-panel.png" />
-7. Make a call to the engine's server (you can use the Kurtosis CLI or Postman) in order to reach out the breakpoint in the code
-8. You can debug the CLI and the Kurtosis engine's server at the same time by running it with `ktdebug` instead of `ktdev` mentioned in a previous step, remember to run both remote debug configuration in the Goland IDE.
+6. Make a call to the engine's server (you can use the Kurtosis CLI or Postman) in order to reach out the breakpoint in the code
+7. Use the debug panel to inspect the variables value and continue with the debug flow
+   <img src="./readme-static-files/goland-debug-panel.png" />
+8. You can debug the CLI and the Kurtosis engine's server at the same time by running it with `ktdebug` instead of `ktdev` mentioned in a previous step, remember to run both remote debug configurations in the Goland IDE.
 ```bash
 source ./scripts/set_kt_alias.sh
 ktdebug engine start
@@ -449,6 +449,57 @@ k3d image load kurtosistech/engine:5ec6eb-dirty-debug
 scripts/port-forward-engine-debug.sh
 ```
 3. Do not forget to run the Kurtosis gateway after calling the engine's server (in another terminal instance also)
+```bash
+ktdev gateway
+```
+
+For running Kurtosis APIC with Golang remote debug:
+1. Run the main build script with the first argument `debug_mode` as true. This will generate a new Kurtosis APIC container image which will contain the `debug` suffix in the name.
+```bash
+scripts/build.sh true 
+```
+2. Add the breakpoint in the line where you want to stop the cursor.
+   <img src="./readme-static-files/goland-apic-breakpoint.png" />
+3. Run the Kurtosis engine in debug more or not depending on if you want to also debug the engine.
+```bash
+source ./scripts/set_kt_alias.sh
+ktdev engine start --debug-mode
+
+OR
+
+ktdev engine start # you will have to build the engine in the regular way `engine/scripts/build.sh` if you choose this version
+```
+4. Add a new enclave in debug mode with the `enclave add` command and passing the `debug-mode` flag. This will create a new APIC container with the debug server port bounded and waiting for a connection.
+IMPORTANT: You can only run one enclave in debug mode so far, if you want to run another one it will fail due the debug port is already in use, 
+```bash
+ktdev enclave add --debug-mode 
+```
+5. Then choose the "APIC-remote-debug" run configuration in the "run panel"
+6. Press the "debug" button
+   <img src="./readme-static-files/goland-apic-debug-button.png" />
+7. Find the APIC's GRPC server port in the host machine (you can check it in Docker Desktop or using the Docker CLI, it's the one bounded with the container's 7443 port)
+8. Make a call to the APIC's server (you can use the Kurtosis CLI or Postman) in order to reach out the breakpoint in the code
+9. Use the debug panel to inspect the variables value and continue with the debug flow
+   <img src="./readme-static-files/goland-debug-panel.png" />
+10. You can debug the CLI, the Kurtosis engine's server and the Kurtosis APIC's server at the same time by running it with `ktdebug` instead of `ktdev` mentioned in a previous step, remember to run the three remote debug configurations in the Goland IDE.
+```bash
+source ./scripts/set_kt_alias.sh
+ktdev engine start --debug-mode
+ktdebug enclave add
+```
+
+Additional steps if you are debugging Kurtosis engine in K8s:
+
+1. Upload the APIC's image for debug to the K8s cluster
+```bash
+# for example:
+k3d image load kurtosistech/core:5ec6eb-dirty-debug
+```
+2. Run the port-forward script before pressing the debug button in Golang (in another terminal instance) to bind the host's port to the container's debug server port
+```bash
+scripts/port-forward-apic-debug.sh enclave-name
+```
+3. Do not forget to run the Kurtosis gateway after calling the APIC's server (in another terminal instance also)
 ```bash
 ktdev gateway
 ```

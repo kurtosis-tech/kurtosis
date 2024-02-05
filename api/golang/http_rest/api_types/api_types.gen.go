@@ -11,6 +11,12 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ApiContainerDebugMode.
+const (
+	False ApiContainerDebugMode = false
+	True  ApiContainerDebugMode = true
+)
+
 // Defines values for ApiContainerStatus.
 const (
 	ApiContainerStatusNONEXISTENT ApiContainerStatus = "NON_EXISTENT"
@@ -101,6 +107,9 @@ const (
 	UDP  TransportProtocol = "UDP"
 )
 
+// ApiContainerDebugMode defines model for ApiContainerDebugMode.
+type ApiContainerDebugMode bool
+
 // ApiContainerStatus defines model for ApiContainerStatus.
 type ApiContainerStatus string
 
@@ -137,10 +146,11 @@ type ContainerStatus string
 // CreateEnclave defines model for CreateEnclave.
 type CreateEnclave struct {
 	// ApiContainerLogLevel Enclave log level, defaults to INFO
-	ApiContainerLogLevel   *string      `json:"api_container_log_level,omitempty"`
-	ApiContainerVersionTag string       `json:"api_container_version_tag"`
-	EnclaveName            string       `json:"enclave_name"`
-	Mode                   *EnclaveMode `json:"mode,omitempty"`
+	ApiContainerLogLevel     *string                `json:"api_container_log_level,omitempty"`
+	ApiContainerVersionTag   string                 `json:"api_container_version_tag"`
+	EnclaveName              string                 `json:"enclave_name"`
+	Mode                     *EnclaveMode           `json:"mode,omitempty"`
+	ShouldApicRunInDebugMode *ApiContainerDebugMode `json:"should_apic_run_in_debug_mode,omitempty"`
 }
 
 // DeletionSummary defines model for DeletionSummary.
