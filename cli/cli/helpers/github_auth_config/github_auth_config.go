@@ -135,19 +135,20 @@ func (git *GitHubAuthConfig) Logout() error {
 	}
 
 	git.username = ""
+
 	return nil
 }
 
 func (git *GitHubAuthConfig) IsLoggedIn() bool {
-	git.mutex.Lock()
-	defer git.mutex.Unlock()
+	git.mutex.RLock()
+	defer git.mutex.RUnlock()
 
 	return git.isLoggedIn()
 }
 
 func (git *GitHubAuthConfig) GetCurrentUser() string {
-	git.mutex.Lock()
-	defer git.mutex.Unlock()
+	git.mutex.RLock()
+	defer git.mutex.RUnlock()
 
 	return git.username
 }

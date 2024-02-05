@@ -13,10 +13,12 @@ import (
 )
 
 var (
-	// The "Kurtosis CLI" OAuth app
-	oauthClientID = ""
-	// This value is safe to be embedded in version control
-	//TODO: verify that it's okay to embed client secret into version control
+	// The "Kurtosis CLI" OAuth app client id and secrets
+
+	// According to GitHub, it's okay to embed the client id secret as pointed out here: https://github.com/cli/oauth/issues/1#issuecomment-754713746
+	oauthClientID = "ff28fd26dcaf1be48c45"
+
+	// secret is actually not needed to retrieve the token, so we leave it empty
 	oauthClientSecret = ""
 
 	isInteractive   = true

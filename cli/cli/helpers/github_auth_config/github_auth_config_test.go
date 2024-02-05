@@ -14,6 +14,6 @@ const (
 
 // The keyring service name in this package has to be always "kurtosis-cli"
 // so we control that it does not change
-func TestApplicationIdDoesNotChange(t *testing.T) {
+func TestKeyringServiceNameDoesNotChange(t *testing.T) {
 	require.Equal(t, expectedKeyringServiceName, kurtosisCliKeyringServiceName)
 }
