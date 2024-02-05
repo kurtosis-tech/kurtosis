@@ -32,6 +32,6 @@ func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 		out.PrintOutLn("No GitHub user currently logged in.")
 		return nil
 	}
-	out.PrintOutLn(fmt.Sprintf("Logged in as GitHub user: '%v'", githubAuthCfg.GetCurrentUser()))
+	out.PrintOutLn(fmt.Sprintf("Logged in as GitHub user: %v", githubAuthCfg.GetCurrentUser()))
 	return nil
 }

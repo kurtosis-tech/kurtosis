@@ -102,17 +102,17 @@ func (git *GitHubAuthConfig) Login() error {
 // -removing the GitHub username file
 // -setting [username] to empty string
 func (git *GitHubAuthConfig) Logout() error {
-	// Don't log out if no user exists
-	if git.isLoggedIn() {
+	// Don't log out if no user is logged in
+	if !git.isLoggedIn() {
 		return nil
 	}
 	err := removeAuthToken(git.username)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing auth token for GitHub user: '%v'", git.username)
+		return stacktrace.Propagate(err, "An error occurred removing auth token for GitHub user: %v", git.username)
 	}
 	err = removeGitHubUsernameFile()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing username for GitHub user: '%v'", git.username)
+		return stacktrace.Propagate(err, "An error occurred removing username for GitHub user: %v", git.username)
 	}
 	git.username = ""
 	return nil

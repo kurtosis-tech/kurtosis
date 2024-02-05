@@ -18,8 +18,6 @@ var (
 	// This value is safe to be embedded in version control
 	//TODO: verify that it's okay to embed client secret into version control
 	oauthClientSecret = ""
-
-	githubHostname = "github.com"
 )
 
 func AuthFlow(oauthHost string, notice string, additionalScopes []string, isInteractive bool, b browser.Browser) (string, string, error) {
@@ -30,7 +28,7 @@ func AuthFlow(oauthHost string, notice string, additionalScopes []string, isInte
 
 	callbackURI := "http://127.0.0.1/callback"
 	flow := &oauth.Flow{ // nolint: exhaustruct
-		Host:         oauth.GitHubHost(githubHostname),
+		Host:         oauth.GitHubHost(fmt.Sprintf("https://%s/", oauthHost)),
 		ClientID:     oauthClientID,
 		ClientSecret: oauthClientSecret,
 		CallbackURI:  callbackURI,

@@ -29,13 +29,13 @@ func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 		return stacktrace.Propagate(err, "An error occurred retrieving GitHub auth configuration.")
 	}
 	if githubAuthCfg.IsLoggedIn() {
-		out.PrintOutLn(fmt.Sprintf("Logged in as GitHub user: '%v'", githubAuthCfg.GetCurrentUser()))
+		out.PrintOutLn(fmt.Sprintf("Logged in as GitHub user: %v", githubAuthCfg.GetCurrentUser()))
 		return nil
 	}
 	err = githubAuthCfg.Login()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred logging user in.")
 	}
-	out.PrintOutLn(fmt.Sprintf("Successfully logged in GitHub user: '%v'", githubAuthCfg.GetCurrentUser()))
+	out.PrintOutLn(fmt.Sprintf("Successfully logged in GitHub user: %v", githubAuthCfg.GetCurrentUser()))
 	return nil
 }
