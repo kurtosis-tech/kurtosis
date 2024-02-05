@@ -1,8 +1,8 @@
 import { Button, ButtonProps, Tooltip } from "@chakra-ui/react";
 import { useState } from "react";
 import { FiTrash2 } from "react-icons/fi";
-import { ConnectEnclaveModal } from "../modals/ConnectEnclaveModal";
 import { EnclaveFullInfo } from "../../types";
+import { ConnectEnclaveModal } from "../modals/ConnectEnclaveModal";
 
 type ConnectEnclaveButtonProps = ButtonProps & {
   enclave: EnclaveFullInfo;
