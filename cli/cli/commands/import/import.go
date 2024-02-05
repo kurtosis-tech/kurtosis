@@ -11,8 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
-
 	command_args_run "github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
@@ -288,7 +286,7 @@ func getMilliCpusReservation(deployConfig *types.DeployConfig) int {
 }
 
 func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveName string) (*enclaves.EnclaveContext, error) {
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName, defaults.DefaultEnableDebugMode)
+	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave '%v'", enclaveName)
 	}

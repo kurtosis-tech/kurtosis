@@ -39,5 +39,5 @@ apic_namespace_name="${KURTOSIS_KUBERNETES_NAMESPACE_PREFIX}-${enclave_name}"
 
 get_apic_pod_name_cmd="kubectl get pods -l="${APIC_CONTAINER_K8S_LABEL}" -n ${apic_namespace_name} | cut -d ' ' -f 1  | tail -n +2"
 
-# execute the port forward to the debug server inside the engine's container
+# execute the port forward to the debug server inside the APIC's container
 kubectl port-forward -n "${apic_namespace_name}" $(eval "${get_apic_pod_name_cmd}") ${APIC_DEBUG_SERVER_PORT}:${APIC_DEBUG_SERVER_PORT}

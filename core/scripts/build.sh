@@ -26,7 +26,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
 show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") debug_image..."
     echo ""
-    echo "  debug_image   Whether images should contains the debug server and run in debug mode, this will use the Dockerfile.debug image to build the container (only configured for the engine server so far)"
+    echo "  debug_image   Whether images should contains the debug server and run in debug mode, this will use the Dockerfile.debug image to build the container (configured for the APIC server so far)"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }

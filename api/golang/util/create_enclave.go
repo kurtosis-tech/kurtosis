@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -14,7 +13,7 @@ func CreateEmptyEnclave(ctx context.Context, enclaveName string) (*enclaves.Encl
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "Failed to get kurtosis context from local engine. Is the engine running? Try running 'kurtosis engine start'")
 	}
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName, defaults.DefaultEnableDebugMode)
+	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "Failed to create enclave.")
 	}
