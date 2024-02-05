@@ -33,6 +33,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "metrics-library/scripts/build.sh"
     "enclave-manager/scripts/build.sh"
     "engine/scripts/build.sh"
+    "core/scripts/build.sh"
 )
 
 # projects with debug mode enabled
