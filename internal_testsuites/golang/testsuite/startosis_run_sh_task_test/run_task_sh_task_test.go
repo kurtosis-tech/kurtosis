@@ -59,6 +59,7 @@ def run(plan):
 	runShWithEnvVar = `
 def run(plan):
   result = plan.run_sh(run="mkdir -p kurtosis && echo $EXAMPLE",image="badouralix/curl-jq",env_vars={"EXAMPLE": "value"})
+  plan.verify(result.output, "==", "value")
 `
 )
 
