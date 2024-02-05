@@ -477,7 +477,7 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # OPTIONAL (Default: badouralix/curl-jq)
         image = "badouralix/curl-jq",
 
-        # Defines environment variables that should be set inside the Docker container running the service.
+        # Defines environment variables that should be set inside the Docker container running the task.
         # OPTIONAL (Default: {})
         env_vars = {
             "VAR_1": "VALUE_1",
