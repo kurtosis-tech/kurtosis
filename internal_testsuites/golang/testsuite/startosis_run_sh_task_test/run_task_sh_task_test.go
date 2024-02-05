@@ -111,6 +111,6 @@ func TestStarlark_RunShWithNewLineRemovalPipe(t *testing.T) {
 
 func TestStarlark_RunShWithEnvVars(t *testing.T) {
 	ctx := context.Background()
-	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, fmt.Sprintf("%s-env_vars", runshTest), runShWithEnvVar)
+	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, fmt.Sprintf("%s-envvars", runshTest), runShWithEnvVar)
 	require.Nil(t, err)
 }
