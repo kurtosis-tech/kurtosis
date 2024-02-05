@@ -131,6 +131,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (
 	*engine.Engine,
 	error,
@@ -143,6 +144,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		envVars,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(

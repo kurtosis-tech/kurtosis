@@ -46,6 +46,7 @@ type KurtosisBackend interface {
 		imageVersionTag string,
 		grpcPortNum uint16,
 		envVars map[string]string,
+		shouldStartInDebugMode bool,
 	) (
 		*engine.Engine,
 		error,
@@ -139,6 +140,7 @@ type KurtosisBackend interface {
 		// Must not conflict with the custom environment variables
 		ownIpAddressEnvVar string,
 		customEnvVars map[string]string,
+		shouldStartInDebugMode bool,
 	) (
 		*api_container.APIContainer,
 		error,
