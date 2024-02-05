@@ -54,7 +54,7 @@ def run(plan, args={}):
         recipe = ExecRecipe(
             command = ["/bin/sh", "-c", cmd],
             extract = {
-                "example_reference_key": "fromjson | .key"
+                "example_reference_key": "fromjson | .key"   # <----- Notice the use of `fromjson`
             }
         ),
     )
