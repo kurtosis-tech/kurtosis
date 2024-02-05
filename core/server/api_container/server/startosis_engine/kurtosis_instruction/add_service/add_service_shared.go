@@ -108,6 +108,8 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		validatorEnvironment.AppendRequiredImageBuild(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec())
 	} else if serviceConfig.GetImageRegistrySpec() != nil {
 		validatorEnvironment.AppendImageToPullWithAuth(serviceConfig.GetContainerImageName(), serviceConfig.GetImageRegistrySpec())
+	} else if serviceConfig.GetNixBuildSpec() != nil {
+		validatorEnvironment.AppendRequiredNixBuild(serviceConfig.GetContainerImageName(), serviceConfig.GetNixBuildSpec())
 	} else {
 		validatorEnvironment.AppendRequiredImagePull(serviceConfig.GetContainerImageName())
 	}
