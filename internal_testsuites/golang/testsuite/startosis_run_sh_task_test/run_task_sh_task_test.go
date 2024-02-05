@@ -2,6 +2,7 @@ package startosis_run_sh_task_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -110,6 +111,6 @@ func TestStarlark_RunShWithNewLineRemovalPipe(t *testing.T) {
 
 func TestStarlark_RunShWithEnvVars(t *testing.T) {
 	ctx := context.Background()
-	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runShWithEnvVar)
+	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, fmt.Sprintf("%s-env_vars", runshTest), runShWithEnvVar)
 	require.Nil(t, err)
 }
