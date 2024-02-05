@@ -840,6 +840,10 @@ components:
         mode:
           $ref: "#/components/schemas/EnclaveMode"
           description: Enclave mode, defaults to TEST
+        should_apic_run_in_debug_mode:
+          $ref: "#/components/schemas/ApiContainerDebugMode"
+          # This is not an EnclaveMode because we will need to debug both current Modes (Test and Prod)
+          description: Whether the APIC's container should run with the debug server to receive a remote debug connection
       required:
         - enclave_name
         - api_container_version_tag
@@ -868,6 +872,13 @@ components:
         - RUNNING
         - STOPPED
         - NON_EXISTENT
+
+    ApiContainerDebugMode:
+      type: boolean
+      default: false
+      enum:
+        - false
+        - true
 
     EnclaveInfo:
       type: object

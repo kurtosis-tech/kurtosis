@@ -1,0 +1,18 @@
+FROM alpine:3.19
+
+# We need protobut-dev to run protobuf compiler against startosis .proto files
+RUN apk update && apk add --no-cache bash protobuf-dev
+
+# Make sure that you changed the port inside the APIC's code before changing it here
+EXPOSE 50103
+
+ARG TARGETARCH
+
+WORKDIR /run
+
+COPY ./build/api-container.$TARGETARCH ./api-container
+
+COPY ./build/dlv.$TARGETARCH /dlv
+
+# Make sure that you changed the port inside the engine's code before changing it here
+CMD ["/dlv", "--listen=:50103", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "--continue", "./api-container"]
