@@ -298,3 +298,21 @@ func removeService(ctx context.Context, serviceNetwork service_network.ServiceNe
 	}
 	return nil
 }
+
+func extractEnvVarsIfDefined(arguments *builtin_argument.ArgumentValuesSet) (*map[string]string, *startosis_errors.InterpretationError) {
+	envVars := map[string]string{}
+	if arguments.IsSet(EnvVarsArgName) {
+		envVarsStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, EnvVarsArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", EnvVarsArgName)
+		}
+		if envVarsStarlark != nil && envVarsStarlark.Len() > 0 {
+			var interpretationErr *startosis_errors.InterpretationError
+			envVars, interpretationErr = kurtosis_types.SafeCastToMapStringString(envVarsStarlark, EnvVarsArgName)
+			if interpretationErr != nil {
+				return nil, interpretationErr
+			}
+		}
+	}
+	return &envVars, nil
+}
