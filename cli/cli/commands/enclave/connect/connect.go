@@ -28,7 +28,7 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
-	
+
 	portMappingSeparatorForLogs = ", "
 )
 
