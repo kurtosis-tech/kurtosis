@@ -7,7 +7,7 @@ in import (fetchTree nixpkgs.locked) {
 with pkgs;
 let
   kurtosis_version = (builtins.readFile ../../kurtosis_version.txt);
-  pname = "kurtosis";
+  pname = "cli";
 
   # The CLI fails to compile as static using CGO_ENABLE (macOS and Linux). We need to manually use flags and add glibc
   # More info on: https://nixos.wiki/wiki/Go (also fails with musl!)
