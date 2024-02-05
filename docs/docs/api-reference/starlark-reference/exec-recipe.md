@@ -49,18 +49,28 @@ def run(plan, args={}):
         )
     )
     cmd = ''' echo '{"key": "value"}' '''
-    plan.exec(
+    result = plan.exec(
         service_name = "service",
         recipe = ExecRecipe(
             command = ["/bin/sh", "-c", cmd],
             extract = {
-                "key": "fromjson | .key"
+                "example_reference_key": "fromjson | .key"
             }
         ),
     )
+    plan.print(result["output"])
+    plan.print(result["extract.example_reference_key"])
 ```
 
+will output:
+```
+> print msg="{{kurtosis:1f60460f3eee4036af01b41fc2ecddc0:output.runtime_value}}"
+{"key": "value"}
 
+
+> print msg="{{kurtosis:1f60460f3eee4036af01b41fc2ecddc0:extract.example_reference_key.runtime_value}}"
+value
+```
 
 :::
 
