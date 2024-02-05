@@ -1,10 +1,12 @@
 import { Flex, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
+import Cookies from "js-cookie";
 
 import { AppPageLayout, HoverLineTabList, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { FunctionComponent } from "react";
 import { EditEnclaveButton } from "../components/EditEnclaveButton";
 import { DeleteEnclavesButton } from "../components/widgets/DeleteEnclavesButton";
+import { ConnectEnclaveButton } from "../components/widgets/ConnectEnclaveButton";
 import { useFullEnclave } from "../EnclavesContext";
 import { EnclaveFullInfo } from "../types";
 import { EnclaveOverview } from "./overview/EnclaveOverview";
@@ -42,6 +44,8 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
     const tab = tabs[newTabIndex];
     navigator(`/enclave/${enclave.shortenedUuid}/${tab.path}`);
   };
+  
+  const instanceUUID = Cookies.get("_kurtosis_instance_id") || "";
 
   return (
     <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange} variant={"kurtosisHeaderLine"}>
@@ -54,6 +58,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
           <Flex gap={"8px"} alignItems={"center"} pb={"16px"}>
             <DeleteEnclavesButton enclaves={[enclave]} />
             <EditEnclaveButton enclave={enclave} />
+            <ConnectEnclaveButton enclave={enclave} instanceUUID={instanceUUID}/>
           </Flex>
         </Flex>
         <TabPanels>
