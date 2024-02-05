@@ -28,7 +28,7 @@ entryPoints:
 
 providers:
   docker:
-    endpoint: "unix:///var/run/docker.sock"
+    endpoint: "unix:///var/run/podman/podman.sock"
     exposedByDefault: false
     network: "{{ .NetworkId }}"
 `
