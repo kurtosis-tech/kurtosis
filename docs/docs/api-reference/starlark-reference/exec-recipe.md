@@ -34,6 +34,37 @@ If you are trying to run a complex `command` with `|`, you should prefix the com
 be rewritten as `command = ["/bin/sh", "-c", "echo a | grep a"]`. Not doing so makes everything after the `echo` as args of that command, instead of following the behavior you would expect from a shell.
 :::
 
+:::tip
+If the executed command returns a proper `JSON` formatted data structure, it's necessary to pass the output through `jq`'s `fromjson` function to enable `jq` to parse the input.
+For more information on `jq`'s built-in methods, plese refer to `jq`'s documentation. The following is an example of how to parse the json formatted output using `jq` syntax:
+
+Example:
+```
+def run(plan, args={}):
+    plan.add_service(
+        name = "service",
+        config = ServiceConfig(
+            image = "alpine",
+            entrypoint = ["/bin/sh", "-c", "sleep infinity"],
+        )
+    )
+    cmd = ''' echo '{"key": "value"}' '''
+    plan.exec(
+        service_name = "service",
+        recipe = ExecRecipe(
+            command = ["/bin/sh", "-c", cmd],
+            extract = {
+                "key": "fromjson | .key"
+            }
+        ),
+    )
+```
+
+
+
+:::
+
+
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [exec-reference]: ./plan.md#exec
 [wait-reference]: ./plan.md#wait
