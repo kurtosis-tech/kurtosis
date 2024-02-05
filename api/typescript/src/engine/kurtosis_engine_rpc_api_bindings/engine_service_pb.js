@@ -590,7 +590,8 @@ proto.engine_api.CreateEnclaveArgs.toObject = function(includeInstance, msg) {
     enclaveName: jspb.Message.getFieldWithDefault(msg, 1, ""),
     apiContainerVersionTag: jspb.Message.getFieldWithDefault(msg, 2, ""),
     apiContainerLogLevel: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    mode: jspb.Message.getFieldWithDefault(msg, 4, 0)
+    mode: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    shouldApicRunInDebugMode: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
   };
 
   if (includeInstance) {
@@ -642,6 +643,10 @@ proto.engine_api.CreateEnclaveArgs.deserializeBinaryFromReader = function(msg, r
     case 4:
       var value = /** @type {!proto.engine_api.EnclaveMode} */ (reader.readEnum());
       msg.setMode(value);
+      break;
+    case 5:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setShouldApicRunInDebugMode(value);
       break;
     default:
       reader.skipField();
@@ -697,6 +702,13 @@ proto.engine_api.CreateEnclaveArgs.serializeBinaryToWriter = function(message, w
   if (f != null) {
     writer.writeEnum(
       4,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 5));
+  if (f != null) {
+    writer.writeBool(
+      5,
       f
     );
   }
@@ -844,6 +856,42 @@ proto.engine_api.CreateEnclaveArgs.prototype.clearMode = function() {
  */
 proto.engine_api.CreateEnclaveArgs.prototype.hasMode = function() {
   return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional bool should_apic_run_in_debug_mode = 5;
+ * @return {boolean}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.getShouldApicRunInDebugMode = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 5, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.setShouldApicRunInDebugMode = function(value) {
+  return jspb.Message.setField(this, 5, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.clearShouldApicRunInDebugMode = function() {
+  return jspb.Message.setField(this, 5, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.hasShouldApicRunInDebugMode = function() {
+  return jspb.Message.getField(this, 5) != null;
 };
 
 

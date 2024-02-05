@@ -74,6 +74,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (
 	*api_container.APIContainer,
 	error,
