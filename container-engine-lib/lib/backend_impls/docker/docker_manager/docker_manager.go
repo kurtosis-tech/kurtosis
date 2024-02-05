@@ -11,12 +11,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/docker/docker/api/types/registry"
-	"github.com/docker/go-units"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/kurtosis/utils"
 	"io"
 	"math"
 	"net"
@@ -24,6 +18,13 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/go-units"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/utils"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -179,7 +180,6 @@ type DockerManager struct {
 	// The underlying Docker client that will be used to modify the Docker environment
 	// This client has a timeout so that request that should return quickly do not end up hanging forever.
 	dockerClient *client.Client
-
 	// We need to use a specific docker client with no timeout for long-running requests on docker, such as tailing
 	// service logs for a long time, or even downloading large container images than can take longer than the timeout
 	dockerClientNoTimeout *client.Client
@@ -202,6 +202,7 @@ func CreateDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error creating docker client")
 	}
+
 	dockerClientNoTimeout, err := client.NewClientWithOpts(dockerClientOpts...)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error creating docker client")
@@ -229,6 +230,10 @@ Returns:
 
 	id: The Docker-managed ID of the network
 */
+func (manager *DockerManager) GetDockerClient() *client.Client {
+	return manager.dockerClient
+}
+
 func (manager *DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error) {
 	ipamConfig := []network.IPAMConfig{{
 		Subnet:     subnetMask,
@@ -331,6 +336,32 @@ func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]types.Ima
 	return unusedImages, nil
 }
 
+func (manager *DockerManager) GetDefaultNetwork(ctx context.Context) (*docker_manager_types.Network, error) {
+
+	matchingNetworks, err := manager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
+			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+		)
+	}
+	numMatchingNetworks := len(matchingNetworks)
+	if numMatchingNetworks > 1 {
+		return nil, stacktrace.NewError(
+			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
+			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+			numMatchingNetworks,
+		)
+	}
+
+	if numMatchingNetworks == 0 {
+		return nil, stacktrace.NewError(fmt.Sprintf("No matching network found with the configured name: %v", consts.NameOfNetworkToStartEngineAndLogServiceContainersIn))
+	}
+
+	return matchingNetworks[0], nil
+}
+
 /*
 GetNetworksByName
 Returns Network list matching the given name (if any).
@@ -365,7 +396,26 @@ func (manager *DockerManager) GetNetworksByLabels(ctx context.Context, labels ma
 		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with labels '%+v'", labels)
 	}
 
-	networks, err := newNetworkListFromDockerNetworkList(dockerNetworks)
+	dnets := make([]types.NetworkResource, 0)
+	if dockerNetworks != nil {
+		// Podman API inconsistency - filter out the union matches that podman returns while docker only returns the intersect matches when filtering by label
+		for _, net := range dockerNetworks {
+			allLabelsMatch := true
+
+			for label, val := range labels {
+				if netValue, exists := net.Labels[label]; !exists || netValue != val {
+					allLabelsMatch = false
+					break
+				}
+			}
+
+			if allLabelsMatch {
+				dnets = append(dnets, net)
+			}
+		}
+	}
+
+	networks, err := newNetworkListFromDockerNetworkList(dnets)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new network list from Docker network list '%+v'", dockerNetworks)
 	}
@@ -474,9 +524,23 @@ func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map
 		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with labels '%+v'", labels)
 	}
 
-	result := []*volume.Volume{}
+	result := make([]*volume.Volume, 0)
 	if resp.Volumes != nil {
-		result = resp.Volumes
+		// Podman API inconsistency - filter out the union matches that podman returns while docker only returns the intersect matches when filtering by label
+		for _, vol := range resp.Volumes {
+			allLabelsMatch := true
+
+			for label, val := range labels {
+				if volValue, exists := vol.Labels[label]; !exists || volValue != val {
+					allLabelsMatch = false
+					break
+				}
+			}
+
+			if allLabelsMatch {
+				result = append(result, vol)
+			}
+		}
 	}
 
 	return result, nil
@@ -520,7 +584,6 @@ func (manager *DockerManager) CreateAndStartContainer(
 	ctx context.Context,
 	args *CreateAndStartContainerArgs,
 ) (string, map[nat.Port]*nat.PortBinding, error) {
-
 	// If the user passed in a Docker image that doesn't have a tag separator (indicating no tag was specified), manually append
 	//  the Docker default tag so that when we search for the image we're searching for a very specific image
 	dockerImage := args.dockerImage
@@ -746,7 +809,6 @@ func (manager *DockerManager) CreateAndStartContainer(
 
 		// Final verification that all published ports get a host machine port bindings
 		if len(resultHostPortBindings) != numPublishedPorts {
-
 			if !didContainerStartSuccessfully {
 				//Then, if the container is running, show the error related to the ports problem
 				return "", nil, stacktrace.NewError(
@@ -781,7 +843,7 @@ func (manager *DockerManager) GetContainerIP(ctx context.Context, networkName st
 	allNetworkInfo := resp.NetworkSettings.Networks
 	networkInfo, found := allNetworkInfo[networkName]
 	if !found {
-		return "", stacktrace.NewError("Container ID '%v' isn't connected to network '%v'", containerId, networkName)
+		return "", stacktrace.NewError("Container ID '%v' isn't connected to network '%v' connected networks: '%+v'", containerId, networkName, resp.NetworkSettings.Networks)
 	}
 	return networkInfo.IPAddress, nil
 }
@@ -798,8 +860,15 @@ func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId s
 		return nil, stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
 	}
 	allNetworkInfo := resp.NetworkSettings.Networks
-	for _, networkInfo := range allNetworkInfo {
-		containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
+	for networkKey, networkInfo := range allNetworkInfo {
+
+		// podman does not return the networkID properly and as such we need to make sure we get it.
+		network, err := manager.dockerClient.NetworkInspect(ctx, networkInfo.NetworkID, types.NetworkInspectOptions{})
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred inspecting network: '%v'", networkKey)
+		}
+
+		containerIps[network.ID] = networkInfo.IPAddress
 	}
 	return containerIps, nil
 }
@@ -1153,6 +1222,7 @@ Connects the container with the given container ID to the network with the given
 If the IP address passed is nil then we get a random ip address
 */
 func (manager *DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP, alias string) (err error) {
+
 	logrus.Tracef(
 		"Connecting container ID %v to network ID %v using static IP %v",
 		containerId,
@@ -1172,10 +1242,10 @@ func (manager *DockerManager) ConnectContainerToNetwork(ctx context.Context, net
 		containerId,
 		config,
 	)
-
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to connect container %s to network with ID %s.", containerId, networkId)
 	}
+
 	return nil
 }
 
@@ -1204,9 +1274,27 @@ func (manager *DockerManager) GetContainerIdsByName(ctx context.Context, nameStr
 
 func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	labelsFilterList := getLabelsFilterArgs(containerLabelSearchFilterKey, labels)
-	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, shouldShowStoppedContainers)
+	resp, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, shouldShowStoppedContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting containers with labels '%+v'", labelsFilterList)
+	}
+	result := make([]*docker_manager_types.Container, 0)
+	if resp != nil {
+		// Podman API inconsistency - filter out the union matches that podman returns while docker only returns the intersect matches when filtering by label
+		for _, container := range resp {
+			allLabelsMatch := true
+			for label, val := range labels {
+				if container.GetLabels() != nil {
+					if containerValue, exists := container.GetLabels()[label]; !exists || containerValue != val {
+						allLabelsMatch = false
+						break
+					}
+				}
+			}
+			if allLabelsMatch {
+				result = append(result, container)
+			}
+		}
 	}
 	return result, nil
 }
@@ -1289,7 +1377,7 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 func (manager *DockerManager) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	var err error
 	var pulledFromRemote bool = true
-	logrus.Debugf("Fetching image '%s' with image download mode: %s", image, downloadMode)
+	logrus.Debugf("Fetching image '%s' with image download mode: %s from registry: %+v", image, downloadMode, registrySpec)
 
 	switch image_fetching := downloadMode; image_fetching {
 	case image_download_mode.ImageDownloadMode_Always:
@@ -1646,8 +1734,9 @@ func (manager *DockerManager) getContainerHostConfig(
 		case automaticPublishing:
 			portMap[containerPort] = []nat.PortBinding{
 				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
+				// Since there is a port policy in place that relies on 0.0.0.0 we should also use this value here
 				{
-					HostIP:   "",
+					HostIP:   "0.0.0.0",
 					HostPort: "",
 				},
 			}
