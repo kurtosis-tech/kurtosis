@@ -8,10 +8,12 @@ import {
   useColorMode,
 } from "@chakra-ui/react";
 import type { ChakraProviderProps } from "@chakra-ui/react/dist/chakra-provider";
+import { cssVar } from "@chakra-ui/styled-system";
 import { mode } from "@chakra-ui/theme-tools";
 import { PropsWithChildren, useEffect } from "react";
 import Fonts from "./theme/Fonts";
 import { formsTheme } from "./theme/formsTheme";
+import { progressTheme } from "./theme/progressTheme";
 import { tabsTheme } from "./theme/tabsTheme";
 import { tagTheme } from "./theme/tagsTheme";
 
@@ -36,14 +38,13 @@ const theme = extendTheme({
   },
   colors: {
     kurtosisGreen: {
-      50: "#00371E",
-      100: "#005e11",
-      200: "#008c19",
-      300: "#00bb22",
+      100: "#99f7aa",
+      200: "#66f27f",
+      300: "#33ee55",
       400: "#00C223", // The true green
-      500: "#33ee55",
-      600: "#66f27f",
-      700: "#99f7aa",
+      500: "#00bb22",
+      600: "#008c19",
+      700: "#18371E",
     },
     darkBlue: {
       200: "#516A77",
@@ -61,8 +62,21 @@ const theme = extendTheme({
       650: "#292929",
       700: "#1E1E1E",
       800: "#1D1D1D", // selected background
-      850: "#1B1B1D",
+      850: "#1B1B1D", // Accent background
       900: "#111111", // ui background
+    },
+    red: {
+      450: "#BD3737",
+      650: "#943031",
+      900: "#441C1C",
+    },
+    green: {
+      450: "#05A122",
+      650: "#0B7F21",
+    },
+    blue: {
+      450: "#2D6DAB",
+      650: "#285987",
     },
   },
   fontSizes: {
@@ -89,6 +103,16 @@ const theme = extendTheme({
     }),
   },
   components: {
+    Alert: {
+      baseStyle: defineStyle(({ colorScheme }) => ({
+        container: {
+          bg: `${colorScheme}.900`,
+        },
+        icon: {
+          color: `${colorScheme}.500`,
+        },
+      })),
+    },
     Badge: {
       baseStyle: {
         textTransform: "none",
@@ -97,25 +121,39 @@ const theme = extendTheme({
     },
     Button: {
       defaultProps: {
-        variant: "outline",
+        variant: "solid",
       },
       variants: {
-        outline: (props: StyleFunctionProps) => ({
-          _hover: { borderColor: `${props.colorScheme}.400`, bg: `gray.650` },
-          _active: { bg: `gray.700` },
-          color: `${props.colorScheme}.400`,
-          borderColor: "gray.300",
-        }),
-        solidOutline: (props: StyleFunctionProps) => {
-          const outline = theme.components.Button.variants!.outline(props);
+        solid: (props: StyleFunctionProps) => {
+          const bg = ["red", "green", "blue"].includes(props.colorScheme)
+            ? `${props.colorScheme}.650`
+            : `${props.colorScheme}.600`;
+          const bgInteraction = ["red", "green", "blue"].includes(props.colorScheme)
+            ? `${props.colorScheme}.450`
+            : `${props.colorScheme}.400`;
           return {
-            ...outline,
-            _hover: { bg: `${props.colorScheme}.400`, color: "gray.900" },
-            _active: { bg: `${props.colorScheme}.400`, color: "gray.900" },
-            color: `${props.colorScheme}.400`,
-            borderColor: `${props.colorScheme}.400`,
+            _hover: { bg: bgInteraction, _disabled: { bg } },
+            _active: { bg: bgInteraction },
+            bg,
+            color: `white`,
           };
         },
+        outline: (props: StyleFunctionProps) => {
+          const color = props.colorScheme === "gray" ? "gray.100" : `${props.colorScheme}.400`;
+          return {
+            _hover: { borderColor: `${props.colorScheme}.400`, bg: `gray.650` },
+            _active: { bg: `gray.700` },
+            color,
+            borderColor: "gray.300",
+          };
+        },
+        activeFilterControl: (props: StyleFunctionProps) => ({
+          _hover: { borderColor: `${props.colorScheme}.200` },
+          borderColor: `${props.colorScheme}.400`,
+          borderWidth: "1px",
+          bg: `${props.colorScheme}.100`,
+          color: `${props.colorScheme}.400`,
+        }),
         kurtosisGroupOutline: (props: StyleFunctionProps) => {
           const outline = theme.components.Button.variants!.outline(props);
           return {
@@ -136,12 +174,16 @@ const theme = extendTheme({
             borderColor: "gray.300",
           };
         },
-        solid: defineStyle((props) => ({
-          _hover: { bg: "gray.600" },
-          _active: { bg: "gray.600" },
-          color: `${props.colorScheme}.400`,
-          bg: "gray.700",
-        })),
+        savedSolid: (props: StyleFunctionProps) => {
+          const solid = theme.components.Button.variants!.solid(props);
+          return {
+            ...solid,
+            _hover: { bg: "gray.600" },
+            _active: { bg: "gray.600" },
+            bg: "gray.700",
+            color: `${props.colorScheme}.400`,
+          };
+        },
         ghost: defineStyle((props) => ({
           _hover: { bg: "gray.650" },
           color: props.colorScheme === "gray" ? undefined : `${props.colorScheme}.400`,
@@ -200,10 +242,17 @@ const theme = extendTheme({
       },
     },
     Card: {
+      baseStyle: {
+        container: { [cssVar("card-bg").variable]: "colors.gray.850" },
+      },
       variants: {
+        elevated: {
+          container: {
+            _dark: { [cssVar("card-bg").variable]: "colors.gray.850" },
+          },
+        },
         valueCard: {
           container: {
-            bg: "gray.850",
             borderRadius: "8px",
             padding: "16px",
             gap: "16px",
@@ -225,6 +274,7 @@ const theme = extendTheme({
             borderStyle: "solid",
             borderWidth: "1px",
             borderRadius: "6px",
+            overflow: "hidden",
           },
           header: {
             bg: "gray.850",
@@ -262,12 +312,40 @@ const theme = extendTheme({
         },
       })),
     },
+    Drawer: {
+      baseStyle: {
+        overlay: {
+          bg: "blackAlpha.100",
+        },
+        header: {
+          borderBottomWidth: "1px",
+          borderBottomColor: "gray.500",
+        },
+        body: { bg: "gray.900", h: "100%", p: "16px" },
+        footer: {
+          borderTopWidth: "1px",
+          borderTopColor: "gray.500",
+        },
+      },
+    },
     Form: formsTheme,
+    Input: {
+      baseStyle: {
+        field: { _dark: { bg: "gray.850" } },
+      },
+    },
     Menu: {
       baseStyle: {
         list: {
           minW: "unset",
+          padding: "4px",
+          boxShadow:
+            "0px 11.25px 30px 0px rgba(0, 0, 0, 0.40), 0px 3.75px 7.5px 0px rgba(0, 0, 0, 0.20), 0px 0px 0px 0.75px rgba(0, 0, 0, 0.10)",
         },
+        item: {
+          borderRadius: "6px",
+        },
+        icon: { color: "gray.400", fontSize: "18px !important" },
       },
     },
     Popover: {
@@ -278,6 +356,7 @@ const theme = extendTheme({
         },
       },
     },
+    Progress: progressTheme,
     Switch: {
       defaultProps: {
         colorScheme: "green",

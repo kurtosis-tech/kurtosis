@@ -1,9 +1,8 @@
-import { Box, Flex, Icon, Image, Input, InputGroup, InputRightElement, Text } from "@chakra-ui/react";
+import { Box, Flex, Icon, Input, InputGroup, InputRightElement, Text } from "@chakra-ui/react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { IoPlay, IoStar } from "react-icons/io5";
 import { useParams } from "react-router-dom";
-import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
 
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import {
@@ -13,13 +12,14 @@ import {
   isDefined,
   KurtosisAlert,
   KurtosisMarkdown,
+  PackageLogo,
   PackageSourceButton,
   readablePackageName,
   RunKurtosisPackageButton,
   SaveKurtosisPackageButton,
   TitledCard,
 } from "kurtosis-ui-components";
-import { ConfigureEnclaveModal } from "../../enclaves/components/modals/ConfigureEnclaveModal";
+import { CreateOrConfigureEnclaveDrawer } from "../../enclaves/components/configuration/drawer/CreateOrConfigureEnclaveDrawer";
 import { EnclavesContextProvider } from "../../enclaves/EnclavesContext";
 import { useKurtosisPackage } from "../CatalogContext";
 
@@ -52,7 +52,7 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
         <PackageHeader kurtosisPackage={kurtosisPackage} />
         <Flex gap={"32px"} h={"100%"} w={"100%"}>
           <Flex gap={"32px"} flexDirection={"column"} maxW={"740px"} w={"100%"}>
-            <TitledCard title={"DESCRIPTION"}>
+            <TitledCard title={"DESCRIPTION"} h={"100%"}>
               <Box p={"0 15px 15px 15px"}>
                 <KurtosisMarkdown>{kurtosisPackage.description}</KurtosisMarkdown>
               </Box>
@@ -64,8 +64,14 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
               size={"lg"}
               onClick={() => setShowConfigurePackage(true)}
             />
-            <InputGroup size={"lg"}>
-              <Input value={runCommand} textOverflow={"ellipsis"} />
+            <InputGroup size={"lg"} variant={"solid"}>
+              <Input
+                value={runCommand}
+                textOverflow={"ellipsis"}
+                fontFamily={"Inconsolata"}
+                bgColor={"gray.850"}
+                readOnly
+              />
               <InputRightElement>
                 <CopyButton
                   contentName={"command"}
@@ -84,8 +90,14 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
             >
               View on Github
             </PackageSourceButton>
-            <Flex borderBottomWidth={"1px"} borderBottomColor={"whiteAlpha.300"} gap={"32px"} p={"16px"}>
-              <Flex gap={"16px"} flexDirection={"column"}>
+            <Flex
+              borderBottomWidth={"1px"}
+              borderBottomColor={"whiteAlpha.300"}
+              justifyContent={"space-between"}
+              gap={"32px"}
+              p={"16px"}
+            >
+              <Flex gap={"16px"} flexDirection={"column"} flex={"1"}>
                 <Flex gap={"8px"} color="gray.400" fontWeight={"bold"} alignItems={"center"}>
                   <Icon as={IoStar} w={"12px"} h={"12px"} />
                   <Text as={"span"} textTransform={"uppercase"}>
@@ -96,7 +108,7 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
                   {kurtosisPackage.stars.toString()}
                 </Text>
               </Flex>
-              <Flex gap={"16px"} flexDirection={"column"}>
+              <Flex gap={"16px"} flexDirection={"column"} flex={"1"}>
                 <Flex gap={"8px"} color="gray.400" fontWeight={"bold"} alignItems={"center"}>
                   <Icon as={IoPlay} w={"12px"} h={"12px"} />
                   <Text as={"span"} textTransform={"uppercase"}>
@@ -131,7 +143,7 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
         </Flex>
         {showConfigurePackage && (
           <EnclavesContextProvider skipInitialLoad>
-            <ConfigureEnclaveModal
+            <CreateOrConfigureEnclaveDrawer
               isOpen={true}
               onClose={() => setShowConfigurePackage(false)}
               kurtosisPackage={kurtosisPackage}
@@ -144,18 +156,9 @@ const PackageImpl = ({ kurtosisPackage }: PackageImplProps) => {
 };
 
 const PackageHeader = ({ kurtosisPackage }: PackageImplProps) => {
-  const client = useKurtosisClient();
-
   return (
     <Flex gap={"22px"} w={"100%"}>
-      <Image
-        h={"120px"}
-        w={"120px"}
-        bg={kurtosisPackage.iconUrl !== "" ? "white" : "black"}
-        src={kurtosisPackage.iconUrl || `${client.getBaseApplicationUrl()}/logo.png`}
-        fallbackSrc={`${client.getBaseApplicationUrl()}/logo.png`}
-        borderRadius={"9px"}
-      />
+      <PackageLogo kurtosisPackage={kurtosisPackage} h={"120px"} w={"120px"} borderRadius={"9px"} />
       <Flex flexDirection={"column"} justifyContent={"space-between"} flex={"1"}>
         <Flex flexDirection={"column"} gap={"8px"}>
           <Text noOfLines={1} fontSize={"xl"}>
@@ -166,7 +169,7 @@ const PackageHeader = ({ kurtosisPackage }: PackageImplProps) => {
           </Text>
         </Flex>
         <Box>
-          <SaveKurtosisPackageButton kurtosisPackage={kurtosisPackage} />
+          <SaveKurtosisPackageButton kurtosisPackage={kurtosisPackage} size={"md"} />
         </Box>
       </Flex>
     </Flex>

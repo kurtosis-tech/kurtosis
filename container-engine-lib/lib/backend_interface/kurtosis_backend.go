@@ -3,6 +3,7 @@ package backend_interface
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"io"
 	"time"
 
@@ -34,7 +35,7 @@ type KurtosisBackend interface {
 	// If retrieving the latest [dockerImage] fails, the local image will be used.
 	// Returns True is it was retrieved from cloud or False if it's a local image
 	// Returns a string that represents the architecture of the image
-	FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error)
+	FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error)
 
 	PruneUnusedImages(ctx context.Context) ([]string, error)
 
@@ -45,6 +46,7 @@ type KurtosisBackend interface {
 		imageVersionTag string,
 		grpcPortNum uint16,
 		envVars map[string]string,
+		shouldStartInDebugMode bool,
 	) (
 		*engine.Engine,
 		error,
@@ -138,6 +140,7 @@ type KurtosisBackend interface {
 		// Must not conflict with the custom environment variables
 		ownIpAddressEnvVar string,
 		customEnvVars map[string]string,
+		shouldStartInDebugMode bool,
 	) (
 		*api_container.APIContainer,
 		error,
@@ -339,7 +342,7 @@ type KurtosisBackend interface {
 	// Destroy the logs collector for enclave with UUID
 	DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error
 
-	CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error)
+	CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error)
 
 	// Returns nil if logs aggregator was not found
 	GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error)

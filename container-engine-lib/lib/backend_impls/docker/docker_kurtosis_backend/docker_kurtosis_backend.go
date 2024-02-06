@@ -3,6 +3,7 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"io"
 	"sync"
 
@@ -84,8 +85,8 @@ func NewDockerKurtosisBackend(
 	}
 }
 
-func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
-	return backend.dockerManager.FetchImage(ctx, image, downloadMode)
+func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+	return backend.dockerManager.FetchImage(ctx, image, registrySpec, downloadMode)
 }
 
 func (backend *DockerKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
@@ -109,6 +110,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (
 	*engine.Engine,
 	error,
@@ -121,6 +123,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		envVars,
 		backend.dockerManager,
 		backend.objAttrsProvider,
+		shouldStartInDebugMode,
 	)
 }
 
@@ -475,11 +478,12 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) CreateReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
+func (backend *DockerKurtosisBackend) CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error) {
 	reverseProxyContainer := traefik.NewTraefikReverseProxyContainer()
 
 	reverseProxy, _, err := reverse_proxy_functions.CreateReverseProxy(
 		ctx,
+		engineGuid,
 		reverseProxyContainer,
 		backend.dockerManager,
 		backend.objAttrsProvider,

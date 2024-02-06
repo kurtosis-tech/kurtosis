@@ -3,6 +3,7 @@ package user_services_functions
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
@@ -43,12 +44,6 @@ const (
 	unboundPortNumber = 1
 
 	unlimitedReplacements = -1
-
-	ingressRulePathAllPaths = "/"
-)
-
-var (
-	ingressRulePathTypePrefix = netv1.PathTypePrefix
 )
 
 // Completeness enforced via unit test
@@ -312,6 +307,8 @@ func createStartServiceOperation(
 		privateIPAddrPlaceholder := serviceConfig.GetPrivateIPAddrPlaceholder()
 		minCpuAllocationMilliCpus := serviceConfig.GetMinCPUAllocationMillicpus()
 		minMemoryAllocationMegabytes := serviceConfig.GetMinMemoryAllocationMegabytes()
+		user := serviceConfig.GetUser()
+		tolerations := serviceConfig.GetTolerations()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -402,6 +399,7 @@ func createStartServiceOperation(
 			memoryAllocationMegabytes,
 			minCpuAllocationMilliCpus,
 			minMemoryAllocationMegabytes,
+			user,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
@@ -419,6 +417,7 @@ func createStartServiceOperation(
 			podVolumes,
 			userServiceServiceAccountName,
 			restartPolicy,
+			tolerations,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
@@ -638,6 +637,7 @@ func getUserServicePodContainerSpecs(
 	memoryAllocationMegabytes uint64,
 	minCpuAllocationMilliCpus uint64,
 	minMemoryAllocationMegabytes uint64,
+	user *service_user.ServiceUser,
 ) ([]apiv1.Container, error) {
 
 	var containerEnvVars []apiv1.EnvVar
@@ -696,6 +696,22 @@ func getUserServicePodContainerSpecs(
 			// NOTE: There are a bunch of other interesting Container options that we omitted for now but might
 			// want to specify in the future
 		},
+	}
+
+	if user != nil {
+		uid := int64(user.GetUID())
+		// nolint: exhaustruct
+		securityContext := &apiv1.SecurityContext{
+			RunAsUser: &uid,
+		}
+
+		gid, gidIsSet := user.GetGID()
+		if gidIsSet {
+			gidAsInt64 := int64(gid)
+			securityContext.RunAsGroup = &gidAsInt64
+		}
+
+		containers[0].SecurityContext = securityContext
 	}
 
 	return containers, nil
@@ -929,8 +945,8 @@ func getUserServiceIngressRules(
 					HTTP: &netv1.HTTPIngressRuleValue{
 						Paths: []netv1.HTTPIngressPath{
 							{
-								Path:     ingressRulePathAllPaths,
-								PathType: &ingressRulePathTypePrefix,
+								Path:     consts.IngressRulePathAllPaths,
+								PathType: &consts.IngressRulePathTypePrefix,
 								Backend: netv1.IngressBackend{
 									Service: &netv1.IngressServiceBackend{
 										Name: string(serviceRegistration.GetName()),

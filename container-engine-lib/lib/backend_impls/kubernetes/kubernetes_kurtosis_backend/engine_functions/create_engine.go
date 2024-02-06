@@ -3,6 +3,8 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
@@ -16,8 +18,8 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"time"
 )
 
 const (
@@ -30,6 +32,9 @@ const (
 
 var noWait *port_spec.Wait = nil
 
+// TODO add support for passing toleration to Engine
+var noToleration []apiv1.Toleration = nil
+
 func CreateEngine(
 	ctx context.Context,
 	imageOrgAndRepo string,
@@ -38,6 +43,7 @@ func CreateEngine(
 	envVars map[string]string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
+	_ bool, //It's not required to add extra configuration in K8S for enabling the debug server
 ) (
 	*engine.Engine,
 	error,
@@ -62,6 +68,15 @@ func CreateEngine(
 			err,
 			"An error occurred creating the engine's private grpc port spec object using number '%v' and protocol '%v'",
 			grpcPortNum,
+			consts.KurtosisServersTransportProtocol.String(),
+		)
+	}
+	privateRESTAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the engine's private rest api port spec object using number '%v' and protocol '%v'",
+			engine.RESTAPIPortAddr,
 			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
@@ -149,6 +164,7 @@ func CreateEngine(
 		namespaceName,
 		engineAttributesProvider,
 		privateGrpcPortSpec,
+		privateRESTAPIPortSpec,
 		enginePodLabels,
 		kubernetesManager,
 	)
@@ -165,6 +181,26 @@ func CreateEngine(
 		}
 	}()
 
+	engineIngress, err := createEngineIngress(
+		ctx,
+		namespaceName,
+		engineAttributesProvider,
+		privateRESTAPIPortSpec,
+		kubernetesManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ingress")
+	}
+	var shouldRemoveIngress = true
+	defer func() {
+		if shouldRemoveIngress {
+			if err := kubernetesManager.RemoveIngress(ctx, engineIngress); err != nil {
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes ingress '%v' that we created but an error was thrown:\n%v", engineIngress.Name, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes ingress with name '%v'!!!!!!!", engineIngress.Name)
+			}
+		}
+	}()
+
 	engineResources := &engineKubernetesResources{
 		clusterRole:        clusterRole,
 		clusterRoleBinding: clusterRoleBindings,
@@ -172,6 +208,7 @@ func CreateEngine(
 		serviceAccount:     serviceAccount,
 		service:            engineService,
 		pod:                enginePod,
+		ingress:            engineIngress,
 	}
 	engineObjsById, err := getEngineObjectsFromKubernetesResources(map[engine.EngineGUID]*engineKubernetesResources{
 		engineGuid: engineResources,
@@ -216,6 +253,7 @@ func CreateEngine(
 	shouldRemoveClusterRoleBinding = false
 	shouldRemovePod = false
 	shouldRemoveService = false
+	shouldRemoveIngress = false
 	return resultEngine, nil
 }
 
@@ -436,6 +474,7 @@ func createEnginePod(
 		serviceAccountName,
 		// Engine doesn't auto restart
 		apiv1.RestartPolicyNever,
+		noToleration,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
@@ -448,18 +487,21 @@ func createEngineService(
 	namespace string,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
 	privateGrpcPortSpec *port_spec.PortSpec,
+	privateRESTAPIPortSpec *port_spec.PortSpec,
 	podMatchLabels map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*apiv1.Service, error) {
 	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(
 		consts.KurtosisInternalContainerGrpcPortSpecId,
 		privateGrpcPortSpec,
-		consts.KurtosisInternalContainerGrpcProxyPortSpecId, nil)
+		consts.KurtosisInternalContainerRESTAPIPortSpecId,
+		privateRESTAPIPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred getting the engine service attributes using private grpc port spec '%+v'",
+			"An error occurred getting the engine service attributes using private grpc port spec '%+v' and private REST API port spec '%+v'",
 			privateGrpcPortSpec,
+			privateRESTAPIPortSpec,
 		)
 	}
 	engineServiceName := engineServiceAttributes.GetName().GetString()
@@ -468,7 +510,8 @@ func createEngineService(
 
 	// Define service ports. These hook up to ports on the containers running in the engine pod
 	servicePorts, err := shared_helpers.GetKubernetesServicePortsFromPrivatePortSpecs(map[string]*port_spec.PortSpec{
-		consts.KurtosisInternalContainerGrpcPortSpecId: privateGrpcPortSpec,
+		consts.KurtosisInternalContainerGrpcPortSpecId:    privateGrpcPortSpec,
+		consts.KurtosisInternalContainerRESTAPIPortSpecId: privateRESTAPIPortSpec,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the engine service's ports using the engine private port specs")
@@ -490,11 +533,83 @@ func createEngineService(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v'",
+			"An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v' and '%v'",
 			engineServiceName,
 			namespace,
 			privateGrpcPortSpec.GetNumber(),
+			privateRESTAPIPortSpec.GetNumber(),
 		)
 	}
 	return service, nil
+}
+
+func createEngineIngress(
+	ctx context.Context,
+	namespace string,
+	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
+	privateRESTAPIPortSpec *port_spec.PortSpec,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (*netv1.Ingress, error) {
+	engineIngressAttributes, err := engineAttributesProvider.ForEngineIngress()
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting the engine ingress attributes",
+		)
+	}
+	engineIngressName := engineIngressAttributes.GetName().GetString()
+	engineIngressLabels := shared_helpers.GetStringMapFromLabelMap(engineIngressAttributes.GetLabels())
+	engineIngressAnnotations := shared_helpers.GetStringMapFromAnnotationMap(engineIngressAttributes.GetAnnotations())
+
+	engineIngressRules, err := getEngineIngressRules(engineIngressName, privateRESTAPIPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the user service ingress rules for ingress service with name '%v'", engineIngressName)
+	}
+
+	createdIngress, err := kubernetesManager.CreateIngress(
+		ctx,
+		namespace,
+		engineIngressName,
+		engineIngressLabels,
+		engineIngressAnnotations,
+		engineIngressRules,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ingress with name '%s' in namespace '%s'", engineIngressName, namespace)
+	}
+
+	return createdIngress, nil
+}
+
+func getEngineIngressRules(
+	engineIngressName string,
+	privateRESTAPIPortSpec *port_spec.PortSpec,
+) ([]netv1.IngressRule, error) {
+	var ingressRules []netv1.IngressRule
+	ingressRule := netv1.IngressRule{
+		Host: engine.RESTAPIPortHostHeader,
+		IngressRuleValue: netv1.IngressRuleValue{
+			HTTP: &netv1.HTTPIngressRuleValue{
+				Paths: []netv1.HTTPIngressPath{
+					{
+						Path:     consts.IngressRulePathAllPaths,
+						PathType: &consts.IngressRulePathTypePrefix,
+						Backend: netv1.IngressBackend{
+							Service: &netv1.IngressServiceBackend{
+								Name: engineIngressName,
+								Port: netv1.ServiceBackendPort{
+									Name:   "",
+									Number: int32(privateRESTAPIPortSpec.GetNumber()),
+								},
+							},
+							Resource: nil,
+						},
+					},
+				},
+			},
+		},
+	}
+	ingressRules = append(ingressRules, ingressRule)
+
+	return ingressRules, nil
 }

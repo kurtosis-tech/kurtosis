@@ -1,5 +1,6 @@
 import { Flex, Heading, Spinner } from "@chakra-ui/react";
 import { GetPackagesResponse, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import { ReadPackageResponse } from "kurtosis-cloud-indexer-sdk/build/kurtosis_package_indexer_pb";
 import { isDefined, SavedPackagesProvider } from "kurtosis-ui-components";
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
 import { Result } from "true-myth";
@@ -8,6 +9,7 @@ import { loadSavedPackageNames, storeSavedPackages } from "./storage";
 
 export type CatalogState = {
   catalog: Result<GetPackagesResponse, string>;
+  getSinglePackage: (packageName: string) => Promise<Result<ReadPackageResponse, string>>;
   refreshCatalog: () => Promise<Result<GetPackagesResponse, string>>;
 };
 
@@ -42,6 +44,13 @@ export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
     });
   }, []);
 
+  const getSinglePackage = useCallback(
+    async (packageName: string) => {
+      return await packageIndexerClient.readPackage(packageName);
+    },
+    [packageIndexerClient],
+  );
+
   useEffect(() => {
     refreshCatalog();
   }, [refreshCatalog]);
@@ -58,7 +67,7 @@ export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
   }
 
   return (
-    <CatalogContext.Provider value={{ catalog, refreshCatalog }}>
+    <CatalogContext.Provider value={{ catalog, refreshCatalog, getSinglePackage }}>
       <SavedPackagesProvider savedPackages={savedPackages} togglePackageSaved={togglePackageSaved}>
         {children}
       </SavedPackagesProvider>

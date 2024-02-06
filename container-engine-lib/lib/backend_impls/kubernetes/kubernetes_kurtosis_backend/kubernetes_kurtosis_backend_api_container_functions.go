@@ -2,6 +2,7 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	kubernetes_manager_consts "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
@@ -42,6 +43,9 @@ const (
 
 var noWait *port_spec.Wait = nil
 
+// TODO add support for passing toleration to APIC
+var noTolerations []apiv1.Toleration = nil
+
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -70,6 +74,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (
 	*api_container.APIContainer,
 	error,
@@ -130,9 +135,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	// Get Service Attributes
 	apiContainerServiceAttributes, err := apiContainerAttributesProvider.ForApiContainerService(
 		consts.KurtosisInternalContainerGrpcPortSpecId,
-		privateGrpcPortSpec,
-		consts.KurtosisInternalContainerGrpcProxyPortSpecId,
-		nil)
+		privateGrpcPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -164,7 +167,9 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		servicePorts,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v'", apiContainerServiceName, enclaveNamespaceName, grpcPortInt32)
+		errMsg := fmt.Sprintf("An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v'", apiContainerServiceName, enclaveNamespaceName, grpcPortInt32)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	var shouldRemoveService = true
 	defer func() {
@@ -200,7 +205,9 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
 	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
+		errMsg := fmt.Sprintf("An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	apiContainerServiceAccountName := apiContainerServiceAccount.GetName()
 	shouldRemoveServiceAccount := true
@@ -257,8 +264,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerClusterRole, err := backend.kubernetesManager.CreateClusterRoles(ctx, clusterRoleName, clusterRolePolicyRules, clusterRoleLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role '%v' with policy rules '%+v' "+
+		errMsg := fmt.Sprintf("An error occurred creating cluster role '%v' with policy rules '%+v' "+
 			"and labels '%+v' in namespace '%v'", clusterRoleName, clusterRolePolicyRules, clusterRoleLabels, enclaveNamespaceName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	shouldRemoveClusterRole := true
 	defer func() {
@@ -298,8 +307,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerClusterRoleBinding, err := backend.kubernetesManager.CreateClusterRoleBindings(ctx, clusterRoleBindingName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, clusterRoleBindingsLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role bindings '%v' with subjects "+
+		errMsg := fmt.Sprintf("An error occurred creating cluster role bindings '%v' with subjects "+
 			"'%+v' and role ref '%+v' in namespace '%v'", clusterRoleBindingName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, enclaveNamespaceName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	shouldRemoveClusterRoleBinding := true
 	defer func() {
@@ -355,8 +366,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerRole, err := backend.kubernetesManager.CreateRole(ctx, roleName, enclaveNamespaceName, rolePolicyRules, roleLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating role '%v' with policy rules '%+v' "+
+		errMsg := fmt.Sprintf("An error occurred creating role '%v' with policy rules '%+v' "+
 			"and labels '%+v' in namespace '%v'", roleName, rolePolicyRules, roleLabels, enclaveNamespaceName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	shouldRemoveRole := true
 	defer func() {
@@ -396,8 +409,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerRoleBinding, err := backend.kubernetesManager.CreateRoleBindings(ctx, roleBindingName, enclaveNamespaceName, roleBindingsSubjects, roleBindingsRoleRef, roleBindingsLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating role bindings '%v' with subjects "+
+		errMsg := fmt.Sprintf("An error occurred creating role bindings '%v' with subjects "+
 			"'%+v' and role ref '%+v' in namespace '%v'", roleBindingName, roleBindingsSubjects, roleBindingsRoleRef, enclaveNamespaceName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	shouldRemoveRoleBinding := true
 	defer func() {
@@ -424,7 +439,9 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		volumeLabelsStrs[key.GetString()] = value.GetString()
 	}
 	if _, err = backend.kubernetesManager.CreatePersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveDataDirVolumeName, volumeLabelsStrs, enclaveDataDirVolumeSize); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume claim for enclave data dir volume for enclave '%s'", enclaveDataDirVolumeName)
+		errMsg := fmt.Sprintf("An error occurred creating the persistent volume claim for enclave data dir volume for enclave '%s'", enclaveDataDirVolumeName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	shouldDeleteVolumeClaim := true
 
@@ -464,9 +481,12 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		apiContainerVolumes,
 		apiContainerServiceAccountName,
 		apiContainerRestartPolicy,
+		noTolerations,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
+		errMsg := fmt.Sprintf("An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	var shouldRemovePod = true
 	defer func() {

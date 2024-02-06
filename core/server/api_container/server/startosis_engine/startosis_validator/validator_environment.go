@@ -4,17 +4,20 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/sirupsen/logrus"
 )
 
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
 type ValidatorEnvironment struct {
-	imagesToPull                  map[string]bool // "set" of images that need to be downloaded
+	imagesToPull                  map[string]*image_registry_spec.ImageRegistrySpec // "set" of images that need to be downloaded
 	imagesToBuild                 map[string]*image_build_spec.ImageBuildSpec
 	serviceNames                  map[service.ServiceName]ComponentExistence
 	artifactNames                 map[string]ComponentExistence
+	persistentKeys                map[service_directory.DirectoryPersistentKey]ComponentExistence
 	serviceNameToPrivatePortIDs   map[service.ServiceName][]string
 	availableCpuInMilliCores      compute_resources.CpuMilliCores
 	availableMemoryInMegaBytes    compute_resources.MemoryInMegaBytes
@@ -34,7 +37,7 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 		artifactNamesWithComponentExistence[artifactName] = ComponentExistedBeforePackageRun
 	}
 	return &ValidatorEnvironment{
-		imagesToPull:                  map[string]bool{},
+		imagesToPull:                  map[string]*image_registry_spec.ImageRegistrySpec{},
 		imagesToBuild:                 map[string]*image_build_spec.ImageBuildSpec{},
 		serviceNames:                  serviceNamesWithComponentExistence,
 		artifactNames:                 artifactNamesWithComponentExistence,
@@ -42,18 +45,24 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 		availableCpuInMilliCores:      availableCpuInMilliCores,
 		availableMemoryInMegaBytes:    availableMemoryInMegaBytes,
 		isResourceInformationComplete: isResourceInformationComplete,
-		minMemoryByServiceName:        map[service.ServiceName]compute_resources.MemoryInMegaBytes{},
-		minCPUByServiceName:           map[service.ServiceName]compute_resources.CpuMilliCores{},
-		imageDownloadMode:             imageDownloadMode,
+		// TODO account for idempotent runs on this and make it pre-load the cache whenever we create a NewValidatorEnvironment
+		persistentKeys:         map[service_directory.DirectoryPersistentKey]ComponentExistence{},
+		minMemoryByServiceName: map[service.ServiceName]compute_resources.MemoryInMegaBytes{},
+		minCPUByServiceName:    map[service.ServiceName]compute_resources.CpuMilliCores{},
+		imageDownloadMode:      imageDownloadMode,
 	}
 }
 
 func (environment *ValidatorEnvironment) AppendRequiredImagePull(containerImage string) {
-	environment.imagesToPull[containerImage] = true
+	environment.imagesToPull[containerImage] = nil
 }
 
 func (environment *ValidatorEnvironment) AppendRequiredImageBuild(containerImage string, imageBuildSpec *image_build_spec.ImageBuildSpec) {
 	environment.imagesToBuild[containerImage] = imageBuildSpec
+}
+
+func (environmemt *ValidatorEnvironment) AppendImageToPullWithAuth(containerImage string, registrySpec *image_registry_spec.ImageRegistrySpec) {
+	environmemt.imagesToPull[containerImage] = registrySpec
 }
 
 func (environment *ValidatorEnvironment) GetNumberOfContainerImagesToProcess() uint32 {
@@ -159,4 +168,16 @@ func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64,
 		return nil
 	}
 	return startosis_errors.NewValidationError("service '%v' requires '%v' megabytes of memory but based on our calculation we will only have '%v' megabytes available at the time we start the service", serviceNameForLogging, memoryToConsume, environment.availableMemoryInMegaBytes)
+}
+
+func (environment *ValidatorEnvironment) AddPersistentKey(persistentKey service_directory.DirectoryPersistentKey) {
+	environment.persistentKeys[persistentKey] = ComponentCreatedOrUpdatedDuringPackageRun
+}
+
+func (environment *ValidatorEnvironment) DoesPersistentKeyExist(persistentKey service_directory.DirectoryPersistentKey) ComponentExistence {
+	persistentKeyExistence, found := environment.persistentKeys[persistentKey]
+	if !found {
+		return ComponentNotFound
+	}
+	return persistentKeyExistence
 }

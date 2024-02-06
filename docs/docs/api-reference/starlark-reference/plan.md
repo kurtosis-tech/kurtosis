@@ -477,6 +477,13 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # OPTIONAL (Default: badouralix/curl-jq)
         image = "badouralix/curl-jq",
 
+        # Defines environment variables that should be set inside the Docker container running the task.
+        # OPTIONAL (Default: {})
+        env_vars = {
+            "VAR_1": "VALUE_1",
+            "VAR_2": "VALUE_2",
+        },
+
         # A mapping of path_on_task_where_contents_will_be_mounted -> files_artifact_id_to_mount
         # For more information about file artifacts, see below.
         # CAUTION: duplicate paths to files or directories to be mounted is not supported, and it will fail
@@ -622,7 +629,7 @@ The `upload_files` instruction packages the files specified by the [locator][loc
 ```python
 artifact_name = plan.upload_files(
     # The file to upload into a files artifact
-    # Must be a Kurtosis locator.
+    # Must be any GitHub URL without the '/blob/main' part.
     # MANDATORY
     src = "github.com/foo/bar/static/example.txt",
 

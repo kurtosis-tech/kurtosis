@@ -5,6 +5,7 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -17,6 +18,7 @@ func NewTraefikReverseProxyContainer() *traefikReverseProxyContainer {
 
 func (traefikContainer *traefikReverseProxyContainer) CreateAndStart(
 	ctx context.Context,
+	engineGuid engine.EngineGUID,
 	httpPort uint16,
 	dashboardPort uint16,
 	targetNetworkId string,
@@ -25,7 +27,7 @@ func (traefikContainer *traefikReverseProxyContainer) CreateAndStart(
 ) (string, map[string]string, func(), error) {
 	traefikContainerConfigProviderObj := createTraefikContainerConfigProvider(httpPort, dashboardPort, targetNetworkId)
 
-	reverseProxyAttrs, err := objAttrsProvider.ForReverseProxy()
+	reverseProxyAttrs, err := objAttrsProvider.ForReverseProxy(engineGuid)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the reverse proxy container attributes.")
 	}

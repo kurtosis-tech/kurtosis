@@ -1,4 +1,4 @@
-package startosis_upload_files_test
+package startosis_upload_file_test
 
 import (
 	"context"
@@ -11,33 +11,27 @@ import (
 	"github.com/stretchr/testify/require"
 	"os"
 	"path"
-	"testing"
 )
 
 const (
-	validPackageWithInputTestName = "upload-file-package"
-	validPackageWithInputRelPath  = "../../../starlark/upload-file-package"
+	packageWithUploadFileRelPath = "../../../starlark/upload-file/upload-file-package"
 
 	fileName = "large-file.bin"
 	fileSize = 25 * 1024 * 1024 // 25MB
 )
 
-func TestStartosisPackage_UploadFileAndCheckFileHash(t *testing.T) {
-	t.Parallel()
+func (suite *StartosisUploadFileTestSuite) TestStartosisPackage_UploadFileAndCheckFileHash() {
 	ctx := context.Background()
-
+	t := suite.T()
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, validPackageWithInputTestName)
-	require.NoError(t, err, "An error occurred creating an enclave")
-	defer func() { _ = destroyEnclaveFunc() }()
-
-	currentWorkingDirectory, err := os.Getwd()
-	require.Nil(t, err)
-	packageDirpath := path.Join(currentWorkingDirectory, validPackageWithInputRelPath)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
+	currentWorkingDirectory, err := os.Getwd()
+	require.Nil(t, err)
+	packageDirpath := path.Join(currentWorkingDirectory, packageWithUploadFileRelPath)
+
 	// we generate a file and place it into the package - as it is a big file, we don't want to check it in GitHub
-	fileRelPath := path.Join(validPackageWithInputRelPath, fileName)
+	fileRelPath := path.Join(packageWithUploadFileRelPath, fileName)
 	randomFilePath, deleteFile, err := test_helpers.GenerateRandomTempFile(fileSize, fileRelPath)
 	require.NoError(t, err)
 	defer deleteFile()
@@ -57,7 +51,9 @@ func TestStartosisPackage_UploadFileAndCheckFileHash(t *testing.T) {
 	// Note: the result extracted from the recipe inside Starlark contains a newline char at the end.
 	// We need to add it here manually to have matching hashes
 	params := fmt.Sprintf(`{"file_hash": "%s\n"}`, randomFileHexHash)
-	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(params)))
+	runConfig := starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(params))
+	isRemotePackage := false
+	runResult, err := suite.RunPackage(ctx, packageDirpath, runConfig, isRemotePackage)
 	require.NoError(t, err, "Unexpected error executing Starlark package")
 
 	// the package itself runs the assertion here. If the file hash computed withing the enclave with md5sum differs

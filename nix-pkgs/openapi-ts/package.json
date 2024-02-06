@@ -1,8 +1,0 @@
-{
-  "devDependencies": {
-    "openapi-typescript": "^7.0.0-next.5"
-  },
-  "dependencies": {
-    "openapi-fetch": "^0.8.2"
-  }
-}

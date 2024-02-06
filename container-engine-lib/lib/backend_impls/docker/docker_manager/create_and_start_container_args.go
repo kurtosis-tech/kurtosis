@@ -1,6 +1,8 @@
 package docker_manager
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"net"
 
 	"github.com/docker/go-connections/nat"
@@ -16,6 +18,7 @@ type CreateAndStartContainerArgs struct {
 	networkId                                string
 	staticIp                                 net.IP
 	addedCapabilities                        map[ContainerCapability]bool
+	securityOpts                             map[ContainerSecurityOpt]bool
 	networkMode                              DockerManagerNetworkMode
 	usedPorts                                map[nat.Port]PortPublishSpec
 	entrypointArgs                           []string
@@ -32,6 +35,8 @@ type CreateAndStartContainerArgs struct {
 	containerInitEnabled                     bool
 	restartPolicy                            RestartPolicy
 	imageDownloadMode                        image_download_mode.ImageDownloadMode
+	user                                     *service_user.ServiceUser
+	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -43,6 +48,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	networkId                                string
 	staticIp                                 net.IP
 	addedCapabilities                        map[ContainerCapability]bool
+	securityOpts                             map[ContainerSecurityOpt]bool
 	networkMode                              DockerManagerNetworkMode
 	usedPorts                                map[nat.Port]PortPublishSpec
 	entrypointArgs                           []string
@@ -59,6 +65,8 @@ type CreateAndStartContainerArgsBuilder struct {
 	containerInitEnabled                     bool
 	restartPolicy                            RestartPolicy
 	imageDownloadMode                        image_download_mode.ImageDownloadMode
+	user                                     *service_user.ServiceUser
+	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
 }
 
 /*
@@ -77,6 +85,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		networkId:                                networkId,
 		staticIp:                                 nil,
 		addedCapabilities:                        map[ContainerCapability]bool{},
+		securityOpts:                             map[ContainerSecurityOpt]bool{},
 		networkMode:                              DefaultNetworkMode,
 		usedPorts:                                map[nat.Port]PortPublishSpec{},
 		entrypointArgs:                           nil,
@@ -93,6 +102,8 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		containerInitEnabled:                     false,
 		restartPolicy:                            NoRestart,
 		imageDownloadMode:                        image_download_mode.ImageDownloadMode_Missing,
+		user:                                     nil,
+		imageRegistrySpec:                        nil,
 	}
 }
 
@@ -106,6 +117,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		networkId:                                builder.networkId,
 		staticIp:                                 builder.staticIp,
 		addedCapabilities:                        builder.addedCapabilities,
+		securityOpts:                             builder.securityOpts,
 		networkMode:                              builder.networkMode,
 		usedPorts:                                builder.usedPorts,
 		entrypointArgs:                           builder.entrypointArgs,
@@ -121,6 +133,8 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		containerInitEnabled:                     builder.containerInitEnabled,
 		restartPolicy:                            builder.restartPolicy,
 		imageDownloadMode:                        builder.imageDownloadMode,
+		user:                                     builder.user,
+		imageRegistrySpec:                        builder.imageRegistrySpec,
 	}
 }
 
@@ -147,6 +161,13 @@ func (builder *CreateAndStartContainerArgsBuilder) WithStaticIP(ip net.IP) *Crea
 // For more info, see the --cap-add section of https://docs.docker.com/engine/reference/run/
 func (builder *CreateAndStartContainerArgsBuilder) WithAddedCapabilities(capabilities map[ContainerCapability]bool) *CreateAndStartContainerArgsBuilder {
 	builder.addedCapabilities = capabilities
+	return builder
+}
+
+// A "set" of security options to add to the container, corresponding to the --security-opt Docker flag
+// For more info, see https://docs.docker.com/engine/reference/commandline/container_run/#security-opt
+func (builder *CreateAndStartContainerArgsBuilder) WithSecurityOpts(securityOpts map[ContainerSecurityOpt]bool) *CreateAndStartContainerArgsBuilder {
+	builder.securityOpts = securityOpts
 	return builder
 }
 
@@ -263,5 +284,15 @@ func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageAlways
 
 func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageIfMissing() *CreateAndStartContainerArgsBuilder {
 	builder.imageDownloadMode = image_download_mode.ImageDownloadMode_Missing
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithUser(user *service_user.ServiceUser) *CreateAndStartContainerArgsBuilder {
+	builder.user = user
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithImageRegistrySpec(imageRegistrySpec *image_registry_spec.ImageRegistrySpec) *CreateAndStartContainerArgsBuilder {
+	builder.imageRegistrySpec = imageRegistrySpec
 	return builder
 }

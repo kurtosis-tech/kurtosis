@@ -28,6 +28,10 @@ pub struct CreateEnclaveArgs {
     pub api_container_log_level: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(enumeration = "EnclaveMode", optional, tag = "4")]
     pub mode: ::core::option::Option<i32>,
+    /// Whether the APIC's container should run with the debug server to receive a remote debug connection
+    /// This is not an EnclaveMode because we will need to debug both current Modes (Test and Prod)
+    #[prost(bool, optional, tag = "5")]
+    pub should_apic_run_in_debug_mode: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

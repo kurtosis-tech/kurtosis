@@ -79,13 +79,19 @@ export const DictArgumentInput = ({ keyType, valueType, ...otherProps }: DictArg
               width={"222px"}
             />
           </KurtosisArgumentSubtypeFormControl>
-          <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"}>
+          <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"} variant={"outline"}>
             Delete
           </Button>
         </Flex>
       ))}
       <Flex>
-        <Button onClick={() => append({})} leftIcon={<FiPlus />} size={"sm"} colorScheme={"kurtosisGreen"}>
+        <Button
+          onClick={() => append({})}
+          leftIcon={<FiPlus />}
+          size={"sm"}
+          colorScheme={"kurtosisGreen"}
+          variant={"outline"}
+        >
           Add
         </Button>
       </Flex>

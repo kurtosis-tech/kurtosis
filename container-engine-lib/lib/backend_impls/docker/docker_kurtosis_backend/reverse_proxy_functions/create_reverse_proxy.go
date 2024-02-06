@@ -2,10 +2,12 @@ package reverse_proxy_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -18,6 +20,7 @@ const (
 // Create reverse proxy idempotently, if existing reverse proxy is found, then it is returned
 func CreateReverseProxy(
 	ctx context.Context,
+	engineGuid engine.EngineGUID,
 	reverseProxyContainer ReverseProxyContainer,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
@@ -46,7 +49,7 @@ func CreateReverseProxy(
 		logrus.Debugf("Something failed while trying to create the reverse proxy object using container with ID '%s'. Error was:\n%s", proxyDockerContainer.GetId(), getProxyObjErr.Error())
 		logrus.Debugf("Destroying the failing reverse proxy to create a new one...")
 		if destroyProxyContainerErr := destroyReverseProxyWithContainerId(ctx, dockerManager, proxyDockerContainer.GetId()); destroyProxyContainerErr != nil {
-			return nil, nil, stacktrace.Propagate(err, "an error occurred destroying the current reverse proxy that was failing to create a new one")
+			return nil, nil, stacktrace.Propagate(destroyProxyContainerErr, "an error occurred destroying the current reverse proxy that was failing to create a new one")
 		}
 		logrus.Debugf("... current reverse proxy successfully destroyed, starting a new one now.")
 	}
@@ -59,6 +62,7 @@ func CreateReverseProxy(
 
 	containerId, containerLabels, removeReverseProxyContainerFunc, err := reverseProxyContainer.CreateAndStart(
 		ctx,
+		engineGuid,
 		defaultReverseProxyHttpPortNum,
 		defaultReverseProxyDashboardPortNum,
 		targetNetworkId,

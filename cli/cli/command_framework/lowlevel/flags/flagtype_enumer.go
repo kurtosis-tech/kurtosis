@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _FlagTypeName = "stringuint32bool"
+const _FlagTypeName = "stringuint8uint32bool"
 
-var _FlagTypeIndex = [...]uint8{0, 6, 12, 16}
+var _FlagTypeIndex = [...]uint8{0, 6, 11, 17, 21}
 
-const _FlagTypeLowerName = "stringuint32bool"
+const _FlagTypeLowerName = "stringuint8uint32bool"
 
 func (i FlagType) String() string {
 	if i < 0 || i >= FlagType(len(_FlagTypeIndex)-1) {
@@ -25,25 +25,29 @@ func (i FlagType) String() string {
 func _FlagTypeNoOp() {
 	var x [1]struct{}
 	_ = x[FlagType_String-(0)]
-	_ = x[FlagType_Uint32-(1)]
-	_ = x[FlagType_Bool-(2)]
+	_ = x[FlagType_Uint8-(1)]
+	_ = x[FlagType_Uint32-(2)]
+	_ = x[FlagType_Bool-(3)]
 }
 
-var _FlagTypeValues = []FlagType{FlagType_String, FlagType_Uint32, FlagType_Bool}
+var _FlagTypeValues = []FlagType{FlagType_String, FlagType_Uint8, FlagType_Uint32, FlagType_Bool}
 
 var _FlagTypeNameToValueMap = map[string]FlagType{
 	_FlagTypeName[0:6]:        FlagType_String,
 	_FlagTypeLowerName[0:6]:   FlagType_String,
-	_FlagTypeName[6:12]:       FlagType_Uint32,
-	_FlagTypeLowerName[6:12]:  FlagType_Uint32,
-	_FlagTypeName[12:16]:      FlagType_Bool,
-	_FlagTypeLowerName[12:16]: FlagType_Bool,
+	_FlagTypeName[6:11]:       FlagType_Uint8,
+	_FlagTypeLowerName[6:11]:  FlagType_Uint8,
+	_FlagTypeName[11:17]:      FlagType_Uint32,
+	_FlagTypeLowerName[11:17]: FlagType_Uint32,
+	_FlagTypeName[17:21]:      FlagType_Bool,
+	_FlagTypeLowerName[17:21]: FlagType_Bool,
 }
 
 var _FlagTypeNames = []string{
 	_FlagTypeName[0:6],
-	_FlagTypeName[6:12],
-	_FlagTypeName[12:16],
+	_FlagTypeName[6:11],
+	_FlagTypeName[11:17],
+	_FlagTypeName[17:21],
 }
 
 // FlagTypeString retrieves an enum value from the enum constants string name.

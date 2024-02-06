@@ -1,6 +1,7 @@
 package builtin_argument
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
@@ -17,6 +18,25 @@ func NonEmptyString(value starlark.Value, argNameForLogging string) *startosis_e
 	}
 	if len(valueStr.GoString()) == 0 {
 		return startosis_errors.NewInterpretationError("Value for '%s' was an empty string. This is disallowed", argNameForLogging)
+	}
+	return nil
+}
+
+func StringListWithNotEmptyValues(value starlark.Value, argNameForLogging string) *startosis_errors.InterpretationError {
+	starlarkList, ok := value.(*starlark.List)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a starlark.List but was '%s'", argNameForLogging, reflect.TypeOf(value))
+	}
+	iterator := starlarkList.Iterate()
+	defer iterator.Done()
+	var itemValue starlark.Value
+	var index = 0
+	for iterator.Next(&itemValue) {
+		argumentDescription := fmt.Sprintf("element %d in argument '%s'", index, argNameForLogging)
+		if interpretationErr := NonEmptyString(itemValue, argumentDescription); interpretationErr != nil {
+			return interpretationErr
+		}
+		index++
 	}
 	return nil
 }

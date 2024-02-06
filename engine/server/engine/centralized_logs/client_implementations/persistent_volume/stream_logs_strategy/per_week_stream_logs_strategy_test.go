@@ -277,7 +277,9 @@ func TestIsWithinRetentionPeriod(t *testing.T) {
 }
 
 func getWeekFilepathStr(year, week int) string {
-	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
+	formattedWeekNum := fmt.Sprintf("%02d", week)
+	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 }
 
 func TestGetCompleteJsonLogString(t *testing.T) {
