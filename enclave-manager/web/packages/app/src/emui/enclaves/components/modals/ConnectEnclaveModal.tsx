@@ -32,7 +32,7 @@ export const ConnectEnclaveModal = ({ isOpen, onClose, enclave, instanceUUID }: 
           <FileDisplay value={commands} title={"CLI Commands"} filename={`${enclave.name}--connect.sh`} />
         </ModalBody>
         <ModalFooter>
-          The enclave inspect command shows you the ephemeral port to use to connect to your user service.
+          The enclave inspect command shows you the ephemeral ports to use to connect to your user services.
         </ModalFooter>
       </ModalContent>
     </Modal>
