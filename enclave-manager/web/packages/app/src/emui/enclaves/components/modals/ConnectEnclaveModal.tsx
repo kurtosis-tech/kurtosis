@@ -20,8 +20,8 @@ export type ConnectEnclaveModalProps = {
 export const ConnectEnclaveModal = ({ isOpen, onClose, enclave, instanceUUID }: ConnectEnclaveModalProps) => {
   const commands = `
   kurtosis cloud load ${instanceUUID}
-  kurtosis enclave ${enclave.name} connect
-  kurtosis enclave ${enclave.name} inspect`;
+  kurtosis enclave connect ${enclave.name}
+  kurtosis enclave inspect ${enclave.name}`;
   return (
     <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
