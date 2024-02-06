@@ -3,7 +3,6 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"strings"
 	"time"
 
@@ -38,7 +37,6 @@ type EnclavePool struct {
 	isCI                        bool
 	cloudUserID                 metrics_client.CloudUserID
 	cloudInstanceID             metrics_client.CloudInstanceID
-	gitAuth                     *http.BasicAuth
 }
 
 // CreateEnclavePool will do the following:
