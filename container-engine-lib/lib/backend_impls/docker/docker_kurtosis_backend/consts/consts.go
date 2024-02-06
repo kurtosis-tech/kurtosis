@@ -31,8 +31,6 @@ const (
 	//The Docker network name where all the containers in the engine and logs service context will be added
 	NameOfNetworkToStartEngineAndLogServiceContainersIn = "bridge"
 	HttpApplicationProtocol                             = "http"
-
-	GithubAuthStorageDirPath = "/kurtosis-data/github-auth"
 )
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
