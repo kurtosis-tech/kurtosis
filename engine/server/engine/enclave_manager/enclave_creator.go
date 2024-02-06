@@ -50,6 +50,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
 	kurtosisBackendType args.KurtosisBackendType,
+	shouldAPICRunInDebugMode bool,
 ) (*types.EnclaveInfo, error) {
 
 	uuid, err := uuid_generator.GenerateUUIDString()
@@ -111,6 +112,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 		isCI,
 		cloudUserID,
 		cloudInstanceID,
+		shouldAPICRunInDebugMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
@@ -197,6 +199,7 @@ func (creator *EnclaveCreator) launchApiContainer(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	shouldStartInDebugMode bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -218,7 +221,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 			didUserAcceptSendingMetrics,
 			isCI,
 			cloudUserID,
-			cloudInstanceID)
+			cloudInstanceID,
+      shouldStartInDebugMode)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveUuid, apiContainerImageVersionTag)
 		}
@@ -237,6 +241,7 @@ func (creator *EnclaveCreator) launchApiContainer(
 		isCI,
 		cloudUserID,
 		cloudInstanceID,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveUuid)

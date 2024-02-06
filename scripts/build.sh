@@ -31,14 +31,15 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "name_generator/scripts/build.sh"
     "api/scripts/build.sh"
     "metrics-library/scripts/build.sh"
-    "core/scripts/build.sh"
     "enclave-manager/scripts/build.sh"
     "engine/scripts/build.sh"
+    "core/scripts/build.sh"
 )
 
 # projects with debug mode enabled
 BUILD_DEBUG_SCRIPT_RELATIVE_FILEPATHS=(
     "engine/scripts/build.sh"
+    "core/scripts/build.sh"
 )
 
 DEFAULT_DEBUG_IMAGE="false"
@@ -49,7 +50,7 @@ DEFAULT_DEBUG_IMAGE="false"
 show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") debug_image..."
     echo ""
-    echo "  debug_image   Whether images should contains the debug server and run in debug mode, this will use the Dockerfile.debug image to build the container (only configured for the engine server so far)"
+    echo "  debug_image   Whether images should contains the debug server and run in debug mode, this will use the Dockerfile.debug image to build the container (configured for the engine server and the APIC server so far)"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }

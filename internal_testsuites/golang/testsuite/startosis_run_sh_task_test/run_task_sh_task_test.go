@@ -55,6 +55,12 @@ def run(plan):
   result2 = plan.run_sh(run="cat /temp/tech.txt | tr -d '\n'", files={"/temp": file_artifacts[0]})
   plan.verify(result2.output, "==", "kurtosis")
 `
+
+	runShWithEnvVar = `
+def run(plan):
+  result = plan.run_sh(run="mkdir -p kurtosis && echo $EXAMPLE",image="badouralix/curl-jq",env_vars={"EXAMPLE": "value"})
+  plan.verify(result.output, "==", "value\n")
+`
 )
 
 func TestStarlark_RunshTaskSimple(t *testing.T) {
@@ -99,5 +105,11 @@ func TestStarlark_RunshFileArtifactWithoutParentDir(t *testing.T) {
 func TestStarlark_RunShWithNewLineRemovalPipe(t *testing.T) {
 	ctx := context.Background()
 	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runShWithNewLineRemoval)
+	require.Nil(t, err)
+}
+
+func TestStarlark_RunShWithEnvVars(t *testing.T) {
+	ctx := context.Background()
+	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runShWithEnvVar)
 	require.Nil(t, err)
 }

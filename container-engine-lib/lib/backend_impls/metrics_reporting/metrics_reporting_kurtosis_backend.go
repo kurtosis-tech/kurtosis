@@ -202,6 +202,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	enclaveDataVolumeDirpath string,
 	ownIpEnvVar string,
 	customEnvVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (*api_container.APIContainer, error) {
 	if _, found := customEnvVars[ownIpEnvVar]; found {
 		return nil, stacktrace.NewError("Requested own IP environment variable '%v' conflicts with custom environment variable", ownIpEnvVar)
@@ -215,6 +216,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 		enclaveDataVolumeDirpath,
 		ownIpEnvVar,
 		customEnvVars,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
 		// WARNING: remember not to print 'customEnvVars' because it could end up creating a secret info leak

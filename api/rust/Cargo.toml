@@ -1,6 +1,6 @@
 [package]
 name = "kurtosis-sdk"
-version = "0.86.12"
+version = "0.86.14"
 license = "BUSL-1.1"
 description = "Rust SDK for Kurtosis"
 edition = "2021"

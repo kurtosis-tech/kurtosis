@@ -22,6 +22,8 @@ const (
 	fill = true
 
 	createTestEnclave = false
+
+	defaultApicDebugModeForEnclavesInThePool = false
 )
 
 type EnclavePool struct {
@@ -121,6 +123,7 @@ func (pool *EnclavePool) GetEnclave(
 	engineVersion string,
 	apiContainerVersion string,
 	apiContainerLogLevel logrus.Level,
+	shouldAPICRunInDebugMode bool,
 ) (*types.EnclaveInfo, error) {
 
 	logrus.Debugf(
@@ -138,6 +141,7 @@ func (pool *EnclavePool) GetEnclave(
 		engineVersion,
 		apiContainerVersion,
 		apiContainerLogLevel,
+		shouldAPICRunInDebugMode,
 	) {
 		logrus.Debugf("The requested enclave params are different from the enclave in the pool params")
 		return nil, nil
@@ -290,6 +294,7 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*types.Encla
 		pool.cloudUserID,
 		pool.cloudInstanceID,
 		args.KurtosisBackendType_Kubernetes, // enclave pool only available for k8s
+		defaultApicDebugModeForEnclavesInThePool,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -347,6 +352,7 @@ func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 	engineVersion string,
 	apiContainerVersion string,
 	apiContainerLogLevel logrus.Level,
+	shouldAPICRunInDebugMode bool,
 ) bool {
 
 	// if the api container version is empty string means that will be executed with the default version
@@ -356,7 +362,7 @@ func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 	}
 
 	if engineVersion == apiContainerVersion &&
-		apiContainerLogLevel == defaultApiContainerLogLevel {
+		apiContainerLogLevel == defaultApiContainerLogLevel && !shouldAPICRunInDebugMode {
 		return true
 	}
 

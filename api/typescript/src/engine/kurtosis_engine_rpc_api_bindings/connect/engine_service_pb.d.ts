@@ -177,6 +177,14 @@ export declare class CreateEnclaveArgs extends Message<CreateEnclaveArgs> {
    */
   mode?: EnclaveMode;
 
+  /**
+   * Whether the APIC's container should run with the debug server to receive a remote debug connection
+   * This is not an EnclaveMode because we will need to debug both current Modes (Test and Prod)
+   *
+   * @generated from field: optional bool should_apic_run_in_debug_mode = 5;
+   */
+  shouldApicRunInDebugMode?: boolean;
+
   constructor(data?: PartialMessage<CreateEnclaveArgs>);
 
   static readonly runtime: typeof proto3;

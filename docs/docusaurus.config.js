@@ -88,11 +88,6 @@ const config = {
 						activeBasePath: '/sdk'
 					},
 					{
-						href: 'https://web3.kurtosis.com',
-						position: 'left',
-						label: 'Kurtosis for Web3',
-					},
-					{
 						href: 'https://www.kurtosis.com/release-notes',
 						position: 'left',
 						label: 'Release Notes',

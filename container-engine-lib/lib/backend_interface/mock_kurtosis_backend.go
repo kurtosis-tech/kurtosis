@@ -148,25 +148,29 @@ func (_c *MockKurtosisBackend_CopyFilesFromUserService_Call) RunAndReturn(run fu
 	return _c
 }
 
-// CreateAPIContainer provides a mock function with given fields: ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars
-func (_m *MockKurtosisBackend) CreateAPIContainer(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string) (*api_container.APIContainer, error) {
-	ret := _m.Called(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
+// CreateAPIContainer provides a mock function with given fields: ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars, shouldStartInDebugMode
+func (_m *MockKurtosisBackend) CreateAPIContainer(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string, shouldStartInDebugMode bool) (*api_container.APIContainer, error) {
+	ret := _m.Called(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars, shouldStartInDebugMode)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateAPIContainer")
+	}
 
 	var r0 *api_container.APIContainer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string) (*api_container.APIContainer, error)); ok {
-		return rf(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
+	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string, bool) (*api_container.APIContainer, error)); ok {
+		return rf(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars, shouldStartInDebugMode)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string) *api_container.APIContainer); ok {
-		r0 = rf(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
+	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string, bool) *api_container.APIContainer); ok {
+		r0 = rf(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars, shouldStartInDebugMode)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*api_container.APIContainer)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string) error); ok {
-		r1 = rf(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
+	if rf, ok := ret.Get(1).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string, bool) error); ok {
+		r1 = rf(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars, shouldStartInDebugMode)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -187,13 +191,14 @@ type MockKurtosisBackend_CreateAPIContainer_Call struct {
 //   - enclaveDataVolumeDirpath string
 //   - ownIpAddressEnvVar string
 //   - customEnvVars map[string]string
-func (_e *MockKurtosisBackend_Expecter) CreateAPIContainer(ctx interface{}, image interface{}, enclaveUuid interface{}, grpcPortNum interface{}, enclaveDataVolumeDirpath interface{}, ownIpAddressEnvVar interface{}, customEnvVars interface{}) *MockKurtosisBackend_CreateAPIContainer_Call {
-	return &MockKurtosisBackend_CreateAPIContainer_Call{Call: _e.mock.On("CreateAPIContainer", ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)}
+//   - shouldStartInDebugMode bool
+func (_e *MockKurtosisBackend_Expecter) CreateAPIContainer(ctx interface{}, image interface{}, enclaveUuid interface{}, grpcPortNum interface{}, enclaveDataVolumeDirpath interface{}, ownIpAddressEnvVar interface{}, customEnvVars interface{}, shouldStartInDebugMode interface{}) *MockKurtosisBackend_CreateAPIContainer_Call {
+	return &MockKurtosisBackend_CreateAPIContainer_Call{Call: _e.mock.On("CreateAPIContainer", ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars, shouldStartInDebugMode)}
 }
 
-func (_c *MockKurtosisBackend_CreateAPIContainer_Call) Run(run func(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string)) *MockKurtosisBackend_CreateAPIContainer_Call {
+func (_c *MockKurtosisBackend_CreateAPIContainer_Call) Run(run func(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string, shouldStartInDebugMode bool)) *MockKurtosisBackend_CreateAPIContainer_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(enclave.EnclaveUUID), args[3].(uint16), args[4].(string), args[5].(string), args[6].(map[string]string))
+		run(args[0].(context.Context), args[1].(string), args[2].(enclave.EnclaveUUID), args[3].(uint16), args[4].(string), args[5].(string), args[6].(map[string]string), args[7].(bool))
 	})
 	return _c
 }
@@ -203,7 +208,7 @@ func (_c *MockKurtosisBackend_CreateAPIContainer_Call) Return(_a0 *api_container
 	return _c
 }
 
-func (_c *MockKurtosisBackend_CreateAPIContainer_Call) RunAndReturn(run func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string) (*api_container.APIContainer, error)) *MockKurtosisBackend_CreateAPIContainer_Call {
+func (_c *MockKurtosisBackend_CreateAPIContainer_Call) RunAndReturn(run func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string, bool) (*api_container.APIContainer, error)) *MockKurtosisBackend_CreateAPIContainer_Call {
 	_c.Call.Return(run)
 	return _c
 }

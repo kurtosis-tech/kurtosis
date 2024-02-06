@@ -141,6 +141,7 @@ type KurtosisBackend interface {
 		// Must not conflict with the custom environment variables
 		ownIpAddressEnvVar string,
 		customEnvVars map[string]string,
+		shouldStartInDebugMode bool,
 	) (
 		*api_container.APIContainer,
 		error,
