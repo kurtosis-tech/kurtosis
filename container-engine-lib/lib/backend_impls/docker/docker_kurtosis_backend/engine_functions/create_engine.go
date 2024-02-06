@@ -32,7 +32,6 @@ const (
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 	logsStorageDirPath                          = "/var/log/kurtosis/"
-	githubAuthStorgaeDirPath                    = "/kurtosis-data/github-auth/"
 )
 
 func CreateEngine(
@@ -263,7 +262,7 @@ func CreateEngine(
 		}
 	}()
 	githubAuthStorageCreator := github_auth_storage_creator.NewGitHubAuthStorageCreator(gitAuthToken)
-	err = githubAuthStorageCreator.CreateGitHubAuthStorage(ctx, targetNetworkId, githubAuthStorageVolNameStr, githubAuthStorgaeDirPath, dockerManager)
+	err = githubAuthStorageCreator.CreateGitHubAuthStorage(ctx, targetNetworkId, githubAuthStorageVolNameStr, consts.GitHubAuthStorageDirPath, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating GitHub auth storage.")
 	}
@@ -275,7 +274,7 @@ func CreateEngine(
 
 	volumeMounts := map[string]string{
 		logsStorageVolNameStr:       logsStorageDirPath,
-		githubAuthStorageVolNameStr: githubAuthStorgaeDirPath,
+		githubAuthStorageVolNameStr: consts.GitHubAuthStorageDirPath,
 	}
 
 	if serverArgs.OnBastionHost {

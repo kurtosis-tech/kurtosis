@@ -166,7 +166,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 
 	volumeMounts := map[string]string{
 		enclaveDataVolumeName:    enclaveDataVolumeDirpath,
-		githubAuthStorageVolName: consts.GithubAuthStorageDirPath,
+		githubAuthStorageVolName: consts.GitHubAuthStorageDirPath,
 	}
 
 	labelStrs := map[string]string{}
