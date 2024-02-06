@@ -1,4 +1,4 @@
-# Enclave Manager UI (EMUI)
+# Enclave Manager UI (EM UI)
 
 This codebase produces the enclave manager UI (ie `kurtosis web`). The `src` directory contains:
 
@@ -22,7 +22,7 @@ Removes the build output if present.
 ### `yarn start`
 
 Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Open [http://localhost:4000](http://localhost:4000) to view it in the browser.
 
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
@@ -41,6 +41,31 @@ The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+
+### `yarn start:prod`
+
+Serve your local build on port 4000.
+
+### `yarn prettier`
+
+Runs `prettier --check` to check that the code matches the formatting that [`prettier`](https://prettier.io/) would apply.
+
+### `yarn prettier:fix`
+
+Applies any formatting changes prettier wants to apply to this application. For ease of use you can use IDE integrations
+to auto apply prettier changes on file save, see instructions:
+
+- [Here](https://plugins.jetbrains.com/plugin/10456-prettier) for Intellij
+- [Here](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for vscode
+
+### `yarn cypress:ete`
+
+Run the cypress ETE tests
+
+### `yarn cypress:open`
+
+Open the cypress console for debugging/developing new cypress tests. The cypress test suite runs against the locally
+served EMUI from port 9711.
 
 ### `yarn eject`
 

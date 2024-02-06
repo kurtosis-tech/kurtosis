@@ -2,9 +2,13 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
 	"testing"
 	"time"
 )
@@ -52,11 +56,14 @@ func TestServiceConfigMarshallers(t *testing.T) {
 	require.Equal(t, originalServiceConfig.GetMinCPUAllocationMillicpus(), newServiceConfig.GetMinCPUAllocationMillicpus())
 	require.Equal(t, originalServiceConfig.GetMinMemoryAllocationMegabytes(), newServiceConfig.GetMinMemoryAllocationMegabytes())
 	require.Equal(t, originalServiceConfig.GetLabels(), newServiceConfig.GetLabels())
+	require.Equal(t, originalServiceConfig.GetImageBuildSpec(), newServiceConfig.GetImageBuildSpec())
 }
 
 func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 	serviceConfig, err := CreateServiceConfig(
 		imageName,
+		testImageBuildSpec(),
+		testImageRegistrySpec(),
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},
@@ -73,15 +80,17 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 			"test-label-key":        "test-label-value",
 			"test-second-label-key": "test-second-label-value",
 		},
+		testServiceUser(),
+		testToleration(),
 	)
 	require.NoError(t, err)
 	return serviceConfig
 }
 
 func testPersistentDirectory() *service_directory.PersistentDirectories {
-	persistentDirectoriesMap := map[string]service_directory.DirectoryPersistentKey{
-		"dirpath1": service_directory.DirectoryPersistentKey("dirpath1_persistent_directory_key"),
-		"dirpath2": service_directory.DirectoryPersistentKey("dirpath2_persistent_directory_key"),
+	persistentDirectoriesMap := map[string]service_directory.PersistentDirectory{
+		"dirpath1": {PersistentKey: service_directory.DirectoryPersistentKey("dirpath1_persistent_directory_key"), Size: service_directory.DirectoryPersistentSize(int64(0))},
+		"dirpath2": {PersistentKey: service_directory.DirectoryPersistentKey("dirpath2_persistent_directory_key"), Size: service_directory.DirectoryPersistentSize(int64(0))},
 	}
 
 	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
@@ -94,9 +103,9 @@ func testFilesArtifactExpansion() *service_directory.FilesArtifactsExpansion {
 			"ENV_VAR1": "env_var1_value",
 			"ENV_VAR2": "env_var2_value",
 		},
-		ServiceDirpathsToArtifactIdentifiers: map[string]string{
-			"/pahth/number1": "first_identifier",
-			"/path/number2":  "second_idenfifier",
+		ServiceDirpathsToArtifactIdentifiers: map[string][]string{
+			"/path/number1": {"first_identifier"},
+			"/path/number2": {"second_identifier"},
 		},
 		ExpanderDirpathsToServiceDirpaths: map[string]string{
 			"/expander/dir1": "/service/dir1",
@@ -162,4 +171,32 @@ func testEnvVars() map[string]string {
 		"HTTP_PORT":  "80",
 		"HTTPS_PORT": "443",
 	}
+}
+
+func testImageBuildSpec() *image_build_spec.ImageBuildSpec {
+	return image_build_spec.NewImageBuildSpec(
+		"test-image",
+		"path",
+		"")
+}
+
+func testImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
+	return image_registry_spec.NewImageRegistrySpec("test-image", "test-userename", "test-password", "test-registry.io")
+}
+
+func testServiceUser() *service_user.ServiceUser {
+	su := service_user.NewServiceUser(100)
+	su.SetGID(100)
+	return su
+}
+
+func testToleration() []v1.Toleration {
+	tolerationSeconds := int64(6)
+	return []v1.Toleration{{
+		Key:               "testKey",
+		Operator:          v1.TolerationOpEqual,
+		Value:             "testValue",
+		Effect:            v1.TaintEffectNoExecute,
+		TolerationSeconds: &tolerationSeconds,
+	}}
 }

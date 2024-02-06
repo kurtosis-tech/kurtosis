@@ -32,7 +32,7 @@ Creates a new Kurtosis enclave using the given parameters. The enclave will be c
 * `enclaveContext`: An [EnclaveContext][enclavecontext] object representing the new enclave.
 
 ### `createProductionEnclave(String enclaveName) -> [EnclaveContext][enclavecontext] enclaveContext`
-Same as above, but creates an enclave in production mode (services will restart upon failure)
+Same as above, but creates an enclave in production mode (services will restart if they die)
 
 
 ### `getEnclaveContext(String enclaveIdentifier) -> [EnclaveContext][enclavecontext] enclaveContext`
@@ -481,8 +481,6 @@ This is a configuration object for Starlark Runs:
 * `DryRun`: When set to true, the Kurtosis instructions are not executed. Configurable using `WithDryRun`; defaults to false.
 * `Parallelism`: The level of parallelism for instructions that support parallelism. Configurable using `WithParallelism`; defaults to 4
 * `ExperimentalFeatureFlags`: List of experimental features to turn on for this run. Leave empty to leave any experimental feature disabled. Configurable using `WithExperimentalFeatureFlags`; defaults to empty
-* `CloudInstanceId`: The `CloudInstanceId` if running on Cloud Kurtosis. Configurable using `WithCloudInstanceID`; defaults to "".
-* `CloudUserId`: The `CloudUserId` if running on Cloud Kurtosis. Configurable using `WithCloudUserId`; defaults to "".
 
 ServiceContext
 --------------

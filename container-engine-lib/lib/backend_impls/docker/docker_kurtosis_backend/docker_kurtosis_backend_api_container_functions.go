@@ -2,9 +2,11 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"net"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -29,9 +31,13 @@ const (
 
 	maxWaitForApiContainerAvailabilityRetries         = 10
 	timeBetweenWaitForApiContainerAvailabilityRetries = 1 * time.Second
+
+	apicDebugServerPort = 50103 // in ClI this is 50101 and in engine is 50102
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
+
+var emptyRegistrySpecAsPublicImage *image_registry_spec.ImageRegistrySpec = nil
 
 func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
@@ -42,7 +48,10 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (*api_container.APIContainer, error) {
+	logrus.Debugf("Creating the APIC for enclave '%v'", enclaveUuid)
+
 	// Verify no API container already exists in the enclave
 	apiContainersInEnclaveFilters := &api_container.APIContainerFilters{
 		EnclaveIDs: map[enclave.EnclaveUUID]bool{
@@ -71,7 +80,19 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 
 	enclaveLogsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector for enclave '%v; This is a bug in Kurtosis'", enclaveUuid)
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector for enclave '%v'; This is a bug in Kurtosis", enclaveUuid)
+	}
+
+	reverseProxy, err := backend.GetReverseProxy(ctx)
+	if reverseProxy == nil {
+		return nil, stacktrace.Propagate(err, "The reverse proxy is not running, This is a bug in Kurtosis")
+	}
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the reverse proxy, This is a bug in Kurtosis")
+	}
+	reverseProxyEnclaveNetworkIpAddress, found := reverseProxy.GetEnclaveNetworksIpAddress()[enclaveNetwork.GetId()]
+	if !found {
+		return nil, stacktrace.NewError("An error occurred while getting the reverse proxy enclave network IP address for enclave '%v', This is a bug in Kurtosis", enclaveUuid)
 	}
 
 	networkCidr := enclaveNetwork.GetIpAndMask()
@@ -79,6 +100,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		networkCidr.IP.String():                                    true,
 		enclaveNetwork.GetGatewayIp():                              true,
 		enclaveLogsCollector.GetEnclaveNetworkIpAddress().String(): true,
+		reverseProxyEnclaveNetworkIpAddress.String():               true,
 	}
 
 	ipAddr, err := network_helpers.GetFreeIpAddrFromSubnet(alreadyTakenIps, networkCidr)
@@ -108,7 +130,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 			err,
 			"An error occurred creating the API container's private grpc port spec object using number '%v' and protocol '%v'",
 			grpcPortNum,
-			consts.EngineTransportProtocol.String(),
+			apiContainerTransportProtocol,
 		)
 	}
 
@@ -130,8 +152,33 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
+
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort: docker_manager.NewAutomaticPublishingSpec(),
+	}
+
+	if shouldStartInDebugMode {
+		debugServerPortSpec, err := port_spec.NewPortSpec(
+			uint16(apicDebugServerPort),
+			apiContainerTransportProtocol,
+			consts.HttpApplicationProtocol,
+			defaultWait,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred creating the API container's debug server port spec object using number '%v' and protocol '%v'",
+				apicDebugServerPort,
+				apiContainerTransportProtocol,
+			)
+		}
+
+		debugServerDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(debugServerPortSpec)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred transforming the debug server port spec to a Docker port")
+		}
+
+		usedPorts[debugServerDockerPort] = docker_manager.NewManualPublishingSpec(uint16(apicDebugServerPort))
 	}
 
 	bindMounts := map[string]string{
@@ -149,7 +196,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 	// TODO: configure the APIContainer to send the logs to the Fluentbit logs collector server
 
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
 		apiContainerAttrs.GetName().GetString(),
 		enclaveNetwork.GetId(),
@@ -165,14 +212,31 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 	).WithLabels(
 		labelStrs,
-	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
+	).WithRestartPolicy(docker_manager.RestartOnFailure)
 
-	if _, err = backend.dockerManager.FetchImageIfMissing(ctx, image); err != nil {
-		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
+	if shouldStartInDebugMode {
+		// Adding systrace capabilities when starting the debug server in the engine's container
+		capabilities := map[docker_manager.ContainerCapability]bool{
+			docker_manager.SysPtrace: true,
+		}
+		createAndStartArgsBuilder.WithAddedCapabilities(capabilities)
+
+		// Setting security for debugging the engine's container
+		securityOpts := map[docker_manager.ContainerSecurityOpt]bool{
+			docker_manager.AppArmorUnconfined: true,
+		}
+		createAndStartArgsBuilder.WithSecurityOpts(securityOpts)
+	}
+
+	createAndStartArgs := createAndStartArgsBuilder.Build()
+
+	if _, err = backend.dockerManager.FetchImageIfMissing(ctx, image, emptyRegistrySpecAsPublicImage); err != nil {
+		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version. Error:\n%v", image, err)
 	}
 
 	containerId, hostMachinePortBindings, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
+		logrus.Debugf("Error occurred starting the API container. Err:\n%v", err)
 		return nil, stacktrace.Propagate(err, "An error occurred starting the API container")
 	}
 	shouldKillContainer := true
@@ -203,6 +267,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
 	}
 
+	logrus.Debugf("Checking for the APIC availability in enclave '%v'...", enclaveUuid)
 	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		ctx,
 		backend.dockerManager,
@@ -213,6 +278,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
 	}
+	logrus.Debugf("...APIC is available in enclave '%v'", enclaveUuid)
 
 	bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
 	if err != nil {
@@ -223,6 +289,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an API container object from container with ID '%v'", containerId)
 	}
+
+	logrus.Debugf("APIC for enclave '%v' successfully created", enclaveUuid)
 
 	shouldKillContainer = false
 	return result, nil

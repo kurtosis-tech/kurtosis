@@ -55,6 +55,7 @@ dependency_http_port = dependency.ports["http"]
 plan.add_service(
     name = "dependant",
     config = ServiceConfig(
+        image=ImageBuildSpec(image_name="dependant", build_context_dir="./"),
         env_vars = {
             "DEPENDENCY_URL": "http://{}:{}".format(dependency.ip_address, dependency_http_port.number),
         },
@@ -454,7 +455,7 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
 
-The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the Python script, alongside with future-reference to the file artifact names that were generated.
+The instruction returns a `struct` with [future references][future-references-reference] to the output and exit code of the Python script, alongside with future-reference to the file artifact names that were generated.
 * `result.output` is a future reference to the output of the command
 * `result.code` is a future reference to the exit code
 * `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
@@ -475,6 +476,13 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # Image the command will be run on
         # OPTIONAL (Default: badouralix/curl-jq)
         image = "badouralix/curl-jq",
+
+        # Defines environment variables that should be set inside the Docker container running the task.
+        # OPTIONAL (Default: {})
+        env_vars = {
+            "VAR_1": "VALUE_1",
+            "VAR_2": "VALUE_2",
+        },
 
         # A mapping of path_on_task_where_contents_will_be_mounted -> files_artifact_id_to_mount
         # For more information about file artifacts, see below.
@@ -522,7 +530,7 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
 
-The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
+The instruction returns a `struct` with [future references][future-references-reference] to the output and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
    * `result.output` is a future reference to the output of the command
    * `result.code` is a future reference to the exit code
    * `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
@@ -543,7 +551,7 @@ The instruction returns a `struct` with [future references][future-references-re
     plan.print(result.files_artifacts) # prints ["blue_moon", "green_planet"]
     
     # blue_moon is name of the file artifact that contains task directory
-    # green_planet is the name of the file artifact that conatins test.txt file
+    # green_planet is the name of the file artifact that contains test.txt file
 
     service_one = plan.add_service(
         ..., 
@@ -621,7 +629,7 @@ The `upload_files` instruction packages the files specified by the [locator][loc
 ```python
 artifact_name = plan.upload_files(
     # The file to upload into a files artifact
-    # Must be a Kurtosis locator.
+    # Must be any GitHub URL without the '/blob/main' part.
     # MANDATORY
     src = "github.com/foo/bar/static/example.txt",
 

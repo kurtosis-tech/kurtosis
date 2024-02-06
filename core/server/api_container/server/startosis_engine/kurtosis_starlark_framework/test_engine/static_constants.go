@@ -26,7 +26,17 @@ var (
 	testModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
 	testModuleRelativeLocator = "./helpers.star"
 
-	testContainerImageName = "kurtosistech/example-datastore-server"
+	testContainerImageName       = "kurtosistech/example-datastore-server"
+	testBuildContextDir          = "./"
+	testTargetStage              = "builder"
+	testBuildContextLocator      = testModulePackageId
+	testContainerImageLocator    = "github.com/kurtosistech/test-package/Dockerfile"
+	testOnDiskContextDirPath     = "kurtosis-data/test-package"
+	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"
+
+	testRegistryAddr     = "http://registry.test.io"
+	testRegistryUsername = "kurtosis"
+	testRegistryPassword = "password"
 
 	testPrivatePortId              = "grpc"
 	testPrivatePortNumber          = uint16(1323)
@@ -42,12 +52,14 @@ var (
 	testPublicPortProtocol        = port_spec.TransportProtocol_TCP
 	testPublicApplicationProtocol = "https"
 
-	testFilesArtifactPath1      = "path/to/file/1"
-	testFilesArtifactName1      = "file_1"
-	testFilesArtifactPath2      = "path/to/file/2"
-	testFilesArtifactName2      = "file_2"
-	testPersistentDirectoryPath = "path/to/persistent/dir"
-	testPersistentDirectoryKey  = "persistent-dir-test"
+	testFilesArtifactPath1             = "path/to/file/1"
+	testFilesArtifactName1             = "file_1"
+	testFilesArtifactPath2             = "path/to/file/2"
+	testFilesArtifactName2             = "file_2"
+	testPersistentDirectoryPath        = "path/to/persistent/dir"
+	testPersistentDirectoryKey         = "persistent-dir-test"
+	testPersistentDirectorySize        = int64(30)
+	testPersistentDirectorySizeInBytes = testPersistentDirectorySize * 1024 * 1024
 
 	testEntryPointSlice = []string{
 		"127.0.0.0",
@@ -105,4 +117,8 @@ var (
 		testServiceConfigLabelsKey1: testServiceConfigLabelsValue1,
 		testServiceConfigLabelsKey2: testServiceConfigLabelsValue2,
 	}
+
+	testTolerationKey     = "test-key"
+	testTolerationValue   = "test-value"
+	testTolerationSeconds = int64(64)
 )

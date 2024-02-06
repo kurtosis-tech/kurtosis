@@ -18,11 +18,13 @@ import * as kurtosisLogLineOperator from "./kurtosis_context/log_line_operator";
 export function newCreateEnclaveArgs(
         enclaveName: string,
         apiContainerImageVersionTag: string,
-        apiContainerLogLevel: string): CreateEnclaveArgs {
+        apiContainerLogLevel: string,
+        shouldApicRunInDebugMode: boolean): CreateEnclaveArgs {
     const result: CreateEnclaveArgs = new CreateEnclaveArgs();
     result.setEnclaveName(enclaveName);
     result.setApiContainerVersionTag(apiContainerImageVersionTag);
     result.setApiContainerLogLevel(apiContainerLogLevel);
+    result.setShouldApicRunInDebugMode(shouldApicRunInDebugMode);
 
     return result;
 }

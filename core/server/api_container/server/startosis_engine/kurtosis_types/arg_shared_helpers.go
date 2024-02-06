@@ -60,6 +60,31 @@ func SafeCastToMapStringString(expectedValue starlark.Value, argNameForLogging s
 }
 
 // TODO: make private once arg_parser don't need it anymore
+func SafeCastToMapStringStringSlice(expectedValue starlark.Value, argNameForLogging string) (map[string][]string, *startosis_errors.InterpretationError) {
+	dictValue, ok := expectedValue.(*starlark.Dict)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError("'%s' argument is expected to be a dict. Got %s", argNameForLogging, reflect.TypeOf(expectedValue))
+	}
+	castValue := make(map[string][]string)
+	for _, key := range dictValue.Keys() {
+		stringKey, castErr := SafeCastToString(key, fmt.Sprintf("%v.key:%v", argNameForLogging, key))
+		if castErr != nil {
+			return nil, castErr
+		}
+		value, found, dictErr := dictValue.Get(key)
+		if !found || dictErr != nil {
+			return nil, startosis_errors.NewInterpretationError("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", key.String(), argNameForLogging)
+		}
+		stringSliceValue, castErr := SafeCastToStringSlice(value, fmt.Sprintf("%v[\"%v\"]", argNameForLogging, stringKey))
+		if castErr != nil {
+			return nil, castErr
+		}
+		castValue[stringKey] = stringSliceValue
+	}
+	return castValue, nil
+}
+
+// TODO: make private once arg_parser don't need it anymore
 func SafeCastToString(expectedValueString starlark.Value, argNameForLogging string) (string, *startosis_errors.InterpretationError) {
 	castValue, ok := expectedValueString.(starlark.String)
 	if !ok {

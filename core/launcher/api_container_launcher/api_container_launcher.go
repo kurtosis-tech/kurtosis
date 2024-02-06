@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -41,6 +42,10 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	isProductionEnclave bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
+	shouldStartInDebugMode bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -56,6 +61,10 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		isProductionEnclave,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		isCI,
+		cloudUserID,
+		cloudInstanceID,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -74,6 +83,10 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	isProductionEnclave bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
+	shouldStartInDebugMode bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -91,6 +104,9 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		isProductionEnclave,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
+		isCI,
+		cloudUserID,
+		cloudInstanceID,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
@@ -116,6 +132,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		enclaveDataVolumeDirpath,
 		ownIpAddressEnvvar,
 		envVars,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")

@@ -1,3 +1,6 @@
+Ignore generated code:
+src/client/packageIndexer/api/*.ts
+
 # Ignore artifacts:
 build
 coverage

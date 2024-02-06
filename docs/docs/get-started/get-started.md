@@ -16,7 +16,7 @@ To quickly see what Kurtosis feels like, check out the example snippets below:
 
 ### Local Deploy on Docker
 
-```bash
+```console
 kurtosis run github.com/kurtosis-tech/basic-service-package
 ```
 
@@ -34,7 +34,7 @@ kurtosis run github.com/kurtosis-tech/basic-service-package
 
 ### Local deploy with feature flag and different numbers of each service
 
-```bash
+```console
 kurtosis run github.com/kurtosis-tech/basic-service-package \
   '{"service_a_count": 2, 
     "service_b_count": 2, 
@@ -56,10 +56,10 @@ kurtosis run github.com/kurtosis-tech/basic-service-package \
 
 ### Remote deploy on Kubernetes
 
-```bash
+```console
 kurtosis cluster set remote-kubernetes; kurtosis gateway > /dev/null 2>&1 &
 ```
-```bash
+```console
 kurtosis run github.com/kurtosis-tech/basic-service-package \
   '{"service_a_count": 2, 
     "service_b_count": 2, 

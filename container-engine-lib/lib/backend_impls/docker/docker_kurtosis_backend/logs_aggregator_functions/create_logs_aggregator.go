@@ -31,12 +31,22 @@ func CreateLogsAggregator(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator container.")
 	}
 	if found {
-		logrus.Warnf("Found existing logs aggregator; cannot start a new one.")
-		logsAggregatorObj, _, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
+		logrus.Debugf("Found existing logs aggregator; cannot start a new one.")
+		logsAggregatorObj, containerId, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred getting existing logs aggregator.")
 		}
-		return logsAggregatorObj, nil, nil
+		removeCtx := context.Background()
+		removeLogsAggregatorContainerFunc := func() {
+			if err := dockerManager.RemoveContainer(removeCtx, containerId); err != nil {
+				logrus.Errorf(
+					"Something failed while trying to remove the logs aggregator container with ID '%v'. Error was:\n%v",
+					containerId,
+					err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove the logs aggregator server with Docker container ID '%v'!!!!!!", containerId)
+			}
+		}
+		return logsAggregatorObj, removeLogsAggregatorContainerFunc, nil
 	}
 
 	logsAggregatorNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)

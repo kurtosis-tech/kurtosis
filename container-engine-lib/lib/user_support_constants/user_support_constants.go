@@ -19,12 +19,12 @@ const (
 	GitHubFeatureRequestIssueUrl      = GithubNewIssuesUrl + "?labels=feature+request&template=feature-request.yml"
 	GitHubDocsIssueUrl                = GithubNewIssuesUrl + "?labels=docs&template=docs-issue.yml"
 	CLICommandsReferenceURL           = DocumentationUrl + "/cli"
-	StarlarkPackagesReferenceURL      = DocumentationUrl + "/concepts-reference/packages"
-	StarlarkLocatorsReferenceURL      = DocumentationUrl + "/concepts-reference/locators"
-	UpgradeCLIInstructionsPage        = DocumentationUrl + "/install#upgrading"
-	MetricsPhilosophyDocs             = DocumentationUrl + "/explanations/metrics-philosophy"
-	HowImportWorksLink                = DocumentationUrl + "/explanations/how-do-kurtosis-imports-work"
-	PackageDocLink                    = DocumentationUrl + "/concepts-reference/packages"
+	StarlarkPackagesReferenceURL      = DocumentationUrl + "/advanced-concepts/packages"
+	StarlarkLocatorsReferenceURL      = DocumentationUrl + "/advanced-concepts/locators"
+	UpgradeCLIInstructionsPage        = DocumentationUrl + "/upgrade"
+	MetricsPhilosophyDocs             = DocumentationUrl + "/advanced-concepts/metrics-philosophy"
+	HowImportWorksLink                = DocumentationUrl + "/advanced-concepts/how-do-kurtosis-imports-work"
+	PackageDocLink                    = DocumentationUrl + "/advanced-concepts/packages"
 	GoogleRe2SyntaxDocumentation      = "https://github.com/google/re2/wiki/Syntax"
 	KurtosisDiscordUrl                = "https://discord.gg/6Jjp9c89z9"
 	KurtosisOnBoardCalendlyUrl        = "https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding"
@@ -56,7 +56,6 @@ var urlsToValidateInTest = []string{
 	KurtosisDiscordUrl,
 	KurtosisOnBoardCalendlyUrl,
 	HowImportWorksLink,
-	KurtosisTechTwitterProfileLink,
 	KurtosisCloudLink,
-	PackageDocLink,
+	KurtosisTechTwitterProfileLink,
 }

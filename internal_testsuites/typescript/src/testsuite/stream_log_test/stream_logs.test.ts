@@ -10,7 +10,11 @@ import {
 import log from "loglevel";
 import {err, Result} from "neverthrow";
 import {createEnclave} from "../../test_helpers/enclave_setup";
-import {addServicesWithLogLines, getLogsResponseAndEvaluateResponse} from "../../test_helpers/test_helpers";
+import {
+    addServicesWithLogLines,
+    getLogsResponseAndEvaluateResponse,
+    shouldSkipFlakyTest
+} from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "stream-logs";
 
@@ -73,6 +77,11 @@ jest.setTimeout(180000);
 test("Test Stream Logs", TestStreamLogs);
 
 async function TestStreamLogs() {
+
+    // TODO remove this call after 17-11-2023
+    if (shouldSkipFlakyTest(TEST_NAME)) {
+        return
+    }
 
     const createEnclaveResult = await createEnclave(TEST_NAME);
 

@@ -40,6 +40,8 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		testContainerImageName,
 		nil,
 		nil,
+		nil,
+		nil,
 		[]string{"-- " + runtimeValue},
 		nil,
 		nil,
@@ -51,6 +53,8 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		0,
 		0,
 		map[string]string{},
+		nil,
+		nil,
 	)
 	require.NoError(t, err)
 
@@ -82,6 +86,8 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
+		nil,
 		[]string{"bash", "-c", "sleep " + runtimeValue},
 		nil,
 		nil,
@@ -92,6 +98,8 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 		0,
 		0,
 		map[string]string{},
+		nil,
+		nil,
 	)
 	require.NoError(t, err)
 
@@ -124,6 +132,8 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
+		nil,
 		map[string]string{
 			"PORT": runtimeValue,
 		},
@@ -135,6 +145,8 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 		0,
 		0,
 		map[string]string{},
+		nil,
+		nil,
 	)
 	require.NoError(t, err)
 
@@ -173,12 +185,16 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 		nil,
 		nil,
 		nil,
+		nil,
+		nil,
 		0,
 		0,
 		"",
 		0,
 		0,
 		map[string]string{},
+		nil,
+		nil,
 	)
 	require.NoError(t, err)
 

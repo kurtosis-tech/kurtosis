@@ -12,11 +12,15 @@ import (
 // Regenerate mock with the following command from core/server directory:
 // mockery -r --name=PackageContentProvider --filename=mock_package_content_provider.go --structname=MockPackageContentProvider --with-expecter --inpackage
 type PackageContentProvider interface {
-	// GetOnDiskAbsoluteFilePath returns the absolute file path of a file inside a module.
+	// GetOnDiskAbsolutePackageFilePath returns the absolute file path of a file inside a module.
 	// The corresponding GitHub repo will be cloned if necessary
-	GetOnDiskAbsoluteFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError)
+	GetOnDiskAbsolutePackageFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError)
 
-	// GetModuleContents returns the stringified content of a file inside a module
+	// GetOnDiskAbsolutePath returns the absolute path (it can be a filer or a folder and, it can be from a package or not) on APIC's disk.
+	// The corresponding GitHub repo will be cloned if necessary
+	GetOnDiskAbsolutePath(repositoryPathURL string) (string, *startosis_errors.InterpretationError)
+
+	// GetModuleContents returns the stringifies content of a file inside a module
 	GetModuleContents(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError)
 
 	// GetOnDiskAbsolutePackagePath returns the absolute folder path containing this package
@@ -30,7 +34,7 @@ type PackageContentProvider interface {
 	ClonePackage(packageId string) (string, *startosis_errors.InterpretationError)
 
 	// GetAbsoluteLocator does:
-	// 1. if the given locator is relative, translates it to absolute using sourceModuleLocator (if it's already absolute, does nothing)
+	// 1. if the given locator is relative, translates it to absolute locator using sourceModuleLocator (if it's already absolute, does nothing)
 	// 2. applies any replace rules, if they match the now-absolute locator
 	GetAbsoluteLocator(packageId string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError)
 

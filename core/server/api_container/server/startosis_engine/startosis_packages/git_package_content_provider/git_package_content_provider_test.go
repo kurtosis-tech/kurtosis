@@ -17,7 +17,8 @@ import (
 
 const (
 	packagesDirRelPath                = "startosis-packages"
-	packagesTmpDirRelPath             = "tmp-startosis-packages"
+	repositoriesTmpDirRelPath         = "tmp-repositories"
+	genericRepositoriesDirRelPath     = "generic-repositories"
 	packageDescriptionForTest         = "package description test"
 	localAbsoluteLocatorNotAllowedMsg = "is referencing a file within the same package using absolute import syntax"
 )
@@ -28,7 +29,7 @@ func TestGitPackageProvider_SucceedsForValidPackage(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
@@ -44,7 +45,7 @@ func TestGitPackageProvider_SucceedsForValidPackageWithExplicitMasterSet(t *test
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
@@ -60,7 +61,7 @@ func TestGitPackageProvider_SucceedsForValidPackageWithBranch(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
@@ -76,7 +77,7 @@ func TestGitPackageProvider_FailsForInvalidBranch(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
@@ -91,7 +92,7 @@ func TestGitPackageProvider_SucceedsForValidPackageWithTag(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
@@ -107,7 +108,7 @@ func TestGitPackageProvider_SucceedsForValidPackageWithCommit(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
@@ -123,7 +124,7 @@ func TestGitPackageProvider_SucceedsForValidPackageWithCommitOnABranch(t *testin
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
@@ -139,13 +140,14 @@ func TestGitPackageProvider_SucceedsForNonStarlarkFile(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, nil)
 
-	sampleStarlarkPackage := "github.com/kurtosis-tech/ethereum-package/static_files/prometheus-config/prometheus.yml.tmpl"
+	// TODO replace this with something local or static
+	sampleStarlarkPackage := "github.com/kurtosis-tech/prometheus-package/static-files/prometheus.yml.tmpl"
 	contents, err := provider.GetModuleContents(sampleStarlarkPackage)
 	require.Nil(t, err)
 	require.NotEmpty(t, contents)
@@ -155,7 +157,7 @@ func TestGitPackageProvider_FailsForNonExistentPackage(t *testing.T) {
 	oackageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(oackageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
@@ -170,14 +172,14 @@ func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, nil)
 
 	packagePath := "github.com/kurtosis-tech/datastore-army-package/src/helpers.star"
-	pathOnDisk, err := provider.GetOnDiskAbsoluteFilePath(packagePath)
+	pathOnDisk, err := provider.getOnDiskAbsolutePath(packagePath, true)
 
 	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/datastore-army-package existing")
 	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "datastore-army-package", "src/helpers.star"), pathOnDisk)
@@ -187,17 +189,53 @@ func TestGetAbsolutePathOnDisk_WorksForNonInMainBranchLocators(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, nil)
 
 	absoluteFileLocator := "github.com/kurtosis-tech/sample-dependency-package@test-branch/main.star"
-	pathOnDisk, err := provider.GetOnDiskAbsoluteFilePath(absoluteFileLocator)
+	pathOnDisk, err := provider.getOnDiskAbsolutePath(absoluteFileLocator, true)
 
 	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/datastore-army-package existing")
 	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "sample-dependency-package", "main.star"), pathOnDisk)
+}
+
+func TestGetAbsolutePathOnDisk_GenericRepositoryDir(t *testing.T) {
+	repositoriesDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(repositoriesDir)
+
+	repositoriesTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(repositoriesTmpDir)
+
+	provider := NewGitPackageContentProvider(repositoriesDir, repositoriesTmpDir, nil)
+
+	repositoryPathURL := "github.com/kurtosis-tech/minimal-grpc-server/golang/scripts"
+	pathOnDisk, err := provider.GetOnDiskAbsolutePath(repositoryPathURL)
+
+	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/minimal-grpc-server existing")
+	require.Equal(t, path.Join(repositoriesDir, "kurtosis-tech", "minimal-grpc-server", "golang", "scripts"), pathOnDisk)
+}
+
+func TestGetAbsolutePathOnDisk_GenericRepositoryFile(t *testing.T) {
+	repositoriesDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(repositoriesDir)
+
+	repositoriesTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(repositoriesTmpDir)
+
+	provider := NewGitPackageContentProvider(repositoriesDir, repositoriesTmpDir, nil)
+
+	repositoryPathURL := "github.com/kurtosis-tech/minimal-grpc-server/golang/scripts/build.sh"
+	pathOnDisk, err := provider.GetOnDiskAbsolutePath(repositoryPathURL)
+
+	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/minimal-grpc-server existing")
+	require.Equal(t, path.Join(repositoriesDir, "kurtosis-tech", "minimal-grpc-server", "golang", "scripts", "build.sh"), pathOnDisk)
 }
 
 func TestGetAbsoluteLocator_SucceedsForRelativeFile(t *testing.T) {
@@ -556,7 +594,7 @@ func TestCloneReplacedPackagesIfNeeded_Succeeds(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
-	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 

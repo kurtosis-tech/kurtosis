@@ -2,17 +2,18 @@ package test_helpers
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"io"
-	"math/rand"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
@@ -114,6 +115,11 @@ var (
 	emptyEntrypointArgs          = []string{}
 	emptyCmdArgs                 = []string{}
 	emptyEnvVars                 = map[string]string{}
+
+	// skip flaky tests period
+	skipFlakyTestStartDate = time.Date(2023, 11, 10, 0, 0, 0, 0, time.UTC)
+	oneWeekDays            = 7
+	oneWeekAfterStartDate  = skipFlakyTestStartDate.AddDate(0, 0, oneWeekDays)
 )
 
 var fileServerPortSpec = &kurtosis_core_rpc_api_bindings.Port{
@@ -695,4 +701,11 @@ func getServiceWithLogLinesServiceConfigStarlark(logLines []string) string {
 	cmdArgs := []string{echoLogLinesLoopCmdStr}
 
 	return services.GetServiceConfigStarlark(dockerGettingStartedImage, emptyPrivatePorts, emptyFileArtifactMountPoints, entrypointArgs, cmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
+}
+
+func SkipFlakyTest(t *testing.T, testName string) {
+	now := time.Now()
+	if now.Before(oneWeekAfterStartDate) {
+		t.Skipf("Skipping %s, because it is too noisy, until %s or until we fix the flakyness", testName, oneWeekAfterStartDate)
+	}
 }

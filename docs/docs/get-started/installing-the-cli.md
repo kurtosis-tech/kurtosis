@@ -1,7 +1,7 @@
 ---
-title: Installing Kurtosis
+title: Install Kurtosis
 id: installing-the-cli
-sidebar_label: Installing Kurtosis
+sidebar_label: Install Kurtosis
 slug: /install
 sidebar_position: 2
 ---
@@ -13,30 +13,17 @@ import TabItem from '@theme/TabItem';
 
 <!---------- END IMPORTS ------------>
 
-
-The instructions in this guide will walk you through installing the latest version of Kurtosis. 
-
-:::info
-We're working on a cloud-hosted version of Kurtosis that doesn't require installing anything. If this interests you, let us know [here](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H) and we'll let you know when it's ready!
-:::
-
-If you already have Kurtosis installed and you're looking to upgrade to latest, [see here][upgrade-guide].
-
-If you're looking to install a historical version instead, [see here][install-historical-guide].
+The instructions in this guide will walk you through installing the latest version of Kurtosis.
 
 I. Install & Start Docker
 -----------------
 
 1. If you don't already have Docker installed, follow the instructions [here][docker-install] to install the Docker application specific to your machine (e.g. Apple Intel, Apple M1, etc.). 
-1. Start the Docker daemon (e.g. open Docker Desktop)
-1. Verify that Docker is running:
+2. Start the Docker daemon (e.g. open Docker Desktop)
+3. Verify that Docker is running:
    ```bash
    docker image ls
    ```
-
-:::note
-For some users, Kurtosis fails to run if Docker was not installed in `sudo` mode. We have a workaround detailed in [#1140](https://github.com/kurtosis-tech/kurtosis/issues/1140) while we work on a more graceful solution, outlined in [#1469](https://github.com/kurtosis-tech/kurtosis/issues/1469).
-:::
 
 II. Install the CLI
 -------------------------
@@ -89,7 +76,7 @@ Download the appropriate artifact from [the release artifacts page][release-arti
 <TabItem value="windows" label="Windows">
 
 Windows users are encouraged to use [Windows Subsystem for Linux (WSL)][windows-susbsystem-for-linux] to use Kurtosis.
-If you want to run a native executable, you can download the latest build for your architechture [here](https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/tags).
+If you want to run a native executable, you can download the latest build for your architecture [here](https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/tags).
 
 Or do it using PowerShell:
 
@@ -134,7 +121,7 @@ kurtosis version
 
 III. (Optional) Add command-line completion
 --------------------------------
-Kurtosis supports command-line completion to allow completing subcommands and dynamic values (e.g. enclave name during `enclave inspect`). This isn't required, but we believe it significantly enhances the Kurtosis experience for those who are using . If you'd like to install it, see [these instructions][installing-command-line-completion].
+Kurtosis supports optional command-line completion to allow completing subcommands and dynamic values (e.g. enclave name during `enclave inspect`). If you'd like to install it, see [these instructions][installing-command-line-completion].
 
 Run the quickstart
 ------------------

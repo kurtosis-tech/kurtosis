@@ -26,9 +26,7 @@ type KubernetesApiContainerObjectAttributesProvider interface {
 	ForApiContainerPod() (KubernetesObjectAttributes, error)
 	ForApiContainerService(
 		privateGrpcPortId string,
-		privateGrpcPortSpec *port_spec.PortSpec,
-		privateGrpcProxyPortId string,
-		privateGrpcProxyPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
+		privateGrpcPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
 	ForApiContainerServiceAccount() (KubernetesObjectAttributes, error)
 	ForApiContainerRole() (KubernetesObjectAttributes, error)
 	ForApiContainerClusterRole() (KubernetesObjectAttributes, error)
@@ -72,8 +70,6 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerService(
 	grpcPortId string,
 	grpcPortSpec *port_spec.PortSpec,
-	grpcProxyPortId string,
-	grpcProxyPortSpec *port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
 	labels, err := provider.getLabelsForApiContainerObject()
 	if err != nil {

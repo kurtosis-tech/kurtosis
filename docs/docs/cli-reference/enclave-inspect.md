@@ -14,7 +14,11 @@ where `$THE_ENCLAVE_IDENTIFIER` is the [resource identifier](../advanced-concept
 
 Running the above command will print detailed information about:
 
+- The enclave's name
+- The enclave's UUID (you can see the full UUID by using the --full-uuids flag in this command)
 - The enclave's status (running or stopped)
+- The enclave's creation time
+- The enclave's flags used (e.g: the production flag)
 - The services inside the enclave (if any), their status, and the information for accessing those services' ports from your local machine
 - Any files artifacts registered within the specified enclave
 

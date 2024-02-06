@@ -3,7 +3,6 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -23,9 +22,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
-	"io"
-	"os"
-	"path"
 	"strings"
 )
 
@@ -41,17 +37,7 @@ const (
 
 	pipInstallCmd = "pip install"
 
-	pythonScriptFileName = "main.py"
-	pythonWorkspace      = "/tmp/python"
-
-	defaultTmpDir                  = ""
-	pythonScriptReadPermission     = 0644
-	enforceMaxSizeLimit            = true
-	temporaryPythonDirectoryPrefix = "run-python-*"
-
 	successfulPipRunExitCode = 0
-
-	scriptArtifactFormat = "%v-python-script"
 )
 
 func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -160,17 +146,6 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	}
 	builtin.run = pythonScript.GoString()
 
-	compressedScript, compressedScriptMd5, scriptCompressionInterpretationErr := getCompressedPythonScriptForUpload(builtin.run)
-	if err != nil {
-		return nil, scriptCompressionInterpretationErr
-	}
-	defer compressedScript.Close()
-	uniqueFilesArtifactName := fmt.Sprintf(scriptArtifactFormat, builtin.name)
-	_, err = builtin.serviceNetwork.UploadFilesArtifact(compressedScript, compressedScriptMd5, uniqueFilesArtifactName)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while storing the python script to disk")
-	}
-
 	if arguments.IsSet(PythonArgumentsArgName) {
 		argsValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, PythonArgumentsArgName)
 		if err != nil {
@@ -217,24 +192,24 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-			filesArtifactMountDirPaths[pythonWorkspace] = uniqueFilesArtifactName
-			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
+			multipleFilesArtifactsMountDirPaths := map[string][]string{}
+			for pathToFile, fileArtifactName := range filesArtifactMountDirPaths {
+				multipleFilesArtifactsMountDirPaths[pathToFile] = []string{fileArtifactName}
+			}
+			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(multipleFilesArtifactsMountDirPaths, builtin.serviceNetwork)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
 		}
-	} else {
-		filesArtifactMountDirPaths := map[string]string{}
-		filesArtifactMountDirPaths[pythonWorkspace] = uniqueFilesArtifactName
-		var interpretationErr *startosis_errors.InterpretationError
-		filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
+	}
+
+	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
+	if err != nil {
+		return nil, interpretationErr
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion)
+	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion, envVars)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
 	}
@@ -267,7 +242,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 
 func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	// TODO add validation for python script
-	var serviceDirpathsToArtifactIdentifiers map[string]string
+	var serviceDirpathsToArtifactIdentifiers map[string][]string
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		serviceDirpathsToArtifactIdentifiers = builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers
 	}
@@ -276,10 +251,8 @@ func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValue
 
 // Execute This is just v0 for run_python task - we can later improve on it.
 //
-//	 These TODOs are copied from run-sh
-//		TODO: stop the container as soon as task completed.
-//		Create an mechanism for other services to retrieve files from the task container
-//		Make task as its own entity instead of currently shown under services
+//	TODO Create an mechanism for other services to retrieve files from the task container
+//	TODO Make task as its own entity instead of currently shown under services
 func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
 	if err != nil {
@@ -329,6 +302,11 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 			return "", stacktrace.Propagate(err, "error occurred while copying files from  a task")
 		}
 	}
+
+	if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
+		return "", stacktrace.Propagate(err, "attempted to remove the temporary task container but failed")
+	}
+
 	return instructionResult, err
 }
 
@@ -375,26 +353,8 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	}
 	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, spaceDelimiter)
 
-	pythonScriptAbsolutePath := path.Join(pythonWorkspace, pythonScriptFileName)
 	if len(argumentsAsString) > 0 {
-		return fmt.Sprintf("python %s %s", pythonScriptAbsolutePath, argumentsAsString), nil
+		return fmt.Sprintf("python -c '%s' %s", builtin.run, argumentsAsString), nil
 	}
-	return fmt.Sprintf("python %s", pythonScriptAbsolutePath), nil
-}
-
-func getCompressedPythonScriptForUpload(pythonScript string) (io.ReadCloser, []byte, *startosis_errors.InterpretationError) {
-	temporaryPythonScriptDir, err := os.MkdirTemp(defaultTmpDir, temporaryPythonDirectoryPrefix)
-	defer os.Remove(temporaryPythonScriptDir)
-	if err != nil {
-		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while creating a temporary folder to write the python script too")
-	}
-	pythonScriptFilePath := path.Join(temporaryPythonScriptDir, pythonScriptFileName)
-	if err = os.WriteFile(pythonScriptFilePath, []byte(pythonScript), pythonScriptReadPermission); err != nil {
-		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while writing python script to disk")
-	}
-	compressed, _, contentMd5, err := shared_utils.CompressPath(pythonScriptFilePath, enforceMaxSizeLimit)
-	if err != nil {
-		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while compressing the python script")
-	}
-	return compressed, contentMd5, nil
+	return fmt.Sprintf("python -c '%s'", builtin.run), nil
 }

@@ -2,7 +2,6 @@ package startosis_stop_service_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
@@ -116,11 +115,9 @@ Service ` + serviceName + ` deployed successfully.
 
 	logrus.Infof("Validated that the service is stopped")
 
-	// we run the stop script one more time and validate that an error is returned since the service is already stopped.
+	// already stopped service should be able to stop just fine
 	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, stopScript2)
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
-	require.NotEmpty(t, runResult.ExecutionError, "Expected execution error coming from already stopped service")
-	expectedErrorStr := fmt.Sprintf("Service '%v' is already stopped", serviceName)
-	require.Contains(t, runResult.ExecutionError.ErrorMessage, expectedErrorStr)
+	require.Nil(t, runResult.ExecutionError)
 }

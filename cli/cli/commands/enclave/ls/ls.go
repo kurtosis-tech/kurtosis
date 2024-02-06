@@ -16,7 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_status_stringifier"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
 	"strings"

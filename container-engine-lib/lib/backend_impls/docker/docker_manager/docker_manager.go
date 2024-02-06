@@ -7,9 +7,16 @@ package docker_manager
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/go-units"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/utils"
 	"io"
 	"math"
 	"net"
@@ -36,6 +43,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+
+	bksession "github.com/moby/buildkit/session"
 )
 
 const (
@@ -73,8 +82,9 @@ const (
 	// ------------------ Filter Search Keys ----------------------
 	// All these defined in https://docs.docker.com/engine/api/v1.24
 
-	containerNameSearchFilterKey  = "name"
-	containerLabelSearchFilterKey = "label"
+	containerNameSearchFilterKey      = "name"
+	containerLabelSearchFilterKey     = "label"
+	containerNetworkIdSearchFilterKey = "network"
 
 	volumeNameSearchFilterKey  = "name"
 	volumeLabelSearchFilterKey = "label"
@@ -137,11 +147,17 @@ const (
 	dontStreamStats        = false
 
 	kurtosisTagPrefix = "kurtosistech/"
+
+	defaultContainerImageFile = "Dockerfile"
+
+	// Per https://github.com/hashicorp/waypoint/pull/1937/files
+	buildkitSessionSharedKey = ""
 )
 
 type RestartPolicy string
 
 const (
+	RestartAlways    = "always"
 	RestartOnFailure = "on-failure"
 	NoRestart        = ""
 )
@@ -412,19 +428,7 @@ func (manager *DockerManager) CreateVolume(context context.Context, volumeName s
 		Name:              volumeName,
 	}
 
-	/*
-		We don't use the return value of VolumeCreate because there's not much useful information on there - Docker doesn't
-		use UUIDs to identify volumes - only the name - so there's no UUID to retrieve, and the volume's Mountpoint (what you'd
-		think would be the path of the volume on the local machine) isn't useful either because Docker itself runs inside a VM
-		so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
-		to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
-	*/
-	_, err := manager.dockerClient.VolumeCreate(context, volumeConfig)
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not create Docker volume for test controller")
-	}
-
-	return nil
+	return manager.createPersistentVolumeInternal(context, volumeConfig)
 }
 
 /*
@@ -524,8 +528,9 @@ func (manager *DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	_, _, err := manager.FetchImage(ctx, dockerImage, args.imageDownloadMode)
+	_, _, err := manager.FetchImage(ctx, dockerImage, args.imageRegistrySpec, args.imageDownloadMode)
 	if err != nil {
+		logrus.Debugf("Error occurred fetching image '%v'. Err:\n%v", dockerImage, err)
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
 
@@ -553,6 +558,11 @@ func (manager *DockerManager) CreateAndStartContainer(
 		usedPortsSet[port] = struct{}{}
 	}
 
+	var userStr string
+	if args.user != nil {
+		userStr = args.user.GetUIDGIDPairAsStr()
+	}
+
 	containerConfigPtr, err := manager.getContainerCfg(
 		dockerImage,
 		isInteractiveMode,
@@ -561,12 +571,14 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.cmdArgs,
 		args.envVariables,
 		args.labels,
+		userStr,
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
 	containerHostConfigPtr, err := manager.getContainerHostConfig(
 		args.addedCapabilities,
+		args.securityOpts,
 		args.networkMode,
 		args.bindMounts,
 		args.volumeMounts,
@@ -773,6 +785,24 @@ func (manager *DockerManager) GetContainerIP(ctx context.Context, networkName st
 		return "", stacktrace.NewError("Container ID '%v' isn't connected to network '%v'", containerId, networkName)
 	}
 	return networkInfo.IPAddress, nil
+}
+
+/*
+GetContainerIps
+Gets the container's IPs on all networks
+Returns a map of network ID to network IP address
+*/
+func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId string) (map[string]string, error) {
+	containerIps := map[string]string{}
+	resp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
+	}
+	allNetworkInfo := resp.NetworkSettings.Networks
+	for _, networkInfo := range allNetworkInfo {
+		containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
+	}
+	return containerIps, nil
 }
 
 func (manager *DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
@@ -1182,10 +1212,20 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	return result, nil
 }
 
+func (manager *DockerManager) GetContainersByNetworkId(ctx context.Context, networkId string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
+	filterArg := filters.Arg(containerNetworkIdSearchFilterKey, networkId)
+	networkIdFilterList := filters.NewArgs(filterArg)
+	result, err := manager.getContainersByFilterArgs(ctx, networkIdFilterList, shouldShowStoppedContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting containers with network id '%+v'", networkIdFilterList)
+	}
+	return result, nil
+}
+
 // [FetchImageIfMissing] uses the local [dockerImage] if it's available.
 // If unavailable, will attempt to fetch the latest image.
 // Returns error if local [dockerImage] is unavailable and pulling image fails.
-func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerImage string) (bool, error) {
+func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerImage string, registrySpec *image_registry_spec.ImageRegistrySpec) (bool, error) {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
 	// this allows us to be deterministic in our behaviour
@@ -1193,7 +1233,7 @@ func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerIma
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+	doesImageExistLocally, err := manager.isImageAvailableLocally(dockerImage)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
 	}
@@ -1201,7 +1241,7 @@ func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerIma
 
 	if !doesImageExistLocally {
 		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
-		err = manager.pullImage(ctx, dockerImage)
+		err = manager.pullImage(ctx, dockerImage, registrySpec)
 		if err != nil {
 			return false, stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
 		}
@@ -1214,7 +1254,7 @@ func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerIma
 // [FetchLatestImage] always attempts to retrieve the latest [dockerImage].
 // If retrieving the latest [dockerImage] fails, the local image will be used.
 // Returns error, if no local image is available after retrieving latest fails.
-func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage string) error {
+func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage string, registrySpec *image_registry_spec.ImageRegistrySpec) error {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
 	// this allows us to be deterministic in our behaviour
@@ -1222,7 +1262,7 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+	doesImageExistLocally, err := manager.isImageAvailableLocally(dockerImage)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
 	}
@@ -1231,14 +1271,14 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 	// try and pull latest image even if image exists locally
 	if doesImageExistLocally {
 		logrus.Tracef("Image exists locally, but attempting to get latest from remote image repository.")
-		err = manager.pullImage(ctx, dockerImage)
+		err = manager.pullImage(ctx, dockerImage, registrySpec)
 		if err != nil {
 			logrus.Tracef("Failed to pull Docker image '%v' from remote image repository. Going to use available local image.", dockerImage)
 		} else {
 			logrus.Tracef("Latest image successfully pulled from remote to local.")
 		}
 	} else {
-		err = manager.pullImage(ctx, dockerImage)
+		err = manager.pullImage(ctx, dockerImage, registrySpec)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository.", dockerImage)
 		}
@@ -1247,16 +1287,16 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 	return nil
 }
 
-func (manager *DockerManager) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+func (manager *DockerManager) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	var err error
 	var pulledFromRemote bool = true
-	logrus.Infof("Fetching image '%s' is running in '%s' mode", image, downloadMode)
+	logrus.Debugf("Fetching image '%s' with image download mode: %s", image, downloadMode)
 
 	switch image_fetching := downloadMode; image_fetching {
 	case image_download_mode.ImageDownloadMode_Always:
-		err = manager.FetchLatestImage(ctx, image)
+		err = manager.FetchLatestImage(ctx, image, registrySpec)
 	case image_download_mode.ImageDownloadMode_Missing:
-		pulledFromRemote, err = manager.FetchImageIfMissing(ctx, image)
+		pulledFromRemote, err = manager.FetchImageIfMissing(ctx, image, registrySpec)
 	default:
 		return false, "", stacktrace.NewError("Undefined image pulling mode: '%v'", image_fetching)
 	}
@@ -1271,6 +1311,124 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, down
 	}
 
 	return pulledFromRemote, imageArchitecture, nil
+}
+
+func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
+	buildContextDirPath := imageBuildSpec.GetBuildContextDir()
+	buildContextTarReader, err := getBuildContextReader(buildContextDirPath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred retrieving the build context for '%v' at context directory path: %v", imageName, buildContextDirPath)
+	}
+
+	// Before instructing docker client to execute an image build, we need to create a connection to buildkit
+	// buildkit is the daemon process that executes build workloads: https://docs.docker.com/build/architecture/#buildkit
+
+	// Setup session to buildkit (eg. https://github.com/hashicorp/waypoint/pull/1937)
+	uuidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred generating a UUID to give the Docker Buildkit session")
+	}
+	sessionName := fmt.Sprintf("kurtosis-%s", uuidStr)
+
+	// Generate a new session every time because per https://github.com/moby/buildkit/issues/1432 sharing sessions is an optimization
+	// Don't bother reusing sessions so that we don't hit bugs
+	buildkitSession, err := bksession.NewSession(ctx, sessionName, buildkitSessionSharedKey)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error generating a Docker Buildkit session with sessionName: %v", sessionName)
+	}
+	dialSessionFunc := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
+		return manager.dockerClientNoTimeout.DialHijack(ctx, "/session", proto, meta)
+	}
+
+	// Activate the session
+	go func() {
+		err := buildkitSession.Run(ctx, dialSessionFunc)
+		if err != nil {
+			logrus.Errorf("An error occurred running a buildkit session for building image '%v':\n%v", imageName, err)
+		}
+	}()
+	defer buildkitSession.Close() //nolint
+
+	imageBuildOpts := types.ImageBuildOptions{
+		Tags:           []string{imageName},
+		SuppressOutput: false,
+		RemoteContext:  "",    // We don't have a remote context (we're uploading it)
+		NoCache:        false, // needs to be false so image only rebuilds if docker detects changes to cached image
+		Remove:         false,
+		ForceRemove:    false,
+		PullParent:     false,
+		Isolation:      container.Isolation(""),
+		CPUSetCPUs:     "",
+		CPUSetMems:     "",
+		CPUShares:      0,
+		CPUQuota:       0,
+		CPUPeriod:      0,
+		Memory:         0,
+		MemorySwap:     0,
+		CgroupParent:   "",
+		NetworkMode:    "",
+		ShmSize:        0,
+		Dockerfile:     defaultContainerImageFile,
+		Ulimits:        []*units.Ulimit{},
+		BuildArgs:      map[string]*string{},
+		AuthConfigs:    map[string]registry.AuthConfig{},
+		Context:        buildContextTarReader,
+		// 0.0.0 label is a hack so that images by internal testsuite are cleaned up by kurtosis clean/PruneUnusedImages
+		Labels:      map[string]string{},
+		Squash:      false,
+		CacheFrom:   []string{},
+		SecurityOpt: []string{},
+		ExtraHosts:  []string{},
+		Target:      imageBuildSpec.GetTargetStage(),
+		SessionID:   buildkitSession.ID(),
+		Platform:    "",
+		// Version specifies the version of the underlying builder to use
+		Version: types.BuilderBuildKit, // Use 2 for BuildKit
+		// BuildID is an optional identifier that can be passed together with the
+		// build request. The same identifier can be used to gracefully cancel the
+		// build with the cancel request.
+		BuildID: "",
+		// Outputs defines configurations for exporting build results. Only supported in BuildKit mode.
+		Outputs: []types.ImageBuildOutput{},
+	}
+	imageBuildResponse, err := manager.dockerClientNoTimeout.ImageBuild(ctx, buildContextTarReader, imageBuildOpts)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred attempting to build image using Docker: %v", imageName)
+	}
+	defer imageBuildResponse.Body.Close()
+
+	var imageBuildResponseBuffer bytes.Buffer
+	_, err = io.Copy(&imageBuildResponseBuffer, imageBuildResponse.Body)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while trying to pipe image build output to a buffer.")
+	}
+	imageBuildResponseBodyStr := imageBuildResponseBuffer.String()
+
+	// ImageBuildResponse has no notion of success or error builds, so we check if the image is available locally and return the
+	// response body if it is not found
+	isImageAvailable, err := manager.isImageAvailableLocally(imageName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to check if '%v' was built and available locally.", imageName)
+	}
+	if !isImageAvailable {
+		return "", stacktrace.NewError("Image build for '%s' failed with the following output:\n%v", imageName, imageBuildResponseBodyStr)
+	}
+
+	imageArch, err := manager.getImagePlatform(ctx, imageName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred attempting to get image platform for '%v'.", imageName)
+	}
+
+	return imageArch, nil
+}
+
+// returns a reader to a tarball of [contextDirPath]
+func getBuildContextReader(contextDirPath string) (io.Reader, error) {
+	buildContext, _, _, err := utils.CompressPath(contextDirPath, false)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred compressing the path to context directory path '%v'", contextDirPath)
+	}
+	return buildContext, nil
 }
 
 func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
@@ -1343,11 +1501,31 @@ func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (com
 //	INSTANCE HELPER FUNCTIONS
 //
 // =================================================================================================================
-func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (bool, error) {
+func (manager *DockerManager) createPersistentVolumeInternal(context context.Context, volumeConfig volume.CreateOptions) error {
+	/*
+		We don't use the return value of VolumeCreate because there's not much useful information on there - Docker doesn't
+		use UUIDs to identify volumes - only the name - so there's no UUID to retrieve, and the volume's Mountpoint (what you'd
+		think would be the path of the volume on the local machine) isn't useful either because Docker itself runs inside a VM
+		so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
+		to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
+	*/
+	_, err := manager.dockerClient.VolumeCreate(context, volumeConfig)
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not create Docker volume for test controller")
+	}
+
+	return nil
+
+}
+
+func (manager *DockerManager) isImageAvailableLocally(imageName string) (bool, error) {
+	// Own context for checking if the image is locally available because we do not want to cancel this works in case the main context in the request is cancelled
+	// if the first request fails the image will be ready for following request making the process faster
+	checkImageAvailabilityCtx := context.Background()
 	referenceArg := filters.Arg("reference", imageName)
 	filterArgs := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
-		ctx,
+		checkImageAvailabilityCtx,
 		types.ImageListOptions{
 			All:            true,
 			Filters:        filterArgs,
@@ -1370,14 +1548,14 @@ func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, image
 	return numMatchingImages > 0, nil
 }
 
-func (manager *DockerManager) pullImage(context context.Context, imageName string) error {
+func (manager *DockerManager) pullImage(context context.Context, imageName string, registrySpec *image_registry_spec.ImageRegistrySpec) error {
 	// As we're using the docker client with no timeout to pull the image, we quickly check with the client that has
 	// a timeout whether the docker engine is reachable.
 	if _, err := manager.dockerClient.Ping(context); err != nil {
 		return stacktrace.Propagate(err, "An error occurred communicating with docker engine")
 	}
 	logrus.Infof("Pulling image '%s'", imageName)
-	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClientNoTimeout, imageName, defaultPlatform)
+	err, retryWithLinuxAmd64 := pullImage(manager.dockerClientNoTimeout, imageName, registrySpec, defaultPlatform)
 	if err == nil {
 		return nil
 	}
@@ -1386,7 +1564,7 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 	}
 	// we retry with linux/amd64
 	logrus.Debugf("Retrying pulling image '%s' for '%s'", imageName, linuxAmd64)
-	err, _ = pullImage(context, manager.dockerClientNoTimeout, imageName, linuxAmd64)
+	err, _ = pullImage(manager.dockerClientNoTimeout, imageName, registrySpec, linuxAmd64)
 	if err != nil {
 		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
 	}
@@ -1436,6 +1614,7 @@ Args:
 */
 func (manager *DockerManager) getContainerHostConfig(
 	addedCapabilities map[ContainerCapability]bool,
+	securityOpts map[ContainerSecurityOpt]bool,
 	networkMode DockerManagerNetworkMode,
 	bindMounts map[string]string,
 	volumeMounts map[string]string,
@@ -1498,6 +1677,12 @@ func (manager *DockerManager) getContainerHostConfig(
 	for capability := range addedCapabilities {
 		capabilityStr := string(capability)
 		addedCapabilitiesSlice = append(addedCapabilitiesSlice, capabilityStr)
+	}
+
+	securityOptsSlice := []string{}
+	for securityOpt := range securityOpts {
+		securityOptStr := string(securityOpt)
+		securityOptsSlice = append(securityOptsSlice, securityOptStr)
 	}
 
 	extraHosts := []string{}
@@ -1568,7 +1753,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	}
 
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
-	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
+	//  if the Dockerfile *does* have and EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
 
 	containerHostConfigPtr := &container.HostConfig{
@@ -1601,7 +1786,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Privileged:      false,
 		PublishAllPorts: false,
 		ReadonlyRootfs:  false,
-		SecurityOpt:     nil,
+		SecurityOpt:     securityOptsSlice,
 		StorageOpt:      nil,
 		Tmpfs:           nil,
 		UTSMode:         "",
@@ -1628,7 +1813,8 @@ func (manager *DockerManager) getContainerCfg(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVariables map[string]string,
-	labels map[string]string) (config *container.Config, err error) {
+	labels map[string]string,
+	user string) (config *container.Config, err error) {
 
 	envVariablesSlice := make([]string, 0, len(envVariables))
 	for key, val := range envVariables {
@@ -1638,7 +1824,7 @@ func (manager *DockerManager) getContainerCfg(
 	nodeConfigPtr := &container.Config{
 		Hostname:        "",
 		Domainname:      "",
-		User:            "",
+		User:            user,
 		AttachStdin:     isInteractiveMode, // Analogous to `-a STDIN` option to `docker run`
 		AttachStdout:    isInteractiveMode, // Analogous to `-a STDOUT` option to `docker run`
 		AttachStderr:    isInteractiveMode, // Analogous to `-a STDERR` option to `docker run`
@@ -1993,14 +2179,35 @@ func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.En
 	return config
 }
 
-func pullImage(ctx context.Context, dockerClient *client.Client, imageName string, platform string) (error, bool) {
+func pullImage(dockerClient *client.Client, imageName string, registrySpec *image_registry_spec.ImageRegistrySpec, platform string) (error, bool) {
+	// Own context for pulling images because we do not want to cancel this works in case the main context in the request is cancelled
+	// if the fist request fails the image will be ready for following request making the process faster
+	pullImageCtx := context.Background()
 	logrus.Tracef("Starting pulling '%s' for platform '%s'", imageName, platform)
-	out, err := dockerClient.ImagePull(ctx, imageName, types.ImagePullOptions{
+	imagePullOptions := types.ImagePullOptions{
 		All:           false,
 		RegistryAuth:  "",
 		PrivilegeFunc: nil,
 		Platform:      platform,
-	})
+	}
+	if registrySpec != nil {
+		authConfig := registry.AuthConfig{
+			Username:      registrySpec.GetUsername(),
+			Password:      registrySpec.GetPassword(),
+			Email:         "",
+			Auth:          "",
+			ServerAddress: registrySpec.GetRegistryAddr(),
+			IdentityToken: "",
+			RegistryToken: "",
+		}
+		encodedAuthConfig, err := registry.EncodeAuthConfig(authConfig)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while converting registry auth to base64"), false
+		}
+		imagePullOptions.RegistryAuth = encodedAuthConfig
+
+	}
+	out, err := dockerClient.ImagePull(pullImageCtx, imageName, imagePullOptions)
 	if err != nil {
 		return stacktrace.Propagate(err, "Tried pulling image '%v' with platform '%v' but failed", imageName, platform), false
 	}

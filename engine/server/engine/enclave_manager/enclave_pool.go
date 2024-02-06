@@ -3,14 +3,16 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"strings"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -20,18 +22,23 @@ const (
 	fill = true
 
 	createTestEnclave = false
+
+	defaultApicDebugModeForEnclavesInThePool = false
 )
 
 type EnclavePool struct {
 	kurtosisBackend             backend_interface.KurtosisBackend
 	enclaveCreator              *EnclaveCreator
-	idleEnclavesChan            chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo
+	idleEnclavesChan            chan *types.EnclaveInfo
 	fillChan                    chan bool
 	engineVersion               string
 	cancelSubRoutineCtxFunc     context.CancelFunc
 	enclaveEnvVars              string
 	metricsUserID               string
 	didUserAcceptSendingMetrics bool
+	isCI                        bool
+	cloudUserID                 metrics_client.CloudUserID
+	cloudInstanceID             metrics_client.CloudInstanceID
 }
 
 // CreateEnclavePool will do the following:
@@ -41,12 +48,16 @@ type EnclavePool struct {
 // 3- Will start a subroutine in charge of filling the pool
 func CreateEnclavePool(
 	kurtosisBackend backend_interface.KurtosisBackend,
+
 	enclaveCreator *EnclaveCreator,
 	poolSize uint8,
 	engineVersion string,
 	enclaveEnvVars string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
+	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
 
 ) (*EnclavePool, error) {
 
@@ -73,7 +84,7 @@ func CreateEnclavePool(
 	}
 
 	// this channel is the repository of idle enclave UUIDs
-	idleEnclavesChan := make(chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo, poolSize)
+	idleEnclavesChan := make(chan *types.EnclaveInfo, poolSize)
 
 	// This channel is used as a signal to tell to the sub-routine that one idle enclave
 	// has been allocated from the pool
@@ -92,6 +103,9 @@ func CreateEnclavePool(
 		enclaveEnvVars:              enclaveEnvVars,
 		metricsUserID:               metricsUserID,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
+		isCI:                        isCI,
+		cloudUserID:                 cloudUserID,
+		cloudInstanceID:             cloudInstanceID,
 	}
 
 	go enclavePool.run(ctxWithCancel)
@@ -110,7 +124,8 @@ func (pool *EnclavePool) GetEnclave(
 	engineVersion string,
 	apiContainerVersion string,
 	apiContainerLogLevel logrus.Level,
-) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
+	shouldAPICRunInDebugMode bool,
+) (*types.EnclaveInfo, error) {
 
 	logrus.Debugf(
 		"Requesting enclave from pool using params: engine version '%s', api container version '%s' and api container log level '%s'...",
@@ -127,6 +142,7 @@ func (pool *EnclavePool) GetEnclave(
 		engineVersion,
 		apiContainerVersion,
 		apiContainerLogLevel,
+		shouldAPICRunInDebugMode,
 	) {
 		logrus.Debugf("The requested enclave params are different from the enclave in the pool params")
 		return nil, nil
@@ -145,7 +161,7 @@ func (pool *EnclavePool) GetEnclave(
 	// and it has to fill the pool again
 	pool.fillChan <- fill
 
-	enclaveUUID := enclave.EnclaveUUID(enclaveInfo.GetEnclaveUuid())
+	enclaveUUID := enclave.EnclaveUUID(enclaveInfo.EnclaveUuid)
 	shouldDestroyEnclaveBecauseSomethingFails := true
 	defer func() {
 		if shouldDestroyEnclaveBecauseSomethingFails {
@@ -175,9 +191,8 @@ func (pool *EnclavePool) GetEnclave(
 
 	// update the enclave info before returning it
 	// we assume that container status and apic status both are RUNNING because we check it above in getRunningEnclave
-	enclaveCreationTimestamp := timestamppb.New(newCreationTime)
 	enclaveInfo.Name = newEnclaveName
-	enclaveInfo.CreationTime = enclaveCreationTimestamp
+	enclaveInfo.CreationTime = newCreationTime
 
 	logrus.Debugf("Returning enclave Info '%+v' for requested enclave name '%s'", enclaveInfo, newEnclaveName)
 
@@ -250,12 +265,12 @@ func (pool *EnclavePool) createAndAddOneIdleEnclaveIfNeeded(ctx context.Context)
 	}
 
 	pool.idleEnclavesChan <- newEnclaveInfo
-	logrus.Debugf("Enclave with UUID '%s' was added intho the pool channel", newEnclaveInfo.GetEnclaveUuid())
+	logrus.Debugf("Enclave with UUID '%s' was added intho the pool channel", newEnclaveInfo.EnclaveUuid)
 
 	return nil
 }
 
-func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
+func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*types.EnclaveInfo, error) {
 
 	enclaveName, err := GetRandomIdleEnclaveName()
 	if err != nil {
@@ -276,6 +291,11 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_en
 		createTestEnclave,
 		pool.metricsUserID,
 		pool.didUserAcceptSendingMetrics,
+		pool.isCI,
+		pool.cloudUserID,
+		pool.cloudInstanceID,
+		args.KurtosisBackendType_Kubernetes, // enclave pool only available for k8s
+		defaultApicDebugModeForEnclavesInThePool,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -333,6 +353,7 @@ func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 	engineVersion string,
 	apiContainerVersion string,
 	apiContainerLogLevel logrus.Level,
+	shouldAPICRunInDebugMode bool,
 ) bool {
 
 	// if the api container version is empty string means that will be executed with the default version
@@ -342,7 +363,7 @@ func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 	}
 
 	if engineVersion == apiContainerVersion &&
-		apiContainerLogLevel == defaultApiContainerLogLevel {
+		apiContainerLogLevel == defaultApiContainerLogLevel && !shouldAPICRunInDebugMode {
 		return true
 	}
 

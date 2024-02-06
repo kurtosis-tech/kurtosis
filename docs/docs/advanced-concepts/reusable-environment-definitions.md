@@ -28,7 +28,7 @@ With this lens, we see why none of the most common solutions can be reused acros
 - Ansible behaves like scripting with idempotence and validation on top. It is better in the Prod usecase than scripting, but doesn't ease the Dev/Test usecase of instantiating just a part of the system.
 - Docker Compose is great for Dev and even for some Test, but fails in Prod for its lack of idempotence and its requirement to bring the entire stack down and up each time. It has no validation, little parameterizability, and Docker Compose files cannot be plugged together.
 - Helm is excellent for the Prod usecase for its idempotence, parameterizability, and emphasis on sharing, but Helm charts are complex and difficult to compose or decompose. Like Docker Compose, data-handling is via volumes only. The only execution mode is declarative, so Helm only fills the Test usecase when mixed with a procedural language.
-- Terraform, like Helm, hits the Prod usecase very well. However, like Helm, Terraform can only be executed in declarative mode; Test usecases with Terraform therefore need a procedural langauge to sequence events.
+- Terraform, like Helm, hits the Prod usecase very well. However, like Helm, Terraform can only be executed in declarative mode; Test usecases with Terraform therefore need a procedural language to sequence events.
 
 What does a reusable solution look like?
 ----------------------------------------

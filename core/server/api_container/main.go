@@ -32,7 +32,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
-	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
@@ -56,11 +56,6 @@ const (
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
 )
-
-type doNothingMetricsClientCallback struct{}
-
-func (d doNothingMetricsClientCallback) Success()          {}
-func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func main() {
 	// This allows the filename & function to be reported
@@ -151,7 +146,7 @@ func runMain() error {
 		}
 	case args.KurtosisBackendType_Kubernetes:
 		// TODO Use this value when we have fields for the API container
-		_, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
+		clusterConfigK8s, ok := (clusterConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
 			return stacktrace.NewError(
 				"Failed to cast untyped cluster configuration object '%+v' to the appropriate type, even though "+
@@ -160,7 +155,8 @@ func runMain() error {
 				args.KurtosisBackendType_Kubernetes.String(),
 			)
 		}
-		kurtosisBackend, err = kubernetes_kurtosis_backend.GetApiContainerBackend(ctx)
+		// TODO wrap up APIContainerModeArgs if the parameter list keeps on going up (currently just IsProductionEnclave)
+		kurtosisBackend, err = kubernetes_kurtosis_backend.GetApiContainerBackend(ctx, clusterConfigK8s.StorageClass, serverArgs.IsProductionEnclave)
 		if err != nil {
 			return stacktrace.Propagate(
 				err,
@@ -178,14 +174,19 @@ func runMain() error {
 
 	logger := logrus.StandardLogger()
 	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCoreSource,
-		serverArgs.Version,
-		serverArgs.MetricsUserID,
-		serverArgs.KurtosisBackendType.String(),
-		serverArgs.DidUserAcceptSendingMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		doNothingMetricsClientCallback{},
-		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		metrics_client.NewMetricsClientCreatorOption(
+			source.KurtosisCoreSource,
+			serverArgs.Version,
+			serverArgs.MetricsUserID,
+			serverArgs.KurtosisBackendType.String(),
+			serverArgs.DidUserAcceptSendingMetrics,
+			shouldFlushMetricsClientQueueOnEachEvent,
+			metrics_client.DoNothingMetricsClientCallback{},
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			serverArgs.IsCI,
+			serverArgs.CloudUserID,
+			serverArgs.CloudInstanceID,
+		),
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the metrics client")

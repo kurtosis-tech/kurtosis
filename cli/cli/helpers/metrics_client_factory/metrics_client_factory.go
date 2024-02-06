@@ -2,14 +2,14 @@ package metrics_client_factory
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/do_nothing_metrics_client_callback"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_cloud_user_instance_id_helper"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
-	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -31,6 +31,8 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 		return nil, nil, stacktrace.NewError("An error occurred while determining whether configuration already exists")
 	}
 
+	maybeCloudUserId, maybeCloudInstanceId := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
+
 	var sendUserMetrics bool
 	if hasConfig {
 		kurtosisConfig, err := kurtosisConfigStore.GetConfig()
@@ -44,14 +46,16 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 
 	logger := logrus.StandardLogger()
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCLISource,
-		kurtosis_version.KurtosisVersion,
-		metricsUserId,
-		clusterType,
-		sendUserMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		metrics_client.NewMetricsClientCreatorOption(
+			source.KurtosisCLISource,
+			kurtosis_version.KurtosisVersion,
+			metricsUserId,
+			clusterType,
+			sendUserMetrics,
+			shouldFlushMetricsClientQueueOnEachEvent,
+			metrics_client.DoNothingMetricsClientCallback{},
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			metrics_client.IsCI(), maybeCloudUserId, maybeCloudInstanceId),
 	)
 
 	if err != nil {
@@ -70,16 +74,19 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 	// this is force set to true in order to get the segment client
 	sendUserMetrics := true
 
+	maybeCloudUserId, maybeCloudInstanceId := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
+
 	logger := logrus.StandardLogger()
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
-		source.KurtosisCLISource,
-		kurtosis_version.KurtosisVersion,
-		metricsUserId,
-		clusterType,
-		sendUserMetrics,
-		shouldFlushMetricsClientQueueOnEachEvent,
-		do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		metrics_client.NewMetricsClientCreatorOption(source.KurtosisCLISource,
+			kurtosis_version.KurtosisVersion,
+			metricsUserId,
+			clusterType,
+			sendUserMetrics,
+			shouldFlushMetricsClientQueueOnEachEvent,
+			metrics_client.DoNothingMetricsClientCallback{},
+			analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+			metrics_client.IsCI(), maybeCloudUserId, maybeCloudInstanceId),
 	)
 
 	if err != nil {

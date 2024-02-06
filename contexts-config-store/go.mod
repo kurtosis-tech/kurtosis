@@ -1,10 +1,10 @@
 module github.com/kurtosis-tech/kurtosis/contexts-config-store
 
-go 1.19
+go 1.20
 
 require (
 	github.com/adrg/xdg v0.4.0
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.4.0
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/protobuf v1.31.0
@@ -17,7 +17,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

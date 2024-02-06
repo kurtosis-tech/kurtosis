@@ -2,6 +2,8 @@ package metrics_reporting
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"io"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -27,8 +30,8 @@ func NewMetricsReportingKurtosisBackend(underlying backend_interface.KurtosisBac
 	return &MetricsReportingKurtosisBackend{underlying: underlying}
 }
 
-func (backend *MetricsReportingKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
-	pulledFromRemote, architecture, err := backend.underlying.FetchImage(ctx, image, downloadMode)
+func (backend *MetricsReportingKurtosisBackend) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+	pulledFromRemote, architecture, err := backend.underlying.FetchImage(ctx, image, registrySpec, downloadMode)
 	if err != nil {
 		return false, "", stacktrace.Propagate(err, "An error occurred pulling image '%v'", image)
 	}
@@ -49,6 +52,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
 		ctx,
@@ -56,9 +60,10 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		envVars,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v'", imageOrgAndRepo, imageVersionTag)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v' and debug mode '%v'", imageOrgAndRepo, imageVersionTag, shouldStartInDebugMode)
 	}
 	return result, nil
 }
@@ -195,6 +200,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	enclaveDataVolumeDirpath string,
 	ownIpEnvVar string,
 	customEnvVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (*api_container.APIContainer, error) {
 	if _, found := customEnvVars[ownIpEnvVar]; found {
 		return nil, stacktrace.NewError("Requested own IP environment variable '%v' conflicts with custom environment variable", ownIpEnvVar)
@@ -208,13 +214,14 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 		enclaveDataVolumeDirpath,
 		ownIpEnvVar,
 		customEnvVars,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
+		// WARNING: remember not to print 'customEnvVars' because it could end up creating a secret info leak
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating an API container from image '%v' with envvars: %+v",
+			"An error occurred creating an API container from image '%v'",
 			image,
-			customEnvVars,
 		)
 	}
 	return result, nil
@@ -438,10 +445,26 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollectorForEnclave(c
 	return nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error) {
+	return backend.underlying.CreateReverseProxy(ctx, engineGuid)
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error) {
+	return backend.underlying.GetReverseProxy(ctx)
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyReverseProxy(ctx context.Context) error {
+	return backend.underlying.DestroyReverseProxy(ctx)
+}
+
 func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, isResourceInformationComplete, err := backend.underlying.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
 		return 0, 0, false, stacktrace.Propagate(err, "An error occurred while fetching cpu & memory information from the underlying backend")
 	}
 	return availableMemory, availableCpu, isResourceInformationComplete, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
+	return backend.underlying.BuildImage(ctx, imageName, imageBuildSpec)
 }

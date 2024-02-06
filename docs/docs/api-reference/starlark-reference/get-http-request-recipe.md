@@ -19,7 +19,7 @@ get_request_recipe = GetHttpRequestRecipe(
     # request and assigning that output to a key-value pair, where the key is the
     # reference variable and the value is the specific output. 
     # 
-    # Specifcally: the key is the way you refer to the extraction later on and
+    # Specifically: the key is the way you refer to the extraction later on and
     # the value is a 'jq' string that contains logic to extract parts from response 
     # body that you get from the HTTP GET request.
     # 

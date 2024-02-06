@@ -31,6 +31,7 @@ const (
 	StoreFilesArgName = "store"
 	WaitArgName       = "wait"
 	FilesArgName      = "files"
+	EnvVarsArgName    = "env_vars"
 
 	newlineChar = "\n"
 
@@ -134,7 +135,7 @@ func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.S
 	return result
 }
 
-func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string]string, imageName string) *startosis_errors.ValidationError {
+func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string][]string, imageName string) *startosis_errors.ValidationError {
 	if storeSpecList != nil {
 		if err := validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList); err != nil {
 			return startosis_errors.WrapWithValidationError(err, "error occurred while validating file paths to copy into file artifact")
@@ -145,13 +146,15 @@ func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvi
 		}
 	}
 
-	for _, artifactName := range serviceDirpathsToArtifactIdentifiers {
-		if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
-			return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunPythonBuiltinName, artifactName)
+	for _, artifactNames := range serviceDirpathsToArtifactIdentifiers {
+		for _, artifactName := range artifactNames {
+			if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
+				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunPythonBuiltinName, artifactName)
+			}
 		}
 	}
 
-	validatorEnvironment.AppendRequiredContainerImage(imageName)
+	validatorEnvironment.AppendRequiredImagePull(imageName)
 	return nil
 
 }
@@ -246,9 +249,15 @@ func resultMapToString(resultMap map[string]starlark.Comparable, builtinNameForL
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
 }
 
-func getServiceConfig(image string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion) (*service.ServiceConfig, error) {
+func getServiceConfig(
+	image string,
+	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
+	envVars *map[string]string,
+) (*service.ServiceConfig, error) {
 	serviceConfig, err := service.CreateServiceConfig(
 		image,
+		nil,
+		nil,
 		nil,
 		nil,
 		// This make sure that the container does not stop as soon as it starts
@@ -258,7 +267,7 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		//  command is completed
 		runTailCommandToPreventContainerToStopOnCreating,
 		nil,
-		nil,
+		*envVars,
 		filesArtifactExpansion,
 		nil,
 		0,
@@ -267,6 +276,8 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		0,
 		0,
 		map[string]string{},
+		nil,
+		nil,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
@@ -278,4 +289,30 @@ func formatErrorMessage(errorMessage string, errorFromExec string) string {
 	splitErrorMessageNewLine := strings.Split(errorFromExec, "\n")
 	reformattedErrorMessage := strings.Join(splitErrorMessageNewLine, "\n  ")
 	return fmt.Sprintf("%v\n  %v", errorMessage, reformattedErrorMessage)
+}
+
+func removeService(ctx context.Context, serviceNetwork service_network.ServiceNetwork, serviceName string) error {
+	_, err := serviceNetwork.RemoveService(ctx, serviceName)
+	if err != nil {
+		return stacktrace.NewError("error occurred while removing task with name %v", serviceName)
+	}
+	return nil
+}
+
+func extractEnvVarsIfDefined(arguments *builtin_argument.ArgumentValuesSet) (*map[string]string, *startosis_errors.InterpretationError) {
+	envVars := map[string]string{}
+	if arguments.IsSet(EnvVarsArgName) {
+		envVarsStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, EnvVarsArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", EnvVarsArgName)
+		}
+		if envVarsStarlark != nil && envVarsStarlark.Len() > 0 {
+			var interpretationErr *startosis_errors.InterpretationError
+			envVars, interpretationErr = kurtosis_types.SafeCastToMapStringString(envVarsStarlark, EnvVarsArgName)
+			if interpretationErr != nil {
+				return nil, interpretationErr
+			}
+		}
+	}
+	return &envVars, nil
 }

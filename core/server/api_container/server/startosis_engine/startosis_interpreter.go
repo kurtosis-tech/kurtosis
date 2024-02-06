@@ -56,21 +56,21 @@ type StartosisInterpreter struct {
 	serviceNetwork service_network.ServiceNetwork
 	recipeExecutor *runtime_value_store.RuntimeValueStore
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
-	moduleContentProvider startosis_packages.PackageContentProvider
-	starlarkValueSerde    *kurtosis_types.StarlarkValueSerde
-	enclaveEnvVars        string
+	packageContentProvider startosis_packages.PackageContentProvider
+	starlarkValueSerde     *kurtosis_types.StarlarkValueSerde
+	enclaveEnvVars         string
 }
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string) *StartosisInterpreter {
 	return &StartosisInterpreter{
-		mutex:                 &sync.Mutex{},
-		serviceNetwork:        serviceNetwork,
-		recipeExecutor:        runtimeValueStore,
-		moduleContentProvider: moduleContentProvider,
-		enclaveEnvVars:        enclaveVarEnvs,
-		starlarkValueSerde:    starlarkValueSerde,
+		mutex:                  &sync.Mutex{},
+		serviceNetwork:         serviceNetwork,
+		recipeExecutor:         runtimeValueStore,
+		packageContentProvider: packageContentProvider,
+		enclaveEnvVars:         enclaveVarEnvs,
+		starlarkValueSerde:     starlarkValueSerde,
 	}
 }
 
@@ -93,7 +93,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	currentEnclavePlan *enclave_plan_persistence.EnclavePlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
-	if interpretationErr := interpreter.moduleContentProvider.CloneReplacedPackagesIfNeeded(packageReplaceOptions); interpretationErr != nil {
+	if interpretationErr := interpreter.packageContentProvider.CloneReplacedPackagesIfNeeded(packageReplaceOptions); interpretationErr != nil {
 		return "", nil, interpretationErr.ToAPIType()
 	}
 
@@ -268,7 +268,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	if mainFuncParamsNum >= minimumParamsRequiredForPlan {
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
-			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider, packageReplaceOptions)
+			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.packageContentProvider, packageReplaceOptions)
 			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, interpreter.starlarkValueSerde, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}
@@ -368,7 +368,7 @@ func (interpreter *StartosisInterpreter) buildBindings(
 	predeclared[builtins.KurtosisModuleName] = kurtosisModule
 
 	// Add all Kurtosis helpers
-	for _, kurtosisHelper := range KurtosisHelpers(packageId, recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, moduleGlobalCache, packageReplaceOptions) {
+	for _, kurtosisHelper := range KurtosisHelpers(packageId, recursiveInterpretForModuleLoading, interpreter.packageContentProvider, moduleGlobalCache, packageReplaceOptions) {
 		predeclared[kurtosisHelper.Name()] = kurtosisHelper
 	}
 

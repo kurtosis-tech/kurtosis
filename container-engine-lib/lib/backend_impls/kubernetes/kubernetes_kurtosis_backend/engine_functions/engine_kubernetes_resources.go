@@ -2,6 +2,7 @@ package engine_functions
 
 import (
 	apiv1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
@@ -21,4 +22,7 @@ type engineKubernetesResources struct {
 
 	// Should always be nil if namespace is nil
 	pod *apiv1.Pod
+
+	// Should always be nil if namespace is nil
+	ingress *netv1.Ingress
 }

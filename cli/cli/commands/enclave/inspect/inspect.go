@@ -19,7 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	metrics_client "github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"sort"
@@ -37,6 +37,7 @@ const (
 	enclaveNameTitleName         = "Name"
 	enclaveStatusTitleName       = "Status"
 	enclaveCreationTimeTitleName = "Creation Time"
+	flagsTitleName               = "Flags"
 
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
@@ -49,6 +50,8 @@ const (
 
 	userServicesArtifactsHeader = "User Services"
 	filesArtifactsHeader        = "Files Artifacts"
+
+	productionEnclaveFlagStr = "production"
 )
 
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
@@ -104,47 +107,52 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	if err = PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, showFullUuids); err != nil {
+	if err = PrintEnclaveInspect(ctx, kurtosisCtx, enclaveIdentifier, showFullUuids); err != nil {
 		// this is already wrapped up
 		return err
 	}
 	return nil
 }
 
-func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, showFullUuids bool) error {
+func PrintEnclaveInspect(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, showFullUuids bool) error {
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
 	}
 
-	enclaveContainersStatus := enclaveInfo.ContainersStatus
-	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
-
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
+
+	// Add title row
 	keyValuePrinter.AddPair(enclaveNameTitleName, enclaveInfo.GetName())
 
+	// Add UUID row
 	if showFullUuids {
 		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetEnclaveUuid())
 	} else {
 		keyValuePrinter.AddPair(enclaveUUIDTitleName, enclaveInfo.GetShortenedUuid())
 	}
 
-	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveContainersStatus)
+	// Add status row
+	enclaveContainersStatusStr, err := enclave_status_stringifier.EnclaveContainersStatusStringifier(enclaveInfo.GetContainersStatus())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred when stringify enclave containers status")
 	}
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatusStr)
 
+	// Add creation time row
 	enclaveCreationTime := enclaveInfo.GetCreationTime()
-	//TODO remove this condition after 2023-01-01 when we are sure that there is not any old enclave created without the creation time label
-	//TODO and add a fail loudly check
-	if enclaveCreationTime != nil {
-		enclaveCreationTimeStr := enclaveCreationTime.AsTime().Local().Format(time.RFC1123)
-
-		keyValuePrinter.AddPair(enclaveCreationTimeTitleName, enclaveCreationTimeStr)
+	if enclaveCreationTime == nil {
+		return stacktrace.Propagate(err, "Expected to get the enclave creation time from the enclave info received but it was not received, this is a bug in Kurtosis")
 	}
+	enclaveCreationTimeStr := enclaveCreationTime.AsTime().Local().Format(time.RFC1123)
+	keyValuePrinter.AddPair(enclaveCreationTimeTitleName, enclaveCreationTimeStr)
 
-	isApiContainerRunning := enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
+	// Add flags row
+	allEnclaveFlagsStr := getAllEnclaveFlagsStr(enclaveInfo)
+
+	keyValuePrinter.AddPair(flagsTitleName, allEnclaveFlagsStr)
+
+	isApiContainerRunning := enclaveInfo.GetApiContainerStatus() == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
 
 	keyValuePrinter.Print()
 	out.PrintOutLn("")
@@ -187,4 +195,18 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.
 	}
 
 	return nil
+}
+
+func getAllEnclaveFlagsStr(enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo) string {
+	allEnclaveFragsStr := ""
+
+	// we only one enclave flag added so far, but we could have more in the future, so we should add them here
+	// and return all of them together in just one string
+	currentModeStr := strings.ToLower(enclaveInfo.GetMode().String())
+
+	if currentModeStr == productionEnclaveFlagStr {
+		allEnclaveFragsStr = currentModeStr
+	}
+
+	return allEnclaveFragsStr
 }

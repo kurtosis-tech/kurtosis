@@ -19,20 +19,24 @@ func (suite *KurtosisTypeConstructorTestSuite) TestDirectoryPersistentDirectory(
 }
 
 func (t *directoryPersistentDirectoryTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.PersistentKeyAttr, testPersistentDirectoryKey)
+	return fmt.Sprintf("%s(%s=%q, %s=%d)", directory.DirectoryTypeName, directory.PersistentKeyAttr, testPersistentDirectoryKey, directory.SizeKeyAttr, testPersistentDirectorySize)
 }
 
 func (t *directoryPersistentDirectoryTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	directoryStarlark, ok := typeValue.(*directory.Directory)
 	require.True(t, ok)
 
-	artifactName, found, err := directoryStarlark.GetArtifactNameIfSet()
+	artifactNames, found, err := directoryStarlark.GetArtifactNamesIfSet()
 	require.Nil(t, err)
 	require.False(t, found)
-	require.Empty(t, artifactName)
+	require.Empty(t, artifactNames)
 
 	persistentKey, found, err := directoryStarlark.GetPersistentKeyIfSet()
 	require.Nil(t, err)
 	require.True(t, found)
 	require.Equal(t, testPersistentDirectoryKey, persistentKey)
+
+	size, err := directoryStarlark.GetSizeOrDefault()
+	require.Nil(t, err)
+	require.Equal(t, testPersistentDirectorySizeInBytes, size)
 }

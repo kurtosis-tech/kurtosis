@@ -304,6 +304,8 @@ func getServiceRegistrationWithDataForTest(
 func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceConfig {
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
+		nil,
+		nil,
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},
@@ -320,15 +322,17 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 			"test-label-key":        "test-label-value",
 			"test-second-label-key": "test-second-label-value",
 		},
+		nil,
+		nil,
 	)
 	require.NoError(t, err)
 	return serviceConfig
 }
 
 func testPersistentDirectory() *service_directory.PersistentDirectories {
-	persistentDirectoriesMap := map[string]service_directory.DirectoryPersistentKey{
-		"dirpath1": service_directory.DirectoryPersistentKey("dirpath1_persistent_directory_key"),
-		"dirpath2": service_directory.DirectoryPersistentKey("dirpath2_persistent_directory_key"),
+	persistentDirectoriesMap := map[string]service_directory.PersistentDirectory{
+		"dirpath1": {PersistentKey: service_directory.DirectoryPersistentKey("dirpath1_persistent_directory_key"), Size: service_directory.DirectoryPersistentSize(int64(0))},
+		"dirpath2": {PersistentKey: service_directory.DirectoryPersistentKey("dirpath2_persistent_directory_key"), Size: service_directory.DirectoryPersistentSize(int64(0))},
 	}
 
 	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
@@ -341,9 +345,9 @@ func testFilesArtifactExpansion() *service_directory.FilesArtifactsExpansion {
 			"ENV_VAR1": "env_var1_value",
 			"ENV_VAR2": "env_var2_value",
 		},
-		ServiceDirpathsToArtifactIdentifiers: map[string]string{
-			"/pahth/number1": "first_identifier",
-			"/path/number2":  "second_idenfifier",
+		ServiceDirpathsToArtifactIdentifiers: map[string][]string{
+			"/path/number1": {"first_identifier"},
+			"/path/number2": {"second_identifier"},
 		},
 		ExpanderDirpathsToServiceDirpaths: map[string]string{
 			"/expander/dir1": "/service/dir1",
