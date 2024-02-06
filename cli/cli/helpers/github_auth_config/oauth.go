@@ -31,6 +31,10 @@ var (
 	browser = *gitbrowser.New(defaultLauncher, os.Stdout, os.Stderr)
 )
 
+type OAuthFlow interface {
+	AuthFlow() (string, string, error)
+}
+
 func AuthFlow() (string, string, error) {
 	httpClient := &http.Client{} // nolint: exhaustruct
 

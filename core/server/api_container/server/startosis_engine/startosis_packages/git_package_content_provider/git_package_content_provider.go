@@ -16,6 +16,7 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 	"strings"
@@ -424,10 +425,13 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 	return nil
 }
 
-// Returns empty string if no token found in [githubAuthTokenFile]
+// Returns empty string if no token found in [githubAuthTokenFile] or [githubAuthTokenFile] doesn't exist
 func (provider *GitPackageContentProvider) getGitHubAuthToken() (string, error) {
 	tokenBytes, err := os.ReadFile(provider.githubAuthTokenFile)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return "", nil
+		}
 		return "", stacktrace.Propagate(err, "An error occurred reading contents at '%v' to retrieve GitHub auth token.", provider.githubAuthTokenFile)
 	}
 	return string(tokenBytes), nil
