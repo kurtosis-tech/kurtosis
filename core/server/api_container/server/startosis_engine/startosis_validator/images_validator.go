@@ -133,25 +133,26 @@ func (validator *ImagesValidator) nixBuildUsingBackend(
 	buildErrors chan<- error,
 	nixBuildStarted chan<- string,
 	nixBuildFinished chan<- *ValidatedImage) {
+	imageRef := nixBuildSpec.GetFullFlakeReference()
+	logrus.Debugf("Requesting the build of image: '%s'", imageRef)
 	var imageName string
-	logrus.Debugf("Requesting the build of image: '%s'", imageName)
 	var imageArch string
 	imageBuiltLocally := true
 	imagePulledFromRemote := false
 	defer wg.Done()
 	imageCurrentlyBuilding <- true
-	nixBuildStarted <- imageName
+	nixBuildStarted <- imageRef
 	defer func() {
 		<-imageCurrentlyBuilding
 		nixBuildFinished <- NewValidatedImage(imageName, imagePulledFromRemote, imageBuiltLocally, imageArch)
 	}()
 
-	logrus.Debugf("Starting the build of image: '%s'", imageName)
+	logrus.Debugf("Starting the build of image: '%s'", imageRef)
 	imageName, err := (*backend).NixBuild(ctx, nixBuildSpec)
 	if err != nil {
-		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())
-		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageName)
+		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageRef, err.Error())
+		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageRef)
 		return
 	}
-	logrus.Debugf("Container image '%s' successfully built", imageName)
+	logrus.Debugf("Container image '%s' successfully built from Nix definition %s", imageName, imageRef)
 }

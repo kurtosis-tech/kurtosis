@@ -2,6 +2,7 @@ package nix_build_spec
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -17,15 +18,21 @@ type privateNixBuildSpec struct {
 	NixFlakeDir    string
 	ContextDirPath string
 	FlakeOutput    string
+	ImageName      string
 }
 
-func NewNixBuildSpec(contextDirPath string, nixFlakeDir string, flakeOutput string) *NixBuildSpec {
+func NewNixBuildSpec(imageName string, contextDirPath string, nixFlakeDir string, flakeOutput string) *NixBuildSpec {
 	internalNixBuildSpec := &privateNixBuildSpec{
 		NixFlakeDir:    nixFlakeDir,
 		ContextDirPath: contextDirPath,
 		FlakeOutput:    flakeOutput,
+		ImageName:      imageName,
 	}
 	return &NixBuildSpec{internalNixBuildSpec}
+}
+
+func (nixBuildSpec *NixBuildSpec) GetImageName() string {
+	return nixBuildSpec.privateNixBuildSpec.ImageName
 }
 
 func (nixBuildSpec *NixBuildSpec) GetNixFlakeDir() string {
@@ -38,6 +45,10 @@ func (nixBuildSpec *NixBuildSpec) GetBuildContextDir() string {
 
 func (nixBuildSpec *NixBuildSpec) GetFlakeOutput() string {
 	return nixBuildSpec.privateNixBuildSpec.FlakeOutput
+}
+
+func (nixBuildSpec *NixBuildSpec) GetFullFlakeReference() string {
+	return fmt.Sprintf("%s/.#%s", nixBuildSpec.privateNixBuildSpec.NixFlakeDir, nixBuildSpec.privateNixBuildSpec.FlakeOutput)
 }
 
 func (nixBuildSpec *NixBuildSpec) MarshalJSON() ([]byte, error) {

@@ -35,6 +35,7 @@ var (
 	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"
 
 	testNixContextDir           = "./"
+	testNixImageName            = "test-image"
 	testNixFlakeOutput          = "foo"
 	testNixFlakeLocationDir     = "./server/app"
 	testOnDiskNixContextDirPath = "kurtosis-data/test-package"

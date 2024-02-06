@@ -191,7 +191,7 @@ func testImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
 }
 
 func testNixBuildSpec() *nix_build_spec.NixBuildSpec {
-	return nix_build_spec.NewNixBuildSpec("test-image", "path", "")
+	return nix_build_spec.NewNixBuildSpec("test-image", "path", "", "")
 }
 
 func testServiceUser() *service_user.ServiceUser {

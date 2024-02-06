@@ -679,7 +679,7 @@ func convertImage(
 	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *image_registry_spec.ImageRegistrySpec, *nix_build_spec.NixBuildSpec, *startosis_errors.InterpretationError) {
 	imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := image.(*ImageBuildSpec)
 	imageRegistrySpecStarlarkType, isImageRegistrySpecStarlarkType := image.(*ImageRegistrySpec)
-	NixBuildSpecStarlarkType, isNixBuildSpecStarlarkType := image.(*NixBuildSpec)
+	nixBuildSpecStarlarkType, isNixBuildSpecStarlarkType := image.(*NixBuildSpec)
 	if isImageBuildSpecStarlarkType {
 		imageBuildSpec, interpretationErr := imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {
@@ -697,11 +697,11 @@ func convertImage(
 		}
 		return imageRegistrySpec.GetImageName(), nil, imageRegistrySpec, nil, nil
 	} else if isNixBuildSpecStarlarkType {
-		nixBuildSpec, interpretationErr := NixBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
+		nixBuildSpec, interpretationErr := nixBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {
 			return "", nil, nil, nil, interpretationErr
 		}
-		return nixBuildSpec.GetFlakeOutput(), nil, nil, nixBuildSpec, nil
+		return nixBuildSpec.GetImageName(), nil, nil, nixBuildSpec, nil
 	} else {
 		imageName, interpretationErr := kurtosis_types.SafeCastToString(image, ImageAttr)
 		if interpretationErr != nil {

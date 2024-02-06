@@ -154,10 +154,6 @@ func (_c *MockKurtosisBackend_CopyFilesFromUserService_Call) RunAndReturn(run fu
 func (_m *MockKurtosisBackend) CreateAPIContainer(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string, shouldStartInDebugMode bool) (*api_container.APIContainer, error) {
 	ret := _m.Called(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars, shouldStartInDebugMode)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateAPIContainer")
-	}
-
 	var r0 *api_container.APIContainer
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string, bool) (*api_container.APIContainer, error)); ok {
@@ -2433,13 +2429,12 @@ func (_c *MockKurtosisBackend_UpdateEnclave_Call) RunAndReturn(run func(context.
 	return _c
 }
 
-type mockConstructorTestingTNewMockKurtosisBackend interface {
+// NewMockKurtosisBackend creates a new instance of MockKurtosisBackend. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewMockKurtosisBackend(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewMockKurtosisBackend creates a new instance of MockKurtosisBackend. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewMockKurtosisBackend(t mockConstructorTestingTNewMockKurtosisBackend) *MockKurtosisBackend {
+}) *MockKurtosisBackend {
 	mock := &MockKurtosisBackend{}
 	mock.Mock.Test(t)
 

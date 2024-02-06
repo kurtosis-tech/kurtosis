@@ -39,12 +39,14 @@ func (suite *KurtosisTypeConstructorTestSuite) TestNixBuildSpecTest() {
 }
 
 func (t *nixBuildSpecTest) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
+	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q)",
 		service_config.NixBuildSpecTypeName,
 		service_config.FlakeLocationDir,
 		testNixFlakeLocationDir,
 		service_config.NixContextAttr,
 		testNixContextDir,
+		service_config.NixImageName,
+		testNixImageName,
 		service_config.FlakeOutputAttr,
 		testNixFlakeOutput)
 }
