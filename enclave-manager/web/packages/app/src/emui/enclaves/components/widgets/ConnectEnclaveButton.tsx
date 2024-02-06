@@ -1,6 +1,6 @@
 import { Button, ButtonProps, Tooltip } from "@chakra-ui/react";
 import { useState } from "react";
-import { FiTrash2 } from "react-icons/fi";
+import { FiLink2 } from "react-icons/fi";
 import { EnclaveFullInfo } from "../../types";
 import { ConnectEnclaveModal } from "../modals/ConnectEnclaveModal";
 
@@ -17,7 +17,7 @@ export const ConnectEnclaveButton = ({ enclave, instanceUUID, ...buttonProps }: 
       <Tooltip label={`Steps to connect to this enclave from the CLI.`} openDelay={1000}>
         <Button
           colorScheme={"green"}
-          leftIcon={<FiTrash2 />}
+          leftIcon={<FiLink2 />}
           onClick={() => setShowModal(true)}
           size={"sm"}
           variant={"solid"}
