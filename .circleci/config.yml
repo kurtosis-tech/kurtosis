@@ -766,9 +766,9 @@ jobs:
               false
             fi
       - run:
-          name: "Verify Kurtosis cleaned up all its volumes (except for the log storage volume, so we can persist service logs)"
+          name: "Verify Kurtosis cleaned up all its volumes (except for the log storage and github auth storage volumes)"
           command: |
-            if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l ) -eq 1 ]; then
+            if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l ) -eq 2 ]; then
               docker volume ls
               false
             fi
