@@ -173,7 +173,6 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 
 	maybeCloudUserId, maybeCloudInstanceId := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
 
-	// Configure GitHub authentication
 	var githubAuthToken string
 	// If override was provided, use it, else use existing GitHub auth config if it exists
 	if guarantor.githubAuthTokenOverride != "" {
@@ -183,7 +182,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred retrieving GitHub config.")
 		}
-		if githubAuthConfig.GetCurrentUser() != "" {
+		if githubAuthConfig.IsLoggedIn() {
 			githubAuthToken, err = githubAuthConfig.GetAuthToken()
 			if err != nil {
 				return stacktrace.Propagate(err, "Detected GitHub user '%v' is logged in but error occurred retrieving auth token.", githubAuthConfig.GetCurrentUser())
