@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -12,6 +13,8 @@ func DestroyEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 	dockerManager *docker_manager.DockerManager,
+	objsAttrProvider object_attributes_provider.DockerObjectAttributesProvider,
+
 ) (
 	resultSuccessfulEngineGuids map[engine.EngineGUID]bool,
 	resultErroredEngineGuids map[engine.EngineGUID]error,
@@ -59,6 +62,17 @@ func DestroyEngines(
 			"An error occurred destroying engine '%v'",
 			guidStr,
 		)
+	}
+
+	// Remove GitHub Auth storage
+	githubAuthStorageAttrs, err := objsAttrProvider.ForGitHubAuthStorageVolume()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving attributes for GitHub auth storage volume.")
+	}
+	githubAuthStorageVolNamStr := githubAuthStorageAttrs.GetName().GetString()
+	err = dockerManager.RemoveVolume(ctx, githubAuthStorageVolNamStr)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing GitHub auth storage volume.")
 	}
 
 	return successfulGuids, erroredGuids, nil

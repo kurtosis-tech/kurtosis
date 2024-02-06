@@ -53,6 +53,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	grpcPortNum uint16,
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
+	githubAuthToken string,
 ) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
 		ctx,
@@ -61,6 +62,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 		grpcPortNum,
 		envVars,
 		shouldStartInDebugMode,
+		githubAuthToken,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v' and debug mode '%v'", imageOrgAndRepo, imageVersionTag, shouldStartInDebugMode)

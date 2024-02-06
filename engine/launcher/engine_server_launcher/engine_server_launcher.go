@@ -130,6 +130,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		grpcListenPortNum,
 		envVars,
 		shouldStartInDebugMode,
+		githubAuthToken,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%+v'", envVars)

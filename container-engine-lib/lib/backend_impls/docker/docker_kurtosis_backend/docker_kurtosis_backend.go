@@ -111,6 +111,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	grpcPortNum uint16,
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
+	gitAuthToken string,
 ) (
 	*engine.Engine,
 	error,
@@ -121,9 +122,10 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		envVars,
+		shouldStartInDebugMode,
+		gitAuthToken,
 		backend.dockerManager,
 		backend.objAttrsProvider,
-		shouldStartInDebugMode,
 	)
 }
 
@@ -156,7 +158,7 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 	resultErroredEngineUuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
-	return engine_functions.DestroyEngines(ctx, filters, backend.dockerManager)
+	return engine_functions.DestroyEngines(ctx, filters, backend.dockerManager, backend.objAttrsProvider)
 }
 
 func (backend *DockerKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {

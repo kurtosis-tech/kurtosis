@@ -17,11 +17,12 @@ import (
 )
 
 const (
-	engineServerNamePrefix = "kurtosis-engine"
-	logsAggregatorName     = "kurtosis-logs-aggregator"
-	logsStorageVolumeName  = "kurtosis-logs-storage"
-	engineRESTAPIPortStr   = "engine-rest-api"
-	reverseProxyNamePrefix = "kurtosis-reverse-proxy"
+	engineServerNamePrefix  = "kurtosis-engine"
+	logsAggregatorName      = "kurtosis-logs-aggregator"
+	logsStorageVolumeName   = "kurtosis-logs-storage"
+	githubAuthStorageVolume = "kurtosis-github-auth-storage"
+	engineRESTAPIPortStr    = "engine-rest-api"
+	reverseProxyNamePrefix  = "kurtosis-reverse-proxy"
 )
 
 type DockerObjectAttributesProvider interface {
@@ -36,6 +37,7 @@ type DockerObjectAttributesProvider interface {
 	ForLogsAggregator() (DockerObjectAttributes, error)
 	ForLogsStorageVolume() (DockerObjectAttributes, error)
 	ForReverseProxy(engineGuid engine.EngineGUID) (DockerObjectAttributes, error)
+	ForGitHubAuthStorageVolume() (DockerObjectAttributes, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -144,6 +146,23 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsStorageVolume() (Dock
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
 		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.LogsStorageVolumeTypeDockerLabelValue,
+	}
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+	return objectAttributes, nil
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForGitHubAuthStorageVolume() (DockerObjectAttributes, error) {
+	name, err := docker_object_name.CreateNewDockerObjectName(githubAuthStorageVolume)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", githubAuthStorageVolume)
+	}
+
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.GitHubAuthStorageVolumeTypeDockerLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
