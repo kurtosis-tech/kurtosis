@@ -17,12 +17,12 @@ import (
 )
 
 const (
-	engineServerNamePrefix            = "kurtosis-engine"
-	logsAggregatorName                = "kurtosis-logs-aggregator"
-	logsStorageVolumeName             = "kurtosis-logs-storage"
-	githubAuthStorageVolumeNamePrefix = "kurtosis-github-auth-storage"
-	engineRESTAPIPortStr              = "engine-rest-api"
-	reverseProxyNamePrefix            = "kurtosis-reverse-proxy"
+	engineServerNamePrefix      = "kurtosis-engine"
+	logsAggregatorName          = "kurtosis-logs-aggregator"
+	logsStorageVolumeName       = "kurtosis-logs-storage"
+	githubAuthStorageVolumeName = "kurtosis-github-auth-storage"
+	engineRESTAPIPortStr        = "engine-rest-api"
+	reverseProxyNamePrefix      = "kurtosis-reverse-proxy"
 )
 
 type DockerObjectAttributesProvider interface {
@@ -37,7 +37,7 @@ type DockerObjectAttributesProvider interface {
 	ForLogsAggregator() (DockerObjectAttributes, error)
 	ForLogsStorageVolume() (DockerObjectAttributes, error)
 	ForReverseProxy(engineGuid engine.EngineGUID) (DockerObjectAttributes, error)
-	ForGitHubAuthStorageVolume(engineGuid engine.EngineGUID) (DockerObjectAttributes, error)
+	ForGitHubAuthStorageVolume() (DockerObjectAttributes, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -155,31 +155,14 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsStorageVolume() (Dock
 	return objectAttributes, nil
 }
 
-func (provider *dockerObjectAttributesProviderImpl) ForGitHubAuthStorageVolume(engineGuid engine.EngineGUID) (DockerObjectAttributes, error) {
-	nameStr := strings.Join(
-		[]string{
-			githubAuthStorageVolumeNamePrefix,
-			string(engineGuid),
-		},
-		objectNameElementSeparator,
-	)
-	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
+func (provider *dockerObjectAttributesProviderImpl) ForGitHubAuthStorageVolume() (DockerObjectAttributes, error) {
+	name, err := docker_object_name.CreateNewDockerObjectName(githubAuthStorageVolumeName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the Github auth storage volume Docker object name object from string '%v'", nameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", githubAuthStorageVolumeName)
 	}
 
-	idLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(engineGuid))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the GitHub auth storage volume GUID Docker label from string '%v'", engineGuid)
-	}
-	guidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(string(engineGuid))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the GitHub auth storage volume GUID Docker label from string '%v'", engineGuid)
-	}
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
 		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.GitHubAuthStorageVolumeTypeDockerLabelValue,
-		docker_label_key.IDDockerLabelKey:         idLabelValue,
-		docker_label_key.GUIDDockerLabelKey:       guidLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

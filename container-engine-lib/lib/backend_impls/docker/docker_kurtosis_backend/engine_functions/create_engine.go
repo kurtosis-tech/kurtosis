@@ -241,7 +241,7 @@ func CreateEngine(
 	}
 
 	// Configure GitHub Auth by writing the provided token to a volume that's accessible by the engine
-	githubAuthStorageVolObjAttrs, err := objAttrsProvider.ForGitHubAuthStorageVolume(engineGuid)
+	githubAuthStorageVolObjAttrs, err := objAttrsProvider.ForGitHubAuthStorageVolume()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred retrieving object attributes for GitHub auth storage.")
 	}
@@ -250,17 +250,10 @@ func CreateEngine(
 	for labelKey, labelValue := range githubAuthStorageVolObjAttrs.GetLabels() {
 		githubAuthStorageVolLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
+	// This volume is created idempotently (like logs storage volume) and just write the token to the file everytime the engine starts
 	if err = dockerManager.CreateVolume(ctx, githubAuthStorageVolNameStr, githubAuthStorageVolLabelStrs); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating GitHub auth storage volume.")
 	}
-	shouldRemoveGitHubAuthStorageVolume := true
-	defer func() {
-		if shouldRemoveGitHubAuthStorageVolume {
-			if err := dockerManager.RemoveVolume(ctx, githubAuthStorageVolNameStr); err != nil {
-				logrus.Errorf("An error occurred removing GitHub auth storage volume after if failed to be created. Must remove it manually!")
-			}
-		}
-	}()
 	githubAuthStorageCreator := github_auth_storage_creator.NewGitHubAuthStorageCreator(gitAuthToken)
 	err = githubAuthStorageCreator.CreateGitHubAuthStorage(ctx, targetNetworkId, githubAuthStorageVolNameStr, consts.GitHubAuthStorageDirPath, dockerManager)
 	if err != nil {
@@ -364,7 +357,6 @@ func CreateEngine(
 
 	shouldRemoveLogsAggregator = false
 	shouldRemoveReverseProxy = false
-	shouldRemoveGitHubAuthStorageVolume = false
 	shouldKillEngineContainer = false
 	return result, nil
 }

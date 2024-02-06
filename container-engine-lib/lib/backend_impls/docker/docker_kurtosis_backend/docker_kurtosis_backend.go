@@ -158,7 +158,7 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 	resultErroredEngineUuids map[engine.EngineGUID]error,
 	resultErr error,
 ) {
-	return engine_functions.DestroyEngines(ctx, filters, backend.dockerManager, backend.objAttrsProvider)
+	return engine_functions.DestroyEngines(ctx, filters, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
