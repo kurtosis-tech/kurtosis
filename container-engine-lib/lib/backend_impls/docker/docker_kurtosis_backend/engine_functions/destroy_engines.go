@@ -64,15 +64,17 @@ func DestroyEngines(
 		)
 	}
 
-	// Remove GitHub Auth storage
-	githubAuthStorageAttrs, err := objsAttrProvider.ForGitHubAuthStorageVolume()
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving attributes for GitHub auth storage volume.")
-	}
-	githubAuthStorageVolNamStr := githubAuthStorageAttrs.GetName().GetString()
-	err = dockerManager.RemoveVolume(ctx, githubAuthStorageVolNamStr)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing GitHub auth storage volume.")
+	// Remove GitHub Auth storage associated with successfully removed engine
+	for guid, _ := range successfulGuids {
+		githubAuthStorageAttrs, err := objsAttrProvider.ForGitHubAuthStorageVolume(guid)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving attributes for GitHub auth storage volume.")
+		}
+		githubAuthStorageVolNamStr := githubAuthStorageAttrs.GetName().GetString()
+		err = dockerManager.RemoveVolume(ctx, githubAuthStorageVolNamStr)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred removing GitHub auth storage volume.")
+		}
 	}
 
 	return successfulGuids, erroredGuids, nil

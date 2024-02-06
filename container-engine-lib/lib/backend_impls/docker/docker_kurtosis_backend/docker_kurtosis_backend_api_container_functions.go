@@ -69,11 +69,10 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave data volume for enclave '%v'", enclaveUuid)
 	}
 
-	githubAuthStorageVolAttrs, err := backend.objAttrsProvider.ForGitHubAuthStorageVolume()
+	githubAuthStorageVolumeName, err := backend.getGitHubAuthStorageVolume(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting object attributes for GitHub auth storage volume.")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the GitHub auth storage volume name.")
 	}
-	githubAuthStorageVolName := githubAuthStorageVolAttrs.GetName().GetString()
 
 	// Get the Docker network ID where we'll start the new API container
 	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveUuid(ctx, enclaveUuid)
@@ -165,8 +164,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	volumeMounts := map[string]string{
-		enclaveDataVolumeName:    enclaveDataVolumeDirpath,
-		githubAuthStorageVolName: consts.GitHubAuthStorageDirPath,
+		enclaveDataVolumeName:       enclaveDataVolumeDirpath,
+		githubAuthStorageVolumeName: consts.GitHubAuthStorageDirPath,
 	}
 
 	labelStrs := map[string]string{}

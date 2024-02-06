@@ -27,7 +27,10 @@ const (
 	// Move from places outside the enclave data dir are not atomic as they're over the network
 	tmpRepositoriesStoreDirname = "tmp-repositories"
 
-	githubAuthStoreDirname  = "github-auth"
+	// Name of directory INSIDE THE ENCLAVE DATA DIR at [absMountDirPath]  that contains info for authenticating GitHub operations
+	githubAuthStoreDirname = "github-auth"
+
+	// Name of file within [githubAuthStoreDirname] that contains the GitHub auth token
 	githubAuthTokenFilename = "token.txt"
 )
 
@@ -80,10 +83,11 @@ func (dir EnclaveDataDirectory) GetGitPackageContentProvider(enclaveDb *enclave_
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the temporary repositories store dirpath '%v' exists.", tempRepositoriesStoreDirpath)
 	}
 
-	githubAuthTokenAbsPath := path.Join(dir.absMountDirpath, githubAuthStoreDirname, githubAuthTokenFilename)
-	if err := ensureDirpathExists(githubAuthTokenAbsPath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring the GitHub auth file '%v' exists.", githubAuthTokenAbsPath)
+	githubAuthStoreDirpath := path.Join(dir.absMountDirpath, githubAuthStoreDirname)
+	if err := ensureDirpathExists(githubAuthStoreDirpath); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring the GitHub auth store dirpath '%v' exists.", githubAuthStoreDirpath)
 	}
+	githubAuthTokenFilepath := path.Join(dir.absMountDirpath, githubAuthStoreDirname, githubAuthTokenFilename)
 
-	return git_package_content_provider.NewGitPackageContentProvider(repositoriesStoreDirpath, tempRepositoriesStoreDirpath, githubAuthTokenAbsPath, enclaveDb), nil
+	return git_package_content_provider.NewGitPackageContentProvider(repositoriesStoreDirpath, tempRepositoriesStoreDirpath, githubAuthTokenFilepath, enclaveDb), nil
 }

@@ -241,7 +241,7 @@ func CreateEngine(
 	}
 
 	// Configure GitHub Auth by writing the provided token to a volume that's accessible by the engine
-	githubAuthStorageVolObjAttrs, err := objAttrsProvider.ForGitHubAuthStorageVolume()
+	githubAuthStorageVolObjAttrs, err := objAttrsProvider.ForGitHubAuthStorageVolume(engineGuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred retrieving object attributes for GitHub auth storage.")
 	}

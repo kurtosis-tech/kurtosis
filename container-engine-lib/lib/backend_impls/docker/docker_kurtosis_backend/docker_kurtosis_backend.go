@@ -593,3 +593,22 @@ func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveUuid(ctx cont
 	volume := foundVolumes[0]
 	return volume.Name, nil
 }
+
+// Guaranteed to either return a GitHub auth storage volume name or throw an error
+func (backend *DockerKurtosisBackend) getGitHubAuthStorageVolume(ctx context.Context) (string, error) {
+	volumeSearchLabels := map[string]string{
+		docker_label_key.VolumeTypeDockerLabelKey.GetString(): label_value_consts.GitHubAuthStorageVolumeTypeDockerLabelValue.GetString(),
+	}
+	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting GitHub auth storage volumes matching labels '%+v'", volumeSearchLabels)
+	}
+	if len(foundVolumes) > 1 {
+		return "", stacktrace.NewError("Found multiple GitHub auth storage volumes. This should never happen")
+	}
+	if len(foundVolumes) == 0 {
+		return "", stacktrace.NewError("No GitHub auth storage volume found.")
+	}
+	volume := foundVolumes[0]
+	return volume.Name, nil
+}
