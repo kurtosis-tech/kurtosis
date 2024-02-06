@@ -59,6 +59,12 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 				},
 				{
+					Name:              EnvVarsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator:         nil,
+				},
+				{
 					Name:              WaitArgName,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
@@ -90,6 +96,7 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 			FilesArgName:      true,
 			StoreFilesArgName: true,
 			WaitArgName:       true,
+			EnvVarsArgName:    true,
 		},
 	}
 }
@@ -147,8 +154,13 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 		}
 	}
 
+	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
+	if err != nil {
+		return nil, interpretationErr
+	}
+
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion)
+	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion, envVars)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
 	}

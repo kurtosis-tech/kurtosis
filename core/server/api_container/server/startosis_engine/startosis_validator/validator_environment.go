@@ -173,11 +173,3 @@ func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64,
 func (environment *ValidatorEnvironment) AddPersistentKey(persistentKey service_directory.DirectoryPersistentKey) {
 	environment.persistentKeys[persistentKey] = ComponentCreatedOrUpdatedDuringPackageRun
 }
-
-func (environment *ValidatorEnvironment) DoesPersistentKeyExist(persistentKey service_directory.DirectoryPersistentKey) ComponentExistence {
-	persistentKeyExistence, found := environment.persistentKeys[persistentKey]
-	if !found {
-		return ComponentNotFound
-	}
-	return persistentKeyExistence
-}

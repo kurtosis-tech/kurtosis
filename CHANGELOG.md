@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.86.14](https://github.com/kurtosis-tech/kurtosis/compare/0.86.13...0.86.14) (2024-02-06)
+
+
+### Bug Fixes
+
+* allow persistent directory to be reused across services ([#2123](https://github.com/kurtosis-tech/kurtosis/issues/2123)) ([eb5bcb9](https://github.com/kurtosis-tech/kurtosis/commit/eb5bcb9053468b054e28efbc40e4ee459caf203e))
+
+## [0.86.13](https://github.com/kurtosis-tech/kurtosis/compare/0.86.12...0.86.13) (2024-02-05)
+
+
+### Features
+
+* add `env_vars` as input to `run_sh` ([#2114](https://github.com/kurtosis-tech/kurtosis/issues/2114)) ([5a30ea7](https://github.com/kurtosis-tech/kurtosis/commit/5a30ea75865bfc5fb9359d3da206124d13ebc45e)), closes [#2050](https://github.com/kurtosis-tech/kurtosis/issues/2050)
+* add nodejs devtools to Nix ([#2099](https://github.com/kurtosis-tech/kurtosis/issues/2099)) ([7bbb2bc](https://github.com/kurtosis-tech/kurtosis/commit/7bbb2bc7a5487b05f91089634beed5e83e3329de))
+* add run docker compose with kurtosis guide ([#2085](https://github.com/kurtosis-tech/kurtosis/issues/2085)) ([7bbe479](https://github.com/kurtosis-tech/kurtosis/commit/7bbe4796a5b1e952fb85d7cf89136b34ad35f70a))
+* Add RunStarlarkScript to enclave manager API ([#2103](https://github.com/kurtosis-tech/kurtosis/issues/2103)) ([1eeb3eb](https://github.com/kurtosis-tech/kurtosis/commit/1eeb3eb3880e8df83c78642dce391070cda9f515))
+
+
+### Bug Fixes
+
+* adding the `core script build call`, which was removed by accident, in the main build script ([#2118](https://github.com/kurtosis-tech/kurtosis/issues/2118)) ([1f73821](https://github.com/kurtosis-tech/kurtosis/commit/1f738216851718bda1ebf9f9bf8936a715ae2cdf))
+* Fix calls to stacktrace in the reverse proxy module ([#2100](https://github.com/kurtosis-tech/kurtosis/issues/2100)) ([a7fefc2](https://github.com/kurtosis-tech/kurtosis/commit/a7fefc235676335d195c4f98a10bb31c5b46a794))
+
 ## [0.86.12](https://github.com/kurtosis-tech/kurtosis/compare/0.86.11...0.86.12) (2024-01-25)
 
 
