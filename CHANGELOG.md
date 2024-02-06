@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.14](https://github.com/kurtosis-tech/kurtosis/compare/0.86.13...0.86.14) (2024-02-06)
+
+
+### Bug Fixes
+
+* allow persistent directory to be reused across services ([#2123](https://github.com/kurtosis-tech/kurtosis/issues/2123)) ([eb5bcb9](https://github.com/kurtosis-tech/kurtosis/commit/eb5bcb9053468b054e28efbc40e4ee459caf203e))
+
 ## [0.86.13](https://github.com/kurtosis-tech/kurtosis/compare/0.86.12...0.86.13) (2024-02-05)
 
 
