@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -51,15 +52,15 @@ type GitPackageContentProvider struct {
 	repositoriesDir                 string
 	packageReplaceOptionsRepository *packageReplaceOptionsRepository
 
-	gitAuth *http.BasicAuth
+	githubAuthTokenFile string
 }
 
-func NewGitPackageContentProvider(repositoriesDir string, tmpDir string, enclaveDb *enclave_db.EnclaveDB, gitAuth *http.BasicAuth) *GitPackageContentProvider {
+func NewGitPackageContentProvider(repositoriesDir, tmpDir, githubAuthTokenFile string, enclaveDb *enclave_db.EnclaveDB) *GitPackageContentProvider {
 	return &GitPackageContentProvider{
 		repositoriesDir:                 repositoriesDir,
 		repositoriesTmpDir:              tmpDir,
+		githubAuthTokenFile:             githubAuthTokenFile,
 		packageReplaceOptionsRepository: newPackageReplaceOptionsRepository(enclaveDb),
-		gitAuth:                         gitAuth,
 	}
 }
 
@@ -318,12 +319,24 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 		depth = depthAssumingBranchTagsCommitsAreSpecified
 	}
 
+	var githubAuth *http.BasicAuth
+	githubAuthToken, err := provider.getGitHubAuthToken()
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "An error occurred retrieving GitHub auth token.")
+	}
+	if githubAuthToken != "" {
+		githubAuth = &http.BasicAuth{
+			Username: "token",
+			Password: githubAuthToken,
+		}
+	}
+
 	//TODO evaluate to use the GitHub client GetContents call instead, because we are cloning the entire repository's workspace with this approach
 	//TODO and the startosis package could be just a small sub-folder inside a giant mono-repository
 	//TODO and even now, in the upload_files instruction, we are allowing to upload files or a folder for any repository, but we are cloning the entire repository for this
 	repo, err := git.PlainClone(gitClonePath, isNotBareClone, &git.CloneOptions{
 		URL:               parsedURL.GetGitURL(),
-		Auth:              provider.gitAuth,
+		Auth:              githubAuth,
 		RemoteName:        "",
 		ReferenceName:     "",
 		SingleBranch:      false,
@@ -344,11 +357,10 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 		Shared: false,
 	})
 	if err != nil {
-		// TODO remove public repository from error after we support private repositories
 		// We silent the underlying error here as it can be confusing to the user. For example, when there's a typo in
 		// the repo name, pointing to a non existing repo, the underlying error is: "authentication required"
 		logrus.Errorf("Error cloning git repository: '%s' to '%s'. Error was: \n%s", parsedURL.GetGitURL(), gitClonePath, err.Error())
-		return startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists and is a public repository.", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
+		return startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists or if it's a private repository, that you are logged into GitHub via `kurtosis github login`.", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
 	}
 
 	if parsedURL.GetTagBranchOrCommit() != emptyTagBranchOrCommit {
@@ -410,6 +422,15 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 		return startosis_errors.NewInterpretationError("Cloning the repository '%s' failed. An error occurred while moving repository at temporary destination '%s' to final destination '%s'", parsedURL.GetGitURL(), gitClonePath, packagePath)
 	}
 	return nil
+}
+
+// Returns empty string if no token found in [githubAuthTokenFile]
+func (provider *GitPackageContentProvider) getGitHubAuthToken() (string, error) {
+	tokenBytes, err := os.ReadFile(provider.githubAuthTokenFile)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred reading contents at '%v' to retrieve GitHub auth token.", provider.githubAuthTokenFile)
+	}
+	return string(tokenBytes), nil
 }
 
 // methods checks whether the root of the package is same as repository root

@@ -8,7 +8,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"net"
 	"os"
 	"path"
@@ -126,14 +125,7 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred while getting the enclave db")
 	}
 
-	var gitAuth *http.BasicAuth
-	if serverArgs.GitAuthToken != "" {
-		gitAuth = &http.BasicAuth{
-			Username: "token",
-			Password: serverArgs.GitAuthToken,
-		}
-	}
-	gitPackageContentProvider, err := enclaveDataDir.GetGitPackageContentProvider(enclaveDb, gitAuth)
+	gitPackageContentProvider, err := enclaveDataDir.GetGitPackageContentProvider(enclaveDb)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while creating the Git module content provider")
 	}

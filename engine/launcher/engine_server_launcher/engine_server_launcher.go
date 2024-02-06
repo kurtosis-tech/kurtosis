@@ -66,8 +66,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		cloudInstanceID,
 		allowedCORSOrigins,
 		shouldStartInDebugMode,
-		githubAuthToken,
-	)
+		githubAuthToken)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
 	}
@@ -112,7 +111,6 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		cloudUserID,
 		cloudInstanceID,
 		allowedCORSOrigins,
-		githubAuthToken,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")

@@ -3,7 +3,6 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
-	git "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"sort"
 	"strings"
 	"sync"
@@ -75,8 +74,6 @@ type EnclaveManager struct {
 	isCI                        bool
 	cloudUserID                 metrics_client.CloudUserID
 	cloudInstanceID             metrics_client.CloudInstanceID
-
-	gitAuth *git.BasicAuth
 }
 
 func CreateEnclaveManager(
@@ -92,7 +89,6 @@ func CreateEnclaveManager(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
-	gitAuth *git.BasicAuth,
 ) (*EnclaveManager, error) {
 	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
@@ -103,7 +99,7 @@ func CreateEnclaveManager(
 
 	// The enclave pool feature is only available for Kubernetes so far
 	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
-		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars, metricsUserID, didUserAcceptSendingMetrics, isCI, cloudUserID, cloudInstanceID, gitAuth)
+		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars, metricsUserID, didUserAcceptSendingMetrics, isCI, cloudUserID, cloudInstanceID)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
 		}
@@ -124,7 +120,6 @@ func CreateEnclaveManager(
 		isCI:                                      isCI,
 		cloudUserID:                               cloudUserID,
 		cloudInstanceID:                           cloudInstanceID,
-		gitAuth:                                   gitAuth,
 	}
 
 	return enclaveManager, nil
@@ -198,7 +193,6 @@ func (manager *EnclaveManager) CreateEnclave(
 			manager.cloudUserID,
 			manager.cloudInstanceID,
 			manager.kurtosisBackendType,
-			manager.gitAuth,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(
