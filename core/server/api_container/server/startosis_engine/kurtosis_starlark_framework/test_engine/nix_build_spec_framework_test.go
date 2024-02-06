@@ -20,12 +20,17 @@ func (suite *KurtosisTypeConstructorTestSuite) TestNixBuildSpecTest() {
 	suite.packageContentProvider.EXPECT().
 		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
 		Times(1).
-		Return(testOnDiskNixContextDirPath, nil)
+		Return(testBuildContextLocator, nil)
 
 	suite.packageContentProvider.EXPECT().
 		GetOnDiskAbsolutePackageFilePath(testNixFlakeLocator).
 		Times(1).
 		Return(testOnDiskNixFlakePath, nil)
+
+	suite.packageContentProvider.EXPECT().
+		GetOnDiskAbsolutePath(testBuildContextLocator).
+		Times(1).
+		Return(testOnDiskContextDirPath, nil)
 
 	suite.run(&nixBuildSpecTest{
 		T:                      suite.T(),
@@ -54,7 +59,7 @@ func (t *nixBuildSpecTest) Assert(typeValue builtin_argument.KurtosisValueType) 
 		t.packageContentProvider,
 		testNoPackageReplaceOptions)
 	require.Nil(t, err)
-	require.Equal(t, testOnDiskNixFlakePath, nixBuildSpec.GetNixFlakeFilePath())
+	require.Equal(t, testOnDiskNixFlakeDir, nixBuildSpec.GetNixFlakeDir())
 	require.Equal(t, testOnDiskNixContextDirPath, nixBuildSpec.GetBuildContextDir())
 	require.Equal(t, testNixFlakeOutput, nixBuildSpec.GetFlakeOutput())
 }

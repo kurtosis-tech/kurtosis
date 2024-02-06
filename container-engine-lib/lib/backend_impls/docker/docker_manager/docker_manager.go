@@ -6,14 +6,19 @@
 package docker_manager
 
 import (
+	"archive/tar"
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net"
+	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 	"sync"
@@ -1315,8 +1320,116 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, regi
 	return pulledFromRemote, imageArchitecture, nil
 }
 
+// ImageManifest represents the structure of the manifest.json file
+type ImageManifest struct {
+	Config   string   `json:"Config"`
+	RepoTags []string `json:"RepoTags"`
+	Layers   []string `json:"Layers"`
+}
+type Manifest struct {
+	Images []ImageManifest
+}
+
+// Add other fields if needed
+
+func readTarGz(filename string) ImageManifest {
+	cmd := exec.Command("tar", "-axf", filename, "manifest.json", "-O")
+	stdout, err := cmd.Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	var data ImageManifest
+	err = json.Unmarshal([]byte(stdout), &data)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	return data
+}
+
+// GetRepoTags extracts the RepoTags from a Docker image file
+func GetRepoTags(imageFilePath string) ([]string, error) {
+	imageFile, err := os.Open(imageFilePath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Fail to open image file %s", imageFilePath)
+	}
+	defer imageFile.Close()
+
+	gzipReader, err := gzip.NewReader(imageFile)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Fail to ungzip image file %s", stacktrace.Propagate(err, "Fail to read the image files"))
+	}
+	defer gzipReader.Close()
+
+	tarReader := tar.NewReader(gzipReader)
+
+	var found bool = false
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Fail to read the image files")
+		}
+
+		if header.Name == "manifest.json" {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, stacktrace.NewError("manifest.json not found in the image")
+	}
+
+	var imageManifest []ImageManifest
+	jsonDecoder := json.NewDecoder(tarReader)
+	if err := jsonDecoder.Decode(&imageManifest); err != nil {
+		return nil, stacktrace.Propagate(err, "Could not parse the manifest.json")
+	}
+
+	return imageManifest[0].RepoTags, nil
+}
+
 func (manager *DockerManager) NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error) {
-	return "", nil
+	getBuildContextDir := nixBuildSpec.GetBuildContextDir()
+	logrus.Warnf("Nix Build Dir: %s", getBuildContextDir)
+	flakeOutput := nixBuildSpec.GetFlakeOutput()
+	logrus.Warnf("Nix Flake Output: %s", flakeOutput)
+	flakeOutputFilePath := nixBuildSpec.GetNixFlakeDir()
+	logrus.Warnf("Nix Build Flake: %s", flakeOutputFilePath)
+
+	entries, err := os.ReadDir(getBuildContextDir)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	for _, e := range entries {
+		fmt.Println(e.Name())
+	}
+
+	cmd := exec.Command("/nix/var/nix/profiles/default/bin/nix", "build", fmt.Sprintf("%s/.#%s", flakeOutputFilePath, flakeOutput), "--print-out-paths", "--extra-experimental-features", "flakes nix-command", "--out-link", "result-123")
+
+	var errBuffer strings.Builder
+	cmd.Stderr = &errBuffer
+	imageFileRaw, err := cmd.Output()
+	if err != nil {
+		errMsg := errBuffer.String()
+		logrus.WithError(err).Error(errMsg)
+		return "", stacktrace.Propagate(err, "Failed to build nix image with Nix.")
+	}
+	imageFile := strings.TrimSpace(string(imageFileRaw))
+
+	imageName, err := GetRepoTags(imageFile)
+	if err != nil {
+		return "", err
+	}
+
+	image, err := os.Open(imageFile)
+	imgRes, err := manager.dockerClient.ImageLoad(ctx, image, false)
+	logrus.Debugf("%v", imgRes)
+
+	return imageName[0], nil
 }
 
 func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {

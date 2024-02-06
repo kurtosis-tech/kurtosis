@@ -22,7 +22,7 @@ const (
 	NixContextAttr   = "build_context_dir"
 
 	// Currently only supports container nixs named Dockerfile
-	defaultNixFlakeFilePath = "flake.nix"
+	defaultNixFlakeFile = "flake.nix"
 )
 
 func NewNixBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -175,15 +175,19 @@ func getOnDiskNixBuildSpecPaths(
 	}
 
 	// get on disk directory path of Dockerfile
-	flakeNixAbsoluteLocator := path.Join(contextDirAbsoluteLocator, flakeLocationDir, defaultNixFlakeFilePath)
+	flakeNixAbsoluteLocator := path.Join(contextDirAbsoluteLocator, flakeLocationDir, defaultNixFlakeFile)
 
 	flakeNixPathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsolutePackageFilePath(flakeNixAbsoluteLocator)
 	if interpretationErr != nil {
 		return "", "", interpretationErr
 	}
 
+	contextDirOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsolutePath(contextDirAbsoluteLocator)
+	if interpretationErr != nil {
+		return "", "", interpretationErr
+	}
 	// Assume, that flake nix sits at the same level as context directory to get context dir path on disk
-	contextDirPathOnDisk := filepath.Dir(flakeNixPathOnDisk)
+	FlakeDirOnDisk := filepath.Dir(flakeNixPathOnDisk)
 
-	return contextDirPathOnDisk, flakeNixPathOnDisk, nil
+	return contextDirOnDisk, FlakeDirOnDisk, nil
 }

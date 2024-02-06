@@ -63,7 +63,7 @@ func (validator *ImagesValidator) Validate(
 	for imageName, nixBuildSpec := range environment.nixToBuild {
 		wg.Add(1)
 		logrus.Warnf("%v - %v", imageName, nixBuildSpec)
-		go validator.nixBuildUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, nixBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
+		go validator.nixBuildUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, nixBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
 	wg.Wait()
 	logrus.Debug("All image validation submitted, currently in progress.")
@@ -129,11 +129,11 @@ func (validator *ImagesValidator) nixBuildUsingBackend(
 	wg *sync.WaitGroup,
 	imageCurrentlyBuilding chan bool,
 	backend *backend_interface.KurtosisBackend,
-	imageName string,
 	nixBuildSpec *nix_build_spec.NixBuildSpec,
 	buildErrors chan<- error,
 	nixBuildStarted chan<- string,
 	nixBuildFinished chan<- *ValidatedImage) {
+	var imageName string
 	logrus.Debugf("Requesting the build of image: '%s'", imageName)
 	var imageArch string
 	imageBuiltLocally := true
@@ -147,7 +147,7 @@ func (validator *ImagesValidator) nixBuildUsingBackend(
 	}()
 
 	logrus.Debugf("Starting the build of image: '%s'", imageName)
-	imageArch, err := (*backend).NixBuild(ctx, nixBuildSpec)
+	imageName, err := (*backend).NixBuild(ctx, nixBuildSpec)
 	if err != nil {
 		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageName, err.Error())
 		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageName)
