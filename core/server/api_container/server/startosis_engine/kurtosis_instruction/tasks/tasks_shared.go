@@ -31,6 +31,7 @@ const (
 	StoreFilesArgName = "store"
 	WaitArgName       = "wait"
 	FilesArgName      = "files"
+	EnvVarsArgName    = "env_vars"
 
 	newlineChar = "\n"
 
@@ -248,7 +249,11 @@ func resultMapToString(resultMap map[string]starlark.Comparable, builtinNameForL
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
 }
 
-func getServiceConfig(image string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion) (*service.ServiceConfig, error) {
+func getServiceConfig(
+	image string,
+	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
+	envVars *map[string]string,
+) (*service.ServiceConfig, error) {
 	serviceConfig, err := service.CreateServiceConfig(
 		image,
 		nil,
@@ -262,7 +267,7 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		//  command is completed
 		runTailCommandToPreventContainerToStopOnCreating,
 		nil,
-		nil,
+		*envVars,
 		filesArtifactExpansion,
 		nil,
 		0,
@@ -292,4 +297,22 @@ func removeService(ctx context.Context, serviceNetwork service_network.ServiceNe
 		return stacktrace.NewError("error occurred while removing task with name %v", serviceName)
 	}
 	return nil
+}
+
+func extractEnvVarsIfDefined(arguments *builtin_argument.ArgumentValuesSet) (*map[string]string, *startosis_errors.InterpretationError) {
+	envVars := map[string]string{}
+	if arguments.IsSet(EnvVarsArgName) {
+		envVarsStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, EnvVarsArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", EnvVarsArgName)
+		}
+		if envVarsStarlark != nil && envVarsStarlark.Len() > 0 {
+			var interpretationErr *startosis_errors.InterpretationError
+			envVars, interpretationErr = kurtosis_types.SafeCastToMapStringString(envVarsStarlark, EnvVarsArgName)
+			if interpretationErr != nil {
+				return nil, interpretationErr
+			}
+		}
+	}
+	return &envVars, nil
 }
