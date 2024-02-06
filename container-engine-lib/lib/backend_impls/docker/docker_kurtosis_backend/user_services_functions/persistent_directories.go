@@ -22,7 +22,7 @@ func getOrCreatePersistentDirectories(
 	persistentDirectories := map[string]string{}
 
 	for serviceDirPath, persistentDirectory := range serviceMountpointsToPersistentKey {
-		volumeAttrs, err := objAttrsProvider.ForSinglePersistentDirectoryVolume(serviceUuid, persistentDirectory.PersistentKey)
+		volumeAttrs, err := objAttrsProvider.ForSinglePersistentDirectoryVolume(persistentDirectory.PersistentKey)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error creating persistent directory labels for '%s'", persistentDirectory.PersistentKey)
 		}
