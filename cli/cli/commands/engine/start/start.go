@@ -3,9 +3,14 @@ package start
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
+
+	"strconv"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/engine/common"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
@@ -14,8 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -111,12 +114,12 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 	}
 
 	if engineVersion == defaultEngineVersion && isDebugMode {
-		engineDebugVersion := fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
+		engineDebugVersion := fmt.Sprintf("%s-%s", kurtosis_version.GetVersion(), defaults.DefaultKurtosisContainerDebugImageNameSuffix)
 		logrus.Infof("Starting Kurtosis engine in debug mode from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineDebugVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineDebugVersion, logLevel, enclavePoolSize, true)
 	} else if engineVersion == defaultEngineVersion {
 
-		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.KurtosisVersion)
+		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.GetVersion())
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize)
 	} else {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineVersion)

@@ -1,9 +1,13 @@
 package host_machine_directories
 
 import (
+	"io/ioutil"
+	"path"
+	"path/filepath"
+
 	"github.com/adrg/xdg"
 	"github.com/kurtosis-tech/stacktrace"
-	"path"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -104,9 +108,15 @@ func GetLastPesteredUserAboutOldVersionsFilepath() (string, error) {
 
 func GetKurtosisCliLogsFileDirPath(fileName string) (string, error) {
 	xdgRelDirPath := getRelativeFilePathForKurtosisCliLogs()
-	kurtosisCliLogFilePath, err := xdg.DataFile(path.Join(xdgRelDirPath, fileName))
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the kurtosis cli logs file path using '%v'", kurtosisCliLogFilePath)
+	kurtosisCliLogFilePath, errXdg := xdg.DataFile(path.Join(xdgRelDirPath, fileName))
+	if errXdg != nil {
+		// Fallback to temp folder if XDG fails to find a suitable location. For instance XDG will fail when testing inside Nix sandbox.
+		logrus.WithError(errXdg).Warnf("Couldn't create kurtosis cli logs file path in the user space '%v'. Trying on temp folder.", kurtosisCliLogFilePath)
+		kurtosisCliLogDir, errTemp := ioutil.TempDir("", applicationDirname)
+		if errTemp != nil {
+			return "", stacktrace.Propagate(errTemp, "An error occurred creating  kurtosis cli logs file path using '%v'", kurtosisCliLogDir)
+		}
+		kurtosisCliLogFilePath = filepath.Join(kurtosisCliLogDir, fileName)
 	}
 	return kurtosisCliLogFilePath, nil
 }

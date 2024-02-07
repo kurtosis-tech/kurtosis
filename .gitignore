@@ -1,6 +1,3 @@
-# Ignoring the file that gets generated with the repo's version
-/kurtosis_version/kurtosis_version.go
-
 # IntelliJ
 .idea
 *.iws
@@ -126,3 +123,9 @@ Cargo.lock
 
 # Lerna debug
 lerna-debug.log
+
+# Nix outputs
+result
+
+# Nix VM disk image
+nixos.qcow2

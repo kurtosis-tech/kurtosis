@@ -46,7 +46,7 @@ func logUserEmailAddressAsMetric(userEmail string) {
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 		metrics_client.NewMetricsClientCreatorOption(
 			source.KurtosisCLISource,
-			kurtosis_version.KurtosisVersion,
+			kurtosis_version.GetVersion(),
 			metricsUserId,
 			// TODO this isn't relevant for the metric also this only runs at first install;
 			// The user hasn't ever used Kurtosis yet so it has to be the default cluster
