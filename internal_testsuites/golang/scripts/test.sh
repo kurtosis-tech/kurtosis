@@ -17,8 +17,12 @@ KUBERNETES_TIMEOUT="510s" # K8S takes longer than docker
 TESTSUITE_CLUSTER_BACKEND_DOCKER="docker"
 TESTSUITE_CLUSTER_BACKEND_KUBERNETES="kubernetes"
 
+TEST_IS_RUNNING_ON_CIRCLE_CI="true"
+TEST_IS_NOT_RUNNING_ON_CIRCLE_CI="false"
+
 # By default, run testsuite against docker
 DEFAULT_TESTSUITE_CLUSTER_BACKEND="${TESTSUITE_CLUSTER_BACKEND_DOCKER}"
+DEFAULT_IS_RUNNING_ON_CIRCLE_CI="${TEST_IS_NOT_RUNNING_ON_CIRCLE_CI}
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -27,6 +31,7 @@ show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") cli_cluster_backend_arg"
     echo ""
     echo "  cli_cluster_backend_arg   Optional argument describing the cluster backend tests are running against. Must be one of 'docker', 'kubernetes' (default: ${DEFAULT_TESTSUITE_CLUSTER_BACKEND})"
+    echo "  circle_ci_arg             Optional argument that allows for test splitting on Circle CI
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
@@ -35,6 +40,13 @@ testsuite_cluster_backend_arg="${1:-${DEFAULT_TESTSUITE_CLUSTER_BACKEND}}"
 if [ "${testsuite_cluster_backend_arg}" != "${TESTSUITE_CLUSTER_BACKEND_DOCKER}" ] &&
    [ "${testsuite_cluster_backend_arg}" != "${TESTSUITE_CLUSTER_BACKEND_KUBERNETES}" ]; then
     echo "Error: unknown cluster provided to run tests against. Must be one of 'docker', 'kubernetes'"
+    show_helptext_and_exit
+fi
+
+testsuite_is_running_on_circleci=${1:-${DEFAULT_IS_RUNNING_ON_CIRCLE_CI}}
+if [ "${testsuite_cluster_backend_arg}" != "${TEST_IS_RUNNING_ON_CIRCLE_CI}" ] &&
+   [ "${testsuite_cluster_backend_arg}" != "${TEST_IS_NOT_RUNNING_ON_CIRCLE_CI}" ]; then
+    echo "Error: unknown value for whether the test is running against circleci. Must be one of 'false', 'true'"
     show_helptext_and_exit
 fi
 
@@ -51,8 +63,16 @@ if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_KUBERNET
     # The only reason this exists is because, some Kurtosis feature doesn't work on Kubernetes so we have to know to skip
     #  those tests
     # K8S is also slower than docker, so they have different timeouts
-    CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${KUBERNETES_TIMEOUT}" -tags kubernetes
+    if [ "${testsuite_is_running_on_circleci}" == ${TEST_IS_NOT_RUNNING_ON_CIRCLE_CI }]; then
+      CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${KUBERNETES_TIMEOUT}" -tags kubernetes
+    else
+      CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${KUBERNETES_TIMEOUT}" -tags kubernetes  -v $(go list ./... | circleci tests split)
+    fi
 else
-    CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${DOCKER_TIMEOUT}"
+    if [ "${testsuite_is_running_on_circleci}" == ${TEST_IS_NOT_RUNNING_ON_CIRCLE_CI }]; then
+      CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${DOCKER_TIMEOUT}"
+    else
+      CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${DOCKER_TIMEOUT}" -v $(go list ./... | circleci tests split)
+    fi
 fi
 
