@@ -521,6 +521,8 @@ jobs:
           paths:
             - "<< pipeline.parameters.engine-server-image-filename >>"
 
+  # could potentially skip all other architectures than linux/amd64 as that is what is needed in CI
+  # and build the others as a separate task, so that tests start running faster
   build_cli:
     # The starlark-lsp uses treesitter which has direct c bindings; and making a go releaser cross arch build
     # requires a lot of tooling; when the original author adding starlark-lsp to the project they copied the tilt-releaser

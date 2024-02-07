@@ -43,7 +43,7 @@ if [ "${testsuite_cluster_backend_arg}" != "${TESTSUITE_CLUSTER_BACKEND_DOCKER}"
     show_helptext_and_exit
 fi
 
-testsuite_is_running_on_circleci=${1:-${DEFAULT_IS_RUNNING_ON_CIRCLE_CI}}
+testsuite_is_running_on_circleci=${2:-${DEFAULT_IS_RUNNING_ON_CIRCLE_CI}}
 if [ "${testsuite_cluster_backend_arg}" != "${TEST_IS_RUNNING_ON_CIRCLE_CI}" ] &&
    [ "${testsuite_cluster_backend_arg}" != "${TEST_IS_NOT_RUNNING_ON_CIRCLE_CI}" ]; then
     echo "Error: unknown value for whether the test is running against circleci. Must be one of 'false', 'true'"
