@@ -75,6 +75,7 @@ func TestGetAuthTokenGetsTokenFromKeyring(t *testing.T) {
 	expectedToken := "token"
 	_, err = tempUsernameFile.Write([]byte(expectedUsername))
 	require.NoError(t, err)
+	keyring.MockInit() // changes the underlying keyring to an in memory keyring for testing
 	err = keyring.Set(kurtosisCliKeyringServiceName, expectedUsername, expectedToken)
 	require.NoError(t, err)
 
@@ -138,6 +139,7 @@ func TestGetAuthTokenReturnsNoTokenFoundIfUserExistsWithNoToken(t *testing.T) {
 
 	_, err = tempUsernameFile.Write([]byte("john123"))
 	require.NoError(t, err)
+	keyring.MockInit()
 
 	// run test
 	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
@@ -156,6 +158,7 @@ func TestSetUser(t *testing.T) {
 
 	expectedUsername := "john123"
 	expectedAuthToken := "password"
+	keyring.MockInit()
 
 	// run test
 	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
@@ -189,6 +192,7 @@ func TestSetUserOverwritesExistingUser(t *testing.T) {
 	oldToken := "password"
 	_, err = tempUsernameFile.Write([]byte(oldUser))
 	require.NoError(t, err)
+	keyring.MockInit()
 	err = keyring.Set(kurtosisCliKeyringServiceName, oldUser, oldToken)
 	require.NoError(t, err)
 
@@ -197,7 +201,7 @@ func TestSetUserOverwritesExistingUser(t *testing.T) {
 
 	currentUser, err := store.GetUser()
 	require.NoError(t, err)
-	require.Empty(t, currentUser)
+	require.Equal(t, oldUser, currentUser)
 
 	newUser := "tim"
 	newToken := "wordpass"
@@ -242,6 +246,7 @@ func TestRemoveUserWithTokenInKeyring(t *testing.T) {
 	expectedToken := "token"
 	_, err = tempUsernameFile.Write([]byte(expectedUsername))
 	require.NoError(t, err)
+	keyring.MockInit()
 	err = keyring.Set(kurtosisCliKeyringServiceName, expectedUsername, expectedToken)
 	require.NoError(t, err)
 

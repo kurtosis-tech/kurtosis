@@ -182,9 +182,15 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred retrieving GitHub auth store.")
 		}
-		username := githubAuthStore.GetUser()
+		username, err := githubAuthStore.GetUser()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting GitHub user.")
+		}
 		if username != "" {
-			githubAuthToken = githubAuthStore.GetAuthToken()
+			githubAuthToken, err = githubAuthStore.GetAuthToken()
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting GitHub auth token for user: %v.", username)
+			}
 		}
 	}
 

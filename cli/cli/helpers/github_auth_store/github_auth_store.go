@@ -86,8 +86,6 @@ func NewGitHubAuthStore() (GitHubAuthStore, error) {
 }
 
 func newGitHubAuthStoreForTesting(testUsernameFilePath, testAuthTokenFilePath string) GitHubAuthStore {
-	// This call mocks change the underlying keyring to an in memory keyring for testing purposes
-	keyring.MockInit()
 	return &githubConfigStoreImpl{
 		RWMutex:           &sync.RWMutex{},
 		usernameFilePath:  testUsernameFilePath,
@@ -99,16 +97,12 @@ func (store *githubConfigStoreImpl) GetUser() (string, error) {
 	store.RLock()
 	defer store.RUnlock()
 
-	userExists, err := store.doesGitHubUsernameFileExist()
+	username, userExists, err := store.getUserAndIfTheyExist()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred discovering if user exists.")
+		return "", stacktrace.Propagate(err, "An error occurred verifying if a user exists.")
 	}
 	if !userExists {
 		return "", nil
-	}
-	username, err := store.getGitHubUsernameFromFile()
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting user from store.")
 	}
 	return username, nil
 }
@@ -117,26 +111,14 @@ func (store *githubConfigStoreImpl) GetAuthToken() (string, error) {
 	store.RLock()
 	defer store.RUnlock()
 
-	return "", nil
-}
+	username, userExists, err := store.getUserAndIfTheyExist()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred verifying if a user exists.")
+	}
+	if !userExists {
+		return "", nil
+	}
 
-func (store *githubConfigStoreImpl) SetUser(username, authToken string) error {
-	store.Lock()
-	defer store.Unlock()
-	return nil
-}
-
-func (store *githubConfigStoreImpl) RemoveUser() error {
-	store.Lock()
-	defer store.Unlock()
-
-	return nil
-}
-
-// getAuthToken attempts to retrieve auth token from keyring
-// If not found or err occurs, attempts to retrieve auth token from plain text file
-func (store *githubConfigStoreImpl) getAuthToken(username string) (string, error) {
-	var authToken string
 	authToken, err := getAuthTokenFromKeyring(username)
 	if err == nil {
 		return authToken, nil
@@ -156,7 +138,88 @@ func (store *githubConfigStoreImpl) getAuthToken(username string) (string, error
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting auth token from file for GitHub user: %v", username)
 	}
+	if authToken == "" {
+		return "", NoTokenFound
+	}
 	return authToken, nil
+}
+
+func (store *githubConfigStoreImpl) SetUser(username, authToken string) error {
+	store.Lock()
+	defer store.Unlock()
+
+	err := store.saveGitHubUsernameFile(username)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred saving '%v' to store.", username)
+	}
+	shouldUnsetGitHubUsername := true
+	defer func() {
+		if shouldUnsetGitHubUsername {
+			if err := store.removeGitHubUsernameFile(); err != nil {
+				logrus.Errorf("Error occurred removing GitHub username after setting it failed!!! GitHub auth could be in a bad state.")
+			}
+		}
+	}()
+
+	err = store.setAuthToken(username, authToken)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred setting auth token in store for user: %v", username)
+	}
+	shouldUnsetAuthToken := true
+	defer func() {
+		if shouldUnsetAuthToken {
+			if err = store.removeAuthToken(username); err != nil {
+				logrus.Errorf("Error occurred removing GitHub auth token after setting it failed!!! GitHub auth could be in a bad state.")
+			}
+		}
+	}()
+
+	shouldUnsetGitHubUsername = false
+	shouldUnsetAuthToken = false
+	return nil
+}
+
+func (store *githubConfigStoreImpl) RemoveUser() error {
+	store.Lock()
+	defer store.Unlock()
+
+	username, userExists, err := store.getUserAndIfTheyExist()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying if a user exists.")
+	}
+	if !userExists {
+		return nil
+	}
+
+	err = store.removeAuthToken(username)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing user '%v' token from store.", username)
+	}
+
+	err = store.removeGitHubUsernameFile()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing GitHub user '%v' from store", username)
+	}
+
+	return nil
+}
+
+func (store *githubConfigStoreImpl) getUserAndIfTheyExist() (string, bool, error) {
+	userExists, err := store.doesGitHubUsernameFileExist()
+	if err != nil {
+		return "", false, stacktrace.Propagate(err, "An error occurred discovering if user exists.")
+	}
+	if !userExists {
+		return "", false, nil
+	}
+	username, err := store.getGitHubUsernameFromFile()
+	if err != nil {
+		return "", false, stacktrace.Propagate(err, "An error occurred getting user from store.")
+	}
+	if username == "" {
+		return "", false, nil
+	}
+	return username, true, nil
 }
 
 // setAuthToken attempts to set the git auth token for username
@@ -219,6 +282,16 @@ func (store *githubConfigStoreImpl) saveGitHubUsernameFile(username string) erro
 	return nil
 }
 
+func (store *githubConfigStoreImpl) removeGitHubUsernameFile() error {
+	logrus.Debugf("Removing git username in file...")
+	err := os.Remove(store.usernameFilePath)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing GitHub username file '%v'", store.usernameFilePath)
+	}
+	logrus.Debugf("Removed Github username file")
+	return nil
+}
+
 func (store *githubConfigStoreImpl) doesGitHubAuthTokenFileExist() (bool, error) {
 	_, err := os.Stat(store.authTokenFilePath)
 	if err != nil {
@@ -262,8 +335,11 @@ func (store *githubConfigStoreImpl) removeGitHubAuthTokenFile() error {
 
 func getAuthTokenFromKeyring(username string) (string, error) {
 	authToken, err := keyring.Get(kurtosisCliKeyringServiceName, username)
+	if err != nil && errors.Is(err, keyring.ErrNotFound) {
+		return "", err // don't wrap so ths specific err can be detected
+	}
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting auth token for GitHub user '%v' from keyring", username)
+		return "", stacktrace.Propagate(err, "An error occurred retrieving token for '%v' from keyring", username)
 	}
 	return authToken, nil
 }

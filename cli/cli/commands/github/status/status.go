@@ -33,7 +33,7 @@ func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 		return stacktrace.Propagate(err, "An error occurred getting user to see if user already exists.")
 	}
 	if username == "" {
-		out.PrintOutLn("No GitHub user logged into Kurtosis CLI: %v")
+		out.PrintOutLn("No GitHub user logged into Kurtosis CLI")
 		return nil
 	}
 	out.PrintOutLn(fmt.Sprintf("Logged in as GitHub user: %v", username))
