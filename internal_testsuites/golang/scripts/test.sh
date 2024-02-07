@@ -64,7 +64,7 @@ if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_KUBERNET
     #  those tests
     # K8S is also slower than docker, so they have different timeouts
     if [ "${testsuite_is_running_on_circleci}" == "${TEST_IS_RUNNING_ON_CIRCLE_CI}" ]; then
-        CGO_ENABLED=0 go test -v $(go list -tags kubernetes ./...| circleci tests split) -p "${PARALLELISM}" -count=1 -timeout "${KUBERNETES_TIMEOUT}" -tags kubernetes"
+        CGO_ENABLED=0 go test -v $(go list -tags kubernetes ./...| circleci tests split) -p "${PARALLELISM}" -count=1 -timeout "${KUBERNETES_TIMEOUT}" -tags kubernetes
     else
         CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${KUBERNETES_TIMEOUT}" -tags kubernetes
     fi
