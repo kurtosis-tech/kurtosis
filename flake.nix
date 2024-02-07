@@ -70,42 +70,53 @@
           }) [ architectures OSs ];
         in pkgs.lib.foldl' (set: acc: acc // set) { } all;
 
-        container.image.x86_64 = let
-          server = packages.default.overrideAttrs (old:
-            old // {
-              GOOS = "linux";
-              GOARCH = "amd64";
-              doCheck = false;
-            });
-        in pkgs.dockerTools.buildImage {
-          name = "kurtosis-cloud-backend";
-          tag = rev;
-          created = "now";
-          contents = server;
-          architecture = "amd64";
-          config.Cmd = [ "${server}/bin/linux_amd64/server" ];
-        };
-
-        container.image.aarch64 = let
-          server = packages.default.overrideAttrs (old:
-            old // {
-              GOOS = "linux";
-              GOARCH = "arm64";
-              doCheck = false;
-            });
-        in pkgs.dockerTools.buildImage {
-          name = "kurtosis-cloud-backend";
-          tag = rev;
-          created = "now";
-          contents = server;
-          architecture = "arm64";
-          config.Cmd = [ "${server}/bin/linux_arm64/server" ];
-        };
+        packages.containers = let
+          architectures = [ "amd64" "arm64" ];
+          service_names = [ "engine" "core" "files_artifacts_expander" ];
+          os = "linux";
+          all = pkgs.lib.lists.crossLists (arch: service_name: {
+            "${service_name}" = {
+              "${toString arch}" = let
+                # if running from linux no cross-compilation is needed to palce the service in a container
+                needsCrossCompilation = "${arch}-${os}"
+                  != builtins.replaceStrings [ "aarch64" "x86_64" ] [
+                    "arm64"
+                    "amd64"
+                  ] system;
+                service = if !needsCrossCompilation then
+                  packages.${service_name}
+                else
+                  packages.${service_name}.overrideAttrs (old:
+                    old // {
+                      GOOS = os;
+                      GOARCH = arch;
+                      # CGO_ENABLED = disabled breaks the CLI compilation 
+                      # CGO_ENABLED = 0;
+                      doCheck = false;
+                    });
+              in pkgs.dockerTools.buildImage {
+                name = "${service_name}";
+                tag = rev;
+                created = "now";
+                copyToRoot = pkgs.buildEnv {
+                  name = "image-root";
+                  paths = [ service ];
+                  pathsToLink = [ "/bin" ];
+                };
+                architecture = arch;
+                config.Cmd = if !needsCrossCompilation then
+                  [ "${service}/bin/${service.pname}" ]
+                else
+                  [ "${service}/bin/${os}_${arch}/${service.pname}" ];
+              };
+            };
+          }) [ architectures service_names ];
+        in pkgs.lib.foldl' (set: acc: acc // set) { } all;
 
         packages.integrationTest = import ./internal_testsuites/vm_tests.nix
           (self.inputs // {
             inherit pkgs nixpkgs;
-            containers = container;
+            containers = packages.containers;
           });
       });
 }
