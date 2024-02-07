@@ -563,7 +563,7 @@ jobs:
       # only save cache and persist to workspace the CLI built for just the CircleCI architecture
       - when:
           condition:
-            equal: [ "false", << parameters.all_architectures >> ]
+            equal: [ false, << parameters.all_architectures >> ]
           steps:
             - save_cache:
                 key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
