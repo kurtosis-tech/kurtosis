@@ -615,7 +615,7 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/golang/scripts/test.sh true; then
+                if ! ./internal_testsuites/golang/scripts/test.sh docker true; then
                   touch /tmp/testsuite-failed
                 fi
 

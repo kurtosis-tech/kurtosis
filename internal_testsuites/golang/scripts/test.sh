@@ -22,7 +22,7 @@ TEST_IS_NOT_RUNNING_ON_CIRCLE_CI="false"
 
 # By default, run testsuite against docker
 DEFAULT_TESTSUITE_CLUSTER_BACKEND="${TESTSUITE_CLUSTER_BACKEND_DOCKER}"
-DEFAULT_IS_RUNNING_ON_CIRCLE_CI="${TEST_IS_NOT_RUNNING_ON_CIRCLE_CI}
+DEFAULT_IS_RUNNING_ON_CIRCLE_CI="${TEST_IS_NOT_RUNNING_ON_CIRCLE_CI}"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -31,7 +31,7 @@ show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") cli_cluster_backend_arg"
     echo ""
     echo "  cli_cluster_backend_arg   Optional argument describing the cluster backend tests are running against. Must be one of 'docker', 'kubernetes' (default: ${DEFAULT_TESTSUITE_CLUSTER_BACKEND})"
-    echo "  circle_ci_arg             Optional argument that allows for test splitting on Circle CI
+    echo "  circle_ci_arg             Optional argument that allows for test splitting on Circle CI. Must be on of 'true' or 'false'"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
