@@ -353,26 +353,35 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceIdentifier string) (*
 			serviceIdentifier)
 	}
 
-	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
+	serviceContext, err := enclaveCtx.convertServiceInfoToServiceContext(serviceInfo)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
+		return nil, stacktrace.Propagate(err, "An error occurred converting the service info to a service context.")
 	}
-	serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetMaybePublicPorts())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
-	}
-
-	serviceContext := services.NewServiceContext(
-		enclaveCtx.client,
-		services.ServiceName(serviceIdentifier),
-		services.ServiceUUID(serviceInfo.ServiceUuid),
-		serviceInfo.GetPrivateIpAddr(),
-		serviceCtxPrivatePorts,
-		serviceInfo.GetMaybePublicIpAddr(),
-		serviceCtxPublicPorts,
-	)
 
 	return serviceContext, nil
+}
+
+// Docs available at https://docs.kurtosis.com/sdk#getservicecontexts--mapstring--bool---servicecontext-servicecontext
+func (enclaveCtx *EnclaveContext) GetServiceContexts(serviceIdentifiers map[string]bool) (map[services.ServiceName]*services.ServiceContext, error) {
+	getServiceInfoArgs := binding_constructors.NewGetServicesArgs(serviceIdentifiers)
+	response, err := enclaveCtx.client.GetServices(context.Background(), getServiceInfoArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred when trying to get info for services '%v'",
+			serviceIdentifiers)
+	}
+
+	serviceContexts := make(map[services.ServiceName]*services.ServiceContext, len(response.GetServiceInfo()))
+	for _, serviceInfo := range response.GetServiceInfo() {
+		serviceContext, err := enclaveCtx.convertServiceInfoToServiceContext(serviceInfo)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred converting the service info to a service context.")
+		}
+		serviceContexts[serviceContext.GetServiceName()] = serviceContext
+	}
+
+	return serviceContexts, nil
 }
 
 // Docs available at https://docs.kurtosis.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
@@ -634,6 +643,29 @@ func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packag
 		return stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
 	}
 	return nil
+}
+
+func (enclaveCtx *EnclaveContext) convertServiceInfoToServiceContext(serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo) (*services.ServiceContext, error) {
+	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetPrivatePorts())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
+	}
+	serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(serviceInfo.GetMaybePublicPorts())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
+	}
+
+	serviceContext := services.NewServiceContext(
+		enclaveCtx.client,
+		services.ServiceName(serviceInfo.Name),
+		services.ServiceUUID(serviceInfo.ServiceUuid),
+		serviceInfo.GetPrivateIpAddr(),
+		serviceCtxPrivatePorts,
+		serviceInfo.GetMaybePublicIpAddr(),
+		serviceCtxPublicPorts,
+	)
+
+	return serviceContext, nil
 }
 
 func getKurtosisYaml(packageRootPath string) (*KurtosisYaml, error) {

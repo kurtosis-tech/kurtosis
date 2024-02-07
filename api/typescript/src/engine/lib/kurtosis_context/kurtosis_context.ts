@@ -44,6 +44,9 @@ export const DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM: number = 9710;
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
 
+const DEFAULT_SHOULD_APIC_RUN_IN_DEBUG_MODE = false
+const RUN_APIC_IN_DEBUG_MODE = true
+
 // Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
 export class KurtosisContext {
     private readonly client: GenericEngineClient
@@ -88,32 +91,25 @@ export class KurtosisContext {
 
     // Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
     public async createEnclave(enclaveName: string): Promise<Result<EnclaveContext, Error>> {
-        const subnetworkDisableBecauseItIsDeprecated = false
         const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
             enclaveName,
             DEFAULT_API_CONTAINER_VERSION_TAG,
             API_CONTAINER_LOG_LEVEL,
+            DEFAULT_SHOULD_APIC_RUN_IN_DEBUG_MODE,
         );
 
-        const getEnclaveResponseResult = await this.client.createEnclaveResponse(enclaveArgs)
-        if(getEnclaveResponseResult.isErr()){
-            return err(getEnclaveResponseResult.error)
-        }
+        return this.createEnclaveWithArgs(enclaveArgs)
+    }
 
-        const enclaveResponse: CreateEnclaveResponse = getEnclaveResponseResult.value;
-        const enclaveInfo: EnclaveInfo | undefined = enclaveResponse.getEnclaveInfo();
-        if (enclaveInfo === undefined) {
-            return err(new Error("An error occurred creating enclave with name " + enclaveName + " enclaveInfo is undefined; " +
-                "this is a bug on this library" ))
-        }
+    public async createEnclaveWithDebugEnabled(enclaveName: string): Promise<Result<EnclaveContext, Error>> {
+        const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
+            enclaveName,
+            DEFAULT_API_CONTAINER_VERSION_TAG,
+            API_CONTAINER_LOG_LEVEL,
+            RUN_APIC_IN_DEBUG_MODE,
+        );
 
-        const newEnclaveContextResult: Result<EnclaveContext, Error> = await this.newEnclaveContextFromEnclaveInfo(enclaveInfo);
-        if (newEnclaveContextResult.isErr()) {
-            return err(new Error(`An error occurred creating an enclave context from a newly-created enclave; this should never happen`))
-        }
-
-        const enclaveContext = newEnclaveContextResult.value
-        return ok(enclaveContext);
+        return this.createEnclaveWithArgs(enclaveArgs)
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#getenclavecontextstring-enclaveidentifier---enclavecontextenclavecontext-enclavecontext
@@ -351,4 +347,27 @@ export class KurtosisContext {
 
         return ok(null)
     }
+
+    async createEnclaveWithArgs(enclaveArgs: CreateEnclaveArgs): Promise<Result<EnclaveContext, Error>> {
+        const getEnclaveResponseResult = await this.client.createEnclaveResponse(enclaveArgs)
+        if(getEnclaveResponseResult.isErr()){
+            return err(getEnclaveResponseResult.error)
+        }
+
+        const enclaveResponse: CreateEnclaveResponse = getEnclaveResponseResult.value;
+        const enclaveInfo: EnclaveInfo | undefined = enclaveResponse.getEnclaveInfo();
+        if (enclaveInfo === undefined) {
+            return err(new Error("An error occurred creating enclave with name " + enclaveArgs.getEnclaveName() + " enclaveInfo is undefined; " +
+                "this is a bug on this library" ))
+        }
+
+        const newEnclaveContextResult: Result<EnclaveContext, Error> = await this.newEnclaveContextFromEnclaveInfo(enclaveInfo);
+        if (newEnclaveContextResult.isErr()) {
+            return err(new Error(`An error occurred creating an enclave context from a newly-created enclave; this should never happen`))
+        }
+
+        const enclaveContext = newEnclaveContextResult.value
+        return ok(enclaveContext);
+    }
+
 }

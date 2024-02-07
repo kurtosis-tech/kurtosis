@@ -17,6 +17,11 @@ const (
 
 	// engine-enclave-pool-size = 0 means that enclave pool feat will be disabled
 	DefaultEngineEnclavePoolSize uint8 = 0
+
+	// This is the persistent flag key used, accroos all the CLI commands, to determine wheter to run in debug mode
+	DebugModeFlagKey                             = "debug-mode"
+	DefaultEnableDebugMode                       = false
+	DefaultKurtosisContainerDebugImageNameSuffix = "debug"
 )
 
 var DefaultApiContainerLogLevel = logrus.DebugLevel

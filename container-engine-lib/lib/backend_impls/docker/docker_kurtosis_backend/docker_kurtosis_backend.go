@@ -110,6 +110,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (
 	*engine.Engine,
 	error,
@@ -122,6 +123,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		envVars,
 		backend.dockerManager,
 		backend.objAttrsProvider,
+		shouldStartInDebugMode,
 	)
 }
 

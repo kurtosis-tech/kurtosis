@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -93,6 +94,17 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred while getting the API Container Version using flag with key '%v'; this is a bug in Kurtosis", apiContainerVersionFlagKey)
 	}
 
+	isDebugMode, err := flags.GetBool(defaults.DebugModeFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
+	}
+
+	shouldApicRunInDebugMode := defaults.DefaultEnableDebugMode
+	if isDebugMode && apiContainerVersion == defaults.DefaultAPIContainerVersion {
+		apiContainerVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
+		shouldApicRunInDebugMode = true
+	}
+
 	kurtosisLogLevelStr, err := flags.GetString(apiContainerLogLevelFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the API Container log level using flag with key '%v'; this is a bug in Kurtosis", apiContainerLogLevelFlagKey)
@@ -107,6 +119,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
+
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
@@ -130,10 +143,11 @@ func run(
 	}
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveName:            &enclaveName,
-		ApiContainerVersionTag: &apiContainerVersion,
-		ApiContainerLogLevel:   &kurtosisLogLevelStr,
-		Mode:                   &mode,
+		EnclaveName:              &enclaveName,
+		ApiContainerVersionTag:   &apiContainerVersion,
+		ApiContainerLogLevel:     &kurtosisLogLevelStr,
+		Mode:                     &mode,
+		ShouldApicRunInDebugMode: &shouldApicRunInDebugMode,
 	}
 	createdEnclaveResponse, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {

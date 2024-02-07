@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -102,9 +103,20 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine Container Version using flag with key '%v'; this is a bug in Kurtosis", engineVersionFlagKey)
 	}
 
+	isDebugMode, err := flags.GetBool(defaults.DebugModeFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
+	}
+
+	shouldStartInDebugMode := defaults.DefaultEnableDebugMode
+	if isDebugMode {
+		engineVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
+		shouldStartInDebugMode = true
+	}
+
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}

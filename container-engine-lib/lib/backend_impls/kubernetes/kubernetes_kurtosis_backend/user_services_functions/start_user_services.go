@@ -356,7 +356,6 @@ func createStartServiceOperation(
 			createVolumesWithClaims, err = preparePersistentDirectoriesResources(
 				ctx,
 				namespaceName,
-				serviceUuid,
 				enclaveObjAttributesProvider,
 				persistentDirectories.ServiceDirpathToPersistentDirectory,
 				kubernetesManager)
