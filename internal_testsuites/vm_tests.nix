@@ -35,9 +35,10 @@ in nixos-lib.runTest rec {
       kurtosis.containers.engine.${container_arch}
     }")
     machine.succeed("docker load < ${
-      kurtosis.containers.files_artifacts_expander.${container_arch}
+      kurtosis.containers.files-artifacts-expander.${container_arch}
     }")
-    with subtest("Check that module fails the right way"):
-        machine.succeed("${kurtosis.cli}/bin/cli engine restart")
+
+    with subtest("Check that if engine and companion containers start"):
+        machine.succeed("${kurtosis.cli}/bin/cli engine restart --cli-log-level debug")
   '';
 }

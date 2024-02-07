@@ -30,7 +30,8 @@ jobs:
       - name: Check Nix flake inputs
         uses: DeterminateSystems/flake-checker-action@v5
       - name: ETE Test with VM
-        run: nix run .#integrationTest
+        # Disable sandbox because ete fetches images from the public repo
+        run: nix run .#integrationTest --option sandbox false
 
   full_test:
     name: Run test on all assets

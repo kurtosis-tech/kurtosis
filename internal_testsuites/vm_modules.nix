@@ -3,6 +3,8 @@ let
   nixosModulesVM = { ... }: {
     # Make VM output to the terminal instead of a separate window
     virtualisation.vmVariant.virtualisation.graphics = false;
+    virtualisation.memorySize = 3 * 1024;
+    virtualisation.diskSize = 10 * 1024;
   };
 
   nixosModulesBase = { pkgs, ... }: {

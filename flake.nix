@@ -45,7 +45,7 @@
           inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
         };
 
-        packages.files_artifacts_expander =
+        packages.files-artifacts-expander =
           pkgs.callPackage ./core/files_artifacts_expander/. {
             inherit rev;
             inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
@@ -72,11 +72,12 @@
 
         packages.containers = let
           architectures = [ "amd64" "arm64" ];
-          service_names = [ "engine" "core" "files_artifacts_expander" ];
+          service_names = [ "engine" "core" "files-artifacts-expander" ];
           os = "linux";
           all = pkgs.lib.lists.crossLists (arch: service_name: {
             "${service_name}" = {
               "${toString arch}" = let
+                tag = "${self.shortRev or "dirty"}";
                 # if running from linux no cross-compilation is needed to palce the service in a container
                 needsCrossCompilation = "${arch}-${os}"
                   != builtins.replaceStrings [ "aarch64" "x86_64" ] [
@@ -96,12 +97,13 @@
                       doCheck = false;
                     });
               in pkgs.dockerTools.buildImage {
-                name = "${service_name}";
-                tag = rev;
+                name = "kurtosistech/${service_name}";
+                tag = tag;
                 created = "now";
                 copyToRoot = pkgs.buildEnv {
                   name = "image-root";
-                  paths = [ service ];
+                  paths =
+                    [ service pkgs.bashInteractive pkgs.nettools pkgs.gnugrep ];
                   pathsToLink = [ "/bin" ];
                 };
                 architecture = arch;
