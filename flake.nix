@@ -84,7 +84,8 @@
                     "amd64"
                   ] system;
                 service = if !needsCrossCompilation then
-                  packages.${service_name}
+                  packages.${service_name}.overrideAttrs
+                  (old: old // { doCheck = false; })
                 else
                   packages.${service_name}.overrideAttrs (old:
                     old // {
@@ -116,7 +117,7 @@
         packages.integrationTest = import ./internal_testsuites/vm_tests.nix
           (self.inputs // {
             inherit pkgs nixpkgs;
-            containers = packages.containers;
+            kurtosis = packages;
           });
       });
 }

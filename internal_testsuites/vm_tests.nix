@@ -1,4 +1,4 @@
-{ nixpkgs, pkgs, containers, ... }:
+{ nixpkgs, pkgs, kurtosis, ... }:
 let
   nixos-lib = import (nixpkgs + "/nixos/lib") { };
   vm_modules = import ./vm_modules.nix { inherit nixpkgs; };
@@ -28,14 +28,16 @@ in nixos-lib.runTest rec {
     machine.wait_for_unit("k3s")
     machine.succeed("k3s kubectl cluster-info")
 
-    machine.succeed("docker load < ${containers.core.${container_arch}}")
-    machine.succeed("docker load < ${containers.engine.${container_arch}}")
     machine.succeed("docker load < ${
-      containers.files_artifacts_expander.${container_arch}
+      kurtosis.containers.core.${container_arch}
+    }")
+    machine.succeed("docker load < ${
+      kurtosis.containers.engine.${container_arch}
+    }")
+    machine.succeed("docker load < ${
+      kurtosis.containers.files_artifacts_expander.${container_arch}
     }")
     with subtest("Check that module fails the right way"):
-        images, stdout = machine.execute("docker images 2>&1")
-        assert 1 == 2, f"Expected: `images` but got {stdout}"
-
+        machine.succeed("${kurtosis.cli}/bin/cli engine restart")
   '';
 }
