@@ -41,9 +41,11 @@ func CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	_ bool, //It's not required to add extra configuration in K8S for enabling the debug server
+	githubAuthToken string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
-	_ bool, //It's not required to add extra configuration in K8S for enabling the debug server
+
 ) (
 	*engine.Engine,
 	error,

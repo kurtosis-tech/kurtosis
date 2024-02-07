@@ -132,6 +132,7 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	grpcPortNum uint16,
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
+	githubAuthToken string,
 ) (
 	*engine.Engine,
 	error,
@@ -142,9 +143,10 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		envVars,
+		shouldStartInDebugMode,
+		githubAuthToken,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
-		shouldStartInDebugMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(

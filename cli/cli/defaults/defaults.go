@@ -22,6 +22,8 @@ const (
 	DebugModeFlagKey                             = "debug-mode"
 	DefaultEnableDebugMode                       = false
 	DefaultKurtosisContainerDebugImageNameSuffix = "debug"
+
+	DefaultGitHubAuthTokenOverride = ""
 )
 
 var DefaultApiContainerLogLevel = logrus.DebugLevel

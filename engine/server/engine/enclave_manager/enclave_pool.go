@@ -58,7 +58,6 @@ func CreateEnclavePool(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
-
 ) (*EnclavePool, error) {
 
 	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature

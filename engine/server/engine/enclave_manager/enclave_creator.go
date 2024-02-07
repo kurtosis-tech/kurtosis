@@ -2,7 +2,6 @@ package enclave_manager
 
 import (
 	"context"
-
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -113,8 +112,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 		isCI,
 		cloudUserID,
 		cloudInstanceID,
-		shouldAPICRunInDebugMode,
-	)
+		shouldAPICRunInDebugMode)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
 	}
@@ -223,8 +221,7 @@ func (creator *EnclaveCreator) launchApiContainer(
 			isCI,
 			cloudUserID,
 			cloudInstanceID,
-			shouldStartInDebugMode,
-		)
+			shouldStartInDebugMode)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveUuid, apiContainerImageVersionTag)
 		}
