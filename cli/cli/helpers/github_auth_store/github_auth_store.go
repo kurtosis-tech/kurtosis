@@ -10,19 +10,22 @@ import (
 	"sync"
 )
 
-var (
-	once            sync.Once
-	githubAuthStore GitHubAuthStore
-	NoTokenFound    = errors.New("no token found")
-)
-
 const (
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// DO NOT CHANGE THIS VALUE
 	// Changing this value could leak tokens in a users keyring/make Kurtosis unable to retrieve/remove them.
 	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	kurtosisCliKeyringServiceName = "kurtosis-cli"
-	githubAuthFilesPerms          = 0644
+
+	githubAuthFilesPerms = 0644
+)
+
+var (
+	// NOTE: This will be initialized exactly once (singleton pattern)
+	githubAuthStore GitHubAuthStore
+	once            sync.Once
+
+	NoTokenFound = errors.New("no token found")
 )
 
 type GitHubAuthStore interface {
@@ -38,6 +41,8 @@ func GetGitHubAuthStore() (GitHubAuthStore, error) {
 		return nil, err
 	}
 	once.Do(func() {
+		// NOTE: We use a 'once' to initialize the GitHubAuthStore because it contains a mutex to guard
+		// the files, and we don't ever want multiple GitHubAuthStore instances in existence
 		githubAuthStore = store
 	})
 	return githubAuthStore, nil
