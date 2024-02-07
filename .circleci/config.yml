@@ -1476,7 +1476,7 @@ workflows:
       - build_cli:
           <<: *filters_ignore_main
 
-      - build_cli_all:
+      - build_cli:
           all_architectures: true
           name: build_cli_all
           <<: *filters_ignore_main
