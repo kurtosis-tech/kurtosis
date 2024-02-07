@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.86.15](https://github.com/kurtosis-tech/kurtosis/compare/0.86.14...0.86.15) (2024-02-07)
+
+
+### Features
+
+* Enclave connect ([#2117](https://github.com/kurtosis-tech/kurtosis/issues/2117)) ([d33de7b](https://github.com/kurtosis-tech/kurtosis/commit/d33de7bebb0e997c8b2fd93872a1b676dc3519e7))
+
+
+### Bug Fixes
+
+* Fix the enclave connect button and modal help string in the EM UI ([#2127](https://github.com/kurtosis-tech/kurtosis/issues/2127)) ([a11fb4c](https://github.com/kurtosis-tech/kurtosis/commit/a11fb4c701e7ed8700c7812559aebb03d5d3846b))
+
 ## [0.86.14](https://github.com/kurtosis-tech/kurtosis/compare/0.86.13...0.86.14) (2024-02-06)
 
 
