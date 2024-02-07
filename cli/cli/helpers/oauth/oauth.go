@@ -15,7 +15,7 @@ import (
 var (
 	// The "Kurtosis CLI" OAuth app client id and secrets
 
-	// According to GitHub, it's okay to embed the client id secret as pointed out here: https://github.com/cli/oauth/issues/1#issuecomment-754713746
+	// According to GitHub, it's okay to embed the client id and secret as pointed out here: https://github.com/cli/oauth/issues/1#issuecomment-754713746
 	oauthClientID = "ff28fd26dcaf1be48c45"
 
 	// secret is actually not needed to retrieve the token, so we leave it empty
@@ -35,6 +35,8 @@ type OAuth interface {
 	AuthFlow() (string, string, error)
 }
 
+// Retrieves a long-lived OAuth token from a GitHub user that authorizes Kurtosis CLI
+// Returns the GitHub username, authToken or an error
 func AuthFlow() (string, string, error) {
 	httpClient := &http.Client{} // nolint: exhaustruct
 

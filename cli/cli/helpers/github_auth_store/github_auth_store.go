@@ -336,7 +336,7 @@ func (store *githubConfigStoreImpl) removeGitHubAuthTokenFile() error {
 func getAuthTokenFromKeyring(username string) (string, error) {
 	authToken, err := keyring.Get(kurtosisCliKeyringServiceName, username)
 	if err != nil && errors.Is(err, keyring.ErrNotFound) {
-		return "", err // don't wrap so ths specific err can be detected
+		return "", err // don't wrap so this specific err can be detected
 	}
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred retrieving token for '%v' from keyring", username)

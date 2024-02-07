@@ -15,7 +15,7 @@ import (
 var StatusCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.GitHubStatusCmdStr,
 	ShortDescription:         "Displays GitHub auth info",
-	LongDescription:          "Displays GitHub auth info by showing a logged in users info or whether no GitHub user is logged into Kurtosis CLI",
+	LongDescription:          "Displays GitHub auth info by showing a logged in user's info or whether no GitHub user is logged into Kurtosis CLI",
 	Args:                     nil,
 	Flags:                    nil,
 	PreValidationAndRunFunc:  nil,
