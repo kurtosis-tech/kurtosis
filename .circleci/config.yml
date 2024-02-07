@@ -573,6 +573,7 @@ jobs:
     executor: ubuntu_vm
     parameters:
       <<: *param_cli_cluster_backend
+    parallelism: 4
     steps:
       - checkout
 
