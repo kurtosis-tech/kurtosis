@@ -25,13 +25,25 @@ var (
 	githubAuthStore GitHubAuthStore
 	once            sync.Once
 
-	NoTokenFound = errors.New("no token found")
+	NoTokenFound = errors.New("no token found for currently logged in user")
 )
 
+// GitHubAuthStore stores information about a user that has authorized Kurtosis CLI to perform git operations on their behalf
 type GitHubAuthStore interface {
+	// GetUser returns GitHub username of current user
+	// If no user exists, returns empty string
 	GetUser() string
+
+	// SetUser sets the current user to [username] and stores their [authToken] in system credential storage if it exists
+	// otherwise, stores [authToken] in plain text file
 	SetUser(username, authToken string) error
+
+	// RemoveUser removes user and users authToken from store if a user exists
 	RemoveUser() error
+
+	// GetAuthToken returns authToken for the user if they exist
+	// Returns empty string if no user exists
+	// Returns NoTokenFound err if user exists but no authToken was found
 	GetAuthToken() string
 }
 
@@ -70,7 +82,7 @@ func NewGitHubAuthStore() (GitHubAuthStore, error) {
 	}, nil
 }
 
-func NewGitHubAuthStoreForTesting(testUsernameFilePath, testAuthTokenFilePath string) GitHubAuthStore {
+func newGitHubAuthStoreForTesting(testUsernameFilePath, testAuthTokenFilePath string) GitHubAuthStore {
 	// This call mocks change the underlying keyring to an in memory keyring for testing purposes
 	keyring.MockInit()
 	return &githubConfigStoreImpl{
