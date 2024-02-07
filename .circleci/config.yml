@@ -1484,7 +1484,7 @@ workflows:
 
       - build_cli:
           all_architectures: true
-          name: build_cli_all
+          name: "Check if CLI builds for all os/arch pairs"
           <<: *filters_ignore_main
 
       - test_enclave_manager_web_ui:
