@@ -530,6 +530,11 @@ jobs:
     docker:
       - image: "docker/tilt-releaser@sha256:<< pipeline.parameters.tilt-releaser-version >>"
     resource_class: large
+    parameters:
+      all_architectures:
+        description: "Whether we should build all architectures or not"
+        type: bool
+        default: false
     steps:
       - checkout
 
@@ -554,7 +559,7 @@ jobs:
             - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
 
       - run: |
-          cli/cli/scripts/build.sh true
+          cli/cli/scripts/build.sh << parameters.all_architectures >>
 
       - save_cache:
           key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
@@ -1471,6 +1476,11 @@ workflows:
                 - main
 
       - build_cli:
+          <<: *filters_ignore_main
+
+      - build_cli_all:
+          all_architectures: true
+          name: build_cli_all
           <<: *filters_ignore_main
 
       - test_enclave_manager_web_ui:
