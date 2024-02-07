@@ -3,7 +3,7 @@ package engine_manager
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/github_auth_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/github_auth_store"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -174,19 +174,17 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	maybeCloudUserId, maybeCloudInstanceId := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
 
 	var githubAuthToken string
-	// If override was provided, use it, else use existing GitHub auth config if it exists
+	// If override was provided, use it, else use existing GitHub auth if it exists
 	if guarantor.githubAuthTokenOverride != "" {
 		githubAuthToken = guarantor.githubAuthTokenOverride
 	} else {
-		githubAuthConfig, err := github_auth_config.GetGitHubAuthConfig()
+		githubAuthStore, err := github_auth_store.GetGitHubAuthStore()
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred retrieving GitHub config.")
+			return stacktrace.Propagate(err, "An error occurred retrieving GitHub auth store.")
 		}
-		if githubAuthConfig.IsLoggedIn() {
-			githubAuthToken, err = githubAuthConfig.GetAuthToken()
-			if err != nil {
-				return stacktrace.Propagate(err, "Detected GitHub user '%v' is logged in but error occurred retrieving auth token.", githubAuthConfig.GetCurrentUser())
-			}
+		username := githubAuthStore.GetUser()
+		if username != "" {
+			githubAuthToken = githubAuthStore.GetAuthToken()
 		}
 	}
 

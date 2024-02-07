@@ -1,4 +1,4 @@
-package github_auth_config
+package oauth
 
 import (
 	"bufio"
@@ -31,7 +31,7 @@ var (
 	browser = *gitbrowser.New(defaultLauncher, os.Stdout, os.Stderr)
 )
 
-type OAuthFlow interface {
+type OAuth interface {
 	AuthFlow() (string, string, error)
 }
 

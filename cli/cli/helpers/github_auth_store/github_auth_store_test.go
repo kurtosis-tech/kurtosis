@@ -1,4 +1,4 @@
-package github_auth_config
+package github_auth_store
 
 import (
 	"github.com/stretchr/testify/require"
