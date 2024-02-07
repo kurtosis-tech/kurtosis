@@ -63,19 +63,86 @@ func TestGetUserReturnsUser(t *testing.T) {
 }
 
 func TestGetAuthTokenGetsTokenFromKeyring(t *testing.T) {
+	// setup mock GitHub store
+	tempUsernameFile, err := os.CreateTemp(tempFileDir, tempUsernameFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempUsernameFile.Name())
+	tempAuthTokenFile, err := os.CreateTemp(tempFileDir, tempAuthTokenFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempAuthTokenFile.Name())
 
+	expectedUsername := "john123"
+	expectedToken := "token"
+	_, err = tempUsernameFile.Write([]byte(expectedUsername))
+	require.NoError(t, err)
+	err = keyring.Set(kurtosisCliKeyringServiceName, expectedUsername, expectedToken)
+	require.NoError(t, err)
+
+	// run test
+	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
+
+	actualToken, err := store.GetAuthToken()
+	require.NoError(t, err)
+	require.Equal(t, expectedToken, actualToken)
 }
 
 func TestGetAuthTokenReturnsEmptyStringIfNoUserExists(t *testing.T) {
+	// setup mock GitHub store
+	tempUsernameFile, err := os.CreateTemp(tempFileDir, tempUsernameFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempUsernameFile.Name())
+	tempAuthTokenFile, err := os.CreateTemp(tempFileDir, tempAuthTokenFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempAuthTokenFile.Name())
 
+	// run test
+	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
+
+	actualToken, err := store.GetAuthToken()
+	require.NoError(t, err)
+	require.Empty(t, actualToken)
 }
 
 func TestGetAuthTokenGetsTokenFromFile(t *testing.T) {
+	// setup mock GitHub store
+	tempUsernameFile, err := os.CreateTemp(tempFileDir, tempUsernameFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempUsernameFile.Name())
+	tempAuthTokenFile, err := os.CreateTemp(tempFileDir, tempAuthTokenFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempAuthTokenFile.Name())
 
+	username := "john123"
+	expectedToken := "token"
+	_, err = tempUsernameFile.Write([]byte(username))
+	require.NoError(t, err)
+	_, err = tempAuthTokenFile.Write([]byte(expectedToken))
+	require.NoError(t, err)
+
+	// run test
+	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
+
+	actualToken, err := store.GetAuthToken()
+	require.NoError(t, err)
+	require.Equal(t, expectedToken, actualToken)
 }
 
 func TestGetAuthTokenReturnsNoTokenFoundIfUserExistsWithNoToken(t *testing.T) {
+	// setup mock GitHub store
+	tempUsernameFile, err := os.CreateTemp(tempFileDir, tempUsernameFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempUsernameFile.Name())
+	tempAuthTokenFile, err := os.CreateTemp(tempFileDir, tempAuthTokenFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempAuthTokenFile.Name())
 
+	_, err = tempUsernameFile.Write([]byte("john123"))
+	require.NoError(t, err)
+
+	// run test
+	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
+	_, err = store.GetAuthToken()
+	require.ErrorIs(t, err, NoTokenFound)
 }
 
 func TestSetUser(t *testing.T) {
@@ -147,9 +214,79 @@ func TestSetUserOverwritesExistingUser(t *testing.T) {
 }
 
 func TestRemoveUserIsNoOpIfNoUserExists(t *testing.T) {
+	// setup mock GitHub store
+	tempUsernameFile, err := os.CreateTemp(tempFileDir, tempUsernameFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempUsernameFile.Name())
+	tempAuthTokenFile, err := os.CreateTemp(tempFileDir, tempAuthTokenFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempAuthTokenFile.Name())
 
+	// run test
+	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
+
+	err = store.RemoveUser()
+	require.NoError(t, err)
 }
 
-func TestRemoveUser(t *testing.T) {
+func TestRemoveUserWithTokenInKeyring(t *testing.T) {
+	// setup mock GitHub store
+	tempUsernameFile, err := os.CreateTemp(tempFileDir, tempUsernameFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempUsernameFile.Name())
+	tempAuthTokenFile, err := os.CreateTemp(tempFileDir, tempAuthTokenFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempAuthTokenFile.Name())
 
+	expectedUsername := "john123"
+	expectedToken := "token"
+	_, err = tempUsernameFile.Write([]byte(expectedUsername))
+	require.NoError(t, err)
+	err = keyring.Set(kurtosisCliKeyringServiceName, expectedUsername, expectedToken)
+	require.NoError(t, err)
+
+	// run test
+	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
+
+	err = store.RemoveUser()
+	require.NoError(t, err)
+
+	username, err := store.GetUser()
+	require.NoError(t, err)
+	require.Empty(t, username)
+
+	authToken, err := store.GetAuthToken()
+	require.NoError(t, err)
+	require.Empty(t, authToken)
+}
+
+func TestRemoveUserWithTokenInFile(t *testing.T) {
+	// setup mock GitHub store
+	tempUsernameFile, err := os.CreateTemp(tempFileDir, tempUsernameFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempUsernameFile.Name())
+	tempAuthTokenFile, err := os.CreateTemp(tempFileDir, tempAuthTokenFileNamePattern)
+	require.NoError(t, err)
+	defer os.Remove(tempAuthTokenFile.Name())
+
+	expectedUsername := "john123"
+	expectedToken := "token"
+	_, err = tempUsernameFile.Write([]byte(expectedUsername))
+	require.NoError(t, err)
+	_, err = tempAuthTokenFile.Write([]byte(expectedToken))
+	require.NoError(t, err)
+
+	// run test
+	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
+
+	err = store.RemoveUser()
+	require.NoError(t, err)
+
+	username, err := store.GetUser()
+	require.NoError(t, err)
+	require.Empty(t, username)
+
+	authToken, err := store.GetAuthToken()
+	require.NoError(t, err)
+	require.Empty(t, authToken)
 }
