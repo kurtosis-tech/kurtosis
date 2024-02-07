@@ -11,10 +11,10 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"net"
 	"os"
@@ -159,6 +159,8 @@ const (
 
 	// Per https://github.com/hashicorp/waypoint/pull/1937/files
 	buildkitSessionSharedKey = ""
+
+	nixCmdPath = "/nix/var/nix/profiles/default/bin/nix"
 )
 
 type RestartPolicy string
@@ -1326,25 +1328,6 @@ type ImageManifest struct {
 	RepoTags []string `json:"RepoTags"`
 	Layers   []string `json:"Layers"`
 }
-type Manifest struct {
-	Images []ImageManifest
-}
-
-// Add other fields if needed
-
-func readTarGz(filename string) ImageManifest {
-	cmd := exec.Command("tar", "-axf", filename, "manifest.json", "-O")
-	stdout, err := cmd.Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	var data ImageManifest
-	err = json.Unmarshal([]byte(stdout), &data)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	return data
-}
 
 // GetRepoTags extracts the RepoTags from a Docker image file
 func GetRepoTags(imageFilePath string) ([]string, error) {
@@ -1371,7 +1354,6 @@ func GetRepoTags(imageFilePath string) ([]string, error) {
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Fail to read the image files")
 		}
-
 		if header.Name == "manifest.json" {
 			found = true
 			break
@@ -1388,27 +1370,29 @@ func GetRepoTags(imageFilePath string) ([]string, error) {
 		return nil, stacktrace.Propagate(err, "Could not parse the manifest.json")
 	}
 
+	if len(imageManifest) > 1 {
+		return nil, stacktrace.NewError("Image has more than 1 label/tag, don't know which one to pick: %v", imageManifest)
+	} else if len(imageManifest) < 1 {
+		return nil, stacktrace.NewError("Image has no label/tag")
+	}
+
 	return imageManifest[0].RepoTags, nil
 }
 
 func (manager *DockerManager) NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error) {
-	getBuildContextDir := nixBuildSpec.GetBuildContextDir()
-	logrus.Warnf("Nix Build Dir: %s", getBuildContextDir)
-	flakeOutput := nixBuildSpec.GetFlakeOutput()
-	logrus.Warnf("Nix Flake Output: %s", flakeOutput)
-	flakeOutputFilePath := nixBuildSpec.GetNixFlakeDir()
-	logrus.Warnf("Nix Build Flake: %s", flakeOutputFilePath)
+	flakeReference := nixBuildSpec.GetFullFlakeReference()
 
-	entries, err := os.ReadDir(getBuildContextDir)
-	if err != nil {
-		logrus.Fatal(err)
-	}
+	// Flake generates a link to the nix store containing the image result, to avoid collision with a possible existing one from the
+	// build context (from the user env) and which would result when trying to overwrite it, we create a unique one
+	hasher := md5.New()
+	hasher.Write([]byte(flakeReference))
+	resultLink := fmt.Sprintf("nix-result-%x", hasher.Sum(nil))
 
-	for _, e := range entries {
-		fmt.Println(e.Name())
-	}
-
-	cmd := exec.Command("/nix/var/nix/profiles/default/bin/nix", "build", fmt.Sprintf("%s/.#%s", flakeOutputFilePath, flakeOutput), "--print-out-paths", "--extra-experimental-features", "flakes nix-command", "--out-link", "result-123")
+	cmd := exec.Command(
+		nixCmdPath, "build", flakeReference,
+		"--print-out-paths",
+		"--extra-experimental-features", "flakes nix-command",
+		"--out-link", resultLink)
 
 	var errBuffer strings.Builder
 	cmd.Stderr = &errBuffer
@@ -1419,6 +1403,7 @@ func (manager *DockerManager) NixBuild(ctx context.Context, nixBuildSpec *nix_bu
 		return "", stacktrace.Propagate(err, "Failed to build nix image with Nix.")
 	}
 	imageFile := strings.TrimSpace(string(imageFileRaw))
+	logrus.Debugf("Nix flake image on attribute %s, result on image file %s", flakeReference, imageFile)
 
 	imageName, err := GetRepoTags(imageFile)
 	if err != nil {
@@ -1426,8 +1411,15 @@ func (manager *DockerManager) NixBuild(ctx context.Context, nixBuildSpec *nix_bu
 	}
 
 	image, err := os.Open(imageFile)
-	imgRes, err := manager.dockerClient.ImageLoad(ctx, image, false)
-	logrus.Debugf("%v", imgRes)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to open generated Nix image on %s", imageFile)
+	}
+
+	_, err = manager.dockerClient.ImageLoad(ctx, image, false)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to load Nix image %s in docker", imageFile)
+	}
+	logrus.Debugf("Nix generated image file %s is loaded into docker", imageFile)
 
 	return imageName[0], nil
 }

@@ -3,6 +3,11 @@ package _import
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/joho/godotenv"
@@ -25,10 +30,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -175,6 +176,7 @@ func run(
 
 func convertComposeFileToStarlark(path string, dotEnvMap map[string]string) (string, map[string]string, error) {
 	project, err := loader.Load(types.ConfigDetails{ //nolint:exhaustruct
+		// nolint: exhaustruct
 		ConfigFiles: []types.ConfigFile{{Filename: path}},
 		Environment: dotEnvMap,
 	})

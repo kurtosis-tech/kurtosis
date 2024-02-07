@@ -3,6 +3,12 @@ package docker_compose_transpiler
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/joho/godotenv"
@@ -15,11 +21,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"os"
-	"path"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -122,6 +123,7 @@ func convertComposeToStarlarkScript(composeBytes []byte, envVars map[string]stri
 func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]string) (*types.Project, error) {
 	composeParseConfig := types.ConfigDetails{ //nolint:exhaustruct
 		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
+		// nolint: exhaustruct
 		ConfigFiles: []types.ConfigFile{{
 			Content: composeBytes,
 		}},
