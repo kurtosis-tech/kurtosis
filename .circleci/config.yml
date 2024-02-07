@@ -559,18 +559,24 @@ jobs:
       - run: |
           cli/cli/scripts/build.sh << parameters.all_architectures >>
 
-      - save_cache:
-          key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
-          paths:
-            - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
-            - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
 
-      - persist_to_workspace:
-          root: .
-          paths:
-            - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
-            - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
-            - "./<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
+      # only save cache and persist to workspace the CLI built for just the CircleCI architecture
+      - when:
+          condition:
+            equal: [ "false", << parameters.all_architectures >> ]
+          steps:
+            - save_cache:
+                key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
+                paths:
+                  - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
+                  - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
+
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
+                  - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+                  - "./<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
 
   build_golang_testsuite:
     executor: ubuntu_vm
