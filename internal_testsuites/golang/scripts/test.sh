@@ -63,8 +63,8 @@ if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_KUBERNET
     # The only reason this exists is because, some Kurtosis feature doesn't work on Kubernetes so we have to know to skip
     #  those tests
     # K8S is also slower than docker, so they have different timeouts
-    CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${KUBERNETES_TIMEOUT}" -tags kubernetes  -v $(go list ./... | circleci tests split)
+    CGO_ENABLED=0 go test -v $(go list ./... | circleci tests split) ./... -p "${PARALLELISM}" -count=1 -timeout "${KUBERNETES_TIMEOUT}" -tags kubernetes
 else
-    CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${DOCKER_TIMEOUT}" -v $(go list ./... | circleci tests split)
+    CGO_ENABLED=0 go test -v $(go list ./... | circleci tests split) ./... -p "${PARALLELISM}" -count=1 -timeout "${DOCKER_TIMEOUT}"
 fi
 
