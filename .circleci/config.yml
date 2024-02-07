@@ -531,7 +531,7 @@ jobs:
     parameters:
       all_architectures:
         description: "Whether we should build all architectures or not"
-        type: bool
+        type: boolean
         default: false
     steps:
       - checkout
