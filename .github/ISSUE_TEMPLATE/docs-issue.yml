@@ -1,9 +1,7 @@
 name: "Docs Issue"
 description: Report an issue in our documentation
 labels: ["docs"]
-assignees:
-  - leeederek
-  - thylocine33
+assignees: []
 body:
   - type: input
     id: url-link
