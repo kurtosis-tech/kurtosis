@@ -28,7 +28,10 @@ func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred retrieving GitHub auth configuration.")
 	}
-	username := githubAuthStore.GetUser()
+	username, err := githubAuthStore.GetUser()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting user to see if user already exists.")
+	}
 	if username == "" {
 		out.PrintOutLn("No GitHub user logged into Kurtosis CLI: %v")
 		return nil

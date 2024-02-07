@@ -35,10 +35,13 @@ func TestGetUserReturnsEmptyStringIfNoUserExists(t *testing.T) {
 
 	// run test
 	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
-	require.Empty(t, store.GetUser())
+
+	actualUsername, err := store.GetUser()
+	require.NoError(t, err)
+	require.Empty(t, actualUsername)
 }
 
-func TestGetUserReturnsCorrectUser(t *testing.T) {
+func TestGetUserReturnsUser(t *testing.T) {
 	// setup mock GitHub store
 	tempUsernameFile, err := os.CreateTemp(tempFileDir, tempUsernameFileNamePattern)
 	require.NoError(t, err)
@@ -53,7 +56,26 @@ func TestGetUserReturnsCorrectUser(t *testing.T) {
 
 	// run test
 	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
-	require.Equal(t, expectedUsername, store.GetUser())
+
+	actualUsername, err := store.GetUser()
+	require.NoError(t, err)
+	require.Equal(t, expectedUsername, actualUsername)
+}
+
+func TestGetAuthTokenGetsTokenFromKeyring(t *testing.T) {
+
+}
+
+func TestGetAuthTokenReturnsEmptyStringIfNoUserExists(t *testing.T) {
+
+}
+
+func TestGetAuthTokenGetsTokenFromFile(t *testing.T) {
+
+}
+
+func TestGetAuthTokenReturnsNoTokenFoundIfUserExistsWithNoToken(t *testing.T) {
+
 }
 
 func TestSetUser(t *testing.T) {
@@ -71,13 +93,20 @@ func TestSetUser(t *testing.T) {
 	// run test
 	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
 
-	require.Empty(t, store.GetUser())
+	currentUser, err := store.GetUser()
+	require.NoError(t, err)
+	require.Empty(t, currentUser)
 
 	err = store.SetUser(expectedUsername, expectedAuthToken)
 	require.NoError(t, err)
 
-	require.Equal(t, expectedUsername, store.GetUser())
-	require.Equal(t, expectedAuthToken, store.GetAuthToken())
+	actualUsername, err := store.GetUser()
+	require.NoError(t, err)
+	require.Equal(t, expectedUsername, actualUsername)
+
+	actualAuthToken, err := store.GetAuthToken()
+	require.NoError(t, err)
+	require.Equal(t, expectedAuthToken, actualAuthToken)
 }
 
 func TestSetUserOverwritesExistingUser(t *testing.T) {
@@ -99,14 +128,28 @@ func TestSetUserOverwritesExistingUser(t *testing.T) {
 	// run test
 	store := newGitHubAuthStoreForTesting(tempUsernameFile.Name(), tempAuthTokenFile.Name())
 
-	require.Equal(t, oldUser, store.GetUser())
-	require.Equal(t, oldToken, store.GetAuthToken())
+	currentUser, err := store.GetUser()
+	require.NoError(t, err)
+	require.Empty(t, currentUser)
 
 	newUser := "tim"
 	newToken := "wordpass"
 	err = store.SetUser(newUser, newToken)
 	require.NoError(t, err)
 
-	require.Equal(t, newUser, store.GetUser())
-	require.Equal(t, newToken, store.GetAuthToken())
+	actualNewUser, err := store.GetUser()
+	require.NoError(t, err)
+	require.Equal(t, newUser, actualNewUser)
+
+	actualNewToken, err := store.GetAuthToken()
+	require.NoError(t, err)
+	require.Equal(t, newToken, actualNewToken)
+}
+
+func TestRemoveUserIsNoOpIfNoUserExists(t *testing.T) {
+
+}
+
+func TestRemoveUser(t *testing.T) {
+
 }

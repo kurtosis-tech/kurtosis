@@ -27,12 +27,15 @@ func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred retrieving GitHub auth store.")
 	}
-	username := githubAuthStore.GetUser()
+	username, err := githubAuthStore.GetUser()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting user to see if user already exists.")
+	}
 	if username == "" {
 		out.PrintOutLn("No GitHub user currently logged in.")
 		return nil
 	}
-	authToken := githubAuthStore.GetAuthToken()
+	authToken, err := githubAuthStore.GetAuthToken()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred retrieving GitHub auth token for user: %v.", username)
 	}

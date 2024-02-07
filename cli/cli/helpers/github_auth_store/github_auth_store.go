@@ -28,23 +28,26 @@ var (
 	NoTokenFound = errors.New("no token found for currently logged in user")
 )
 
-// GitHubAuthStore stores information about a user that has authorized Kurtosis CLI to perform git operations on their behalf
+// GitHubAuthStore stores information about a GitHub user that has authorized Kurtosis CLI to perform git operations on their behalf
+// [username] is their GitHub username
+// [authToken] is a scoped token that authorizes Kurtosis CLI on behalf of [username
 type GitHubAuthStore interface {
-	// GetUser returns GitHub username of current user
+	// GetUser returns [username] of current user
 	// If no user exists, returns empty string
-	GetUser() string
+	GetUser() (string, error)
 
-	// SetUser sets the current user to [username] and stores their [authToken] in system credential storage if it exists
+	// GetAuthToken returns authToken for the user if they exist
+	// If [authToken] doesn't exist in system credential storage, attempts to retrieve token from plain text file
+	// Returns empty string if no user exists
+	// Returns NoTokenFound err if user exists but no [authToken] was found
+	GetAuthToken() (string, error)
+
+	// SetUser sets current user to [username] and stores their [authToken] in system credential storage if it exists
 	// otherwise, stores [authToken] in plain text file
 	SetUser(username, authToken string) error
 
-	// RemoveUser removes user and users authToken from store if a user exists
+	// RemoveUser removes user and user's [authToken] from store, if a user exists
 	RemoveUser() error
-
-	// GetAuthToken returns authToken for the user if they exist
-	// Returns empty string if no user exists
-	// Returns NoTokenFound err if user exists but no authToken was found
-	GetAuthToken() string
 }
 
 func GetGitHubAuthStore() (GitHubAuthStore, error) {
@@ -92,20 +95,42 @@ func newGitHubAuthStoreForTesting(testUsernameFilePath, testAuthTokenFilePath st
 	}
 }
 
-func (store *githubConfigStoreImpl) GetUser() string {
-	return ""
+func (store *githubConfigStoreImpl) GetUser() (string, error) {
+	store.RLock()
+	defer store.RUnlock()
+
+	userExists, err := store.doesGitHubUsernameFileExist()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred discovering if user exists.")
+	}
+	if !userExists {
+		return "", nil
+	}
+	username, err := store.getGitHubUsernameFromFile()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting user from store.")
+	}
+	return username, nil
+}
+
+func (store *githubConfigStoreImpl) GetAuthToken() (string, error) {
+	store.RLock()
+	defer store.RUnlock()
+
+	return "", nil
 }
 
 func (store *githubConfigStoreImpl) SetUser(username, authToken string) error {
+	store.Lock()
+	defer store.Unlock()
 	return nil
 }
 
 func (store *githubConfigStoreImpl) RemoveUser() error {
-	return nil
-}
+	store.Lock()
+	defer store.Unlock()
 
-func (store *githubConfigStoreImpl) GetAuthToken() string {
-	return ""
+	return nil
 }
 
 // getAuthToken attempts to retrieve auth token from keyring
@@ -191,16 +216,6 @@ func (store *githubConfigStoreImpl) saveGitHubUsernameFile(username string) erro
 		return stacktrace.Propagate(err, "An error occurred writing GitHub username to file '%v'", store.usernameFilePath)
 	}
 	logrus.Debugf("Saved GitHub username file")
-	return nil
-}
-
-func (store *githubConfigStoreImpl) removeGitHubUsernameFile() error {
-	logrus.Debugf("Removing git username in file...")
-	err := os.Remove(store.usernameFilePath)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing GitHub username file '%v'", store.usernameFilePath)
-	}
-	logrus.Debugf("Removed Github username file")
 	return nil
 }
 
