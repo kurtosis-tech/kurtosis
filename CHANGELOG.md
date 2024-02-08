@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.86.17](https://github.com/kurtosis-tech/kurtosis/compare/0.86.16...0.86.17) (2024-02-08)
+
+
+### Features
+
+* experimental enclave building in the EMUI ([#2137](https://github.com/kurtosis-tech/kurtosis/issues/2137)) ([8a26a6c](https://github.com/kurtosis-tech/kurtosis/commit/8a26a6cc38e832f92e552b5f32fd6a5c73cf2869))
+* support setting node selectors for user services ([#2135](https://github.com/kurtosis-tech/kurtosis/issues/2135)) ([e176a3a](https://github.com/kurtosis-tech/kurtosis/commit/e176a3aa23e9070ba52f0e8a965191a0eb3cc6b4))
+
+
+### Bug Fixes
+
+* files artifacts expander image debug tag ([#2119](https://github.com/kurtosis-tech/kurtosis/issues/2119)) ([b3f7edd](https://github.com/kurtosis-tech/kurtosis/commit/b3f7eddc9dcb9e02af7c116c5d86dd97dd74f8c2))
+
 ## [0.86.16](https://github.com/kurtosis-tech/kurtosis/compare/0.86.15...0.86.16) (2024-02-07)
 
 
