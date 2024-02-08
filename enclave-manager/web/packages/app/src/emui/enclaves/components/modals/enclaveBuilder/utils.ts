@@ -2,8 +2,8 @@ import { isDefined, RemoveFunctions, stringifyError } from "kurtosis-ui-componen
 import { Edge, Node } from "reactflow";
 import { Result } from "true-myth";
 import { EnclaveFullInfo } from "../../../types";
-import { KurtosisServiceNodeData } from "./KurtosisServiceNode";
 import { Variable } from "./types";
+import { KurtosisNodeData, KurtosisServiceNodeData } from "./VariableContextProvider";
 
 export const EMUI_BUILD_STATE_KEY = "EMUI_BUILD_STATE";
 
@@ -36,45 +36,68 @@ export function getInitialGraphStateFromEnclave<T extends object>(
   }
 }
 
-const variablePattern = /\{\{(service.([^.]+)\..*)}}/;
-export function getVariablesFromNodes(nodes: Record<string, KurtosisServiceNodeData>): Variable[] {
-  return Object.entries(nodes).flatMap(([id, data]) => [
-    {
-      id: `service.${id}.name`,
-      displayName: `service.${data.serviceName}.name`,
-      value: `${data.serviceName}.name`,
-    },
-    {
-      id: `service.${id}.hostname`,
-      displayName: `service.${data.serviceName}.hostname`,
-      value: `${data.serviceName}.hostname`,
-    },
-    ...data.ports.flatMap((port, i) => [
-      {
-        id: `service.${id}.port.${i}`,
-        displayName: `service.${data.serviceName}.port.${port.portName}`,
-        value: `"{}://{}:{}".format(${data.serviceName}.ports["${port.portName}"].application_protocol, ${data.serviceName}.hostname, ${data.serviceName}.ports["${port.portName}"].number)`,
-      },
-      {
-        id: `service.${id}.port.${i}.port`,
-        displayName: `service.${data.serviceName}.port.${port.portName}.port`,
-        value: `${data.serviceName}.ports["${port.portName}"].number`,
-      },
-      {
-        id: `service.${id}.port.${i}.applicationProtocol`,
-        displayName: `service.${data.serviceName}.port.${port.portName}.application_protocol`,
-        value: `${data.serviceName}.ports["${port.portName}"].application_protocol`,
-      },
-    ]),
-    ...data.env.map((env, i) => ({
-      id: `service.${id}.env.${i}`,
-      displayName: `service.${data.serviceName}.env.${env.key}`,
-      value: `${data.serviceName}.env_vars["${env.key}"]`,
-    })),
-  ]);
+function normaliseNameToStarlarkVariable(name?: string) {
+  if (!isDefined(name)) {
+    return "";
+  }
+  return name.replace(/\s/g, "").toLowerCase();
 }
 
-export function getNodeDependencies(nodes: Record<string, KurtosisServiceNodeData>): Record<string, Set<string>> {
+const variablePattern = /\{\{(service.([^.]+)\..*)}}/;
+export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): Variable[] {
+  return Object.entries(nodes).flatMap(([id, data]) =>
+    data.type === "service"
+      ? [
+          {
+            id: `service.${id}.name`,
+            displayName: `service.${data.serviceName}.name`,
+            value: `${normaliseNameToStarlarkVariable(data.serviceName)}.name`,
+          },
+          {
+            id: `service.${id}.hostname`,
+            displayName: `service.${data.serviceName}.hostname`,
+            value: `${normaliseNameToStarlarkVariable(data.serviceName)}.hostname`,
+          },
+          ...data.ports.flatMap((port, i) => [
+            {
+              id: `service.${id}.port.${i}`,
+              displayName: `service.${data.serviceName}.port.${port.portName}`,
+              value: `"{}://{}:{}".format(${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${
+                port.portName
+              }"].application_protocol, ${normaliseNameToStarlarkVariable(
+                data.serviceName,
+              )}.hostname, ${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${port.portName}"].number)`,
+            },
+            {
+              id: `service.${id}.port.${i}.port`,
+              displayName: `service.${data.serviceName}.port.${port.portName}.port`,
+              value: `${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${port.portName}"].number`,
+            },
+            {
+              id: `service.${id}.port.${i}.applicationProtocol`,
+              displayName: `service.${data.serviceName}.port.${port.portName}.application_protocol`,
+              value: `${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${
+                port.portName
+              }"].application_protocol`,
+            },
+          ]),
+          ...data.env.map((env, i) => ({
+            id: `service.${id}.env.${i}`,
+            displayName: `service.${data.serviceName}.env.${env.key}`,
+            value: `${normaliseNameToStarlarkVariable(data.serviceName)}.env_vars["${env.key}"]`,
+          })),
+        ]
+      : [
+          {
+            id: `artifact.${id}`,
+            displayName: `artifact.${data.artifactName}`,
+            value: `${normaliseNameToStarlarkVariable(data.artifactName)}`,
+          },
+        ],
+  );
+}
+
+export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Record<string, Set<string>> {
   const dependencies: Record<string, Set<string>> = {};
   const getDependenciesFor = (key: string): Set<string> => {
     if (!isDefined(dependencies[key])) {
@@ -83,22 +106,24 @@ export function getNodeDependencies(nodes: Record<string, KurtosisServiceNodeDat
     return dependencies[key];
   };
   Object.entries(nodes).forEach(([id, data]) => {
-    const nameMatches = data.serviceName.match(variablePattern);
-    if (nameMatches) {
-      getDependenciesFor(id).add(nameMatches[2]);
+    if (data.type === "service") {
+      const nameMatches = data.serviceName.match(variablePattern);
+      if (nameMatches) {
+        getDependenciesFor(id).add(nameMatches[2]);
+      }
+      data.env.forEach((env) => {
+        const envMatches = env.key.match(variablePattern) || env.value.match(variablePattern);
+        if (envMatches) {
+          getDependenciesFor(id).add(envMatches[2]);
+        }
+      });
+      data.ports.forEach((port) => {
+        const portMatches = port.portName.match(variablePattern) || port.applicationProtocol.match(variablePattern);
+        if (portMatches) {
+          getDependenciesFor(id).add(portMatches[2]);
+        }
+      });
     }
-    data.env.forEach((env) => {
-      const envMatches = env.key.match(variablePattern) || env.value.match(variablePattern);
-      if (envMatches) {
-        getDependenciesFor(id).add(envMatches[2]);
-      }
-    });
-    data.ports.forEach((port) => {
-      const portMatches = port.portName.match(variablePattern) || port.applicationProtocol.match(variablePattern);
-      if (portMatches) {
-        getDependenciesFor(id).add(portMatches[2]);
-      }
-    });
   });
   return dependencies;
 }
@@ -106,7 +131,7 @@ export function getNodeDependencies(nodes: Record<string, KurtosisServiceNodeDat
 export function generateStarlarkFromGraph(
   nodes: Node[],
   edges: Edge[],
-  data: Record<string, KurtosisServiceNodeData>,
+  data: Record<string, KurtosisNodeData>,
   existingEnclave?: RemoveFunctions<EnclaveFullInfo>,
 ): string {
   // Topological sort
@@ -150,33 +175,55 @@ export function generateStarlarkFromGraph(
 
   let starlark = "def run(plan):\n";
   for (const node of sortedNodes) {
-    const serviceName = data[node.id].serviceName.replace(/\s/g, "").toLowerCase();
-    starlark += `    ${serviceName} = plan.add_service(\n`;
-    starlark += `        name = ${interpolateValue(data[node.id].serviceName)},\n`;
-    starlark += `        config = ServiceConfig (\n`;
-    starlark += `            image = ${interpolateValue(data[node.id].image)},\n`;
-    starlark += `            ports = {\n`;
-    for (const { portName, port, applicationProtocol, transportProtocol } of data[node.id].ports) {
-      starlark += `                ${interpolateValue(portName)}: PortSpec(\n`;
-      starlark += `                    number = ${port},\n`;
-      starlark += `                    transport_protocol = "${transportProtocol}",\n`;
-      starlark += `                    application_protocol = ${interpolateValue(applicationProtocol)},\n`;
-      starlark += `                ),\n`;
+    const nodeData = data[node.id];
+    if (nodeData.type === "service") {
+      const serviceName = normaliseNameToStarlarkVariable(nodeData.serviceName);
+      starlark += `    ${serviceName} = plan.add_service(\n`;
+      starlark += `        name = ${interpolateValue(nodeData.serviceName)},\n`;
+      starlark += `        config = ServiceConfig (\n`;
+      starlark += `            image = ${interpolateValue(nodeData.image)},\n`;
+      starlark += `            ports = {\n`;
+      for (const { portName, port, applicationProtocol, transportProtocol } of nodeData.ports) {
+        starlark += `                ${interpolateValue(portName)}: PortSpec(\n`;
+        starlark += `                    number = ${port},\n`;
+        starlark += `                    transport_protocol = "${transportProtocol}",\n`;
+        starlark += `                    application_protocol = ${interpolateValue(applicationProtocol)},\n`;
+        starlark += `                ),\n`;
+      }
+      starlark += `            },\n`;
+      starlark += `            env_vars = {\n`;
+      for (const { key, value } of nodeData.env) {
+        starlark += `                ${interpolateValue(key)}: ${interpolateValue(value)},\n`;
+      }
+      starlark += `            },\n`;
+      starlark += `        ),\n`;
+      starlark += `    )\n\n`;
     }
-    starlark += `            },\n`;
-    starlark += `            env_vars = {\n`;
-    for (const { key, value } of data[node.id].env) {
-      starlark += `                ${interpolateValue(key)}: ${interpolateValue(value)},\n`;
+
+    if (nodeData.type === "artifact") {
+      const artifactName = normaliseNameToStarlarkVariable(nodeData.artifactName);
+      starlark += `    ${artifactName} = plan.render_templates(\n`;
+      starlark += `        name = "${nodeData.artifactName}",\n`;
+      starlark += `        config = {\n`;
+      for (const [fileName, fileText] of Object.entries(nodeData.files)) {
+        starlark += `            "${fileName}": struct(\n`;
+        starlark += `                template="""${fileText}""",\n`;
+        starlark += `                data={},\n`;
+        starlark += `            ),\n`;
+      }
+      starlark += `        },\n`;
+      starlark += `    )\n\n`;
     }
-    starlark += `            },\n`;
-    starlark += `        ),\n`;
-    starlark += `    )\n\n`;
   }
 
   // Delete any services from any existing enclave that aren't defined anymore
   if (isDefined(existingEnclave) && existingEnclave.services?.isOk) {
     for (const existingService of Object.values(existingEnclave.services.value.serviceInfo)) {
-      if (!sortedNodes.some((node) => data[node.id].serviceName === existingService.name)) {
+      const serviceNoLongerExists = sortedNodes.every((node) => {
+        const nodeData = data[node.id];
+        return nodeData.type !== "service" || nodeData.serviceName !== existingService.name;
+      });
+      if (serviceNoLongerExists) {
         starlark += `    plan.remove_service(name = "${existingService.name}")\n`;
       }
     }

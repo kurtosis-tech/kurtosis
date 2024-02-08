@@ -1,12 +1,36 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from "react";
-import { KurtosisServiceNodeData } from "./KurtosisServiceNode";
 import { Variable } from "./types";
 import { getVariablesFromNodes } from "./utils";
 
+export type KurtosisPort = {
+  portName: string;
+  port: number;
+  transportProtocol: "TCP" | "UDP";
+  applicationProtocol: string;
+};
+
+export type KurtosisServiceNodeData = {
+  type: "service";
+  serviceName: string;
+  image: string;
+  env: { key: string; value: string }[];
+  ports: KurtosisPort[];
+  isValid: boolean;
+};
+
+export type KurtosisArtifactNodeData = {
+  type: "artifact";
+  artifactName: string;
+  files: Record<string, string>;
+  isValid: boolean;
+};
+
+export type KurtosisNodeData = KurtosisArtifactNodeData | KurtosisServiceNodeData;
+
 type VariableContextState = {
-  data: Record<string, KurtosisServiceNodeData>;
+  data: Record<string, KurtosisNodeData>;
   variables: Variable[];
-  updateData: (id: string, data: KurtosisServiceNodeData) => void;
+  updateData: (id: string, data: KurtosisNodeData) => void;
   removeData: (id: string) => void;
 };
 
@@ -22,13 +46,13 @@ type VariableContextProviderProps = {
 };
 
 export const VariableContextProvider = ({ initialData, children }: PropsWithChildren<VariableContextProviderProps>) => {
-  const [data, setData] = useState<Record<string, KurtosisServiceNodeData>>(initialData);
+  const [data, setData] = useState<Record<string, KurtosisNodeData>>(initialData);
 
   const variables = useMemo((): Variable[] => {
     return getVariablesFromNodes(data);
   }, [data]);
 
-  const updateData = useCallback((id: string, data: KurtosisServiceNodeData) => {
+  const updateData = useCallback((id: string, data: KurtosisNodeData) => {
     setData((oldData) => ({ ...oldData, [id]: data }));
   }, []);
 

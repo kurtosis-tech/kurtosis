@@ -11,33 +11,18 @@ import { ListArgumentInput } from "../../form/ListArgumentInput";
 import { OptionsArgumentInput } from "../../form/OptionArgumentInput";
 import { StringArgumentInput } from "../../form/StringArgumentInput";
 import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
-import { useVariableContext } from "./VariableContextProvider";
-
-type KurtosisPort = {
-  portName: string;
-  port: number;
-  transportProtocol: "TCP" | "UDP";
-  applicationProtocol: string;
-};
-
-export type KurtosisServiceNodeData = {
-  serviceName: string;
-  image: string;
-  env: { key: string; value: string }[];
-  ports: KurtosisPort[];
-  isValid: boolean;
-};
+import { KurtosisPort, KurtosisServiceNodeData, useVariableContext } from "./VariableContextProvider";
 
 export const KurtosisServiceNode = memo(
-  ({ id, selected }: NodeProps<KurtosisServiceNodeData>) => {
+  ({ id, selected }: NodeProps) => {
     const { data, updateData, removeData } = useVariableContext();
     const formMethods = useForm<KurtosisServiceNodeData>({
-      defaultValues: data[id] || {},
+      defaultValues: (data[id] as KurtosisServiceNodeData) || {},
       mode: "onBlur",
       shouldFocusError: false,
     });
 
-    const { deleteElements } = useReactFlow<KurtosisServiceNodeData>();
+    const { deleteElements } = useReactFlow();
 
     const handleDeleteNode = (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
@@ -90,7 +75,9 @@ export const KurtosisServiceNode = memo(
           </NodeResizeControl>
 
           <Flex justifyContent={"space-between"} alignItems={"center"} minH={"0"}>
-            <Text fontWeight={"semibold"}>{data[id]?.serviceName || <i>Unnamed Service</i>}</Text>
+            <Text fontWeight={"semibold"}>
+              {(data[id] as KurtosisServiceNodeData)?.serviceName || <i>Unnamed Service</i>}
+            </Text>
             <IconButton
               aria-label={"Delete node"}
               icon={<FiTrash />}

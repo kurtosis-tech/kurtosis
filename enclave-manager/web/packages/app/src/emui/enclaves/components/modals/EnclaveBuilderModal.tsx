@@ -27,18 +27,24 @@ import {
   useEdgesState,
   useNodesState,
   useReactFlow,
+  XYPosition,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { v4 as uuidv4 } from "uuid";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
-import { KurtosisServiceNode, KurtosisServiceNodeData } from "./enclaveBuilder/KurtosisServiceNode";
+import { KurtosisArtifactNode } from "./enclaveBuilder/KurtosisArtifactNode";
+import { KurtosisServiceNode } from "./enclaveBuilder/KurtosisServiceNode";
 import {
   generateStarlarkFromGraph,
   getInitialGraphStateFromEnclave,
   getNodeDependencies,
 } from "./enclaveBuilder/utils";
-import { useVariableContext, VariableContextProvider } from "./enclaveBuilder/VariableContextProvider";
+import {
+  KurtosisServiceNodeData,
+  useVariableContext,
+  VariableContextProvider,
+} from "./enclaveBuilder/VariableContextProvider";
 
 type EnclaveBuilderModalProps = {
   isOpen: boolean;
@@ -188,7 +194,7 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes || []);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
 
-    const nodeTypes = useMemo(() => ({ serviceNode: KurtosisServiceNode }), []);
+    const nodeTypes = useMemo(() => ({ serviceNode: KurtosisServiceNode, artifactNode: KurtosisArtifactNode }), []);
 
     const onLayout = useCallback(() => {
       const layouted = getLayoutedElements(nodes, edges);
@@ -201,19 +207,34 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
       });
     }, [nodes, edges, fitView, setEdges, setNodes]);
 
-    const handleAddNode = () => {
+    const getNewNodePosition = (): XYPosition => {
       const viewport = getViewport();
-      console.log(viewport);
+      insertOffset.current += 1;
+      return { x: -viewport.x + insertOffset.current * 20 + 400, y: -viewport.y + insertOffset.current * 20 };
+    };
+
+    const handleAddServiceNode = () => {
       const id = uuidv4();
-      updateData(id, { serviceName: "", image: "", ports: [], env: [], isValid: false });
+      updateData(id, { type: "service", serviceName: "", image: "", ports: [], env: [], isValid: false });
       addNodes({
         id,
-        position: { x: -viewport.x + insertOffset.current * 20 + 400, y: -viewport.y + insertOffset.current * 20 },
+        position: getNewNodePosition(),
         width: 600,
         type: "serviceNode",
         data: {},
       });
-      insertOffset.current += 1;
+    };
+
+    const handleAddArtifactNode = () => {
+      const id = uuidv4();
+      updateData(id, { type: "artifact", artifactName: "", files: {}, isValid: false });
+      addNodes({
+        id,
+        position: getNewNodePosition(),
+        width: 600,
+        type: "artifactNode",
+        data: {},
+      });
     };
 
     useEffect(() => {
@@ -244,8 +265,11 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
       <Flex flexDirection={"column"} h={"100%"} gap={"8px"}>
         <ButtonGroup paddingInline={6}>
           <Button onClick={onLayout}>Do Layout</Button>
-          <Button leftIcon={<FiPlusCircle />} onClick={handleAddNode}>
-            Add Node
+          <Button leftIcon={<FiPlusCircle />} onClick={handleAddServiceNode}>
+            Add Service Node
+          </Button>
+          <Button leftIcon={<FiPlusCircle />} onClick={handleAddArtifactNode}>
+            Add Artifact Node
           </Button>
         </ButtonGroup>
         <Box bg={"gray.900"} flex={"1"}>

@@ -10,6 +10,7 @@ const MONACO_READ_ONLY_CHANGE_EVENT_ID = 89;
 type CodeEditorProps = {
   text: string;
   fileName?: string;
+  isEditable?: boolean;
   onTextChange?: (newText: string) => void;
   showLineNumbers?: boolean;
 };
@@ -17,12 +18,13 @@ type CodeEditorProps = {
 export type CodeEditorImperativeAttributes = {
   formatCode: () => Promise<void>;
   setText: (text: string) => void;
+  getText: () => string;
   setLanguage: (language: string) => void;
 };
 
 export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorProps>(
-  ({ text, fileName, onTextChange, showLineNumbers }, ref) => {
-    const isReadOnly = !isDefined(onTextChange);
+  ({ text, fileName, isEditable, onTextChange, showLineNumbers }, ref) => {
+    const isReadOnly = !isEditable && !isDefined(onTextChange);
     const [monaco, setMonaco] = useState<Monaco>();
     const [editor, setEditor] = useState<monacoEditor.IStandaloneCodeEditor>();
 
@@ -56,8 +58,8 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
     const handleChange: OnChange = (value, ev) => {
       if (isDefined(value) && onTextChange) {
         onTextChange(value);
-        resizeEditorBasedOnContent();
       }
+      resizeEditorBasedOnContent();
     };
 
     useImperativeHandle(
@@ -110,6 +112,9 @@ export const CodeEditor = forwardRef<CodeEditorImperativeAttributes, CodeEditorP
             return;
           }
           editor.setValue(text);
+        },
+        getText: () => {
+          return editor?.getValue() || "";
         },
         setLanguage: (language: string) => {
           if (!isDefined(editor) || !isDefined(monaco)) {
