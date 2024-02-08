@@ -103,7 +103,7 @@ func run(
 
 	filesInEnclave, err := enclaveCtx.GetAllFilesArtifactNamesAndUuids(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred while fetching files artifact in enclave '%v'", enclaveIdentifier)
+		return stacktrace.Propagate(err, "An error occurred while fetching files artifact in enclave '%v'", enclaveIdentifier)
 	}
 
 	if len(filesInEnclave) == 0 {
@@ -119,10 +119,10 @@ func run(
 	for _, fileNameAndUuid := range filesInEnclave {
 		fileDownloadPath := path.Join(filesDownloadFolder, fileNameAndUuid.GetFileName())
 		if err = os.Mkdir(fileDownloadPath, filesArtifactDestinationDirPermission); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while creating directory '%v' to write files articat '%v'", fileDownloadPath, fileNameAndUuid.GetFileName())
+			return stacktrace.Propagate(err, "An error occurred while creating directory '%v' to write files artifact '%v'", fileDownloadPath, fileNameAndUuid.GetFileName())
 		}
 		if err = files.DownloadAndExtractFilesArtifact(ctx, enclaveCtx, fileNameAndUuid.GetFileName(), fileDownloadPath); err != nil {
-			return stacktrace.Propagate(err, "an error occurred while downloading and extracting file '%v'", fileNameAndUuid.GetFileName())
+			return stacktrace.Propagate(err, "An error occurred while downloading and extracting file '%v'", fileNameAndUuid.GetFileName())
 		}
 	}
 

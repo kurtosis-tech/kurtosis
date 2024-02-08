@@ -136,14 +136,14 @@ func run(
 	// if the user doesn't want to extract, we just download and return
 	if shouldNotExtract {
 		if err = files.DownloadFilesArtifactToLocation(ctx, enclaveCtx, artifactIdentifier, absoluteDestinationPath); err != nil {
-			return stacktrace.Propagate(err, "an error occurred while downloading file '%v' to '%v' for enclave '%v'", artifactIdentifier, absoluteDestinationPath, enclaveIdentifier)
+			return stacktrace.Propagate(err, "An error occurred while downloading file '%v' to '%v' for enclave '%v'", artifactIdentifier, absoluteDestinationPath, enclaveIdentifier)
 		}
 		logrus.Infof("File package with identifier '%v' downloaded to '%v'", artifactIdentifier, absoluteDestinationPath)
 		return nil
 	}
 
 	if err = files.DownloadAndExtractFilesArtifact(ctx, enclaveCtx, artifactIdentifier, absoluteDestinationPath); err != nil {
-		return stacktrace.Propagate(err, "an error occurred while downloading and extracting file '%v' to '%v' for enclave '%v'", artifactIdentifier, absoluteDestinationPath, enclaveIdentifier)
+		return stacktrace.Propagate(err, "An error occurred while downloading and extracting file '%v' to '%v' for enclave '%v'", artifactIdentifier, absoluteDestinationPath, enclaveIdentifier)
 	}
 	logrus.Infof("File package with identifier '%v' extracted to '%v'", artifactIdentifier, absoluteDestinationPath)
 
