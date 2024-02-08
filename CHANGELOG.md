@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.86.16](https://github.com/kurtosis-tech/kurtosis/compare/0.86.15...0.86.16) (2024-02-07)
+
+
+### Features
+
+* kurtosis github login ([#2113](https://github.com/kurtosis-tech/kurtosis/issues/2113)) ([2f0d638](https://github.com/kurtosis-tech/kurtosis/commit/2f0d638c688828de3eb781b11d696883807357ba))
+
+
+### Bug Fixes
+
+* Remove Derek and Karla as default assignees for docs issues ([#2129](https://github.com/kurtosis-tech/kurtosis/issues/2129)) ([2f1eecc](https://github.com/kurtosis-tech/kurtosis/commit/2f1eecc9a935ac19cf4de0fbc26ab852a5248b7f))
+
 ## [0.86.15](https://github.com/kurtosis-tech/kurtosis/compare/0.86.14...0.86.15) (2024-02-07)
 
 
