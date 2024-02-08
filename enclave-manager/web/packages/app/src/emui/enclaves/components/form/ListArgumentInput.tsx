@@ -1,29 +1,30 @@
 import { Button, ButtonGroup, Flex, useToast } from "@chakra-ui/react";
 
-import { ArgumentValueType } from "kurtosis-cloud-indexer-sdk";
 import { CopyButton, PasteButton, stringifyError } from "kurtosis-ui-components";
+import { ReactElement } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { FiDelete, FiPlus } from "react-icons/fi";
-import { KurtosisArgumentSubtypeFormControl } from "../KurtosisArgumentFormControl";
-import { ConfigureEnclaveForm } from "../types";
-import { KurtosisArgumentTypeInput, KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
+import { KurtosisSubtypeFormControl } from "./KurtosisFormControl";
+import { KurtosisFormInputProps } from "./types";
 
-type ListArgumentInputProps = KurtosisArgumentTypeInputImplProps & {
-  valueType: ArgumentValueType;
+type ListArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel> & {
+  FieldComponent: (props: KurtosisFormInputProps<DataModel>) => ReactElement;
+  createNewValue: () => object;
 };
 
-export const ListArgumentInput = ({ valueType, ...otherProps }: ListArgumentInputProps) => {
+export const ListArgumentInput = <DataModel extends object>({
+  FieldComponent,
+  createNewValue,
+  ...otherProps
+}: ListArgumentInputProps<DataModel>) => {
   const toast = useToast();
-  const { getValues, setValue } = useFormContext<ConfigureEnclaveForm>();
+  const { getValues, setValue } = useFormContext<DataModel>();
   const { fields, append, remove } = useFieldArray({ name: otherProps.name });
 
   const handleValuePaste = (value: string) => {
     try {
       const parsed = JSON.parse(value);
-      setValue(
-        otherProps.name,
-        parsed.map((value: any) => ({ value })),
-      );
+      setValue(otherProps.name, parsed);
     } catch (err: any) {
       toast({
         title: `Could not read pasted input, was it a json list of values? Got error: ${stringifyError(err)}`,
@@ -35,28 +36,18 @@ export const ListArgumentInput = ({ valueType, ...otherProps }: ListArgumentInpu
   return (
     <Flex flexDirection={"column"} gap={"10px"}>
       <ButtonGroup isAttached>
-        <CopyButton
-          contentName={"value"}
-          valueToCopy={() => JSON.stringify(getValues(otherProps.name).map(({ value }: { value: any }) => value))}
-        />
+        <CopyButton contentName={"value"} valueToCopy={() => JSON.stringify(getValues(otherProps.name) as any[])} />
         <PasteButton onValuePasted={handleValuePaste} />
       </ButtonGroup>
       {fields.map((field, i) => (
         <Flex key={field.id} gap={"10px"}>
-          <KurtosisArgumentSubtypeFormControl
+          <KurtosisSubtypeFormControl
             disabled={otherProps.disabled}
             isRequired={otherProps.isRequired}
-            name={`${otherProps.name as `args.${string}`}.${i}.value`}
+            name={`${otherProps.name as `args.${string}`}.${i}`}
           >
-            <KurtosisArgumentTypeInput
-              type={valueType}
-              name={`${otherProps.name as `args.${string}`}.${i}.value`}
-              isRequired
-              validate={otherProps.validate}
-              width={"411px"}
-              size={"sm"}
-            />
-          </KurtosisArgumentSubtypeFormControl>
+            <FieldComponent name={`${otherProps.name}.${i}` as any} isRequired validate={otherProps.validate} />
+          </KurtosisSubtypeFormControl>
           <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"} variant={"outline"}>
             Delete
           </Button>
@@ -64,7 +55,7 @@ export const ListArgumentInput = ({ valueType, ...otherProps }: ListArgumentInpu
       ))}
       <Flex>
         <Button
-          onClick={() => append({ value: "" })}
+          onClick={() => append(createNewValue() as any)}
           leftIcon={<FiPlus />}
           colorScheme={"kurtosisGreen"}
           size={"sm"}

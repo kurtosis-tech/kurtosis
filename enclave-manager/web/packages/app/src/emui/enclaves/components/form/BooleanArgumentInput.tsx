@@ -1,13 +1,17 @@
 import { Radio, RadioGroup, Stack, Switch } from "@chakra-ui/react";
-import { useEnclaveConfigurationFormContext } from "../EnclaveConfigurationForm";
-import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-type BooleanArgumentInputProps = KurtosisArgumentTypeInputImplProps & {
+import { useFormContext } from "react-hook-form";
+import { KurtosisFormInputProps } from "./types";
+
+type BooleanArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel> & {
   inputType?: "radio" | "switch";
 };
 
-export const BooleanArgumentInput = ({ inputType, ...props }: BooleanArgumentInputProps) => {
-  const { register, getValues } = useEnclaveConfigurationFormContext();
+export const BooleanArgumentInput = <DataModel extends object>({
+  inputType,
+  ...props
+}: BooleanArgumentInputProps<DataModel>) => {
+  const { register, getValues } = useFormContext<DataModel>();
 
   const currentDefault = getValues(props.name);
 
@@ -17,7 +21,8 @@ export const BooleanArgumentInput = ({ inputType, ...props }: BooleanArgumentInp
         {...register(props.name, {
           disabled: props.disabled,
           required: props.isRequired,
-          value: true,
+          // any required to force this initial value to work.
+          value: true as any,
           validate: props.validate,
         })}
       />
