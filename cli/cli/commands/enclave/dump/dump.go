@@ -11,11 +11,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/files"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"os"
+	"path"
 )
 
 const (
@@ -31,6 +34,9 @@ const (
 	defaultEnclaveDumpDir = "kurtosis-dump"
 	enclaveDumpSeparator  = "--"
 	outputDirIsOptional   = true
+
+	filesArtifactDestinationDirPermission = 0o777
+	filesArtifactFolderName               = "files"
 )
 
 var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -79,20 +85,35 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting enclave for identifier '%v'", enclaveIdentifier)
+		return stacktrace.Propagate(err, "an error occurred while retrieving enclave context for enclave")
 	}
 
-	enclaveUuid := enclaveInfo.GetEnclaveUuid()
+	enclaveUuid := enclaveCtx.GetEnclaveUuid()
 
 	if enclaveOutputDirpath == defaultEnclaveDumpDir {
-		enclaveName := enclaveInfo.GetName()
+		enclaveName := enclaveCtx.GetEnclaveName()
 		enclaveOutputDirpath = fmt.Sprintf("%s%s%s", enclaveName, enclaveDumpSeparator, enclaveUuid)
 	}
 
 	if err := kurtosisBackend.DumpEnclave(ctx, enclave.EnclaveUUID(enclaveUuid), enclaveOutputDirpath); err != nil {
 		return stacktrace.Propagate(err, "An error occurred dumping enclave '%v' to '%v'", enclaveIdentifier, enclaveOutputDirpath)
+	}
+
+	filesDownloadFolder := path.Join(enclaveOutputDirpath, filesArtifactFolderName)
+	if err = os.Mkdir(filesDownloadFolder, filesArtifactDestinationDirPermission); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating a folder '%v' to download files to", filesArtifactFolderName)
+	}
+
+	filesInEnclave, err := enclaveCtx.GetAllFilesArtifactNamesAndUuids(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "an error occurred while fetching files artifact in enclave '%v'", enclaveIdentifier)
+	}
+	for _, fileNameAndUuid := range filesInEnclave {
+		if err = files.DownloadAndExtractFilesArtifact(ctx, enclaveCtx, fileNameAndUuid.GetFileName(), filesDownloadFolder); err != nil {
+			return stacktrace.Propagate(err, "an error occurred while downloading and extracting file '%v'", fileNameAndUuid.GetFileName())
+		}
 	}
 
 	logrus.Infof("Dumped enclave '%v' to directory '%v'", enclaveIdentifier, enclaveOutputDirpath)
