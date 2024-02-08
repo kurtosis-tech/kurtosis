@@ -214,7 +214,7 @@ The `ports` dictionary argument accepts a key value pair, where `key` is a user 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [Directory][directory] object or files artifact name.
 Using a `Directory` object with `artifact_name` is strictly equivalent to directly using the files artifact name as the value of the dictionary. This is just to simplify usage.
 
-See [NixSupport](NixSupport) for more information on how to use the Nix and Kurtosis together.
+See [Nix Support](nix-support) for more information on how to use the Nix and Kurtosis together.
 
 You can view more information on [configuring the `ReadyCondition` type here][ready-condition].
 
