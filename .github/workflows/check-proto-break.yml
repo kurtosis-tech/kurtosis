@@ -18,9 +18,9 @@ jobs:
           go-version: '1.20'
       - run: |
           if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
-            echo "::set-output name=change::false"
-          else
             echo "::set-output name=change::true"
+          else
+            echo "::set-output name=change::false"
           fi
         id: check
   check-proto-break:
