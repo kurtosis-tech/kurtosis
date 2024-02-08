@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 )
@@ -137,11 +138,14 @@ func run(
 		if err = files.DownloadFilesArtifactToLocation(ctx, enclaveCtx, artifactIdentifier, absoluteDestinationPath); err != nil {
 			return stacktrace.Propagate(err, "an error occurred while downloading file '%v' to '%v' for enclave '%v'", artifactIdentifier, absoluteDestinationPath, enclaveIdentifier)
 		}
+		logrus.Infof("File package with identifier '%v' downloaded to '%v'", artifactIdentifier, absoluteDestinationPath)
+		return nil
 	}
 
 	if err = files.DownloadAndExtractFilesArtifact(ctx, enclaveCtx, artifactIdentifier, absoluteDestinationPath); err != nil {
 		return stacktrace.Propagate(err, "an error occurred while downloading and extracting file '%v' to '%v' for enclave '%v'", artifactIdentifier, absoluteDestinationPath, enclaveIdentifier)
 	}
+	logrus.Infof("File package with identifier '%v' extracted to '%v'", artifactIdentifier, absoluteDestinationPath)
 
 	return nil
 }

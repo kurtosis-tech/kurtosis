@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path"
 )
@@ -33,9 +32,7 @@ func DownloadFilesArtifactToLocation(ctx context.Context, enclaveCtx *enclaves.E
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while writing bytes to file '%v' with permission '%v'", destinationPathToDownloadFileTo, filesArtifactPermission)
 	}
-	logrus.Infof("File package with identifier '%v' downloaded to '%v'", artifactIdentifier, destinationPathToDownloadFileTo)
 	return nil
-
 }
 
 func DownloadAndExtractFilesArtifact(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, artifactIdentifier string, absoluteDestinationPath string) error {
@@ -64,7 +61,6 @@ func DownloadAndExtractFilesArtifact(ctx context.Context, enclaveCtx *enclaves.E
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while extracting '%v' to '%v'", tmpFileToWriteTo, absoluteDestinationPath)
 	}
-	logrus.Infof("File package with identifier '%v' extracted to '%v'", artifactIdentifier, absoluteDestinationPath)
 
 	shouldCleanupTmpDir = true
 	return nil
