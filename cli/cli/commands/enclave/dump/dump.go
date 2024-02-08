@@ -86,6 +86,9 @@ func run(
 	}
 
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting enclave for identifier '%v'", enclaveIdentifier)
+	}
 
 	enclaveUuid := enclaveInfo.GetEnclaveUuid()
 	if enclaveOutputDirpath == defaultEnclaveDumpDir {
@@ -93,7 +96,7 @@ func run(
 		enclaveOutputDirpath = fmt.Sprintf("%s%s%s", enclaveName, enclaveDumpSeparator, enclaveUuid)
 	}
 
-	if err := kurtosisBackend.DumpEnclave(ctx, enclave.EnclaveUUID(enclaveUuid), enclaveOutputDirpath); err != nil {
+	if err = kurtosisBackend.DumpEnclave(ctx, enclave.EnclaveUUID(enclaveUuid), enclaveOutputDirpath); err != nil {
 		return stacktrace.Propagate(err, "An error occurred dumping enclave '%v' to '%v'", enclaveIdentifier, enclaveOutputDirpath)
 	}
 
@@ -105,7 +108,7 @@ func run(
 
 	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
 	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred while retrieving enclave context for enclave")
+		return stacktrace.Propagate(err, "An error occurred while retrieving enclave context for enclave with identifier '%v'", enclaveIdentifier)
 	}
 
 	filesInEnclave, err := enclaveCtx.GetAllFilesArtifactNamesAndUuids(ctx)
