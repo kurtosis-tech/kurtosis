@@ -47,6 +47,7 @@ type KurtosisBackend interface {
 		grpcPortNum uint16,
 		envVars map[string]string,
 		shouldStartInDebugMode bool,
+		githubAuthToken string,
 	) (
 		*engine.Engine,
 		error,

@@ -3,6 +3,7 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/github_auth_storage_creator"
 	"time"
 
 	"github.com/docker/go-connections/nat"
@@ -30,8 +31,7 @@ const (
 	engineDebugServerPort                       = 50102 // in ClI this is 50101 and 50103 for the APIC
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
-	logsStorageDirpath                          = "/var/log/kurtosis/"
-	removeLogsWaitHours                         = 6 * time.Hour
+	logsStorageDirPath                          = "/var/log/kurtosis/"
 )
 
 func CreateEngine(
@@ -40,9 +40,10 @@ func CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	shouldStartInDebugMode bool,
+	gitAuthToken string,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
-	shouldStartInDebugMode bool,
 ) (
 	*engine.Engine,
 	error,
@@ -239,13 +240,34 @@ func CreateEngine(
 		usedPorts[debugServerDockerPort] = docker_manager.NewManualPublishingSpec(uint16(engineDebugServerPort))
 	}
 
+	// Configure GitHub Auth by writing the provided token to a volume that's accessible by the engine
+	githubAuthStorageVolObjAttrs, err := objAttrsProvider.ForGitHubAuthStorageVolume()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving object attributes for GitHub auth storage.")
+	}
+	githubAuthStorageVolNameStr := githubAuthStorageVolObjAttrs.GetName().GetString()
+	githubAuthStorageVolLabelStrs := map[string]string{}
+	for labelKey, labelValue := range githubAuthStorageVolObjAttrs.GetLabels() {
+		githubAuthStorageVolLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+	// This volume is created idempotently (like logs storage volume) and just write the token to the file everytime the engine starts
+	if err = dockerManager.CreateVolume(ctx, githubAuthStorageVolNameStr, githubAuthStorageVolLabelStrs); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating GitHub auth storage volume.")
+	}
+	githubAuthStorageCreator := github_auth_storage_creator.NewGitHubAuthStorageCreator(gitAuthToken)
+	err = githubAuthStorageCreator.CreateGitHubAuthStorage(ctx, targetNetworkId, githubAuthStorageVolNameStr, consts.GitHubAuthStorageDirPath, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating GitHub auth storage.")
+	}
+
 	bindMounts := map[string]string{
 		// Necessary so that the engine server can interact with the Docker engine
 		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
 	}
 
 	volumeMounts := map[string]string{
-		logsStorageVolNameStr: logsStorageDirpath,
+		logsStorageVolNameStr:       logsStorageDirPath,
+		githubAuthStorageVolNameStr: consts.GitHubAuthStorageDirPath,
 	}
 
 	if serverArgs.OnBastionHost {

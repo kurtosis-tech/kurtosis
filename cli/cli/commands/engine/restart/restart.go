@@ -19,9 +19,10 @@ import (
 )
 
 const (
-	engineVersionFlagKey   = "version"
-	logLevelFlagKey        = "log-level"
-	enclavePoolSizeFlagKey = "enclave-pool-size"
+	engineVersionFlagKey           = "version"
+	logLevelFlagKey                = "log-level"
+	enclavePoolSizeFlagKey         = "enclave-pool-size"
+	githubAuthTokenOverrideFlagKey = "github-auth-token"
 
 	defaultEngineVersion                   = ""
 	restartEngineOnSameVersionIfAnyRunning = false
@@ -63,6 +64,13 @@ var RestartCmd = &lowlevel.LowlevelKurtosisCommand{
 			Type:      flags.FlagType_Uint8,
 			Default:   strconv.Itoa(int(defaults.DefaultEngineEnclavePoolSize)),
 		},
+		{
+			Key:       githubAuthTokenOverrideFlagKey,
+			Usage:     "The GitHub auth token that should be used to authorize git operations such as accessing packages in private repositories. Overrides existing GitHub auth config if a user is logged in.",
+			Shorthand: "",
+			Type:      flags.FlagType_String,
+			Default:   defaults.DefaultGitHubAuthTokenOverride,
+		},
 	},
 	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
@@ -93,6 +101,11 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", logLevelStr)
 	}
 
+	githubAuthTokenOverride, err := flags.GetString(githubAuthTokenOverrideFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting GitHub auth token override flag with key '%v'. This is a bug in Kurtosis", githubAuthTokenOverrideFlagKey)
+	}
+
 	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
@@ -116,7 +129,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}

@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.86.16](https://github.com/kurtosis-tech/kurtosis/compare/0.86.15...0.86.16) (2024-02-07)
+
+
+### Features
+
+* kurtosis github login ([#2113](https://github.com/kurtosis-tech/kurtosis/issues/2113)) ([2f0d638](https://github.com/kurtosis-tech/kurtosis/commit/2f0d638c688828de3eb781b11d696883807357ba))
+
+
+### Bug Fixes
+
+* Remove Derek and Karla as default assignees for docs issues ([#2129](https://github.com/kurtosis-tech/kurtosis/issues/2129)) ([2f1eecc](https://github.com/kurtosis-tech/kurtosis/commit/2f1eecc9a935ac19cf4de0fbc26ab852a5248b7f))
+
+## [0.86.15](https://github.com/kurtosis-tech/kurtosis/compare/0.86.14...0.86.15) (2024-02-07)
+
+
+### Features
+
+* Enclave connect ([#2117](https://github.com/kurtosis-tech/kurtosis/issues/2117)) ([d33de7b](https://github.com/kurtosis-tech/kurtosis/commit/d33de7bebb0e997c8b2fd93872a1b676dc3519e7))
+
+
+### Bug Fixes
+
+* Fix the enclave connect button and modal help string in the EM UI ([#2127](https://github.com/kurtosis-tech/kurtosis/issues/2127)) ([a11fb4c](https://github.com/kurtosis-tech/kurtosis/commit/a11fb4c701e7ed8700c7812559aebb03d5d3846b))
+
 ## [0.86.14](https://github.com/kurtosis-tech/kurtosis/compare/0.86.13...0.86.14) (2024-02-06)
 
 

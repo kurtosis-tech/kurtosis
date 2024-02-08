@@ -58,7 +58,7 @@ func (store *MetricsUserIDStore) GetUserID() (string, error) {
 	} else {
 		userID, err = machineid.ProtectedID(applicationID)
 		if err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred generating anonimazed user ID")
+			return "", stacktrace.Propagate(err, "An error occurred generating anonymized user ID")
 		}
 		if err = store.saveMetricsUserIdFile(userID); err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred saving metrics user id in file")
