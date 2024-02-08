@@ -101,15 +101,21 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred dumping enclave '%v' to '%v'", enclaveIdentifier, enclaveOutputDirpath)
 	}
 
+	filesInEnclave, err := enclaveCtx.GetAllFilesArtifactNamesAndUuids(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "an error occurred while fetching files artifact in enclave '%v'", enclaveIdentifier)
+	}
+
+	if len(filesInEnclave) == 0 {
+		logrus.Infof("Dumped enclave '%v' to directory '%v'", enclaveIdentifier, enclaveOutputDirpath)
+		return nil
+	}
+
 	filesDownloadFolder := path.Join(enclaveOutputDirpath, filesArtifactFolderName)
 	if err = os.Mkdir(filesDownloadFolder, filesArtifactDestinationDirPermission); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while creating a folder '%v' to download files to", filesArtifactFolderName)
 	}
 
-	filesInEnclave, err := enclaveCtx.GetAllFilesArtifactNamesAndUuids(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred while fetching files artifact in enclave '%v'", enclaveIdentifier)
-	}
 	for _, fileNameAndUuid := range filesInEnclave {
 		fileDownloadPath := path.Join(filesDownloadFolder, fileNameAndUuid.GetFileName())
 		if err = os.Mkdir(fileDownloadPath, filesArtifactDestinationDirPermission); err != nil {
