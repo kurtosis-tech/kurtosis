@@ -45,6 +45,7 @@ func TestServiceConfigMarshallers(t *testing.T) {
 		require.EqualValues(t, publicPortSpec, originalPublicPortSpec)
 	}
 
+	require.Equal(t, originalServiceConfig, newServiceConfig)
 	require.Equal(t, originalServiceConfig.GetEnvVars(), newServiceConfig.GetEnvVars())
 	require.Equal(t, originalServiceConfig.GetCmdArgs(), newServiceConfig.GetCmdArgs())
 	require.Equal(t, originalServiceConfig.GetEnvVars(), newServiceConfig.GetEnvVars())
@@ -57,6 +58,7 @@ func TestServiceConfigMarshallers(t *testing.T) {
 	require.Equal(t, originalServiceConfig.GetMinMemoryAllocationMegabytes(), newServiceConfig.GetMinMemoryAllocationMegabytes())
 	require.Equal(t, originalServiceConfig.GetLabels(), newServiceConfig.GetLabels())
 	require.Equal(t, originalServiceConfig.GetImageBuildSpec(), newServiceConfig.GetImageBuildSpec())
+	require.Equal(t, originalServiceConfig.GetNodeSelectors(), newServiceConfig.GetNodeSelectors())
 }
 
 func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
@@ -82,6 +84,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 		},
 		testServiceUser(),
 		testToleration(),
+		testNodeSelectors(),
 	)
 	require.NoError(t, err)
 	return serviceConfig
@@ -199,4 +202,10 @@ func testToleration() []v1.Toleration {
 		Effect:            v1.TaintEffectNoExecute,
 		TolerationSeconds: &tolerationSeconds,
 	}}
+}
+
+func testNodeSelectors() map[string]string {
+	return map[string]string{
+		"disktype": "ssd",
+	}
 }
