@@ -893,6 +893,10 @@ jobs:
       - run: "${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf --name stored-file"
       - run: "${KURTOSIS_BINPATH} files download test-enclave stored-file ."
 
+      # Check Dump Contains files
+      - run: "${KURTOSIS_BINPATH} enclave dump test-enclave test-dump"
+      - run: "cat test-dump/files/rendered-file"
+
       # Module inside an enclave
       - run: "${KURTOSIS_BINPATH} enclave ls"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
