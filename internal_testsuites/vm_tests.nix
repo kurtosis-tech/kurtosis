@@ -1,4 +1,4 @@
-{ nixpkgs, pkgs, kurtosis, ... }:
+{ nixpkgs, pkgs, kurtosisPkgs, kurtosisImages, ... }:
 let
   nixos-lib = import (nixpkgs + "/nixos/lib") { };
   vm_modules = import ./vm_modules.nix { inherit nixpkgs; };
@@ -28,17 +28,13 @@ in nixos-lib.runTest rec {
     machine.wait_for_unit("k3s")
     machine.succeed("k3s kubectl cluster-info")
 
+    machine.succeed("docker load < ${kurtosisImages.core.${container_arch}}")
+    machine.succeed("docker load < ${kurtosisImages.engine.${container_arch}}")
     machine.succeed("docker load < ${
-      kurtosis.containers.core.${container_arch}
-    }")
-    machine.succeed("docker load < ${
-      kurtosis.containers.engine.${container_arch}
-    }")
-    machine.succeed("docker load < ${
-      kurtosis.containers.files-artifacts-expander.${container_arch}
+      kurtosisImages.files-artifacts-expander.${container_arch}
     }")
 
     with subtest("Check that if engine and companion containers start"):
-        machine.succeed("${kurtosis.cli}/bin/cli engine restart --cli-log-level debug")
+        machine.succeed("${kurtosisPkgs.cli}/bin/cli engine restart --cli-log-level debug")
   '';
 }

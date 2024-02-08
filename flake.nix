@@ -55,7 +55,7 @@
         checks.core = packages.core;
         checks.engine = packages.engine;
 
-        packages.cli-binaries = let
+        cross-packages.cli = let
           architectures = [ "amd64" "arm64" ];
           OSs = [ "linux" "darwin" "windows" ];
           all = pkgs.lib.lists.crossLists (arch: os: {
@@ -70,7 +70,7 @@
           }) [ architectures OSs ];
         in pkgs.lib.foldl' (set: acc: acc // set) { } all;
 
-        packages.containers = let
+        containers = let
           architectures = [ "amd64" "arm64" ];
           service_names = [ "engine" "core" "files-artifacts-expander" ];
           os = "linux";
@@ -114,12 +114,13 @@
               };
             };
           }) [ architectures service_names ];
-        in pkgs.lib.foldl' (set: acc: acc // set) { } all;
+        in pkgs.lib.foldl' (set: acc: pkgs.lib.recursiveUpdate acc set) { } all;
 
         packages.integrationTest = import ./internal_testsuites/vm_tests.nix
           (self.inputs // {
             inherit pkgs nixpkgs;
-            kurtosis = packages;
+            kurtosisPkgs = packages;
+            kurtosisImages = containers;
           });
       });
 }
