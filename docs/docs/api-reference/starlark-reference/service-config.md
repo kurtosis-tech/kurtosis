@@ -174,7 +174,16 @@ config = ServiceConfig(
             effect = "NoSchedule",
             toleration_seconds = 64,
         )
-    ]
+    ],
+    
+    # A map of node selectors
+    # This refers to Node Selectors in Kubernetes https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+    # This has no effect on Docker
+    # This is an experimental feature that might get replaced with a better abstraction suited for Kurtosis
+    # OPTIONAL
+    node_selectors = {
+        "disktype": "ssd",
+    }
 )
 ```
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package.

@@ -1049,6 +1049,7 @@ func (manager *KubernetesManager) CreatePod(
 	podServiceAccountName string,
 	restartPolicy apiv1.RestartPolicy,
 	tolerations []apiv1.Toleration,
+	nodeSelectors map[string]string,
 ) (*apiv1.Pod, error) {
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespaceName)
 
@@ -1080,7 +1081,7 @@ func (manager *KubernetesManager) CreatePod(
 		TerminationGracePeriodSeconds: nil,
 		ActiveDeadlineSeconds:         nil,
 		DNSPolicy:                     "",
-		NodeSelector:                  nil,
+		NodeSelector:                  nodeSelectors,
 		ServiceAccountName:            podServiceAccountName,
 		DeprecatedServiceAccount:      "",
 		AutomountServiceAccountToken:  nil,
