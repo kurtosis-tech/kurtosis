@@ -895,7 +895,7 @@ jobs:
 
       # Check Dump Contains files
       - run: "${KURTOSIS_BINPATH} enclave dump test-enclave test-dump"
-      - run: "cat test-dump/files/rendered-file"
+      - run: "ls test-dump/files/rendered-file"
 
       # Module inside an enclave
       - run: "${KURTOSIS_BINPATH} enclave ls"

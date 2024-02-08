@@ -85,20 +85,27 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
-	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred while retrieving enclave context for enclave")
-	}
+	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 
-	enclaveUuid := enclaveCtx.GetEnclaveUuid()
-
+	enclaveUuid := enclaveInfo.GetEnclaveUuid()
 	if enclaveOutputDirpath == defaultEnclaveDumpDir {
-		enclaveName := enclaveCtx.GetEnclaveName()
+		enclaveName := enclaveInfo.GetName()
 		enclaveOutputDirpath = fmt.Sprintf("%s%s%s", enclaveName, enclaveDumpSeparator, enclaveUuid)
 	}
 
 	if err := kurtosisBackend.DumpEnclave(ctx, enclave.EnclaveUUID(enclaveUuid), enclaveOutputDirpath); err != nil {
 		return stacktrace.Propagate(err, "An error occurred dumping enclave '%v' to '%v'", enclaveIdentifier, enclaveOutputDirpath)
+	}
+
+	if enclaveInfo.ApiContainerStatus != kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
+		logrus.Debugf("Couldn't dump file information as the enclave '%v' is not running", enclaveIdentifier)
+		logrus.Infof("Dumped enclave '%v' to directory '%v'", enclaveIdentifier, enclaveOutputDirpath)
+		return nil
+	}
+
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "an error occurred while retrieving enclave context for enclave")
 	}
 
 	filesInEnclave, err := enclaveCtx.GetAllFilesArtifactNamesAndUuids(ctx)
