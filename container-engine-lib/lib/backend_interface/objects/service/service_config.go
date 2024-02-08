@@ -61,6 +61,8 @@ type privateServiceConfig struct {
 
 	// TODO replace this with an abstraction that we own
 	Tolerations []v1.Toleration
+
+	NodeSelectors map[string]string
 }
 
 func CreateServiceConfig(
@@ -82,6 +84,7 @@ func CreateServiceConfig(
 	labels map[string]string,
 	user *service_user.ServiceUser,
 	tolerations []v1.Toleration,
+	nodeSelectors map[string]string,
 ) (*ServiceConfig, error) {
 
 	if err := ValidateServiceConfigLabels(labels); err != nil {
@@ -108,6 +111,7 @@ func CreateServiceConfig(
 		Labels:                       labels,
 		User:                         user,
 		Tolerations:                  tolerations,
+		NodeSelectors:                nodeSelectors,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -188,6 +192,10 @@ func (serviceConfig *ServiceConfig) GetTolerations() []v1.Toleration {
 
 func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(serviceConfig.privateServiceConfig)
+}
+
+func (serviceConfig *ServiceConfig) GetNodeSelectors() map[string]string {
+	return serviceConfig.privateServiceConfig.NodeSelectors
 }
 
 func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {

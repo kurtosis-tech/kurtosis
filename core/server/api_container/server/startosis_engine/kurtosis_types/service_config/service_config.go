@@ -47,6 +47,7 @@ const (
 	LabelsAttr                      = "labels"
 	UserAttr                        = "user"
 	TolerationsAttr                 = "tolerations"
+	NodeSelectorsAttr               = "node_selectors"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -182,7 +183,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.ServiceConfigLabels(value, LabelsAttr)
+						return builtin_argument.StringMappingToString(value, LabelsAttr)
 					},
 				},
 				{
@@ -197,6 +198,14 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return nil
+					},
+				},
+				{
+					Name:              NodeSelectorsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringMappingToString(value, NodeSelectorsAttr)
 					},
 				},
 			},
@@ -476,6 +485,18 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	nodeSelectors := map[string]string{}
+	nodeSelectorsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, NodeSelectorsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && nodeSelectorsStarlark.Len() > 0 {
+		nodeSelectors, interpretationErr = kurtosis_types.SafeCastToMapStringString(nodeSelectorsStarlark, NodeSelectorsAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -495,6 +516,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		labels,
 		serviceUser,
 		tolerations,
+		nodeSelectors,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")

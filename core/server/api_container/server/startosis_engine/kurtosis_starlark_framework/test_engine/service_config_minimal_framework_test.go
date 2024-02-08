@@ -63,6 +63,7 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 		map[string]string{},
 		nil,
 		nil,
+		map[string]string{},
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)

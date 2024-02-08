@@ -309,6 +309,7 @@ func createStartServiceOperation(
 		minMemoryAllocationMegabytes := serviceConfig.GetMinMemoryAllocationMegabytes()
 		user := serviceConfig.GetUser()
 		tolerations := serviceConfig.GetTolerations()
+		nodeSelectors := serviceConfig.GetNodeSelectors()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -417,6 +418,7 @@ func createStartServiceOperation(
 			userServiceServiceAccountName,
 			restartPolicy,
 			tolerations,
+			nodeSelectors,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)

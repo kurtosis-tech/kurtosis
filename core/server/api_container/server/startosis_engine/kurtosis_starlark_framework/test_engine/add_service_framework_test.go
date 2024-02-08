@@ -51,6 +51,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 				map[string]string{},
 				nil,
 				nil,
+				map[string]string{},
 			)
 			require.NoError(suite.T(), err)
 

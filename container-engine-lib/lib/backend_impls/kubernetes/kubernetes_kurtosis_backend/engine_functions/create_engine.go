@@ -34,6 +34,7 @@ var noWait *port_spec.Wait = nil
 
 // TODO add support for passing toleration to Engine
 var noToleration []apiv1.Toleration = nil
+var noSelectors map[string]string = nil
 
 func CreateEngine(
 	ctx context.Context,
@@ -477,6 +478,7 @@ func createEnginePod(
 		// Engine doesn't auto restart
 		apiv1.RestartPolicyNever,
 		noToleration,
+		noSelectors,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
