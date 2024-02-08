@@ -278,6 +278,7 @@ func getServiceConfig(
 		map[string]string{},
 		nil,
 		nil,
+		map[string]string{},
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")

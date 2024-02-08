@@ -78,6 +78,7 @@ func (t *serviceConfigTolerationTest) Assert(typeValue builtin_argument.Kurtosis
 		map[string]string{},
 		nil,
 		expectedTolerations,
+		map[string]string{},
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)

@@ -324,6 +324,9 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 		},
 		nil,
 		nil,
+		map[string]string{
+			"disktype": "ssd",
+		},
 	)
 	require.NoError(t, err)
 	return serviceConfig
