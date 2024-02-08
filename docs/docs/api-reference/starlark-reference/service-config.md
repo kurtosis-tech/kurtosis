@@ -267,3 +267,4 @@ The `tolerations` field expects a list of [`Toleration`][toleration] objects bei
 [package]: ../../advanced-concepts/packages.md
 [user]: ./user.md
 [toleration]: ./toleration.md
+[nix-support]: ./nix-support.md
