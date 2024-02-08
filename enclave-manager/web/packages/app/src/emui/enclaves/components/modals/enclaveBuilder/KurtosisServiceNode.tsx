@@ -1,5 +1,5 @@
 import { Flex, Grid, GridItem, IconButton, Text } from "@chakra-ui/react";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { FiTrash } from "react-icons/fi";
 import { RxCornerBottomRight } from "react-icons/rx";
@@ -9,13 +9,24 @@ import { IntegerArgumentInput } from "../../form/IntegerArgumentInput";
 import { KurtosisFormControl } from "../../form/KurtosisFormControl";
 import { ListArgumentInput } from "../../form/ListArgumentInput";
 import { OptionsArgumentInput } from "../../form/OptionArgumentInput";
+import { SelectArgumentInput, SelectOption } from "../../form/SelectArgumentInput";
 import { StringArgumentInput } from "../../form/StringArgumentInput";
 import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
-import { KurtosisPort, KurtosisServiceNodeData, useVariableContext } from "./VariableContextProvider";
+import {
+  KurtosisFileMount,
+  KurtosisPort,
+  KurtosisServiceNodeData,
+  useVariableContext,
+} from "./VariableContextProvider";
 
 export const KurtosisServiceNode = memo(
   ({ id, selected }: NodeProps) => {
-    const { data, updateData, removeData } = useVariableContext();
+    const { data, updateData, removeData, variables } = useVariableContext();
+    const artifactVariableOptions = useMemo((): SelectOption[] => {
+      return variables
+        .filter((variable) => variable.id.startsWith("artifact"))
+        .map((variable) => ({ display: variable.displayName, value: `{{${variable.id}}}` }));
+    }, [variables]);
     const formMethods = useForm<KurtosisServiceNodeData>({
       defaultValues: (data[id] as KurtosisServiceNodeData) || {},
       mode: "onBlur",
@@ -55,13 +66,13 @@ export const KurtosisServiceNode = memo(
         >
           <Handle
             type="target"
-            position={Position.Top}
+            position={Position.Left}
             style={{ background: "transparent", border: "none" }}
             isConnectable={false}
           />
           <Handle
             type="source"
-            position={Position.Bottom}
+            position={Position.Right}
             style={{ background: "transparent", border: "none" }}
             isConnectable={false}
           />
@@ -143,7 +154,7 @@ export const KurtosisServiceNode = memo(
             <KurtosisFormControl<KurtosisServiceNodeData> name={"ports"} label={"Ports"}>
               <ListArgumentInput
                 name={"ports"}
-                renderFieldInput={(props) => (
+                FieldComponent={(props) => (
                   <Grid gridTemplateColumns={"1fr 1fr"} gridGap={"8px"} p={"8px"} bgColor={"gray.650"}>
                     <GridItem>
                       <StringArgumentInput<KurtosisServiceNodeData>
@@ -182,6 +193,40 @@ export const KurtosisServiceNode = memo(
                   applicationProtocol: "",
                   transportProtocol: "TCP",
                   port: 0,
+                })}
+              />
+            </KurtosisFormControl>
+            <KurtosisFormControl<KurtosisServiceNodeData>
+              name={"files"}
+              label={"Files"}
+              helperText={"Choose where to mount artifacts on this services filesystem"}
+            >
+              <ListArgumentInput
+                name={"files"}
+                FieldComponent={(props) => (
+                  <Grid gridTemplateColumns={"1fr 1fr"} gridGap={"8px"} p={"8px"} bgColor={"gray.650"}>
+                    <GridItem>
+                      <StringArgumentInput<KurtosisServiceNodeData>
+                        {...props}
+                        size={"sm"}
+                        placeholder={"/some/path"}
+                        name={`${props.name as `files.${number}`}.mountPoint`}
+                      />
+                    </GridItem>
+                    <GridItem>
+                      <SelectArgumentInput<KurtosisServiceNodeData>
+                        options={artifactVariableOptions}
+                        {...props}
+                        size={"sm"}
+                        placeholder={"Select an Artifact"}
+                        name={`${props.name as `files.${number}`}.artifactName`}
+                      />
+                    </GridItem>
+                  </Grid>
+                )}
+                createNewValue={(): KurtosisFileMount => ({
+                  mountPoint: "",
+                  artifactName: "",
                 })}
               />
             </KurtosisFormControl>

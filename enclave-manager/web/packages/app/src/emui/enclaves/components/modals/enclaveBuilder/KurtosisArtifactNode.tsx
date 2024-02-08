@@ -51,13 +51,13 @@ export const KurtosisArtifactNode = memo(
         >
           <Handle
             type="target"
-            position={Position.Top}
+            position={Position.Left}
             style={{ background: "transparent", border: "none" }}
             isConnectable={false}
           />
           <Handle
             type="source"
-            position={Position.Bottom}
+            position={Position.Right}
             style={{ background: "transparent", border: "none" }}
             isConnectable={false}
           />

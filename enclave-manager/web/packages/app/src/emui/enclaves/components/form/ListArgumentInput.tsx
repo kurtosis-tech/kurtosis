@@ -8,12 +8,12 @@ import { KurtosisSubtypeFormControl } from "./KurtosisFormControl";
 import { KurtosisFormInputProps } from "./types";
 
 type ListArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel> & {
-  renderFieldInput: (props: KurtosisFormInputProps<DataModel>) => ReactElement;
+  FieldComponent: (props: KurtosisFormInputProps<DataModel>) => ReactElement;
   createNewValue: () => object;
 };
 
 export const ListArgumentInput = <DataModel extends object>({
-  renderFieldInput,
+  FieldComponent,
   createNewValue,
   ...otherProps
 }: ListArgumentInputProps<DataModel>) => {
@@ -46,11 +46,7 @@ export const ListArgumentInput = <DataModel extends object>({
             isRequired={otherProps.isRequired}
             name={`${otherProps.name as `args.${string}`}.${i}`}
           >
-            {renderFieldInput({
-              name: `${otherProps.name}.${i}` as any,
-              isRequired: true,
-              validate: otherProps.validate,
-            })}
+            <FieldComponent name={`${otherProps.name}.${i}` as any} isRequired validate={otherProps.validate} />
           </KurtosisSubtypeFormControl>
           <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"} variant={"outline"}>
             Delete

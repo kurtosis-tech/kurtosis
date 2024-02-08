@@ -9,12 +9,18 @@ export type KurtosisPort = {
   applicationProtocol: string;
 };
 
+export type KurtosisFileMount = {
+  mountPoint: string;
+  artifactName: string;
+};
+
 export type KurtosisServiceNodeData = {
   type: "service";
   serviceName: string;
   image: string;
   env: { key: string; value: string }[];
   ports: KurtosisPort[];
+  files: KurtosisFileMount[];
   isValid: boolean;
 };
 
@@ -42,7 +48,7 @@ const VariableContext = createContext<VariableContextState>({
 });
 
 type VariableContextProviderProps = {
-  initialData: Record<string, KurtosisServiceNodeData>;
+  initialData: Record<string, KurtosisNodeData>;
 };
 
 export const VariableContextProvider = ({ initialData, children }: PropsWithChildren<VariableContextProviderProps>) => {

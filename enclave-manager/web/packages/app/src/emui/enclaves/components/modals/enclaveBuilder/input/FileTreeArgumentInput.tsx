@@ -92,8 +92,6 @@ const FileTreeInput = ({ files, onUpdateFiles }: FileTreeInputProps) => {
     onUpdateFiles(newFiles);
   };
 
-  console.log("/" + editingFilePath?.join("/"));
-
   return (
     <Flex flexDirection={"column"} gap={"8px"}>
       <ButtonGroup size={"xs"} variant={"outline"}>

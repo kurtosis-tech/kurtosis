@@ -73,7 +73,7 @@ export const KurtosisArgumentTypeInput = ({
       );
       return (
         <ListArgumentInput
-          renderFieldInput={(props) => (
+          FieldComponent={(props) => (
             <KurtosisArgumentTypeInput
               type={subType1}
               {...props}

@@ -36,14 +36,11 @@ export function getInitialGraphStateFromEnclave<T extends object>(
   }
 }
 
-function normaliseNameToStarlarkVariable(name?: string) {
-  if (!isDefined(name)) {
-    return "";
-  }
-  return name.replace(/\s/g, "").toLowerCase();
+function normaliseNameToStarlarkVariable(name: string) {
+  return name.replace(/\s|-/g, "_").toLowerCase();
 }
 
-const variablePattern = /\{\{(service.([^.]+)\..*)}}/;
+const variablePattern = /\{\{((?:service|artifact).([^.]+)\.?.*)}}/;
 export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): Variable[] {
   return Object.entries(nodes).flatMap(([id, data]) =>
     data.type === "service"
@@ -84,7 +81,7 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
           ...data.env.map((env, i) => ({
             id: `service.${id}.env.${i}`,
             displayName: `service.${data.serviceName}.env.${env.key}`,
-            value: `${normaliseNameToStarlarkVariable(data.serviceName)}.env_vars["${env.key}"]`,
+            value: `"${env.value}"`,
           })),
         ]
       : [
@@ -121,6 +118,12 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
         const portMatches = port.portName.match(variablePattern) || port.applicationProtocol.match(variablePattern);
         if (portMatches) {
           getDependenciesFor(id).add(portMatches[2]);
+        }
+      });
+      data.files.forEach((file) => {
+        const fileMatches = file.mountPoint.match(variablePattern) || file.artifactName.match(variablePattern);
+        if (fileMatches) {
+          getDependenciesFor(id).add(fileMatches[2]);
         }
       });
     }
@@ -194,6 +197,11 @@ export function generateStarlarkFromGraph(
       starlark += `            env_vars = {\n`;
       for (const { key, value } of nodeData.env) {
         starlark += `                ${interpolateValue(key)}: ${interpolateValue(value)},\n`;
+      }
+      starlark += `            },\n`;
+      starlark += `            files = {\n`;
+      for (const { mountPoint, artifactName } of nodeData.files) {
+        starlark += `                ${interpolateValue(mountPoint)}: ${interpolateValue(artifactName)},\n`;
       }
       starlark += `            },\n`;
       starlark += `        ),\n`;

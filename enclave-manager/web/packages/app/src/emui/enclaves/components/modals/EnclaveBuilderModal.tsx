@@ -12,7 +12,7 @@ import {
   ModalOverlay,
 } from "@chakra-ui/react";
 import Dagre from "@dagrejs/dagre";
-import { isDefined, RemoveFunctions, stringifyError } from "kurtosis-ui-components";
+import { isDefined, KurtosisAlert, RemoveFunctions, stringifyError } from "kurtosis-ui-components";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { FiPlusCircle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
@@ -41,7 +41,7 @@ import {
   getNodeDependencies,
 } from "./enclaveBuilder/utils";
 import {
-  KurtosisServiceNodeData,
+  KurtosisNodeData,
   useVariableContext,
   VariableContextProvider,
 } from "./enclaveBuilder/VariableContextProvider";
@@ -66,14 +66,19 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
   } = useMemo((): {
     nodes: Node<any>[];
     edges: Edge<any>[];
-    data: Record<string, KurtosisServiceNodeData>;
+    data: Record<string, KurtosisNodeData>;
   } => {
-    const parseResult = getInitialGraphStateFromEnclave<KurtosisServiceNodeData>(existingEnclave);
+    const parseResult = getInitialGraphStateFromEnclave<KurtosisNodeData>(existingEnclave);
     if (parseResult.isErr) {
       setError(parseResult.error);
       return { nodes: [], edges: [], data: {} };
     }
-    return parseResult.value;
+    return {
+      ...parseResult.value,
+      data: Object.entries(parseResult.value.data)
+        .filter(([id, data]) => parseResult.value.nodes.some((node) => node.id === id))
+        .reduce((acc, [id, data]) => ({ ...acc, [id]: data }), {} as Record<string, KurtosisNodeData>),
+    };
   }, [existingEnclave]);
 
   const handleRun = async () => {
@@ -125,6 +130,7 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody paddingInline={"0"}>
+          {isDefined(error) && <KurtosisAlert message={error} />}
           <VariableContextProvider initialData={initialData}>
             <ReactFlowProvider>
               <Visualiser
@@ -157,7 +163,7 @@ const getLayoutedElements = <T extends object>(nodes: Node<T>[], edges: Edge<any
   if (nodes.length === 0) {
     return { nodes, edges };
   }
-  g.setGraph({ rankdir: "TB" });
+  g.setGraph({ rankdir: "LR", ranksep: 100 });
 
   edges.forEach((edge) => g.setEdge(edge.source, edge.target));
   nodes.forEach((node) =>
@@ -215,7 +221,7 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
 
     const handleAddServiceNode = () => {
       const id = uuidv4();
-      updateData(id, { type: "service", serviceName: "", image: "", ports: [], env: [], isValid: false });
+      updateData(id, { type: "service", serviceName: "", image: "", ports: [], env: [], files: [], isValid: false });
       addNodes({
         id,
         position: getNewNodePosition(),

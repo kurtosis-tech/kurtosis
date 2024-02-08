@@ -45,7 +45,7 @@ export const EditFileModal = ({ isOpen, onClose, filePath, file, onSave }: EditF
               variant={"outline"}
               onClick={() => onSave(codeEditorRef.current?.getText() || "")}
             >
-              Continue
+              Save
             </Button>
           </Flex>
         </ModalFooter>
