@@ -13,12 +13,14 @@
     "kurtosis-ui-components": "0.86.14",
     "react-error-boundary": "^4.0.11",
     "react-hook-form": "^7.47.0",
+    "react-mentions": "^4.4.10",
     "reactflow": "^11.10.2",
     "uuid": "^9.0.1",
     "yaml": "^2.3.4"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",
+    "@types/react-mentions": "^4.1.13",
     "@types/streamsaver": "^2.0.4",
     "@types/uuid": "^9.0.8",
     "serve": "^14.2.1",

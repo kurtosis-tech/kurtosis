@@ -53,10 +53,10 @@ export const KurtosisArgumentTypeInput = ({
       );
       return (
         <DictArgumentInput
-          renderKeyFieldInput={(props) => (
+          KeyFieldComponent={(props) => (
             <KurtosisArgumentTypeInput type={subType1} {...props} name={props.name as `args.${string}.${number}.key`} />
           )}
-          renderValueFieldInput={(props) => (
+          ValueFieldComponent={(props) => (
             <KurtosisArgumentTypeInput
               type={subType2}
               {...props}

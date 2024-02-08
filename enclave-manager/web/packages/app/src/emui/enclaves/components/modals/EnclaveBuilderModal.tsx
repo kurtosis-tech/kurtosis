@@ -13,7 +13,7 @@ import {
 } from "@chakra-ui/react";
 import Dagre from "@dagrejs/dagre";
 import { isDefined, RemoveFunctions, stringifyError } from "kurtosis-ui-components";
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { FiPlusCircle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import {
@@ -33,7 +33,12 @@ import { v4 as uuidv4 } from "uuid";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 import { KurtosisServiceNode, KurtosisServiceNodeData } from "./enclaveBuilder/KurtosisServiceNode";
-import { generateStarlarkFromGraph, getInitialGraphStateFromEnclave } from "./enclaveBuilder/utils";
+import {
+  generateStarlarkFromGraph,
+  getInitialGraphStateFromEnclave,
+  getNodeDependencies,
+} from "./enclaveBuilder/utils";
+import { useVariableContext, VariableContextProvider } from "./enclaveBuilder/VariableContextProvider";
 
 type EnclaveBuilderModalProps = {
   isOpen: boolean;
@@ -48,17 +53,22 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
 
-  const { nodes: initialNodes, edges: initialEdges } = useMemo((): {
-    nodes: Node<KurtosisServiceNodeData>[];
+  const {
+    nodes: initialNodes,
+    edges: initialEdges,
+    data: initialData,
+  } = useMemo((): {
+    nodes: Node<any>[];
     edges: Edge<any>[];
+    data: Record<string, KurtosisServiceNodeData>;
   } => {
     const parseResult = getInitialGraphStateFromEnclave<KurtosisServiceNodeData>(existingEnclave);
     if (parseResult.isErr) {
       setError(parseResult.error);
-      return { nodes: [], edges: [] };
+      return { nodes: [], edges: [], data: {} };
     }
     return parseResult.value;
-  }, [existingEnclave?.starlarkRun]);
+  }, [existingEnclave]);
 
   const handleRun = async () => {
     if (!isDefined(visualiserRef.current)) {
@@ -101,7 +111,7 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={!isLoading ? onClose : () => null}>
+    <Modal isOpen={isOpen} onClose={!isLoading ? onClose : () => null} closeOnEsc={false}>
       <ModalOverlay />
       <ModalContent h={"90vh"} minW={"1300px"}>
         <ModalHeader>
@@ -109,14 +119,16 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody paddingInline={"0"}>
-          <ReactFlowProvider>
-            <Visualiser
-              ref={visualiserRef}
-              initialNodes={initialNodes}
-              initialEdges={initialEdges}
-              existingEnclave={existingEnclave}
-            />
-          </ReactFlowProvider>
+          <VariableContextProvider initialData={initialData}>
+            <ReactFlowProvider>
+              <Visualiser
+                ref={visualiserRef}
+                initialNodes={initialNodes}
+                initialEdges={initialEdges}
+                existingEnclave={existingEnclave}
+              />
+            </ReactFlowProvider>
+          </VariableContextProvider>
         </ModalBody>
         <ModalFooter>
           <ButtonGroup>
@@ -163,16 +175,17 @@ type VisualiserImperativeAttributes = {
 };
 
 type VisualiserProps = {
-  initialNodes: Node<KurtosisServiceNodeData>[];
+  initialNodes: Node<any>[];
   initialEdges: Edge<any>[];
   existingEnclave?: RemoveFunctions<EnclaveFullInfo>;
 };
 
 const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
   ({ initialNodes, initialEdges, existingEnclave }, ref) => {
+    const { data, updateData } = useVariableContext();
     const insertOffset = useRef(0);
-    const { fitView, addNodes, getViewport } = useReactFlow<KurtosisServiceNodeData>();
-    const [nodes, setNodes, onNodesChange] = useNodesState<KurtosisServiceNodeData>(initialNodes || []);
+    const { fitView, addNodes, getViewport } = useReactFlow();
+    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes || []);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
 
     const nodeTypes = useMemo(() => ({ serviceNode: KurtosisServiceNode }), []);
@@ -191,24 +204,40 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
     const handleAddNode = () => {
       const viewport = getViewport();
       console.log(viewport);
+      const id = uuidv4();
+      updateData(id, { serviceName: "", image: "", ports: [], env: [], isValid: false });
       addNodes({
-        id: uuidv4(),
+        id,
         position: { x: -viewport.x + insertOffset.current * 20 + 400, y: -viewport.y + insertOffset.current * 20 },
         width: 600,
         type: "serviceNode",
-        data: { serviceName: "", image: "", ports: [], env: [], isValid: false },
+        data: {},
       });
       insertOffset.current += 1;
     };
+
+    useEffect(() => {
+      setEdges((prevState) => {
+        return Object.entries(getNodeDependencies(data)).flatMap(([to, froms]) =>
+          [...froms].map((from) => ({
+            id: `${from}-${to}`,
+            source: from,
+            target: to,
+            animated: true,
+            style: { strokeWidth: "3px" },
+          })),
+        );
+      });
+    }, [setEdges, data]);
 
     useImperativeHandle(
       ref,
       () => ({
         getStarlark: () => {
-          return generateStarlarkFromGraph(nodes, edges, existingEnclave);
+          return generateStarlarkFromGraph(nodes, edges, data, existingEnclave);
         },
       }),
-      [nodes, edges, existingEnclave],
+      [nodes, edges, data, existingEnclave],
     );
 
     return (
@@ -221,6 +250,7 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
         </ButtonGroup>
         <Box bg={"gray.900"} flex={"1"}>
           <ReactFlow
+            minZoom={0.1}
             maxZoom={1}
             nodeDragThreshold={3}
             nodes={nodes}

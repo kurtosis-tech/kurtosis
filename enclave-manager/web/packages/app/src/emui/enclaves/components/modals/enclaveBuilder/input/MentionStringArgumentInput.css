@@ -1,0 +1,66 @@
+.mentions {
+    appearance: none;
+    height: var(--input-height);
+    font-size: var(--input-font-size);
+    border: 1px solid;
+    border-color: inherit;
+    border-radius: var(--input-border-radius);
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    padding-inline-start: var(--input-padding);
+    padding-inline-end: var(--input-padding);
+    --input-font-size: var(--chakra-fontSizes-sm);
+    --input-padding: var(--chakra-space-3);
+    --input-border-radius: var(--chakra-radii-sm);
+    --input-height: var(--chakra-sizes-8);
+    padding-top: 4px;
+
+    &[aria-invalid="true"] {
+        border-color:var(--chakra-colors-red-300);
+        box-shadow: 0 0 0 1px var(--chakra-colors-red-300);
+    }
+
+    &:focus-within {
+        z-index: 1;
+        border-color: #63b3ed;
+        box-shadow: 0 0 0 1px #63b3ed;
+    }
+}
+
+.mentions--singleLine .mentions__highlighter {
+
+}
+
+.mentions--singleLine .mentions__input {
+    padding-inline-start: var(--input-padding);
+    padding-inline-end: var(--input-padding);
+    --input-padding: var(--chakra-space-3);
+
+    padding-top: 4px;
+
+    &:focus-visible {
+        outline: none;
+    }
+}
+
+.mentions__suggestions__list {
+    background-color: var(--chakra-colors-gray-800);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    font-size: 10pt;
+}
+
+.mentions__suggestions__item {
+    padding: 5px 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.mentions__suggestions__item--focused {
+    background-color: var(--chakra-colors-gray-600);
+}
+
+.mentions__mention {
+    background-color: var(--chakra-colors-blue-500);
+    border-radius: 2px;
+
+}
+

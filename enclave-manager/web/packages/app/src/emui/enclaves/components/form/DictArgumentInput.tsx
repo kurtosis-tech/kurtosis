@@ -1,20 +1,20 @@
 import { Button, ButtonGroup, Flex, useToast } from "@chakra-ui/react";
 
 import { CopyButton, PasteButton, stringifyError } from "kurtosis-ui-components";
-import { ReactElement } from "react";
+import { FC } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { FiDelete, FiPlus } from "react-icons/fi";
 import { KurtosisSubtypeFormControl } from "./KurtosisFormControl";
 import { KurtosisFormInputProps } from "./types";
 
 type DictArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel> & {
-  renderKeyFieldInput: (props: KurtosisFormInputProps<DataModel>) => ReactElement;
-  renderValueFieldInput: (props: KurtosisFormInputProps<DataModel>) => ReactElement;
+  KeyFieldComponent: FC<KurtosisFormInputProps<DataModel>>;
+  ValueFieldComponent: FC<KurtosisFormInputProps<DataModel>>;
 };
 
 export const DictArgumentInput = <DataModel extends object>({
-  renderKeyFieldInput,
-  renderValueFieldInput,
+  KeyFieldComponent,
+  ValueFieldComponent,
   ...otherProps
 }: DictArgumentInputProps<DataModel>) => {
   const toast = useToast();
@@ -56,26 +56,26 @@ export const DictArgumentInput = <DataModel extends object>({
             disabled={otherProps.disabled}
             isRequired={otherProps.isRequired}
           >
-            {renderKeyFieldInput({
-              name: `${otherProps.name}.${i}.key` as any,
-              validate: otherProps.validate,
-              isRequired: true,
-              size: "sm",
-              width: "222px",
-            })}
+            <KeyFieldComponent
+              name={`${otherProps.name}.${i}.key` as any}
+              validate={otherProps.validate}
+              isRequired={true}
+              size={"sm"}
+              width={"222px"}
+            />
           </KurtosisSubtypeFormControl>
           <KurtosisSubtypeFormControl
             name={`${otherProps.name as `args.${string}`}.${i}.value`}
             disabled={otherProps.disabled}
             isRequired={otherProps.isRequired}
           >
-            {renderValueFieldInput({
-              name: `${otherProps.name}.${i}.value` as any,
-              validate: otherProps.validate,
-              isRequired: true,
-              size: "sm",
-              width: "222px",
-            })}
+            <ValueFieldComponent
+              name={`${otherProps.name}.${i}.value` as any}
+              validate={otherProps.validate}
+              isRequired={true}
+              size={"sm"}
+              width={"222px"}
+            />
           </KurtosisSubtypeFormControl>
           <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"} variant={"outline"}>
             Delete
