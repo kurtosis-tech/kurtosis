@@ -3,6 +3,10 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -19,9 +23,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"reflect"
-	"strings"
-	"time"
 )
 
 // shared constants
@@ -256,6 +257,7 @@ func getServiceConfig(
 ) (*service.ServiceConfig, error) {
 	serviceConfig, err := service.CreateServiceConfig(
 		image,
+		nil,
 		nil,
 		nil,
 		nil,

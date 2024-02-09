@@ -2,8 +2,10 @@ package service
 
 import (
 	"encoding/json"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
@@ -29,6 +31,8 @@ type privateServiceConfig struct {
 	// If nil, we will use the ContainerImageName and not use any auth
 	// Mutually exclusive from ImageBuildSpec, ContainerImageName
 	ImagerRegistrySpec *image_registry_spec.ImageRegistrySpec
+
+	NixBuildSpec *nix_build_spec.NixBuildSpec
 
 	PrivatePorts map[string]*port_spec.PortSpec
 
@@ -69,6 +73,7 @@ func CreateServiceConfig(
 	containerImageName string,
 	imageBuildSpec *image_build_spec.ImageBuildSpec,
 	imageRegistrySpec *image_registry_spec.ImageRegistrySpec,
+	nixBuildSpec *nix_build_spec.NixBuildSpec,
 	privatePorts map[string]*port_spec.PortSpec,
 	publicPorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -95,6 +100,7 @@ func CreateServiceConfig(
 		ContainerImageName:        containerImageName,
 		ImageBuildSpec:            imageBuildSpec,
 		ImagerRegistrySpec:        imageRegistrySpec,
+		NixBuildSpec:              nixBuildSpec,
 		PrivatePorts:              privatePorts,
 		PublicPorts:               publicPorts,
 		EntrypointArgs:            entrypointArgs,
@@ -126,6 +132,10 @@ func (serviceConfig *ServiceConfig) GetImageBuildSpec() *image_build_spec.ImageB
 
 func (serviceConfig *ServiceConfig) GetImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
 	return serviceConfig.privateServiceConfig.ImagerRegistrySpec
+}
+
+func (serviceConfig *ServiceConfig) GetNixBuildSpec() *nix_build_spec.NixBuildSpec {
+	return serviceConfig.privateServiceConfig.NixBuildSpec
 }
 
 func (serviceConfig *ServiceConfig) GetPrivatePorts() map[string]*port_spec.PortSpec {

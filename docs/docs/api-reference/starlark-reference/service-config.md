@@ -52,6 +52,26 @@ config = ServiceConfig(
         # The URL of the registry
         registry = "http://my.registry.io/"
     )
+    
+    OR
+
+    image = NixBuildSpec(
+        #  The name of the image that needs to be pulled qualified with the registry
+        # MANDATORY
+        image_name = "hello-world-server",
+
+        # Locator to build context within the Kurtosis package
+        # This allows to select a sub-package where the context is going be used to build the image
+        # MANDATORY
+        build_context_dir = "./"
+        
+        #  The relative path (from the `build_context_dir`) to the folder containing the flake.nix file
+        # MANDATORY
+        flake_location_dir = "./hello-go",
+        
+        #  The selector for the Flake output with the image derivation. Fallbacks to the default package.
+        flake_output = "containerImage",
+    )
 
     # The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.
     # If no ports are provided, no ports will be exposed on the host machine, unless there is an EXPOSE in the Dockerfile
@@ -194,6 +214,8 @@ The `ports` dictionary argument accepts a key value pair, where `key` is a user 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [Directory][directory] object or files artifact name.
 Using a `Directory` object with `artifact_name` is strictly equivalent to directly using the files artifact name as the value of the dictionary. This is just to simplify usage.
 
+See [Nix Support][nix-support] for more information on how to use the Nix and Kurtosis together.
+
 You can view more information on [configuring the `ReadyCondition` type here][ready-condition].
 
 :::tip
@@ -245,3 +267,4 @@ The `tolerations` field expects a list of [`Toleration`][toleration] objects bei
 [package]: ../../advanced-concepts/packages.md
 [user]: ./user.md
 [toleration]: ./toleration.md
+[nix-support]: ./nix-support.md

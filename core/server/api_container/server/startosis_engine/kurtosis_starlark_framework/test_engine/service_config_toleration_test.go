@@ -2,6 +2,8 @@ package test_engine
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -10,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
-	"testing"
 )
 
 type serviceConfigTolerationTest struct {
@@ -61,6 +62,7 @@ func (t *serviceConfigTolerationTest) Assert(typeValue builtin_argument.Kurtosis
 	expectedTolerations := []v1.Toleration{{Key: testTolerationKey, Operator: v1.TolerationOpEqual, Value: testTolerationValue, Effect: v1.TaintEffectNoSchedule, TolerationSeconds: &testTolerationSeconds}}
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
+		nil,
 		nil,
 		nil,
 		map[string]*port_spec.PortSpec{},

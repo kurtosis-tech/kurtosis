@@ -321,6 +321,7 @@ func createEngineClusterRole(
 	}
 	clusterRoleName := clusterRolesAttributes.GetName().GetString()
 	clusterRoleLabels := shared_helpers.GetStringMapFromLabelMap(clusterRolesAttributes.GetLabels())
+	// nolint: exhaustruct
 	clusterRolePolicyRules := []rbacv1.PolicyRule{
 		{
 			Verbs: []string{
@@ -388,6 +389,7 @@ func createEngineClusterRoleBindings(
 	}
 	clusterRoleBindingsName := clusterRoleBindingsAttributes.GetName().GetString()
 	clusterRoleBindingsLabels := shared_helpers.GetStringMapFromLabelMap(clusterRoleBindingsAttributes.GetLabels())
+	// nolint: exhaustruct
 	clusterRoleBindingsSubjects := []rbacv1.Subject{
 		{
 			Kind:      rbacv1.ServiceAccountKind,
@@ -452,6 +454,7 @@ func createEnginePod(
 		}
 		engineContainerEnvVars = append(engineContainerEnvVars, envVar)
 	}
+	// nolint: exhaustruct
 	engineContainers := []apiv1.Container{
 		{
 			Name:  kurtosisEngineContainerName,
