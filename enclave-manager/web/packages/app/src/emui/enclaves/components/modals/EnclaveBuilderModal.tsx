@@ -60,6 +60,7 @@ type EnclaveBuilderModalProps = {
 export const EnclaveBuilderModal = (props: EnclaveBuilderModalProps) => {
   const variableContextKey = useRef(0);
   const [error, setError] = useState<string>();
+  const [currentStarlarkPreview, setCurrentStarlarkPreview] = useState<string>();
 
   const {
     nodes: initialNodes,
@@ -209,6 +210,7 @@ const EnclaveBuilderModalImpl = ({
             <Button onClick={onClose} isDisabled={isLoading}>
               Close
             </Button>
+            <Button onClick={handlePreview}>Preview</Button>
             <Button onClick={handlePreview}>Preview</Button>
             <Tooltip
               label={
