@@ -39,7 +39,7 @@ export const KurtosisArtifactNode = memo(
           flexDirection={"column"}
           height={"100%"}
           borderRadius={"8px"}
-          p={selected ? "8px" : "10px"}
+          p={"10px"}
           bg={"gray.600"}
           borderWidth={"3px"}
           outline={"3px solid transparent"}
@@ -92,8 +92,8 @@ export const KurtosisArtifactNode = memo(
             className={"nodrag nowheel"}
             gap={"8px"}
           >
-            <KurtosisFormControl<KurtosisArtifactNodeData> name={"artifactName"} label={"Artifact Name"}>
-              <StringArgumentInput name={"artifactName"} />
+            <KurtosisFormControl<KurtosisArtifactNodeData> name={"artifactName"} label={"Artifact Name"} isRequired>
+              <StringArgumentInput name={"artifactName"} isRequired />
             </KurtosisFormControl>
             <KurtosisFormControl name={"files"} label={"Files"}>
               <FileTreeArgumentInput name={"files"} />

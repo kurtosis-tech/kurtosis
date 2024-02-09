@@ -50,7 +50,7 @@ export const DictArgumentInput = <DataModel extends object>({
         <PasteButton onValuePasted={handleValuePaste} />
       </ButtonGroup>
       {fields.map((field, i) => (
-        <Flex key={i} gap={"10px"}>
+        <Flex key={field.id} gap={"10px"}>
           <KurtosisSubtypeFormControl
             name={`${otherProps.name as `args.${string}`}.${i}.key`}
             disabled={otherProps.disabled}
