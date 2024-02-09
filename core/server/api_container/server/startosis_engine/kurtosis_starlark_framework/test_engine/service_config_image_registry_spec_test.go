@@ -75,6 +75,8 @@ func (t *serviceConfigImageRegistrySpecTest) Assert(typeValue builtin_argument.K
 		0,
 		map[string]string{},
 		nil,
+		nil,
+		map[string]string{},
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)

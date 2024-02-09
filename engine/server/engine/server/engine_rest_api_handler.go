@@ -74,6 +74,7 @@ func (engine EngineRuntime) PostEnclaves(ctx context.Context, request api.PostEn
 	enclaveMode := utils.DerefWith(request.Body.Mode, api_type.TEST)
 	enclaveName := request.Body.EnclaveName
 	apicVersionTag := request.Body.ApiContainerVersionTag
+	shouldApicRunInDebugMode := utils.DerefWith(request.Body.ShouldApicRunInDebugMode, api_type.False)
 
 	if err := engine.MetricsClient.TrackCreateEnclave(enclaveName, subnetworkDisableBecauseItIsDeprecated); err != nil {
 		logrus.Warn("An error occurred while logging the create enclave event")
@@ -106,6 +107,7 @@ func (engine EngineRuntime) PostEnclaves(ctx context.Context, request api.PostEn
 		apiContainerLogLevel,
 		enclaveName,
 		isProduction,
+		bool(shouldApicRunInDebugMode),
 	)
 	if err != nil {
 		response := internalErrorResponseInfof(err, "An error occurred creating new enclave with name '%v'", request.Body.EnclaveName)

@@ -117,4 +117,14 @@ var (
 		testServiceConfigLabelsKey1: testServiceConfigLabelsValue1,
 		testServiceConfigLabelsKey2: testServiceConfigLabelsValue2,
 	}
+
+	testNodeSelectorKey1   = "disktype"
+	testNodeSelectorValue1 = "ssd"
+	testNodeSelectors      = map[string]string{
+		testNodeSelectorKey1: testNodeSelectorValue1,
+	}
+
+	testTolerationKey     = "test-key"
+	testTolerationValue   = "test-value"
+	testTolerationSeconds = int64(64)
 )

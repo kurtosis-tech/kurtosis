@@ -323,6 +323,10 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 			"test-second-label-key": "test-second-label-value",
 		},
 		nil,
+		nil,
+		map[string]string{
+			"disktype": "ssd",
+		},
 	)
 	require.NoError(t, err)
 	return serviceConfig

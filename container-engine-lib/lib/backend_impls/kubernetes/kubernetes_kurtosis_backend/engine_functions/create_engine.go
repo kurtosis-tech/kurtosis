@@ -32,14 +32,21 @@ const (
 
 var noWait *port_spec.Wait = nil
 
+// TODO add support for passing toleration to Engine
+var noToleration []apiv1.Toleration = nil
+var noSelectors map[string]string = nil
+
 func CreateEngine(
 	ctx context.Context,
 	imageOrgAndRepo string,
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	_ bool, //It's not required to add extra configuration in K8S for enabling the debug server
+	githubAuthToken string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
+
 ) (
 	*engine.Engine,
 	error,
@@ -470,6 +477,8 @@ func createEnginePod(
 		serviceAccountName,
 		// Engine doesn't auto restart
 		apiv1.RestartPolicyNever,
+		noToleration,
+		noSelectors,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)

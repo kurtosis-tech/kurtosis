@@ -147,7 +147,7 @@ func DurationOrNone(value starlark.Value, attributeName string) *startosis_error
 	return nil
 }
 
-func ServiceConfigLabels(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
+func StringMappingToString(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
 	labelsMap := map[string]string{}
 	labelsDict, ok := value.(*starlark.Dict)
 	if !ok {

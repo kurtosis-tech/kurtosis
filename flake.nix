@@ -2,7 +2,7 @@
   description = "Kurtosis dev flake";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
@@ -13,6 +13,10 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         unstable_pkgs = unstable.legacyPackages.${system};
+        node-devtools = import ./nix-pkgs/node-tools/. {
+          inherit pkgs system;
+          nodejs = pkgs.nodejs_20;
+        };
       in {
         formatter = pkgs.nixpkgs-fmt;
 
@@ -23,11 +27,6 @@
                 import ./nix-pkgs/openapi-codegen.nix { inherit pkgs; };
               grpc-tools-node =
                 import ./nix-pkgs/grpc-tools-node.nix { inherit pkgs; };
-              protoc-gen-ts =
-                import ./nix-pkgs/protoc-gen-ts.nix { inherit pkgs; };
-              openapi-typescript =
-                # import ./nix-pkgs/openapi-typescript.nix { inherit pkgs; };
-                import ./nix-pkgs/openapi-ts { inherit pkgs; };
             in [
               goreleaser
               go_1_20
@@ -36,6 +35,7 @@
               delve
               enumer
               nodejs_20
+              node2nix
               yarn
               protobuf
               protoc-gen-go
@@ -44,7 +44,6 @@
               protoc-gen-grpc-web
               grpc-tools
               grpcui
-              openapi-codegen-go
               rustc
               cargo
               rustfmt
@@ -53,9 +52,9 @@
               libiconv
               bash-completion
               # local definition (see above)
+              openapi-codegen-go
               grpc-tools-node
-              protoc-gen-ts
-              openapi-typescript
+              node-devtools.nodeDependencies
             ];
 
           shellHook = ''
@@ -72,9 +71,9 @@
                   @@   @@@    @@@    @@      
                     @@@         @@@@@@@@     
             \u001b[0m
-            Starting Kurtosis dev shell. Setup the alias to local compiled Kurtosis cli command "ktdev" by running:
+            Starting Kurtosis dev shell. Setup the alias to local compiled Kurtosis cli command "ktdev" and "ktdebug" by running:
             \e[32m
-            source ./scripts/set_ktdev.sh
+            source ./scripts/set_kt_alias.sh
             \e[0m
             '
           '';

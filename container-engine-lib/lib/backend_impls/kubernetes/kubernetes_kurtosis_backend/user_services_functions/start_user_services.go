@@ -308,6 +308,8 @@ func createStartServiceOperation(
 		minCpuAllocationMilliCpus := serviceConfig.GetMinCPUAllocationMillicpus()
 		minMemoryAllocationMegabytes := serviceConfig.GetMinMemoryAllocationMegabytes()
 		user := serviceConfig.GetUser()
+		tolerations := serviceConfig.GetTolerations()
+		nodeSelectors := serviceConfig.GetNodeSelectors()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -355,7 +357,6 @@ func createStartServiceOperation(
 			createVolumesWithClaims, err = preparePersistentDirectoriesResources(
 				ctx,
 				namespaceName,
-				serviceUuid,
 				enclaveObjAttributesProvider,
 				persistentDirectories.ServiceDirpathToPersistentDirectory,
 				kubernetesManager)
@@ -416,6 +417,8 @@ func createStartServiceOperation(
 			podVolumes,
 			userServiceServiceAccountName,
 			restartPolicy,
+			tolerations,
+			nodeSelectors,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)

@@ -43,6 +43,10 @@ const (
 
 var noWait *port_spec.Wait = nil
 
+// TODO add support for passing toleration to APIC
+var noTolerations []apiv1.Toleration = nil
+var noSelectors map[string]string = nil
+
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -71,6 +75,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (
 	*api_container.APIContainer,
 	error,
@@ -477,6 +482,8 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		apiContainerVolumes,
 		apiContainerServiceAccountName,
 		apiContainerRestartPolicy,
+		noTolerations,
+		noSelectors,
 	)
 	if err != nil {
 		errMsg := fmt.Sprintf("An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)

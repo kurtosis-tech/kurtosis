@@ -1,5 +1,73 @@
 # Changelog
 
+## [0.86.17](https://github.com/kurtosis-tech/kurtosis/compare/0.86.16...0.86.17) (2024-02-08)
+
+
+### Features
+
+* experimental enclave building in the EMUI ([#2137](https://github.com/kurtosis-tech/kurtosis/issues/2137)) ([8a26a6c](https://github.com/kurtosis-tech/kurtosis/commit/8a26a6cc38e832f92e552b5f32fd6a5c73cf2869))
+* support setting node selectors for user services ([#2135](https://github.com/kurtosis-tech/kurtosis/issues/2135)) ([e176a3a](https://github.com/kurtosis-tech/kurtosis/commit/e176a3aa23e9070ba52f0e8a965191a0eb3cc6b4))
+
+
+### Bug Fixes
+
+* files artifacts expander image debug tag ([#2119](https://github.com/kurtosis-tech/kurtosis/issues/2119)) ([b3f7edd](https://github.com/kurtosis-tech/kurtosis/commit/b3f7eddc9dcb9e02af7c116c5d86dd97dd74f8c2))
+
+## [0.86.16](https://github.com/kurtosis-tech/kurtosis/compare/0.86.15...0.86.16) (2024-02-07)
+
+
+### Features
+
+* kurtosis github login ([#2113](https://github.com/kurtosis-tech/kurtosis/issues/2113)) ([2f0d638](https://github.com/kurtosis-tech/kurtosis/commit/2f0d638c688828de3eb781b11d696883807357ba))
+
+
+### Bug Fixes
+
+* Remove Derek and Karla as default assignees for docs issues ([#2129](https://github.com/kurtosis-tech/kurtosis/issues/2129)) ([2f1eecc](https://github.com/kurtosis-tech/kurtosis/commit/2f1eecc9a935ac19cf4de0fbc26ab852a5248b7f))
+
+## [0.86.15](https://github.com/kurtosis-tech/kurtosis/compare/0.86.14...0.86.15) (2024-02-07)
+
+
+### Features
+
+* Enclave connect ([#2117](https://github.com/kurtosis-tech/kurtosis/issues/2117)) ([d33de7b](https://github.com/kurtosis-tech/kurtosis/commit/d33de7bebb0e997c8b2fd93872a1b676dc3519e7))
+
+
+### Bug Fixes
+
+* Fix the enclave connect button and modal help string in the EM UI ([#2127](https://github.com/kurtosis-tech/kurtosis/issues/2127)) ([a11fb4c](https://github.com/kurtosis-tech/kurtosis/commit/a11fb4c701e7ed8700c7812559aebb03d5d3846b))
+
+## [0.86.14](https://github.com/kurtosis-tech/kurtosis/compare/0.86.13...0.86.14) (2024-02-06)
+
+
+### Bug Fixes
+
+* allow persistent directory to be reused across services ([#2123](https://github.com/kurtosis-tech/kurtosis/issues/2123)) ([eb5bcb9](https://github.com/kurtosis-tech/kurtosis/commit/eb5bcb9053468b054e28efbc40e4ee459caf203e))
+
+## [0.86.13](https://github.com/kurtosis-tech/kurtosis/compare/0.86.12...0.86.13) (2024-02-05)
+
+
+### Features
+
+* add `env_vars` as input to `run_sh` ([#2114](https://github.com/kurtosis-tech/kurtosis/issues/2114)) ([5a30ea7](https://github.com/kurtosis-tech/kurtosis/commit/5a30ea75865bfc5fb9359d3da206124d13ebc45e)), closes [#2050](https://github.com/kurtosis-tech/kurtosis/issues/2050)
+* add nodejs devtools to Nix ([#2099](https://github.com/kurtosis-tech/kurtosis/issues/2099)) ([7bbb2bc](https://github.com/kurtosis-tech/kurtosis/commit/7bbb2bc7a5487b05f91089634beed5e83e3329de))
+* add run docker compose with kurtosis guide ([#2085](https://github.com/kurtosis-tech/kurtosis/issues/2085)) ([7bbe479](https://github.com/kurtosis-tech/kurtosis/commit/7bbe4796a5b1e952fb85d7cf89136b34ad35f70a))
+* Add RunStarlarkScript to enclave manager API ([#2103](https://github.com/kurtosis-tech/kurtosis/issues/2103)) ([1eeb3eb](https://github.com/kurtosis-tech/kurtosis/commit/1eeb3eb3880e8df83c78642dce391070cda9f515))
+
+
+### Bug Fixes
+
+* adding the `core script build call`, which was removed by accident, in the main build script ([#2118](https://github.com/kurtosis-tech/kurtosis/issues/2118)) ([1f73821](https://github.com/kurtosis-tech/kurtosis/commit/1f738216851718bda1ebf9f9bf8936a715ae2cdf))
+* Fix calls to stacktrace in the reverse proxy module ([#2100](https://github.com/kurtosis-tech/kurtosis/issues/2100)) ([a7fefc2](https://github.com/kurtosis-tech/kurtosis/commit/a7fefc235676335d195c4f98a10bb31c5b46a794))
+
+## [0.86.12](https://github.com/kurtosis-tech/kurtosis/compare/0.86.11...0.86.12) (2024-01-25)
+
+
+### Features
+
+* emui add report a bug and info dialog to nav ([#2080](https://github.com/kurtosis-tech/kurtosis/issues/2080)) ([7045ca5](https://github.com/kurtosis-tech/kurtosis/commit/7045ca5d0ed89b8d56c04ce26f9ef01007eb1c25)), closes [#2078](https://github.com/kurtosis-tech/kurtosis/issues/2078) [#2077](https://github.com/kurtosis-tech/kurtosis/issues/2077)
+* support passing toleration to kubernetes ([#2071](https://github.com/kurtosis-tech/kurtosis/issues/2071)) ([7a36ea3](https://github.com/kurtosis-tech/kurtosis/commit/7a36ea35145bdf3f41a7b5c8e357ffd9a4cdfbc6)), closes [#2048](https://github.com/kurtosis-tech/kurtosis/issues/2048)
+
 ## [0.86.11](https://github.com/kurtosis-tech/kurtosis/compare/0.86.10...0.86.11) (2024-01-24)
 
 

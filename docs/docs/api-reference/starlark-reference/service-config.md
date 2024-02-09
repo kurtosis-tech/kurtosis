@@ -159,6 +159,31 @@ config = ServiceConfig(
     # Note that the `gid` field is optional
     # OPTIONAL
     user = User(uid=0, gid=0),
+    
+    # An array of Toleration 
+    # This refers to Kubernetes Tolerations https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+    # This has no effect on Docker
+    # As of 2024-01-24 Taints and Tolerations to work with Kubernetes you need at least one untainted node
+    # Refer to the Toleration docs linked near the end of the page to learn more
+    # OPTIONAL
+    tolerations = [
+        Toleration(
+            key = "test-key",
+            value = "test-value",
+            operator = "Equal",
+            effect = "NoSchedule",
+            toleration_seconds = 64,
+        )
+    ],
+    
+    # A map of node selectors
+    # This refers to Node Selectors in Kubernetes https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+    # This has no effect on Docker
+    # This is an experimental feature that might get replaced with a better abstraction suited for Kurtosis
+    # OPTIONAL
+    node_selectors = {
+        "disktype": "ssd",
+    }
 )
 ```
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package.
@@ -207,7 +232,9 @@ labels:
 ```
 :::
 
-The `user` field expects a `User`[user] object being passed.
+The `user` field expects a [`User`][user] object being passed.
+
+The `tolerations` field expects a list of [`Toleration`][toleration] objects being passed.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service
@@ -217,3 +244,4 @@ The `user` field expects a `User`[user] object being passed.
 [locators]: ../../advanced-concepts/locators.md
 [package]: ../../advanced-concepts/packages.md
 [user]: ./user.md
+[toleration]: ./toleration.md

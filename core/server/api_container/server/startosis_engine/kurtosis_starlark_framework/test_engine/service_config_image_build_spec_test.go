@@ -85,6 +85,8 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		0,
 		map[string]string{},
 		nil,
+		nil,
+		map[string]string{},
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)

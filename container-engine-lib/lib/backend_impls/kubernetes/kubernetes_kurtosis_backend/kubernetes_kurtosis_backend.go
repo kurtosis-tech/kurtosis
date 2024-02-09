@@ -131,6 +131,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	shouldStartInDebugMode bool,
+	githubAuthToken string,
 ) (
 	*engine.Engine,
 	error,
@@ -141,6 +143,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		envVars,
+		shouldStartInDebugMode,
+		githubAuthToken,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
 	)
