@@ -118,8 +118,8 @@ var (
 		testServiceConfigLabelsKey2: testServiceConfigLabelsValue2,
 	}
 
-	testNodeSelectorKey1   = "disktype"
-	testNodeSelectorValue1 = "ssd"
+	testNodeSelectorKey1   = "k3s.io/hostname"
+	testNodeSelectorValue1 = "asrock-berlin-03"
 	testNodeSelectors      = map[string]string{
 		testNodeSelectorKey1: testNodeSelectorValue1,
 	}
