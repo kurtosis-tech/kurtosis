@@ -185,6 +185,14 @@ export const KurtosisServiceNode = memo(
                               size={"sm"}
                               placeholder={"Application Protocol (eg postgresql)"}
                               name={`${props.name as `ports.${number}`}.applicationProtocol`}
+                              validate={(val) => {
+                                if (typeof val !== "string") {
+                                  return "Value should be a string";
+                                }
+                                if (!val.includes(" ")) {
+                                  return "Application protocol cannot include spaces";
+                                }
+                              }}
                             />
                           </GridItem>
                           <GridItem>
