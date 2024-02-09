@@ -225,8 +225,10 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
       addNodes({
         id,
         position: getNewNodePosition(),
-        width: 600,
+        width: 650,
+        style: { width: "650px" },
         type: "serviceNode",
+        selected: true,
         data: {},
       });
     };
@@ -238,7 +240,9 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
         id,
         position: getNewNodePosition(),
         width: 600,
+        style: { width: "400px" },
         type: "artifactNode",
+        selected: true,
         data: {},
       });
     };
@@ -256,6 +260,27 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
         );
       });
     }, [setEdges, data]);
+
+    // Remove the resizeObserver error
+    useEffect(() => {
+      const errorHandler = (e: any) => {
+        if (
+          e.message.includes(
+            "ResizeObserver loop completed with undelivered notifications" || "ResizeObserver loop limit exceeded",
+          )
+        ) {
+          const resizeObserverErr = document.getElementById("webpack-dev-server-client-overlay");
+          if (resizeObserverErr) {
+            resizeObserverErr.style.display = "none";
+          }
+        }
+      };
+      window.addEventListener("error", errorHandler);
+
+      return () => {
+        window.removeEventListener("error", errorHandler);
+      };
+    }, []);
 
     useImperativeHandle(
       ref,
@@ -275,7 +300,7 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
             Add Service Node
           </Button>
           <Button leftIcon={<FiPlusCircle />} onClick={handleAddArtifactNode}>
-            Add Artifact Node
+            Add Files Node
           </Button>
         </ButtonGroup>
         <Box bg={"gray.900"} flex={"1"}>
