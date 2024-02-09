@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.86.18](https://github.com/kurtosis-tech/kurtosis/compare/0.86.17...0.86.18) (2024-02-09)
+
+
+### Features
+
+* add files in enclave dump ([#2136](https://github.com/kurtosis-tech/kurtosis/issues/2136)) ([0525d9f](https://github.com/kurtosis-tech/kurtosis/commit/0525d9fbb12561cf4b5a83814baf05d8d1682274))
+
+
+### Bug Fixes
+
+* node selector validation ([#2141](https://github.com/kurtosis-tech/kurtosis/issues/2141)) ([0fee848](https://github.com/kurtosis-tech/kurtosis/commit/0fee84881f83d0b5a911f511a9fcdd889a0b8784))
+
 ## [0.86.17](https://github.com/kurtosis-tech/kurtosis/compare/0.86.16...0.86.17) (2024-02-08)
 
 
