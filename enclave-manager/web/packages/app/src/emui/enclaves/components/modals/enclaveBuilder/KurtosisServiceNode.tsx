@@ -129,7 +129,7 @@ export const KurtosisServiceNode = memo(
                 />
               </KurtosisFormControl>
               <KurtosisFormControl<KurtosisServiceNodeData> name={"image"} label={"Container Image"} isRequired>
-                <StringArgumentInputsize={"sm"}
+                <StringArgumentInput
                   size={"sm"}
                   name={"image"}
                   isRequired
@@ -146,17 +146,8 @@ export const KurtosisServiceNode = memo(
                     }
                   }}
                 />
-              </KurtosisFormControl></Flex>
-            <Tabs>
-              <TabList>
-                <Tab>Environment Variables</Tab>
-                <Tab>Ports</Tab>
-                <Tab>Files</Tab>
-              </TabList>
-
-              <TabPanels>
-                <TabPanel>
-                  </Flex>
+              </KurtosisFormControl>
+            </Flex>
             <Tabs>
               <TabList>
                 <Tab>Environment Variables</Tab>
@@ -229,8 +220,7 @@ export const KurtosisServiceNode = memo(
                     />
                   </KurtosisFormControl>
                 </TabPanel>
-                <TabPanel>
-                  </TabPanel>
+                <TabPanel></TabPanel>
                 <TabPanel>
                   <KurtosisFormControl<KurtosisServiceNodeData>
                     name={"files"}
