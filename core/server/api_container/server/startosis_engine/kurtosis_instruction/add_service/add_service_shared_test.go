@@ -2,6 +2,9 @@ package add_service
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
@@ -10,8 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
-	"os"
-	"testing"
 )
 
 const (
@@ -38,6 +39,7 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 	serviceName := service.ServiceName("example-datastore-server-2")
 	serviceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -84,6 +86,7 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 	serviceName := service.ServiceName("example-datastore-server-2")
 	serviceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
+		nil,
 		nil,
 		nil,
 		nil,
@@ -136,6 +139,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 		map[string]string{
 			"PORT": runtimeValue,
 		},
@@ -181,6 +185,7 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 	serviceName := service.ServiceName(stringRuntimeValue)
 	serviceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
+		nil,
 		nil,
 		nil,
 		nil,

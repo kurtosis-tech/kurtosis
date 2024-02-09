@@ -2,15 +2,17 @@ package service
 
 import (
 	"encoding/json"
+	"testing"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
-	"testing"
-	"time"
 )
 
 func TestServiceConfigMarshallers(t *testing.T) {
@@ -66,6 +68,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 		imageName,
 		testImageBuildSpec(),
 		testImageRegistrySpec(),
+		testNixBuildSpec(),
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},
@@ -185,6 +188,10 @@ func testImageBuildSpec() *image_build_spec.ImageBuildSpec {
 
 func testImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
 	return image_registry_spec.NewImageRegistrySpec("test-image", "test-userename", "test-password", "test-registry.io")
+}
+
+func testNixBuildSpec() *nix_build_spec.NixBuildSpec {
+	return nix_build_spec.NewNixBuildSpec("test-image", "path", "", "")
 }
 
 func testServiceUser() *service_user.ServiceUser {

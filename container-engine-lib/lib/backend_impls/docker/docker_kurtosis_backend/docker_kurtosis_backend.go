@@ -2,10 +2,12 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"io"
 	"sync"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 
 	"github.com/sirupsen/logrus"
 
@@ -542,6 +544,10 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 
 func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
 	return backend.dockerManager.BuildImage(ctx, imageName, imageBuildSpec)
+}
+
+func (backend *DockerKurtosisBackend) NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error) {
+	return backend.dockerManager.NixBuild(ctx, nixBuildSpec)
 }
 
 // ====================================================================================================
