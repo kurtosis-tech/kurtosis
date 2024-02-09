@@ -35,6 +35,7 @@ import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 import { KurtosisArtifactNode } from "./enclaveBuilder/KurtosisArtifactNode";
 import { KurtosisServiceNode } from "./enclaveBuilder/KurtosisServiceNode";
+import { ViewStarlarkModal } from "./enclaveBuilder/modals/ViewStarlarkModal";
 import {
   generateStarlarkFromGraph,
   getInitialGraphStateFromEnclave,
@@ -58,6 +59,7 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
   const { createEnclave, runStarlarkScript } = useEnclavesContext();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const [currentStarlarkPreview, setCurrentStarlarkPreview] = useState<string>();
 
   const {
     nodes: initialNodes,
@@ -121,10 +123,14 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
     }
   };
 
+  const handlePreview = () => {
+    setCurrentStarlarkPreview(visualiserRef.current?.getStarlark() || "Unable to render");
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={!isLoading ? onClose : () => null} closeOnEsc={false}>
       <ModalOverlay />
-      <ModalContent h={"90vh"} minW={"1300px"}>
+      <ModalContent h={"89vh"} minW={"1300px"}>
         <ModalHeader>
           {isDefined(existingEnclave) ? `Editing ${existingEnclave.name}` : "Build a new Enclave"}
         </ModalHeader>
@@ -147,12 +153,18 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
             <Button onClick={onClose} isDisabled={isLoading}>
               Close
             </Button>
+            <Button onClick={handlePreview}>Preview</Button>
             <Button onClick={handleRun} colorScheme={"green"} isLoading={isLoading} loadingText={"Run"}>
               Run
             </Button>
           </ButtonGroup>
         </ModalFooter>
       </ModalContent>
+      <ViewStarlarkModal
+        isOpen={isDefined(currentStarlarkPreview)}
+        onClose={() => setCurrentStarlarkPreview(undefined)}
+        starlark={currentStarlarkPreview}
+      />
     </Modal>
   );
 };
@@ -228,7 +240,6 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
         width: 650,
         style: { width: "650px" },
         type: "serviceNode",
-        selected: true,
         data: {},
       });
     };
@@ -242,7 +253,6 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
         width: 600,
         style: { width: "400px" },
         type: "artifactNode",
-        selected: true,
         data: {},
       });
     };

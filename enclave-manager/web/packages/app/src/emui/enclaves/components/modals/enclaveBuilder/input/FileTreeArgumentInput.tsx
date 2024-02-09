@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { Controller } from "react-hook-form";
 import { FiPlus } from "react-icons/fi";
 import { KurtosisFormInputProps } from "../../../form/types";
-import { EditFileModal } from "./modals/EditFileModal";
-import { NewFileModal } from "./modals/NewFileModal";
+import { EditFileModal } from "../modals/EditFileModal";
+import { NewFileModal } from "../modals/NewFileModal";
 
 type FileTreeArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel>;
 
