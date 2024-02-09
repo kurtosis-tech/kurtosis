@@ -23,7 +23,7 @@ const (
 	NixContextAttr   = "build_context_dir"
 	NixImageName     = "image_name"
 
-	// Currently only supports container nixs named Dockerfile
+	// Currently only supports container nix flakes
 	defaultNixFlakeFile = "flake.nix"
 )
 
@@ -226,7 +226,7 @@ func getOnDiskNixBuildSpecPaths(
 		return "", "", interpretationErr
 	}
 	// Assume, that flake nix sits at the same level as context directory to get context dir path on disk
-	FlakeDirOnDisk := filepath.Dir(flakeNixPathOnDisk)
+	flakeDirOnDisk := filepath.Dir(flakeNixPathOnDisk)
 
-	return contextDirOnDisk, FlakeDirOnDisk, nil
+	return contextDirOnDisk, flakeDirOnDisk, nil
 }

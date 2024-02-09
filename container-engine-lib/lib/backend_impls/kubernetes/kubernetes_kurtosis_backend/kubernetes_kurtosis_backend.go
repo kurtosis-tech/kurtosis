@@ -491,7 +491,7 @@ func (backend *KubernetesKurtosisBackend) BuildImage(ctx context.Context, imageN
 
 func (backend *KubernetesKurtosisBackend) NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error) {
 	// TODO IMPLEMENT
-	return "", stacktrace.NewError("Loading images isn't yet implemented in Kubernetes.")
+	return "", stacktrace.NewError("Nix image building isn't yet implemented in Kubernetes.")
 }
 
 // ====================================================================================================

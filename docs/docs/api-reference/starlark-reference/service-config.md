@@ -61,7 +61,7 @@ config = ServiceConfig(
         image_name = "hello-world-server",
 
         # Locator to build context within the Kurtosis package
-        # As of now, Kurtosis expects a Dockerfile at the root of the build context
+        # This allows to select a sub-package where the context is going be used to build the image
         # MANDATORY
         build_context_dir = "./"
         

@@ -6,10 +6,8 @@
 package docker_manager
 
 import (
-	"archive/tar"
 	"bufio"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/md5"
 	"encoding/json"
@@ -29,6 +27,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/utils"
 
@@ -1322,63 +1321,6 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, regi
 	return pulledFromRemote, imageArchitecture, nil
 }
 
-// ImageManifest represents the structure of the manifest.json file
-type ImageManifest struct {
-	Config   string   `json:"Config"`
-	RepoTags []string `json:"RepoTags"`
-	Layers   []string `json:"Layers"`
-}
-
-// GetRepoTags extracts the RepoTags from a Docker image file
-func GetRepoTags(imageFilePath string) ([]string, error) {
-	imageFile, err := os.Open(imageFilePath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Fail to open image file %s", imageFilePath)
-	}
-	defer imageFile.Close()
-
-	gzipReader, err := gzip.NewReader(imageFile)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Fail to ungzip image file %s", stacktrace.Propagate(err, "Fail to read the image files"))
-	}
-	defer gzipReader.Close()
-
-	tarReader := tar.NewReader(gzipReader)
-
-	var found bool = false
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Fail to read the image files")
-		}
-		if header.Name == "manifest.json" {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return nil, stacktrace.NewError("manifest.json not found in the image")
-	}
-
-	var imageManifest []ImageManifest
-	jsonDecoder := json.NewDecoder(tarReader)
-	if err := jsonDecoder.Decode(&imageManifest); err != nil {
-		return nil, stacktrace.Propagate(err, "Could not parse the manifest.json")
-	}
-
-	if len(imageManifest) > 1 {
-		return nil, stacktrace.NewError("Image has more than 1 label/tag, don't know which one to pick: %v", imageManifest)
-	} else if len(imageManifest) < 1 {
-		return nil, stacktrace.NewError("Image has no label/tag")
-	}
-
-	return imageManifest[0].RepoTags, nil
-}
-
 func (manager *DockerManager) NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error) {
 	flakeReference := nixBuildSpec.GetFullFlakeReference()
 
@@ -1405,10 +1347,17 @@ func (manager *DockerManager) NixBuild(ctx context.Context, nixBuildSpec *nix_bu
 	imageFile := strings.TrimSpace(string(imageFileRaw))
 	logrus.Debugf("Nix flake image on attribute %s, result on image file %s", flakeReference, imageFile)
 
-	imageName, err := GetRepoTags(imageFile)
+	imageTags, err := image_utils.GetRepoTags(imageFile)
 	if err != nil {
-		return "", err
+		return "", stacktrace.Propagate(err, "Failed to get image tags from Nix image %s", imageFile)
 	}
+
+	if len(imageTags) == 0 {
+		return "", stacktrace.NewError("Generated image %s did not have any tags", imageFile)
+	} else if len(imageTags) > 1 {
+		logrus.Warnf("Generated image %s had multiple tags: %v. We'll select the first.", imageFile, imageTags)
+	}
+	imageTag := imageTags[0]
 
 	image, err := os.Open(imageFile)
 	if err != nil {
@@ -1421,7 +1370,7 @@ func (manager *DockerManager) NixBuild(ctx context.Context, nixBuildSpec *nix_bu
 	}
 	logrus.Debugf("Nix generated image file %s is loaded into docker", imageFile)
 
-	return imageName[0], nil
+	return imageTag, nil
 }
 
 func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {

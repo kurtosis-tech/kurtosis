@@ -11,9 +11,8 @@ Here's a basic explanation of how you can generate Docker images from services u
 
 1. **Install Nix**: Installing Nix isn't strictly necessary with Kurtosis, but it's recommended if you are creating or developing the package. You can install it by following the instructions on the Nix website: [https://nixos.org/download.html](https://nixos.org/download.html)
 
-2. **Create a Nix Flake**: Create a directory for your project and initialize a Nix flake. You can do this by running:
+2. **Create a Nix Flake**: Go to your project root directory and initialize a Nix flake. You can do this by running:
    ```bash
-   mkdir myproject
    cd myproject
    nix flake init -t simple
    ```
