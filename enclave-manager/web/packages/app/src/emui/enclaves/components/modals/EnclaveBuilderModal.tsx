@@ -60,7 +60,6 @@ type EnclaveBuilderModalProps = {
 export const EnclaveBuilderModal = (props: EnclaveBuilderModalProps) => {
   const variableContextKey = useRef(0);
   const [error, setError] = useState<string>();
-  const [currentStarlarkPreview, setCurrentStarlarkPreview] = useState<string>();
 
   const {
     nodes: initialNodes,
