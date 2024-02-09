@@ -18,7 +18,7 @@ on:
   merge_group:
 
 env:
-  GOLINT_VERSION: v1.53.3
+  GOLINT_VERSION: v1.56.1
 
 jobs:
   golangci:
