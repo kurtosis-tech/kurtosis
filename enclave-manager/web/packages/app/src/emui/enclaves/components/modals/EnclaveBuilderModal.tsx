@@ -3,6 +3,7 @@ import {
   Button,
   ButtonGroup,
   Flex,
+  ListItem,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -10,9 +11,12 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Text,
+  Tooltip,
+  UnorderedList,
 } from "@chakra-ui/react";
 import Dagre from "@dagrejs/dagre";
-import { isDefined, KurtosisAlert, RemoveFunctions, stringifyError } from "kurtosis-ui-components";
+import { isDefined, KurtosisAlert, KurtosisAlertModal, RemoveFunctions, stringifyError } from "kurtosis-ui-components";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { FiPlusCircle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
@@ -53,13 +57,9 @@ type EnclaveBuilderModalProps = {
   existingEnclave?: RemoveFunctions<EnclaveFullInfo>;
 };
 
-export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: EnclaveBuilderModalProps) => {
-  const navigator = useNavigate();
-  const visualiserRef = useRef<VisualiserImperativeAttributes | null>(null);
-  const { createEnclave, runStarlarkScript } = useEnclavesContext();
-  const [isLoading, setIsLoading] = useState(false);
+export const EnclaveBuilderModal = (props: EnclaveBuilderModalProps) => {
+  const variableContextKey = useRef(0);
   const [error, setError] = useState<string>();
-  const [currentStarlarkPreview, setCurrentStarlarkPreview] = useState<string>();
 
   const {
     nodes: initialNodes,
@@ -70,7 +70,7 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
     edges: Edge<any>[];
     data: Record<string, KurtosisNodeData>;
   } => {
-    const parseResult = getInitialGraphStateFromEnclave<KurtosisNodeData>(existingEnclave);
+    const parseResult = getInitialGraphStateFromEnclave<KurtosisNodeData>(props.existingEnclave);
     if (parseResult.isErr) {
       setError(parseResult.error);
       return { nodes: [], edges: [], data: {} };
@@ -81,7 +81,65 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
         .filter(([id, data]) => parseResult.value.nodes.some((node) => node.id === id))
         .reduce((acc, [id, data]) => ({ ...acc, [id]: data }), {} as Record<string, KurtosisNodeData>),
     };
-  }, [existingEnclave]);
+  }, [props.existingEnclave]);
+
+  useEffect(() => {
+    if (!props.isOpen) {
+      variableContextKey.current += 1;
+    }
+  }, [props.isOpen]);
+
+  if (isDefined(error)) {
+    return (
+      <KurtosisAlertModal
+        title={"Error"}
+        content={error}
+        isOpen={true}
+        onClose={() => {
+          setError(undefined);
+          props.onClose();
+        }}
+      />
+    );
+  }
+
+  return (
+    <VariableContextProvider key={variableContextKey.current} initialData={initialData}>
+      <EnclaveBuilderModalImpl {...props} initialNodes={initialNodes} initialEdges={initialEdges} />
+    </VariableContextProvider>
+  );
+};
+
+type EnclaveBuilderModalImplProps = EnclaveBuilderModalProps & {
+  initialNodes: Node[];
+  initialEdges: Edge[];
+};
+const EnclaveBuilderModalImpl = ({
+  isOpen,
+  onClose,
+  existingEnclave,
+  initialNodes,
+  initialEdges,
+}: EnclaveBuilderModalImplProps) => {
+  const navigator = useNavigate();
+  const visualiserRef = useRef<VisualiserImperativeAttributes | null>(null);
+  const { createEnclave, runStarlarkScript } = useEnclavesContext();
+  const { data } = useVariableContext();
+  const dataIssues = useMemo(
+    () =>
+      Object.values(data)
+        .filter((nodeData) => !nodeData.isValid)
+        .map(
+          (nodeData) =>
+            `${nodeData.type} ${
+              (nodeData.type === "artifact" ? nodeData.artifactName : nodeData.serviceName) || "with no name"
+            } has invalid data`,
+        ),
+    [data],
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>();
+  const [currentStarlarkPreview, setCurrentStarlarkPreview] = useState<string>();
 
   const handleRun = async () => {
     if (!isDefined(visualiserRef.current)) {
@@ -137,16 +195,14 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
         <ModalCloseButton />
         <ModalBody paddingInline={"0"}>
           {isDefined(error) && <KurtosisAlert message={error} />}
-          <VariableContextProvider initialData={initialData}>
-            <ReactFlowProvider>
-              <Visualiser
-                ref={visualiserRef}
-                initialNodes={initialNodes}
-                initialEdges={initialEdges}
-                existingEnclave={existingEnclave}
-              />
-            </ReactFlowProvider>
-          </VariableContextProvider>
+          <ReactFlowProvider>
+            <Visualiser
+              ref={visualiserRef}
+              initialNodes={initialNodes}
+              initialEdges={initialEdges}
+              existingEnclave={existingEnclave}
+            />
+          </ReactFlowProvider>
         </ModalBody>
         <ModalFooter>
           <ButtonGroup>
@@ -154,9 +210,31 @@ export const EnclaveBuilderModal = ({ isOpen, onClose, existingEnclave }: Enclav
               Close
             </Button>
             <Button onClick={handlePreview}>Preview</Button>
-            <Button onClick={handleRun} colorScheme={"green"} isLoading={isLoading} loadingText={"Run"}>
-              Run
-            </Button>
+            <Button onClick={handlePreview}>Preview</Button>
+            <Tooltip
+              label={
+                dataIssues.length === 0 ? undefined : (
+                  <Flex flexDirection={"column"}>
+                    <Text>There are data issues that must be addressed before this enclave can run:</Text>
+                    <UnorderedList>
+                      {dataIssues.map((issue, i) => (
+                        <ListItem key={i}>{issue}</ListItem>
+                      ))}
+                    </UnorderedList>
+                  </Flex>
+                )
+              }
+            >
+              <Button
+                onClick={handleRun}
+                colorScheme={"green"}
+                isLoading={isLoading}
+                loadingText={"Run"}
+                isDisabled={dataIssues.length > 0}
+              >
+                Run
+              </Button>
+            </Tooltip>
           </ButtonGroup>
         </ModalFooter>
       </ModalContent>
@@ -194,6 +272,8 @@ const getLayoutedElements = <T extends object>(nodes: Node<T>[], edges: Edge<any
   };
 };
 
+const nodeTypes = { serviceNode: KurtosisServiceNode, artifactNode: KurtosisArtifactNode };
+
 type VisualiserImperativeAttributes = {
   getStarlark: () => string;
 };
@@ -211,8 +291,6 @@ const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
     const { fitView, addNodes, getViewport } = useReactFlow();
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes || []);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
-
-    const nodeTypes = useMemo(() => ({ serviceNode: KurtosisServiceNode, artifactNode: KurtosisArtifactNode }), []);
 
     const onLayout = useCallback(() => {
       const layouted = getLayoutedElements(nodes, edges);
