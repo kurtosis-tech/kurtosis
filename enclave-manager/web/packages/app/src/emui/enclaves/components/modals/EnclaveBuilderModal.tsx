@@ -3,6 +3,7 @@ import {
   Button,
   ButtonGroup,
   Flex,
+  ListItem,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -10,6 +11,9 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Text,
+  Tooltip,
+  UnorderedList,
 } from "@chakra-ui/react";
 import Dagre from "@dagrejs/dagre";
 import { isDefined, KurtosisAlert, KurtosisAlertModal, RemoveFunctions, stringifyError } from "kurtosis-ui-components";
@@ -121,7 +125,18 @@ const EnclaveBuilderModalImpl = ({
   const visualiserRef = useRef<VisualiserImperativeAttributes | null>(null);
   const { createEnclave, runStarlarkScript } = useEnclavesContext();
   const { data } = useVariableContext();
-  const isDataValid = useMemo(() => Object.values(data).every((nodeData) => nodeData.isValid), [data]);
+  const dataIssues = useMemo(
+    () =>
+      Object.values(data)
+        .filter((nodeData) => !nodeData.isValid)
+        .map(
+          (nodeData) =>
+            `${nodeData.type} ${
+              (nodeData.type === "artifact" ? nodeData.artifactName : nodeData.serviceName) || "with no name"
+            } has invalid data`,
+        ),
+    [data],
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [currentStarlarkPreview, setCurrentStarlarkPreview] = useState<string>();
@@ -195,15 +210,30 @@ const EnclaveBuilderModalImpl = ({
               Close
             </Button>
             <Button onClick={handlePreview}>Preview</Button>
-            <Button
-              onClick={handleRun}
-              colorScheme={"green"}
-              isLoading={isLoading}
-              loadingText={"Run"}
-              isDisabled={!isDataValid}
+            <Tooltip
+              label={
+                dataIssues.length === 0 ? undefined : (
+                  <Flex flexDirection={"column"}>
+                    <Text>There are data issues that must be addressed before this enclave can run:</Text>
+                    <UnorderedList>
+                      {dataIssues.map((issue, i) => (
+                        <ListItem key={i}>{issue}</ListItem>
+                      ))}
+                    </UnorderedList>
+                  </Flex>
+                )
+              }
             >
-              Run
-            </Button>
+              <Button
+                onClick={handleRun}
+                colorScheme={"green"}
+                isLoading={isLoading}
+                loadingText={"Run"}
+                isDisabled={dataIssues.length > 0}
+              >
+                Run
+              </Button>
+            </Tooltip>
           </ButtonGroup>
         </ModalFooter>
       </ModalContent>

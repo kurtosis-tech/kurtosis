@@ -189,7 +189,7 @@ export const KurtosisServiceNode = memo(
                                 if (typeof val !== "string") {
                                   return "Value should be a string";
                                 }
-                                if (!val.includes(" ")) {
+                                if (val.includes(" ")) {
                                   return "Application protocol cannot include spaces";
                                 }
                               }}
