@@ -21,11 +21,18 @@ type FileTreeProps = {
   nodes: FileTreeNode[];
   selectedFilePath?: string[];
   onFileSelected: (selectedFilePath: string[]) => void;
+  onFileDblClicked?: (selectedFilePath: string[]) => void;
   // Internal prop used for padding
   _isChildNode?: boolean;
 };
 
-export const FileTree = ({ nodes, selectedFilePath, onFileSelected, _isChildNode }: FileTreeProps) => {
+export const FileTree = ({
+  nodes,
+  selectedFilePath,
+  onFileSelected,
+  onFileDblClicked,
+  _isChildNode,
+}: FileTreeProps) => {
   return (
     <Flex flexDirection={"column"} pl={_isChildNode ? "22px" : undefined} w={"100%"}>
       {nodes.map((node, i) => (
@@ -38,6 +45,7 @@ export const FileTree = ({ nodes, selectedFilePath, onFileSelected, _isChildNode
               : undefined
           }
           onFileSelected={onFileSelected}
+          onFileDblClicked={onFileDblClicked}
         />
       ))}
     </Flex>
@@ -48,6 +56,7 @@ type FileTreeNodeComponentProps = {
   node: FileTreeNode;
   selectedFilePath?: string[];
   onFileSelected: (selectedFilePath: string[]) => void;
+  onFileDblClicked?: (selectedFilePath: string[]) => void;
 };
 
 const FileTreeNodeComponent = React.memo((props: FileTreeNodeComponentProps) => {
@@ -62,6 +71,7 @@ const DirectoryNode = ({
   node,
   selectedFilePath,
   onFileSelected,
+  onFileDblClicked,
 }: FileTreeNodeComponentProps & { node: { childNodes: FileTreeNode[] } }) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -82,6 +92,13 @@ const DirectoryNode = ({
     [onFileSelected, node],
   );
 
+  const handleFileDblClicked = useMemo(() => {
+    if (!isDefined(onFileDblClicked)) {
+      return undefined;
+    }
+    return (filePath: string[]) => onFileDblClicked([node.name, ...filePath]);
+  }, [onFileDblClicked]);
+
   return (
     <>
       <Button
@@ -96,6 +113,7 @@ const DirectoryNode = ({
         <FileTree
           nodes={node.childNodes}
           onFileSelected={handleFileSelected}
+          onFileDblClicked={handleFileDblClicked}
           selectedFilePath={childSelectedFilePath}
           _isChildNode
         />
@@ -104,7 +122,7 @@ const DirectoryNode = ({
   );
 };
 
-const FileNode = ({ node, selectedFilePath, onFileSelected }: FileTreeNodeComponentProps) => {
+const FileNode = ({ node, selectedFilePath, onFileSelected, onFileDblClicked }: FileTreeNodeComponentProps) => {
   const isSelected = isDefined(selectedFilePath) && selectedFilePath.length === 1 && selectedFilePath[0] === node.name;
   return (
     <Button
@@ -113,7 +131,13 @@ const FileNode = ({ node, selectedFilePath, onFileSelected }: FileTreeNodeCompon
       leftIcon={<AiFillFile />}
       rightIcon={<FileSize fileSize={node.size} color={"gray.250"} />}
       isActive={isSelected}
-      onClick={() => onFileSelected([node.name])}
+      onClick={(e) => {
+        if (e.detail === 2 && isDefined(onFileDblClicked)) {
+          onFileDblClicked([node.name]);
+        } else {
+          onFileSelected([node.name]);
+        }
+      }}
     >
       <Text as={"span"} w={"100%"} textAlign={"left"}>
         {node.name}

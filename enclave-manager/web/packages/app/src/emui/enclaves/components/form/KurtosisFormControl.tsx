@@ -10,21 +10,19 @@ import {
 } from "@chakra-ui/react";
 import { isDefined, KurtosisMarkdown } from "kurtosis-ui-components";
 import { PropsWithChildren } from "react";
-import { FieldError, FieldPath } from "react-hook-form";
-import { useEnclaveConfigurationFormContext } from "./EnclaveConfigurationForm";
-import { ConfigureEnclaveForm } from "./types";
+import { FieldError, FieldPath, useFormContext } from "react-hook-form";
 
-type KurtosisArguementFormControlProps = PropsWithChildren<
+type KurtosisFormControlProps<DataModel extends object> = PropsWithChildren<
   FormControlProps & {
-    name: FieldPath<ConfigureEnclaveForm>;
+    name: FieldPath<DataModel>;
     label: string;
-    type: string;
+    type?: string;
     helperText?: string;
     disabled?: boolean;
     isRequired?: boolean;
   }
 >;
-export const KurtosisArgumentFormControl = ({
+export const KurtosisFormControl = <DataModel extends object>({
   name,
   label,
   type,
@@ -33,10 +31,10 @@ export const KurtosisArgumentFormControl = ({
   isRequired,
   children,
   ...formControlProps
-}: KurtosisArguementFormControlProps) => {
+}: KurtosisFormControlProps<DataModel>) => {
   const {
     formState: { errors },
-  } = useEnclaveConfigurationFormContext();
+  } = useFormContext<DataModel>();
   // This looks a little strange because `FieldErrors` has the same structure as `ConfigureEnclaveForm`
   const error = name
     .split(".")
@@ -47,7 +45,7 @@ export const KurtosisArgumentFormControl = ({
       <Flex justifyContent={"space-between"}>
         <Flex alignItems={"center"}>
           <FormLabel fontWeight={"bold"}>{label}</FormLabel>
-          <Badge mb={2}>{type}</Badge>
+          {isDefined(type) && <Badge mb={2}>{type}</Badge>}
         </Flex>
         <Flex flexDirection={"column"} justifyContent={"center"} alignItems={"center"}>
           <Tag colorScheme={isRequired ? "red" : "gray"} variant={"square"}>
@@ -59,25 +57,25 @@ export const KurtosisArgumentFormControl = ({
       <FormHelperText>
         <KurtosisMarkdown>{helperText}</KurtosisMarkdown>
       </FormHelperText>
-      <FormErrorMessage>{error?.message}</FormErrorMessage>
+      <FormErrorMessage>{error?.type === "required" ? "This field is required" : error?.message}</FormErrorMessage>
     </FormControl>
   );
 };
 
-type KurtosisArguementSubtypeFormControlProps = PropsWithChildren<{
-  name: FieldPath<ConfigureEnclaveForm>;
+type KurtosisSubtypeFormControlProps<DataModel extends object> = PropsWithChildren<{
+  name: FieldPath<DataModel>;
   disabled?: boolean;
   isRequired?: boolean;
 }>;
-export const KurtosisArgumentSubtypeFormControl = ({
+export const KurtosisSubtypeFormControl = <DataModel extends object>({
   name,
   disabled,
   isRequired,
   children,
-}: KurtosisArguementSubtypeFormControlProps) => {
+}: KurtosisSubtypeFormControlProps<DataModel>) => {
   const {
     formState: { errors },
-  } = useEnclaveConfigurationFormContext();
+  } = useFormContext<DataModel>();
   // This looks a little strange because `FieldErrors` has the same structure as `ConfigureEnclaveForm`
   const error = name
     .split(".")

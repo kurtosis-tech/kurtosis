@@ -1,10 +1,11 @@
 import { Input } from "@chakra-ui/react";
 import { isDefined } from "kurtosis-ui-components";
-import { useEnclaveConfigurationFormContext } from "../EnclaveConfigurationForm";
-import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-export const IntegerArgumentInput = (props: KurtosisArgumentTypeInputImplProps) => {
-  const { register } = useEnclaveConfigurationFormContext();
+import { useFormContext } from "react-hook-form";
+import { KurtosisFormInputProps } from "./types";
+
+export const IntegerArgumentInput = <DataModel extends object>(props: KurtosisFormInputProps<DataModel>) => {
+  const { register } = useFormContext<DataModel>();
 
   return (
     <Input
