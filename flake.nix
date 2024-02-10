@@ -148,5 +148,5 @@
           });
       };
 
-    in all_systems_output // macos_ete_test;
+    in nixpkgs.lib.recursiveUpdate all_systems_output macos_ete_test;
 }
