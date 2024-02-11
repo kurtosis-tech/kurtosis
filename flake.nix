@@ -22,39 +22,46 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           unstable_pkgs = unstable.legacyPackages.${system};
-          rev = "${self.shortRev or self.dirtyRev or "dirty"}";
+          commit_hash = "${self.shortRev or self.dirtyShortRev or "dirty"}";
+          kurtosis_version = let
+            file_ver = (builtins.readFile ./kurtosis_version.txt);
+            clean_ver =
+              builtins.match "[[:space:]]*([^[:space:]]+)[[:space:]]*" file_ver;
+          in if clean_ver == null then commit_hash else builtins.head clean_ver;
         in rec {
           formatter = pkgs.nixpkgs-fmt;
 
           devShells.default = pkgs.callPackage ./shell.nix {
-            inherit rev;
+            inherit commit_hash kurtosis_version;
             inherit (gomod2nix.legacyPackages.${system}) mkGoEnv gomod2nix;
           };
 
           packages.default = packages.cli;
 
           packages.cli = pkgs.callPackage ./cli/cli/. {
+            inherit commit_hash kurtosis_version;
             inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
           };
 
           packages.engine = pkgs.callPackage ./engine/server/. {
+            inherit commit_hash kurtosis_version;
             inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
           };
 
           packages.enclave-manager =
             pkgs.callPackage ./enclave-manager/server/. {
-              inherit rev;
+              inherit commit_hash kurtosis_version;
               inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
             };
 
           packages.core = pkgs.callPackage ./core/server/. {
-            inherit rev;
+            inherit commit_hash kurtosis_version;
             inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
           };
 
           packages.files-artifacts-expander =
             pkgs.callPackage ./core/files_artifacts_expander/. {
-              inherit rev;
+              inherit commit_hash kurtosis_version;
               inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
             };
 
@@ -85,7 +92,6 @@
             all = pkgs.lib.lists.crossLists (arch: service_name: {
               "${service_name}" = {
                 "${toString arch}" = let
-                  tag = "${self.shortRev or "dirty"}";
                   # if running from linux no cross-compilation is needed to palce the service in a container
                   needsCrossCompilation = "${arch}-${os}"
                     != builtins.replaceStrings [ "aarch64" "x86_64" ] [
@@ -106,7 +112,7 @@
                       });
                 in pkgs.dockerTools.buildImage {
                   name = "kurtosistech/${service_name}";
-                  tag = tag;
+                  tag = kurtosis_version;
                   created = "now";
                   copyToRoot = pkgs.buildEnv {
                     name = "image-root";

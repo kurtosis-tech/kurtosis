@@ -3,7 +3,8 @@
   inherit ((fromJSON (readFile ./flake.lock)).nodes) nixpkgs gomod2nix;
 in import (fetchTree nixpkgs.locked) {
   overlays = [ (import "${fetchTree gomod2nix.locked}/overlay.nix") ];
-}), mkGoEnv ? pkgs.mkGoEnv, gomod2nix ? pkgs.gomod2nix, rev ? "dirty" }:
+}), mkGoEnv ? pkgs.mkGoEnv, gomod2nix ? pkgs.gomod2nix
+, kurtosis_version ? "dirty", commit_hash ? "dirty" }:
 let
   goEngineEnv = mkGoEnv { pwd = ./engine/server/.; };
   goCoreEnv = mkGoEnv { pwd = ./core/server/.; };
