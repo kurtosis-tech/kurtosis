@@ -156,7 +156,7 @@ func (builtin *VerifyCapabilities) FillPersistableAttributes(builder *enclave_pl
 }
 
 func (builtin *VerifyCapabilities) Description() string {
-	return fmt.Sprintf("Verifying whether '%v' '%v' '%v'", builtin.runtimeValue, builtin.assertion, builtin.target)
+	return fmt.Sprintf("Verifying whether two values meet a certain condition '%v'", builtin.assertion)
 }
 
 // Verify verifies whether the currentValue matches the targetValue w.r.t. the assertion operator

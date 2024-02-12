@@ -8,5 +8,5 @@ const (
 	Detailed
 	Executable
 	OutputOnly
-	DescriptionOnly
+	Description
 )
