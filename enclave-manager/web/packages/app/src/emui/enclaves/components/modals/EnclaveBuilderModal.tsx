@@ -210,7 +210,6 @@ const EnclaveBuilderModalImpl = ({
               Close
             </Button>
             <Button onClick={handlePreview}>Preview</Button>
-            <Button onClick={handlePreview}>Preview</Button>
             <Tooltip
               label={
                 dataIssues.length === 0 ? undefined : (
