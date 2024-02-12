@@ -5,13 +5,12 @@
 
 What is Kurtosis?
 =================
-[Kurtosis](https://www.kurtosis.com) is a platform for packaging and launching environments of containerized services ("distributed applications") with a focus on approachability for the average developer. What Docker did for shipping binaries, Kurtosis aims to do even better for distributed applications. 
+[Kurtosis](https://www.kurtosis.com) handles the complexity of your backend infrastructure so you can focus on building. Think Vercel-like experience for your backend. We’re actively learning more on how best to make that happen. If you are on board with that mission, consider giving us a star ⭐! 
 
 Kurtosis is formed of:
-
-- A language for declaring a distributed application in Python syntax ([Starlark](https://github.com/google/starlark-go/blob/master/doc/spec.md))
-- A packaging system for sharing and reusing distributed application components
-- A runtime that makes a Kurtosis app Just Work, independent of whether it's running on Docker or Kubernetes, local or in the cloud
+- A Pythonic language for defining your application (Starlark)
+- A packaging system for sharing and running your distributed application
+- A runtime that makes your package Just Work, locally or on the cloud
 - A set of tools to ease common distributed app development needs (e.g. a log aggregator to ease log-diving, automatic port-forwarding to ease connectivity, a `kurtosis service shell` command to ease container filesystem exploration, etc.)
 
 Why should I use Kurtosis?
