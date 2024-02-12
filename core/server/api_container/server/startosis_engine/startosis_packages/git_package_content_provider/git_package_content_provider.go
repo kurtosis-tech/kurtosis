@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
@@ -347,6 +348,14 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 		Tags:              0,
 		InsecureSkipTLS:   false,
 		CABundle:          nil,
+		Mirror:            false,
+		ShallowSubmodules: false,
+		ProxyOptions: transport.ProxyOptions{
+			URL:      "",
+			Username: "",
+			Password: "",
+		},
+		Shared: false,
 	})
 	if err != nil {
 		// We silent the underlying error here as it can be confusing to the user. For example, when there's a typo in
@@ -362,11 +371,12 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 		}
 
 		checkoutOptions := &git.CheckoutOptions{
-			Hash:   plumbing.Hash{},
-			Branch: "",
-			Create: false,
-			Force:  false,
-			Keep:   false,
+			Hash:                      plumbing.Hash{},
+			Branch:                    "",
+			Create:                    false,
+			Force:                     false,
+			Keep:                      false,
+			SparseCheckoutDirectories: []string{},
 		}
 		if found {
 			// if we have a tag or branch we set it
