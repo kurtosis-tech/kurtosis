@@ -1,6 +1,6 @@
 import { Flex, IconButton, Text, useToken } from "@chakra-ui/react";
 import { debounce } from "lodash";
-import { memo, PropsWithChildren, useMemo } from "react";
+import { memo, PropsWithChildren, useEffect, useMemo } from "react";
 import { DefaultValues, FormProvider, useForm } from "react-hook-form";
 import { FiTrash } from "react-icons/fi";
 import { RxCornerBottomRight } from "react-icons/rx";
@@ -50,8 +50,13 @@ export const KurtosisNode = memo(
           const isValid = await formMethods.trigger();
           updateData(id, { ...formMethods.getValues(), isValid });
         }, 500),
-      [formMethods, id, updateData],
+      [updateData, formMethods, id],
     );
+
+    useEffect(() => {
+      const watcher = formMethods.watch(handleChange);
+      return () => watcher.unsubscribe();
+    }, []);
 
     const handleScroll = (e: React.WheelEvent<HTMLDivElement>) => {
       if (e.currentTarget.scrollTop === 0 && e.deltaY < 0) {
@@ -80,7 +85,7 @@ export const KurtosisNode = memo(
           boxShadow={selected ? `0 0 0 4px ${chakraColor}` : undefined}
           _hover={{ boxShadow: !selected ? `0 0 0 1px ${chakraColor}` : undefined }}
           borderColor={color}
-          onChange={handleChange}
+          onBlur={handleChange}
           gap={"8px"}
         >
           <Handle
@@ -123,6 +128,7 @@ export const KurtosisNode = memo(
             flex={"1"}
             overflowY={"scroll"}
             className={"nodrag nowheel"}
+            sx={{ cursor: "initial" }}
             onWheel={handleScroll}
             gap={"16px"}
           >

@@ -1,5 +1,4 @@
 import {
-  Box,
   Button,
   ButtonGroup,
   Flex,
@@ -15,41 +14,18 @@ import {
   Tooltip,
   UnorderedList,
 } from "@chakra-ui/react";
-import Dagre from "@dagrejs/dagre";
 import { isDefined, KurtosisAlert, KurtosisAlertModal, RemoveFunctions, stringifyError } from "kurtosis-ui-components";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { FiPlusCircle } from "react-icons/fi";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Background,
-  BackgroundVariant,
-  Controls,
-  Edge,
-  Node,
-  ReactFlow,
-  ReactFlowProvider,
-  useEdgesState,
-  useNodesState,
-  useReactFlow,
-  XYPosition,
-} from "reactflow";
+import { Edge, Node, ReactFlowProvider } from "reactflow";
 import "reactflow/dist/style.css";
-import { v4 as uuidv4 } from "uuid";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
-import { KurtosisArtifactNode } from "./enclaveBuilder/KurtosisArtifactNode";
-import { KurtosisServiceNode } from "./enclaveBuilder/KurtosisServiceNode";
 import { ViewStarlarkModal } from "./enclaveBuilder/modals/ViewStarlarkModal";
-import {
-  generateStarlarkFromGraph,
-  getInitialGraphStateFromEnclave,
-  getNodeDependencies,
-} from "./enclaveBuilder/utils";
-import {
-  KurtosisNodeData,
-  useVariableContext,
-  VariableContextProvider,
-} from "./enclaveBuilder/VariableContextProvider";
+import { KurtosisNodeData } from "./enclaveBuilder/types";
+import { getInitialGraphStateFromEnclave, getNodeName } from "./enclaveBuilder/utils";
+import { useVariableContext, VariableContextProvider } from "./enclaveBuilder/VariableContextProvider";
+import { Visualiser, VisualiserImperativeAttributes } from "./enclaveBuilder/Visualiser";
 
 type EnclaveBuilderModalProps = {
   isOpen: boolean;
@@ -129,12 +105,7 @@ const EnclaveBuilderModalImpl = ({
     () =>
       Object.values(data)
         .filter((nodeData) => !nodeData.isValid)
-        .map(
-          (nodeData) =>
-            `${nodeData.type} ${
-              (nodeData.type === "artifact" ? nodeData.artifactName : nodeData.serviceName) || "with no name"
-            } has invalid data`,
-        ),
+        .map((nodeData) => `${nodeData.type} ${getNodeName(nodeData)} has invalid data`),
     [data],
   );
   const [isLoading, setIsLoading] = useState(false);
@@ -245,170 +216,3 @@ const EnclaveBuilderModalImpl = ({
     </Modal>
   );
 };
-
-const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
-
-const getLayoutedElements = <T extends object>(nodes: Node<T>[], edges: Edge<any>[]) => {
-  if (nodes.length === 0) {
-    return { nodes, edges };
-  }
-  g.setGraph({ rankdir: "LR", ranksep: 100 });
-
-  edges.forEach((edge) => g.setEdge(edge.source, edge.target));
-  nodes.forEach((node) =>
-    g.setNode(node.id, node as Node<{ label: string }, string | undefined> & { width?: number; height?: number }),
-  );
-
-  Dagre.layout(g);
-
-  return {
-    nodes: nodes.map((node) => {
-      const { x, y } = g.node(node.id);
-
-      return { ...node, position: { x, y } };
-    }),
-    edges,
-  };
-};
-
-const nodeTypes = { serviceNode: KurtosisServiceNode, artifactNode: KurtosisArtifactNode };
-
-type VisualiserImperativeAttributes = {
-  getStarlark: () => string;
-};
-
-type VisualiserProps = {
-  initialNodes: Node<any>[];
-  initialEdges: Edge<any>[];
-  existingEnclave?: RemoveFunctions<EnclaveFullInfo>;
-};
-
-const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
-  ({ initialNodes, initialEdges, existingEnclave }, ref) => {
-    const { data, updateData } = useVariableContext();
-    const insertOffset = useRef(0);
-    const { fitView, addNodes, getViewport } = useReactFlow();
-    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes || []);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
-
-    const onLayout = useCallback(() => {
-      const layouted = getLayoutedElements(nodes, edges);
-
-      setNodes([...layouted.nodes]);
-      setEdges([...layouted.edges]);
-
-      window.requestAnimationFrame(() => {
-        fitView();
-      });
-    }, [nodes, edges, fitView, setEdges, setNodes]);
-
-    const getNewNodePosition = (): XYPosition => {
-      const viewport = getViewport();
-      insertOffset.current += 1;
-      return { x: -viewport.x + insertOffset.current * 20 + 400, y: -viewport.y + insertOffset.current * 20 };
-    };
-
-    const handleAddServiceNode = () => {
-      const id = uuidv4();
-      updateData(id, { type: "service", serviceName: "", image: "", ports: [], env: [], files: [], isValid: false });
-      addNodes({
-        id,
-        position: getNewNodePosition(),
-        width: 650,
-        style: { width: "650px" },
-        type: "serviceNode",
-        data: {},
-      });
-    };
-
-    const handleAddArtifactNode = () => {
-      const id = uuidv4();
-      updateData(id, { type: "artifact", artifactName: "", files: {}, isValid: false });
-      addNodes({
-        id,
-        position: getNewNodePosition(),
-        width: 600,
-        style: { width: "400px" },
-        type: "artifactNode",
-        data: {},
-      });
-    };
-
-    useEffect(() => {
-      setEdges((prevState) => {
-        return Object.entries(getNodeDependencies(data)).flatMap(([to, froms]) =>
-          [...froms].map((from) => ({
-            id: `${from}-${to}`,
-            source: from,
-            target: to,
-            animated: true,
-            style: { strokeWidth: "3px" },
-          })),
-        );
-      });
-    }, [setEdges, data]);
-
-    // Remove the resizeObserver error
-    useEffect(() => {
-      const errorHandler = (e: any) => {
-        if (
-          e.message.includes(
-            "ResizeObserver loop completed with undelivered notifications" || "ResizeObserver loop limit exceeded",
-          )
-        ) {
-          const resizeObserverErr = document.getElementById("webpack-dev-server-client-overlay");
-          if (resizeObserverErr) {
-            resizeObserverErr.style.display = "none";
-          }
-        }
-      };
-      window.addEventListener("error", errorHandler);
-
-      return () => {
-        window.removeEventListener("error", errorHandler);
-      };
-    }, []);
-
-    useImperativeHandle(
-      ref,
-      () => ({
-        getStarlark: () => {
-          return generateStarlarkFromGraph(nodes, edges, data, existingEnclave);
-        },
-      }),
-      [nodes, edges, data, existingEnclave],
-    );
-
-    return (
-      <Flex flexDirection={"column"} h={"100%"} gap={"8px"}>
-        <ButtonGroup paddingInline={6}>
-          <Button onClick={onLayout}>Do Layout</Button>
-          <Button leftIcon={<FiPlusCircle />} onClick={handleAddServiceNode}>
-            Add Service Node
-          </Button>
-          <Button leftIcon={<FiPlusCircle />} onClick={handleAddArtifactNode}>
-            Add Files Node
-          </Button>
-        </ButtonGroup>
-        <Box bg={"gray.900"} flex={"1"}>
-          <ReactFlow
-            minZoom={0.1}
-            maxZoom={1}
-            nodeDragThreshold={3}
-            nodes={nodes}
-            edges={edges}
-            proOptions={{ hideAttribution: true }}
-            onMove={() => (insertOffset.current = 1)}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            nodeTypes={nodeTypes}
-            fitView
-          >
-            <Controls />
-            <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
-          </ReactFlow>
-        </Box>
-      </Flex>
-    );
-  },
-);

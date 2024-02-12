@@ -1,37 +1,6 @@
 import { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from "react";
-import { Variable } from "./types";
+import { KurtosisNodeData, Variable } from "./types";
 import { getVariablesFromNodes } from "./utils";
-
-export type KurtosisPort = {
-  portName: string;
-  port: number;
-  transportProtocol: "TCP" | "UDP";
-  applicationProtocol: string;
-};
-
-export type KurtosisFileMount = {
-  mountPoint: string;
-  artifactName: string;
-};
-
-export type KurtosisServiceNodeData = {
-  type: "service";
-  serviceName: string;
-  image: string;
-  env: { key: string; value: string }[];
-  ports: KurtosisPort[];
-  files: KurtosisFileMount[];
-  isValid: boolean;
-};
-
-export type KurtosisArtifactNodeData = {
-  type: "artifact";
-  artifactName: string;
-  files: Record<string, string>;
-  isValid: boolean;
-};
-
-export type KurtosisNodeData = KurtosisArtifactNodeData | KurtosisServiceNodeData;
 
 type VariableContextState = {
   data: Record<string, KurtosisNodeData>;
