@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _VerbosityName = "BRIEFDETAILEDEXECUTABLEOUTPUT_ONLY"
+const _VerbosityName = "BRIEFDETAILEDEXECUTABLEOUTPUT_ONLYDESCRIPTION_ONLY"
 
-var _VerbosityIndex = [...]uint8{0, 5, 13, 23, 34}
+var _VerbosityIndex = [...]uint8{0, 5, 13, 23, 34, 50}
 
-const _VerbosityLowerName = "briefdetailedexecutableoutput_only"
+const _VerbosityLowerName = "briefdetailedexecutableoutput_onlydescription_only"
 
 func (i Verbosity) String() string {
 	if i < 0 || i >= Verbosity(len(_VerbosityIndex)-1) {
@@ -28,9 +28,10 @@ func _VerbosityNoOp() {
 	_ = x[Detailed-(1)]
 	_ = x[Executable-(2)]
 	_ = x[OutputOnly-(3)]
+	_ = x[DescriptionOnly-(4)]
 }
 
-var _VerbosityValues = []Verbosity{Brief, Detailed, Executable, OutputOnly}
+var _VerbosityValues = []Verbosity{Brief, Detailed, Executable, OutputOnly, DescriptionOnly}
 
 var _VerbosityNameToValueMap = map[string]Verbosity{
 	_VerbosityName[0:5]:        Brief,
@@ -41,6 +42,8 @@ var _VerbosityNameToValueMap = map[string]Verbosity{
 	_VerbosityLowerName[13:23]: Executable,
 	_VerbosityName[23:34]:      OutputOnly,
 	_VerbosityLowerName[23:34]: OutputOnly,
+	_VerbosityName[34:50]:      DescriptionOnly,
+	_VerbosityLowerName[34:50]: DescriptionOnly,
 }
 
 var _VerbosityNames = []string{
@@ -48,6 +51,7 @@ var _VerbosityNames = []string{
 	_VerbosityName[5:13],
 	_VerbosityName[13:23],
 	_VerbosityName[23:34],
+	_VerbosityName[34:50],
 }
 
 // VerbosityString retrieves an enum value from the enum constants string name.
