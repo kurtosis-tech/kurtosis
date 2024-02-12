@@ -288,3 +288,7 @@ func (builtin *WaitCapabilities) TryResolveWith(instructionsAreEqual bool, _ *en
 func (builtin *WaitCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	builder.SetType(WaitBuiltinName)
 }
+
+func (builtin *WaitCapabilities) Description() string {
+	return fmt.Sprintf("Waiting for at most '%v' for service '%v' to reach a certain state", builtin.timeout, builtin.serviceName)
+}

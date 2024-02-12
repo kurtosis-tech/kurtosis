@@ -321,6 +321,10 @@ func (builtin *RunPythonCapabilities) FillPersistableAttributes(builder *enclave
 	builder.SetType(RunPythonBuiltinName)
 }
 
+func (builtin *RunPythonCapabilities) Description() string {
+	return "Running a one time python script"
+}
+
 func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {
 	if len(builtin.packages) == 0 {
 		return nil, nil

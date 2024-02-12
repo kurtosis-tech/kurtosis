@@ -52,12 +52,12 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
-	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
+	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully, "description1")
 	scheduledInstruction1 := instructions_plan.NewScheduledInstruction("instruction1", instruction1, starlark.None).Executed(true)
 	instructionsPlan.AddScheduledInstruction(scheduledInstruction1)
 
-	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
-	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully)
+	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully, "description2")
+	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully, "description3")
 	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
 	require.NoError(t, instructionsPlan.AddInstruction(instruction3, starlark.None))
 
@@ -75,11 +75,11 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 
 	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.StarlarkInstruction{
 		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting, isSkipped),
+			dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting, isSkipped, "description1"),
 		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting, isSkipped),
+			dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting, isSkipped, "description2"),
 		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction3", "instruction3()", noInstructionArgsForTesting, isSkipped),
+			dummyPosition.ToAPIType(), "instruction3", "instruction3()", noInstructionArgsForTesting, isSkipped, "description3"),
 	}
 	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
 	require.Equal(t, executor.enclavePlan.Size(), 3) // check that the enclave plan now contains the 4 instructions
@@ -95,9 +95,9 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 
 	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
-	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
-	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
-	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully)
+	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully, "description1")
+	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute, "description2")
+	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully, "description3")
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
 	require.NoError(t, instructionsPlan.AddInstruction(instruction1, starlark.None))
 	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
@@ -123,9 +123,9 @@ instruction2()
 	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.StarlarkInstruction{
 		// only instruction 1 and 2 because it failed at instruction 2
 		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting, isSkipped),
+			dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting, isSkipped, "description1"),
 		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting, isSkipped),
+			dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting, isSkipped, "description2"),
 	}
 	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
 }
@@ -140,8 +140,8 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 
 	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
-	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
-	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
+	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully, "description1")
+	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully, "description2")
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
 	require.NoError(t, instructionsPlan.AddInstruction(instruction1, starlark.None))
 	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
@@ -157,19 +157,19 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 
 	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.StarlarkInstruction{
 		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting, isSkipped),
+			dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting, isSkipped, "description1"),
 		binding_constructors.NewStarlarkInstruction(
-			dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting, isSkipped),
+			dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting, isSkipped, "description2"),
 	}
 	require.Equal(t, serializedInstruction, expectedSerializedInstructions)
 }
 
-func createMockInstruction(t *testing.T, instructionName string, executeSuccessfully bool) *mock_instruction.MockKurtosisInstruction {
+func createMockInstruction(t *testing.T, instructionName string, executeSuccessfully bool, description string) *mock_instruction.MockKurtosisInstruction {
 	instruction := mock_instruction.NewMockKurtosisInstruction(t)
 
 	stringifiedInstruction := instructionName + "()"
 	canonicalInstruction := binding_constructors.NewStarlarkInstruction(
-		dummyPosition.ToAPIType(), instructionName, stringifiedInstruction, noInstructionArgsForTesting, isSkipped)
+		dummyPosition.ToAPIType(), instructionName, stringifiedInstruction, noInstructionArgsForTesting, isSkipped, description)
 	instruction.EXPECT().GetCanonicalInstruction(mock.Anything).Maybe().Return(canonicalInstruction)
 	instruction.EXPECT().GetPositionInOriginalScript().Maybe().Return(dummyPosition)
 	instruction.EXPECT().String().Maybe().Return(stringifiedInstruction)

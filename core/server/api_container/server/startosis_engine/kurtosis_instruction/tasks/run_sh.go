@@ -266,6 +266,10 @@ func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_pla
 	builder.SetType(RunShBuiltinName)
 }
 
+func (builtin *RunShCapabilities) Description() string {
+	return "Running a one time bash script"
+}
+
 func getCommandToRun(builtin *RunShCapabilities) (string, error) {
 	// replace future references to actual strings
 	maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(builtin.run, builtin.runtimeValueStore)

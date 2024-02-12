@@ -263,13 +263,14 @@ func NewStarlarkRunResponseLineFromRunSuccessEvent(serializedOutputObject string
 	}
 }
 
-func NewStarlarkInstruction(position *kurtosis_core_rpc_api_bindings.StarlarkInstructionPosition, name string, executableInstruction string, arguments []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg, isSkipped bool) *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+func NewStarlarkInstruction(position *kurtosis_core_rpc_api_bindings.StarlarkInstructionPosition, name string, executableInstruction string, arguments []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg, isSkipped bool, description string) *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	return &kurtosis_core_rpc_api_bindings.StarlarkInstruction{
 		InstructionName:       name,
 		Position:              position,
 		ExecutableInstruction: executableInstruction,
 		Arguments:             arguments,
 		IsSkipped:             isSkipped,
+		Description:           description,
 	}
 }
 

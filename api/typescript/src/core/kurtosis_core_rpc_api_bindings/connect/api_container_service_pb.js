@@ -226,6 +226,7 @@ export const StarlarkInstruction = proto3.makeMessageType(
     { no: 3, name: "arguments", kind: "message", T: StarlarkInstructionArg, repeated: true },
     { no: 4, name: "executable_instruction", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "is_skipped", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 6, name: "description", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ],
 );
 
