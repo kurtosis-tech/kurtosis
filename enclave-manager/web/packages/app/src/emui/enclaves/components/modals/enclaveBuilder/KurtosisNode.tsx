@@ -1,10 +1,12 @@
 import { Flex, IconButton, Text, useToken } from "@chakra-ui/react";
-import { memo, PropsWithChildren } from "react";
+import { debounce } from "lodash";
+import { memo, PropsWithChildren, useMemo } from "react";
 import { DefaultValues, FormProvider, useForm } from "react-hook-form";
 import { FiTrash } from "react-icons/fi";
 import { RxCornerBottomRight } from "react-icons/rx";
 import { Handle, NodeResizeControl, Position, useReactFlow } from "reactflow";
-import { KurtosisNodeData, useVariableContext } from "./VariableContextProvider";
+import { KurtosisNodeData } from "./types";
+import { useVariableContext } from "./VariableContextProvider";
 
 type KurtosisNodeProps = PropsWithChildren<{
   id: string;
@@ -33,7 +35,7 @@ export const KurtosisNode = memo(
       shouldFocusError: false,
     });
 
-    const { deleteElements } = useReactFlow();
+    const { deleteElements, zoomOut, zoomIn } = useReactFlow();
 
     const handleDeleteNode = (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
@@ -42,9 +44,25 @@ export const KurtosisNode = memo(
       removeData(id);
     };
 
-    const handleBlur = async () => {
-      const isValid = await formMethods.trigger();
-      updateData(id, { ...formMethods.getValues(), isValid });
+    const handleChange = useMemo(
+      () =>
+        debounce(async () => {
+          const isValid = await formMethods.trigger();
+          updateData(id, { ...formMethods.getValues(), isValid });
+        }, 500),
+      [formMethods, id, updateData],
+    );
+
+    const handleScroll = (e: React.WheelEvent<HTMLDivElement>) => {
+      if (e.currentTarget.scrollTop === 0 && e.deltaY < 0) {
+        zoomIn();
+      }
+      if (
+        Math.abs(e.currentTarget.scrollHeight - e.currentTarget.clientHeight - e.currentTarget.scrollTop) <= 1 &&
+        e.deltaY > 0
+      ) {
+        zoomOut();
+      }
     };
 
     return (
@@ -62,7 +80,7 @@ export const KurtosisNode = memo(
           boxShadow={selected ? `0 0 0 4px ${chakraColor}` : undefined}
           _hover={{ boxShadow: !selected ? `0 0 0 1px ${chakraColor}` : undefined }}
           borderColor={color}
-          onBlur={handleBlur}
+          onChange={handleChange}
           gap={"8px"}
         >
           <Handle
@@ -89,6 +107,7 @@ export const KurtosisNode = memo(
           <Flex justifyContent={"space-between"} alignItems={"center"} minH={"0"}>
             <Text fontWeight={"semibold"}>{name || <i>Unnamed</i>}</Text>
             <IconButton
+              className={"nodrag"}
               aria-label={"Delete node"}
               icon={<FiTrash />}
               colorScheme={"red"}
@@ -104,6 +123,7 @@ export const KurtosisNode = memo(
             flex={"1"}
             overflowY={"scroll"}
             className={"nodrag nowheel"}
+            onWheel={handleScroll}
             gap={"16px"}
           >
             {children}
