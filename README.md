@@ -1,6 +1,12 @@
 
 <img src="./readme-static-files/logo.png" width="1200">
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Follow us on X, formerly Twitter](https://img.shields.io/twitter/follow/KurtosisTech?style=social)](https://twitter.com/Kurtosistech)
+[![Number of GitHub stars](https://img.shields.io/github/stars/kurtosis-tech/kurtosis)](https://github.com/kurtosis-tech/kurtosis/stargazers)
+
+
+
 ----
 
 What is Kurtosis?
@@ -24,7 +30,6 @@ Kurtosis shines when creating, working with, and destroying self-contained distr
 - You're the author of a containerized service or distributed application and you want to give your users a one-liner to try it
 - You want to get an instance of your application running in the cloud without provisioning or administering a Kubernetes cluster
 
-If you're in web3, we have even more specific web3 usecases [here](https://web3.kurtosis.com).
 
 Check out an introductory demo video here:
 
@@ -32,9 +37,11 @@ Check out an introductory demo video here:
 
 How do I get going?
 ===================
-To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install) or visit [Kurtosis Cloud](https://cloud.kurtosis.com/) to provision a remote host.
+To see Kurtosis in action, the easiest way is to visit Kurtosis Cloud to start building in a [remote sandbox for free]([url](https://cloud.kurtosis.com/)). If you’d like to run locally with a CLI, install it using the [instructions here]([url](https://docs.kurtosis.com/install/)). 
 
-Then, run the [Redis voting app Kurtosis package](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app):
+On Kurtosis Cloud, you can upload your own docker compose file with a github locator, or start with one of our popular packages from [the catalog]([url](https://catalog.kurtosis.com/)). 
+
+On the CLI, you can start by running the [Redis voting app Kurtosis package](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app):
 
 ```bash
 kurtosis run github.com/kurtosis-tech/awesome-kurtosis/redis-voting-app
@@ -52,40 +59,15 @@ If you have an issue or feature request, we'd love to hear about it through one 
 
 ### Going further
 
-To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis] or one of these packages:
+To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis] or the [package catalog.]([url](https://catalog.kurtosis.com/)) 
 
-- [Ethereum](https://github.com/kurtosis-tech/ethereum-package): fully functional private Ethereum network in Kurtosis with Flashbots MEV-boost, any EL and CL client combination, and a collection of network monitoring tools.
-- [DIVE](https://github.com/HugoByte/DIVE): A CLI + Kurtosis package by [Hugobyte](https://hugobyte.com) for the ICON ecosystem that can spin up EVM, Cosmos, or JVM networks with a bridge between them.
-- [NEAR](https://github.com/kurtosis-tech/near-package): A private NEAR network in Kurtosis.
-
-To learn about how to write Kurtosis packages, check out our [quickstart][quickstart-reference].
+If you don't see a package and you'd like to write one, check out our [quickstart][quickstart-reference].
 
 To read about how Kurtosis works, see [our documentation][docs].
 
 To see where we're going with the product, check out the roadmap [here](https://github.com/kurtosis-tech/kurtosis/wiki/Short%E2%80%90term-Roadmap).
 
 Got more questions? Drop them in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a) where we, or other community members, can help answer.
-
-Why Kurtosis over Compose, Helm, or Terraform?
-==============================================
-These tools have been around for over a decade, yet most developers still struggle to build distributed applications. Why? In a sentence: building distributed applications is hard, and these tools still haven't made it easy enough for the average developer.
-
-Some of our observations:
-
-- No tool works across the whole software lifecycle: Compose is oriented around quick local environments rather than Prod environments, while Helm and Terraform are the opposite. This often means a dedicated DevOps team handles Prod deployment, leading to the same "throw it across the wall" problem the DevOps movement was founded around.
-- Compose, Helm, and Terraform use fully declarative paradigms, making difficult the sequential "first this, then this" logic necessary for many prototyping workflows.
-- The inherently declarative nature of all three make [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) difficult, leading to frequent copy-pasting.
-- All three tend to leave resources hanging around that the developer needs to manually clean up.
-- Compose and Helm favor "run it and see what happens" over validation & error-checking, resulting in debugging time and longer dev cycles.
-- A significant percentage of developers don't understand how Docker works, and [most don't understand Kubernetes or Terraform][stackoverflow-2022-developer-survey--other-tools].
-
-Here's what our users tell us they like about Kurtosis:
-
-- **It's understandable:** you write code in Python syntax, and you get your distributed application the other side. Variables and functions keep your code DRY.
-- **It's portable:** your application runs with a one-liner independent of where you run it. You can build your application on your local Docker, and in seconds get the same thing on your friend's laptop or a Kubernetes cluster in the cloud.
-- **It can handle sequential dependencies:** for example, "first generate these files, then use them when starting a service".
-- **It's reliable and reproducible:** Kurtosis started as a testing tool and is built to be safe: deterministic execution order, validation to catch errors before runtime, built-in support for inter-service dependencies and readiness checks, etc. Your distributed app should spin up the same way, every time.
-- **It abstracts away complexity while being configurable:** instantiating a distributed application is as simple as calling its function with the parameters you want. For example, instantiating a Postgres server with modified username and password:
 
   On the CLI...
   ```bash
