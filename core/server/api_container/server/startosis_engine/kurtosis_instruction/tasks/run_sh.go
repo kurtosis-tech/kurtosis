@@ -22,6 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
+	"time"
 )
 
 const (
@@ -251,9 +252,16 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 
 	// clean up the service in the background but don't block on it
 	go func() {
-		if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
-			logrus.Errorf("attempted to remove the temporary task container but failed!")
+		now := time.Now()
+		// Create a context with cancellation capability
+		removeCtx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		logrus.Errorf("REMOVING THE SERVICE FROM THE TASK IN A NON BLOCKING WAY")
+		if err = removeService(removeCtx, builtin.serviceNetwork, builtin.name); err != nil {
+			logrus.Errorf("ATTEMPTED TO REMOVE SERVICE BUT FAILED: %v", err)
 		}
+		logrus.Errorf("REMOVING THE SERVICE FROM THE TASK IN A NON BLOCKING WAY SUCCESSFULLY")
+		logrus.Infof("TIME TO REMOVE SERVICE: %v", time.Since(now))
 	}()
 
 	return instructionResult, err
