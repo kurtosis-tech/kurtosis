@@ -1,6 +1,9 @@
 
 <img src="./readme-static-files/logo.png" width="1200">
 
+[![Follow us on X, formerly Twitter](https://img.shields.io/twitter/follow/KurtosisTech?style=social)](https://twitter.com/Kurtosistech)
+[![Number of GitHub stars](https://img.shields.io/github/stars/kurtosis-tech/kurtosis)](https://github.com/kurtosis-tech/kurtosis/stargazers)
+
 ----
 
 What is Kurtosis?
@@ -13,6 +16,15 @@ Kurtosis is formed of:
 - A runtime with a per-stack file management system for reproducibly initializing the state of your stack
 - A set of tools to enable devs to interact with their stacks, like they do on docker or k8s
 
+Why use Kurtosis?
+=========================
+
+Kurtosis is best for:
+
+- Reusing the logic in your stack definitions for all of: local dev, scheduled testing in CI, and ad-hoc larger-scale testing on k8s clusters
+- Giving other devs a way to spin up your application, and commonly used variations of it, with one-liners, via Kurtosis' packaging and parameterization systems
+- Handling complex setup logic in your backend stack, like passing arbitrary data between services as they start up, and enforcing arbitrary wait conditions
+
 How is Kurtosis different than Docker Compose or Helm?
 ==========================
 
@@ -23,19 +35,6 @@ Because of this additional layer of abstraction, we are able to introduce severa
 - Stack-level parameterizability; users have a powerful and flexible way (beyond messing with env vars) to affect modifications in their stacks
 - First-class plug-and-play composability; it's expected for users to import stack definitions into larger stacks, and this experience is optimized
 - The ability to get all of the above, but running over _either_ the docker engine or k8s, at your election
-
-Why use Kurtosis?
-=========================
-
-Kurtosis is best for:
-
-- Reusing the logic in your stack definitions for all of: local dev, scheduled testing in CI, and ad-hoc larger-scale testing on k8s clusters
-- Giving other devs a way to spin up your application, and commonly used variations of it, with one-liners, via Kurtosis' packaging and parameterization systems
-- Handling complex setup logic in your backend stack, like passing arbitrary data between services as they start up, and enforcing arbitrary wait conditions
-
-Check out an introductory demo video here:
-
-<video width="630" height="300" src="https://github.com/kurtosis-tech/kurtosis/assets/11703004/f908aa4a-b340-44c8-b948-46993dcdb96e"></video>
 
 How do I get going?
 ===================
