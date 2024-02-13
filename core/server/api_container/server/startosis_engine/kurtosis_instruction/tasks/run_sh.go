@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
 )
@@ -248,9 +249,12 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		}
 	}
 
-	if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
-		return "", stacktrace.Propagate(err, "attempted to remove the temporary task container but failed")
-	}
+	// clean up the service in the background but don't block on it
+	go func() {
+		if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
+			logrus.Errorf("attempted to remove the temporary task container but failed!")
+		}
+	}()
 
 	return instructionResult, err
 }
