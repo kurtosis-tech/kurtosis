@@ -58,11 +58,7 @@ If you have an issue or feature request, we'd love to hear about it through one 
 
 ### Going further
 
-To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis] or one of these packages:
-
-- [Ethereum](https://github.com/kurtosis-tech/ethereum-package): fully functional private Ethereum network in Kurtosis with Flashbots MEV-boost, any EL and CL client combination, and a collection of network monitoring tools.
-- [DIVE](https://github.com/HugoByte/DIVE): A CLI + Kurtosis package by [Hugobyte](https://hugobyte.com) for the ICON ecosystem that can spin up EVM, Cosmos, or JVM networks with a bridge between them.
-- [NEAR](https://github.com/kurtosis-tech/near-package): A private NEAR network in Kurtosis.
+To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis]! 
 
 To learn about how to write Kurtosis packages, check out our [quickstart][quickstart-reference].
 
