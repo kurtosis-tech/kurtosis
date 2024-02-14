@@ -42,6 +42,7 @@ func NewRunStarlarkConfig(opts ...starlarkRunConfigOption) *StarlarkRunConfig {
 		CloudInstanceId:          defaultCloudInstanceId,
 		CloudUserId:              defaultCloudUserId,
 		ImageDownload:            defaultImageDownload,
+		NonBlockingMode:          defaultNonBlockingMode,
 	}
 
 	for _, opt := range opts {
