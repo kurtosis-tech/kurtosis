@@ -56,7 +56,7 @@ export const KurtosisNode = memo(
     useEffect(() => {
       const watcher = formMethods.watch(handleChange);
       return () => watcher.unsubscribe();
-    }, []);
+    }, [formMethods, handleChange]);
 
     const handleScroll = (e: React.WheelEvent<HTMLDivElement>) => {
       if (e.currentTarget.scrollTop === 0 && e.deltaY < 0) {

@@ -166,9 +166,12 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
       });
     };
 
-    const handleNodeDoubleClick = useCallback((e: React.MouseEvent, node: Node) => {
-      fitView({ nodes: [node], maxZoom: 1, duration: 500 });
-    }, []);
+    const handleNodeDoubleClick = useCallback(
+      (e: React.MouseEvent, node: Node) => {
+        fitView({ nodes: [node], maxZoom: 1, duration: 500 });
+      },
+      [fitView],
+    );
 
     useEffect(() => {
       setEdges((prevState) => {

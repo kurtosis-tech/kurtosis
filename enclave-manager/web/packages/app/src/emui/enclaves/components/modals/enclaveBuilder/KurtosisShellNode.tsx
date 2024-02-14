@@ -1,15 +1,13 @@
 import { Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { isDefined } from "kurtosis-ui-components";
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { NodeProps } from "reactflow";
 import { BooleanArgumentInput } from "../../form/BooleanArgumentInput";
 import { CodeEditorInput } from "../../form/CodeEditorInput";
 import { DictArgumentInput } from "../../form/DictArgumentInput";
 import { KurtosisFormControl } from "../../form/KurtosisFormControl";
 import { ListArgumentInput } from "../../form/ListArgumentInput";
-import { SelectOption } from "../../form/SelectArgumentInput";
 import { StringArgumentInput } from "../../form/StringArgumentInput";
-import { KurtosisFormInputProps } from "../../form/types";
 import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
 import { MountArtifactFileInput } from "./input/MountArtifactFileInput";
 import { validateDockerLocator, validateDurationString, validateName } from "./input/validators";
@@ -19,25 +17,8 @@ import { useVariableContext } from "./VariableContextProvider";
 
 export const KurtosisShellNode = memo(
   ({ id, selected }: NodeProps) => {
-    const { data, variables } = useVariableContext();
-    const artifactVariableOptions = useMemo((): SelectOption[] => {
-      return variables
-        .filter((variable) => variable.id.startsWith("artifact"))
-        .map((variable) => ({ display: variable.displayName, value: `{{${variable.id}}}` }));
-    }, [variables]);
+    const { data } = useVariableContext();
     const nodeData = data[id] as KurtosisShellNodeData;
-
-    const MemodMentionStringValueArgumentInput = useMemo(
-      () => (props: KurtosisFormInputProps<KurtosisShellNodeData>) => (
-        <MentionStringArgumentInput
-          name={`${props.name as `args.${string}.${number}`}.value`}
-          width={"411px"}
-          size={"sm"}
-          validate={props.validate}
-        />
-      ),
-      [],
-    );
 
     if (!isDefined(nodeData)) {
       // Node has probably been deleted.
