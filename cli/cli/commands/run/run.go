@@ -103,7 +103,7 @@ const (
 	imageDownloadFlagKey = "image-download"
 	defaultImageDownload = "missing"
 
-	nonBlockingModeFlagKey = "non-blocking-mode"
+	nonBlockingModeFlagKey = "non-blocking-tasks"
 	defaultBlockingMode    = "false"
 
 	httpProtocolRegexStr = "^(http|https)://"
