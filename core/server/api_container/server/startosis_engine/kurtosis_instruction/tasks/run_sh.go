@@ -19,10 +19,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
-	"time"
 )
 
 const (
@@ -31,7 +29,7 @@ const (
 	defaultRunShImageName = "badouralix/curl-jq"
 )
 
-func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, nonBlockingMode bool) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RunShBuiltinName,
@@ -84,6 +82,7 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 				name:              "",
+				nonBlockingMode:   nonBlockingMode,
 				serviceConfig:     nil, // populated at interpretation time
 				run:               "",  // populated at interpretation time
 				resultUuid:        "",  // populated at interpretation time
@@ -107,9 +106,10 @@ type RunShCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 	serviceNetwork    service_network.ServiceNetwork
 
-	resultUuid string
-	name       string
-	run        string
+	resultUuid      string
+	name            string
+	run             string
+	nonBlockingMode bool
 
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
@@ -250,22 +250,13 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		}
 	}
 
-	// don't clean up the service
-	go func() {
-		now := time.Now()
-		// Create a context with cancellation capability
-		removeCtx, cancel := context.WithCancel(context.Background())
-		defer func() {
-			logrus.Infof("CANCELLING REMOVE CTX")
-			cancel()
-		}()
-		logrus.Errorf("REMOVING THE SERVICE FROM THE TASK IN A NON BLOCKING WAY")
-		if err = removeService(removeCtx, builtin.serviceNetwork, builtin.name); err != nil {
-			logrus.Errorf("ATTEMPTED TO REMOVE SERVICE BUT FAILED: %v", err)
+	// If the user indicated not to block on removing services after tasks, don't remove the service.
+	// The user will have to remove the task service themselves, or it will get cleaned up with Kurtosis clean.
+	if !builtin.nonBlockingMode {
+		if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
+			return "", stacktrace.Propagate(err, "attempted to remove the temporary task container but failed")
 		}
-		logrus.Errorf("REMOVING THE SERVICE FROM THE TASK IN A NON BLOCKING WAY SUCCESSFULLY")
-		logrus.Infof("TIME TO REMOVE SERVICE: %v", time.Since(now))
-	}()
+	}
 
 	return instructionResult, err
 }

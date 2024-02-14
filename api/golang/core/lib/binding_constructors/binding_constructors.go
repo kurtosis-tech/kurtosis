@@ -77,6 +77,7 @@ func NewRunStarlarkPackageArgs(
 	cloudInstanceId string,
 	cloudUserId string,
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
+	nonBlockingMode bool,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -100,6 +101,7 @@ func NewRunStarlarkPackageArgs(
 		CloudInstanceId:        cloudInstanceIdCopy,
 		CloudUserId:            cloudUserIdCopy,
 		ImageDownloadMode:      imageDownloadModeCopy,
+		NonBlockingMode:        &nonBlockingMode,
 	}
 }
 

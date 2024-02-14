@@ -179,10 +179,10 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   hasImageDownloadMode(): boolean;
   clearImageDownloadMode(): RunStarlarkScriptArgs;
 
-  getNonblockingmode(): boolean;
-  setNonblockingmode(value: boolean): RunStarlarkScriptArgs;
-  hasNonblockingmode(): boolean;
-  clearNonblockingmode(): RunStarlarkScriptArgs;
+  getNonBlockingMode(): boolean;
+  setNonBlockingMode(value: boolean): RunStarlarkScriptArgs;
+  hasNonBlockingMode(): boolean;
+  clearNonBlockingMode(): RunStarlarkScriptArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
@@ -203,7 +203,7 @@ export namespace RunStarlarkScriptArgs {
     cloudInstanceId?: string,
     cloudUserId?: string,
     imageDownloadMode?: ImageDownloadMode,
-    nonblockingmode?: boolean,
+    nonBlockingMode?: boolean,
   }
 
   export enum SerializedParamsCase { 
@@ -241,9 +241,9 @@ export namespace RunStarlarkScriptArgs {
     IMAGE_DOWNLOAD_MODE = 9,
   }
 
-  export enum NonblockingmodeCase { 
-    _NONBLOCKINGMODE_NOT_SET = 0,
-    NONBLOCKINGMODE = 10,
+  export enum NonBlockingModeCase { 
+    _NON_BLOCKING_MODE_NOT_SET = 0,
+    NON_BLOCKING_MODE = 10,
   }
 }
 
@@ -309,6 +309,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasImageDownloadMode(): boolean;
   clearImageDownloadMode(): RunStarlarkPackageArgs;
 
+  getNonBlockingMode(): boolean;
+  setNonBlockingMode(value: boolean): RunStarlarkPackageArgs;
+  hasNonBlockingMode(): boolean;
+  clearNonBlockingMode(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -334,6 +339,7 @@ export namespace RunStarlarkPackageArgs {
     cloudInstanceId?: string,
     cloudUserId?: string,
     imageDownloadMode?: ImageDownloadMode,
+    nonBlockingMode?: boolean,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -385,6 +391,11 @@ export namespace RunStarlarkPackageArgs {
   export enum ImageDownloadModeCase { 
     _IMAGE_DOWNLOAD_MODE_NOT_SET = 0,
     IMAGE_DOWNLOAD_MODE = 14,
+  }
+
+  export enum NonBlockingModeCase { 
+    _NON_BLOCKING_MODE_NOT_SET = 0,
+    NON_BLOCKING_MODE = 15,
   }
 }
 

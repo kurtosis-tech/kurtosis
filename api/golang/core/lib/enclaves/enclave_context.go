@@ -182,7 +182,8 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 		runConfig.ExperimentalFeatureFlags,
 		runConfig.CloudInstanceId,
 		runConfig.CloudUserId,
-		runConfig.ImageDownload)
+		runConfig.ImageDownload,
+		runConfig.NonBlockingMode)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
@@ -616,9 +617,21 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 	cloudInstanceId string,
 	cloudUserId string,
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
+	nonBlockingMode bool,
 ) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 
-	return binding_constructors.NewRunStarlarkPackageArgs(packageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId, imageDownloadMode), nil
+	return binding_constructors.NewRunStarlarkPackageArgs(
+		packageName,
+		relativePathToMainFile,
+		mainFunctionName,
+		serializedParams,
+		dryRun,
+		parallelism,
+		experimentalFeatures,
+		cloudInstanceId,
+		cloudUserId,
+		imageDownloadMode,
+		nonBlockingMode), nil
 }
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {

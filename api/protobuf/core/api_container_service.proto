@@ -172,7 +172,7 @@ message RunStarlarkScriptArgs {
   optional ImageDownloadMode image_download_mode = 9;
 
   // Defaults to false
-  optional bool NonBlockingMode = 10;
+  optional bool non_blocking_mode = 10;
 }
 
 message RunStarlarkPackageArgs {
@@ -220,6 +220,9 @@ message RunStarlarkPackageArgs {
 
   // Defaults to empty
   optional ImageDownloadMode image_download_mode = 14;
+
+  // Defaults to false
+  optional bool non_blocking_mode = 15;
 }
 
 enum KurtosisFeatureFlag {

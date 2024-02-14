@@ -648,7 +648,7 @@ export namespace api_container_api {
         }) | ({
             image_download_mode?: ImageDownloadMode;
         }) | ({
-            NonBlockingMode?: boolean;
+            non_blocking_mode?: boolean;
         })))) {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [6], this.#one_of_decls);
@@ -680,8 +680,8 @@ export namespace api_container_api {
                 if ("image_download_mode" in data && data.image_download_mode != undefined) {
                     this.image_download_mode = data.image_download_mode;
                 }
-                if ("NonBlockingMode" in data && data.NonBlockingMode != undefined) {
-                    this.NonBlockingMode = data.NonBlockingMode;
+                if ("non_blocking_mode" in data && data.non_blocking_mode != undefined) {
+                    this.non_blocking_mode = data.non_blocking_mode;
                 }
             }
         }
@@ -760,13 +760,13 @@ export namespace api_container_api {
         get has_image_download_mode() {
             return pb_1.Message.getField(this, 9) != null;
         }
-        get NonBlockingMode() {
+        get non_blocking_mode() {
             return pb_1.Message.getFieldWithDefault(this, 10, false) as boolean;
         }
-        set NonBlockingMode(value: boolean) {
+        set non_blocking_mode(value: boolean) {
             pb_1.Message.setOneofField(this, 10, this.#one_of_decls[7], value);
         }
-        get has_NonBlockingMode() {
+        get has_non_blocking_mode() {
             return pb_1.Message.getField(this, 10) != null;
         }
         get _serialized_params() {
@@ -832,12 +832,12 @@ export namespace api_container_api {
             };
             return cases[pb_1.Message.computeOneofCase(this, [9])];
         }
-        get _NonBlockingMode() {
+        get _non_blocking_mode() {
             const cases: {
-                [index: number]: "none" | "NonBlockingMode";
+                [index: number]: "none" | "non_blocking_mode";
             } = {
                 0: "none",
-                10: "NonBlockingMode"
+                10: "non_blocking_mode"
             };
             return cases[pb_1.Message.computeOneofCase(this, [10])];
         }
@@ -851,7 +851,7 @@ export namespace api_container_api {
             cloud_instance_id?: string;
             cloud_user_id?: string;
             image_download_mode?: ImageDownloadMode;
-            NonBlockingMode?: boolean;
+            non_blocking_mode?: boolean;
         }): RunStarlarkScriptArgs {
             const message = new RunStarlarkScriptArgs({});
             if (data.serialized_script != null) {
@@ -881,8 +881,8 @@ export namespace api_container_api {
             if (data.image_download_mode != null) {
                 message.image_download_mode = data.image_download_mode;
             }
-            if (data.NonBlockingMode != null) {
-                message.NonBlockingMode = data.NonBlockingMode;
+            if (data.non_blocking_mode != null) {
+                message.non_blocking_mode = data.non_blocking_mode;
             }
             return message;
         }
@@ -897,7 +897,7 @@ export namespace api_container_api {
                 cloud_instance_id?: string;
                 cloud_user_id?: string;
                 image_download_mode?: ImageDownloadMode;
-                NonBlockingMode?: boolean;
+                non_blocking_mode?: boolean;
             } = {};
             if (this.serialized_script != null) {
                 data.serialized_script = this.serialized_script;
@@ -926,8 +926,8 @@ export namespace api_container_api {
             if (this.image_download_mode != null) {
                 data.image_download_mode = this.image_download_mode;
             }
-            if (this.NonBlockingMode != null) {
-                data.NonBlockingMode = this.NonBlockingMode;
+            if (this.non_blocking_mode != null) {
+                data.non_blocking_mode = this.non_blocking_mode;
             }
             return data;
         }
@@ -953,8 +953,8 @@ export namespace api_container_api {
                 writer.writeString(8, this.cloud_user_id);
             if (this.has_image_download_mode)
                 writer.writeEnum(9, this.image_download_mode);
-            if (this.has_NonBlockingMode)
-                writer.writeBool(10, this.NonBlockingMode);
+            if (this.has_non_blocking_mode)
+                writer.writeBool(10, this.non_blocking_mode);
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -992,7 +992,7 @@ export namespace api_container_api {
                         message.image_download_mode = reader.readEnum();
                         break;
                     case 10:
-                        message.NonBlockingMode = reader.readBool();
+                        message.non_blocking_mode = reader.readBool();
                         break;
                     default: reader.skipField();
                 }
@@ -1007,7 +1007,7 @@ export namespace api_container_api {
         }
     }
     export class RunStarlarkPackageArgs extends pb_1.Message {
-        #one_of_decls: number[][] = [[3, 4], [5], [6], [7], [8], [9], [10], [12], [13], [14]];
+        #one_of_decls: number[][] = [[3, 4], [5], [6], [7], [8], [9], [10], [12], [13], [14], [15]];
         constructor(data?: any[] | ({
             package_id?: string;
             experimental_features?: KurtosisFeatureFlag[];
@@ -1035,6 +1035,8 @@ export namespace api_container_api {
             cloud_user_id?: string;
         }) | ({
             image_download_mode?: ImageDownloadMode;
+        }) | ({
+            non_blocking_mode?: boolean;
         })))) {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [11], this.#one_of_decls);
@@ -1077,6 +1079,9 @@ export namespace api_container_api {
                 }
                 if ("image_download_mode" in data && data.image_download_mode != undefined) {
                     this.image_download_mode = data.image_download_mode;
+                }
+                if ("non_blocking_mode" in data && data.non_blocking_mode != undefined) {
+                    this.non_blocking_mode = data.non_blocking_mode;
                 }
             }
         }
@@ -1191,6 +1196,15 @@ export namespace api_container_api {
         get has_image_download_mode() {
             return pb_1.Message.getField(this, 14) != null;
         }
+        get non_blocking_mode() {
+            return pb_1.Message.getFieldWithDefault(this, 15, false) as boolean;
+        }
+        set non_blocking_mode(value: boolean) {
+            pb_1.Message.setOneofField(this, 15, this.#one_of_decls[10], value);
+        }
+        get has_non_blocking_mode() {
+            return pb_1.Message.getField(this, 15) != null;
+        }
         get starlark_package_content() {
             const cases: {
                 [index: number]: "none" | "local" | "remote";
@@ -1282,6 +1296,15 @@ export namespace api_container_api {
             };
             return cases[pb_1.Message.computeOneofCase(this, [14])];
         }
+        get _non_blocking_mode() {
+            const cases: {
+                [index: number]: "none" | "non_blocking_mode";
+            } = {
+                0: "none",
+                15: "non_blocking_mode"
+            };
+            return cases[pb_1.Message.computeOneofCase(this, [15])];
+        }
         static fromObject(data: {
             package_id?: string;
             local?: Uint8Array;
@@ -1296,6 +1319,7 @@ export namespace api_container_api {
             cloud_instance_id?: string;
             cloud_user_id?: string;
             image_download_mode?: ImageDownloadMode;
+            non_blocking_mode?: boolean;
         }): RunStarlarkPackageArgs {
             const message = new RunStarlarkPackageArgs({});
             if (data.package_id != null) {
@@ -1337,6 +1361,9 @@ export namespace api_container_api {
             if (data.image_download_mode != null) {
                 message.image_download_mode = data.image_download_mode;
             }
+            if (data.non_blocking_mode != null) {
+                message.non_blocking_mode = data.non_blocking_mode;
+            }
             return message;
         }
         toObject() {
@@ -1354,6 +1381,7 @@ export namespace api_container_api {
                 cloud_instance_id?: string;
                 cloud_user_id?: string;
                 image_download_mode?: ImageDownloadMode;
+                non_blocking_mode?: boolean;
             } = {};
             if (this.package_id != null) {
                 data.package_id = this.package_id;
@@ -1394,6 +1422,9 @@ export namespace api_container_api {
             if (this.image_download_mode != null) {
                 data.image_download_mode = this.image_download_mode;
             }
+            if (this.non_blocking_mode != null) {
+                data.non_blocking_mode = this.non_blocking_mode;
+            }
             return data;
         }
         serialize(): Uint8Array;
@@ -1426,6 +1457,8 @@ export namespace api_container_api {
                 writer.writeString(13, this.cloud_user_id);
             if (this.has_image_download_mode)
                 writer.writeEnum(14, this.image_download_mode);
+            if (this.has_non_blocking_mode)
+                writer.writeBool(15, this.non_blocking_mode);
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -1473,6 +1506,9 @@ export namespace api_container_api {
                         break;
                     case 14:
                         message.image_download_mode = reader.readEnum();
+                        break;
+                    case 15:
+                        message.non_blocking_mode = reader.readBool();
                         break;
                     default: reader.skipField();
                 }

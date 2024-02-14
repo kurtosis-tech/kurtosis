@@ -1938,7 +1938,7 @@ proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstanc
     cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 7, ""),
     cloudUserId: jspb.Message.getFieldWithDefault(msg, 8, ""),
     imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 9, 0),
-    nonblockingmode: jspb.Message.getBooleanFieldWithDefault(msg, 10, false)
+    nonBlockingMode: jspb.Message.getBooleanFieldWithDefault(msg, 10, false)
   };
 
   if (includeInstance) {
@@ -2015,7 +2015,7 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
       break;
     case 10:
       var value = /** @type {boolean} */ (reader.readBool());
-      msg.setNonblockingmode(value);
+      msg.setNonBlockingMode(value);
       break;
     default:
       reader.skipField();
@@ -2427,10 +2427,10 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.hasImageDownloadMode = f
 
 
 /**
- * optional bool NonBlockingMode = 10;
+ * optional bool non_blocking_mode = 10;
  * @return {boolean}
  */
-proto.api_container_api.RunStarlarkScriptArgs.prototype.getNonblockingmode = function() {
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getNonBlockingMode = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 10, false));
 };
 
@@ -2439,7 +2439,7 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.getNonblockingmode = fun
  * @param {boolean} value
  * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
  */
-proto.api_container_api.RunStarlarkScriptArgs.prototype.setNonblockingmode = function(value) {
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setNonBlockingMode = function(value) {
   return jspb.Message.setField(this, 10, value);
 };
 
@@ -2448,7 +2448,7 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.setNonblockingmode = fun
  * Clears the field making it undefined.
  * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
  */
-proto.api_container_api.RunStarlarkScriptArgs.prototype.clearNonblockingmode = function() {
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearNonBlockingMode = function() {
   return jspb.Message.setField(this, 10, undefined);
 };
 
@@ -2457,7 +2457,7 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.clearNonblockingmode = f
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.api_container_api.RunStarlarkScriptArgs.prototype.hasNonblockingmode = function() {
+proto.api_container_api.RunStarlarkScriptArgs.prototype.hasNonBlockingMode = function() {
   return jspb.Message.getField(this, 10) != null;
 };
 
@@ -2539,7 +2539,8 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f,
     cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 12, ""),
     cloudUserId: jspb.Message.getFieldWithDefault(msg, 13, ""),
-    imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 14, 0)
+    imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 14, 0),
+    nonBlockingMode: jspb.Message.getBooleanFieldWithDefault(msg, 15, false)
   };
 
   if (includeInstance) {
@@ -2629,6 +2630,10 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
     case 14:
       var value = /** @type {!proto.api_container_api.ImageDownloadMode} */ (reader.readEnum());
       msg.setImageDownloadMode(value);
+      break;
+    case 15:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setNonBlockingMode(value);
       break;
     default:
       reader.skipField();
@@ -2747,6 +2752,13 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
   if (f != null) {
     writer.writeEnum(
       14,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 15));
+  if (f != null) {
+    writer.writeBool(
+      15,
       f
     );
   }
@@ -3225,6 +3237,42 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.clearImageDownloadMode 
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.hasImageDownloadMode = function() {
   return jspb.Message.getField(this, 14) != null;
+};
+
+
+/**
+ * optional bool non_blocking_mode = 15;
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getNonBlockingMode = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 15, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setNonBlockingMode = function(value) {
+  return jspb.Message.setField(this, 15, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearNonBlockingMode = function() {
+  return jspb.Message.setField(this, 15, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.hasNonBlockingMode = function() {
+  return jspb.Message.getField(this, 15) != null;
 };
 
 

@@ -371,9 +371,9 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
   /**
    * Defaults to false
    *
-   * @generated from field: optional bool NonBlockingMode = 10;
+   * @generated from field: optional bool non_blocking_mode = 10;
    */
-  NonBlockingMode?: boolean;
+  nonBlockingMode?: boolean;
 
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
@@ -497,6 +497,13 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * @generated from field: optional api_container_api.ImageDownloadMode image_download_mode = 14;
    */
   imageDownloadMode?: ImageDownloadMode;
+
+  /**
+   * Defaults to false
+   *
+   * @generated from field: optional bool non_blocking_mode = 15;
+   */
+  nonBlockingMode?: boolean;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
