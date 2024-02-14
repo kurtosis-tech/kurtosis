@@ -27,7 +27,9 @@ export const MentionStringArgumentInput = <DataModel extends object>({
       }
       const suggestions = variables.map((v) => ({ display: v.displayName, id: v.id }));
       const queryTerms = query.toLowerCase().split(/\s+|\./);
-      return suggestions.filter((variable) => queryTerms.every((term) => variable.display.includes(term)));
+      return suggestions.filter((variable) =>
+        queryTerms.every((term) => variable.display.toLowerCase().includes(term)),
+      );
     },
     [variables],
   );
@@ -56,7 +58,7 @@ export const MentionStringArgumentInput = <DataModel extends object>({
           >
             <Mention
               className={"mentions__mention"}
-              trigger={/((?:@)?(\S\S.*))$/}
+              trigger={/(?<=^|.*\s)((\S\S+))$/}
               markup={"{{__id__}}"}
               data={handleQuery}
               displayTransform={(id) =>

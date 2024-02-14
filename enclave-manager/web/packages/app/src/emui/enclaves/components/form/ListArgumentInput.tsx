@@ -1,14 +1,14 @@
 import { Button, ButtonGroup, Flex, useToast } from "@chakra-ui/react";
 
 import { CopyButton, PasteButton, stringifyError } from "kurtosis-ui-components";
-import { ReactElement } from "react";
+import { FC } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { FiDelete, FiPlus } from "react-icons/fi";
 import { KurtosisSubtypeFormControl } from "./KurtosisFormControl";
 import { KurtosisFormInputProps } from "./types";
 
 type ListArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel> & {
-  FieldComponent: (props: KurtosisFormInputProps<DataModel>) => ReactElement;
+  FieldComponent: FC<KurtosisFormInputProps<DataModel>>;
   createNewValue: () => object;
 };
 
