@@ -144,6 +144,10 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
       });
     };
 
+    const handleNodeDoubleClick = useCallback((e: React.MouseEvent, node: Node) => {
+      fitView({ nodes: [node], maxZoom: 1, duration: 500 });
+    }, []);
+
     useEffect(() => {
       setEdges((prevState) => {
         return Object.entries(getNodeDependencies(data)).flatMap(([to, froms]) =>
@@ -213,6 +217,7 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
             onMove={() => (insertOffset.current = 1)}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onNodeDoubleClick={handleNodeDoubleClick}
             nodeTypes={nodeTypes}
             fitView
           >
@@ -224,3 +229,4 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
     );
   },
 );
+Visualiser.displayName = "ForwardRef Visualiser";
