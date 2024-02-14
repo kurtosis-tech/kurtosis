@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.20](https://github.com/kurtosis-tech/kurtosis/compare/0.86.19...0.86.20) (2024-02-14)
+
+
+### Features
+
+* support `run_sh` and `exec` in enclave builder ([#2158](https://github.com/kurtosis-tech/kurtosis/issues/2158)) ([f784eaf](https://github.com/kurtosis-tech/kurtosis/commit/f784eaf7a24ae282aa470d22e6a9ad721d04cc05))
+
 ## [0.86.19](https://github.com/kurtosis-tech/kurtosis/compare/0.86.18...0.86.19) (2024-02-09)
 
 
