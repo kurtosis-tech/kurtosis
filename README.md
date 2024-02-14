@@ -1,34 +1,40 @@
 
 <img src="./readme-static-files/logo.png" width="1200">
 
+[![Follow us on X, formerly Twitter](https://img.shields.io/twitter/follow/KurtosisTech?style=social)](https://twitter.com/Kurtosistech)
+[![Number of GitHub stars](https://img.shields.io/github/stars/kurtosis-tech/kurtosis)](https://github.com/kurtosis-tech/kurtosis/stargazers)
+
 ----
 
 What is Kurtosis?
 =================
-[Kurtosis](https://www.kurtosis.com) handles the complexity of your backend infrastructure so you can focus on building. Think Vercel-like experience for your backend. We’re actively learning more on how best to make that happen. If you are on board with that mission, consider giving us a star ⭐! 
+
+Have you ever tried to build on top of a colleague's work, or contribute to an open source project, just to get stuck on the first steps of spinning up a stack to play with? [Kurtosis](https://www.kurtosis.com) handles the complexity of spinning up ephemeral dev or test stacks so you can focus on developing, not configuring.
 
 Kurtosis is formed of:
-- A Pythonic language for defining your application (Starlark)
-- A packaging system for sharing and running your distributed application
-- A runtime that makes your package Just Work, locally or on the cloud
-- A set of tools to ease common distributed app development needs (e.g. a log aggregator to ease log-diving, automatic port-forwarding to ease connectivity, a `kurtosis service shell` command to ease container filesystem exploration, etc.)
+- A packaging system for distributing backend stack definitions, which can run on docker or on kubernetes
+- A runtime with a per-stack file management system for reproducibly initializing the state of your stack
+- A set of tools to enable devs to interact with their stacks, like they do on docker or k8s
 
-Why should I use Kurtosis?
+Why use Kurtosis?
+=========================
+
+Kurtosis is best for:
+
+- Reusing the logic in your stack definitions for all of: local dev, scheduled testing in CI, and ad-hoc larger-scale testing on k8s clusters
+- Giving other devs a way to spin up your application, and commonly used variations of it, with one-liners, via Kurtosis' packaging and parameterization systems
+- Handling complex setup logic in your backend stack, like passing arbitrary data between services as they start up, and enforcing arbitrary wait conditions
+
+How is Kurtosis different than Docker Compose or Helm?
 ==========================
-Kurtosis shines when creating, working with, and destroying self-contained distributed application environments. Currently, our users report this to be most useful when:
 
-- You're developing on your application and you need to rapidly iterate on it
-- You want to try someone's containerized service or distributed application without setting up an environment, dependencies, etc.
-- You want to spin up your distributed application in ephemeral environments as part of your integration tests
-- You want to ad-hoc test your application on a big cloud cluster
-- You're the author of a containerized service or distributed application and you want to give your users a one-liner to try it
-- You want to get an instance of your application running in the cloud without provisioning or administering a Kubernetes cluster
+Kurtosis operates at a level higher than Docker Compose or Helm, and produces stacks running on either of the underlying engines (the Docker engine, or Kubernetes).
+Because of this additional layer of abstraction, we are able to introduce several features to improve the experience of spinning up ephemeral stacks:
 
-If you're in web3, we have even more specific web3 usecases [here](https://web3.kurtosis.com).
-
-Check out an introductory demo video here:
-
-<video width="630" height="300" src="https://github.com/kurtosis-tech/kurtosis/assets/11703004/f908aa4a-b340-44c8-b948-46993dcdb96e"></video>
+- A per-stack file management system that enables portable state initialization for dev or test stacks
+- Stack-level parameterizability; users have a powerful and flexible way (beyond messing with env vars) to affect modifications in their stacks
+- First-class plug-and-play composability; it's expected for users to import stack definitions into larger stacks, and this experience is optimized
+- The ability to get all of the above, but running over _either_ the docker engine or k8s, at your election
 
 How do I get going?
 ===================
@@ -52,11 +58,7 @@ If you have an issue or feature request, we'd love to hear about it through one 
 
 ### Going further
 
-To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis] or one of these packages:
-
-- [Ethereum](https://github.com/kurtosis-tech/ethereum-package): fully functional private Ethereum network in Kurtosis with Flashbots MEV-boost, any EL and CL client combination, and a collection of network monitoring tools.
-- [DIVE](https://github.com/HugoByte/DIVE): A CLI + Kurtosis package by [Hugobyte](https://hugobyte.com) for the ICON ecosystem that can spin up EVM, Cosmos, or JVM networks with a bridge between them.
-- [NEAR](https://github.com/kurtosis-tech/near-package): A private NEAR network in Kurtosis.
+To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis]! 
 
 To learn about how to write Kurtosis packages, check out our [quickstart][quickstart-reference].
 
@@ -65,40 +67,6 @@ To read about how Kurtosis works, see [our documentation][docs].
 To see where we're going with the product, check out the roadmap [here](https://github.com/kurtosis-tech/kurtosis/wiki/Short%E2%80%90term-Roadmap).
 
 Got more questions? Drop them in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a) where we, or other community members, can help answer.
-
-Why Kurtosis over Compose, Helm, or Terraform?
-==============================================
-These tools have been around for over a decade, yet most developers still struggle to build distributed applications. Why? In a sentence: building distributed applications is hard, and these tools still haven't made it easy enough for the average developer.
-
-Some of our observations:
-
-- No tool works across the whole software lifecycle: Compose is oriented around quick local environments rather than Prod environments, while Helm and Terraform are the opposite. This often means a dedicated DevOps team handles Prod deployment, leading to the same "throw it across the wall" problem the DevOps movement was founded around.
-- Compose, Helm, and Terraform use fully declarative paradigms, making difficult the sequential "first this, then this" logic necessary for many prototyping workflows.
-- The inherently declarative nature of all three make [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) difficult, leading to frequent copy-pasting.
-- All three tend to leave resources hanging around that the developer needs to manually clean up.
-- Compose and Helm favor "run it and see what happens" over validation & error-checking, resulting in debugging time and longer dev cycles.
-- A significant percentage of developers don't understand how Docker works, and [most don't understand Kubernetes or Terraform][stackoverflow-2022-developer-survey--other-tools].
-
-Here's what our users tell us they like about Kurtosis:
-
-- **It's understandable:** you write code in Python syntax, and you get your distributed application the other side. Variables and functions keep your code DRY.
-- **It's portable:** your application runs with a one-liner independent of where you run it. You can build your application on your local Docker, and in seconds get the same thing on your friend's laptop or a Kubernetes cluster in the cloud.
-- **It can handle sequential dependencies:** for example, "first generate these files, then use them when starting a service".
-- **It's reliable and reproducible:** Kurtosis started as a testing tool and is built to be safe: deterministic execution order, validation to catch errors before runtime, built-in support for inter-service dependencies and readiness checks, etc. Your distributed app should spin up the same way, every time.
-- **It abstracts away complexity while being configurable:** instantiating a distributed application is as simple as calling its function with the parameters you want. For example, instantiating a Postgres server with modified username and password:
-
-  On the CLI...
-  ```bash
-  kurtosis run github.com/kurtosis-tech/postgres-package '{"user": "bobmarley", "password": "buffalosoldier"}'
-  ```
-
-  Inside an environment definition...
-  ```python
-  postgres = import_module("github.com/kurtosis-tech/postgres-package/main.star")
-
-  def run(plan):
-    postgres.run(plan, user = "bobmarley", password = "buffalosoldier")
-  ```
 
 Contributing to Kurtosis
 ========================
