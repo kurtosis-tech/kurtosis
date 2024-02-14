@@ -90,8 +90,8 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	relativePathtoMainFile string,
 	serializedStarlark string,
 	serializedJsonParams string,
-	currentEnclavePlan *enclave_plan_persistence.EnclavePlan,
 	nonBlockingMode bool,
+	currentEnclavePlan *enclave_plan_persistence.EnclavePlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
 	if interpretationErr := interpreter.packageContentProvider.CloneReplacedPackagesIfNeeded(packageReplaceOptions); interpretationErr != nil {
