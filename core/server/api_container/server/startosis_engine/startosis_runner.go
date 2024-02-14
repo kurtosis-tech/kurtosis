@@ -125,8 +125,8 @@ func (runner *StartosisRunner) Run(
 				relativePathToMainFile,
 				serializedStartosis,
 				serializedParams,
-				runner.startosisExecutor.enclavePlan,
 				nonBlockingMode,
+				runner.startosisExecutor.enclavePlan,
 			)
 		}
 
