@@ -571,7 +571,6 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 func runReceiveStarlarkResponseLineRoutine(cancelCtxFunc context.CancelFunc, stream grpc.ClientStream, kurtosisResponseLineChan chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) {
 	defer func() {
 		close(kurtosisResponseLineChan)
-		logrus.Infof("CANCELLING CONTEXT FROM API")
 		cancelCtxFunc()
 	}()
 	for {
