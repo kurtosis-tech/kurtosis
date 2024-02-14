@@ -516,9 +516,7 @@ func executeRemotePackage(
 
 // ReadAndPrintResponseLinesUntilClosed TODO(victor.colombo): Extract this to somewhere reasonable
 func ReadAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity, dryRun bool) error {
-	defer func() {
-		cancelFunc()
-	}()
+	defer cancelFunc()
 
 	// This channel will receive a signal when the user presses an interrupt
 	interruptChan := make(chan os.Signal, interruptChanBufferSize)
