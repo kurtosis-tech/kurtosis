@@ -181,6 +181,9 @@ pub struct RunStarlarkScriptArgs {
     /// Defaults to empty
     #[prost(enumeration = "ImageDownloadMode", optional, tag = "9")]
     pub image_download_mode: ::core::option::Option<i32>,
+    /// Defaults to false
+    #[prost(bool, optional, tag = "10")]
+    pub non_blocking_mode: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

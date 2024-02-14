@@ -3,6 +3,8 @@
     "@tailwindcss/typography": "^0.5.9"
   },
   "dependencies": {
-    "openapi-typescript": "7.0.0-next.5"
+    "@connectrpc/protoc-gen-connect-es": "^1.3.0",
+    "openapi-typescript": "7.0.0-next.5",
+    "protoc-gen-ts": "^0.8.7"
   }
 }

@@ -103,6 +103,9 @@ const (
 	imageDownloadFlagKey = "image-download"
 	defaultImageDownload = "missing"
 
+	nonBlockingModeFlagKey = "non-blocking-mode"
+	defaultBlockingMode    = "false"
+
 	httpProtocolRegexStr = "^(http|https)://"
 )
 
@@ -203,6 +206,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Usage:   "If unset, it defaults to `missing` which will only download the latest image tag if the image does not already exist locally (irrespective of the tag of the locally cached image). Use `always` to have Kurtosis always check and download the latest image tag, even if the image exists locally.",
 			Type:    flags.FlagType_String,
 			Default: defaultImageDownload,
+		},
+		{
+			Key:     nonBlockingModeFlagKey,
+			Usage:   "If set, Kurtosis will not block on removing services from tasks from run_sh and run_python instructions. These services will remain and must be manually cleaned up.",
+			Type:    flags.FlagType_Bool,
+			Default: defaultBlockingMode,
 		},
 	},
 	Args: []*args.ArgConfig{
@@ -309,6 +318,11 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", packageArgsFileFlagKey)
 	}
 
+	nonBlockingMode, err := flags.GetBool(nonBlockingModeFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", nonBlockingModeFlagKey)
+	}
+
 	if packageArgs == inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
 		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFileFlagKey, packageArgsFileFlagKey)
 		packageArgs, err = getArgsFromFilepathOrURL(packageArgsFile)
@@ -327,6 +341,7 @@ func run(
 		starlark_run_config.WithRelativePathToMainFile(relativePathToTheMainFile),
 		starlark_run_config.WithSerializedParams(packageArgs),
 		starlark_run_config.WithImageDownloadMode(*imageDownload),
+		starlark_run_config.WithNonBlockingMode(nonBlockingMode),
 	)
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -501,7 +516,10 @@ func executeRemotePackage(
 
 // ReadAndPrintResponseLinesUntilClosed TODO(victor.colombo): Extract this to somewhere reasonable
 func ReadAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity, dryRun bool) error {
-	defer cancelFunc()
+	defer func() {
+		logrus.Infof("CANCELLING CONTEXT FROM CLI")
+		cancelFunc()
+	}()
 
 	// This channel will receive a signal when the user presses an interrupt
 	interruptChan := make(chan os.Signal, interruptChanBufferSize)

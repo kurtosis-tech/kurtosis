@@ -11,6 +11,7 @@ const (
 	defaultCloudInstanceId        = ""
 	defaultCloudUserId            = ""
 	defaultImageDownload          = kurtosis_core_rpc_api_bindings.ImageDownloadMode_missing
+	defaultNonBlockingMode        = false
 )
 
 var defaultExperimentalFeatureFlags = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag(nil)
@@ -25,6 +26,7 @@ type StarlarkRunConfig struct {
 	CloudInstanceId          string
 	CloudUserId              string
 	ImageDownload            kurtosis_core_rpc_api_bindings.ImageDownloadMode
+	NonBlockingMode          bool
 }
 
 type starlarkRunConfigOption func(*StarlarkRunConfig)
@@ -102,5 +104,11 @@ func WithCloudUserId(cloudUserId string) starlarkRunConfigOption {
 func WithImageDownloadMode(imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.ImageDownload = imageDownloadMode
+	}
+}
+
+func WithNonBlockingMode(nonBlockingMode bool) starlarkRunConfigOption {
+	return func(config *StarlarkRunConfig) {
+		config.NonBlockingMode = nonBlockingMode
 	}
 }

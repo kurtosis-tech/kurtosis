@@ -1937,7 +1937,8 @@ proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstanc
     experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
     cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 7, ""),
     cloudUserId: jspb.Message.getFieldWithDefault(msg, 8, ""),
-    imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 9, 0)
+    imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 9, 0),
+    nonblockingmode: jspb.Message.getBooleanFieldWithDefault(msg, 10, false)
   };
 
   if (includeInstance) {
@@ -2011,6 +2012,10 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
     case 9:
       var value = /** @type {!proto.api_container_api.ImageDownloadMode} */ (reader.readEnum());
       msg.setImageDownloadMode(value);
+      break;
+    case 10:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setNonblockingmode(value);
       break;
     default:
       reader.skipField();
@@ -2101,6 +2106,13 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
   if (f != null) {
     writer.writeEnum(
       9,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 10));
+  if (f != null) {
+    writer.writeBool(
+      10,
       f
     );
   }
@@ -2411,6 +2423,42 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.clearImageDownloadMode =
  */
 proto.api_container_api.RunStarlarkScriptArgs.prototype.hasImageDownloadMode = function() {
   return jspb.Message.getField(this, 9) != null;
+};
+
+
+/**
+ * optional bool NonBlockingMode = 10;
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getNonblockingmode = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 10, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setNonblockingmode = function(value) {
+  return jspb.Message.setField(this, 10, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearNonblockingmode = function() {
+  return jspb.Message.setField(this, 10, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.hasNonblockingmode = function() {
+  return jspb.Message.getField(this, 10) != null;
 };
 
 

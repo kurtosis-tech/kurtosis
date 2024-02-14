@@ -1,6 +1,6 @@
 import * as jspb from 'google-protobuf'
 
-import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 
 
 export class Port extends jspb.Message {
@@ -179,6 +179,11 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   hasImageDownloadMode(): boolean;
   clearImageDownloadMode(): RunStarlarkScriptArgs;
 
+  getNonblockingmode(): boolean;
+  setNonblockingmode(value: boolean): RunStarlarkScriptArgs;
+  hasNonblockingmode(): boolean;
+  clearNonblockingmode(): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -198,6 +203,7 @@ export namespace RunStarlarkScriptArgs {
     cloudInstanceId?: string,
     cloudUserId?: string,
     imageDownloadMode?: ImageDownloadMode,
+    nonblockingmode?: boolean,
   }
 
   export enum SerializedParamsCase { 
@@ -233,6 +239,11 @@ export namespace RunStarlarkScriptArgs {
   export enum ImageDownloadModeCase { 
     _IMAGE_DOWNLOAD_MODE_NOT_SET = 0,
     IMAGE_DOWNLOAD_MODE = 9,
+  }
+
+  export enum NonblockingmodeCase { 
+    _NONBLOCKINGMODE_NOT_SET = 0,
+    NONBLOCKINGMODE = 10,
   }
 }
 

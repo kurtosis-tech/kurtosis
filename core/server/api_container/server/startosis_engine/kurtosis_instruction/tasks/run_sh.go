@@ -250,12 +250,15 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		}
 	}
 
-	// clean up the service in the background but don't block on it
+	// don't clean up the service
 	go func() {
 		now := time.Now()
 		// Create a context with cancellation capability
 		removeCtx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+		defer func() {
+			logrus.Infof("CANCELLING REMOVE CTX")
+			cancel()
+		}()
 		logrus.Errorf("REMOVING THE SERVICE FROM THE TASK IN A NON BLOCKING WAY")
 		if err = removeService(removeCtx, builtin.serviceNetwork, builtin.name); err != nil {
 			logrus.Errorf("ATTEMPTED TO REMOVE SERVICE BUT FAILED: %v", err)

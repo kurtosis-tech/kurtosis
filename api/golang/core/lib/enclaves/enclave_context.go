@@ -110,7 +110,17 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for script '%v'", oldSerializedParams)
 	}
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(runConfig.MainFunctionName, serializedScript, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId, runConfig.ImageDownload)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(
+		runConfig.MainFunctionName,
+		serializedScript,
+		serializedParams,
+		runConfig.DryRun,
+		runConfig.Parallelism,
+		runConfig.ExperimentalFeatureFlags,
+		runConfig.CloudInstanceId,
+		runConfig.CloudUserId,
+		runConfig.ImageDownload,
+		runConfig.NonBlockingMode)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	stream, err := enclaveCtx.client.RunStarlarkScript(ctxWithCancel, executeStartosisScriptArgs)
@@ -560,6 +570,7 @@ func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc
 func runReceiveStarlarkResponseLineRoutine(cancelCtxFunc context.CancelFunc, stream grpc.ClientStream, kurtosisResponseLineChan chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) {
 	defer func() {
 		close(kurtosisResponseLineChan)
+		logrus.Infof("CANCELLING CONTEXT FROM API")
 		cancelCtxFunc()
 	}()
 	for {

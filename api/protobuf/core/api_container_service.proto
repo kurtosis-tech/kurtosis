@@ -170,6 +170,9 @@ message RunStarlarkScriptArgs {
 
   // Defaults to empty
   optional ImageDownloadMode image_download_mode = 9;
+
+  // Defaults to false
+  optional bool NonBlockingMode = 10;
 }
 
 message RunStarlarkPackageArgs {
