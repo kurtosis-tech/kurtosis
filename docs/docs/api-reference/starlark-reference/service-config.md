@@ -73,8 +73,10 @@ config = ServiceConfig(
         flake_output = "containerImage",
     )
 
-    # The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.
-    # If no ports are provided, no ports will be exposed on the host machine, unless there is an EXPOSE in the Dockerfile
+    # The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.      
+    # Kurtosis will automatically perform a check to ensure all declared UDP and TCP ports are open and ready for traffic and connections upon startup.
+    # You may specify a custom wait timeout duration or disable the feature entirely, learn more via PortSpec docs
+    # If no ports are provided, no ports will be exposed on the host machine, unless there is an EXPOSE in the Dockerfile.
     # OPTIONAL (Default: {})
     ports = {
         "grpc": PortSpec(

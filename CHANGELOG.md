@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.86.19](https://github.com/kurtosis-tech/kurtosis/compare/0.86.18...0.86.19) (2024-02-09)
+
+
+### Features
+
+* build nix image ([#2132](https://github.com/kurtosis-tech/kurtosis/issues/2132)) ([0eae9fc](https://github.com/kurtosis-tech/kurtosis/commit/0eae9fc942605f14a04554752a0c0dca7b02b1f7))
+* enclave builder tweaks ([#2142](https://github.com/kurtosis-tech/kurtosis/issues/2142)) ([aaf64ca](https://github.com/kurtosis-tech/kurtosis/commit/aaf64ca6085b13b8d70c15114128455277b98e31))
+* enforce enclave builder validation ([#2144](https://github.com/kurtosis-tech/kurtosis/issues/2144)) ([5dcdd9e](https://github.com/kurtosis-tech/kurtosis/commit/5dcdd9e00c0e4f243d2b2e45e752a8c3483cec97))
+
+
+### Bug Fixes
+
+* emui yaml editor populating with values ([#2079](https://github.com/kurtosis-tech/kurtosis/issues/2079)) ([9bd26a8](https://github.com/kurtosis-tech/kurtosis/commit/9bd26a8f855a4c2ac7d5fb2f73c756079f9735a9))
+
 ## [0.86.18](https://github.com/kurtosis-tech/kurtosis/compare/0.86.17...0.86.18) (2024-02-09)
 
 
