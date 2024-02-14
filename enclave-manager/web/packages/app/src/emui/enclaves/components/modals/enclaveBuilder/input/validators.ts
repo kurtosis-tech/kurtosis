@@ -1,3 +1,11 @@
+export function validateName(value?: string) {
+  if (typeof value !== "string") {
+    return "Value should be a string";
+  }
+  if (value.match(/^\d+/)) {
+    return "Value cannot start with numbers";
+  }
+}
 export function validateDockerLocator(value?: string) {
   if (typeof value !== "string") {
     return "Value should be a string";
@@ -26,4 +34,15 @@ export function validateDurationString(value?: string) {
   if (!value.match(/^\d+[msd]?$/)) {
     return "Value should be a custom wait duration with like '10s' or '3m'.";
   }
+}
+
+export function combineValidators(...validators: ((v?: string) => string | void)[]): (v?: string) => string | void {
+  return function (v?: string) {
+    for (const validator of validators) {
+      const r = validator(v);
+      if (r) {
+        return r;
+      }
+    }
+  };
 }

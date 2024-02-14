@@ -12,7 +12,7 @@ import { StringArgumentInput } from "../../form/StringArgumentInput";
 import { KurtosisFormInputProps } from "../../form/types";
 import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
 import { MountArtifactFileInput } from "./input/MountArtifactFileInput";
-import { validateDockerLocator, validateDurationString } from "./input/validators";
+import { validateDockerLocator, validateDurationString, validateName } from "./input/validators";
 import { KurtosisNode } from "./KurtosisNode";
 import { KurtosisFileMount, KurtosisShellNodeData } from "./types";
 import { useVariableContext } from "./VariableContextProvider";
@@ -55,7 +55,7 @@ export const KurtosisShellNode = memo(
       >
         <Flex gap={"16px"}>
           <KurtosisFormControl<KurtosisShellNodeData> name={"shellName"} label={"Shell Name"} isRequired>
-            <StringArgumentInput name={"shellName"} size={"sm"} isRequired />
+            <StringArgumentInput name={"shellName"} size={"sm"} isRequired validate={validateName} />
           </KurtosisFormControl>
           <KurtosisFormControl<KurtosisShellNodeData> name={"image"} label={"Container Image"}>
             <StringArgumentInput
@@ -105,16 +105,17 @@ export const KurtosisShellNode = memo(
                 />
               </KurtosisFormControl>
               <KurtosisFormControl<KurtosisShellNodeData>
-                name={"files"}
-                label={"Output Files"}
-                helperText={"Choose which files to expose from this execution task"}
+                name={"store"}
+                label={"Output File/Directory"}
+                helperText={
+                  "Choose which files to expose from this execution task. You can use either an absolute path, a directory, or a glob."
+                }
+                isRequired
               >
-                <ListArgumentInput<KurtosisShellNodeData>
+                <MentionStringArgumentInput<KurtosisShellNodeData>
                   name={"store"}
-                  FieldComponent={MemodMentionStringValueArgumentInput}
-                  createNewValue={() => ({
-                    value: "",
-                  })}
+                  placeholder={"/some/output/location"}
+                  isRequired
                 />
               </KurtosisFormControl>
             </TabPanel>

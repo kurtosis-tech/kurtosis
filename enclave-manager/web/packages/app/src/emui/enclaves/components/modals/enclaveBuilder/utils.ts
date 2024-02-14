@@ -45,6 +45,9 @@ export function getNodeName(kurtosisNodeData: KurtosisNodeData): string {
   if (kurtosisNodeData.type === "shell") {
     return kurtosisNodeData.shellName;
   }
+  if (kurtosisNodeData.type === "exec") {
+    return kurtosisNodeData.execName;
+  }
   throw new Error(`Unknown node type.`);
 }
 
@@ -116,7 +119,7 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
         {
           id: `shell.${id}`,
           displayName: `shell.${data.shellName}`,
-          value: `${normaliseNameToStarlarkVariable(data.shellName)}`,
+          value: `${normaliseNameToStarlarkVariable(data.shellName)}.files_artifacts[0]`,
         },
         ...data.env.map((env, i) => ({
           id: `shell.${id}.env.${i}`,
@@ -180,6 +183,20 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
           getDependenciesFor(id).add(fileMatches[2]);
         }
       });
+    }
+    if (data.type === "exec") {
+      const nameMatches = data.execName.match(variablePattern);
+      if (nameMatches) {
+        getDependenciesFor(id).add(nameMatches[2]);
+      }
+      const serviceMatches = data.serviceName.match(variablePattern);
+      if (serviceMatches) {
+        getDependenciesFor(id).add(serviceMatches[2]);
+      }
+      const commandMatches = data.command.match(variablePattern);
+      if (commandMatches) {
+        getDependenciesFor(id).add(commandMatches[2]);
+      }
     }
   });
   return dependencies;
@@ -296,13 +313,24 @@ export function generateStarlarkFromGraph(
       }
       starlark += `        },\n`;
       starlark += `        store = [\n`;
-      for (const store of nodeData.store) {
-        starlark += `            ${interpolateValue(store.value)},\n`;
-      }
+      starlark += `            StoreSpec(src = ${interpolateValue(nodeData.store)}, name="${shellName}"),\n`;
       starlark += `        ],\n`;
       const wait = interpolateValue(nodeData.wait);
       if (nodeData.wait_enabled === "false" || wait !== '""') {
         starlark += `        wait=${nodeData.wait_enabled === "true" ? wait : "None"},\n`;
+      }
+      starlark += `    )\n\n`;
+    }
+
+    if (nodeData.type === "exec") {
+      const execName = normaliseNameToStarlarkVariable(nodeData.execName);
+      starlark += `    ${execName} = plan.exec(\n`;
+      starlark += `        service_name = ${interpolateValue(nodeData.serviceName)},\n`;
+      starlark += `        recipe = ExecRecipe(\n`;
+      starlark += `            command = [${nodeData.command.split(" ").map(interpolateValue).join(", ")}],`;
+      starlark += `        ),\n`;
+      if (nodeData.acceptableCodes.length > 0) {
+        starlark += `        acceptable_codes = [${nodeData.acceptableCodes.map(({ value }) => value).join(", ")}],\n`;
       }
       starlark += `    )\n\n`;
     }

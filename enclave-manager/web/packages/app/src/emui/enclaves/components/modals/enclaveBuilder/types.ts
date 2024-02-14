@@ -17,6 +17,20 @@ export type KurtosisFileMount = {
   mountPoint: string;
   artifactName: string;
 };
+
+export type KurtosisAcceptableCode = {
+  value: number;
+};
+
+export type KurtosisExecNodeData = {
+  type: "exec";
+  execName: string;
+  serviceName: string;
+  command: string;
+  acceptableCodes: KurtosisAcceptableCode[];
+  isValid: boolean;
+};
+
 export type KurtosisServiceNodeData = {
   type: "service";
   serviceName: string;
@@ -40,10 +54,14 @@ export type KurtosisShellNodeData = {
   image: string;
   env: KurtosisEnvironmentVar[];
   files: KurtosisFileMount[];
-  store: { value: string }[];
+  store: string;
   wait_enabled: "true" | "false";
   wait: string;
   isValid: boolean;
 };
 
-export type KurtosisNodeData = KurtosisArtifactNodeData | KurtosisServiceNodeData | KurtosisShellNodeData;
+export type KurtosisNodeData =
+  | KurtosisArtifactNodeData
+  | KurtosisServiceNodeData
+  | KurtosisShellNodeData
+  | KurtosisExecNodeData;

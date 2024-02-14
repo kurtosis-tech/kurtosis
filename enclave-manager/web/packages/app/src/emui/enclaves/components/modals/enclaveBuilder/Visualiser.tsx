@@ -18,6 +18,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { EnclaveFullInfo } from "../../../types";
 import { KurtosisArtifactNode } from "./KurtosisArtifactNode";
+import { KurtosisExecNode } from "./KurtosisExecNode";
 import { KurtosisServiceNode } from "./KurtosisServiceNode";
 import { KurtosisShellNode } from "./KurtosisShellNode";
 import { generateStarlarkFromGraph, getNodeDependencies } from "./utils";
@@ -51,6 +52,7 @@ const nodeTypes = {
   serviceNode: KurtosisServiceNode,
   artifactNode: KurtosisArtifactNode,
   shellNode: KurtosisShellNode,
+  execNode: KurtosisExecNode,
 };
 
 export type VisualiserImperativeAttributes = {
@@ -129,7 +131,7 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
         image: "",
         env: [],
         files: [],
-        store: [],
+        store: "",
         wait_enabled: "true",
         wait: "",
         isValid: false,
@@ -140,6 +142,26 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
         width: 650,
         style: { width: "650px" },
         type: "shellNode",
+        data: {},
+      });
+    };
+
+    const handleAddExecNode = () => {
+      const id = uuidv4();
+      updateData(id, {
+        type: "exec",
+        execName: "",
+        serviceName: "",
+        command: "",
+        acceptableCodes: [],
+        isValid: false,
+      });
+      addNodes({
+        id,
+        position: getNewNodePosition(),
+        width: 400,
+        style: { width: "400px" },
+        type: "execNode",
         data: {},
       });
     };
@@ -205,6 +227,9 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
           </Button>
           <Button leftIcon={<FiPlusCircle />} onClick={handleAddShellNode}>
             Add Shell Node
+          </Button>
+          <Button leftIcon={<FiPlusCircle />} onClick={handleAddExecNode}>
+            Add Exec Node
           </Button>
         </ButtonGroup>
         <Box bg={"gray.900"} flex={"1"}>

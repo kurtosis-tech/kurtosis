@@ -46,6 +46,7 @@ export const EnclaveBuilderModal = (props: EnclaveBuilderModalProps) => {
     edges: Edge<any>[];
     data: Record<string, KurtosisNodeData>;
   } => {
+    variableContextKey.current += 1;
     const parseResult = getInitialGraphStateFromEnclave<KurtosisNodeData>(props.existingEnclave);
     if (parseResult.isErr) {
       setError(parseResult.error);
