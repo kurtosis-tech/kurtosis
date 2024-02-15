@@ -22,7 +22,6 @@ export const MentionStringArgumentInput = <DataModel extends object>({
 
   const handleQuery = useCallback(
     (query?: string) => {
-      console.log(query);
       if (!isDefined(query)) {
         return [];
       }

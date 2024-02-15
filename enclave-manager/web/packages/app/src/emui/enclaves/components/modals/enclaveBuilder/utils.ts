@@ -185,7 +185,6 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
         }
       });
       if (data.execStepEnabled === "true") {
-        console.log(data);
         const commandMatches = data.execStepCommand.match(variablePattern);
         if (commandMatches) {
           getDependenciesFor(id).add(commandMatches[2]);
