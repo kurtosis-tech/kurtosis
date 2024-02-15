@@ -70,8 +70,8 @@ func TestParsedGitURL_ParsingGetsRidOfAnyPathEscapes(t *testing.T) {
 	escapedURLWithStartosisFile := "github.com/../../etc/passwd/startosis.star"
 	parsedURL, err = ParseGitURL(escapedURLWithStartosisFile)
 	require.Nil(t, err)
-	require.Equal(t, parsedURL.moduleAuthor, "etc")
-	require.Equal(t, parsedURL.moduleName, "passwd")
+	require.Equal(t, parsedURL.repositoryAuthor, "etc")
+	require.Equal(t, parsedURL.repositoryName, "passwd")
 	require.Equal(t, parsedURL.gitURL, "https://github.com/etc/passwd.git")
 	require.Equal(t, parsedURL.relativeFilePath, "etc/passwd/startosis.star")
 	require.Equal(t, parsedURL.relativeRepoPath, "etc/passwd")
@@ -79,8 +79,8 @@ func TestParsedGitURL_ParsingGetsRidOfAnyPathEscapes(t *testing.T) {
 	escapedURLWithStartosisFile = "github.com/foo/../etc/passwd/startosis.star"
 	parsedURL, err = ParseGitURL(escapedURLWithStartosisFile)
 	require.Nil(t, err)
-	require.Equal(t, parsedURL.moduleAuthor, "etc")
-	require.Equal(t, parsedURL.moduleName, "passwd")
+	require.Equal(t, parsedURL.repositoryAuthor, "etc")
+	require.Equal(t, parsedURL.repositoryName, "passwd")
 	require.Equal(t, parsedURL.gitURL, "https://github.com/etc/passwd.git")
 	require.Equal(t, parsedURL.relativeFilePath, "etc/passwd/startosis.star")
 	require.Equal(t, parsedURL.relativeRepoPath, "etc/passwd")

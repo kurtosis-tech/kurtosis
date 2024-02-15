@@ -2,6 +2,12 @@ package service_registration
 
 import (
 	"fmt"
+	"math/rand"
+	"net"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -9,11 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"math/rand"
-	"net"
-	"os"
-	"testing"
-	"time"
 )
 
 const (
@@ -305,6 +306,8 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		nil,
+		nil,
+		nil,
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},
@@ -320,6 +323,11 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 		map[string]string{
 			"test-label-key":        "test-label-value",
 			"test-second-label-key": "test-second-label-value",
+		},
+		nil,
+		nil,
+		map[string]string{
+			"disktype": "ssd",
 		},
 	)
 	require.NoError(t, err)
@@ -342,9 +350,9 @@ func testFilesArtifactExpansion() *service_directory.FilesArtifactsExpansion {
 			"ENV_VAR1": "env_var1_value",
 			"ENV_VAR2": "env_var2_value",
 		},
-		ServiceDirpathsToArtifactIdentifiers: map[string]string{
-			"/pahth/number1": "first_identifier",
-			"/path/number2":  "second_idenfifier",
+		ServiceDirpathsToArtifactIdentifiers: map[string][]string{
+			"/path/number1": {"first_identifier"},
+			"/path/number2": {"second_identifier"},
 		},
 		ExpanderDirpathsToServiceDirpaths: map[string]string{
 			"/expander/dir1": "/service/dir1",

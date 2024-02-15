@@ -8,6 +8,13 @@ filters_ignore_main: &filters_ignore_main
       ignore:
         - main
 
+# Don't run on tags
+filters_ignore_tags: &filters_ignore_tags
+  filters:
+    branches:
+      ignore: /.*/
+    tags:
+      only: /^[0-9]+\.[0-9]+\.[0-9]+$/
 
 # cli cluster param used to run test suites against docker/kubernetes tests
 param_cli_cluster_backend: &param_cli_cluster_backend
@@ -92,7 +99,7 @@ run_prepare_testing_docker: &run_prepare_testing_docker
 # Steps to prepare a job for Docker testing
 steps_prepare_testing_docker: &steps_prepare_testing_docker
   steps:
-    - <<: *run_prepare_testing_docker 
+    - <<: *run_prepare_testing_docker
 
 # Run steps to dump kurtosis enclaves from docker
 run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
@@ -204,6 +211,9 @@ parameters:
   file-artifacts-expander-image-filename:
     type: string
     default: "file-artifacts-expander-image.tgz"
+  enclave-manager-yarn-cache-key-prefix:
+    type: string
+    default: "enclave-manager_yarn"
   engine-server-image-filename:
     type: string
     default: "engine-server-image.tgz"
@@ -213,6 +223,9 @@ parameters:
   starlark-test-args-file-test-main-star-relative-path:
     type: string
     default: "internal_testsuites/starlark/ci_tests/simple_arg_test/main.star"
+  starlark-test-taints-and-tolerations:
+    type: string
+    default: "internal_testsuites/starlark/taints_and_tolerations/taints_and_toleration_test.star"
   starlark-test-args-file-test-args-json-relative-path:
     type: string
     default: "internal_testsuites/starlark/ci_tests/simple_arg_test/args.json"
@@ -418,6 +431,38 @@ jobs:
           paths:
             - "<< pipeline.parameters.core-server-image-filename >>"
 
+  build_enclave_manager_webapp:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+
+      - run: |
+          # If the current commit is not a tag and if there is no change (compared to main) of anything but docs, then skip this
+          git fetch origin --tags 
+          if (! git describe --exact-match) && git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md' ; then
+            circleci-agent step halt
+          fi
+
+      # Cache our dependencies
+      - restore_cache:
+          keys:
+            - << pipeline.parameters.enclave-manager-yarn-cache-key-prefix>>-{{ checksum "enclave-manager/api/typescript/yarn.lock" }}-{{ checksum "enclave-manager/web/yarn.lock" }}
+
+      - run: npm install -g yarn
+
+      - run: |
+          enclave-manager/scripts/build.sh
+
+      - save_cache:
+          key: << pipeline.parameters.enclave-manager-yarn-cache-key-prefix>>-{{ checksum "enclave-manager/api/typescript/yarn.lock" }}-{{ checksum "enclave-manager/web/yarn.lock" }}
+          paths:
+            - "/home/circleci/.cache/yarn"
+
+      - persist_to_workspace:
+          root: engine/server
+          paths:
+            - webapp
+
   build_engine_launcher:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version >>"
@@ -439,6 +484,11 @@ jobs:
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
+
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - run: cp -R << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/webapp engine/server/webapp
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
@@ -478,6 +528,11 @@ jobs:
     docker:
       - image: "docker/tilt-releaser@sha256:<< pipeline.parameters.tilt-releaser-version >>"
     resource_class: large
+    parameters:
+      all_architectures:
+        description: "Whether we should build all architectures or not"
+        type: boolean
+        default: false
     steps:
       - checkout
 
@@ -502,24 +557,32 @@ jobs:
             - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
 
       - run: |
-          cli/cli/scripts/build.sh true
+          cli/cli/scripts/build.sh << parameters.all_architectures >>
 
-      - save_cache:
-          key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
-          paths:
-            - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
-            - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
 
-      - persist_to_workspace:
-          root: .
-          paths:
-            - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
-            - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+      # only save cache and persist to workspace the CLI built for just the CircleCI architecture
+      - when:
+          condition:
+            equal: [ false, << parameters.all_architectures >> ]
+          steps:
+            - save_cache:
+                key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
+                paths:
+                  - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
+                  - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
+
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
+                  - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+                  - "./<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
 
   build_golang_testsuite:
     executor: ubuntu_vm
     parameters:
       <<: *param_cli_cluster_backend
+    parallelism: 4
     steps:
       - checkout
 
@@ -553,7 +616,7 @@ jobs:
             equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/golang/scripts/test.sh kubernetes; then
+                if ! ./internal_testsuites/golang/scripts/test.sh kubernetes true; then
                   touch /tmp/testsuite-failed
                 fi
 
@@ -564,7 +627,7 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/golang/scripts/test.sh; then
+                if ! ./internal_testsuites/golang/scripts/test.sh docker true; then
                   touch /tmp/testsuite-failed
                 fi
 
@@ -715,9 +778,9 @@ jobs:
               false
             fi
       - run:
-          name: "Verify Kurtosis cleaned up all its volumes (except for the log storage volume, so we can persist service logs)"
+          name: "Verify Kurtosis cleaned up all its volumes (except for the log storage and github auth storage volumes)"
           command: |
-            if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l ) -eq 1 ]; then
+            if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l ) -eq 2 ]; then
               docker volume ls
               false
             fi
@@ -733,6 +796,41 @@ jobs:
               docker network ls
               false
             fi
+
+  test_enclave_manager_web_ui:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      # Set up Kurtosis
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kurtosis-cli
+      # We don't send metrics to avoid polluting our logs
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      - run: "${KURTOSIS_BINPATH} analytics disable"
+
+      - <<: *run_prepare_testing_docker
+
+      - run: npm install -g yarn
+
+      - run: enclave-manager/api/scripts/build.sh
+
+      - run:
+          command: yarn cleanInstall
+          working_directory: enclave-manager/web
+
+      - run:
+          command: yarn cypress:ete
+          working_directory: enclave-manager/web
+
 
   test_basic_cli_functionality:
     executor: ubuntu_vm
@@ -795,6 +893,10 @@ jobs:
       - run: "${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf --name stored-file"
       - run: "${KURTOSIS_BINPATH} files download test-enclave stored-file ."
 
+      # Check Dump Contains files
+      - run: "${KURTOSIS_BINPATH} enclave dump test-enclave test-dump"
+      - run: "ls test-dump/files/rendered-file"
+
       # Module inside an enclave
       - run: "${KURTOSIS_BINPATH} enclave ls"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"
@@ -826,6 +928,12 @@ jobs:
 
       # Execute docker compose import
       - run: "${KURTOSIS_BINPATH} import --enclave test-import --env << pipeline.parameters.dockerimport-cli-dotenv-relative-path >> << pipeline.parameters.dockerimport-cli-dockerfile-relative-path >>"
+
+      # This just tests that tolerations don't mess up Docker
+      # TODO add proper tests for Docker and Kubernetes that test
+      # Adding Toleration to a tainted cluster makes things work
+      # Not having toleration fails
+      - run: "${KURTOSIS_BINPATH} run --enclave with-tolerations << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
 
       # Execute engine functions
       - run: "${KURTOSIS_BINPATH} engine stop"
@@ -909,9 +1017,9 @@ jobs:
                     false
                   fi
             - run:
-                name: "Verify Kurtosis cleaned up all its volumes (except for the log storage volume, so we can persist service logs)"
+                name: "Verify Kurtosis cleaned up all its volumes (except for the log storage and github auth storage volumes)"
                 command: |
-                  if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l) -eq 1 ]; then
+                  if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l) -eq 2 ]; then
                     docker volume ls
                     false
                   fi
@@ -936,7 +1044,7 @@ jobs:
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
-      
+
       # Set up Kurtosis
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
@@ -980,7 +1088,7 @@ jobs:
           condition:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
-            # Restart the engine and make sure Traefik restarted and reconfigured properly 
+            # Restart the engine and make sure Traefik restarted and reconfigured properly
             - run: |
                 ${KURTOSIS_BINPATH} engine restart
                 enclave_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | grep "^UUID:" | awk '{print $2}')
@@ -1178,6 +1286,10 @@ jobs:
           version="$(cat version.txt)"
           "<<pipeline.parameters.generate-kurtosis-version-script-path>>" $version
 
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - run: cp -R << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/webapp engine/server/webapp
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
@@ -1353,6 +1465,9 @@ workflows:
               ignore:
                 - main
 
+      - build_enclave_manager_webapp:
+          <<: *filters_ignore_main
+
       - build_engine_launcher:
           filters:
             branches:
@@ -1361,6 +1476,8 @@ workflows:
       - build_engine_server:
           context:
             - docker-user
+          requires:
+            - build_enclave_manager_webapp
           filters:
             branches:
               ignore:
@@ -1368,6 +1485,23 @@ workflows:
 
       - build_cli:
           <<: *filters_ignore_main
+
+      - build_cli:
+          all_architectures: true
+          name: "Check if CLI builds for all os and arch pairs"
+          <<: *filters_ignore_main
+
+      - test_enclave_manager_web_ui:
+          name: "Test Basic Web UI Functionality in Docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
           cli-cluster-backend: "docker"
@@ -1486,16 +1620,14 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
+  publish:
+    jobs:
       # -- Artifact-publishing jobs --------------------------------
       - publish_kurtosis_sdk_rust:
           context:
             - crates-publisher
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
 
       - publish_kurtosis_api_typescript:
           context:
@@ -1510,39 +1642,28 @@ workflows:
           context:
             - npmjs-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
       - publish_files_artifacts_expander_image:
           context:
             - docker-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
       - publish_api_container_server_image:
           context:
             - docker-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
+
+      - build_enclave_manager_webapp:
+          <<: *filters_ignore_tags
 
       - publish_engine_server_image:
           context:
             - docker-user
             - slack-secrets
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          requires:
+            - build_enclave_manager_webapp
+          <<: *filters_ignore_tags
 
       - push_cli_artifacts:
           context:
@@ -1555,10 +1676,6 @@ workflows:
             - publish_api_container_server_image
             - publish_engine_server_image
             - publish_files_artifacts_expander_image
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+          <<: *filters_ignore_tags
 
       # -- End artifact-publishing jobs ----------------------------

@@ -12,6 +12,9 @@ config = ServiceConfig(
     # the underlying container engine.
     # If a string is provided, Kurtosis will by default detect if images exists locally, or pull from container registry if not.
     # If an ImageBuildSpec is provided, Kurtosis will build the image.
+    # If an ImageRegistrySpec is provided, Kurtosis will pull the image from the given registry with the given credentials
+    # Note for now ImageRegistrySpec is Docker only and the authentication gets ignored on Kubernetes
+    # Reach out to the team if you want to run Kurtosis with private images on Kubernetes
     # MANDATORY
     image = "kurtosistech/example-datastore-server",
     
@@ -32,8 +35,48 @@ config = ServiceConfig(
         target_stage=""
     )
 
-    # The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.
-    # If no ports are provided, no ports will be exposed on the host machine, unless there is an EXPOSE in the Dockerfile
+    OR
+
+    image = ImageRegistrySpec(
+        #  The name of the image that needs to be pulled qualified with the registry
+        # MANDATORY
+        name = "my.registry.io/my-user/my-image",
+
+        # The username that will be used to pull the image from the given registry
+        # MANDATORY
+        username = "my-user",
+
+        # The password that will be used to pull the image from the given registry
+        password = "password",
+
+        # The URL of the registry
+        registry = "http://my.registry.io/"
+    )
+    
+    OR
+
+    image = NixBuildSpec(
+        #  The name of the image that needs to be pulled qualified with the registry
+        # MANDATORY
+        image_name = "hello-world-server",
+
+        # Locator to build context within the Kurtosis package
+        # This allows to select a sub-package where the context is going be used to build the image
+        # MANDATORY
+        build_context_dir = "./"
+        
+        #  The relative path (from the `build_context_dir`) to the folder containing the flake.nix file
+        # MANDATORY
+        flake_location_dir = "./hello-go",
+        
+        #  The selector for the Flake output with the image derivation. Fallbacks to the default package.
+        flake_output = "containerImage",
+    )
+
+    # The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.      
+    # Kurtosis will automatically perform a check to ensure all declared UDP and TCP ports are open and ready for traffic and connections upon startup.
+    # You may specify a custom wait timeout duration or disable the feature entirely, learn more via PortSpec docs
+    # If no ports are provided, no ports will be exposed on the host machine, unless there is an EXPOSE in the Dockerfile.
     # OPTIONAL (Default: {})
     ports = {
         "grpc": PortSpec(
@@ -58,7 +101,7 @@ config = ServiceConfig(
     files = {
         "path/to/files/artifact_1/": files_artifact_1,
         "path/to/files/artifact_2/": Directory(
-            artifact_name=files_artifact_2,
+            artifact_names=[files_artifact_2],
         ),
         "path/to/persistent/directory/": Directory(
             persistent_key="data-directory",
@@ -131,6 +174,38 @@ config = ServiceConfig(
         # Examples
         "name": "alice",
     }
+
+    # The user id and group id to start the container with
+    # Some containers are configured to start with users other than root by default; this allows you to override to root or other
+    # users if you choose to.
+    # Note that the `gid` field is optional
+    # OPTIONAL
+    user = User(uid=0, gid=0),
+    
+    # An array of Toleration 
+    # This refers to Kubernetes Tolerations https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+    # This has no effect on Docker
+    # As of 2024-01-24 Taints and Tolerations to work with Kubernetes you need at least one untainted node
+    # Refer to the Toleration docs linked near the end of the page to learn more
+    # OPTIONAL
+    tolerations = [
+        Toleration(
+            key = "test-key",
+            value = "test-value",
+            operator = "Equal",
+            effect = "NoSchedule",
+            toleration_seconds = 64,
+        )
+    ],
+    
+    # A map of node selectors
+    # This refers to Node Selectors in Kubernetes https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+    # This has no effect on Docker
+    # This is an experimental feature that might get replaced with a better abstraction suited for Kurtosis
+    # OPTIONAL
+    node_selectors = {
+        "disktype": "ssd",
+    }
 )
 ```
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package.
@@ -140,6 +215,8 @@ The `ports` dictionary argument accepts a key value pair, where `key` is a user 
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [Directory][directory] object or files artifact name.
 Using a `Directory` object with `artifact_name` is strictly equivalent to directly using the files artifact name as the value of the dictionary. This is just to simplify usage.
+
+See [Nix Support][nix-support] for more information on how to use the Nix and Kurtosis together.
 
 You can view more information on [configuring the `ReadyCondition` type here][ready-condition].
 
@@ -179,6 +256,10 @@ labels:
 ```
 :::
 
+The `user` field expects a [`User`][user] object being passed.
+
+The `tolerations` field expects a list of [`Toleration`][toleration] objects being passed.
+
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service
 [directory]: ./directory.md
@@ -186,3 +267,6 @@ labels:
 [ready-condition]: ./ready-condition.md
 [locators]: ../../advanced-concepts/locators.md
 [package]: ../../advanced-concepts/packages.md
+[user]: ./user.md
+[toleration]: ./toleration.md
+[nix-support]: ./nix-support.md

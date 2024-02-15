@@ -54,7 +54,6 @@ type DockerEnclaveObjectAttributesProvider interface {
 		serviceUUID service.ServiceUUID,
 	) (DockerObjectAttributes, error)
 	ForSinglePersistentDirectoryVolume(
-		serviceUUID service.ServiceUUID,
 		persistentKey service_directory.DirectoryPersistentKey,
 	) (DockerObjectAttributes, error)
 	ForLogsCollector(tcpPortId string, tcpPortSpec *port_spec.PortSpec, httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error)
@@ -317,24 +316,21 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 
 // In Docker we get one volume per persistent directory
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(
-	serviceUUID service.ServiceUUID,
 	persistentKey service_directory.DirectoryPersistentKey,
 ) (
 	DockerObjectAttributes,
 	error,
 ) {
-	serviceUuidStr := string(serviceUUID)
-
 	guidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the persistent directory volume for service '%v'", serviceUuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the persistent directory volume for persistentKey '%v'", persistentKey)
 	}
 
 	name, err := provider.getNameForEnclaveObject([]string{
 		string(persistentKey),
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object using GUID '%v' and service GUID '%v'", guidStr, serviceUuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume name object using GUID '%v' and persistent key '%v'", guidStr, persistentKey)
 	}
 
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
@@ -342,11 +338,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSinglePersistentDi
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifact expansion volume with UUID '%v'", guidStr)
 	}
 
-	serviceUuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceUuidStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceUuidStr)
-	}
-	labels[docker_label_key.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
 	labels[docker_label_key.VolumeTypeDockerLabelKey] = label_value_consts.PersistentDirectoryVolumeTypeDockerLabelValue
 	// TODO Create a KurtosisResourceDockerLabelKey object, like Kubernetes, and apply the "user-service" label here?
 
@@ -541,6 +532,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 //	"traefik.http.services.65d2fb6d6732-3771c85af16a-81.loadbalancer.server.port": "81"
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEnclaveObject(serviceUuid string, ports map[string]*port_spec.PortSpec) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error) {
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{}
+	labelKeyValuePairs := map[string]string{}
 
 	for _, portSpec := range ports {
 		maybeApplicationProtocol := ""
@@ -552,59 +544,26 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEn
 			shortServiceUuid := uuid_generator.ShortenedUUIDString(serviceUuid)
 			servicePortStr := fmt.Sprintf("%s-%s-%d", shortEnclaveUuid, shortServiceUuid, portSpec.GetNumber())
 
-			// Header Host rule
-			ruleKeySuffix := fmt.Sprintf("http.routers.%s.rule", servicePortStr)
-			ruleLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(ruleKeySuffix)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting the traefik rule label key with suffix '%v'", ruleKeySuffix)
-			}
-			ruleValue := fmt.Sprintf("Host(`%d-%s-%s`)", portSpec.GetNumber(), shortServiceUuid, shortEnclaveUuid)
-			ruleLabelValue, err := docker_label_value.CreateNewDockerLabelValue(ruleValue)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred creating the traefik rule label value with value '%v'", ruleValue)
-			}
-			labels[ruleLabelKey] = ruleLabelValue
-
-			// Service name
-			serviceKeySuffix := fmt.Sprintf("http.routers.%s.service", servicePortStr)
-			serviceLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(serviceKeySuffix)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting the traefik service label key with suffix '%v'", serviceKeySuffix)
-			}
-			serviceValue := servicePortStr
-			serviceLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceValue)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred creating the traefik service label value with value '%v'", serviceValue)
-			}
-			labels[serviceLabelKey] = serviceLabelValue
-
-			// Service port number
-			portKeySuffix := fmt.Sprintf("http.services.%s.loadbalancer.server.port", servicePortStr)
-			portLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(portKeySuffix)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting the traefik port label key with suffix '%v'", portKeySuffix)
-			}
-			portValue := strconv.Itoa(int(portSpec.GetNumber()))
-			portLabelValue, err := docker_label_value.CreateNewDockerLabelValue(portValue)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred creating the traefik port label value with value '%v'", portValue)
-			}
-			labels[portLabelKey] = portLabelValue
+			labelKeyValuePairs[fmt.Sprintf("http.routers.%s.rule", servicePortStr)] = fmt.Sprintf("Host(`%d-%s-%s`)", portSpec.GetNumber(), shortServiceUuid, shortEnclaveUuid)
+			labelKeyValuePairs[fmt.Sprintf("http.routers.%s.service", servicePortStr)] = servicePortStr
+			labelKeyValuePairs[fmt.Sprintf("http.services.%s.loadbalancer.server.port", servicePortStr)] = strconv.Itoa(int(portSpec.GetNumber()))
 		}
 	}
 
-	if len(labels) > 0 {
-		// Enable Traefik for this service is there is at least one traefik label
-		traefikEnableLabelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey("enable")
+	if len(labelKeyValuePairs) > 0 {
+		labelKeyValuePairs["enable"] = "true"
+	}
+
+	for key, value := range labelKeyValuePairs {
+		labelKey, err := docker_label_key.CreateNewDockerTraefikLabelKey(key)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the traefik enable label key")
+			return nil, stacktrace.Propagate(err, "An error occurred getting the traefik  label key with suffix '%v'", key)
 		}
-		traefikEnableValue := "true"
-		traefikEnableLabelValue, err := docker_label_value.CreateNewDockerLabelValue(traefikEnableValue)
+		labelValue, err := docker_label_value.CreateNewDockerLabelValue(value)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating the traefik enable label value with value '%v'", traefikEnableValue)
+			return nil, stacktrace.Propagate(err, "An error occurred creating the traefik  label value with value '%v'", value)
 		}
-		labels[traefikEnableLabelKey] = traefikEnableLabelValue
+		labels[labelKey] = labelValue
 	}
 
 	return labels, nil

@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Engine-remote-debug" type="GoRemoteDebugConfigurationType" factoryName="Go Remote" port="50102">
+    <option name="disconnectOption" value="ASK" />
+    <method v="2" />
+  </configuration>
+</component>

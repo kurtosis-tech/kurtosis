@@ -3,6 +3,8 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -17,7 +19,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"time"
 )
 
 const (
@@ -76,9 +77,6 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 			if !service_directory.IsPersistentKeyValid(directory.PersistentKey) {
 				return startosis_errors.NewValidationError(invalidPersistentKeyErrorText(directory.PersistentKey))
 			}
-			if validatorEnvironment.DoesPersistentKeyExist(directory.PersistentKey) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
-				return startosis_errors.NewValidationError("There was an error validating '%s' as persistent key '%s' already exists inside the enclave", serviceName, directory.PersistentKey)
-			}
 			validatorEnvironment.AddPersistentKey(directory.PersistentKey)
 		}
 	}
@@ -87,9 +85,11 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		return startosis_errors.NewValidationError("There was an error validating '%s' as service with the name '%s' already exists inside the package. Adding two different services with the same name isn't allowed; we recommend prefixing/suffixing the two service names or using two different names entirely.", AddServiceBuiltinName, serviceName)
 	}
 	if serviceConfig.GetFilesArtifactsExpansion() != nil {
-		for _, artifactName := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-			if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
-				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
+		for _, artifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			for _, artifactName := range artifactNames {
+				if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
+					return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
+				}
 			}
 		}
 	}
@@ -106,6 +106,10 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 
 	if serviceConfig.GetImageBuildSpec() != nil {
 		validatorEnvironment.AppendRequiredImageBuild(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec())
+	} else if serviceConfig.GetImageRegistrySpec() != nil {
+		validatorEnvironment.AppendImageToPullWithAuth(serviceConfig.GetContainerImageName(), serviceConfig.GetImageRegistrySpec())
+	} else if serviceConfig.GetNixBuildSpec() != nil {
+		validatorEnvironment.AppendRequiredNixBuild(serviceConfig.GetContainerImageName(), serviceConfig.GetNixBuildSpec())
 	} else {
 		validatorEnvironment.AppendRequiredImagePull(serviceConfig.GetContainerImageName())
 	}
@@ -197,6 +201,8 @@ func replaceMagicStrings(
 	renderedServiceConfig, err := service.CreateServiceConfig(
 		serviceConfig.GetContainerImageName(),
 		serviceConfig.GetImageBuildSpec(),
+		serviceConfig.GetImageRegistrySpec(),
+		serviceConfig.GetNixBuildSpec(),
 		serviceConfig.GetPrivatePorts(),
 		serviceConfig.GetPublicPorts(),
 		entrypoints,
@@ -210,6 +216,9 @@ func replaceMagicStrings(
 		serviceConfig.GetMinCPUAllocationMillicpus(),
 		serviceConfig.GetMinMemoryAllocationMegabytes(),
 		serviceConfig.GetLabels(),
+		serviceConfig.GetUser(),
+		serviceConfig.GetTolerations(),
+		serviceConfig.GetNodeSelectors(),
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating a service config")

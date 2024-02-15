@@ -24,6 +24,18 @@ func (flags *ParsedFlags) GetString(name string) (string, error) {
 	}
 	return value, nil
 }
+
+func (flags *ParsedFlags) GetUint8(name string) (uint8, error) {
+	value, err := flags.cmdFlagsSet.GetUint8(name)
+	if err != nil {
+		return 0, stacktrace.Propagate(err,
+			"An error occurred getting uint8 flag '%v'",
+			name,
+		)
+	}
+	return value, nil
+}
+
 func (flags *ParsedFlags) GetUint32(name string) (uint32, error) {
 	value, err := flags.cmdFlagsSet.GetUint32(name)
 	if err != nil {
@@ -34,6 +46,7 @@ func (flags *ParsedFlags) GetUint32(name string) (uint32, error) {
 	}
 	return value, nil
 }
+
 func (flags *ParsedFlags) GetBool(name string) (bool, error) {
 	value, err := flags.cmdFlagsSet.GetBool(name)
 	if err != nil {

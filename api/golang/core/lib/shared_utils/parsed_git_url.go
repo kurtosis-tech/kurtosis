@@ -12,7 +12,7 @@ const (
 	GithubDomainPrefix = "github.com"
 	httpsSchema        = "https"
 	UrlPathSeparator   = "/"
-	//MinimumSubPathsForValidGitURL for a valid GitURl we need it to look like github.com/author/moduleName
+	//MinimumSubPathsForValidGitURL for a valid GitURl we need it to look like github.com/author/repositoryName
 	// the last two are the minimum requirements for a valid Startosis URL
 	MinimumSubPathsForValidGitURL = 2
 
@@ -26,13 +26,13 @@ const (
 
 // ParsedGitURL an object representing a parsed moduleURL
 type ParsedGitURL struct {
-	// moduleAuthor the git of the module (GitHub user or org)
-	moduleAuthor string
-	// moduleName the name of the module
-	moduleName string
+	// repositoryAuthor the git of the module (GitHub user or org)
+	repositoryAuthor string
+	// repositoryName the name of the module
+	repositoryName string
 	// gitURL the url ending with `.git` where the module lives
 	gitURL string
-	// relativeRepoPath the relative path to the repo this would be moduleAuthor/moduleName/
+	// relativeRepoPath the relative path to the repo this would be repositoryAuthor/repositoryName/
 	relativeRepoPath string
 	// relativeFilePath the full path of the file relative to the module store relativeRepoPath/path/to/file.star
 	// empty if there is no file
@@ -45,8 +45,8 @@ type ParsedGitURL struct {
 
 func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeRepoPath, relativeFilePath string, tagBranchOrCommit string) *ParsedGitURL {
 	return &ParsedGitURL{
-		moduleAuthor:      moduleAuthor,
-		moduleName:        moduleName,
+		repositoryAuthor:  moduleAuthor,
+		repositoryName:    moduleName,
 		gitURL:            gitURL,
 		relativeRepoPath:  relativeRepoPath,
 		relativeFilePath:  relativeFilePath,
@@ -54,12 +54,12 @@ func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeRepoPath, relativ
 	}
 }
 
-func (parsedUrl *ParsedGitURL) GetModuleAuthor() string {
-	return parsedUrl.moduleAuthor
+func (parsedUrl *ParsedGitURL) GetRepositoryAuthor() string {
+	return parsedUrl.repositoryAuthor
 }
 
-func (parsedUrl *ParsedGitURL) GetModuleName() string {
-	return parsedUrl.moduleName
+func (parsedUrl *ParsedGitURL) GetRepositoryName() string {
+	return parsedUrl.repositoryName
 }
 
 func (parsedUrl *ParsedGitURL) GetGitURL() string {

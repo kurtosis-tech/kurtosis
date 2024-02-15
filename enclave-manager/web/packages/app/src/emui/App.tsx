@@ -5,10 +5,12 @@ import { KurtosisClientProvider, useKurtosisClient } from "../client/enclaveMana
 import { KurtosisPackageIndexerProvider } from "../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { CatalogContextProvider } from "./catalog/CatalogContext";
 import { catalogRoutes } from "./catalog/CatalogRoutes";
+import { BuildEnclave } from "./enclaves/components/BuildEnclave";
 import { CreateEnclave } from "./enclaves/components/CreateEnclave";
 import { enclaveRoutes } from "./enclaves/EnclaveRoutes";
 import { EnclavesContextProvider } from "./enclaves/EnclavesContext";
 import { Navbar } from "./Navbar";
+import { SettingsContextProvider } from "./settings";
 
 const logLogo = (t: string) => console.log(`%c ${t}`, "background: black; color: #00C223");
 logLogo(`                                                                               
@@ -35,13 +37,15 @@ console.log(`Kurtosis web UI version: ${process.env.REACT_APP_VERSION || "Unknow
 
 export const EmuiApp = () => {
   return (
-    <KurtosisThemeProvider>
-      <KurtosisPackageIndexerProvider>
-        <KurtosisClientProvider>
-          <KurtosisRouter />
-        </KurtosisClientProvider>
-      </KurtosisPackageIndexerProvider>
-    </KurtosisThemeProvider>
+    <SettingsContextProvider>
+      <KurtosisThemeProvider>
+        <KurtosisPackageIndexerProvider>
+          <KurtosisClientProvider>
+            <KurtosisRouter />
+          </KurtosisClientProvider>
+        </KurtosisPackageIndexerProvider>
+      </KurtosisThemeProvider>
+    </SettingsContextProvider>
   );
 };
 
@@ -65,6 +69,7 @@ const KurtosisRouter = () => {
                   <EnclavesContextProvider>
                     <Outlet />
                     <CreateEnclave />
+                    <BuildEnclave />
                   </EnclavesContextProvider>
                 ),
                 children: enclaveRoutes(),

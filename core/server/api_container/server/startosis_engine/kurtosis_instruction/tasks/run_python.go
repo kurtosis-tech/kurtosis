@@ -192,15 +192,24 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
+			multipleFilesArtifactsMountDirPaths := map[string][]string{}
+			for pathToFile, fileArtifactName := range filesArtifactMountDirPaths {
+				multipleFilesArtifactsMountDirPaths[pathToFile] = []string{fileArtifactName}
+			}
+			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(multipleFilesArtifactsMountDirPaths, builtin.serviceNetwork)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
 		}
 	}
 
+	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
+	if err != nil {
+		return nil, interpretationErr
+	}
+
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion)
+	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion, envVars)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
 	}
@@ -233,7 +242,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 
 func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	// TODO add validation for python script
-	var serviceDirpathsToArtifactIdentifiers map[string]string
+	var serviceDirpathsToArtifactIdentifiers map[string][]string
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		serviceDirpathsToArtifactIdentifiers = builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers
 	}

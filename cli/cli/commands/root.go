@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/feedback"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github"
 	_import "github.com/kurtosis-tech/kurtosis/cli/cli/commands/import"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lint"
@@ -35,6 +36,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/twitter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/web"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election"
@@ -106,6 +108,11 @@ func init() {
 		defaultLogLevelStr,
 		"Sets the level that the CLI will log at ("+strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|")+")",
 	)
+	RootCmd.PersistentFlags().Bool(
+		defaults.DebugModeFlagKey,
+		defaults.DefaultEnableDebugMode,
+		"Whether should enable Kurtosis in debug mode. The debug mode will use the Kurtosis container debug images version (only enabled for the engine server so far)",
+	)
 
 	RootCmd.AddCommand(analytics.AnalyticsCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
@@ -132,6 +139,7 @@ func init() {
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(web.WebCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(_package.PackageCmd)
+	RootCmd.AddCommand(github.GitHubCmd)
 }
 
 // ====================================================================================================

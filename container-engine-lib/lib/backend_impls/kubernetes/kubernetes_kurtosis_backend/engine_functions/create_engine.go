@@ -28,11 +28,13 @@ const (
 	maxWaitForEngineContainerAvailabilityRetries         = 30
 	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
 	httpApplicationProtocol                              = "http"
-
-	restAPIPortHost = "engine"
 )
 
 var noWait *port_spec.Wait = nil
+
+// TODO add support for passing toleration to Engine
+var noToleration []apiv1.Toleration = nil
+var noSelectors map[string]string = nil
 
 func CreateEngine(
 	ctx context.Context,
@@ -40,8 +42,11 @@ func CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	_ bool, //It's not required to add extra configuration in K8S for enabling the debug server
+	githubAuthToken string,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 	objAttrsProvider object_attributes_provider.KubernetesObjectAttributesProvider,
+
 ) (
 	*engine.Engine,
 	error,
@@ -316,6 +321,7 @@ func createEngineClusterRole(
 	}
 	clusterRoleName := clusterRolesAttributes.GetName().GetString()
 	clusterRoleLabels := shared_helpers.GetStringMapFromLabelMap(clusterRolesAttributes.GetLabels())
+	// nolint: exhaustruct
 	clusterRolePolicyRules := []rbacv1.PolicyRule{
 		{
 			Verbs: []string{
@@ -383,6 +389,7 @@ func createEngineClusterRoleBindings(
 	}
 	clusterRoleBindingsName := clusterRoleBindingsAttributes.GetName().GetString()
 	clusterRoleBindingsLabels := shared_helpers.GetStringMapFromLabelMap(clusterRoleBindingsAttributes.GetLabels())
+	// nolint: exhaustruct
 	clusterRoleBindingsSubjects := []rbacv1.Subject{
 		{
 			Kind:      rbacv1.ServiceAccountKind,
@@ -447,6 +454,7 @@ func createEnginePod(
 		}
 		engineContainerEnvVars = append(engineContainerEnvVars, envVar)
 	}
+	// nolint: exhaustruct
 	engineContainers := []apiv1.Container{
 		{
 			Name:  kurtosisEngineContainerName,
@@ -472,6 +480,8 @@ func createEnginePod(
 		serviceAccountName,
 		// Engine doesn't auto restart
 		apiv1.RestartPolicyNever,
+		noToleration,
+		noSelectors,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", enginePodName, namespace, containerImageAndTag)
@@ -584,7 +594,7 @@ func getEngineIngressRules(
 ) ([]netv1.IngressRule, error) {
 	var ingressRules []netv1.IngressRule
 	ingressRule := netv1.IngressRule{
-		Host: restAPIPortHost,
+		Host: engine.RESTAPIPortHostHeader,
 		IngressRuleValue: netv1.IngressRuleValue{
 			HTTP: &netv1.HTTPIngressRuleValue{
 				Paths: []netv1.HTTPIngressPath{

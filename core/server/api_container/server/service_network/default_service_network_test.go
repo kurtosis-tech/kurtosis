@@ -1214,11 +1214,16 @@ func testServiceConfig(t *testing.T, imageName string) *service.ServiceConfig {
 		nil,
 		nil,
 		nil,
+		nil,
+		nil,
 		0,
 		0,
 		"",
 		0,
 		0,
+		map[string]string{},
+		nil,
+		nil,
 		map[string]string{},
 	)
 	require.NoError(t, err)

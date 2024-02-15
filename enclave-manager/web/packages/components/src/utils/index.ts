@@ -135,3 +135,12 @@ export function wrapResult<T>(c: () => T, errorMessage?: string): Result<T, stri
     return Result.err(errorMessage || stringifyError(e));
   }
 }
+
+export function maybeParse<T>(input: string, defaultValue: T): T {
+  try {
+    return JSON.parse(input);
+  } catch (error: any) {
+    console.error(`Unable to load input. Got error: ${stringifyError(error)}`);
+    return defaultValue;
+  }
+}
