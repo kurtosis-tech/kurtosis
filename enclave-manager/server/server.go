@@ -204,6 +204,7 @@ func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *con
 		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
 
+	// nolint: exhaustruct
 	serviceRequest := &connect.Request[emptypb.Empty]{}
 	result, err := (*apiContainerServiceClient).ListFilesArtifactNamesAndUuids(ctx, serviceRequest)
 	if err != nil {
@@ -291,6 +292,7 @@ func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kur
 	if err != nil {
 		return nil, err
 	}
+	// nolint: exhaustruct
 	return &connect.Response[emptypb.Empty]{}, nil
 
 }

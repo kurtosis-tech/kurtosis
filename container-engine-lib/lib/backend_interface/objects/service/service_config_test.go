@@ -2,15 +2,17 @@ package service
 
 import (
 	"encoding/json"
+	"testing"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
-	"testing"
-	"time"
 )
 
 func TestServiceConfigMarshallers(t *testing.T) {
@@ -45,6 +47,7 @@ func TestServiceConfigMarshallers(t *testing.T) {
 		require.EqualValues(t, publicPortSpec, originalPublicPortSpec)
 	}
 
+	require.Equal(t, originalServiceConfig, newServiceConfig)
 	require.Equal(t, originalServiceConfig.GetEnvVars(), newServiceConfig.GetEnvVars())
 	require.Equal(t, originalServiceConfig.GetCmdArgs(), newServiceConfig.GetCmdArgs())
 	require.Equal(t, originalServiceConfig.GetEnvVars(), newServiceConfig.GetEnvVars())
@@ -57,6 +60,7 @@ func TestServiceConfigMarshallers(t *testing.T) {
 	require.Equal(t, originalServiceConfig.GetMinMemoryAllocationMegabytes(), newServiceConfig.GetMinMemoryAllocationMegabytes())
 	require.Equal(t, originalServiceConfig.GetLabels(), newServiceConfig.GetLabels())
 	require.Equal(t, originalServiceConfig.GetImageBuildSpec(), newServiceConfig.GetImageBuildSpec())
+	require.Equal(t, originalServiceConfig.GetNodeSelectors(), newServiceConfig.GetNodeSelectors())
 }
 
 func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
@@ -64,6 +68,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 		imageName,
 		testImageBuildSpec(),
 		testImageRegistrySpec(),
+		testNixBuildSpec(),
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},
@@ -82,6 +87,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 		},
 		testServiceUser(),
 		testToleration(),
+		testNodeSelectors(),
 	)
 	require.NoError(t, err)
 	return serviceConfig
@@ -184,6 +190,10 @@ func testImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
 	return image_registry_spec.NewImageRegistrySpec("test-image", "test-userename", "test-password", "test-registry.io")
 }
 
+func testNixBuildSpec() *nix_build_spec.NixBuildSpec {
+	return nix_build_spec.NewNixBuildSpec("test-image", "path", "", "")
+}
+
 func testServiceUser() *service_user.ServiceUser {
 	su := service_user.NewServiceUser(100)
 	su.SetGID(100)
@@ -199,4 +209,10 @@ func testToleration() []v1.Toleration {
 		Effect:            v1.TaintEffectNoExecute,
 		TolerationSeconds: &tolerationSeconds,
 	}}
+}
+
+func testNodeSelectors() map[string]string {
+	return map[string]string{
+		"disktype": "ssd",
+	}
 }

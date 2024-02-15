@@ -1,10 +1,11 @@
 import { Input, InputProps } from "@chakra-ui/react";
-import { useEnclaveConfigurationFormContext } from "../EnclaveConfigurationForm";
-import { KurtosisArgumentTypeInputImplProps } from "./KurtosisArgumentTypeInput";
 
-type StringArgumentInputProps = KurtosisArgumentTypeInputImplProps & InputProps;
+import { useFormContext } from "react-hook-form";
+import { KurtosisFormInputProps } from "./types";
 
-export const StringArgumentInput = ({
+type StringArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel> & InputProps;
+
+export const StringArgumentInput = <DataModel extends object>({
   name,
   placeholder,
   isRequired,
@@ -14,8 +15,8 @@ export const StringArgumentInput = ({
   size,
   tabIndex,
   ...inputProps
-}: StringArgumentInputProps) => {
-  const { register } = useEnclaveConfigurationFormContext();
+}: StringArgumentInputProps<DataModel>) => {
+  const { register } = useFormContext<DataModel>();
 
   return (
     <Input

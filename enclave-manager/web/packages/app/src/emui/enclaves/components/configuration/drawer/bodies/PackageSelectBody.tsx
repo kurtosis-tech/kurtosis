@@ -20,6 +20,7 @@ import {
   KurtosisAlert,
   KurtosisPackageCardHorizontal,
   parsePackageUrl,
+  useKeyboardAction,
   useSavedPackages,
 } from "kurtosis-ui-components";
 import { debounce } from "lodash";
@@ -106,6 +107,8 @@ export const PackageSelectBody = ({
     setSearchTerm(e.target.value);
   };
 
+  useKeyboardAction(useMemo(() => ({ find: () => searchRef.current?.focus() }), [searchRef]));
+
   useEffect(() => {
     startCheckSinglePackage(searchTerm);
   }, [startCheckSinglePackage, searchTerm]);
@@ -191,6 +194,16 @@ export const PackageSelectBody = ({
               Saved
             </Text>
             {savedPackages.map((kurtosisPackage) => (
+              <KurtosisPackageCardHorizontal
+                key={kurtosisPackage.name}
+                kurtosisPackage={kurtosisPackage}
+                onClick={() => onPackageSelected(kurtosisPackage)}
+              />
+            ))}
+            <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
+              All Packages
+            </Text>
+            {searchResults.value.map((kurtosisPackage) => (
               <KurtosisPackageCardHorizontal
                 key={kurtosisPackage.name}
                 kurtosisPackage={kurtosisPackage}

@@ -3,6 +3,9 @@ package kubernetes_kurtosis_backend
 import (
 	"context"
 	"fmt"
+	"net"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	kubernetes_manager_consts "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
@@ -17,8 +20,6 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
-	"net"
-	"time"
 )
 
 const (
@@ -45,6 +46,7 @@ var noWait *port_spec.Wait = nil
 
 // TODO add support for passing toleration to APIC
 var noTolerations []apiv1.Toleration = nil
+var noSelectors map[string]string = nil
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
@@ -232,6 +234,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	clusterRoleName := clusterRolesAttributes.GetName().GetString()
 	clusterRoleLabels := shared_helpers.GetStringMapFromLabelMap(clusterRolesAttributes.GetLabels())
+	// nolint: exhaustruct
 	clusterRolePolicyRules := []rbacv1.PolicyRule{
 		{
 			Verbs: []string{
@@ -291,6 +294,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	clusterRoleBindingName := clusterRoleBindingsAttributes.GetName().GetString()
 	clusterRoleBindingsLabels := shared_helpers.GetStringMapFromLabelMap(clusterRoleBindingsAttributes.GetLabels())
+	// nolint: exhaustruct
 	clusterRoleBindingsSubjects := []rbacv1.Subject{
 		{
 			Kind:      rbacv1.ServiceAccountKind,
@@ -334,6 +338,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	roleName := rolesAttributes.GetName().GetString()
 	roleLabels := shared_helpers.GetStringMapFromLabelMap(rolesAttributes.GetLabels())
+	// nolint: exhaustruct
 	rolePolicyRules := []rbacv1.PolicyRule{
 		{
 			Verbs: []string{
@@ -393,6 +398,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	roleBindingName := roleBindingsAttributes.GetName().GetString()
 	roleBindingsLabels := shared_helpers.GetStringMapFromLabelMap(roleBindingsAttributes.GetLabels())
+	// nolint: exhaustruct
 	roleBindingsSubjects := []rbacv1.Subject{
 		{
 			Kind:      rbacv1.ServiceAccountKind,
@@ -482,6 +488,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		apiContainerServiceAccountName,
 		apiContainerRestartPolicy,
 		noTolerations,
+		noSelectors,
 	)
 	if err != nil {
 		errMsg := fmt.Sprintf("An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
@@ -1083,6 +1090,7 @@ func getApiContainerContainersAndVolumes(
 	}
 	containerEnvVars = append(containerEnvVars, ownNamespaceEnvVar)
 
+	// nolint: exhaustruct
 	containers := []apiv1.Container{
 		{
 			Name:  kurtosisApiContainerContainerName,

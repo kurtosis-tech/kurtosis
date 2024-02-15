@@ -1,5 +1,82 @@
 # Changelog
 
+## [0.86.21](https://github.com/kurtosis-tech/kurtosis/compare/0.86.20...0.86.21) (2024-02-15)
+
+
+### Bug Fixes
+
+* Core image builds for arm64 under CI ([#2149](https://github.com/kurtosis-tech/kurtosis/issues/2149)) ([807ddae](https://github.com/kurtosis-tech/kurtosis/commit/807ddae12b9274819f53160a8771da7541f4a4c1))
+
+## [0.86.20](https://github.com/kurtosis-tech/kurtosis/compare/0.86.19...0.86.20) (2024-02-14)
+
+
+### Features
+
+* support `run_sh` and `exec` in enclave builder ([#2158](https://github.com/kurtosis-tech/kurtosis/issues/2158)) ([f784eaf](https://github.com/kurtosis-tech/kurtosis/commit/f784eaf7a24ae282aa470d22e6a9ad721d04cc05))
+
+## [0.86.19](https://github.com/kurtosis-tech/kurtosis/compare/0.86.18...0.86.19) (2024-02-09)
+
+
+### Features
+
+* build nix image ([#2132](https://github.com/kurtosis-tech/kurtosis/issues/2132)) ([0eae9fc](https://github.com/kurtosis-tech/kurtosis/commit/0eae9fc942605f14a04554752a0c0dca7b02b1f7))
+* enclave builder tweaks ([#2142](https://github.com/kurtosis-tech/kurtosis/issues/2142)) ([aaf64ca](https://github.com/kurtosis-tech/kurtosis/commit/aaf64ca6085b13b8d70c15114128455277b98e31))
+* enforce enclave builder validation ([#2144](https://github.com/kurtosis-tech/kurtosis/issues/2144)) ([5dcdd9e](https://github.com/kurtosis-tech/kurtosis/commit/5dcdd9e00c0e4f243d2b2e45e752a8c3483cec97))
+
+
+### Bug Fixes
+
+* emui yaml editor populating with values ([#2079](https://github.com/kurtosis-tech/kurtosis/issues/2079)) ([9bd26a8](https://github.com/kurtosis-tech/kurtosis/commit/9bd26a8f855a4c2ac7d5fb2f73c756079f9735a9))
+
+## [0.86.18](https://github.com/kurtosis-tech/kurtosis/compare/0.86.17...0.86.18) (2024-02-09)
+
+
+### Features
+
+* add files in enclave dump ([#2136](https://github.com/kurtosis-tech/kurtosis/issues/2136)) ([0525d9f](https://github.com/kurtosis-tech/kurtosis/commit/0525d9fbb12561cf4b5a83814baf05d8d1682274))
+
+
+### Bug Fixes
+
+* node selector validation ([#2141](https://github.com/kurtosis-tech/kurtosis/issues/2141)) ([0fee848](https://github.com/kurtosis-tech/kurtosis/commit/0fee84881f83d0b5a911f511a9fcdd889a0b8784))
+
+## [0.86.17](https://github.com/kurtosis-tech/kurtosis/compare/0.86.16...0.86.17) (2024-02-08)
+
+
+### Features
+
+* experimental enclave building in the EMUI ([#2137](https://github.com/kurtosis-tech/kurtosis/issues/2137)) ([8a26a6c](https://github.com/kurtosis-tech/kurtosis/commit/8a26a6cc38e832f92e552b5f32fd6a5c73cf2869))
+* support setting node selectors for user services ([#2135](https://github.com/kurtosis-tech/kurtosis/issues/2135)) ([e176a3a](https://github.com/kurtosis-tech/kurtosis/commit/e176a3aa23e9070ba52f0e8a965191a0eb3cc6b4))
+
+
+### Bug Fixes
+
+* files artifacts expander image debug tag ([#2119](https://github.com/kurtosis-tech/kurtosis/issues/2119)) ([b3f7edd](https://github.com/kurtosis-tech/kurtosis/commit/b3f7eddc9dcb9e02af7c116c5d86dd97dd74f8c2))
+
+## [0.86.16](https://github.com/kurtosis-tech/kurtosis/compare/0.86.15...0.86.16) (2024-02-07)
+
+
+### Features
+
+* kurtosis github login ([#2113](https://github.com/kurtosis-tech/kurtosis/issues/2113)) ([2f0d638](https://github.com/kurtosis-tech/kurtosis/commit/2f0d638c688828de3eb781b11d696883807357ba))
+
+
+### Bug Fixes
+
+* Remove Derek and Karla as default assignees for docs issues ([#2129](https://github.com/kurtosis-tech/kurtosis/issues/2129)) ([2f1eecc](https://github.com/kurtosis-tech/kurtosis/commit/2f1eecc9a935ac19cf4de0fbc26ab852a5248b7f))
+
+## [0.86.15](https://github.com/kurtosis-tech/kurtosis/compare/0.86.14...0.86.15) (2024-02-07)
+
+
+### Features
+
+* Enclave connect ([#2117](https://github.com/kurtosis-tech/kurtosis/issues/2117)) ([d33de7b](https://github.com/kurtosis-tech/kurtosis/commit/d33de7bebb0e997c8b2fd93872a1b676dc3519e7))
+
+
+### Bug Fixes
+
+* Fix the enclave connect button and modal help string in the EM UI ([#2127](https://github.com/kurtosis-tech/kurtosis/issues/2127)) ([a11fb4c](https://github.com/kurtosis-tech/kurtosis/commit/a11fb4c701e7ed8700c7812559aebb03d5d3846b))
+
 ## [0.86.14](https://github.com/kurtosis-tech/kurtosis/compare/0.86.13...0.86.14) (2024-02-06)
 
 

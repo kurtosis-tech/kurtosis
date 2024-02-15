@@ -3,6 +3,10 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -19,9 +23,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"reflect"
-	"strings"
-	"time"
 )
 
 // shared constants
@@ -260,6 +261,7 @@ func getServiceConfig(
 		nil,
 		nil,
 		nil,
+		nil,
 		// This make sure that the container does not stop as soon as it starts
 		// This only is needed for kubernetes at the moment
 		// TODO: Instead of creating a service and running exec commands
@@ -278,6 +280,7 @@ func getServiceConfig(
 		map[string]string{},
 		nil,
 		nil,
+		map[string]string{},
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")

@@ -34,6 +34,7 @@
               golangci-lint
               delve
               enumer
+              go-mockery
               nodejs_20
               node2nix
               yarn

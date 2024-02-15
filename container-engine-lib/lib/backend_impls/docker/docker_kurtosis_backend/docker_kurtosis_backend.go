@@ -2,10 +2,12 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"io"
 	"sync"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 
 	"github.com/sirupsen/logrus"
 
@@ -111,6 +113,7 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	grpcPortNum uint16,
 	envVars map[string]string,
 	shouldStartInDebugMode bool,
+	gitAuthToken string,
 ) (
 	*engine.Engine,
 	error,
@@ -121,9 +124,10 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		envVars,
+		shouldStartInDebugMode,
+		gitAuthToken,
 		backend.dockerManager,
 		backend.objAttrsProvider,
-		shouldStartInDebugMode,
 	)
 }
 
@@ -542,6 +546,10 @@ func (backend *DockerKurtosisBackend) BuildImage(ctx context.Context, imageName 
 	return backend.dockerManager.BuildImage(ctx, imageName, imageBuildSpec)
 }
 
+func (backend *DockerKurtosisBackend) NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error) {
+	return backend.dockerManager.NixBuild(ctx, nixBuildSpec)
+}
+
 // ====================================================================================================
 //
 //	Private helper functions shared by multiple subfunctions files
@@ -587,6 +595,25 @@ func (backend *DockerKurtosisBackend) getEnclaveDataVolumeByEnclaveUuid(ctx cont
 	}
 	if len(foundVolumes) == 0 {
 		return "", stacktrace.NewError("No enclave data volume found for enclave '%v'", enclaveUuid)
+	}
+	volume := foundVolumes[0]
+	return volume.Name, nil
+}
+
+// Guaranteed to either return a GitHub auth storage volume name or throw an error
+func (backend *DockerKurtosisBackend) getGitHubAuthStorageVolume(ctx context.Context) (string, error) {
+	volumeSearchLabels := map[string]string{
+		docker_label_key.VolumeTypeDockerLabelKey.GetString(): label_value_consts.GitHubAuthStorageVolumeTypeDockerLabelValue.GetString(),
+	}
+	foundVolumes, err := backend.dockerManager.GetVolumesByLabels(ctx, volumeSearchLabels)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting GitHub auth storage volumes matching labels '%+v'", volumeSearchLabels)
+	}
+	if len(foundVolumes) > 1 {
+		return "", stacktrace.NewError("Found multiple GitHub auth storage volumes. This should never happen")
+	}
+	if len(foundVolumes) == 0 {
+		return "", stacktrace.NewError("No GitHub auth storage volume found.")
 	}
 	volume := foundVolumes[0]
 	return volume.Name, nil

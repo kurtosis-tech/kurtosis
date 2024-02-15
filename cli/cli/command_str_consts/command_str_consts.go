@@ -76,6 +76,11 @@ const (
 	PortCmdStr              = "port"
 	PortPrintCmdStr         = "print"
 	WebCmdStr               = "web"
+	GitHubCmdStr            = "github"
+	GitHubLoginCmdStr       = "login"
+	GitHubLogoutCmdStr      = "logout"
+	GitHubTokenCmdStr       = "token"
+	GitHubStatusCmdStr      = "status"
 )
 
 // TODO: added constant error message here, can we move to another file later.

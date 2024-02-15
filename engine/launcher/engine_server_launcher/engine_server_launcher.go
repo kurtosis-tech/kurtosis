@@ -45,7 +45,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	cloudInstanceID metrics_client.CloudInstanceID,
 	allowedCORSOrigins *[]string,
 	shouldStartInDebugMode bool,
-) (
+	githubAuthToken string) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
@@ -66,7 +66,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		cloudInstanceID,
 		allowedCORSOrigins,
 		shouldStartInDebugMode,
-	)
+		githubAuthToken)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
 	}
@@ -89,12 +89,13 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	cloudInstanceID metrics_client.CloudInstanceID,
 	allowedCORSOrigins *[]string,
 	shouldStartInDebugMode bool,
-) (
+	githubAuthToken string) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
 	kurtosisBackendType, kurtosisBackendConfig := backendConfigSupplier.getKurtosisBackendConfig()
+
 	argsObj, err := args.NewEngineServerArgs(
 		grpcListenPortNum,
 		logLevel.String(),
@@ -127,6 +128,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		grpcListenPortNum,
 		envVars,
 		shouldStartInDebugMode,
+		githubAuthToken,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%+v'", envVars)

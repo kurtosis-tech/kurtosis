@@ -3,8 +3,9 @@ package user_services_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
@@ -309,6 +310,7 @@ func createStartServiceOperation(
 		minMemoryAllocationMegabytes := serviceConfig.GetMinMemoryAllocationMegabytes()
 		user := serviceConfig.GetUser()
 		tolerations := serviceConfig.GetTolerations()
+		nodeSelectors := serviceConfig.GetNodeSelectors()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -417,6 +419,7 @@ func createStartServiceOperation(
 			userServiceServiceAccountName,
 			restartPolicy,
 			tolerations,
+			nodeSelectors,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
@@ -679,7 +682,7 @@ func getUserServicePodContainerSpecs(
 		Limits:   resourceLimitsList,
 		Requests: resourceRequestsList,
 	}
-
+	// nolint: exhaustruct
 	containers := []apiv1.Container{
 		{
 			Name:  userServiceContainerName,
@@ -869,6 +872,7 @@ func createRegisterUserServiceOperation(
 
 		// Kubernetes doesn't allow us to create services without any ports, so we need to set this to a notional value
 		// until the user calls StartService
+		// nolint: exhaustruct
 		notionalServicePorts := []apiv1.ServicePort{
 			{
 				Name: unboundPortName,

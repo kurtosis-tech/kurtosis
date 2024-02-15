@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -15,6 +16,7 @@ import (
 type ValidatorEnvironment struct {
 	imagesToPull                  map[string]*image_registry_spec.ImageRegistrySpec // "set" of images that need to be downloaded
 	imagesToBuild                 map[string]*image_build_spec.ImageBuildSpec
+	nixToBuild                    map[string]*nix_build_spec.NixBuildSpec
 	serviceNames                  map[service.ServiceName]ComponentExistence
 	artifactNames                 map[string]ComponentExistence
 	persistentKeys                map[service_directory.DirectoryPersistentKey]ComponentExistence
@@ -39,6 +41,7 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 	return &ValidatorEnvironment{
 		imagesToPull:                  map[string]*image_registry_spec.ImageRegistrySpec{},
 		imagesToBuild:                 map[string]*image_build_spec.ImageBuildSpec{},
+		nixToBuild:                    map[string]*nix_build_spec.NixBuildSpec{},
 		serviceNames:                  serviceNamesWithComponentExistence,
 		artifactNames:                 artifactNamesWithComponentExistence,
 		serviceNameToPrivatePortIDs:   serviceNameToPrivatePortIds,
@@ -65,8 +68,12 @@ func (environmemt *ValidatorEnvironment) AppendImageToPullWithAuth(containerImag
 	environmemt.imagesToPull[containerImage] = registrySpec
 }
 
+func (environment *ValidatorEnvironment) AppendRequiredNixBuild(containerImage string, nixBuildSpec *nix_build_spec.NixBuildSpec) {
+	environment.nixToBuild[containerImage] = nixBuildSpec
+}
+
 func (environment *ValidatorEnvironment) GetNumberOfContainerImagesToProcess() uint32 {
-	return uint32(len(environment.imagesToPull) + len(environment.imagesToBuild))
+	return uint32(len(environment.imagesToPull) + len(environment.imagesToBuild) + len(environment.nixToBuild))
 }
 
 func (environment *ValidatorEnvironment) AddServiceName(serviceName service.ServiceName) {

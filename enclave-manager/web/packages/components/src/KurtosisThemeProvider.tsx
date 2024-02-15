@@ -331,7 +331,7 @@ const theme = extendTheme({
     Form: formsTheme,
     Input: {
       baseStyle: {
-        field: { _dark: { bg: "gray.850" } },
+        field: { _dark: { bg: "gray.850" }, _placeholder: { color: "gray.200" } },
       },
     },
     Menu: {

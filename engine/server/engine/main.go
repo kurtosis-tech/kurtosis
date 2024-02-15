@@ -177,7 +177,19 @@ func runMain() error {
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
 	logFileManager.StartLogFileManagement(ctx)
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, serverArgs.IsCI, serverArgs.CloudUserID, serverArgs.CloudInstanceID, serverArgs.KurtosisLocalBackendConfig)
+	enclaveManager, err := getEnclaveManager(
+		kurtosisBackend,
+		serverArgs.KurtosisBackendType,
+		serverArgs.ImageVersionTag,
+		serverArgs.PoolSize,
+		serverArgs.EnclaveEnvVars,
+		logFileManager,
+		serverArgs.MetricsUserID,
+		serverArgs.DidUserAcceptSendingMetrics,
+		serverArgs.IsCI,
+		serverArgs.CloudUserID,
+		serverArgs.CloudInstanceID,
+		serverArgs.KurtosisLocalBackendConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}

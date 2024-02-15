@@ -47,6 +47,13 @@ export type EnclavesState = {
     enclave: RemoveFunctions<EnclaveInfo>,
     packageId: string,
     args: Record<string, any>,
+    dryRun?: boolean,
+  ) => Promise<AsyncIterable<StarlarkRunResponseLine>>;
+  runStarlarkScript: (
+    enclave: RemoveFunctions<EnclaveInfo>,
+    script: string,
+    args: Record<string, any>,
+    dryRun?: boolean,
   ) => Promise<AsyncIterable<StarlarkRunResponseLine>>;
   updateStarlarkFinishedInEnclave: (enclave: RemoveFunctions<EnclaveInfo>) => void;
 };
@@ -168,10 +175,30 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
   );
 
   const runStarlarkPackage = useCallback(
-    async (enclave: RemoveFunctions<EnclaveInfo>, packageId: string, args: Record<string, any>) => {
+    async (
+      enclave: RemoveFunctions<EnclaveInfo>,
+      packageId: string,
+      args: Record<string, any>,
+      dryRun: boolean = false,
+    ) => {
       setState((state) => ({ ...state, starlarkRunningInEnclaves: [...state.starlarkRunningInEnclaves, enclave] }));
       assertDefined(enclave.apiContainerInfo, `apic info not defined in enclave ${enclave.name}`);
-      const resp = await kurtosisClient.runStarlarkPackage(enclave.apiContainerInfo, packageId, args);
+      const resp = await kurtosisClient.runStarlarkPackage(enclave.apiContainerInfo, packageId, args, dryRun);
+      return resp;
+    },
+    [kurtosisClient],
+  );
+
+  const runStarlarkScript = useCallback(
+    async (
+      enclave: RemoveFunctions<EnclaveInfo>,
+      script: string,
+      args: Record<string, any>,
+      dryRun: boolean = false,
+    ) => {
+      setState((state) => ({ ...state, starlarkRunningInEnclaves: [...state.starlarkRunningInEnclaves, enclave] }));
+      assertDefined(enclave.apiContainerInfo, `apic info not defined in enclave ${enclave.name}`);
+      const resp = await kurtosisClient.runStarlarkScript(enclave.apiContainerInfo, script, args, dryRun);
       return resp;
     },
     [kurtosisClient],
@@ -217,6 +244,7 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
         createEnclave,
         destroyEnclaves,
         runStarlarkPackage,
+        runStarlarkScript,
         updateStarlarkFinishedInEnclave,
       }}
     >
