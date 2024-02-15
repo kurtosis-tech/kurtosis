@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.86.22](https://github.com/kurtosis-tech/kurtosis/compare/0.86.21...0.86.22) (2024-02-15)
+
+
+### Bug Fixes
+
+* allow building images in arm64 ([#2161](https://github.com/kurtosis-tech/kurtosis/issues/2161)) ([acd884f](https://github.com/kurtosis-tech/kurtosis/commit/acd884fb1a8292b450e66c8f48156f4cef52a082))
+
+## [0.86.21](https://github.com/kurtosis-tech/kurtosis/compare/0.86.20...0.86.21) (2024-02-15)
+
+
+### Bug Fixes
+
+* Core image builds for arm64 under CI ([#2149](https://github.com/kurtosis-tech/kurtosis/issues/2149)) ([807ddae](https://github.com/kurtosis-tech/kurtosis/commit/807ddae12b9274819f53160a8771da7541f4a4c1))
+
+## [0.86.20](https://github.com/kurtosis-tech/kurtosis/compare/0.86.19...0.86.20) (2024-02-14)
+
+
+### Features
+
+* support `run_sh` and `exec` in enclave builder ([#2158](https://github.com/kurtosis-tech/kurtosis/issues/2158)) ([f784eaf](https://github.com/kurtosis-tech/kurtosis/commit/f784eaf7a24ae282aa470d22e6a9ad721d04cc05))
+
 ## [0.86.19](https://github.com/kurtosis-tech/kurtosis/compare/0.86.18...0.86.19) (2024-02-09)
 
 

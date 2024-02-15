@@ -73,7 +73,7 @@ kurtosis run .
 ```
 OR using github link:
 ```
-kurtosis run github.com/awesome-compose/nextcloud-redis-mariadb
+kurtosis run github.com/docker/awesome-compose/nextcloud-redis-mariadb
 ```
 
 Behind the scenes, Kurtosis will interpret your Docker Compose setup as a Kurtosis [package](../get-started/basic-concepts.md#package) and convert it into [starlark](../advanced-concepts/starlark.md) that is executed on an [enclave](../get-started/basic-concepts.md#enclave). The output will look like this:
