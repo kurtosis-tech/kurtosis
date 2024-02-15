@@ -418,7 +418,22 @@ jobs:
           version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
-          docker save -o << pipeline.parameters.core-server-image-filename >> "${image_name_with_version}"          
+          docker save -o << pipeline.parameters.core-server-image-filename >> "${image_name_with_version}"         
+
+      - run: |
+          set -euo pipefail
+          source core/server/scripts/_constants.env
+          dockerfile_filepath='core/server/Dockerfile'
+          version_build="$(./scripts/get-docker-tag.sh)"
+          version_to_publish="$(cat version.txt)"
+          echo "Version that was built: ${version_build}"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
+          image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
+          push_to_dockerhub=false
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
+          
 
       - save_cache:
           key: << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "core/server/go.sum" }}
