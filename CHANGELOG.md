@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.23](https://github.com/kurtosis-tech/kurtosis/compare/0.86.22...0.86.23) (2024-02-15)
+
+
+### Bug Fixes
+
+* replace nix installer ([#2163](https://github.com/kurtosis-tech/kurtosis/issues/2163)) ([8f68547](https://github.com/kurtosis-tech/kurtosis/commit/8f68547ed7ec0959dabd5c2fa2ddec1a78f43847))
+
 ## [0.86.22](https://github.com/kurtosis-tech/kurtosis/compare/0.86.21...0.86.22) (2024-02-15)
 
 
