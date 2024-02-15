@@ -5,7 +5,7 @@ RUN apk update && apk add --no-cache bash protobuf-dev sudo shadow curl xz
 
 # Install Nix
 # We need to set filter-syscalls to false to allow Nix to work properly inside a container: https://github.com/NixOS/nix/issues/5258
-ENV NIX_CONFIG=$'filter-syscalls = false\nexperimental-features = nix-command flakes'
+ENV NIX_INSTALL_ARGS="--extra-conf 'filter-syscalls = false'"
 RUN sh <(curl -L https://nixos.org/nix/install) --daemon --yes
 
 # Make sure that you changed the port inside the APIC's code before changing it here
