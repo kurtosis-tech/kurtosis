@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.22](https://github.com/kurtosis-tech/kurtosis/compare/0.86.21...0.86.22) (2024-02-15)
+
+
+### Bug Fixes
+
+* allow building images in arm64 ([#2161](https://github.com/kurtosis-tech/kurtosis/issues/2161)) ([acd884f](https://github.com/kurtosis-tech/kurtosis/commit/acd884fb1a8292b450e66c8f48156f4cef52a082))
+
 ## [0.86.21](https://github.com/kurtosis-tech/kurtosis/compare/0.86.20...0.86.21) (2024-02-15)
 
 
