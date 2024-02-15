@@ -12,7 +12,7 @@ Introduction
 
 This guide takes ~15 minutes and will walk you through writing your first Kurtosis package. You'll set up a Postgres database and an API server which connects to the database.
 
-:::tip What You'll Do 
+:::tip What You'll Do
 - Start a containerized Postgres database
 - Seed your database with test data
 - Connect an API server to your database
@@ -23,11 +23,11 @@ This guide takes ~15 minutes and will walk you through writing your first Kurtos
 <details><summary>TL;DR Version</summary>
 
 This quickstart is in a "code along" format. You can also dive straight into running the end results and exploring the code too.
- 
+
 **Open the Playground: [Start](https://gitpod.io/?autostart=true&editor=code#https://github.com/kurtosis-tech/quickstart-gitpod)**
 
 Click on the "New Workspace" button! You don't have to worry about the Context URL, Editor or Class. It's all pre-configured for you.
- 
+
 </details>
 
 Setup
@@ -200,23 +200,23 @@ We call this approach [multi-phase runs][multi-phase-runs-reference]. While this
 Add some data
 -------------
 
-A database without data is a fancy heater, so let's add some. 
+A database without data is a fancy heater, so let's add some.
 
 Your two options for seeding a Postgres database are:
 
 1. Making a sequence of PSQL commands via the `psql` binary
 2. Using `pg_restore` to load a package of data
 
-Both are possible in Kurtosis, but for this tutorial we'll use `pg_restore` to seed your database with a TAR of DVD rental information, [courtesy of postgresqltutorial.com](https://www.postgresqltutorial.com/postgresql-getting-started/postgresql-sample-database/). 
+Both are possible in Kurtosis, but for this tutorial we'll use `pg_restore` to seed your database with a TAR of DVD rental information, [courtesy of postgresqltutorial.com](https://www.postgresqltutorial.com/postgresql-getting-started/postgresql-sample-database/).
 
 #### Without Kurtosis
 
-Normally going this route (using `pg_restore`) requires downloading the seed data to your local machine, starting Postgres, writing a pile of Bash to copy the seed data to the Postgres server, and then finally running the `pg_restore` command. If you forget to check if the database is available, you may get flakes when you try to use the seeding logic in a test. 
+Normally going this route (using `pg_restore`) requires downloading the seed data to your local machine, starting Postgres, writing a pile of Bash to copy the seed data to the Postgres server, and then finally running the `pg_restore` command. If you forget to check if the database is available, you may get flakes when you try to use the seeding logic in a test.
 
 Alternatively, you could use Docker Compose to volume-mount the data TAR into the Postgres server, but you'd still need to handle Postgres availability and sequencing the `pg_restore` afterwards.
 
 #### With Kurtosis
-By contrast, Kurtosis Starlark scripts can use data as a first-class primitive and sequence tasks such as `pg_restore` into the plan. 
+By contrast, Kurtosis Starlark scripts can use data as a first-class primitive and sequence tasks such as `pg_restore` into the plan.
 
 Let's see it in action, and we'll explain what's happening afterwards.
 
@@ -395,7 +395,7 @@ def run(plan, args):
     return result
 ```
 
-A [files artifact][files-artifacts-reference] is Kurtosis' first-class data primitive and is a TGZ of arbitrary files living inside an enclave. So long as a files artifact exists, Kurtosis knows how to mount its contents on a service.  
+A [files artifact][files-artifacts-reference] is Kurtosis' first-class data primitive and is a TGZ of arbitrary files living inside an enclave. So long as a files artifact exists, Kurtosis knows how to mount its contents on a service.
 
 #### You mounted and seeded the data into your Postgres instance
 Next, you mounted the seed data, stored in your enclave now as a files artifact, into your Postgres instance using the `ServiceConfig.files` option:
@@ -512,7 +512,7 @@ We got a failure, just like we might when building a real system!
 
 ```text
 > add_service name="api" config=ServiceConfig(image="postgrest/postgrest:v10.2.0.20230209", ports={"http": PortSpec(number=3000, application_protocol="http")}, env_vars={"PGRST_DB_ANON_ROLE": "app_user", "PGRST_DB_URI": "postgresql://postgres:password@{{kurtosis:4d65eca66b5749df8988419ae31dda21:ip_address.runtime_value}}:5432/app_db"})
-There was an error executing Starlark code 
+There was an error executing Starlark code
 An error occurred executing instruction (number 4) at DEFAULT_PACKAGE_ID_FOR_SCRIPT[54:27]:
   add_service(name="api", config=ServiceConfig(image="postgrest/postgrest:v10.2.0.20230209", ports={"http": PortSpec(number=3000, application_protocol="http")}, env_vars={"PGRST_DB_ANON_ROLE": "app_user", "PGRST_DB_URI": "postgresql://postgres:password@{{kurtosis:4d65eca66b5749df8988419ae31dda21:ip_address.runtime_value}}:5432/app_db"}))
   Caused by: Unexpected error occurred starting service 'api'
@@ -521,9 +521,9 @@ An error occurred executing instruction (number 4) at DEFAULT_PACKAGE_ID_FOR_SCR
   09/May/2023:19:18:41 +0000: Attempting to connect to the database...
   09/May/2023:19:18:41 +0000: {"code":"PGRST000","details":"connection to server at \"10.1.0.3\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\n","hint":null,"message":"Database connection error. Retrying the connection."}
   09/May/2023:19:18:41 +0000: connection to server at "10.1.0.3", port 5432 failed: FATAL:  password authentication failed for user "postgres"
-  
+
   postgrest: thread killed
-  
+
   == FINISHED SERVICE 'api' LOGS ===================================
   Caused by: An error occurred while waiting for all TCP and UDP ports to be open
   Caused by: Unsuccessful ports check for IP '10.1.0.4' and port spec '{number:3000 transportProtocol:0 applicationProtocol:0xc006662e10 wait:0xc00662d510}', even after '2' retries with '500' milliseconds in between retries. Timeout '15s' has been reached
@@ -557,7 +557,7 @@ UUID           Name        Ports                                                
 45b355fc810b   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59821   RUNNING
 ```
 
-From the above, we can see that the PostgREST service (named: `api`) is not in the 'User Services' list, so we can infer that it crashed when it was starting. 
+From the above, we can see that the PostgREST service (named: `api`) is not in the 'User Services' list, so we can infer that it crashed when it was starting.
 
 You can also grab the PostgREST logs...
 
@@ -636,7 +636,7 @@ ce90b471a982   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59883   
 
 <details><summary><b>Review: Add an API</b></summary>
 
-In this section, you spun up a new PostgREST service (that we named `api` for readability) with a dependency on the Postgres service. Normally, PostgREST needs to know the IP address or hostname of the Postgres service, and we said earlier that Starlark (the Interpretation phase) can never know Execution values. 
+In this section, you spun up a new PostgREST service (that we named `api` for readability) with a dependency on the Postgres service. Normally, PostgREST needs to know the IP address or hostname of the Postgres service, and we said earlier that Starlark (the Interpretation phase) can never know Execution values.
 
 So how did the services get connected?
 
@@ -703,13 +703,13 @@ You can paste the URL from your output into your browser (or Cmd+click if you're
 Now make a request to insert a row into the database (replacing `$YOUR_PORT` with the `http` port from your `enclave inspect` output for the PostgREST service that we named `api`)...
 
 ```bash
-curl -XPOST -H "content-type: application/json" http://127.0.0.1:$YOUR_PORT/actor --data '{"first_name": "Kevin", "last_name": "Bacon"}'
+curl -X POST -H "content-type: application/json" http://127.0.0.1:$YOUR_PORT/actor --data '{"first_name": "Kevin", "last_name": "Bacon"}'
 ```
 
 ...and then query for it (again replacing `$YOUR_PORT` with your port)...
 
 ```bash
-curl -XGET "http://127.0.0.1:$YOUR_PORT/actor?first_name=eq.Kevin&last_name=eq.Bacon"
+curl -X GET "http://127.0.0.1:$YOUR_PORT/actor?first_name=eq.Kevin&last_name=eq.Bacon"
 ```
 
 ...to get it back:
@@ -867,7 +867,7 @@ kurtosis run github.com/YOUR_GITHUB_USERNAME/REPOSITORY_NAME '{"actors": [{"firs
 
 where `YOUR_GITHUB_USERNAME` is your Github username, and `REPOSITORY_NAME` is the name of your Github repository that houses your `kurtosis.yml` and `main.star` files.
 
-<!-- 
+<!--
 // NOTE(ktoday): We commented this out because the Git publishing aspect was giving people trouble (needed to have Git set up, 'git init' was hard, etc.
 // I still think that publishing/shareability is a large part of Kurtosis, but there's probably a better way to highlight this
 
@@ -929,7 +929,7 @@ And that's it - you've written your very first package in Kurtosis! You experien
 - Parameterized data insertion for future use by other users.
 - Made your Kurtosis package consumable by any user by publishing a Kurtosis package to Github.
 
-To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-kurtosis-explanation]. 
+To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-kurtosis-explanation].
 
 Second, we'd love to hear from you! Please don't hesitate to:
 
