@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-import {ok, err, Result} from "neverthrow";
+import {ok, err, Result, Err} from "neverthrow";
 import * as jspb from "google-protobuf";
 import type {
     Port,
@@ -34,6 +34,7 @@ import {
     GetStarlarkRunResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import * as path from "path";
+import * as fs from 'fs';
 import {parseKurtosisYaml, KurtosisYaml} from "./kurtosis_yaml";
 import {Readable} from "stream";
 import {readStreamContentUntilClosed, StarlarkRunResult} from "./starlark_run_blocking";
@@ -48,6 +49,20 @@ const OS_PATH_SEPARATOR_STRING = "/"
 
 const DOT_RELATIVE_PATH_INDICATOR_STRING = "."
 
+// required to get around the "only Github URLs" validation
+const composePackageIdPlaceholder = 'github.com/NOTIONAL_USER/COMPOSE-PACKAGE'
+
+
+// TODO Remove this once package ID is detected ONLY the APIC side (i.e. the CLI doesn't need to tell the APIC what package ID it's using)
+// Doing so requires that we upload completely anonymous packages to the APIC, and it figures things out from there
+let supportedDockerComposeYmlFilenames = [
+    "compose.yml",
+    "compose.yaml",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+    "docker_compose.yml",
+    "docker_compose.yaml",
+]
 
 // Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
 export class EnclaveContext {
@@ -146,16 +161,20 @@ export class EnclaveContext {
         packageRootPath: string,
         runConfig: StarlarkRunConfig,
     ): Promise<Result<Readable, Error>> {
-        const kurtosisYmlResult = await this.getKurtosisYaml(packageRootPath)
-        if (kurtosisYmlResult.isErr()) {
-            return err(new Error(`Unexpected error while getting the Kurtosis yaml file from path '${packageRootPath}'`))
+        const packageNameAndReplaceOptionsResult = await this.getPackageNameAndReplaceOptions(packageRootPath);
+        if (packageNameAndReplaceOptionsResult.isErr()) {
+            return err(new Error(`Unexpected error occurred while trying to get package name and replace options:\n${packageNameAndReplaceOptionsResult.error}`))
         }
+        const [packageName, packageReplaceOptions] = packageNameAndReplaceOptionsResult.value;
 
-        const kurtosisYaml: KurtosisYaml = kurtosisYmlResult.value
-        const packageId: string = kurtosisYaml.name
-        const packageReplaceOptions: Map<string, string> = kurtosisYaml.packageReplaceOptions
-
-        const args = await this.assembleRunStarlarkPackageArg(kurtosisYaml, runConfig.relativePathToMainFile, runConfig.mainFunctionName, runConfig.serializedParams, runConfig.dryRun, runConfig.cloudInstanceId, runConfig.cloudUserId)
+        const args = await this.assembleRunStarlarkPackageArg(
+            packageName,
+            runConfig.relativePathToMainFile,
+            runConfig.mainFunctionName,
+            runConfig.serializedParams,
+            runConfig.dryRun,
+            runConfig.cloudInstanceId,
+            runConfig.cloudUserId)
         if (args.isErr()) {
             return err(new Error(`Unexpected error while assembling arguments to pass to the Starlark executor \n${args.error}`))
         }
@@ -165,9 +184,9 @@ export class EnclaveContext {
             return err(new Error(`Unexpected error while creating the package's tgs file from '${packageRootPath}'\n${archiverResponse.error}`))
         }
 
-        const uploadStarlarkPackageResponse = await this.backend.uploadStarlarkPackage(packageId, archiverResponse.value)
+        const uploadStarlarkPackageResponse = await this.backend.uploadStarlarkPackage(packageName, archiverResponse.value)
         if (uploadStarlarkPackageResponse.isErr()){
-            return err(new Error(`Unexpected error while uploading Starlark package '${packageId}'\n${uploadStarlarkPackageResponse.error}`))
+            return err(new Error(`Unexpected error while uploading Starlark package '${packageName}'\n${uploadStarlarkPackageResponse.error}`))
         }
 
         if (packageReplaceOptions !== undefined && packageReplaceOptions.size > 0) {
@@ -285,6 +304,8 @@ export class EnclaveContext {
         return ok(serviceContext);
     }
 
+    // TODO: Add getServiceContexts
+
     // Docs available at https://docs.kurtosis.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
     public async getServices(): Promise<Result<Map<ServiceName, ServiceUUID>, Error>> {
         const getAllServicesArgMap: Map<string, boolean> = new Map<string,boolean>()
@@ -388,6 +409,44 @@ export class EnclaveContext {
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
+    // Determines the package name and replace options based on [packageRootPath]
+    // If a kurtosis.yml is detected, package is a kurtosis package
+    // If a valid [supportedDockerComposeYaml] is detected, package is a docker compose package
+    private async getPackageNameAndReplaceOptions(packageRootPath: string): Promise<Result<[string, Map<string, string>], Error>>
+    {
+        let packageName: string;
+        let packageReplaceOptions: Map<string, string>;
+
+        // Use kurtosis package if it exists
+        if (fs.existsSync(path.join(packageRootPath, KURTOSIS_YAML_FILENAME))) {
+            const kurtosisYmlResult = await this.getKurtosisYaml(packageRootPath)
+            if (kurtosisYmlResult.isErr()) {
+                return err(new Error(`Unexpected error while getting the Kurtosis yaml file from path '${packageRootPath}'`))
+            }
+            const kurtosisYml: KurtosisYaml = kurtosisYmlResult.value
+            packageName = kurtosisYml.name;
+            packageReplaceOptions = kurtosisYml.packageReplaceOptions;
+        } else {
+            // Use compose package if it exists
+            let composeAbsFilepath = '';
+            for (const candidateComposeFilename of supportedDockerComposeYmlFilenames) {
+                const candidateComposeAbsFilepath = path.join(packageRootPath, candidateComposeFilename);
+                if (fs.existsSync(candidateComposeAbsFilepath)) {
+                    composeAbsFilepath = candidateComposeAbsFilepath;
+                    break;
+                }
+            }
+            if (composeAbsFilepath === '') {
+                return err(new Error(
+                    `Neither a '${KURTOSIS_YAML_FILENAME}' file nor one of the default Compose files (${supportedDockerComposeYmlFilenames.join(', ')}) was found in the package root; at least one of these is required`,
+                ));
+            }
+            packageName = composePackageIdPlaceholder;
+            packageReplaceOptions = new Map<string, string>();
+        }
+
+        return ok([packageName, packageReplaceOptions]);
+    }
 
     // convertApiPortsToServiceContextPorts returns a converted map where Port objects associated with strings in [apiPorts] are
     // properly converted to PortSpec objects.
@@ -412,7 +471,7 @@ export class EnclaveContext {
     }
 
     private async assembleRunStarlarkPackageArg(
-        kurtosisYaml: KurtosisYaml,
+        packageName: string,
         relativePathToMainFile: string,
         mainFunctionName: string,
         serializedParams: string,
@@ -422,7 +481,7 @@ export class EnclaveContext {
         ): Promise<Result<RunStarlarkPackageArgs, Error>> {
 
         const args = new RunStarlarkPackageArgs;
-        args.setPackageId(kurtosisYaml.name)
+        args.setPackageId(packageName)
         args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
         args.setRelativePathToMainFile(relativePathToMainFile)

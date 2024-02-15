@@ -1,4 +1,4 @@
-import { Flex, IconButton, IconButtonProps, Image, Tooltip } from "@chakra-ui/react";
+import { Box, Flex, IconButton, IconButtonProps, Image, Tooltip } from "@chakra-ui/react";
 import { PropsWithChildren } from "react";
 import { useHref } from "react-router-dom";
 
@@ -22,11 +22,15 @@ export const Navigation = ({ children }: PropsWithChildren & NavigationProps) =>
       <Flex width={"40px"} height={"40px"} alignItems={"center"}>
         <Image src={logoHref} />
       </Flex>
-      <Flex flexDirection={"column"} gap={"16px"}>
+      <Flex flexDirection={"column"} gap={"16px"} flex={"1"}>
         {children}
       </Flex>
     </Flex>
   );
+};
+
+export const NavigationDivider = () => {
+  return <Box flex={"1"} />;
 };
 
 type NavButtonProps = Omit<IconButtonProps, "aria-label"> & {

@@ -72,10 +72,10 @@ services:
     ports: 
       - '80:80'
     volumes:
-     - ~/data:/data
+     - ./data:/data
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
-    plan.upload_files(src = "~/data", name = "web--volume0")
+    plan.upload_files(src = "./data", name = "web--volume0")
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/data": "web--volume0"}, env_vars={}))
 `, builtImageSuffix)
 
@@ -97,7 +97,7 @@ services:
      - /project/node_modules
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/project/node_modules": Directory(persistent_key="volume0")}, env_vars={}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/project/node_modules": Directory(persistent_key="web--volume0")}, env_vars={}))
 `, builtImageSuffix)
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
@@ -118,8 +118,38 @@ services:
      - /project/node_modules:/node_modules
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/node_modules": Directory(persistent_key="volume0")}, env_vars={}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/node_modules": Directory(persistent_key="web--volume0")}, env_vars={}))
 `, builtImageSuffix)
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
+func TestMinimalComposeWithPersistentVolumeAtProvidedPathAreUnique(t *testing.T) {
+	composeBytes := []byte(`
+services:
+  web2: 
+    build:
+      context: app
+      target: builder
+    ports: 
+      - '80:80'
+    volumes:
+     - /project/node_modules:/node_modules
+  web3: 
+    build:
+      context: app
+      target: builder
+    ports: 
+      - '80:80'
+    volumes:
+     - /project/node_modules:/node_modules
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/node_modules": Directory(persistent_key="web2--volume0")}, env_vars={}))
+    plan.add_service(name = "web3", config = ServiceConfig(image=ImageBuildSpec(image_name="web3%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/node_modules": Directory(persistent_key="web3--volume0")}, env_vars={}))
+`, builtImageSuffix, builtImageSuffix)
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
 	require.NoError(t, err)
@@ -139,7 +169,7 @@ services:
     environment:
      NODE_ENV: "development"
     volumes:
-     - ~/data:/data
+     - ./data:/data
      - /project/node_modules:/node_modules
     entrypoint:
      - /bin/echo
@@ -148,8 +178,8 @@ services:
     command: ["echo", "Hello,", "World!"]
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
-    plan.upload_files(src = "~/data", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/data": "web--volume0", "/node_modules": Directory(persistent_key="volume1")}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], cmd=["echo", "Hello,", "World!"], env_vars={"NODE_ENV": "development"}))
+    plan.upload_files(src = "./data", name = "web--volume0")
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/data": "web--volume0", "/node_modules": Directory(persistent_key="web--volume1")}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], cmd=["echo", "Hello,", "World!"], env_vars={"NODE_ENV": "development"}))
 `, builtImageSuffix)
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
@@ -368,14 +398,10 @@ services:
    volumes:
      - "~/minecraft_data:/data"
 `)
-	expectedResult := `def run(plan):
-    plan.upload_files(src = "~/minecraft_data", name = "minecraft--volume0")
-    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": "minecraft--volume0"}, env_vars={"EULA": "TRUE"}, min_cpu=0, min_memory=0))
-`
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
-	require.NoError(t, err)
-	require.Equal(t, expectedResult, result)
+	// Returns error because '~' indicates the user is trying to reference their home path which is outside the package
+	_, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	require.Error(t, err)
 }
 
 // https://github.com/docker/awesome-compose/tree/master/angular
@@ -394,7 +420,7 @@ services:
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.upload_files(src = "./angular", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="angular", target_stage="builder"), ports={"port0": PortSpec(number=4200, transport_protocol="TCP")}, files={"/project": "web--volume0", "/project/node_modules": Directory(persistent_key="volume1")}, env_vars={}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="angular", target_stage="builder"), ports={"port0": PortSpec(number=4200, transport_protocol="TCP")}, files={"/project": "web--volume0", "/project/node_modules": Directory(persistent_key="web--volume1")}, env_vars={}))
 `, builtImageSuffix)
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
@@ -509,13 +535,13 @@ services:
     ports:
       - '8000:8000'
     volumes:
-      - .:/code
+      - ./code:/code
     depends_on:
       - redis
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
-    plan.upload_files(src = ".", name = "web--volume0")
+    plan.upload_files(src = "./code", name = "web--volume0")
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%v", build_context_dir=".", target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP")}, files={"/code": "web--volume0"}, env_vars={}))
 `, builtImageSuffix)
 
@@ -574,8 +600,8 @@ networks:
   redisnet:
 `)
 	expectedResult := `def run(plan):
-    plan.add_service(name = "db", config = ServiceConfig(image="mariadb:10.5", files={"/var/lib/mysql": Directory(persistent_key="volume0")}, cmd=["--transaction-isolation=READ-COMMITTED", "--binlog-format=ROW"], env_vars={"MYSQL_DATABASE": "nextcloud", "MYSQL_PASSWORD": "nextcloud", "MYSQL_ROOT_PASSWORD": "nextcloud", "MYSQL_USER": "nextcloud"}))
-    plan.add_service(name = "nc", config = ServiceConfig(image="nextcloud:apache", ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/var/www/html": Directory(persistent_key="volume0")}, env_vars={"MYSQL_DATABASE": "nextcloud", "MYSQL_HOST": "db", "MYSQL_PASSWORD": "nextcloud", "MYSQL_USER": "nextcloud", "REDIS_HOST": "redis"}))
+    plan.add_service(name = "db", config = ServiceConfig(image="mariadb:10.5", files={"/var/lib/mysql": Directory(persistent_key="db--volume0")}, cmd=["--transaction-isolation=READ-COMMITTED", "--binlog-format=ROW"], env_vars={"MYSQL_DATABASE": "nextcloud", "MYSQL_PASSWORD": "nextcloud", "MYSQL_ROOT_PASSWORD": "nextcloud", "MYSQL_USER": "nextcloud"}))
+    plan.add_service(name = "nc", config = ServiceConfig(image="nextcloud:apache", ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, files={"/var/www/html": Directory(persistent_key="nc--volume0")}, env_vars={"MYSQL_DATABASE": "nextcloud", "MYSQL_HOST": "db", "MYSQL_PASSWORD": "nextcloud", "MYSQL_USER": "nextcloud", "REDIS_HOST": "redis"}))
     plan.add_service(name = "redis", config = ServiceConfig(image="redis:alpine", env_vars={}))
 `
 

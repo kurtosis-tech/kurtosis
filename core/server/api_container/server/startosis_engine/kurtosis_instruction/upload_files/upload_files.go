@@ -116,7 +116,7 @@ func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert locator '%v' into absolute locator but failed", src.GoString())
 	}
 
-	pathOnDisk, interpretationErr := builtin.packageContentProvider.GetOnDiskAbsoluteFilePath(absoluteLocator)
+	pathOnDisk, interpretationErr := builtin.packageContentProvider.GetOnDiskAbsolutePath(absoluteLocator)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

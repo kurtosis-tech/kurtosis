@@ -13,3 +13,4 @@ scripts
 
 .dockerignore
 Dockerfile
+Dockerfile.debug

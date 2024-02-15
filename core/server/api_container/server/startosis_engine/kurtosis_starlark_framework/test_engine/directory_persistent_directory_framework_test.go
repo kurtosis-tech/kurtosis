@@ -38,5 +38,5 @@ func (t *directoryPersistentDirectoryTestCase) Assert(typeValue builtin_argument
 
 	size, err := directoryStarlark.GetSizeOrDefault()
 	require.Nil(t, err)
-	require.Equal(t, testPersistentDirectorySize, size)
+	require.Equal(t, testPersistentDirectorySizeInBytes, size)
 }

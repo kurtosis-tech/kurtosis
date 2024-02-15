@@ -137,6 +137,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	//If blank, will use a random one
 	enclaveName string,
 	isProduction bool,
+	shouldAPICRunInDebugMode bool,
 ) (*types.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
@@ -173,6 +174,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			engineVersion,
 			apiContainerImageVersionTag,
 			apiContainerLogLevel,
+			shouldAPICRunInDebugMode,
 		)
 		if err != nil {
 			logrus.Errorf("An error occurred when trying to get an enclave from the enclave pool. Err:\n%v", err)
@@ -193,6 +195,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			manager.cloudUserID,
 			manager.cloudInstanceID,
 			manager.kurtosisBackendType,
+			shouldAPICRunInDebugMode,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(

@@ -1,7 +1,7 @@
 import * as jspb from 'google-protobuf'
 
-import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
-import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb';
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
+import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb'; // proto import: "google/protobuf/timestamp.proto"
 
 
 export class GetEngineInfoResponse extends jspb.Message {
@@ -43,6 +43,11 @@ export class CreateEnclaveArgs extends jspb.Message {
   hasMode(): boolean;
   clearMode(): CreateEnclaveArgs;
 
+  getShouldApicRunInDebugMode(): boolean;
+  setShouldApicRunInDebugMode(value: boolean): CreateEnclaveArgs;
+  hasShouldApicRunInDebugMode(): boolean;
+  clearShouldApicRunInDebugMode(): CreateEnclaveArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateEnclaveArgs.AsObject;
   static toObject(includeInstance: boolean, msg: CreateEnclaveArgs): CreateEnclaveArgs.AsObject;
@@ -57,6 +62,7 @@ export namespace CreateEnclaveArgs {
     apiContainerVersionTag?: string,
     apiContainerLogLevel?: string,
     mode?: EnclaveMode,
+    shouldApicRunInDebugMode?: boolean,
   }
 
   export enum EnclaveNameCase { 
@@ -77,6 +83,11 @@ export namespace CreateEnclaveArgs {
   export enum ModeCase { 
     _MODE_NOT_SET = 0,
     MODE = 4,
+  }
+
+  export enum ShouldApicRunInDebugModeCase { 
+    _SHOULD_APIC_RUN_IN_DEBUG_MODE_NOT_SET = 0,
+    SHOULD_APIC_RUN_IN_DEBUG_MODE = 5,
   }
 }
 

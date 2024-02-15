@@ -2,7 +2,12 @@ package service_config
 
 import (
 	"fmt"
+	"math"
+	"path"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
@@ -20,8 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
-	"math"
-	"path"
+	v1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -44,6 +48,8 @@ const (
 	MaxMemoryMegaBytesAttr          = "max_memory"
 	LabelsAttr                      = "labels"
 	UserAttr                        = "user"
+	TolerationsAttr                 = "tolerations"
+	NodeSelectorsAttr               = "node_selectors"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -179,7 +185,8 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.ServiceConfigLabels(value, LabelsAttr)
+
+						return builtin_argument.ServiceLabelsValidator(value, LabelsAttr)
 					},
 				},
 				{
@@ -187,6 +194,22 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*User],
 					Validator:         nil,
+				},
+				{
+					Name:              TolerationsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return nil
+					},
+				},
+				{
+					Name:              NodeSelectorsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringMappingToString(value, NodeSelectorsAttr)
+					},
 				},
 			},
 		},
@@ -230,7 +253,9 @@ func (config *ServiceConfig) ToKurtosisType(
 	var ok bool
 
 	var imageName string
+	var maybeNixBuildSpec *nix_build_spec.NixBuildSpec
 	var maybeImageBuildSpec *image_build_spec.ImageBuildSpec
+	var maybeImageRegistrySpec *image_registry_spec.ImageRegistrySpec
 	rawImageAttrValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](config.KurtosisValueTypeDefault, ImageAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -238,7 +263,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'", ImageAttr, ServiceConfigTypeName)
 	}
-	imageName, maybeImageBuildSpec, interpretationErr = convertImage(
+	imageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, interpretationErr = convertImage(
 		rawImageAttrValue,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageId,
@@ -452,9 +477,35 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	var tolerations []v1.Toleration
+	tolerationsStarlarkList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, TolerationsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		tolerations, interpretationErr = convertTolerations(tolerationsStarlarkList)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
+	nodeSelectors := map[string]string{}
+	nodeSelectorsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, NodeSelectorsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && nodeSelectorsStarlark.Len() > 0 {
+		nodeSelectors, interpretationErr = kurtosis_types.SafeCastToMapStringString(nodeSelectorsStarlark, NodeSelectorsAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
+		maybeImageRegistrySpec,
+		maybeNixBuildSpec,
 		privatePorts,
 		publicPorts,
 		entryPointArgs,
@@ -469,6 +520,8 @@ func (config *ServiceConfig) ToKurtosisType(
 		minMemory,
 		labels,
 		serviceUser,
+		tolerations,
+		nodeSelectors,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
@@ -618,28 +671,67 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 
 // If [image] is an ImageBuildSpec type, returns name for the image to build and ImageBuildSpec converted to KurtosisType
 // If [image] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
+// If [image] is an ImageRegistrySpec type, returns the name for the image and the ImageRegistrySpec converted to KurtosisType
 func convertImage(
 	image starlark.Value,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *startosis_errors.InterpretationError) {
+	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *image_registry_spec.ImageRegistrySpec, *nix_build_spec.NixBuildSpec, *startosis_errors.InterpretationError) {
 	imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := image.(*ImageBuildSpec)
+	imageRegistrySpecStarlarkType, isImageRegistrySpecStarlarkType := image.(*ImageRegistrySpec)
+	nixBuildSpecStarlarkType, isNixBuildSpecStarlarkType := image.(*NixBuildSpec)
 	if isImageBuildSpecStarlarkType {
 		imageBuildSpec, interpretationErr := imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {
-			return "", nil, interpretationErr
+			return "", nil, nil, nil, interpretationErr
 		}
 		imageName, interpretationErr := imageBuildSpecStarlarkType.GetImageName()
 		if interpretationErr != nil {
-			return "", nil, interpretationErr
+			return "", nil, nil, nil, interpretationErr
 		}
-		return imageName, imageBuildSpec, nil
+		return imageName, imageBuildSpec, nil, nil, nil
+	} else if isImageRegistrySpecStarlarkType {
+		imageRegistrySpec, interpretationErr := imageRegistrySpecStarlarkType.ToKurtosisType()
+		if interpretationErr != nil {
+			return "", nil, nil, nil, interpretationErr
+		}
+		return imageRegistrySpec.GetImageName(), nil, imageRegistrySpec, nil, nil
+	} else if isNixBuildSpecStarlarkType {
+		nixBuildSpec, interpretationErr := nixBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
+		if interpretationErr != nil {
+			return "", nil, nil, nil, interpretationErr
+		}
+		return nixBuildSpec.GetImageName(), nil, nil, nixBuildSpec, nil
 	} else {
 		imageName, interpretationErr := kurtosis_types.SafeCastToString(image, ImageAttr)
 		if interpretationErr != nil {
-			return "", nil, interpretationErr
+			return "", nil, nil, nil, interpretationErr
 		}
-		return imageName, nil, nil
+		return imageName, nil, nil, nil, nil
 	}
+}
+
+func convertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *startosis_errors.InterpretationError) {
+	var outputValue []v1.Toleration
+	iterator := tolerationsList.Iterate()
+	defer iterator.Done()
+	var item starlark.Value
+
+	var index = 0
+	for iterator.Next(&item) {
+		toleration, ok := item.(*Toleration)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("Expected item at index '%v' of the tolerations list passed via '%v' attr to be a '%v' but it wasn't", index, TolerationsAttr, TolerationTypeName)
+		}
+
+		tolerationKubeType, err := toleration.ToKubeType()
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Error occurred while converting object at '%v' of '%v' list to internal type", index, TolerationsAttr)
+		}
+		outputValue = append(outputValue, *tolerationKubeType)
+		index += 1
+	}
+
+	return outputValue, nil
 }

@@ -17,7 +17,6 @@ import {
   Tabs,
   Text,
   Tooltip,
-  useToast,
 } from "@chakra-ui/react";
 import { EnclaveMode } from "enclave-manager-sdk/build/engine_service_pb";
 import { ArgumentValueType, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
@@ -39,11 +38,11 @@ import { useNavigate } from "react-router-dom";
 import { useKurtosisClient } from "../../../../../../client/enclaveManager/KurtosisClientContext";
 import { useEnclavesContext } from "../../../../EnclavesContext";
 import { EnclaveFullInfo } from "../../../../types";
+import { BooleanArgumentInput } from "../../../form/BooleanArgumentInput";
+import { KurtosisFormControl } from "../../../form/KurtosisFormControl";
+import { StringArgumentInput } from "../../../form/StringArgumentInput";
 import { allowedEnclaveNamePattern, isEnclaveNameAllowed } from "../../../utils";
 import { EnclaveConfigurationForm, EnclaveConfigurationFormImperativeAttributes } from "../../EnclaveConfigurationForm";
-import { BooleanArgumentInput } from "../../inputs/BooleanArgumentInput";
-import { StringArgumentInput } from "../../inputs/StringArgumentInput";
-import { KurtosisArgumentFormControl } from "../../KurtosisArgumentFormControl";
 import { KurtosisPackageArgumentInput } from "../../KurtosisPackageArgumentInput";
 import { ConfigureEnclaveForm } from "../../types";
 import { transformKurtosisArgsToFormArgs } from "../../utils";
@@ -85,7 +84,6 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
     const [error, setError] = useState<string>();
     const formRef = useRef<EnclaveConfigurationFormImperativeAttributes>(null);
     const yamlRef = useRef<YAMLEditorImperativeAttributes>(null);
-    const toast = useToast();
     const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Form");
 
     const handleTabChange = (index: number) => {
@@ -184,20 +182,6 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
       }
 
       if (formData.args.args) {
-        try {
-          console.debug("formData", formData);
-          formData.args.args = JSON.parse(formData.args.args);
-          console.debug("successfully parsed args as proper JSON", formData.args.args);
-        } catch (err) {
-          toast({
-            title: `An error occurred while preparing data for running package. The package arguments were not proper JSON: ${stringifyError(
-              err,
-            )}`,
-            colorScheme: "red",
-          });
-          return;
-        }
-
         const { args, ...rest } = formData.args;
 
         submissionData = {
@@ -288,7 +272,7 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
           <DrawerBody as={Flex} p={"16px"} flexDirection={"column"} gap={"16px"}>
             <Card borderWidth={"1px"} borderColor={"gray.500"}>
               <CardBody p={"0"}>
-                <KurtosisArgumentFormControl name={"enclaveName"} label={"Enclave name"} type={"text"} p={"12px"}>
+                <KurtosisFormControl name={"enclaveName"} label={"Enclave name"} type={"text"} p={"12px"}>
                   <StringArgumentInput
                     name={"enclaveName"}
                     disabled={isDefined(existingEnclave)}
@@ -300,7 +284,7 @@ export const EnclaveConfigureBody = forwardRef<EnclaveConfigureBodyAttributes, E
                     tabIndex={1}
                     bg={"gray.650"}
                   />
-                </KurtosisArgumentFormControl>
+                </KurtosisFormControl>
                 <FormControl
                   display={"flex"}
                   alignItems={"center"}

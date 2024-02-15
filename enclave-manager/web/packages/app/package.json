@@ -1,22 +1,28 @@
 {
   "name": "@kurtosis/emui-app",
-  "version": "0.86.1",
+  "version": "0.86.21",
   "private": true,
   "homepage": ".",
   "dependencies": {
+    "@dagrejs/dagre": "^1.0.4",
     "ansi-to-html": "^0.7.2",
     "enclave-manager-sdk": "file:../../../api/typescript",
     "html-react-parser": "^4.2.2",
     "js-cookie": "^3.0.5",
     "kurtosis-cloud-indexer-sdk": "^0.0.2",
-    "kurtosis-ui-components": "0.86.1",
+    "kurtosis-ui-components": "0.86.21",
     "react-error-boundary": "^4.0.11",
     "react-hook-form": "^7.47.0",
+    "react-mentions": "^4.4.10",
+    "reactflow": "^11.10.2",
+    "uuid": "^9.0.1",
     "yaml": "^2.3.4"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",
+    "@types/react-mentions": "^4.1.13",
     "@types/streamsaver": "^2.0.4",
+    "@types/uuid": "^9.0.8",
     "serve": "^14.2.1",
     "source-map-explorer": "^2.5.3"
   },
