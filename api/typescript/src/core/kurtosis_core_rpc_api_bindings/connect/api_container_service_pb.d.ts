@@ -653,6 +653,11 @@ export declare class StarlarkInstruction extends Message<StarlarkInstruction> {
    */
   isSkipped: boolean;
 
+  /**
+   * @generated from field: string description = 6;
+   */
+  description: string;
+
   constructor(data?: PartialMessage<StarlarkInstruction>);
 
   static readonly runtime: typeof proto3;
