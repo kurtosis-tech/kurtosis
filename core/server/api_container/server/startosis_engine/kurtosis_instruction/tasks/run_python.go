@@ -322,7 +322,7 @@ func (builtin *RunPythonCapabilities) FillPersistableAttributes(builder *enclave
 }
 
 func (builtin *RunPythonCapabilities) Description() string {
-	return "Running a one time python script"
+	return "Running Python Script"
 }
 
 func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {
