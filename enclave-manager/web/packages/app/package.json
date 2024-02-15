@@ -1,0 +1,58 @@
+{
+  "name": "@kurtosis/emui-app",
+  "version": "0.86.20",
+  "private": true,
+  "homepage": ".",
+  "dependencies": {
+    "@dagrejs/dagre": "^1.0.4",
+    "ansi-to-html": "^0.7.2",
+    "enclave-manager-sdk": "file:../../../api/typescript",
+    "html-react-parser": "^4.2.2",
+    "js-cookie": "^3.0.5",
+    "kurtosis-cloud-indexer-sdk": "^0.0.2",
+    "kurtosis-ui-components": "0.86.20",
+    "react-error-boundary": "^4.0.11",
+    "react-hook-form": "^7.47.0",
+    "react-mentions": "^4.4.10",
+    "reactflow": "^11.10.2",
+    "uuid": "^9.0.1",
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "@types/js-cookie": "^3.0.6",
+    "@types/react-mentions": "^4.1.13",
+    "@types/streamsaver": "^2.0.4",
+    "@types/uuid": "^9.0.8",
+    "serve": "^14.2.1",
+    "source-map-explorer": "^2.5.3"
+  },
+  "scripts": {
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
+    "clean": "rm -rf build",
+    "waitForComponentsBuild": "scripts/wait-until-file-exists.sh ../components/build/index.js",
+    "start": "yarn waitForComponentsBuild && PORT=4000 craco start",
+    "start:cloud": "yarn waitForComponentsBuild && BROWSER=none PUBLIC_URL=http://localhost:3000/emui-dev PORT=4000 dotenv -e ./.env.cloudDevelopment -- craco start",
+    "start:prod": "serve -p 4000 -s build",
+    "build": "craco build",
+    "test": "craco test",
+    "eject": "craco eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

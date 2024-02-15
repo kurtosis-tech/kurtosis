@@ -2,6 +2,10 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
+	"fmt"
+	"net"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	kubernetes_manager_consts "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
@@ -16,8 +20,6 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
-	"net"
-	"time"
 )
 
 const (
@@ -36,9 +38,15 @@ const (
 	timeBetweenWaitForApiContainerContainerAvailabilityRetries = 1 * time.Second
 
 	enclaveDataDirVolumeName = "enclave-data"
+
+	enclaveDataDirVolumeSize int64 = 1 * 1024 * 1024 * 1024 // 1g minimum size on Kubernetes
 )
 
 var noWait *port_spec.Wait = nil
+
+// TODO add support for passing toleration to APIC
+var noTolerations []apiv1.Toleration = nil
+var noSelectors map[string]string = nil
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
@@ -68,6 +76,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
 	customEnvVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (
 	*api_container.APIContainer,
 	error,
@@ -128,9 +137,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	// Get Service Attributes
 	apiContainerServiceAttributes, err := apiContainerAttributesProvider.ForApiContainerService(
 		consts.KurtosisInternalContainerGrpcPortSpecId,
-		privateGrpcPortSpec,
-		consts.KurtosisInternalContainerGrpcProxyPortSpecId,
-		nil)
+		privateGrpcPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -162,7 +169,9 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		servicePorts,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v'", apiContainerServiceName, enclaveNamespaceName, grpcPortInt32)
+		errMsg := fmt.Sprintf("An error occurred while creating the service with name '%s' in namespace '%s' with ports '%v'", apiContainerServiceName, enclaveNamespaceName, grpcPortInt32)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	var shouldRemoveService = true
 	defer func() {
@@ -198,7 +207,9 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	serviceAccountLabels := shared_helpers.GetStringMapFromLabelMap(serviceAccountAttributes.GetLabels())
 	apiContainerServiceAccount, err := backend.kubernetesManager.CreateServiceAccount(ctx, serviceAccountName, enclaveNamespaceName, serviceAccountLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
+		errMsg := fmt.Sprintf("An error occurred creating service account '%v' with labels '%+v' in namespace '%v'", serviceAccountName, serviceAccountLabels, enclaveNamespaceName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	apiContainerServiceAccountName := apiContainerServiceAccount.GetName()
 	shouldRemoveServiceAccount := true
@@ -223,6 +234,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	clusterRoleName := clusterRolesAttributes.GetName().GetString()
 	clusterRoleLabels := shared_helpers.GetStringMapFromLabelMap(clusterRolesAttributes.GetLabels())
+	// nolint: exhaustruct
 	clusterRolePolicyRules := []rbacv1.PolicyRule{
 		{
 			Verbs: []string{
@@ -255,8 +267,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerClusterRole, err := backend.kubernetesManager.CreateClusterRoles(ctx, clusterRoleName, clusterRolePolicyRules, clusterRoleLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role '%v' with policy rules '%+v' "+
+		errMsg := fmt.Sprintf("An error occurred creating cluster role '%v' with policy rules '%+v' "+
 			"and labels '%+v' in namespace '%v'", clusterRoleName, clusterRolePolicyRules, clusterRoleLabels, enclaveNamespaceName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	shouldRemoveClusterRole := true
 	defer func() {
@@ -280,6 +294,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	clusterRoleBindingName := clusterRoleBindingsAttributes.GetName().GetString()
 	clusterRoleBindingsLabels := shared_helpers.GetStringMapFromLabelMap(clusterRoleBindingsAttributes.GetLabels())
+	// nolint: exhaustruct
 	clusterRoleBindingsSubjects := []rbacv1.Subject{
 		{
 			Kind:      rbacv1.ServiceAccountKind,
@@ -296,8 +311,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerClusterRoleBinding, err := backend.kubernetesManager.CreateClusterRoleBindings(ctx, clusterRoleBindingName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, clusterRoleBindingsLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role bindings '%v' with subjects "+
+		errMsg := fmt.Sprintf("An error occurred creating cluster role bindings '%v' with subjects "+
 			"'%+v' and role ref '%+v' in namespace '%v'", clusterRoleBindingName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, enclaveNamespaceName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	shouldRemoveClusterRoleBinding := true
 	defer func() {
@@ -321,6 +338,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	roleName := rolesAttributes.GetName().GetString()
 	roleLabels := shared_helpers.GetStringMapFromLabelMap(rolesAttributes.GetLabels())
+	// nolint: exhaustruct
 	rolePolicyRules := []rbacv1.PolicyRule{
 		{
 			Verbs: []string{
@@ -340,6 +358,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 				kubernetes_manager_consts.ServicesKubernetesResource,
 				kubernetes_manager_consts.JobsKubernetesResource,
 				kubernetes_manager_consts.PersistentVolumeClaimsKubernetesResource,
+				kubernetes_manager_consts.IngressesKubernetesResource,
 			},
 		},
 		{
@@ -352,8 +371,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerRole, err := backend.kubernetesManager.CreateRole(ctx, roleName, enclaveNamespaceName, rolePolicyRules, roleLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating role '%v' with policy rules '%+v' "+
+		errMsg := fmt.Sprintf("An error occurred creating role '%v' with policy rules '%+v' "+
 			"and labels '%+v' in namespace '%v'", roleName, rolePolicyRules, roleLabels, enclaveNamespaceName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	shouldRemoveRole := true
 	defer func() {
@@ -377,6 +398,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	roleBindingName := roleBindingsAttributes.GetName().GetString()
 	roleBindingsLabels := shared_helpers.GetStringMapFromLabelMap(roleBindingsAttributes.GetLabels())
+	// nolint: exhaustruct
 	roleBindingsSubjects := []rbacv1.Subject{
 		{
 			Kind:      rbacv1.ServiceAccountKind,
@@ -393,8 +415,10 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 
 	apiContainerRoleBinding, err := backend.kubernetesManager.CreateRoleBindings(ctx, roleBindingName, enclaveNamespaceName, roleBindingsSubjects, roleBindingsRoleRef, roleBindingsLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating role bindings '%v' with subjects "+
+		errMsg := fmt.Sprintf("An error occurred creating role bindings '%v' with subjects "+
 			"'%+v' and role ref '%+v' in namespace '%v'", roleBindingName, roleBindingsSubjects, roleBindingsRoleRef, enclaveNamespaceName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	shouldRemoveRoleBinding := true
 	defer func() {
@@ -411,12 +435,45 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting container ports from the API container's private port specs")
 	}
 
+	volumeAttrs, err := enclaveAttributesProvider.ForEnclaveDataDirVolume()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the labels for enclave data dir volume")
+	}
+
+	volumeLabelsStrs := map[string]string{}
+	for key, value := range volumeAttrs.GetLabels() {
+		volumeLabelsStrs[key.GetString()] = value.GetString()
+	}
+	if _, err = backend.kubernetesManager.CreatePersistentVolumeClaim(ctx, enclaveNamespaceName, enclaveDataDirVolumeName, volumeLabelsStrs, enclaveDataDirVolumeSize); err != nil {
+		errMsg := fmt.Sprintf("An error occurred creating the persistent volume claim for enclave data dir volume for enclave '%s'", enclaveDataDirVolumeName)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
+	}
+	shouldDeleteVolumeClaim := true
+
+	defer func() {
+		if !shouldDeleteVolumeClaim {
+			return
+		}
+		if err := backend.kubernetesManager.RemovePersistentVolumeClaim(context.Background(), enclaveNamespaceName, enclaveDataDirVolumeName); err != nil {
+			logrus.Warnf(
+				"Creating pod didn't finish successfully - we tried removing the PVC %v but failed with error %v",
+				enclaveDataDirVolumeName,
+				err,
+			)
+			logrus.Warnf("You'll need to clean up volume claim '%v' manually!", enclaveDataDirVolumeName)
+		}
+	}()
+
 	apiContainerContainers, apiContainerVolumes, err := getApiContainerContainersAndVolumes(image, containerPorts, envVarsWithOwnIp, enclaveDataVolumeDirpath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers and volumes")
 	}
 
 	apiContainerInitContainers := []apiv1.Container{}
+
+	// Data is always persistent we can always restart like Docker
+	apiContainerRestartPolicy := apiv1.RestartPolicyOnFailure
 
 	// Create pods with api container containers and volumes in Kubernetes
 	apiContainerPod, err := backend.kubernetesManager.CreatePod(
@@ -429,9 +486,14 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		apiContainerContainers,
 		apiContainerVolumes,
 		apiContainerServiceAccountName,
+		apiContainerRestartPolicy,
+		noTolerations,
+		noSelectors,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
+		errMsg := fmt.Sprintf("An error occurred while creating the pod with name '%s' in namespace '%s' with image '%s'", apiContainerPodName, enclaveNamespaceName, image)
+		logrus.Errorf("%s. Error was:\n%s", errMsg, err)
+		return nil, stacktrace.Propagate(err, errMsg)
 	}
 	var shouldRemovePod = true
 	defer func() {
@@ -480,6 +542,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 	shouldRemoveServiceAccount = false
 	shouldRemovePod = false
 	shouldRemoveService = false
+	shouldDeleteVolumeClaim = false
 	return resultApiContainer, nil
 }
 
@@ -770,7 +833,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 					"but found '%v'",
 				namespaceName,
 				enclaveIdStr,
-				len(services),
+				len(servicesForEnclaveId),
 			)
 		}
 		service := servicesForEnclaveId[0]
@@ -994,7 +1057,7 @@ func getApiContainerContainersAndVolumes(
 	enclaveDataVolumeDirpath string,
 ) (
 	resultContainers []apiv1.Container,
-	resultPodVolumes []apiv1.Volume,
+	resultVolumes []apiv1.Volume,
 	resultErr error,
 ) {
 	if _, found := envVars[ApiContainerOwnNamespaceNameEnvVar]; found {
@@ -1027,6 +1090,7 @@ func getApiContainerContainersAndVolumes(
 	}
 	containerEnvVars = append(containerEnvVars, ownNamespaceEnvVar)
 
+	// nolint: exhaustruct
 	containers := []apiv1.Container{
 		{
 			Name:  kurtosisApiContainerContainerName,
@@ -1046,38 +1110,38 @@ func getApiContainerContainersAndVolumes(
 		{
 			Name: enclaveDataDirVolumeName,
 			VolumeSource: apiv1.VolumeSource{
-				HostPath: nil,
-				EmptyDir: &apiv1.EmptyDirVolumeSource{
-					Medium:    "",
-					SizeLimit: nil,
+				HostPath:             nil,
+				EmptyDir:             nil,
+				GCEPersistentDisk:    nil,
+				AWSElasticBlockStore: nil,
+				GitRepo:              nil,
+				Secret:               nil,
+				NFS:                  nil,
+				ISCSI:                nil,
+				Glusterfs:            nil,
+				PersistentVolumeClaim: &apiv1.PersistentVolumeClaimVolumeSource{
+					ClaimName: enclaveDataDirVolumeName,
+					ReadOnly:  false,
 				},
-				GCEPersistentDisk:     nil,
-				AWSElasticBlockStore:  nil,
-				GitRepo:               nil,
-				Secret:                nil,
-				NFS:                   nil,
-				ISCSI:                 nil,
-				Glusterfs:             nil,
-				PersistentVolumeClaim: nil,
-				RBD:                   nil,
-				FlexVolume:            nil,
-				Cinder:                nil,
-				CephFS:                nil,
-				Flocker:               nil,
-				DownwardAPI:           nil,
-				FC:                    nil,
-				AzureFile:             nil,
-				ConfigMap:             nil,
-				VsphereVolume:         nil,
-				Quobyte:               nil,
-				AzureDisk:             nil,
-				PhotonPersistentDisk:  nil,
-				Projected:             nil,
-				PortworxVolume:        nil,
-				ScaleIO:               nil,
-				StorageOS:             nil,
-				CSI:                   nil,
-				Ephemeral:             nil,
+				RBD:                  nil,
+				FlexVolume:           nil,
+				Cinder:               nil,
+				CephFS:               nil,
+				Flocker:              nil,
+				DownwardAPI:          nil,
+				FC:                   nil,
+				AzureFile:            nil,
+				ConfigMap:            nil,
+				VsphereVolume:        nil,
+				Quobyte:              nil,
+				AzureDisk:            nil,
+				PhotonPersistentDisk: nil,
+				Projected:            nil,
+				PortworxVolume:       nil,
+				ScaleIO:              nil,
+				StorageOS:            nil,
+				CSI:                  nil,
+				Ephemeral:            nil,
 			},
 		},
 	}

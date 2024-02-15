@@ -15,6 +15,9 @@ const (
 	//  be stored in the port spec label
 	KurtosisInternalContainerGrpcPortId = "grpc"
 
+	// The ID of the REST API port.
+	KurtosisInternalContainerRESTAPIPortId = "rest-api"
+
 	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported)
 	EngineTransportProtocol = port_spec.TransportProtocol_TCP
 
@@ -28,6 +31,8 @@ const (
 	//The Docker network name where all the containers in the engine and logs service context will be added
 	NameOfNetworkToStartEngineAndLogServiceContainersIn = "bridge"
 	HttpApplicationProtocol                             = "http"
+
+	GitHubAuthStorageDirPath = "/kurtosis-data/github-auth/"
 )
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner

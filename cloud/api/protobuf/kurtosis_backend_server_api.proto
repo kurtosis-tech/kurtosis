@@ -7,13 +7,18 @@ option go_package = "github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis
 import "google/protobuf/empty.proto";
 
 service KurtosisCloudBackendServer {
-  rpc IsAvailable (google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc IsAvailable (google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  };
   rpc CreateCloudInstance(CreateCloudInstanceConfigArgs) returns (CreateCloudInstanceConfigResponse) {};
-  rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {};
+  rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  };
   rpc GetOrCreateApiKey(GetOrCreateApiKeyRequest) returns (GetOrCreateApiKeyResponse) {};
   rpc GetOrCreateInstance(GetOrCreateInstanceRequest) returns (GetOrCreateInstanceResponse) {};
   rpc GetOrCreatePaymentConfig(GetOrCreatePaymentConfigArgs) returns (GetOrCreatePaymentConfigResponse) {};
   rpc RefreshDefaultPaymentMethod (RefreshDefaultPaymentMethodArgs) returns (google.protobuf.Empty) {};
+  rpc CancelPaymentSubscription (CancelPaymentSubscriptionArgs) returns (google.protobuf.Empty) {};
 }
 
 message GetOrCreateApiKeyRequest {
@@ -42,8 +47,9 @@ message CreateCloudInstanceConfigResponse {
 }
 
 message GetCloudInstanceConfigArgs {
-  string api_key = 1;
-  string instance_id = 2;
+  optional string api_key = 1;
+  optional string instance_id = 2;
+  optional string instance_short_id = 3;
 }
 
 message LaunchResult {
@@ -72,6 +78,7 @@ message GetCloudInstanceConfigResponse {
 
 message GetOrCreatePaymentConfigArgs {
   string access_token = 1;
+  bool setup_intent = 2; 
 }
 
 message PaymentMethod {
@@ -89,11 +96,18 @@ message PaymentProduct {
 
 message PaymentSubscription {
   PaymentProduct product = 1;
+
+  enum Status {
+    ACTIVE = 0;
+    CANCELLED = 1;
+    UNKNOWN = 2;
+  }
+  Status status = 2;
 }
 
 message GetOrCreatePaymentConfigResponse {
   string user_id = 1;
-  string client_secret = 2;
+  optional string client_secret = 2;
   optional PaymentMethod payment_method = 3;
   PaymentProduct product = 4;
   optional PaymentSubscription subscription = 5;
@@ -103,6 +117,10 @@ message GetOrCreatePaymentConfigResponse {
 message RefreshDefaultPaymentMethodArgs {
   string access_token = 1;
   string payment_method_id = 2;
+}
+
+message CancelPaymentSubscriptionArgs {
+  string access_token = 1;
 }
 
 message AwsKey {

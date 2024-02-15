@@ -9,6 +9,9 @@ import {StarlarkRunConfig} from "kurtosis-sdk";
 const VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME = "valid-package-with-input"
 const VALID_PACKAGE_WITH_PACKAGE_INPUT_REL_PATH = "../../../../starlark/valid-kurtosis-package-with-input"
 
+const DOCKER_COMPOSE_PACKAGE_TEST_NAME = "docker-compose-package"
+const DOCKER_COMPOSE_PACKAGE_REL_PATH = "../../../../starlark/docker-compose-package"
+
 jest.setTimeout(JEST_TIMEOUT_MS)
 
 test("Test valid Starlark package with input", async () => {
@@ -84,6 +87,41 @@ test("Test valid Starlark package with input - missing key in params", async () 
 
         expect(runResult.value.runOutput).toEqual("")
         expect(runResult.value.instructions).toHaveLength(0)
+    } finally {
+        stopEnclaveFunction()
+    }
+})
+
+test("Test valid Docker Compose package", async () => {
+    // ------------------------------------- ENGINE SETUP ----------------------------------------------
+    const createEnclaveResult = await createEnclave(DOCKER_COMPOSE_PACKAGE_TEST_NAME + "-test")
+
+    if (createEnclaveResult.isErr()) {
+        throw createEnclaveResult.error
+    }
+
+    const {enclaveContext, stopEnclaveFunction} = createEnclaveResult.value
+
+    try {
+        // ------------------------------------- TEST SETUP ----------------------------------------------
+        const packageRootPath = path.join(__dirname, DOCKER_COMPOSE_PACKAGE_REL_PATH)
+
+        log.info(`Loading package at path '${packageRootPath}'`)
+
+        const runResult = await enclaveContext.runStarlarkPackageBlocking(
+            packageRootPath,
+            new StarlarkRunConfig(),
+        )
+
+        if (runResult.isErr()) {
+            log.error(`An error occurred execute Starlark package '${packageRootPath}'`);
+            throw runResult.error
+        }
+
+        expect(runResult.value.interpretationError).toBeUndefined()
+        expect(runResult.value.validationErrors).toEqual([])
+        expect(runResult.value.executionError).toBeUndefined()
+        expect(runResult.value.instructions).toHaveLength(3)
     } finally {
         stopEnclaveFunction()
     }

@@ -59,6 +59,12 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 				},
 				{
+					Name:              EnvVarsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator:         nil,
+				},
+				{
 					Name:              WaitArgName,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
@@ -90,6 +96,7 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 			FilesArgName:      true,
 			StoreFilesArgName: true,
 			WaitArgName:       true,
+			EnvVarsArgName:    true,
 		},
 	}
 }
@@ -136,15 +143,24 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
+			multipleFilesArtifactsMountDirPaths := map[string][]string{}
+			for pathToFile, fileArtifactName := range filesArtifactMountDirPaths {
+				multipleFilesArtifactsMountDirPaths[pathToFile] = []string{fileArtifactName}
+			}
+			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(multipleFilesArtifactsMountDirPaths, builtin.serviceNetwork)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
 		}
 	}
 
+	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
+	if err != nil {
+		return nil, interpretationErr
+	}
+
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion)
+	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion, envVars)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
 	}
@@ -179,7 +195,7 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 
 func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	// TODO validate bash
-	var serviceDirpathsToArtifactIdentifiers map[string]string
+	var serviceDirpathsToArtifactIdentifiers map[string][]string
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		serviceDirpathsToArtifactIdentifiers = builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers
 	}
@@ -188,9 +204,8 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 
 // Execute This is just v0 for run_sh task - we can later improve on it.
 //
-//		TODO: stop the container as soon as task completed.
-//	  Create an mechanism for other services to retrieve files from the task container
-//	  Make task as its own entity instead of currently shown under services
+//	TODO Create an mechanism for other services to retrieve files from the task container
+//	Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
 	if err != nil {
@@ -232,6 +247,11 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 			return "", stacktrace.Propagate(err, "error occurred while copying files from  a task")
 		}
 	}
+
+	if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
+		return "", stacktrace.Propagate(err, "attempted to remove the temporary task container but failed")
+	}
+
 	return instructionResult, err
 }
 

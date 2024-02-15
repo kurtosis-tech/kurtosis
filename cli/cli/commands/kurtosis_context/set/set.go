@@ -3,7 +3,6 @@ package set
 import (
 	"context"
 	"fmt"
-
 	"github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/context_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
@@ -16,11 +15,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 const (
 	contextIdentifierArgKey      = "context"
 	contextIdentifierArgIsGreedy = false
+
+	dockerDaemonIsNotRunningErrorSubStr     = "Is the docker daemon running?"
+	cantConnectToLocalKubernetesErrorSubStr = "connect: connection refused"
 )
 
 var ContextSetCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -66,12 +69,15 @@ func SetContext(
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 		}
-		if err := engineManager.StopEngineIdempotently(ctx); err != nil {
-			return stacktrace.Propagate(err, "An error occurred stopping the local engine. The local engine"+
-				"needs to be stopped before the context can be set. The engine status can be obtained running"+
-				"kurtosis %s %s and it can be stopped manually by running kurtosis %s %s.",
-				command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr,
-				command_str_consts.EngineCmdStr, command_str_consts.EngineStopCmdStr)
+		if stopLocalEngineErr := engineManager.StopEngineIdempotently(ctx); stopLocalEngineErr != nil {
+			if !isDockerOrKubernetesNotRunningErr(stopLocalEngineErr) {
+				return stacktrace.Propagate(stopLocalEngineErr, "An error occurred stopping the local engine. The local engine "+
+					"needs to be stopped before the context can be set. The engine status can be obtained running "+
+					"kurtosis %s %s and it can be stopped manually by running kurtosis %s %s.",
+					command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr,
+					command_str_consts.EngineCmdStr, command_str_consts.EngineStopCmdStr)
+			}
+
 		}
 	}
 
@@ -126,7 +132,7 @@ func SetContext(
 	} else {
 		// We stop the portal when the user switches back to the local context.
 		// We do that to be consistent with the start above.
-		// However the portal is designed to also work with the local context with a client and server
+		// However, the portal is designed to also work with the local context with a client and server
 		// running locally.
 		if err := portalManager.StopExisting(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping Kurtosis Portal")
@@ -141,7 +147,7 @@ func SetContext(
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager for the new context.")
 	}
 
-	_, engineClientCloseFunc, startEngineErr := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel, defaults.DefaultEngineEnclavePoolSize)
+	_, engineClientCloseFunc, startEngineErr := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultGitHubAuthTokenOverride)
 	if startEngineErr != nil {
 		logrus.Warnf("The context was successfully set to '%s' but Kurtosis failed to start an engine in "+
 			"this new context. A new engine should be started manually with '%s %s %s'. The error was:\n%v",
@@ -158,4 +164,13 @@ func SetContext(
 
 	isContextSetSuccessful = true
 	return nil
+}
+
+func isDockerOrKubernetesNotRunningErr(err error) bool {
+	rootCauseErrStr := stacktrace.RootCause(err).Error()
+	if strings.Contains(rootCauseErrStr, dockerDaemonIsNotRunningErrorSubStr) ||
+		strings.Contains(rootCauseErrStr, cantConnectToLocalKubernetesErrorSubStr) {
+		return true
+	}
+	return false
 }

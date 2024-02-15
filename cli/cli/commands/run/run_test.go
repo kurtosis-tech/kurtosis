@@ -42,3 +42,35 @@ func TestValidateArgs_invalid(t *testing.T) {
 	err = validatePackageArgs(testCtx, testParsedFlags, parsedArgs)
 	require.NotNil(t, err)
 }
+
+func TestIsHttpUrl_ValidHTTP(t *testing.T) {
+	fileUrl := "http://www.mysite.com/myfile.json"
+
+	isHttpUrlResult := isHttpUrl(fileUrl)
+
+	require.True(t, isHttpUrlResult)
+}
+
+func TestIsHttpUrl_ValidHTTPS(t *testing.T) {
+	fileUrl := "https://www.mysite.com/myfile.json"
+
+	isHttpUrlResult := isHttpUrl(fileUrl)
+
+	require.True(t, isHttpUrlResult)
+}
+
+func TestIsHttpUrl_NoValidBecauseIsAbsoluteFilepath(t *testing.T) {
+	fileUrl := "/my-folder/myfile.json"
+
+	isHttpUrlResult := isHttpUrl(fileUrl)
+
+	require.False(t, isHttpUrlResult)
+}
+
+func TestIsHttpUrl_NoValidBecauseIsRelativeFilepath(t *testing.T) {
+	fileUrl := "../my-folder/myfile.json"
+
+	isHttpUrlResult := isHttpUrl(fileUrl)
+
+	require.False(t, isHttpUrlResult)
+}

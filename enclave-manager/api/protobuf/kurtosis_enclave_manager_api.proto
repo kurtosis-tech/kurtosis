@@ -15,8 +15,10 @@ service KurtosisEnclaveManagerServer {
   rpc GetServiceLogs(engine_api.GetServiceLogsArgs) returns (stream engine_api.GetServiceLogsResponse) {};
   rpc ListFilesArtifactNamesAndUuids(GetListFilesArtifactNamesAndUuidsRequest) returns (api_container_api.ListFilesArtifactNamesAndUuidsResponse) {};
   rpc RunStarlarkPackage(RunStarlarkPackageRequest) returns (stream api_container_api.StarlarkRunResponseLine) {};
+  rpc RunStarlarkScript(RunStarlarkScriptRequest) returns (stream api_container_api.StarlarkRunResponseLine) {};
   rpc CreateEnclave(engine_api.CreateEnclaveArgs) returns (engine_api.CreateEnclaveResponse) {};
-  rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (api_container_api.InspectFilesArtifactContentsResponse) {}
+  rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (api_container_api.InspectFilesArtifactContentsResponse) {};
+  rpc DownloadFilesArtifact(DownloadFilesArtifactRequest) returns (stream api_container_api.StreamedDataChunk) {};
   rpc DestroyEnclave(engine_api.DestroyEnclaveArgs) returns (google.protobuf.Empty) {};
   rpc GetStarlarkRun(GetStarlarkRunRequest) returns (api_container_api.GetStarlarkRunResponse) {};
 }
@@ -51,10 +53,22 @@ message RunStarlarkPackageRequest{
   api_container_api.RunStarlarkPackageArgs RunStarlarkPackageArgs = 3;
 }
 
+message RunStarlarkScriptRequest{
+  string apic_ip_address = 1;
+  int32 apic_port = 2;
+  api_container_api.RunStarlarkScriptArgs RunStarlarkScriptArgs = 3;
+}
+
 message InspectFilesArtifactContentsRequest {
   string apic_ip_address = 1;
   int32 apic_port = 2;
   api_container_api.FilesArtifactNameAndUuid file_names_and_uuid = 3;
+}
+
+message DownloadFilesArtifactRequest {
+  string apic_ip_address = 1;
+  int32 apic_port = 2;
+  api_container_api.DownloadFilesArtifactArgs download_files_artifacts_args = 3;
 }
 
 message GetStarlarkRunRequest{

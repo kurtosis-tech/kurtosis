@@ -1,8 +1,11 @@
 package server
 
 import (
-	"connectrpc.com/connect"
 	"context"
+	"fmt"
+	"time"
+
+	"connectrpc.com/connect"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -10,14 +13,17 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/types"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"time"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-var (
-	logRetentionFeatureReleaseTime = time.Date(2023, 9, 7, 13, 0, 0, 0, time.UTC)
+const (
+	subnetworkDisableBecauseItIsDeprecated = false
 )
 
 type EngineConnectServerService struct {
@@ -32,16 +38,12 @@ type EngineConnectServerService struct {
 	// User consent to send metrics
 	didUserAcceptSendingMetrics bool
 
-	// The clients for consuming container logs from the logs' database server
-
-	// per week pulls logs from enclaves created post log retention feature
-	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient
-
-	// per file pulls logs from enclaves created pre log retention feature
-	// TODO: remove once users are fully migrated to log retention/new log schema
-	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient
+	// The client for consuming container logs from the logs database
+	logsDatabaseClient centralized_logs.LogsDatabaseClient
 
 	logFileManager *log_file_manager.LogFileManager
+
+	metricsClient metrics_client.MetricsClient
 }
 
 func NewEngineConnectServerService(
@@ -49,20 +51,108 @@ func NewEngineConnectServerService(
 	enclaveManager *enclave_manager.EnclaveManager,
 	metricsUserId string,
 	didUserAcceptSendingMetrics bool,
-	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient,
-	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient,
+	logsDatabaseClient centralized_logs.LogsDatabaseClient,
 	logFileManager *log_file_manager.LogFileManager,
+	metricsClient metrics_client.MetricsClient,
 ) *EngineConnectServerService {
 	service := &EngineConnectServerService{
 		imageVersionTag:             imageVersionTag,
 		enclaveManager:              enclaveManager,
 		metricsUserID:               metricsUserId,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
-		perWeekLogsDatabaseClient:   perWeekLogsDatabaseClient,
-		perFileLogsDatabaseClient:   perFileLogsDatabaseClient,
+		logsDatabaseClient:          logsDatabaseClient,
 		logFileManager:              logFileManager,
+		metricsClient:               metricsClient,
 	}
 	return service
+}
+
+func toGrpcEnclaveStatus(status types.EnclaveStatus) kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus {
+	switch status {
+	case types.EnclaveStatus_EMPTY:
+		return kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_EMPTY
+	case types.EnclaveStatus_STOPPED:
+		return kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_STOPPED
+	case types.EnclaveStatus_RUNNING:
+		return kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING
+	default:
+		panic(fmt.Sprintf("Undefined mapping of value: %s", status))
+	}
+}
+
+func toGrpcContainerStatus(status types.ContainerStatus) kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus {
+	switch status {
+	case types.ContainerStatus_NONEXISTENT:
+		return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_NONEXISTENT
+	case types.ContainerStatus_STOPPED:
+		return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_STOPPED
+	case types.ContainerStatus_RUNNING:
+		return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
+	default:
+		panic(fmt.Sprintf("Undefined mapping of value: %s", status))
+	}
+}
+
+func toGrpcEnclaveAPIContainerInfo(info types.EnclaveAPIContainerInfo) kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo {
+	return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
+		ContainerId:           info.ContainerId,
+		IpInsideEnclave:       info.IpInsideEnclave,
+		GrpcPortInsideEnclave: info.GrpcPortInsideEnclave,
+		BridgeIpAddress:       info.BridgeIpAddress,
+	}
+}
+
+func toGrpcApiContainerHostMachineInfo(info types.EnclaveAPIContainerHostMachineInfo) kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo {
+	return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
+		IpOnHostMachine:       info.IpOnHostMachine,
+		GrpcPortOnHostMachine: info.GrpcPortOnHostMachine,
+	}
+}
+
+func toGrpcTimestamp(timestamp time.Time) *timestamppb.Timestamp {
+	return timestamppb.New(timestamp)
+}
+
+func toGrpcEnclaveMode(mode types.EnclaveMode) kurtosis_engine_rpc_api_bindings.EnclaveMode {
+	switch mode {
+	case types.EnclaveMode_PRODUCTION:
+		return kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
+	case types.EnclaveMode_TEST:
+		return kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
+	default:
+		panic(fmt.Sprintf("Undefined mapping of value: %s", mode))
+	}
+}
+
+func toGrpcEnclaveInfo(info types.EnclaveInfo) kurtosis_engine_rpc_api_bindings.EnclaveInfo {
+	containerInfo := utils.MapPointer(info.ApiContainerInfo, toGrpcEnclaveAPIContainerInfo)
+	apiHostMachine := utils.MapPointer(info.ApiContainerHostMachineInfo, toGrpcApiContainerHostMachineInfo)
+	return kurtosis_engine_rpc_api_bindings.EnclaveInfo{
+		EnclaveUuid:                 info.EnclaveUuid,
+		ShortenedUuid:               info.ShortenedUuid,
+		Name:                        info.Name,
+		ContainersStatus:            toGrpcEnclaveStatus(info.EnclaveStatus),
+		ApiContainerStatus:          toGrpcContainerStatus(info.ApiContainerStatus),
+		ApiContainerInfo:            containerInfo,
+		ApiContainerHostMachineInfo: apiHostMachine,
+		CreationTime:                toGrpcTimestamp(info.CreationTime),
+		Mode:                        toGrpcEnclaveMode(info.Mode),
+	}
+}
+
+func toGrpcEnclaveIdentifiers(identifier types.EnclaveIdentifiers) kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers {
+	return kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{
+		EnclaveUuid:   identifier.EnclaveUuid,
+		Name:          identifier.Name,
+		ShortenedUuid: identifier.ShortenedUuid,
+	}
+}
+
+func toGrpcEnclaveNameAndUuid(identifier types.EnclaveNameAndUuid) kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid {
+	return kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid{
+		Uuid: identifier.Uuid,
+		Name: identifier.Name,
+	}
 }
 
 func (service *EngineConnectServerService) GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
@@ -74,6 +164,11 @@ func (service *EngineConnectServerService) GetEngineInfo(context.Context, *conne
 
 func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	args := connectArgs.Msg
+
+	if err := service.metricsClient.TrackCreateEnclave(args.GetEnclaveName(), subnetworkDisableBecauseItIsDeprecated); err != nil {
+		logrus.Warn("An error occurred while logging the create enclave event")
+	}
+
 	logrus.Debugf("args: %+v", args)
 	apiContainerLogLevel, err := logrus.ParseLevel(args.GetApiContainerLogLevel())
 	if err != nil {
@@ -84,6 +179,7 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 	if args.GetMode() == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
 		isProduction = true
 	}
+
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		service.imageVersionTag,
@@ -91,13 +187,15 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 		apiContainerLogLevel,
 		args.GetEnclaveName(),
 		isProduction,
+		args.GetShouldApicRunInDebugMode(),
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", args.EnclaveName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", args.GetEnclaveName())
 	}
 
+	grpcEnclaveInfo := toGrpcEnclaveInfo(*enclaveInfo)
 	response := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
-		EnclaveInfo: enclaveInfo,
+		EnclaveInfo: &grpcEnclaveInfo,
 	}
 
 	return connect.NewResponse(response), nil
@@ -108,7 +206,12 @@ func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *c
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
 	}
-	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{EnclaveInfo: infoForEnclaves}
+	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{
+		EnclaveInfo: utils.MapMapValues(
+			infoForEnclaves,
+			func(info *types.EnclaveInfo) *kurtosis_engine_rpc_api_bindings.EnclaveInfo {
+				return utils.MapPointer(info, toGrpcEnclaveInfo)
+			})}
 	return connect.NewResponse(response), nil
 }
 
@@ -117,13 +220,22 @@ func (service *EngineConnectServerService) GetExistingAndHistoricalEnclaveIdenti
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave identifiers")
 	}
-	response := &kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse{AllIdentifiers: allIdentifiers}
+	response := &kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse{
+		AllIdentifiers: utils.MapList(
+			allIdentifiers,
+			func(identifier *types.EnclaveIdentifiers) *kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers {
+				return utils.MapPointer(identifier, toGrpcEnclaveIdentifiers)
+			})}
 	return connect.NewResponse(response), nil
 }
 
 func (service *EngineConnectServerService) StopEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
 	args := connectArgs.Msg
 	enclaveIdentifier := args.EnclaveIdentifier
+
+	if err := service.metricsClient.TrackStopEnclave(enclaveIdentifier); err != nil {
+		logrus.Warnf("An error occurred while logging the stop enclave event for enclave '%v'", enclaveIdentifier)
+	}
 
 	if err := service.enclaveManager.StopEnclave(ctx, enclaveIdentifier); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
@@ -135,6 +247,10 @@ func (service *EngineConnectServerService) StopEnclave(ctx context.Context, conn
 func (service *EngineConnectServerService) DestroyEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
 	args := connectArgs.Msg
 	enclaveIdentifier := args.EnclaveIdentifier
+
+	if err := service.metricsClient.TrackDestroyEnclave(enclaveIdentifier); err != nil {
+		logrus.Warnf("An error occurred while logging the destroy enclave event for enclave '%v'", enclaveIdentifier)
+	}
 
 	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with identifier '%v':", args.EnclaveIdentifier)
@@ -153,7 +269,13 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 			return nil, stacktrace.Propagate(err, "An error occurred removing all logs.")
 		}
 	}
-	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveNameAndUuids: removedEnclaveUuidsAndNames}
+	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{
+		RemovedEnclaveNameAndUuids: utils.MapList(
+			removedEnclaveUuidsAndNames,
+			func(identifier *types.EnclaveNameAndUuid) *kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid {
+				return utils.MapPointer(identifier, toGrpcEnclaveNameAndUuid)
+			},
+		)}
 	return connect.NewResponse(response), nil
 }
 
@@ -181,7 +303,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		requestedServiceUuids[serviceUuid] = true
 	}
 
-	if service.perWeekLogsDatabaseClient == nil || service.perFileLogsDatabaseClient == nil {
+	if service.logsDatabaseClient == nil {
 		return stacktrace.NewError("It's not possible to return service logs because there is no logs database client; this is bug in Kurtosis")
 	}
 
@@ -201,14 +323,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		return stacktrace.Propagate(err, "An error occurred creating the conjunctive log line filters from the GRPC's conjunctive log line filters '%+v'", args.GetConjunctiveFilters())
 	}
 
-	// get enclave creation time to determine strategy to pull logs
-	enclaveCreationTime, err := service.getEnclaveCreationTime(ctx, enclaveUuid)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while trying to get the enclave creation time to determine how to pull logs.")
-	}
-	logsDatabaseClient := service.getLogsDatabaseClient(enclaveCreationTime)
-
-	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(
+	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(
 		contextWithCancel,
 		enclaveUuid,
 		requestedServiceUuids,
@@ -276,8 +391,7 @@ func (service *EngineConnectServerService) reportAnyMissingUuidsAndGetNotFoundUu
 	requestedServiceUuids map[user_service.ServiceUUID]bool,
 	stream *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) (map[string]bool, error) {
-	// doesn't matter which logs client is used here
-	existingServiceUuids, err := service.perWeekLogsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
+	existingServiceUuids, err := service.logsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service UUIDs from the log client for enclave '%v' and for the requested UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
 	}
@@ -321,7 +435,8 @@ func newLogsResponse(
 		// there is no new log lines but is a found UUID, so it has to be included in the service logs map
 		if !found && !isInNotFoundUuidList {
 			serviceLogLinesByUuid[serviceUuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{
-				Line: nil,
+				Line:      nil,
+				Timestamp: nil,
 			}
 		}
 		//Remove the service's UUID from the initial not found list, if it was returned from the logs database
@@ -342,14 +457,15 @@ func newLogsResponse(
 }
 
 func newRPCBindingsLogLineFromLogLines(logLines []logline.LogLine) *kurtosis_engine_rpc_api_bindings.LogLine {
-
 	logLinesStr := make([]string, len(logLines))
+	var logTimestamp *timestamppb.Timestamp
 
 	for logLineIndex, logLine := range logLines {
 		logLinesStr[logLineIndex] = logLine.GetContent()
+		logTimestamp = timestamppb.New(logLine.GetTimestamp())
 	}
 
-	rpcBindingsLogLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr}
+	rpcBindingsLogLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr, Timestamp: logTimestamp}
 
 	return rpcBindingsLogLines
 }
@@ -395,31 +511,4 @@ func newConjunctiveLogLineFiltersFromGRPCLogLineFilters(
 	}
 
 	return conjunctiveLogLineFilters, nil
-}
-
-// If the enclave was created prior to log retention, return the per file logs client
-func (service *EngineConnectServerService) getLogsDatabaseClient(enclaveCreationTime time.Time) centralized_logs.LogsDatabaseClient {
-	if enclaveCreationTime.After(logRetentionFeatureReleaseTime) {
-		return service.perWeekLogsDatabaseClient
-	} else {
-		return service.perFileLogsDatabaseClient
-	}
-}
-
-func (service *EngineConnectServerService) getEnclaveCreationTime(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (time.Time, error) {
-	enclaves, err := service.enclaveManager.GetEnclaves(ctx)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	enclaveObj, found := enclaves[string(enclaveUuid)]
-	if !found {
-		return time.Time{}, stacktrace.NewError("Engine could not find enclave '%v'", enclaveUuid)
-	}
-
-	timestamp := enclaveObj.GetCreationTime()
-	if timestamp == nil {
-		return time.Time{}, stacktrace.NewError("An error occurred getting the creation time for enclave '%v'. This is a bug in Kurtosis", enclaveUuid)
-	}
-	return timestamp.AsTime(), nil
 }

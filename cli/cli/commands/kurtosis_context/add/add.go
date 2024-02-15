@@ -76,8 +76,8 @@ func AddContext(newContextToAdd *generated.KurtosisContext, envVars *string, clo
 			newContextToAdd.GetRemoteContextV0().GetTunnelPort(),
 			newContextToAdd.GetRemoteContextV0().GetTlsConfig(),
 			envVars,
-			cloudInstanceIdCopy,
 			cloudUserIdCopy,
+			cloudInstanceIdCopy,
 		)
 	} else {
 		enrichedContextData = newContextToAdd

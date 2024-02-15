@@ -24,13 +24,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/kurtosis/utils"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
@@ -463,9 +463,6 @@ func (network *DefaultServiceNetwork) StartServices(
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 		}
-		if serviceRegistration.GetStatus() == service.ServiceStatus_Started {
-			return nil, nil, stacktrace.NewError("Service '%v' is already started", serviceRegistration.GetName())
-		}
 		serviceRegistrations[serviceRegistration.GetUUID()] = serviceRegistration
 	}
 
@@ -530,9 +527,6 @@ func (network *DefaultServiceNetwork) StopServices(
 		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
-		}
-		if serviceRegistration.GetStatus() == service.ServiceStatus_Stopped {
-			return nil, nil, stacktrace.NewError("Service '%v' is already stopped", serviceRegistration.GetName())
 		}
 		serviceUuids[serviceRegistration.GetUUID()] = true
 		serviceNamesByUuid[serviceRegistration.GetUUID()] = serviceRegistration.GetName()
@@ -1231,7 +1225,7 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 		}
 	}
 
-	compressedFile, _, compressedFileMd5, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
+	compressedFile, _, compressedFileMd5, err := utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
 	}

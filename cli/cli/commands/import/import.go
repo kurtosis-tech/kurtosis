@@ -3,6 +3,11 @@ package _import
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/joho/godotenv"
@@ -11,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-
 	command_args_run "github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
@@ -22,14 +26,10 @@ import (
 	_run "github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/name_generator"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -155,6 +155,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't find enclave name flag '%v'", enclaveNameFlagKey)
 	}
+
 	enclaveCtx, err := createEnclave(ctx, kurtosisCtx, enclaveName)
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't create enclave")
@@ -167,7 +168,7 @@ func run(
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to run generated starlark from compose")
 	}
-	if err = inspect.PrintEnclaveInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveCtx.GetEnclaveName(), doNotShowFullUuids); err != nil {
+	if err = inspect.PrintEnclaveInspect(ctx, kurtosisCtx, enclaveCtx.GetEnclaveName(), doNotShowFullUuids); err != nil {
 		logrus.Errorf("An error occurred while printing enclave status and contents:\n%s", err)
 	}
 	return nil
@@ -175,6 +176,7 @@ func run(
 
 func convertComposeFileToStarlark(path string, dotEnvMap map[string]string) (string, map[string]string, error) {
 	project, err := loader.Load(types.ConfigDetails{ //nolint:exhaustruct
+		// nolint: exhaustruct
 		ConfigFiles: []types.ConfigFile{{Filename: path}},
 		Environment: dotEnvMap,
 	})

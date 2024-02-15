@@ -3,10 +3,15 @@ package engine_functions
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/github_auth_storage_creator"
+	"time"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/reverse_proxy_functions/implementations/traefik"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -17,17 +22,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 const (
 	//TODO: pass this parameter
 	enclaveManagerUIPort                        = 9711
 	enclaveManagerAPIPort                       = 8081
+	engineDebugServerPort                       = 50102 // in ClI this is 50101 and 50103 for the APIC
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
-	logsStorageDirpath                          = "/var/log/kurtosis/"
-	removeLogsWaitHours                         = 6 * time.Hour
+	logsStorageDirPath                          = "/var/log/kurtosis/"
 )
 
 func CreateEngine(
@@ -36,6 +40,8 @@ func CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	shouldStartInDebugMode bool,
+	gitAuthToken string,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) (
@@ -109,6 +115,28 @@ func CreateEngine(
 	}()
 	logrus.Infof("Centralized logs components started.")
 
+	reverseProxyContainer := traefik.NewTraefikReverseProxyContainer()
+	_, removeReverseProxyFunc, err := reverse_proxy_functions.CreateReverseProxy(
+		ctx,
+		engineGuid,
+		reverseProxyContainer,
+		dockerManager,
+		objAttrsProvider)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"An error occurred attempting to create reverse proxy for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
+	}
+	shouldRemoveReverseProxy := true
+	defer func() {
+		if shouldRemoveReverseProxy {
+			removeReverseProxyFunc()
+		}
+	}()
+	if err = reverse_proxy_functions.ConnectReverseProxyToEnclaveNetworks(ctx, dockerManager); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occured connecting the reverse proxy to the enclave networks")
+	}
+	logrus.Infof("Reverse proxy started.")
+
 	enclaveManagerUIPortSpec, err := port_spec.NewPortSpec(uint16(enclaveManagerUIPort), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -134,10 +162,22 @@ func CreateEngine(
 		)
 	}
 
+	restAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the REST API server's http port spec object using number '%v' and protocol '%v'",
+			engine.RESTAPIPortAddr,
+			consts.EngineTransportProtocol.String(),
+		)
+	}
+
 	engineAttrs, err := objAttrsProvider.ForEngineServer(
 		engineGuid,
 		consts.KurtosisInternalContainerGrpcPortId,
 		privateGrpcPortSpec,
+		consts.KurtosisInternalContainerRESTAPIPortId,
+		restAPIPortSpec,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -163,10 +203,61 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the Enclave Manager API port spec to a Docker port")
 	}
 
+	restAPIDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(restAPIPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the Enclave Manager API port spec to a Docker port")
+	}
+
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort:       docker_manager.NewManualPublishingSpec(grpcPortNum),
 		enclaveManagerUIDockerPort:  docker_manager.NewManualPublishingSpec(uint16(enclaveManagerUIPort)),
 		enclaveManagerAPIDockerPort: docker_manager.NewManualPublishingSpec(uint16(enclaveManagerAPIPort)),
+		restAPIDockerPort:           docker_manager.NewManualPublishingSpec(engine.RESTAPIPortAddr),
+	}
+
+	// Configure the debug port only if it's required
+	if shouldStartInDebugMode {
+		debugServerPortSpec, err := port_spec.NewPortSpec(
+			uint16(engineDebugServerPort),
+			consts.EngineTransportProtocol,
+			consts.HttpApplicationProtocol,
+			defaultWait,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred creating the Engine's debug server port spec object using number '%v' and protocol '%v'",
+				engineDebugServerPort,
+				consts.EngineTransportProtocol.String(),
+			)
+		}
+
+		debugServerDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(debugServerPortSpec)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred transforming the debug server port spec to a Docker port")
+		}
+
+		usedPorts[debugServerDockerPort] = docker_manager.NewManualPublishingSpec(uint16(engineDebugServerPort))
+	}
+
+	// Configure GitHub Auth by writing the provided token to a volume that's accessible by the engine
+	githubAuthStorageVolObjAttrs, err := objAttrsProvider.ForGitHubAuthStorageVolume()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving object attributes for GitHub auth storage.")
+	}
+	githubAuthStorageVolNameStr := githubAuthStorageVolObjAttrs.GetName().GetString()
+	githubAuthStorageVolLabelStrs := map[string]string{}
+	for labelKey, labelValue := range githubAuthStorageVolObjAttrs.GetLabels() {
+		githubAuthStorageVolLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+	// This volume is created idempotently (like logs storage volume) and just write the token to the file everytime the engine starts
+	if err = dockerManager.CreateVolume(ctx, githubAuthStorageVolNameStr, githubAuthStorageVolLabelStrs); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating GitHub auth storage volume.")
+	}
+	githubAuthStorageCreator := github_auth_storage_creator.NewGitHubAuthStorageCreator(gitAuthToken)
+	err = githubAuthStorageCreator.CreateGitHubAuthStorage(ctx, targetNetworkId, githubAuthStorageVolNameStr, consts.GitHubAuthStorageDirPath, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating GitHub auth storage.")
 	}
 
 	bindMounts := map[string]string{
@@ -175,7 +266,8 @@ func CreateEngine(
 	}
 
 	volumeMounts := map[string]string{
-		logsStorageVolNameStr: logsStorageDirpath,
+		logsStorageVolNameStr:       logsStorageDirPath,
+		githubAuthStorageVolNameStr: consts.GitHubAuthStorageDirPath,
 	}
 
 	if serverArgs.OnBastionHost {
@@ -194,7 +286,7 @@ func CreateEngine(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
 		engineAttrs.GetName().GetString(),
 		targetNetworkId,
@@ -208,7 +300,23 @@ func CreateEngine(
 		usedPorts,
 	).WithLabels(
 		labelStrs,
-	).Build()
+	)
+
+	if shouldStartInDebugMode {
+		// Adding systrace capabilities when starting the debug server in the engine's container
+		capabilities := map[docker_manager.ContainerCapability]bool{
+			docker_manager.SysPtrace: true,
+		}
+		createAndStartArgsBuilder.WithAddedCapabilities(capabilities)
+
+		// Setting security for debugging the engine's container
+		securityOpts := map[docker_manager.ContainerSecurityOpt]bool{
+			docker_manager.AppArmorUnconfined: true,
+		}
+		createAndStartArgsBuilder.WithSecurityOpts(securityOpts)
+	}
+
+	createAndStartArgs := createAndStartArgsBuilder.Build()
 
 	containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
@@ -248,6 +356,7 @@ func CreateEngine(
 	}
 
 	shouldRemoveLogsAggregator = false
+	shouldRemoveReverseProxy = false
 	shouldKillEngineContainer = false
 	return result, nil
 }

@@ -13,5 +13,5 @@ kurtosis files upload $THE_ENCLAVE_IDENTIFIER $PATH_TO_FILES
 where `$THE_ENCLAVE_IDENTIFIER` is the [resource identifier][resource-identifier] for the enclave.
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
-[files-artifacts]: ../concepts-reference/files-artifacts.md
-[resource-identifier]: ../concepts-reference/resource-identifier.md
+[files-artifacts]: ../advanced-concepts/files-artifacts.md
+[resource-identifier]: ../advanced-concepts/resource-identifier.md

@@ -86,11 +86,11 @@ fi
         exit 1
     fi
     if "${should_publish_arg}"; then
-        goreleaser_verb_and_flags="release --rm-dist"
+        goreleaser_verb_and_flags="release --clean"
     elif "${should_build_all_arg}" ; then
-        goreleaser_verb_and_flags="release --rm-dist --snapshot"
+        goreleaser_verb_and_flags="release --clean --snapshot"
     else
-        goreleaser_verb_and_flags="build --rm-dist --snapshot --single-target"
+        goreleaser_verb_and_flags="build --clean --snapshot --single-target"
     fi
     if ! GORELEASER_CURRENT_TAG=$(cat $root_dirpath/version.txt) goreleaser ${goreleaser_verb_and_flags}; then
         echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2

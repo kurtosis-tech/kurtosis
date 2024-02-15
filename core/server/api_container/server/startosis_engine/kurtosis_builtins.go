@@ -61,8 +61,8 @@ func KurtosisPlanInstructions(
 	packageReplaceOptions map[string]string,
 ) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
-		add_service.NewAddService(serviceNetwork, runtimeValueStore),
-		add_service.NewAddServices(serviceNetwork, runtimeValueStore),
+		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions),
+		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions),
 		verify.NewVerify(runtimeValueStore),
 		exec.NewExec(serviceNetwork, runtimeValueStore),
 		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),
@@ -111,5 +111,10 @@ func KurtosisTypeConstructors() []*starlark.Builtin {
 		starlark.NewBuiltin(store_spec.StoreSpecTypeName, store_spec.NewStoreSpecType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.ServiceConfigTypeName, service_config.NewServiceConfigType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.ReadyConditionTypeName, service_config.NewReadyConditionType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.ImageBuildSpecTypeName, service_config.NewImageBuildSpecType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.NixBuildSpecTypeName, service_config.NewNixBuildSpecType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.ImageRegistrySpecTypeName, service_config.NewImageRegistrySpec().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.UserTypeName, service_config.NewUserType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.TolerationTypeName, service_config.NewTolerationType().CreateBuiltin()),
 	}
 }

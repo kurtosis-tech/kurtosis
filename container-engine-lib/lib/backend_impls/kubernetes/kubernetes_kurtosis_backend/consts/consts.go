@@ -2,7 +2,8 @@ package consts
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
+	netv1 "k8s.io/api/networking/v1"
 )
 
 const (
@@ -14,11 +15,16 @@ const (
 	//  be stored in the port spec label
 	KurtosisInternalContainerGrpcPortSpecId = "grpc"
 
-	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
-	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
-	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
-	KurtosisInternalContainerGrpcProxyPortSpecId = "grpc-proxy"
-	HttpApplicationProtocol                      = "http"
+	// The ID of the REST API port
+	KurtosisInternalContainerRESTAPIPortSpecId = "rest-api"
+
+	HttpApplicationProtocol = "http"
+
+	IngressRulePathAllPaths = "/"
+)
+
+var (
+	IngressRulePathTypePrefix = netv1.PathTypePrefix
 )
 
 // This maps a Kubernetes pod's phase to a binary "is the pod considered running?" determiner

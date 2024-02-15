@@ -1,6 +1,7 @@
 package builtin_argument
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
@@ -21,6 +22,25 @@ func NonEmptyString(value starlark.Value, argNameForLogging string) *startosis_e
 	return nil
 }
 
+func StringListWithNotEmptyValues(value starlark.Value, argNameForLogging string) *startosis_errors.InterpretationError {
+	starlarkList, ok := value.(*starlark.List)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a starlark.List but was '%s'", argNameForLogging, reflect.TypeOf(value))
+	}
+	iterator := starlarkList.Iterate()
+	defer iterator.Done()
+	var itemValue starlark.Value
+	var index = 0
+	for iterator.Next(&itemValue) {
+		argumentDescription := fmt.Sprintf("element %d in argument '%s'", index, argNameForLogging)
+		if interpretationErr := NonEmptyString(itemValue, argumentDescription); interpretationErr != nil {
+			return interpretationErr
+		}
+		index++
+	}
+	return nil
+}
+
 func Uint64InRange(value starlark.Value, argNameForLogging string, min uint64, max uint64) *startosis_errors.InterpretationError {
 	valueInt, ok := value.(starlark.Int)
 	if !ok {
@@ -32,6 +52,21 @@ func Uint64InRange(value starlark.Value, argNameForLogging string, min uint64, m
 	}
 	if valueUint64 < min || valueUint64 > max {
 		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be an integer between %d and %d, but it was %v", argNameForLogging, min, max, valueUint64)
+	}
+	return nil
+}
+
+func Int64InRange(value starlark.Value, argNameForLogging string, min int64, max int64) *startosis_errors.InterpretationError {
+	valueInt, ok := value.(starlark.Int)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be an integer between %d and %d, but it was '%s'", argNameForLogging, min, max, reflect.TypeOf(value))
+	}
+	valueInt64, ok := valueInt.Int64()
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be an integer between %d and %d, but it was %v", argNameForLogging, min, max, valueInt)
+	}
+	if valueInt64 < min || valueInt64 > max {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be an integer between %d and %d, but it was %v", argNameForLogging, min, max, valueInt64)
 	}
 	return nil
 }
@@ -112,32 +147,47 @@ func DurationOrNone(value starlark.Value, attributeName string) *startosis_error
 	return nil
 }
 
-func ServiceConfigLabels(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
-	labelsMap := map[string]string{}
-	labelsDict, ok := value.(*starlark.Dict)
-	if !ok {
-		return startosis_errors.NewInterpretationError("Attribute '%s' is expected to be a dictionary of strings, got '%s'", attributeName, reflect.TypeOf(value))
+func StringMappingToString(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
+	if _, err := parseMapStringString(value, attributeName); err != nil {
+		return err
 	}
-	for _, labelKey := range labelsDict.Keys() {
-		labelValue, found, err := labelsDict.Get(labelKey)
-		if err != nil {
-			return startosis_errors.WrapWithInterpretationError(err, "Unexpected error iterating on dictionary. Value associated to key '%v' could not be found", labelKey)
-		} else if !found {
-			return startosis_errors.NewInterpretationError("Unexpected error iterating on dictionary. Value associated to key '%v' could not be found", labelKey)
-		}
+	return nil
+}
 
-		labelKeyStr, ok := labelKey.(starlark.String)
-		if !ok {
-			return startosis_errors.NewInterpretationError("Key in '%s' dictionary was expected to be a string, got '%s'", attributeName, reflect.TypeOf(labelKey))
-		}
-		labelValueStr, ok := labelValue.(starlark.String)
-		if !ok {
-			return startosis_errors.NewInterpretationError("Value associated to key '%s' in dictionary '%s' was expected to be a string, got '%s'", labelKeyStr, attributeName, reflect.TypeOf(value))
-		}
-		labelsMap[labelKeyStr.GoString()] = labelValueStr.GoString()
+func ServiceLabelsValidator(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
+	labelsMap, interpretationErr := parseMapStringString(value, attributeName)
+	if interpretationErr != nil {
+		return interpretationErr
 	}
 	if err := service.ValidateServiceConfigLabels(labelsMap); err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "An error occurred validating service config labels '%+v'", labelsMap)
 	}
 	return nil
+}
+
+func parseMapStringString(value starlark.Value, attributeName string) (map[string]string, *startosis_errors.InterpretationError) {
+	stringMap := map[string]string{}
+	stringDict, ok := value.(*starlark.Dict)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError("Attribute '%s' is expected to be a dictionary of strings, got '%s'", attributeName, reflect.TypeOf(value))
+	}
+	for _, mapKey := range stringDict.Keys() {
+		mapValue, found, err := stringDict.Get(mapKey)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unexpected error iterating on dictionary. Value associated to key '%v' could not be found", mapKey)
+		} else if !found {
+			return nil, startosis_errors.NewInterpretationError("Unexpected error iterating on dictionary. Value associated to key '%v' could not be found", mapKey)
+		}
+
+		mapKeyStr, ok := mapKey.(starlark.String)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("Key in '%s' dictionary was expected to be a string, got '%s'", attributeName, reflect.TypeOf(mapKey))
+		}
+		mapValueStr, ok := mapValue.(starlark.String)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("Value associated to key '%s' in dictionary '%s' was expected to be a string, got '%s'", mapKeyStr, attributeName, reflect.TypeOf(value))
+		}
+		stringMap[mapKeyStr.GoString()] = mapValueStr.GoString()
+	}
+	return stringMap, nil
 }

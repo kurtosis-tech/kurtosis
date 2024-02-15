@@ -4,7 +4,7 @@ sidebar_label: Code Examples
 slug: /code-examples
 ---
 
-This page lists where you can find many different types of Kurtosis [packages][packages-concepts-reference]:
+This page lists where you can find many different types of Kurtosis [packages][packages-concepts]:
 
 - [Awesome Kurtosis][awesome-kurtosis]: A repo containing many different examples of Kurtosis usage across web2 and web3
 - [Official Kurtosis packages on Github](https://github.com/kurtosis-tech?q=package+in%3Aname&type=&language=): The multitude of Kurtosis-maintained packages, including the rising [AutoGPT package](https://github.com/kurtosis-tech/autogpt-package)
@@ -13,4 +13,4 @@ This page lists where you can find many different types of Kurtosis [packages][p
 
 <!---------------------------------------- ONLY LINKS BELOW HERE!!! ----------------------------------->
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis
-[packages-concepts-reference]: ./concepts-reference/packages.md
+[packages-concepts]: ./advanced-concepts/packages.md

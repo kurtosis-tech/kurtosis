@@ -32,17 +32,10 @@ var LsCmd = &lowlevel.LowlevelKurtosisCommand{
 }
 
 func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	kurtosisConfigStore := kurtosis_config.GetKurtosisConfigStore()
-	configProvider := kurtosis_config.NewKurtosisConfigProvider(kurtosisConfigStore)
-	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	clusterList, err := GetClusterList()
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get or initialize Kurtosis configuration")
+		return stacktrace.Propagate(err, "Failed to get Kurtosis cluster list")
 	}
-	var clusterList []string
-	for clusterName := range kurtosisConfig.GetKurtosisClusters() {
-		clusterList = append(clusterList, clusterName)
-	}
-	sort.Strings(clusterList)
 
 	tablePrinter := output_printers.NewTablePrinter(clusterCurrentColumnHeader, clusterNameColumnHeader)
 
@@ -58,6 +51,21 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	}
 	tablePrinter.Print()
 	return nil
+}
+
+func GetClusterList() ([]string, error) {
+	kurtosisConfigStore := kurtosis_config.GetKurtosisConfigStore()
+	configProvider := kurtosis_config.NewKurtosisConfigProvider(kurtosisConfigStore)
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	if err != nil {
+		return []string{}, stacktrace.Propagate(err, "Failed to get or initialize Kurtosis configuration")
+	}
+	var clusterList []string
+	for clusterName := range kurtosisConfig.GetKurtosisClusters() {
+		clusterList = append(clusterList, clusterName)
+	}
+	sort.Strings(clusterList)
+	return clusterList, nil
 }
 
 func isCurrentCluster(clusterName string) bool {

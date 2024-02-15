@@ -25,9 +25,9 @@ jobs:
     name: golang-lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          go-version: 1.19
+          go-version: '1.20'
       - uses: actions/checkout@v3
       # Generate versions
       - run: scripts/generate-kurtosis-version.sh
@@ -50,6 +50,13 @@ jobs:
         with:
           version: ${{ env.GOLINT_VERSION }}
           working-directory: grpc-file-transfer/golang/
+          args: --timeout=3m
+          skip-pkg-cache: true
+      - name: lint-metrics-library
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: ${{ env.GOLINT_VERSION }}
+          working-directory: metrics-library/golang
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-name-generator

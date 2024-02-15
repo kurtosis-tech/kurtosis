@@ -5,6 +5,10 @@ import (
 	"io"
 	"time"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -13,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/reverse_proxy"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 )
 
@@ -32,7 +37,7 @@ type KurtosisBackend interface {
 	// If retrieving the latest [dockerImage] fails, the local image will be used.
 	// Returns True is it was retrieved from cloud or False if it's a local image
 	// Returns a string that represents the architecture of the image
-	FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error)
+	FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error)
 
 	PruneUnusedImages(ctx context.Context) ([]string, error)
 
@@ -43,6 +48,8 @@ type KurtosisBackend interface {
 		imageVersionTag string,
 		grpcPortNum uint16,
 		envVars map[string]string,
+		shouldStartInDebugMode bool,
+		githubAuthToken string,
 	) (
 		*engine.Engine,
 		error,
@@ -136,6 +143,7 @@ type KurtosisBackend interface {
 		// Must not conflict with the custom environment variables
 		ownIpAddressEnvVar string,
 		customEnvVars map[string]string,
+		shouldStartInDebugMode bool,
 	) (
 		*api_container.APIContainer,
 		error,
@@ -337,6 +345,19 @@ type KurtosisBackend interface {
 	// Destroy the logs collector for enclave with UUID
 	DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error
 
+	CreateReverseProxy(ctx context.Context, engineGuid engine.EngineGUID) (*reverse_proxy.ReverseProxy, error)
+
+	// Returns nil if logs aggregator was not found
+	GetReverseProxy(ctx context.Context) (*reverse_proxy.ReverseProxy, error)
+
+	DestroyReverseProxy(ctx context.Context) error
+
 	// GetAvailableCPUAndMemory - gets available memory in megabytes and cpu in millicores, the boolean indicates whether the information is complete
 	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error)
+
+	// BuildImage builds a container image based on the [imageBuildSpec] with [imageName]
+	// Returns image architecture and if error occurred
+	BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error)
+
+	NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error)
 }

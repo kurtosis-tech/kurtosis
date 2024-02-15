@@ -3,6 +3,9 @@ package start
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/engine/common"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
@@ -11,73 +14,95 @@ import (
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
+	"strconv"
 	"strings"
 )
 
 const (
-	engineVersionArg    = "version"
-	logLevelArg         = "log-level"
-	enclavePoolSizeFlag = "enclave-pool-size"
+	engineVersionFlagKey           = "version"
+	logLevelFlagKey                = "log-level"
+	enclavePoolSizeFlagKey         = "enclave-pool-size"
+	githubAuthTokenOverrideFlagKey = "github-auth-token"
 
 	defaultEngineVersion          = ""
 	kurtosisTechEngineImagePrefix = "kurtosistech/engine"
 	imageVersionDelimiter         = ":"
 )
 
-var engineVersion string
-var logLevelStr string
-var enclavePoolSize uint8
-
-// StartCmd Suppressing exhaustruct requirement because this struct has ~40 properties
-// nolint: exhaustruct
-var StartCmd = &cobra.Command{
-	Use:   command_str_consts.EngineStartCmdStr,
-	Short: "Starts the Kurtosis engine",
-	Long:  "Starts the Kurtosis engine, doing nothing if an engine is already running",
-	RunE:  run,
-}
-
-func init() {
-	StartCmd.Flags().StringVar(
-		&engineVersion,
-		engineVersionArg,
-		defaultEngineVersion,
-		"The version (Docker tag) of the Kurtosis engine that should be started (blank will start the default version)",
-	)
-	StartCmd.Flags().StringVar(
-		&logLevelStr,
-		logLevelArg,
-		defaults.DefaultEngineLogLevel.String(),
-		fmt.Sprintf(
-			"The level that the started engine should log at (%v)",
-			strings.Join(
-				logrus_log_levels.GetAcceptableLogLevelStrs(),
-				"|",
+var StartCmd = &lowlevel.LowlevelKurtosisCommand{
+	CommandStr:       command_str_consts.EngineStartCmdStr,
+	ShortDescription: "Starts the Kurtosis engine",
+	LongDescription:  "Starts the Kurtosis engine, doing nothing if an engine is already running",
+	Args:             nil,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:       engineVersionFlagKey,
+			Usage:     "The version (Docker tag) of the Kurtosis engine that should be started (blank will start the default version)",
+			Shorthand: "",
+			Type:      flags.FlagType_String,
+			Default:   defaultEngineVersion,
+		},
+		{
+			Key: logLevelFlagKey,
+			Usage: fmt.Sprintf(
+				"The level that the started engine should log at (%v)",
+				strings.Join(
+					logrus_log_levels.GetAcceptableLogLevelStrs(),
+					"|",
+				),
 			),
-		),
-	)
-	StartCmd.Flags().Uint8Var(
-		&enclavePoolSize,
-		enclavePoolSizeFlag,
-		defaults.DefaultEngineEnclavePoolSize,
-		fmt.Sprintf(
-			"The enclave pool size, the default value is '%v' which means it will be disabled. CAUTION: This is only available for Kubernetes, and this command will fail if you want to use it for Docker.",
-			defaults.DefaultEngineEnclavePoolSize,
-		),
-	)
+			Shorthand: "",
+			Type:      flags.FlagType_String,
+			Default:   defaults.DefaultEngineLogLevel.String(),
+		},
+		{
+			Key: enclavePoolSizeFlagKey,
+			Usage: fmt.Sprintf(
+				"The enclave pool size, the default value is '%v' which means it will be disabled. CAUTION: This is only available for Kubernetes, and this command will fail if you want to use it for Docker.",
+				defaults.DefaultEngineEnclavePoolSize,
+			),
+			Shorthand: "",
+			Type:      flags.FlagType_Uint8,
+			Default:   strconv.Itoa(int(defaults.DefaultEngineEnclavePoolSize)),
+		},
+		{
+			Key:       githubAuthTokenOverrideFlagKey,
+			Usage:     "The github auth token that should be used to authorize git operations such as accessing packages in private repositories. Overrides existing github auth config if a user is logged in.",
+			Shorthand: "",
+			Type:      flags.FlagType_String,
+			Default:   defaults.DefaultGitHubAuthTokenOverride,
+		},
+	},
+	PreValidationAndRunFunc:  nil,
+	RunFunc:                  run,
+	PostValidationAndRunFunc: nil,
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error {
 	ctx := context.Background()
 
+	enclavePoolSize, err := flags.GetUint8(enclavePoolSizeFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a integer flag with key '%v' but none was found; this is an error in Kurtosis!", enclavePoolSizeFlagKey)
+	}
+
 	if err := common.ValidateEnclavePoolSizeFlag(enclavePoolSize); err != nil {
-		return stacktrace.Propagate(err, "An error occurred validating the '%v' flag", enclavePoolSizeFlag)
+		return stacktrace.Propagate(err, "An error occurred validating the '%v' flag", enclavePoolSizeFlagKey)
+	}
+
+	logLevelStr, err := flags.GetString(logLevelFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine log level using flag with key '%v'; this is a bug in Kurtosis", logLevelFlagKey)
 	}
 
 	logLevel, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", logLevelStr)
+	}
+
+	githubAuthTokenOverride, err := flags.GetString(githubAuthTokenOverrideFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting GitHub auth token override flag with key '%v'. This is a bug in Kurtosis", githubAuthTokenOverrideFlagKey)
 	}
 
 	engineManager, err := engine_manager.NewEngineManager(ctx)
@@ -87,12 +112,27 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var engineClientCloseFunc func() error
 	var startEngineErr error
-	if engineVersion == defaultEngineVersion {
+
+	engineVersion, err := flags.GetString(engineVersionFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine Container Version using flag with key '%v'; this is a bug in Kurtosis", engineVersionFlagKey)
+	}
+
+	isDebugMode, err := flags.GetBool(defaults.DebugModeFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
+	}
+
+	if engineVersion == defaultEngineVersion && isDebugMode {
+		engineDebugVersion := fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
+		logrus.Infof("Starting Kurtosis engine in debug mode from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineDebugVersion)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineDebugVersion, logLevel, enclavePoolSize, true, githubAuthTokenOverride)
+	} else if engineVersion == defaultEngineVersion {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.KurtosisVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize, githubAuthTokenOverride)
 	} else {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel, enclavePoolSize)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel, enclavePoolSize, defaults.DefaultEnableDebugMode, githubAuthTokenOverride)
 	}
 	if startEngineErr != nil {
 		return stacktrace.Propagate(startEngineErr, "An error occurred starting the Kurtosis engine")

@@ -14,17 +14,17 @@ func getOrCreatePersistentDirectories(
 	ctx context.Context,
 	serviceUuid service.ServiceUUID,
 	objAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
-	serviceMountpointsToPersistentKey map[string]service_directory.DirectoryPersistentKey,
+	serviceMountpointsToPersistentKey map[string]service_directory.PersistentDirectory,
 	dockerManager *docker_manager.DockerManager,
 ) (map[string]string, error) {
 	shouldDeleteVolumes := true
 	volumeNamesToRemoveIfFailure := map[string]bool{}
 	persistentDirectories := map[string]string{}
 
-	for serviceDirPath, persistentKey := range serviceMountpointsToPersistentKey {
-		volumeAttrs, err := objAttrsProvider.ForSinglePersistentDirectoryVolume(serviceUuid, persistentKey)
+	for serviceDirPath, persistentDirectory := range serviceMountpointsToPersistentKey {
+		volumeAttrs, err := objAttrsProvider.ForSinglePersistentDirectoryVolume(persistentDirectory.PersistentKey)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error creating persistent directory labels for '%s'", persistentKey)
+			return nil, stacktrace.Propagate(err, "Error creating persistent directory labels for '%s'", persistentDirectory.PersistentKey)
 		}
 
 		volumeName := volumeAttrs.GetName().GetString()
@@ -45,11 +45,15 @@ func getOrCreatePersistentDirectories(
 			return nil, stacktrace.NewError("More than one volume with name '%s' exists in docker. This is unexpected", volumeName)
 		}
 
+		// note this doesn't consider persistentDirectory.Size
+		// Docker doesn't support sized volumes - the best you can do is create tmpfs (in memory) persistent volumes
+		// but that would go away if you restart Docker
+		// TODO Make the `lsp` aware of `size`
 		if err = dockerManager.CreateVolume(ctx, volumeName, volumeLabelsStrs); err != nil {
 			return nil, stacktrace.Propagate(
 				err,
 				"An error occurred creating persistent directory volume '%s' for service '%v'",
-				persistentKey,
+				persistentDirectory.PersistentKey,
 				serviceUuid,
 			)
 		}

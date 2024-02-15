@@ -14,7 +14,6 @@ const (
 
 	containerTypeLabelKeyStr = labelNamespaceStr + "container-type"
 	volumeTypeLabelKeyStr    = labelNamespaceStr + "volume-type"
-	enclaveTypeLabelKeyStr   = labelNamespaceStr + "enclave-type"
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelNamespaceStr + "id"
@@ -42,6 +41,9 @@ const (
 	logsServiceUuidDockerLabelKey      = "service_uuid"
 	logsServiceShortUuidDockerLabelKey = "service_short_uuid"
 	logsServiceNameDockerLabelKey      = "service_name"
+
+	// Traefik label keys
+	traefikLabelKeyPrefixStr = "traefik."
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!

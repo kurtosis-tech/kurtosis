@@ -2,6 +2,7 @@ package lowlevel
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -48,7 +49,7 @@ type LowlevelKurtosisCommand struct {
 	PostValidationAndRunFunc func(ctx context.Context)
 }
 
-// Gets a Cobra command represnting the LowlevelKurtosisCommand
+// Gets a Cobra command representing the LowlevelKurtosisCommand
 // This function is intended to be run in an init() (i.e. before the program runs any logic), so it will panic if
 // any errors occur
 func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command {
@@ -316,6 +317,8 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		strings.Join(allArgUsageStrs, " "),
 	)
 
+	expectedArgsFunc := kurtosisCmd.getExpectedArgumentsFunc(lastArgIsGreedy, numberOfRequiredArgs, allArgUsageStrs)
+
 	// Suppressing exhaustruct requirement because this struct has ~40 properties
 	// nolint: exhaustruct
 	result := &cobra.Command{
@@ -325,11 +328,7 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		Long:                  kurtosisCmd.LongDescription,
 		ValidArgsFunction:     getCompletionsFunc,
 		RunE:                  cobraRunFunc,
-	}
-	if lastArgIsGreedy {
-		result.Args = cobra.MinimumNArgs(numberOfRequiredArgs)
-	} else {
-		result.Args = cobra.RangeArgs(numberOfRequiredArgs, len(kurtosisCmd.Args))
+		Args:                  expectedArgsFunc,
 	}
 
 	// Validates that the default values for the declared flags match the declard types, and add them to the Cobra command
@@ -365,6 +364,31 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 	}
 
 	return result
+}
+
+func (kurtosisCmd *LowlevelKurtosisCommand) getExpectedArgumentsFunc(lastArgIsGreedy bool, numberOfRequiredArgs int, allArgUsageStrs []string) cobra.PositionalArgs {
+	var expectedArgsFunc cobra.PositionalArgs
+
+	if lastArgIsGreedy {
+		expectedArgsFunc = cobra.MinimumNArgs(numberOfRequiredArgs)
+		return expectedArgsFunc
+	}
+
+	expectedArgsFunc = func(cmd *cobra.Command, args []string) error {
+		min := numberOfRequiredArgs
+		max := len(kurtosisCmd.Args)
+
+		if len(args) < min || len(args) > max {
+			missingArgsText := fmt.Sprintf("this command accepts between %d and %d arg(s), received %d.", min, max, len(args))
+			cmdUsageText := fmt.Sprintf("Usage: %s %s", cmd.CommandPath(), strings.Join(allArgUsageStrs, " "))
+			helpUsageText := fmt.Sprintf("Run '%s --help' for more usage details.", cmd.CommandPath())
+			errText := strings.Join([]string{missingArgsText, cmdUsageText, helpUsageText}, "\n")
+			return errors.New(errText)
+		}
+		return nil
+	}
+
+	return expectedArgsFunc
 }
 
 // ====================================================================================================

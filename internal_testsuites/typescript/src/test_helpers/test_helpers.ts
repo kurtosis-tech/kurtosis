@@ -57,11 +57,15 @@ const WAIT_FOR_FILE_SERVER_INTERVAL_MILLISECONDS = 100
 const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT = "/static"
 
 const DEFAULT_SHOULD_RETURN_ALL_LOGS = true
-const DEFAULT_NUM_LOG_LINES = 0 // this value doesn't matetr since default is to return all logs
+const DEFAULT_NUM_LOG_LINES = 0 // this value doesn't matter since default is to return all logs
+
+// skip flaky tests period
+const SKIP_FLAKY_TEST_END_DATE = new Date('2023-11-17');
+
 
 // for validating data store is healthy
 /*
-NOTE: on 2022-05-16 the Go version failed with the following error so we bumped the num polls to 20.
+NOTE: on 2022-05-16 the Go version failed with the following error so, we bumped the num polls to 20.
 
 time="2022-05-16T23:58:21Z" level=info msg="Sanity-checking that all 4 datastore services added via the module work as expected..."
 --- FAIL: TestModule (21.46s)
@@ -605,4 +609,13 @@ function getServiceWithLogLinesConfig(logLines: ServiceLog[]): string {
     const cmdOverride = `["${echoLogLinesLoopCmdStr}"]`
 
     return `ServiceConfig(image="${DOCKER_GETTING_STARTED_IMAGE}", entrypoint=${entrypointOverride}, cmd=${cmdOverride})`
+}
+
+export function shouldSkipFlakyTest(testName: string): boolean {
+    const now = new Date()
+    if (now < SKIP_FLAKY_TEST_END_DATE) {
+        log.info(`Skipping ${testName}, because it is too noisy, until ${SKIP_FLAKY_TEST_END_DATE} or until we fix the flakyness`)
+        return true
+    }
+    return false
 }

@@ -2,9 +2,15 @@ package service
 
 import (
 	"encoding/json"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"github.com/kurtosis-tech/stacktrace"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Config options for the underlying container of a service
@@ -16,6 +22,17 @@ type ServiceConfig struct {
 
 type privateServiceConfig struct {
 	ContainerImageName string
+
+	// Configuration for container engine to build image for this service
+	// If nil, container engine won't be able to build image for this service
+	ImageBuildSpec *image_build_spec.ImageBuildSpec
+
+	// Configuration for container engine to pull an in a private registry behind authentication
+	// If nil, we will use the ContainerImageName and not use any auth
+	// Mutually exclusive from ImageBuildSpec, ContainerImageName
+	ImagerRegistrySpec *image_registry_spec.ImageRegistrySpec
+
+	NixBuildSpec *nix_build_spec.NixBuildSpec
 
 	PrivatePorts map[string]*port_spec.PortSpec
 
@@ -43,10 +60,20 @@ type privateServiceConfig struct {
 	MinMemoryAllocationMegabytes uint64
 
 	Labels map[string]string
+
+	User *service_user.ServiceUser
+
+	// TODO replace this with an abstraction that we own
+	Tolerations []v1.Toleration
+
+	NodeSelectors map[string]string
 }
 
 func CreateServiceConfig(
 	containerImageName string,
+	imageBuildSpec *image_build_spec.ImageBuildSpec,
+	imageRegistrySpec *image_registry_spec.ImageRegistrySpec,
+	nixBuildSpec *nix_build_spec.NixBuildSpec,
 	privatePorts map[string]*port_spec.PortSpec,
 	publicPorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -60,6 +87,9 @@ func CreateServiceConfig(
 	minCpuMilliCores uint64,
 	minMemoryMegaBytes uint64,
 	labels map[string]string,
+	user *service_user.ServiceUser,
+	tolerations []v1.Toleration,
+	nodeSelectors map[string]string,
 ) (*ServiceConfig, error) {
 
 	if err := ValidateServiceConfigLabels(labels); err != nil {
@@ -68,6 +98,9 @@ func CreateServiceConfig(
 
 	internalServiceConfig := &privateServiceConfig{
 		ContainerImageName:        containerImageName,
+		ImageBuildSpec:            imageBuildSpec,
+		ImagerRegistrySpec:        imageRegistrySpec,
+		NixBuildSpec:              nixBuildSpec,
 		PrivatePorts:              privatePorts,
 		PublicPorts:               publicPorts,
 		EntrypointArgs:            entrypointArgs,
@@ -82,12 +115,27 @@ func CreateServiceConfig(
 		MinCpuAllocationMilliCpus:    minCpuMilliCores,
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
 		Labels:                       labels,
+		User:                         user,
+		Tolerations:                  tolerations,
+		NodeSelectors:                nodeSelectors,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
 
 func (serviceConfig *ServiceConfig) GetContainerImageName() string {
 	return serviceConfig.privateServiceConfig.ContainerImageName
+}
+
+func (serviceConfig *ServiceConfig) GetImageBuildSpec() *image_build_spec.ImageBuildSpec {
+	return serviceConfig.privateServiceConfig.ImageBuildSpec
+}
+
+func (serviceConfig *ServiceConfig) GetImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
+	return serviceConfig.privateServiceConfig.ImagerRegistrySpec
+}
+
+func (serviceConfig *ServiceConfig) GetNixBuildSpec() *nix_build_spec.NixBuildSpec {
+	return serviceConfig.privateServiceConfig.NixBuildSpec
 }
 
 func (serviceConfig *ServiceConfig) GetPrivatePorts() map[string]*port_spec.PortSpec {
@@ -140,12 +188,24 @@ func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.privateServiceConfig.MinMemoryAllocationMegabytes
 }
 
+func (serviceConfig *ServiceConfig) GetUser() *service_user.ServiceUser {
+	return serviceConfig.privateServiceConfig.User
+}
+
 func (serviceConfig *ServiceConfig) GetLabels() map[string]string {
 	return serviceConfig.privateServiceConfig.Labels
 }
 
+func (serviceConfig *ServiceConfig) GetTolerations() []v1.Toleration {
+	return serviceConfig.privateServiceConfig.Tolerations
+}
+
 func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(serviceConfig.privateServiceConfig)
+}
+
+func (serviceConfig *ServiceConfig) GetNodeSelectors() map[string]string {
+	return serviceConfig.privateServiceConfig.NodeSelectors
 }
 
 func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {

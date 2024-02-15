@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -20,8 +22,9 @@ import (
 
 type addServiceTestCase struct {
 	*testing.T
-	serviceNetwork    *service_network.MockServiceNetwork
-	runtimeValueStore *runtime_value_store.RuntimeValueStore
+	serviceNetwork         *service_network.MockServiceNetwork
+	runtimeValueStore      *runtime_value_store.RuntimeValueStore
+	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
@@ -32,6 +35,9 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 		mock.MatchedBy(func(serviceConfig *service.ServiceConfig) bool {
 			expectedServiceConfig, err := service.CreateServiceConfig(
 				testContainerImageName,
+				nil,
+				nil,
+				nil,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
 				nil,
@@ -44,6 +50,9 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
+				map[string]string{},
+				nil,
+				nil,
 				map[string]string{},
 			)
 			require.NoError(suite.T(), err)
@@ -58,14 +67,20 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 	)
 
 	suite.run(&addServiceTestCase{
-		T:                 suite.T(),
-		serviceNetwork:    suite.serviceNetwork,
-		runtimeValueStore: suite.runtimeValueStore,
+		T:                      suite.T(),
+		serviceNetwork:         suite.serviceNetwork,
+		runtimeValueStore:      suite.runtimeValueStore,
+		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
 func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return add_service.NewAddService(t.serviceNetwork, t.runtimeValueStore)
+	return add_service.NewAddService(
+		t.serviceNetwork,
+		t.runtimeValueStore,
+		testModulePackageId,
+		t.packageContentProvider,
+		testNoPackageReplaceOptions)
 }
 
 func (t *addServiceTestCase) GetStarlarkCode() string {

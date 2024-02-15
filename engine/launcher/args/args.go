@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
+
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -47,6 +49,23 @@ type EngineServerArgs struct {
 	// Environment variable to pass to all the enclaves the engine is going to create. Those environment variable will
 	// then be accessible in Starlark scripts in the `kurtosis` module
 	EnclaveEnvVars string `json:"enclaveEnvVars"`
+
+	// Whether the Engine is running in a CI  environment
+	IsCI bool `json:"is_ci"`
+
+	// The Cloud User ID of the current user if available
+	CloudUserID metrics_client.CloudUserID `json:"cloud_user_id"`
+
+	// The Cloud Instance ID of the current user if available
+	CloudInstanceID metrics_client.CloudInstanceID `json:"cloud_instance_id"`
+
+	// List of allowed origins to validate CORS requests on the REST API. If undefined, defaults to '*' (any origin).
+	AllowedCORSOrigins *[]string `json:"allowed_cors_origins,omitempty"`
+}
+
+var skipValidation = map[string]bool{
+	"cloud_instance_id": true,
+	"cloud_user_id":     true,
 }
 
 func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
@@ -93,6 +112,10 @@ func NewEngineServerArgs(
 	onBastionHost bool,
 	poolSize uint8,
 	enclaveEnvVars string,
+	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
+	allowedCORSOrigins *[]string,
 ) (*EngineServerArgs, error) {
 	if enclaveEnvVars == "" {
 		enclaveEnvVars = emptyJsonField
@@ -108,6 +131,10 @@ func NewEngineServerArgs(
 		OnBastionHost:               onBastionHost,
 		PoolSize:                    poolSize,
 		EnclaveEnvVars:              enclaveEnvVars,
+		IsCI:                        isCI,
+		CloudUserID:                 cloudUserID,
+		CloudInstanceID:             cloudInstanceID,
+		AllowedCORSOrigins:          allowedCORSOrigins,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")
@@ -122,6 +149,10 @@ func (args EngineServerArgs) validate() error {
 	for i := 0; i < reflectValType.NumField(); i++ {
 		field := reflectValType.Field(i)
 		jsonFieldName := field.Tag.Get(jsonFieldTag)
+
+		if _, found := skipValidation[jsonFieldName]; found {
+			continue
+		}
 
 		// Ensure no empty strings
 		strVal := reflectVal.Field(i).String()

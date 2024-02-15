@@ -37,7 +37,7 @@ func CreateLogsCollectorForEnclave(
 	*logs_collector.LogsCollector,
 	error,
 ) {
-
+	logrus.Debugf("Creating logs collector for enclave '%v'", enclaveUuid)
 	preExistingLogsCollectorContainers, err := getLogsCollectorForTheGivenEnclave(ctx, enclaveUuid, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs collector containers for given enclave '%v'", enclaveUuid)
@@ -118,9 +118,12 @@ func CreateLogsCollectorForEnclave(
 
 	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorObj.GetBridgeNetworkIpAddress(), logsCollectorObj.GetPrivateHttpPort().GetNumber())
 
+	logrus.Debugf("Checking for logs collector availability in enclave '%v'...", enclaveUuid)
 	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while waiting for the log container to become available")
 	}
+	logrus.Debugf("...logs collector is available in enclave '%v'", enclaveUuid)
+	logrus.Debugf("Logs collector successfully created with container ID '%v' for enclave '%v'", containerId, enclaveUuid)
 
 	shouldDisconnectLogsCollectorFromEnclaveNetwork = false
 	shouldRemoveLogsCollectorContainerFunc = false

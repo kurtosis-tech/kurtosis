@@ -6,11 +6,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/stretchr/testify/require"
 	"io"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
@@ -264,14 +266,20 @@ func TestIsWithinRetentionPeriod(t *testing.T) {
 	mockTime := logs_clock.NewMockLogsClock(2023, 41, 0)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime)
 
-	isWithinRetentionPeriod, err := strategy.isWithinRetentionPeriod(jsonLogLine)
+	timestamp, err := parseTimestampFromJsonLogLine(jsonLogLine)
+	require.NoError(t, err)
+	logLine := logline.NewLogLine("", *timestamp)
+
+	isWithinRetentionPeriod, err := strategy.isWithinRetentionPeriod(logLine)
 
 	require.NoError(t, err)
 	require.False(t, isWithinRetentionPeriod)
 }
 
 func getWeekFilepathStr(year, week int) string {
-	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
+	formattedWeekNum := fmt.Sprintf("%02d", week)
+	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 }
 
 func TestGetCompleteJsonLogString(t *testing.T) {
@@ -445,4 +453,64 @@ func TestGetJsonLogStringWithEOFAndNoValidJsonEnding(t *testing.T) {
 	require.ErrorIs(t, io.EOF, err)
 	require.False(t, isComplete)
 	require.Equal(t, logLine1, jsonLogStr)
+}
+
+func TestParseTimestampFromJsonLogLineReturnsTime(t *testing.T) {
+	timestampStr := "2023-09-06T00:35:15Z" // utc timestamp
+	jsonLogLine := map[string]string{
+		"timestamp": timestampStr,
+	}
+
+	expectedTime, err := time.Parse(time.RFC3339, timestampStr)
+	require.NoError(t, err)
+
+	actualTime, err := parseTimestampFromJsonLogLine(jsonLogLine)
+
+	require.NoError(t, err)
+	require.Equal(t, expectedTime, *actualTime)
+}
+
+func TestParseTimestampFromJsonLogLineWithOffsetReturnsTime(t *testing.T) {
+	timestampStr := "2023-09-06T00:35:15-04:00" // utc timestamp with offset '-4:00'
+	jsonLogLine := map[string]string{
+		"timestamp": timestampStr,
+	}
+
+	expectedTime, err := time.Parse(time.RFC3339, timestampStr)
+	require.NoError(t, err)
+
+	actualTime, err := parseTimestampFromJsonLogLine(jsonLogLine)
+
+	require.NoError(t, err)
+	require.Equal(t, expectedTime, *actualTime)
+}
+
+func TestParseTimestampFromJsonLogLineWithIncorrectlyFormattedTimeReturnsError(t *testing.T) {
+	timestampStr := "2023-09-06" // not UTC formatted timestamp str
+	jsonLogLine := map[string]string{
+		"timestamp": timestampStr,
+	}
+
+	_, err := parseTimestampFromJsonLogLine(jsonLogLine)
+
+	require.Error(t, err)
+}
+
+func TestParseTimestampFromJsonLogLineWithoutTimezoneReturnsError(t *testing.T) {
+	timestampStr := "2023-09-06T00:35:15" // no utc timezone indicator or offset to indicate timezone
+	jsonLogLine := map[string]string{
+		"timestamp": timestampStr,
+	}
+
+	_, err := parseTimestampFromJsonLogLine(jsonLogLine)
+
+	require.Error(t, err)
+}
+
+func TestParseTimestampFromJsonLogLineWithNoTimestampFieldReturnsError(t *testing.T) {
+	jsonLogLine := map[string]string{}
+
+	_, err := parseTimestampFromJsonLogLine(jsonLogLine)
+
+	require.Error(t, err)
 }

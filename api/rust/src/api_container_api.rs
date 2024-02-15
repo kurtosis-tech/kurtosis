@@ -214,9 +214,11 @@ pub struct RunStarlarkPackageArgs {
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "11")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
     /// Defaults to empty
+    /// Deprecated: This value isn't used in the APIC anymore
     #[prost(string, optional, tag = "12")]
     pub cloud_instance_id: ::core::option::Option<::prost::alloc::string::String>,
     /// Defaults to empty
+    /// Deprecated: This value isn't used in the APIC anymore
     #[prost(string, optional, tag = "13")]
     pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
     /// Defaults to empty

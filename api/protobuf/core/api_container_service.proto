@@ -208,9 +208,11 @@ message RunStarlarkPackageArgs {
   repeated KurtosisFeatureFlag experimental_features = 11;
 
   // Defaults to empty
+  // Deprecated: This value isn't used in the APIC anymore
   optional string cloud_instance_id = 12;
 
   // Defaults to empty
+  // Deprecated: This value isn't used in the APIC anymore
   optional string cloud_user_id = 13;
 
   // Defaults to empty
