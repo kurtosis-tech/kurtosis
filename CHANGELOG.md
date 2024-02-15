@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.21](https://github.com/kurtosis-tech/kurtosis/compare/0.86.20...0.86.21) (2024-02-15)
+
+
+### Bug Fixes
+
+* Core image builds for arm64 under CI ([#2149](https://github.com/kurtosis-tech/kurtosis/issues/2149)) ([807ddae](https://github.com/kurtosis-tech/kurtosis/commit/807ddae12b9274819f53160a8771da7541f4a4c1))
+
 ## [0.86.20](https://github.com/kurtosis-tech/kurtosis/compare/0.86.19...0.86.20) (2024-02-14)
 
 
