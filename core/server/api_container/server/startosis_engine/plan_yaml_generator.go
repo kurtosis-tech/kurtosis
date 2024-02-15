@@ -4,14 +4,8 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
-)
-
-const (
-	TCP ApplicationProtocol = "TCP"
-	UDP ApplicationProtocol = "UDP"
-
-	SHELL  TaskType = "sh"
-	PYTHON TaskType = "python"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
 )
 
 // We need the package id and the args, the args need to be filled in
@@ -89,6 +83,12 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 		switch getBuiltinNameFromInstruction(scheduledInstruction) {
 		case add_service.AddServiceBuiltinName:
 			pyg.updatePlanYamlFromAddService(scheduledInstruction)
+		case remove_service.RemoveServiceBuiltinName:
+			pyg.updatePlanYamlFromRemoveService(scheduledInstruction)
+		case tasks.RunShBuiltinName:
+			pyg.updatePlanYamlFromRunSh(scheduledInstruction)
+		case tasks.RunPythonBuiltinName:
+			pyg.updatePlanYamlFromRunPython(scheduledInstruction)
 		default:
 			return nil, nil
 		}
@@ -96,6 +96,31 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 
 	// at the very end, convert the plan yaml representation into a yaml
 	return convertPlanYamlToYaml(pyg.planYaml)
+}
+
+// is there anyway i can make this type more specific for type safety
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruction *instructions_plan.ScheduledInstruction) {
+	// TODO: update the plan yaml based on an add_service
+}
+
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRemoveService(RemoveServiceInstruction *instructions_plan.ScheduledInstruction) {
+	// TODO: update the plan yaml based on an add_service
+}
+
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(addServiceInstruction *instructions_plan.ScheduledInstruction) {
+	// TODO: update the plan yaml based on an add_service
+}
+
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(addServiceInstruction *instructions_plan.ScheduledInstruction) {
+	// TODO: update the plan yaml based on an add_service
+}
+
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(addServiceInstruction *instructions_plan.ScheduledInstruction) {
+	// TODO: update the plan yaml based on an add_service
+}
+
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(addServiceInstruction *instructions_plan.ScheduledInstruction) {
+	// TODO: update the plan yaml based on an add_service
 }
 
 func convertPlanYamlToYaml(planYaml *PlanYaml) ([]byte, error) {
@@ -109,71 +134,3 @@ func convertPlanYamlToYaml(planYaml *PlanYaml) ([]byte, error) {
 func getBuiltinNameFromInstruction(instruction *instructions_plan.ScheduledInstruction) string {
 	return instruction.GetInstruction().GetCanonicalInstruction(false).GetInstructionName()
 }
-
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruction *instructions_plan.ScheduledInstruction) {
-
-}
-
-type PlanYaml struct {
-	PackageId      string           `yaml:"packageId,omitempty"`
-	Services       []*Service       `yaml:"services,omitempty"`
-	FilesArtifacts []*FilesArtifact `yaml:"filesArtifacts,omitempty"`
-	Tasks          []*Task          `yaml:"tasks,omitempty"`
-}
-
-// Service represents a service in the system.
-type Service struct {
-	Uuid    string                 `yaml:"uuid,omitempty"`
-	Name    string                 `yaml:"name,omitempty"`
-	Image   string                 `yaml:"image,omitempty"`
-	EnvVars []*EnvironmentVariable `yaml:"envVars,omitempty"`
-	Ports   []*Port                `yaml:"ports,omitempty"`
-	Files   []*FileMount           `yaml:"files,omitempty"`
-}
-
-// FilesArtifact represents a collection of files.
-type FilesArtifact struct {
-	Uuid  string            `yaml:"uuid,omitempty"`
-	Name  string            `yaml:"name,omitempty"`
-	Files map[string]string `yaml:"files,omitempty"`
-}
-
-// EnvironmentVariable represents an environment variable.
-type EnvironmentVariable struct {
-	Key   string `yaml:"key,omitempty"`
-	Value string `yaml:"value,omitempty"`
-}
-
-// Port represents a port.
-type Port struct {
-	TransportProtocol ApplicationProtocol `yaml:"transportProtocol,omitempty"`
-
-	PortName string `yaml:"portName,omitempty"`
-	PortNum  uint16 `yaml:"portNum,omitempty"`
-}
-
-// ApplicationProtocol represents the application protocol used.
-type ApplicationProtocol string
-
-// FileMount represents a mount point for files.
-type FileMount struct {
-	MountPath         string `yaml:"mountPath,omitempty"`
-	FilesArtifactUuid string `yaml:"filesArtifactUuid,omitempty"`
-	FilesArtifactName string `yaml:"filesArtifactName,omitempty"`
-}
-
-// Task represents a task to be executed.
-type Task struct {
-	TaskType   TaskType               `yaml:"taskType,omitempty"`
-	Name       string                 `yaml:"name,omitempty"`
-	Command    string                 `yaml:"command,omitempty"`
-	Image      string                 `yaml:"image,omitempty"`
-	EnvVars    []*EnvironmentVariable `yaml:"envVar,omitempty"`
-	Files      []*FileMount           `yaml:"files,omitempty"`
-	Store      []string               `yaml:"store,omitempty"`
-	ShouldWait bool                   `yaml:"shouldWait,omitempty"`
-	Wait       string                 `yaml:"wait,omitempty"`
-}
-
-// TaskType represents the type of task.
-type TaskType string
