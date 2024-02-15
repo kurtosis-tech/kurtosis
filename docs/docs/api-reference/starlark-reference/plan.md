@@ -557,7 +557,7 @@ The instruction returns a `struct` with [future references][future-references-re
         ..., 
         config=ServiceConfig(
             name="service_one", 
-            files={"/src": results.file_artifacts[0]}, # copies the directory task into service_one 
+            files={"/src": result.file_artifacts[0]}, # copies the directory task into service_one 
         )
     ) # the path to the file will look like: /src/task/test.txt
 
@@ -565,7 +565,7 @@ The instruction returns a `struct` with [future references][future-references-re
         ..., 
         config=ServiceConfig(
             name="service_two", 
-            files={"/src": results.file_artifacts[1]}, # copies the file test.txt into service_two
+            files={"/src": result.file_artifacts[1]}, # copies the file test.txt into service_two
         ),
     ) # the path to the file will look like: /src/test.txt
 ```
