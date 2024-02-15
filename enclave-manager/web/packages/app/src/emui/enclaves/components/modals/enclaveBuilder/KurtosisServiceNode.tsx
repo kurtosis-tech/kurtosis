@@ -16,16 +16,10 @@ import { useVariableContext } from "./VariableContextProvider";
 export const KurtosisServiceNode = memo(
   ({ id, selected }: NodeProps) => {
     const { data } = useVariableContext();
+    const nodeData = data[id] as KurtosisServiceNodeData;
 
     return (
-      <KurtosisNode
-        id={id}
-        selected={selected}
-        name={(data[id] as KurtosisServiceNodeData)?.serviceName}
-        minWidth={650}
-        maxWidth={800}
-        color={"blue.900"}
-      >
+      <KurtosisNode id={id} selected={selected} minWidth={650} maxWidth={800}>
         <Flex gap={"16px"}>
           <KurtosisFormControl<KurtosisServiceNodeData> name={"serviceName"} label={"Service Name"} isRequired>
             <StringArgumentInput name={"serviceName"} size={"sm"} isRequired validate={validateName} />

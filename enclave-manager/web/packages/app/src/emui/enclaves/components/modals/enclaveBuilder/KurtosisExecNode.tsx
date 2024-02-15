@@ -1,5 +1,4 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
-import { isDefined } from "kurtosis-ui-components";
 import { memo, useMemo } from "react";
 import { NodeProps } from "reactflow";
 import { IntegerArgumentInput } from "../../form/IntegerArgumentInput";
@@ -16,8 +15,7 @@ import { useVariableContext } from "./VariableContextProvider";
 
 export const KurtosisExecNode = memo(
   ({ id, selected }: NodeProps) => {
-    const { data, variables } = useVariableContext();
-    const nodeData = data[id] as KurtosisExecNodeData;
+    const { variables } = useVariableContext();
 
     const serviceVariableOptions = useMemo((): SelectOption[] => {
       return variables
@@ -28,20 +26,8 @@ export const KurtosisExecNode = memo(
         }));
     }, [variables]);
 
-    if (!isDefined(nodeData)) {
-      // Node has probably been deleted.
-      return null;
-    }
-
     return (
-      <KurtosisNode
-        id={id}
-        selected={selected}
-        name={nodeData.execName}
-        color={"purple.900"}
-        minWidth={300}
-        maxWidth={800}
-      >
+      <KurtosisNode id={id} selected={selected} minWidth={300} maxWidth={800}>
         <KurtosisFormControl<KurtosisExecNodeData> name={"execName"} label={"Exec Name"} isRequired>
           <StringArgumentInput size={"sm"} name={"execName"} isRequired validate={validateName} />
         </KurtosisFormControl>

@@ -1,5 +1,4 @@
 import { Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
-import { isDefined } from "kurtosis-ui-components";
 import { memo } from "react";
 import { NodeProps } from "reactflow";
 import { BooleanArgumentInput } from "../../form/BooleanArgumentInput";
@@ -20,20 +19,8 @@ export const KurtosisShellNode = memo(
     const { data } = useVariableContext();
     const nodeData = data[id] as KurtosisShellNodeData;
 
-    if (!isDefined(nodeData)) {
-      // Node has probably been deleted.
-      return null;
-    }
-
     return (
-      <KurtosisNode
-        id={id}
-        selected={selected}
-        name={nodeData.shellName}
-        color={"purple.900"}
-        minWidth={650}
-        maxWidth={800}
-      >
+      <KurtosisNode id={id} selected={selected} minWidth={650} maxWidth={800}>
         <Flex gap={"16px"}>
           <KurtosisFormControl<KurtosisShellNodeData> name={"shellName"} label={"Shell Name"} isRequired>
             <StringArgumentInput name={"shellName"} size={"sm"} isRequired validate={validateName} />

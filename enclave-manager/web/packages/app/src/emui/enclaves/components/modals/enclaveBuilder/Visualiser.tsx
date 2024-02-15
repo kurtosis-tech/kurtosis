@@ -23,6 +23,7 @@ import { KurtosisServiceNode } from "./KurtosisServiceNode";
 import { KurtosisShellNode } from "./KurtosisShellNode";
 import { generateStarlarkFromGraph, getNodeDependencies } from "./utils";
 import { useVariableContext } from "./VariableContextProvider";
+import "./Visualiser.css";
 
 const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
 const getLayoutedElements = <T extends object>(nodes: Node<T>[], edges: Edge<any>[]) => {
@@ -181,6 +182,7 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
             source: from,
             target: to,
             animated: true,
+            type: "straight",
             style: { strokeWidth: "3px" },
           })),
         );
