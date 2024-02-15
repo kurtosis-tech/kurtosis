@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.24](https://github.com/kurtosis-tech/kurtosis/compare/0.86.23...0.86.24) (2024-02-15)
+
+
+### Features
+
+* added a `description` field to instructions ([#2147](https://github.com/kurtosis-tech/kurtosis/issues/2147)) ([9085cfd](https://github.com/kurtosis-tech/kurtosis/commit/9085cfd7d1ad51b65e2087e124cc24cb487364b8))
+
 ## [0.86.23](https://github.com/kurtosis-tech/kurtosis/compare/0.86.22...0.86.23) (2024-02-15)
 
 
