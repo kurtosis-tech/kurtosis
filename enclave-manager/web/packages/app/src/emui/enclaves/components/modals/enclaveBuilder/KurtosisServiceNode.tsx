@@ -86,5 +86,5 @@ export const KurtosisServiceNode = memo(
       </KurtosisNode>
     );
   },
-  (oldProps, newProps) => oldProps.id !== newProps.id || oldProps.selected !== newProps.selected,
+  (oldProps, newProps) => oldProps.id === newProps.id && oldProps.selected === newProps.selected,
 );

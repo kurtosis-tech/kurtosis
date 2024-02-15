@@ -91,7 +91,7 @@ export const KurtosisExecNode = memo(
       </KurtosisNode>
     );
   },
-  (oldProps, newProps) => oldProps.id !== newProps.id || oldProps.selected !== newProps.selected,
+  (oldProps, newProps) => oldProps.id === newProps.id && oldProps.selected === newProps.selected,
 );
 
 const AcceptableCodeInput = (props: KurtosisFormInputProps<KurtosisExecNodeData>) => {
