@@ -4068,7 +4068,8 @@ proto.api_container_api.StarlarkInstruction.toObject = function(includeInstance,
     argumentsList: jspb.Message.toObjectList(msg.getArgumentsList(),
     proto.api_container_api.StarlarkInstructionArg.toObject, includeInstance),
     executableInstruction: jspb.Message.getFieldWithDefault(msg, 4, ""),
-    isSkipped: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
+    isSkipped: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
+    description: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -4126,6 +4127,10 @@ proto.api_container_api.StarlarkInstruction.deserializeBinaryFromReader = functi
     case 5:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setIsSkipped(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setDescription(value);
       break;
     default:
       reader.skipField();
@@ -4190,6 +4195,13 @@ proto.api_container_api.StarlarkInstruction.serializeBinaryToWriter = function(m
   if (f) {
     writer.writeBool(
       5,
+      f
+    );
+  }
+  f = message.getDescription();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
       f
     );
   }
@@ -4322,6 +4334,24 @@ proto.api_container_api.StarlarkInstruction.prototype.getIsSkipped = function() 
  */
 proto.api_container_api.StarlarkInstruction.prototype.setIsSkipped = function(value) {
   return jspb.Message.setProto3BooleanField(this, 5, value);
+};
+
+
+/**
+ * optional string description = 6;
+ * @return {string}
+ */
+proto.api_container_api.StarlarkInstruction.prototype.getDescription = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.StarlarkInstruction} returns this
+ */
+proto.api_container_api.StarlarkInstruction.prototype.setDescription = function(value) {
+  return jspb.Message.setProto3StringField(this, 6, value);
 };
 
 

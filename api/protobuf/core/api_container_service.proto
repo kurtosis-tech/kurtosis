@@ -262,6 +262,8 @@ message StarlarkInstruction {
   string executable_instruction = 4;
 
   bool is_skipped = 5;
+
+  string description = 6;
 }
 
 message StarlarkInstructionResult {

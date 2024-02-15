@@ -2,6 +2,7 @@ package request
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -199,6 +200,10 @@ func (builtin *RequestCapabilities) TryResolveWith(instructionsAreEqual bool, _ 
 
 func (builtin *RequestCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	builder.SetType(RequestBuiltinName)
+}
+
+func (builtin *RequestCapabilities) Description() string {
+	return fmt.Sprintf("Running '%v' request on service '%v'", builtin.httpRequestRecipe.RequestType(), builtin.serviceName)
 }
 
 func (builtin *RequestCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {

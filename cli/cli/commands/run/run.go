@@ -143,7 +143,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 		{
 			Key:       verbosityFlagKey,
-			Usage:     fmt.Sprintf("The verbosity of the command output: %s. If unset, it defaults to `brief` for a concise and explicit output. Use `detailed` to display the exhaustive list of arguments for each command. `executable` will generate executable Starlark instructions.", strings.Join(command_args_run.VerbosityStrings(), ", ")),
+			Usage:     fmt.Sprintf("The verbosity of the command output: %s. If unset, it defaults to `brief` for a concise and explicit output. Use `detailed` to display the exhaustive list of arguments for each command. `executable` will generate executable Starlark instructions. `description` will just print a description of what is about to happen without any details", strings.Join(command_args_run.VerbosityStrings(), ", ")),
 			Type:      flags.FlagType_String,
 			Shorthand: "v",
 			Default:   defaultVerbosity,

@@ -314,6 +314,8 @@ pub struct StarlarkInstruction {
     pub executable_instruction: ::prost::alloc::string::String,
     #[prost(bool, tag = "5")]
     pub is_skipped: bool,
+    #[prost(string, tag = "6")]
+    pub description: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

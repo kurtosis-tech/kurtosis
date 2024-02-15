@@ -189,6 +189,10 @@ func (builtin *ExecCapabilities) FillPersistableAttributes(builder *enclave_plan
 	builder.SetType(ExecBuiltinName)
 }
 
+func (builtin *ExecCapabilities) Description() string {
+	return fmt.Sprintf("Executing command on service '%v'", builtin.serviceName)
+}
+
 func (builtin *ExecCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {
 	isAcceptableCode := false
 	for _, acceptableCode := range builtin.acceptableCodes {
