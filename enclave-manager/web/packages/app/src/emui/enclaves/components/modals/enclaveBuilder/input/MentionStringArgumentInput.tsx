@@ -22,6 +22,7 @@ export const MentionStringArgumentInput = <DataModel extends object>({
 
   const handleQuery = useCallback(
     (query?: string) => {
+      console.log(query);
       if (!isDefined(query)) {
         return [];
       }
@@ -37,7 +38,6 @@ export const MentionStringArgumentInput = <DataModel extends object>({
   return (
     <Controller
       name={name}
-      disabled={disabled}
       defaultValue={"" as any}
       rules={{ required: isRequired, validate: validate }}
       render={({ field, fieldState }) => {
@@ -54,11 +54,12 @@ export const MentionStringArgumentInput = <DataModel extends object>({
             tabIndex={tabIndex}
             singleLine
             value={field.value}
+            disabled={disabled}
             onChange={(e, newValue, newPlainTextValue, mentions) => field.onChange(newValue)}
           >
             <Mention
               className={"mentions__mention"}
-              trigger={/(?<=^|.*\s)((\S\S+))$/}
+              trigger={/(?<=^|.*[ :/@#$])(([^ :/@#$]{2,}))$/}
               markup={"{{__id__}}"}
               data={handleQuery}
               displayTransform={(id) =>

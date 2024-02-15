@@ -45,8 +45,8 @@ export function getNodeName(kurtosisNodeData: KurtosisNodeData): string {
   if (kurtosisNodeData.type === "shell") {
     return kurtosisNodeData.shellName;
   }
-  if (kurtosisNodeData.type === "exec") {
-    return kurtosisNodeData.execName;
+  if (kurtosisNodeData.type === "python") {
+    return kurtosisNodeData.pythonName;
   }
   throw new Error(`Unknown node type.`);
 }
@@ -59,7 +59,11 @@ function escapeString(value: string): string {
   return value.replaceAll(/(["\\])/g, "\\$1");
 }
 
-const variablePattern = /\{\{((?:service|artifact|shell).([^.]+)\.?.*)}}/;
+function escapeTemplateString(value: string): string {
+  return escapeString(value).replaceAll(/{{(.*?)}}/g, "{{`{{$1}}`}}");
+}
+
+const variablePattern = /\{\{((?:service|artifact|shell|python).([^.]+)\.?.*?)}}/;
 export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): Variable[] {
   return Object.entries(nodes).flatMap(([id, data]) => {
     if (data.type === "service") {
@@ -129,6 +133,21 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
       ];
     }
 
+    if (data.type === "python") {
+      return [
+        {
+          id: `python.${id}`,
+          displayName: `python.${data.pythonName}`,
+          value: `${normaliseNameToStarlarkVariable(data.pythonName)}.files_artifacts[0]`,
+        },
+        ...data.args.map((arg, i) => ({
+          id: `python.${id}.args.${i}`,
+          displayName: `python.${data.pythonName}.args[${i}]`,
+          value: `"${arg.arg}"`,
+        })),
+      ];
+    }
+
     return [];
   });
 }
@@ -165,6 +184,13 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
           getDependenciesFor(id).add(fileMatches[2]);
         }
       });
+      if (data.execStepEnabled === "true") {
+        console.log(data);
+        const commandMatches = data.execStepCommand.match(variablePattern);
+        if (commandMatches) {
+          getDependenciesFor(id).add(commandMatches[2]);
+        }
+      }
     }
     if (data.type === "shell") {
       const nameMatches = data.shellName.match(variablePattern);
@@ -184,19 +210,23 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
         }
       });
     }
-    if (data.type === "exec") {
-      const nameMatches = data.execName.match(variablePattern);
+    if (data.type === "python") {
+      const nameMatches = data.pythonName.match(variablePattern);
       if (nameMatches) {
         getDependenciesFor(id).add(nameMatches[2]);
       }
-      const serviceMatches = data.serviceName.match(variablePattern);
-      if (serviceMatches) {
-        getDependenciesFor(id).add(serviceMatches[2]);
-      }
-      const commandMatches = data.command.match(variablePattern);
-      if (commandMatches) {
-        getDependenciesFor(id).add(commandMatches[2]);
-      }
+      data.args.forEach((arg) => {
+        const argMatches = arg.arg.match(variablePattern);
+        if (argMatches) {
+          getDependenciesFor(id).add(argMatches[2]);
+        }
+      });
+      data.files.forEach((file) => {
+        const fileMatches = file.mountPoint.match(variablePattern) || file.artifactName.match(variablePattern);
+        if (fileMatches) {
+          getDependenciesFor(id).add(fileMatches[2]);
+        }
+      });
     }
   });
   return dependencies;
@@ -210,17 +240,18 @@ export function generateStarlarkFromGraph(
 ): string {
   // Topological sort
   const sortedNodes: Node<KurtosisServiceNodeData>[] = [];
-  let remainingEdges = [...edges];
+  let remainingEdges = [...edges].filter((e) => e.target !== e.source);
   while (remainingEdges.length > 0 || sortedNodes.length !== nodes.length) {
-    const nodesRemoved = nodes
+    const nodesToRemove = nodes
       .filter((node) => remainingEdges.every((edge) => edge.target !== node.id)) // eslint-disable-line no-loop-func
       .filter((node) => !sortedNodes.includes(node));
-    if (nodesRemoved.length === 0) {
+
+    if (nodesToRemove.length === 0) {
       throw new Error(
         "Topological sort couldn't remove nodes. This indicates a cycle has been detected. Starlark cannot be rendered.",
       );
     }
-    sortedNodes.push(...nodesRemoved);
+    sortedNodes.push(...nodesToRemove);
     remainingEdges = remainingEdges.filter((edge) => sortedNodes.every((node) => edge.source !== node.id));
   }
   const variablesById = getVariablesFromNodes(data).reduce(
@@ -277,6 +308,21 @@ export function generateStarlarkFromGraph(
       starlark += `            },\n`;
       starlark += `        ),\n`;
       starlark += `    )\n\n`;
+
+      if (nodeData.execStepEnabled === "true") {
+        const execName = `${serviceName}_exec`;
+        starlark += `    ${execName} = plan.exec(\n`;
+        starlark += `        service_name = ${interpolateValue(nodeData.serviceName)},\n`;
+        starlark += `        recipe = ExecRecipe(\n`;
+        starlark += `            command = [${nodeData.execStepCommand.split(" ").map(interpolateValue).join(", ")}],`;
+        starlark += `        ),\n`;
+        if (nodeData.execStepAcceptableCodes.length > 0) {
+          starlark += `        acceptable_codes = [${nodeData.execStepAcceptableCodes
+            .map(({ value }) => value)
+            .join(", ")}],\n`;
+        }
+        starlark += `    )\n\n`;
+      }
     }
 
     if (nodeData.type === "artifact") {
@@ -286,7 +332,7 @@ export function generateStarlarkFromGraph(
       starlark += `        config = {\n`;
       for (const [fileName, fileText] of Object.entries(nodeData.files)) {
         starlark += `            "${fileName}": struct(\n`;
-        starlark += `                template="""${escapeString(fileText)}""",\n`;
+        starlark += `                template = """${escapeTemplateString(fileText)}""",\n`;
         starlark += `                data={},\n`;
         starlark += `            ),\n`;
       }
@@ -322,15 +368,37 @@ export function generateStarlarkFromGraph(
       starlark += `    )\n\n`;
     }
 
-    if (nodeData.type === "exec") {
-      const execName = normaliseNameToStarlarkVariable(nodeData.execName);
-      starlark += `    ${execName} = plan.exec(\n`;
-      starlark += `        service_name = ${interpolateValue(nodeData.serviceName)},\n`;
-      starlark += `        recipe = ExecRecipe(\n`;
-      starlark += `            command = [${nodeData.command.split(" ").map(interpolateValue).join(", ")}],`;
-      starlark += `        ),\n`;
-      if (nodeData.acceptableCodes.length > 0) {
-        starlark += `        acceptable_codes = [${nodeData.acceptableCodes.map(({ value }) => value).join(", ")}],\n`;
+    if (nodeData.type === "python") {
+      const pythonName = normaliseNameToStarlarkVariable(nodeData.pythonName);
+      starlark += `    ${pythonName} = plan.run_python(\n`;
+      starlark += `        run = """${escapeString(nodeData.command)}""",\n`;
+      const image = interpolateValue(nodeData.image);
+      if (image !== '""') {
+        starlark += `        image = ${image},\n`;
+      }
+      starlark += `        packages = [\n`;
+      for (const { packageName } of nodeData.packages) {
+        starlark += `            ${interpolateValue(packageName)},\n`;
+      }
+      starlark += `        ],\n`;
+      starlark += `        args = [\n`;
+      for (const { arg } of nodeData.args) {
+        starlark += `            ${interpolateValue(arg)},\n`;
+      }
+      starlark += `        ],\n`;
+      starlark += `        files = {\n`;
+      for (const { mountPoint, artifactName } of nodeData.files) {
+        starlark += `            ${interpolateValue(mountPoint)}: ${interpolateValue(artifactName)},\n`;
+      }
+      starlark += `        },\n`;
+      if (nodeData.store !== "") {
+        starlark += `        store = [\n`;
+        starlark += `            StoreSpec(src = ${interpolateValue(nodeData.store)}, name="${pythonName}"),\n`;
+        starlark += `        ],\n`;
+      }
+      const wait = interpolateValue(nodeData.wait);
+      if (nodeData.wait_enabled === "false" || wait !== '""') {
+        starlark += `        wait=${nodeData.wait_enabled === "true" ? wait : "None"},\n`;
       }
       starlark += `    )\n\n`;
     }

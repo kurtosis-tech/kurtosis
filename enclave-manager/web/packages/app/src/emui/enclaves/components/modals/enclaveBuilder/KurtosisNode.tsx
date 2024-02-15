@@ -4,7 +4,6 @@ import { debounce } from "lodash";
 import { FC, memo, PropsWithChildren, useEffect, useMemo } from "react";
 import { DefaultValues, FormProvider, useForm } from "react-hook-form";
 import { FiCpu, FiFile, FiTerminal, FiTrash } from "react-icons/fi";
-import { PiCodeBlock } from "react-icons/pi";
 import { RxCornerBottomRight } from "react-icons/rx";
 import { Handle, NodeResizeControl, Position, useReactFlow, useViewport } from "reactflow";
 import { KurtosisNodeData } from "./types";
@@ -14,15 +13,22 @@ import { useVariableContext } from "./VariableContextProvider";
 const colors: Record<KurtosisNodeData["type"], string> = {
   service: "blue.900",
   artifact: "yellow.900",
-  exec: "purple.900",
   shell: "red.900",
+  python: "red.900",
 };
 
-const icons: Record<KurtosisNodeData["type"], FC> = {
+export const nodeIcons: Record<KurtosisNodeData["type"], FC> = {
   service: FiCpu,
   artifact: FiFile,
-  exec: FiTerminal,
-  shell: PiCodeBlock,
+  shell: FiTerminal,
+  python: FiTerminal,
+};
+
+const nodeTypeReadable: Record<KurtosisNodeData["type"], string> = {
+  service: "Service",
+  artifact: "Files",
+  shell: "Shell execution task",
+  python: "Python execution task",
 };
 
 type KurtosisNodeProps = PropsWithChildren<{
@@ -62,7 +68,7 @@ export const KurtosisNode = memo(
   },
 );
 
-type KurtosisNodeImpl<DataType extends KurtosisNodeData> = KurtosisNodeProps & { nodeData: DataType };
+type KurtosisNodeImplProps<DataType extends KurtosisNodeData> = KurtosisNodeProps & { nodeData: DataType };
 const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
   id,
   nodeData,
@@ -70,7 +76,7 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
   minWidth,
   maxWidth,
   children,
-}: KurtosisNodeImpl<DataType>) => {
+}: KurtosisNodeImplProps<DataType>) => {
   const { updateData, removeData } = useVariableContext();
   const color = colors[nodeData.type];
   const chakraColor = useToken("colors", color);
@@ -179,7 +185,7 @@ const ZoomAwareNodeContent = ({ name, type, onDelete, children }: ZoomAwareNodeC
   if (viewport.zoom < 0.4) {
     return (
       <Flex gap={"20px"} alignItems={"center"} justifyContent={"center"} h={"100%"}>
-        <Icon as={icons[type]} h={"40px"} w={"40px"} />
+        <Icon as={nodeIcons[type]} h={"40px"} w={"40px"} />
         <Text fontSize={"40px"} textAlign={"center"} p={"20px"}>
           {name || <i>Unnamed</i>}
         </Text>
@@ -190,7 +196,13 @@ const ZoomAwareNodeContent = ({ name, type, onDelete, children }: ZoomAwareNodeC
   return (
     <>
       <Flex justifyContent={"space-between"} alignItems={"center"} minH={"0"}>
-        <Text fontWeight={"semibold"}>{name || <i>Unnamed</i>}</Text>
+        <Flex gap={"8px"} alignItems={"center"}>
+          <Icon as={nodeIcons[type]} w={"20px"} h={"20px"} />
+          <Text fontWeight={"semibold"}>{name || <i>Unnamed</i>}</Text>
+          <Text color={"gray.300"}>
+            <i>{nodeTypeReadable[type]}</i>
+          </Text>
+        </Flex>
         <IconButton
           className={"nodrag"}
           aria-label={"Delete node"}
