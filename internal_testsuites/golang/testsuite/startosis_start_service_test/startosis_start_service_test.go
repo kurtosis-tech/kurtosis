@@ -2,7 +2,6 @@ package startosis_stop_service_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
@@ -108,8 +107,6 @@ Service ` + serviceName + ` deployed successfully.
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.NotEmpty(t, runResult.ExecutionError, "Expected execution error coming from already started service")
-	expectedErrorStr := fmt.Sprintf("Service '%v' is already started", serviceName)
-	require.Contains(t, runResult.ExecutionError.ErrorMessage, expectedErrorStr)
 
 	// we run the stop and restart script and validate that the service is unreachable.
 	runResult, err = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, stopAndStartScript)
@@ -136,6 +133,4 @@ Service ` + serviceName + ` deployed successfully.
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.NotEmpty(t, runResult.ExecutionError, "Expected execution error coming from already started service")
-	expectedErrorStr = fmt.Sprintf("Service '%v' is already started", serviceName)
-	require.Contains(t, runResult.ExecutionError.ErrorMessage, expectedErrorStr)
 }

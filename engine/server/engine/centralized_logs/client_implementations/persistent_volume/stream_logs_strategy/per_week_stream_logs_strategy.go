@@ -6,6 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/hpcloud/tail"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -16,11 +22,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
-	"io"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -99,7 +100,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 
 	if shouldFollowLogs {
 		latestLogFile := paths[len(paths)-1]
-		if err := strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+		if err := strategy.followLogs(ctx, latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 			streamErrChan <- stacktrace.Propagate(err, "An error occurred creating following logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 			return
 		}
@@ -110,8 +111,8 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 // [getLogFilePaths] returns a list of log file paths containing logs for [serviceUuid] in [enclaveUuid]
 // going [retentionPeriodInWeeks] back from the [currentWeek].
 // Notes:
-// - File paths are of the format '/week/enclave uuid/service uuid.json' where 'week' is %W strftime specifier
-// - The list of file paths is returned in order of oldest logs to most recent logs e.g. [ 3/80124/1234.json, /4/801234/1234.json, ...]
+// - File paths are of the format '/week/enclave uuid/service uuid.json' where 'week' is %V strftime specifier
+// - The list of file paths is returned in order of oldest logs to most recent logs e.g. [ 03/80124/1234.json, /04/801234/1234.json, ...]
 // - If a file path does not exist, the function with exits and returns whatever file paths were found
 func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_filesystem.VolumeFilesystem, retentionPeriodInWeeks int, enclaveUuid, serviceUuid string) ([]string, error) {
 	var paths []string
@@ -121,7 +122,9 @@ func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_fil
 	firstWeekWithLogs := 0
 	for i := 0; i < retentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
-		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
+		// %02d to format week num with leading zeros so 1-9 are converted to 01-09 for %V format
+		formattedWeekNum := fmt.Sprintf("%02d", week)
+		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err == nil {
 			paths = append(paths, filePathStr)
 			firstWeekWithLogs = i
@@ -137,7 +140,8 @@ func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_fil
 	// scan for remaining files as far back as they exist
 	for i := firstWeekWithLogs + 1; i < retentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
-		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
+		formattedWeekNum := fmt.Sprintf("%02d", week)
+		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err != nil {
 			break
 		}
@@ -350,6 +354,7 @@ func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine *logl
 
 // Continue streaming log lines as they are written to log file (tail -f [filepath])
 func (strategy *PerWeekStreamLogsStrategy) followLogs(
+	ctx context.Context,
 	filepath string,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	serviceUuid service.ServiceUUID,
@@ -371,22 +376,33 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while attempting to tail the log file.")
 	}
+	defer func() {
+		if err := logTail.Stop(); err != nil {
+			logrus.WithError(err).WithFields(logrus.Fields{filepath: filepath}).Error("Failed to stop reading log file")
+		}
+		logTail.Cleanup()
+	}()
 
-	for logLine := range logTail.Lines {
-		if logLine.Err != nil {
-			return stacktrace.Propagate(logLine.Err, "hpcloud/tail encountered an error with the following log line: %v", logLine.Text)
-		}
-		jsonLog, err := convertStringToJson(logLine.Text)
-		if err != nil {
-			// if tail package fails to parse a valid new line, fail fast
-			return stacktrace.NewError("hpcloud/tail returned the following line: '%v' that was not valid json.\nThis is potentially a bug in tailing package.", logLine.Text)
-		}
-		err = strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
+	for {
+		select {
+		case <-ctx.Done():
+			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v'", serviceUuid)
+			return nil
+		case logLine := <-logTail.Lines:
+			if logLine.Err != nil {
+				return stacktrace.Propagate(logLine.Err, "hpcloud/tail encountered an error with the following log line: %v", logLine.Text)
+			}
+			jsonLog, err := convertStringToJson(logLine.Text)
+			if err != nil {
+				// if tail package fails to parse a valid new line, fail fast
+				return stacktrace.NewError("hpcloud/tail returned the following line: '%v' that was not valid json.\nThis is potentially a bug in tailing package.", logLine.Text)
+			}
+			err = strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
+			}
 		}
 	}
-	return nil
 }
 
 func convertStringToJson(line string) (JsonLog, error) {

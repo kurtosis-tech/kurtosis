@@ -45,6 +45,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	shouldStartInDebugMode bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -63,6 +64,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		isCI,
 		cloudUserID,
 		cloudInstanceID,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -84,6 +86,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	shouldStartInDebugMode bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -129,6 +132,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		enclaveDataVolumeDirpath,
 		ownIpAddressEnvvar,
 		envVars,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")

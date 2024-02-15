@@ -26,11 +26,13 @@ import (
 )
 
 const (
-	listenPort                = 8081
-	grpcServerStopGracePeriod = 5 * time.Second
-	engineHostUrl             = "http://localhost:9710"
-	kurtosisCloudApiHost      = "https://cloud.kurtosis.com"
-	kurtosisCloudApiPort      = 8080
+	listenPort                 = 8081
+	grpcServerStopGracePeriod  = 5 * time.Second
+	engineHostUrl              = "http://localhost:9710"
+	kurtosisCloudApiHost       = "https://cloud.kurtosis.com"
+	kurtosisCloudApiPort       = 8080
+	numberOfElementsAuthHeader = 2
+	numberOfElementsHostString = 2
 )
 
 type Authentication struct {
@@ -60,6 +62,7 @@ func NewWebserver(enforceAuth bool) (*WebServer, error) {
 		apiKeyMutex:         &sync.RWMutex{},
 		apiKeyMap:           map[string]*string{},
 		instanceConfigMap:   map[string]*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse{},
+		instanceConfig:      nil,
 	}, nil
 }
 
@@ -83,7 +86,7 @@ func (c *WebServer) ValidateRequestAuthorization(
 
 	reqToken := header.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer")
-	if len(splitToken) != 2 {
+	if len(splitToken) != numberOfElementsAuthHeader {
 		return false, stacktrace.NewError("Authorization token malformed. Bearer token format required")
 	}
 	reqToken = strings.TrimSpace(splitToken[1])
@@ -101,7 +104,7 @@ func (c *WebServer) ValidateRequestAuthorization(
 	}
 	reqHost := header.Get("Host")
 	splitHost := strings.Split(reqHost, ":")
-	if len(splitHost) != 2 {
+	if len(splitHost) != numberOfElementsHostString {
 		return false, stacktrace.NewError("Host header malformed. host:port format required")
 	}
 	reqHost = splitHost[0]
@@ -201,6 +204,7 @@ func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *con
 		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
 
+	// nolint: exhaustruct
 	serviceRequest := &connect.Request[emptypb.Empty]{}
 	result, err := (*apiContainerServiceClient).ListFilesArtifactNamesAndUuids(ctx, serviceRequest)
 	if err != nil {
@@ -214,11 +218,8 @@ func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *con
 	return resp, nil
 }
 
-func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
+func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], responseStream *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
-	runPackageArgs := req.Msg.RunStarlarkPackageArgs
-	shouldClonePackage := true
-	runPackageArgs.ClonePackage = &shouldClonePackage
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
@@ -226,17 +227,54 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 		Msg: req.Msg.RunStarlarkPackageArgs,
 	}
 
+	runPackageArgs := req.Msg.RunStarlarkPackageArgs
+	shouldClonePackage := true // ktoday: Why do we coerce the "clone" to true?
+	runPackageArgs.ClonePackage = &shouldClonePackage
+
 	starlarkLogsStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, runStarlarkRequest)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to run package: %s", req.Msg.RunStarlarkPackageArgs.PackageId)
+	}
 
 	for starlarkLogsStream.Receive() {
 		resp := starlarkLogsStream.Msg()
-		err = str.Send(resp)
+		err = responseStream.Send(resp)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to send run starlark package logs.")
+			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to return logs from running the Starlark package.")
 		}
 	}
 	if err = starlarkLogsStream.Err(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to receive run starlark package logs.")
+		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to return logs from running the Starlark package.")
+	}
+
+	return nil
+}
+
+func (c *WebServer) RunStarlarkScript(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkScriptRequest], responseStream *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
+	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to create the APIC client")
+	}
+
+	runScriptArgs := req.Msg.RunStarlarkScriptArgs
+	runStarlarkRequest := &connect.Request[kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs]{
+		Msg: req.Msg.RunStarlarkScriptArgs,
+	}
+
+	starlarkLogsStream, err := (*apiContainerServiceClient).RunStarlarkScript(ctx, runStarlarkRequest)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to run the following Starlark script:\n%s", runScriptArgs.SerializedScript)
+	}
+
+	for starlarkLogsStream.Receive() {
+		resp := starlarkLogsStream.Msg()
+		err = responseStream.Send(resp)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to return logs from running the Starlark script.")
+		}
+	}
+	if err = starlarkLogsStream.Err(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to return logs from running the Starlark script.")
 	}
 
 	return nil
@@ -254,6 +292,7 @@ func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kur
 	if err != nil {
 		return nil, err
 	}
+	// nolint: exhaustruct
 	return &connect.Response[emptypb.Empty]{}, nil
 
 }
@@ -333,6 +372,9 @@ func (c *WebServer) DownloadFilesArtifact(
 	}
 
 	filesArtifactStream, err := (*apiContainerServiceClient).DownloadFilesArtifact(ctx, downloadFilesArtifactRequest)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to create download stream for file artifact: %s", filesArtifactIdentifier)
+	}
 	for filesArtifactStream.Receive() {
 		resp := filesArtifactStream.Msg()
 		err = str.Send(resp)
@@ -447,10 +489,11 @@ func (c *WebServer) GetCloudInstanceConfig(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get the instance")
 	}
+	// nolint:exhaustruct
 	getInstanceConfigRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs{
-			ApiKey:     apiKey,
-			InstanceId: getInstanceResponse.Msg.InstanceId,
+			ApiKey:     &apiKey,
+			InstanceId: &getInstanceResponse.Msg.InstanceId,
 		},
 	}
 	getInstanceConfigResponse, err := (*client).GetCloudInstanceConfig(ctx, getInstanceConfigRequest)

@@ -1,11 +1,12 @@
 package enclave_db
 
 import (
-	"github.com/kurtosis-tech/stacktrace"
-	bolt "go.etcd.io/bbolt"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/kurtosis-tech/stacktrace"
+	bolt "go.etcd.io/bbolt"
 )
 
 const (
@@ -38,6 +39,7 @@ func GetOrCreateEnclaveDatabase() (*EnclaveDB, error) {
 			NoSync:          false,
 			OpenFile:        nil,
 			Mlock:           false,
+			PreLoadFreelist: false,
 		})
 	})
 	if databaseOpenError != nil {

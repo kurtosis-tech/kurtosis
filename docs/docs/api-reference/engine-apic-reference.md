@@ -32,7 +32,7 @@ Creates a new Kurtosis enclave using the given parameters. The enclave will be c
 * `enclaveContext`: An [EnclaveContext][enclavecontext] object representing the new enclave.
 
 ### `createProductionEnclave(String enclaveName) -> [EnclaveContext][enclavecontext] enclaveContext`
-Same as above, but creates an enclave in production mode (services will restart upon failure)
+Same as above, but creates an enclave in production mode (services will restart if they die)
 
 
 ### `getEnclaveContext(String enclaveIdentifier) -> [EnclaveContext][enclavecontext] enclaveContext`
@@ -301,6 +301,17 @@ Gets relevant information about a service (identified by the given service [iden
 **Returns**
 
 The [ServiceContext][servicecontext] representation of a service running in a Docker container.
+
+### `getServiceContexts(Map<String, Boolean> serviceIdentifiers) -> Map<ServiceName, ServiceContext> serviceContexts`
+Gets relevant information about services (identified by the given [service identifiers][service-identifiers]) that are running in the enclave.
+
+**Args**
+
+* `serviceIdentifiers`: The [service identifiers][service-identifiers] to indicate which services to retrieve.
+
+**Returns**
+
+* `serviceContexts`: A map of objects containing a mapping of Name -> [ServiceContext][servicecontext] for all the services inside the enclave.
 
 ### `getServices() -> Map<ServiceName,  ServiceUUID> serviceIdentifiers`
 Gets the Name and UUID of the current services in the enclave.

@@ -3,6 +3,8 @@ package engine_manager
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/github_auth_store"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -71,6 +73,14 @@ type engineExistenceGuarantor struct {
 	poolSize uint8
 
 	enclaveEnvVars string
+
+	allowedCORSOrigins *[]string
+
+	// Whether the engine's should run with the debug server to receive a remote debug connection
+	shouldRunInDebugMode bool
+
+	// token with git auth to override existing GitHub auth if there is any
+	githubAuthTokenOverride string
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -85,6 +95,10 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	onBastionHost bool,
 	poolSize uint8,
 	enclaveEnvVars string,
+	allowedCORSOrigins *[]string,
+	shouldRunInDebugMode bool,
+	githubAuthTokenOverride string,
+
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -99,6 +113,9 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		onBastionHost,
 		poolSize,
 		enclaveEnvVars,
+		allowedCORSOrigins,
+		shouldRunInDebugMode,
+		githubAuthTokenOverride,
 	)
 }
 
@@ -115,6 +132,9 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	onBastionHost bool,
 	poolSize uint8,
 	enclaveEnvVars string,
+	allowedCORSOrigins *[]string,
+	shouldRunInDebugMode bool,
+	githubAuthTokenOverride string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -131,6 +151,9 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		onBastionHost:                             onBastionHost,
 		poolSize:                                  poolSize,
 		enclaveEnvVars:                            enclaveEnvVars,
+		allowedCORSOrigins:                        allowedCORSOrigins,
+		shouldRunInDebugMode:                      shouldRunInDebugMode,
+		githubAuthTokenOverride:                   githubAuthTokenOverride,
 	}
 }
 
@@ -150,6 +173,27 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 
 	maybeCloudUserId, maybeCloudInstanceId := metrics_cloud_user_instance_id_helper.GetMaybeCloudUserAndInstanceID()
 
+	var githubAuthToken string
+	// If override was provided, use it, else use existing GitHub auth if it exists
+	if guarantor.githubAuthTokenOverride != "" {
+		githubAuthToken = guarantor.githubAuthTokenOverride
+	} else {
+		githubAuthStore, err := github_auth_store.GetGitHubAuthStore()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred retrieving GitHub auth store.")
+		}
+		username, err := githubAuthStore.GetUser()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting GitHub user.")
+		}
+		if username != "" {
+			githubAuthToken, err = githubAuthStore.GetAuthToken()
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting GitHub auth token for user: %v.", username)
+			}
+		}
+	}
+
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
@@ -165,6 +209,9 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metrics_client.IsCI(),
 			maybeCloudUserId,
 			maybeCloudInstanceId,
+			guarantor.allowedCORSOrigins,
+			guarantor.shouldRunInDebugMode,
+			githubAuthToken,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -181,6 +228,9 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metrics_client.IsCI(),
 			maybeCloudUserId,
 			maybeCloudInstanceId,
+			guarantor.allowedCORSOrigins,
+			guarantor.shouldRunInDebugMode,
+			githubAuthToken,
 		)
 	}
 	if engineLaunchErr != nil {

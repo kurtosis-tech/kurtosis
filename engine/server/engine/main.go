@@ -8,13 +8,27 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
+	enclaveApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/core_rest_api"
+	engineApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/engine_rest_api"
+	loggingApi "github.com/kurtosis-tech/kurtosis/api/golang/http_rest/server/websocket_api"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	em_api "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
@@ -28,19 +42,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
+	restApi "github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/streaming"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/utils"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/analytics_logger"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"runtime"
-	"strings"
-	"time"
 )
 
 const (
@@ -62,6 +75,20 @@ const (
 	indexPath                   = "index.html"
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
+
+	streamerPoolSize       = 1000
+	streamerExpirationTime = time.Hour * 2
+
+	pathToApiGroup = "/api"
+
+	pathToEnclaveSpecs   = "/specs/enclave"
+	pathToEngineSpecs    = "/specs/engine"
+	pathToWebsocketSpecs = "/specs/websocket"
+)
+
+var (
+	defaultCORSOrigins []string = []string{"*"}
+	defaultCORSHeaders []string = []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept}
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -150,7 +177,19 @@ func runMain() error {
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
 	logFileManager.StartLogFileManagement(ctx)
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, serverArgs.IsCI, serverArgs.CloudUserID, serverArgs.CloudInstanceID)
+	enclaveManager, err := getEnclaveManager(
+		kurtosisBackend,
+		serverArgs.KurtosisBackendType,
+		serverArgs.ImageVersionTag,
+		serverArgs.PoolSize,
+		serverArgs.EnclaveEnvVars,
+		logFileManager,
+		serverArgs.MetricsUserID,
+		serverArgs.DidUserAcceptSendingMetrics,
+		serverArgs.IsCI,
+		serverArgs.CloudUserID,
+		serverArgs.CloudInstanceID,
+		serverArgs.KurtosisLocalBackendConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -221,6 +260,22 @@ func runMain() error {
 		}
 	}()
 
+	go func() {
+		err := restApiServer(
+			ctx,
+			serverArgs,
+			enclaveManager,
+			logsDatabaseClient,
+			logFileManager,
+			metricsClient,
+		)
+		if err != nil {
+			logrus.Fatal("The REST API server is down, exiting!", err)
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			os.Exit(failureExitCode)
+		}
+	}()
+
 	engineConnectServer := server.NewEngineConnectServerService(
 		serverArgs.ImageVersionTag,
 		enclaveManager,
@@ -236,11 +291,11 @@ func runMain() error {
 		}
 	}()
 
-	logrus.Info("Running server...")
 	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
 	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
+
 	return nil
 }
 
@@ -256,13 +311,18 @@ func getEnclaveManager(
 	isCI bool,
 	cloudUserId metrics_client.CloudUserID,
 	cloudInstanceId metrics_client.CloudInstanceID,
+	kurtosisLocalBackendConfig interface{},
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
 		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewDockerKurtosisBackendConfigSupplier()
 	case args.KurtosisBackendType_Kubernetes:
-		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier()
+		kurtosisLocalBackendConfigKubernetesType, ok := kurtosisLocalBackendConfig.(kurtosis_backend_config.KubernetesBackendConfig)
+		if !ok {
+			return nil, stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
+		}
+		apiContainerKurtosisBackendConfigSupplier = api_container_launcher.NewKubernetesKurtosisBackendConfigSupplier(kurtosisLocalBackendConfigKubernetesType.StorageClass)
 	default:
 		return nil, stacktrace.NewError("Backend type '%v' was not recognized by engine server.", kurtosisBackendType.String())
 	}
@@ -304,11 +364,11 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 				"connect to a remote Kurtosis backend")
 		}
 		// Use this with more properties
-		_, ok := (backendConfig).(kurtosis_backend_config.KubernetesBackendConfig)
+		clusterConfigK8s, ok := (backendConfig).(kurtosis_backend_config.KubernetesBackendConfig)
 		if !ok {
 			return nil, stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
-		kurtosisBackend, err = kubernetes_kurtosis_backend.GetEngineServerBackend(ctx)
+		kurtosisBackend, err = kubernetes_kurtosis_backend.GetEngineServerBackend(ctx, clusterConfigK8s.StorageClass)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,
@@ -345,4 +405,100 @@ func formatFilenameFunctionForLogs(filename string, functionName string) string 
 	output.WriteString(functionName)
 	output.WriteString("]")
 	return output.String()
+}
+
+func restApiServer(
+	ctx context.Context,
+	serverArgs *args.EngineServerArgs,
+	enclave_manager *enclave_manager.EnclaveManager,
+	logsDatabaseClient centralized_logs.LogsDatabaseClient,
+	logFileManager *log_file_manager.LogFileManager,
+	metricsClient metrics_client.MetricsClient,
+) error {
+
+	asyncStarlarkLogs := streaming.NewStreamerPool[*kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamerPoolSize, streamerExpirationTime)
+	defer asyncStarlarkLogs.Clean()
+
+	logrus.Info("Running REST API server...")
+
+	// This is how you set up a basic Echo router
+	echoRouter := echo.New()
+	echoApiRouter := echoRouter.Group(pathToApiGroup)
+	echoApiRouter.Use(echomiddleware.Logger())
+
+	// Setup CORS policies for the REST API server
+	allowOrigins := utils.DerefWith(serverArgs.AllowedCORSOrigins, defaultCORSOrigins)
+	logrus.Infof("Setting-up CORS policy to accept requests from origins: %v", allowOrigins)
+
+	// nolint:exhaustruct
+	echoApiRouter.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: allowOrigins,
+		AllowHeaders: defaultCORSHeaders,
+	}))
+
+	// ============================== Engine Management API ======================================
+	engineRuntime := restApi.EngineRuntime{
+		ImageVersionTag: serverArgs.ImageVersionTag,
+		EnclaveManager:  enclave_manager,
+		LogFileManager:  logFileManager,
+		MetricsClient:   metricsClient,
+	}
+	engineApi.RegisterHandlers(echoApiRouter, engineApi.NewStrictHandler(engineRuntime, nil))
+
+	// ============================== Logging API ======================================
+	// nolint:exhaustruct
+	corsConfig := cors.New(cors.Options{
+		AllowedOrigins: allowOrigins,
+		AllowedMethods: defaultCORSHeaders,
+	})
+	webSocketRuntime := restApi.WebSocketRuntime{
+		ImageVersionTag:             serverArgs.ImageVersionTag,
+		EnclaveManager:              enclave_manager,
+		MetricsUserID:               serverArgs.MetricsUserID,
+		DidUserAcceptSendingMetrics: serverArgs.DidUserAcceptSendingMetrics,
+		LogsDatabaseClient:          logsDatabaseClient,
+		LogFileManager:              logFileManager,
+		MetricsClient:               metricsClient,
+		AsyncStarlarkLogs:           asyncStarlarkLogs,
+		CorsConfig:                  *corsConfig,
+	}
+	loggingApi.RegisterHandlers(echoApiRouter, webSocketRuntime)
+
+	// ============================== Engine Management API ======================================
+	enclaveRuntime, err := restApi.NewEnclaveRuntime(ctx, *enclave_manager, asyncStarlarkLogs, false)
+	if err != nil {
+		newErr := stacktrace.Propagate(err, "Failed to initialize %T", enclaveRuntime)
+		return newErr
+	}
+	enclaveApi.RegisterHandlers(echoApiRouter, enclaveApi.NewStrictHandler(enclaveRuntime, nil))
+
+	// ============================== Serve OpenAPI specs ======================================
+	// TODO (edgar) Move Spec service to Web Server
+	// =========================================================================================
+	swaggerEngine, err := engineApi.GetSwagger()
+	if err != nil {
+		// Log and skip since this is non-essential
+		logrus.Errorf("Error loading swagger spec: %v", err)
+	} else {
+		server.ServeSwaggerUI(echoRouter, pathToApiGroup, pathToEngineSpecs, server.NewSwaggerUIConfig(swaggerEngine))
+	}
+
+	swaggerEnclave, err := enclaveApi.GetSwagger()
+	if err != nil {
+		// Log and skip since this is non-essential
+		logrus.Errorf("Error loading swagger spec: %v", err)
+	} else {
+		server.ServeSwaggerUI(echoRouter, pathToApiGroup, pathToEnclaveSpecs, server.NewSwaggerUIConfig(swaggerEnclave))
+	}
+
+	swaggerWebsocket, err := loggingApi.GetSwagger()
+	if err != nil {
+		// Log and skip since this is non-essential
+		logrus.Errorf("Error loading swagger spec: %v", err)
+	} else {
+		server.ServeSwaggerUI(echoRouter, pathToApiGroup, pathToWebsocketSpecs, server.NewSwaggerUIConfig(swaggerWebsocket))
+	}
+
+	// ============================== Start Server ======================================
+	return echoRouter.Start(net.JoinHostPort(engine.RESTAPIHostIP, fmt.Sprint(engine.RESTAPIPortAddr)))
 }

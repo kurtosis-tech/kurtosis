@@ -14,7 +14,6 @@ const (
 
 	containerTypeLabelKeyStr = labelNamespaceStr + "container-type"
 	volumeTypeLabelKeyStr    = labelNamespaceStr + "volume-type"
-	enclaveTypeLabelKeyStr   = labelNamespaceStr + "enclave-type"
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelNamespaceStr + "id"

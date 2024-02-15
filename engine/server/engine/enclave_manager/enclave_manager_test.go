@@ -16,10 +16,10 @@ func TestIsContainerRunningDeterminerCompleteness(t *testing.T) {
 	}
 }
 
-func TestGetEnclaveContainersStatusFromEnclaveStatusCompleteness(t *testing.T) {
+func TestGetEnclaveStatusFromEnclaveStatusCompleteness(t *testing.T) {
 	for _, enclaveStatus := range enclave.EnclaveStatusValues() {
-		_, err := getEnclaveContainersStatusFromEnclaveStatus(enclaveStatus)
-		require.NoError(t, err, "No EnclaveContainersStatus provided for enclave status '%v'", enclaveStatus.String())
+		_, err := getEnclaveStatusFromEnclaveStatus(enclaveStatus)
+		require.NoError(t, err, "No EnclaveStatus provided for enclave status '%v'", enclaveStatus.String())
 	}
 }
 

@@ -1,0 +1,66 @@
+{
+  "name": "kurtosis-ui-components",
+  "version": "0.86.20",
+  "private": false,
+  "main": "build/index",
+  "description": "This repo contains components used by Kurtosis UI applications.",
+  "types": "./build/index",
+  "files": [
+    "build"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kurtosis-tech/kurtosis.git",
+    "directory": "enclave-manager/web/packages/components"
+  },
+  "author": "Kurtosis Technologies Inc <support@kurtosistech.com> (https://www.kurtosistech.com/)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/kurtosis-tech/kurtosis/issues"
+  },
+  "homepage": "https://github.com/kurtosis-tech/kurtosis",
+  "scripts": {
+    "start": "tsc --watch --preserveWatchOutput",
+    "build": "rm -rf build/; tsc"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "@tanstack/react-table": "^8.10.7",
+    "kurtosis-cloud-indexer-sdk": "^0.0.2",
+    "react-error-boundary": "^4.0.11",
+    "react-markdown": "^9.0.0",
+    "react-router-dom": "^6.21.1",
+    "react-virtuoso": "^4.6.2",
+    "streamsaver": "^2.0.6",
+    "yaml": "^2.3.4"
+  },
+  "peerDependencies": {
+    "react": ">=16 || >=17 || >= 18",
+    "react-dom": ">=16 || >=17 || >= 18",
+    "@chakra-ui/icons": ">=2 && < 3",
+    "@chakra-ui/react": ">=2.8 && <3",
+    "true-myth": ">=7 && < 8",
+    "luxon": ">=3 && <4"
+  },
+  "devDependencies": {
+    "monaco-editor": "^0.44.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

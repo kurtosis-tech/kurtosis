@@ -121,7 +121,7 @@ func (_c *MockPackageContentProvider_CloneReplacedPackagesIfNeeded_Call) RunAndR
 	return _c
 }
 
-// GetAbsoluteLocatorForRelativeLocator provides a mock function with given fields: packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions
+// GetAbsoluteLocator provides a mock function with given fields: packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions
 func (_m *MockPackageContentProvider) GetAbsoluteLocator(packageId string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError) {
 	ret := _m.Called(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions)
 
@@ -147,8 +147,8 @@ func (_m *MockPackageContentProvider) GetAbsoluteLocator(packageId string, locat
 	return r0, r1
 }
 
-// MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAbsoluteLocator'
-type MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call struct {
+// MockPackageContentProvider_GetAbsoluteLocator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAbsoluteLocator'
+type MockPackageContentProvider_GetAbsoluteLocator_Call struct {
 	*mock.Call
 }
 
@@ -157,24 +157,23 @@ type MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call struct
 //   - locatorOfModuleInWhichThisBuiltInIsBeingCalled string
 //   - relativeOrAbsoluteLocator string
 //   - packageReplaceOptions map[string]string
-
-func (_e *MockPackageContentProvider_Expecter) GetAbsoluteLocatorForRelativeLocator(packageId interface{}, locatorOfModuleInWhichThisBuiltInIsBeingCalled interface{}, relativeOrAbsoluteLocator interface{}, packageReplaceOptions interface{}) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
-	return &MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call{Call: _e.mock.On("GetAbsoluteLocator", packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions)}
+func (_e *MockPackageContentProvider_Expecter) GetAbsoluteLocator(packageId interface{}, locatorOfModuleInWhichThisBuiltInIsBeingCalled interface{}, relativeOrAbsoluteLocator interface{}, packageReplaceOptions interface{}) *MockPackageContentProvider_GetAbsoluteLocator_Call {
+	return &MockPackageContentProvider_GetAbsoluteLocator_Call{Call: _e.mock.On("GetAbsoluteLocator", packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteLocator, packageReplaceOptions)}
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) Run(run func(packageId string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocator_Call) Run(run func(packageId string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string)) *MockPackageContentProvider_GetAbsoluteLocator_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(string), args[2].(string), args[3].(map[string]string))
 	})
 	return _c
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) Return(_a0 string, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocator_Call) Return(_a0 string, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_GetAbsoluteLocator_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) RunAndReturn(run func(string, string, string, map[string]string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocator_Call) RunAndReturn(run func(string, string, string, map[string]string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetAbsoluteLocator_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -289,8 +288,8 @@ func (_c *MockPackageContentProvider_GetModuleContents_Call) RunAndReturn(run fu
 	return _c
 }
 
-// GetOnDiskAbsoluteFilePath provides a mock function with given fields: fileInsidePackageUrl
-func (_m *MockPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
+// GetOnDiskAbsolutePackageFilePath provides a mock function with given fields: fileInsidePackageUrl
+func (_m *MockPackageContentProvider) GetOnDiskAbsolutePackageFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
 	ret := _m.Called(fileInsidePackageUrl)
 
 	var r0 string
@@ -315,30 +314,30 @@ func (_m *MockPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsidePackag
 	return r0, r1
 }
 
-// MockPackageContentProvider_GetOnDiskAbsoluteFilePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOnDiskAbsoluteFilePath'
-type MockPackageContentProvider_GetOnDiskAbsoluteFilePath_Call struct {
+// MockPackageContentProvider_GetOnDiskAbsolutePackageFilePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOnDiskAbsolutePackageFilePath'
+type MockPackageContentProvider_GetOnDiskAbsolutePackageFilePath_Call struct {
 	*mock.Call
 }
 
-// GetOnDiskAbsoluteFilePath is a helper method to define mock.On call
+// GetOnDiskAbsolutePackageFilePath is a helper method to define mock.On call
 //   - fileInsidePackageUrl string
-func (_e *MockPackageContentProvider_Expecter) GetOnDiskAbsoluteFilePath(fileInsidePackageUrl interface{}) *MockPackageContentProvider_GetOnDiskAbsoluteFilePath_Call {
-	return &MockPackageContentProvider_GetOnDiskAbsoluteFilePath_Call{Call: _e.mock.On("GetOnDiskAbsoluteFilePath", fileInsidePackageUrl)}
+func (_e *MockPackageContentProvider_Expecter) GetOnDiskAbsolutePackageFilePath(fileInsidePackageUrl interface{}) *MockPackageContentProvider_GetOnDiskAbsolutePackageFilePath_Call {
+	return &MockPackageContentProvider_GetOnDiskAbsolutePackageFilePath_Call{Call: _e.mock.On("GetOnDiskAbsolutePackageFilePath", fileInsidePackageUrl)}
 }
 
-func (_c *MockPackageContentProvider_GetOnDiskAbsoluteFilePath_Call) Run(run func(fileInsidePackageUrl string)) *MockPackageContentProvider_GetOnDiskAbsoluteFilePath_Call {
+func (_c *MockPackageContentProvider_GetOnDiskAbsolutePackageFilePath_Call) Run(run func(fileInsidePackageUrl string)) *MockPackageContentProvider_GetOnDiskAbsolutePackageFilePath_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *MockPackageContentProvider_GetOnDiskAbsoluteFilePath_Call) Return(_a0 string, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_GetOnDiskAbsoluteFilePath_Call {
+func (_c *MockPackageContentProvider_GetOnDiskAbsolutePackageFilePath_Call) Return(_a0 string, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_GetOnDiskAbsolutePackageFilePath_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockPackageContentProvider_GetOnDiskAbsoluteFilePath_Call) RunAndReturn(run func(string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetOnDiskAbsoluteFilePath_Call {
+func (_c *MockPackageContentProvider_GetOnDiskAbsolutePackageFilePath_Call) RunAndReturn(run func(string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetOnDiskAbsolutePackageFilePath_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -393,6 +392,60 @@ func (_c *MockPackageContentProvider_GetOnDiskAbsolutePackagePath_Call) Return(_
 }
 
 func (_c *MockPackageContentProvider_GetOnDiskAbsolutePackagePath_Call) RunAndReturn(run func(string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetOnDiskAbsolutePackagePath_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetOnDiskAbsolutePath provides a mock function with given fields: repositoryPathURL
+func (_m *MockPackageContentProvider) GetOnDiskAbsolutePath(repositoryPathURL string) (string, *startosis_errors.InterpretationError) {
+	ret := _m.Called(repositoryPathURL)
+
+	var r0 string
+	var r1 *startosis_errors.InterpretationError
+	if rf, ok := ret.Get(0).(func(string) (string, *startosis_errors.InterpretationError)); ok {
+		return rf(repositoryPathURL)
+	}
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(repositoryPathURL)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(string) *startosis_errors.InterpretationError); ok {
+		r1 = rf(repositoryPathURL)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*startosis_errors.InterpretationError)
+		}
+	}
+
+	return r0, r1
+}
+
+// MockPackageContentProvider_GetOnDiskAbsolutePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOnDiskAbsolutePath'
+type MockPackageContentProvider_GetOnDiskAbsolutePath_Call struct {
+	*mock.Call
+}
+
+// GetOnDiskAbsolutePath is a helper method to define mock.On call
+//   - repositoryPathURL string
+func (_e *MockPackageContentProvider_Expecter) GetOnDiskAbsolutePath(repositoryPathURL interface{}) *MockPackageContentProvider_GetOnDiskAbsolutePath_Call {
+	return &MockPackageContentProvider_GetOnDiskAbsolutePath_Call{Call: _e.mock.On("GetOnDiskAbsolutePath", repositoryPathURL)}
+}
+
+func (_c *MockPackageContentProvider_GetOnDiskAbsolutePath_Call) Run(run func(repositoryPathURL string)) *MockPackageContentProvider_GetOnDiskAbsolutePath_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockPackageContentProvider_GetOnDiskAbsolutePath_Call) Return(_a0 string, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_GetOnDiskAbsolutePath_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockPackageContentProvider_GetOnDiskAbsolutePath_Call) RunAndReturn(run func(string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetOnDiskAbsolutePath_Call {
 	_c.Call.Return(run)
 	return _c
 }

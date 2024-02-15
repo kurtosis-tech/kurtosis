@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -14,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
+	"github.com/kurtosis-tech/kurtosis/utils"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"os"
@@ -116,12 +116,12 @@ func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert locator '%v' into absolute locator but failed", src.GoString())
 	}
 
-	pathOnDisk, interpretationErr := builtin.packageContentProvider.GetOnDiskAbsoluteFilePath(absoluteLocator)
+	pathOnDisk, interpretationErr := builtin.packageContentProvider.GetOnDiskAbsolutePath(absoluteLocator)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	compressedDataPath, _, compressedDataMd5, err := shared_utils.CompressPathToFile(pathOnDisk, enforceMaxFileSizeLimit)
+	compressedDataPath, _, compressedDataMd5, err := utils.CompressPathToFile(pathOnDisk, enforceMaxFileSizeLimit)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while compressing the files at '%s'", pathOnDisk)
 	}
