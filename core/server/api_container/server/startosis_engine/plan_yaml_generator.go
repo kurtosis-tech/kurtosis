@@ -74,6 +74,10 @@ type PlanYamlGeneratorImpl struct {
 
 	packageReplaceOptions map[string]string
 
+	// index of files artifact uuid
+	// this provides a look up to see what files artifacts have been processed
+	filesArtifactIndex map[string]bool
+
 	// Representation of plan in yaml the plan is being processed, the yaml gets updated
 	planYaml *PlanYaml
 }
@@ -134,7 +138,8 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 
 	// start building Service Yaml object
 	service := &Service{}
-	service.Uuid = string(addServiceInstruction.GetUuid()) // uuid of the object is the uuid of the instruction that created that object
+	// TODO: mock uuid generator so I can add uuids
+	//service.Uuid = string(addServiceInstruction.GetUuid()) // uuid of the object is the uuid of the instruction that created that object
 
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, add_service.ServiceNameArgName)
 	if err != nil {
@@ -146,7 +151,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", add_service.ServiceConfigArgName)
 	}
-	serviceConfig, err := starlarkServiceConfig.ToKurtosisType( // is this an expensive call
+	serviceConfig, err := starlarkServiceConfig.ToKurtosisType( // is this an expensive call? it's made twice - once during interpretation
 		pyg.serviceNetwork,
 		pyg.locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		pyg.planYaml.PackageId,
@@ -154,16 +159,63 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 		pyg.packageReplaceOptions)
 
 	service.Image = serviceConfig.GetContainerImageName() // TODO: support image build specs
+	service.Cmd = serviceConfig.GetCmdArgs()
+	service.Entrypoint = serviceConfig.GetEntrypointArgs()
+
+	// ports
 	service.Ports = []*Port{}
 	for portName, configPort := range serviceConfig.GetPrivatePorts() { // TODO: support public ports
 		port := &Port{
-			TransportProtocol: ApplicationProtocol(configPort.GetTransportProtocol().String()),
-			PortName:          portName,
-			PortNum:           configPort.GetNumber(),
+			TransportProtocol:   TransportProtocol(configPort.GetTransportProtocol().String()),
+			ApplicationProtocol: ApplicationProtocol(*configPort.GetMaybeApplicationProtocol()),
+			Name:                portName,
+			Number:              configPort.GetNumber(),
 		}
 		service.Ports = append(service.Ports, port)
 	}
 
+	// env vars
+	service.EnvVars = []*EnvironmentVariable{}
+	for key, val := range serviceConfig.GetEnvVars() {
+		envVar := &EnvironmentVariable{
+			Key:   key,
+			Value: val,
+		}
+		service.EnvVars = append(service.EnvVars, envVar)
+	}
+
+	// adding a file, also means adding a files artifact IF it doesn't exist already
+	// 1. create the files artifact, with the correct identifier
+	// 2. add the files artifact to the plan yaml if it doesn't alrady exist
+	service.Files = []*FileMount{}
+	// but the question is where did the artifact identifier come from? is it a new one or is it an old one?
+	// if it's an old one that was already created, how do we know that it was already created
+	// but there's a difference between it being created and it coming from somewhere
+	for mountPath, artifactIdentifiers := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+		// create files artifact objects
+		filesArtifacts := []*FilesArtifact{}
+		for _, identifier := range artifactIdentifiers {
+			filesArtifact := &FilesArtifact{
+				Uuid:  identifier,
+				Name:  "",                  // TODO: how do we get this if the FilesArtifact wasn't created by a different instruction
+				Files: map[string]string{}, // TODO: how do we get this if FilesArtifact wasn't created by a different instruction
+			}
+			// if the files artifact haven't already been tracked, add it to list of known files artifacts
+			if _, ok := pyg.filesArtifactIndex[identifier]; !ok {
+				pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
+				pyg.filesArtifactIndex[identifier] = true
+			}
+			filesArtifacts = append(filesArtifacts, filesArtifact)
+		}
+
+		fileMount := &FileMount{
+			MountPath:      mountPath,
+			filesArtifacts: filesArtifacts,
+		}
+		service.Files = append(service.Files, fileMount)
+	}
+
+	pyg.planYaml.Services = append(pyg.planYaml.Services, service)
 	return nil
 }
 

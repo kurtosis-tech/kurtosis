@@ -18,12 +18,14 @@ type PlanYaml struct {
 
 // Service represents a service in the system.
 type Service struct {
-	Uuid    string                 `yaml:"uuid,omitempty"`
-	Name    string                 `yaml:"name,omitempty"`
-	Image   string                 `yaml:"image,omitempty"`
-	EnvVars []*EnvironmentVariable `yaml:"envVars,omitempty"`
-	Ports   []*Port                `yaml:"ports,omitempty"`
-	Files   []*FileMount           `yaml:"files,omitempty"`
+	Uuid       string                 `yaml:"uuid,omitempty"`       // done
+	Name       string                 `yaml:"name,omitempty"`       // done
+	Image      string                 `yaml:"image,omitempty"`      // done
+	Cmd        []string               `yaml:"command,omitempty"`    // done
+	Entrypoint []string               `yaml:"entrypoint,omitempty"` // done
+	EnvVars    []*EnvironmentVariable `yaml:"envVars,omitempty"`    // done
+	Ports      []*Port                `yaml:"ports,omitempty"`      // done
+	Files      []*FileMount           `yaml:"files,omitempty"`
 }
 
 // FilesArtifact represents a collection of files.
@@ -41,10 +43,11 @@ type EnvironmentVariable struct {
 
 // Port represents a port.
 type Port struct {
-	TransportProtocol ApplicationProtocol `yaml:"transportProtocol,omitempty"`
+	Name   string `yaml:"name,omitempty"`
+	Number uint16 `yaml:"number,omitempty"`
 
-	PortName string `yaml:"portName,omitempty"`
-	PortNum  uint16 `yaml:"portNum,omitempty"`
+	TransportProtocol   TransportProtocol   `yaml:"transportProtocol,omitempty"`
+	ApplicationProtocol ApplicationProtocol `yaml:"applicationProtocol,omitempty"`
 }
 
 // ApplicationProtocol represents the application protocol used.
@@ -55,9 +58,8 @@ type TransportProtocol string
 
 // FileMount represents a mount point for files.
 type FileMount struct {
-	MountPath         string `yaml:"mountPath,omitempty"`
-	FilesArtifactUuid string `yaml:"filesArtifactUuid,omitempty"`
-	FilesArtifactName string `yaml:"filesArtifactName,omitempty"`
+	MountPath      string           `yaml:"mountPath,omitempty"`
+	filesArtifacts []*FilesArtifact // TODO: support persistent directories
 }
 
 // Task represents a task to be executed.

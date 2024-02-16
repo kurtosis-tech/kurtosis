@@ -294,7 +294,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
 
-	logrus.Infof("package id: %v\n main func name: %v\n actual relative path to main file: %v\n script with run func: %v\n serialized params:%v\n%v",
+	logrus.Infof("package id: %v\n main func name: %v\n actual relative path to main file: %v\n script with run func: %v\n serialized params:%v\n",
 		detectedPackageId,
 		mainFuncName,
 		actualRelativePathToMainFile,
