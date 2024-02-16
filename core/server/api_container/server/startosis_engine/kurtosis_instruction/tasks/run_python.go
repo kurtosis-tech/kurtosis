@@ -362,9 +362,9 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 		maybePythonArgumentsWithRuntimeValueReplaced = append(maybePythonArgumentsWithRuntimeValueReplaced, maybePythonArgumentWithRuntimeValueReplaced)
 	}
 	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, spaceDelimiter)
-
+	runEscaped := strings.ReplaceAll(builtin.run, `"`, `\"`)
 	if len(argumentsAsString) > 0 {
-		return fmt.Sprintf("python -c '%s' %s", builtin.run, argumentsAsString), nil
+		return fmt.Sprintf(`python -c "%s" %s`, runEscaped, argumentsAsString), nil
 	}
-	return fmt.Sprintf("python -c '%s'", builtin.run), nil
+	return fmt.Sprintf(`python -c "%s"`, runEscaped), nil
 }
