@@ -34,7 +34,7 @@ const (
 var LoadCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.CloudLoadCmdStr,
 	ShortDescription: "Load a Kurtosis Cloud instance",
-	LongDescription: "Load a remote Kurtosis Cloud instance by providing the instance id." +
+	LongDescription: "Load a remote Kurtosis Cloud instance by providing the instance ID. " +
 		"Note, the remote instance must be in a running state for this operation to complete successfully",
 	Flags: []*flags.FlagConfig{},
 	Args: []*args.ArgConfig{
