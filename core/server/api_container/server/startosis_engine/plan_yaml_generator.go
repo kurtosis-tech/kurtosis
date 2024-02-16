@@ -36,10 +36,10 @@ type PlanYamlGenerator interface {
 	// services:
 	// 	- uuid:
 	//	- name:
-	//     service_config:
-	//			image:
-	//			env_var:
-	//			...
+	//    service_config:
+	//	  	image:
+	//		env_var:
+	//		...
 	//
 	//
 	// files_artifacts:
@@ -79,10 +79,11 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 
 	// iterate over the sequence of instructions
 	for _, scheduledInstruction := range instructionsSequence {
+		var err error
 		// based on the instruction, update the plan yaml representation accordingly
 		switch getBuiltinNameFromInstruction(scheduledInstruction) {
 		case add_service.AddServiceBuiltinName:
-			pyg.updatePlanYamlFromAddService(scheduledInstruction)
+			err = pyg.updatePlanYamlFromAddService(scheduledInstruction)
 		case remove_service.RemoveServiceBuiltinName:
 			pyg.updatePlanYamlFromRemoveService(scheduledInstruction)
 		case tasks.RunShBuiltinName:
@@ -92,6 +93,9 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 		default:
 			return nil, nil
 		}
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// at the very end, convert the plan yaml representation into a yaml
@@ -99,8 +103,23 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 }
 
 // is there anyway i can make this type more specific for type safety
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruction *instructions_plan.ScheduledInstruction) {
+
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruction *instructions_plan.ScheduledInstruction) error {
 	// TODO: update the plan yaml based on an add_service
+	kurtosisInstruction := addServiceInstruction.GetInstruction()
+	instructionArgsList := kurtosisInstruction.GetCanonicalInstruction(false).Arguments
+
+	// get name and config arg from args list
+	nameArg := instructionArgsList[0]
+	configArg := instructionArgsList[1]
+
+	// start building Service Yaml object
+	service := &Service{}
+	service.Uuid = string(addServiceInstruction.GetUuid()) // uuid of the object is the uuid of the instruction that created that object
+	service.Name = nameArg.GetSerializedArgValue()
+
+	_ = configArg // find some way to get the config arg but just not as a string
+	return nil
 }
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRemoveService(RemoveServiceInstruction *instructions_plan.ScheduledInstruction) {

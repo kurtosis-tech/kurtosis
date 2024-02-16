@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 )
 
@@ -33,4 +34,6 @@ type KurtosisInstruction interface {
 	// It returns a builder and not the built object b/c the caller of this method might want to set some attributes
 	// itself. In the current case, this is called in the executor, and it sets the UUID and the returned value.
 	GetPersistableAttributes() *enclave_plan_persistence.EnclavePlanInstructionBuilder
+
+	GetArguments() *builtin_argument.ArgumentValuesSet
 }
