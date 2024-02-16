@@ -165,7 +165,14 @@ func (runner *StartosisRunner) Run(
 		starlarkRunResponseLines <- progressInfo
 
 		if dryRun {
-			pyg := NewPlanYamlGenerator(instructionsPlan)
+			pyg := NewPlanYamlGenerator(
+				instructionsPlan,
+				runner.startosisInterpreter.serviceNetwork,
+				packageId,
+				runner.startosisInterpreter.packageContentProvider,
+				"", // don't think this matters? but figure out if it does
+				packageReplaceOptions,
+			)
 			planYaml, err := pyg.GenerateYaml()
 			if err != nil {
 				starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromWarning(err.Error())

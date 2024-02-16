@@ -2,10 +2,16 @@ package startosis_engine
 
 import (
 	"github.com/go-yaml/yaml"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"go.starlark.net/starlark"
 )
 
 // We need the package id and the args, the args need to be filled in
@@ -60,14 +66,34 @@ type PlanYamlGeneratorImpl struct {
 	// Plan generetated by an interpretation of a starlark script of package
 	plan *instructions_plan.InstructionsPlan
 
+	serviceNetwork service_network.ServiceNetwork
+
+	packageContentProvider startosis_packages.PackageContentProvider
+
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string
+
+	packageReplaceOptions map[string]string
+
 	// Representation of plan in yaml the plan is being processed, the yaml gets updated
 	planYaml *PlanYaml
 }
 
-func NewPlanYamlGenerator(plan *instructions_plan.InstructionsPlan) *PlanYamlGeneratorImpl {
+func NewPlanYamlGenerator(
+	plan *instructions_plan.InstructionsPlan,
+	serviceNetwork service_network.ServiceNetwork,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageReplaceOptions map[string]string) *PlanYamlGeneratorImpl {
 	return &PlanYamlGeneratorImpl{
-		plan:     plan,
-		planYaml: &PlanYaml{},
+		plan:                   plan,
+		serviceNetwork:         serviceNetwork,
+		packageContentProvider: packageContentProvider,
+		packageReplaceOptions:  packageReplaceOptions,
+		locatorOfModuleInWhichThisBuiltInIsBeingCalled: locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		planYaml: &PlanYaml{
+			PackageId: packageId,
+		},
 	}
 }
 
@@ -102,23 +128,42 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 	return convertPlanYamlToYaml(pyg.planYaml)
 }
 
-// is there anyway i can make this type more specific for type safety
-
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruction *instructions_plan.ScheduledInstruction) error {
-	// TODO: update the plan yaml based on an add_service
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruction *instructions_plan.ScheduledInstruction) error { // for type safety, it would be great to be more specific than scheduled instruction
 	kurtosisInstruction := addServiceInstruction.GetInstruction()
-	instructionArgsList := kurtosisInstruction.GetCanonicalInstruction(false).Arguments
-
-	// get name and config arg from args list
-	nameArg := instructionArgsList[0]
-	configArg := instructionArgsList[1]
+	arguments := kurtosisInstruction.GetArguments()
 
 	// start building Service Yaml object
 	service := &Service{}
 	service.Uuid = string(addServiceInstruction.GetUuid()) // uuid of the object is the uuid of the instruction that created that object
-	service.Name = nameArg.GetSerializedArgValue()
 
-	_ = configArg // find some way to get the config arg but just not as a string
+	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, add_service.ServiceNameArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", add_service.ServiceNameArgName)
+	}
+	service.Name = string(serviceName)
+
+	starlarkServiceConfig, err := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, add_service.ServiceConfigArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", add_service.ServiceConfigArgName)
+	}
+	serviceConfig, err := starlarkServiceConfig.ToKurtosisType( // is this an expensive call
+		pyg.serviceNetwork,
+		pyg.locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		pyg.planYaml.PackageId,
+		pyg.packageContentProvider,
+		pyg.packageReplaceOptions)
+
+	service.Image = serviceConfig.GetContainerImageName() // TODO: support image build specs
+	service.Ports = []*Port{}
+	for portName, configPort := range serviceConfig.GetPrivatePorts() { // TODO: support public ports
+		port := &Port{
+			TransportProtocol: ApplicationProtocol(configPort.GetTransportProtocol().String()),
+			PortName:          portName,
+			PortNum:           configPort.GetNumber(),
+		}
+		service.Ports = append(service.Ports, port)
+	}
+
 	return nil
 }
 

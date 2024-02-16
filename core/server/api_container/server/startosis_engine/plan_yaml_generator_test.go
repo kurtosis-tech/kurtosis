@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"testing"
 )
 
 type PlanYamlGeneratorTestSuite struct {
@@ -24,14 +25,18 @@ type PlanYamlGeneratorTestSuite struct {
 }
 
 func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
+	// mock package content provider
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
 	enclaveDb := getEnclaveDBForTest(suite.T())
 
 	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
 
+	// mock runtime value store
 	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(suite.T(), err)
 	suite.runtimeValueStore = runtimeValueStore
+
+	// mock service network
 	suite.serviceNetwork = service_network.NewMockServiceNetwork(suite.T())
 
 	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "")
@@ -48,9 +53,9 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	suite.serviceNetwork.EXPECT().ExistServiceRegistration(testServiceName).Maybe().Return(true, nil)
 }
 
-//func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
-//	suite.Run(t, new(PlanYamlGeneratorTestSuite))
-//}
+func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
+	suite.Run(t, new(PlanYamlGeneratorTestSuite))
+}
 
 func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
@@ -75,7 +80,13 @@ def run(plan):
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
-	pyg := NewPlanYamlGenerator(instructionsPlan)
+	pyg := NewPlanYamlGenerator(
+		instructionsPlan,
+		suite.serviceNetwork,
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		suite.packageContentProvider,
+		"", // figure out if this is needed
+		noPackageReplaceOptions)
 	yamlBytes, err := pyg.GenerateYaml()
 	require.NoError(suite.T(), err)
 
@@ -124,7 +135,13 @@ def run(plan):
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 8, instructionsPlan.Size())
 
-	pyg := NewPlanYamlGenerator(instructionsPlan)
+	pyg := NewPlanYamlGenerator(
+		instructionsPlan,
+		suite.serviceNetwork,
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		suite.packageContentProvider,
+		"", // figure out if this is needed
+		noPackageReplaceOptions)
 	yamlBytes, err := pyg.GenerateYaml()
 	require.NoError(suite.T(), err)
 

@@ -1,8 +1,9 @@
 package startosis_engine
 
 const (
-	TCP ApplicationProtocol = "TCP"
-	UDP ApplicationProtocol = "UDP"
+	HTTP ApplicationProtocol = "HTTP"
+	UDP  TransportProtocol   = "UDP"
+	TCP  TransportProtocol   = "TCP"
 
 	SHELL  TaskType = "sh"
 	PYTHON TaskType = "python"
@@ -48,6 +49,9 @@ type Port struct {
 
 // ApplicationProtocol represents the application protocol used.
 type ApplicationProtocol string
+
+// TransportProtocol represents transport protocol used.
+type TransportProtocol string
 
 // FileMount represents a mount point for files.
 type FileMount struct {

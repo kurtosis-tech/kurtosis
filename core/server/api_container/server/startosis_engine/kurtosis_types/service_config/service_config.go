@@ -263,6 +263,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'", ImageAttr, ServiceConfigTypeName)
 	}
+	// TODO: refactor image build spec into a common interface
 	imageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, interpretationErr = convertImage(
 		rawImageAttrValue,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
