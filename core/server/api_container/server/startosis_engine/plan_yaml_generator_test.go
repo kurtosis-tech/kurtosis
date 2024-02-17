@@ -60,9 +60,9 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Return(apiContainerInfo)
 }
 
-//func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
-//	suite.Run(t, new(PlanYamlGeneratorTestSuite))
-//}
+func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
+	suite.Run(t, new(PlanYamlGeneratorTestSuite))
+}
 
 func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
@@ -80,29 +80,20 @@ func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
-    hi_files_artifact = plan.upload_files(
-        src="github.com/foo/bar/hi.txt",
-        name="hi-file"
+    database = plan.add_service(
+        name="database",
+        config=ServiceConfig(
+            image="postgres:latest",
+        )
     )
 
     plan.add_service(
         name="tedi",
         config=ServiceConfig(
             image="ubuntu:latest",
-            cmd=["cat", "/root/hi.txt"],
-            ports={
-                "dashboard":PortSpec(
-                    number=1234,
-                    application_protocol="http",
-                    transport_protocol="TCP"
-                )
-            },
             env_vars={
-                "PASSWORD": "tedi"
+                "DB_URL": database.ip_address 
             },
-            files={
-                "/root": hi_files_artifact,
-            }
         )
     )
 `

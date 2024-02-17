@@ -1,0 +1,9 @@
+packageId: github.com/kurtosis-tech/plan-yaml-prac
+services:
+- name: database
+  image: postgres:latest
+- name: tedi
+  image: ubuntu:latest
+  envVars:
+  - key: DB_URL
+    value: '{{kurtosis:7e76b78877ff4b8189840894ebee2664:ip_address.runtime_value}}'

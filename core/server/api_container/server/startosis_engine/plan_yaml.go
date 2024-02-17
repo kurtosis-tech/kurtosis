@@ -66,15 +66,13 @@ type FileMount struct {
 
 // Task represents a task to be executed.
 type Task struct {
-	TaskType   TaskType               `yaml:"taskType,omitempty"`
-	Name       string                 `yaml:"name,omitempty"`
-	Command    string                 `yaml:"command,omitempty"`
-	Image      string                 `yaml:"image,omitempty"`
-	EnvVars    []*EnvironmentVariable `yaml:"envVar,omitempty"`
-	Files      []*FileMount           `yaml:"files,omitempty"`
-	Store      []string               `yaml:"store,omitempty"`
-	ShouldWait bool                   `yaml:"shouldWait,omitempty"`
-	Wait       string                 `yaml:"wait,omitempty"`
+	TaskType TaskType               `yaml:"taskType,omitempty"`
+	Name     string                 `yaml:"name,omitempty"`
+	Command  string                 `yaml:"command,omitempty"`
+	Image    string                 `yaml:"image,omitempty"`
+	EnvVars  []*EnvironmentVariable `yaml:"envVar,omitempty"`
+	Files    []*FileMount           `yaml:"files,omitempty"`
+	Store    []*FilesArtifact       `yaml:"store,omitempty"`
 }
 
 // TaskType represents the type of task.
