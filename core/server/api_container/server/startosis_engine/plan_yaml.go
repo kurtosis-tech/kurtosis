@@ -59,7 +59,7 @@ type TransportProtocol string
 // FileMount represents a mount point for files.
 type FileMount struct {
 	MountPath      string           `yaml:"mountPath,omitempty"`
-	filesArtifacts []*FilesArtifact // TODO: support persistent directories
+	FilesArtifacts []*FilesArtifact `yaml:"filesArtifacts,omitempty"` // TODO: support persistent directories
 }
 
 // Task represents a task to be executed.

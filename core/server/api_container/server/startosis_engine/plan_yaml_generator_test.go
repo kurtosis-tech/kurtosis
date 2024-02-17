@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"net"
+	"os"
 	"testing"
 )
 
@@ -139,6 +140,8 @@ files_artifacts:
 	files:
 	- "/root"
 `
+	err = os.WriteFile("./plan.yml", yamlBytes, 0644)
+	require.NoError(suite.T(), err)
 	require.Equal(suite.T(), expectedYamlString, string(yamlBytes))
 }
 

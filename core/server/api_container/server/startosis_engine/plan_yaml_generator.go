@@ -103,6 +103,9 @@ func NewPlanYamlGenerator(
 		planYaml: &PlanYaml{
 			PackageId: packageId,
 		},
+		filesArtifactIndex: map[string]*FilesArtifact{},
+		serviceIndex:       map[string]*Service{},
+		taskIndex:          map[string]*Task{},
 	}
 }
 
@@ -218,7 +221,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 				// the only information we have about a files artifact that didn't already exist is the name
 				// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
 				filesArtifact = &FilesArtifact{
-					Name: identifier, // TODO: check that the identifier the files artifact name and NOT a files artifact uuid
+					Name: identifier,
 				}
 				pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
 				pyg.filesArtifactIndex[identifier] = filesArtifact
@@ -226,7 +229,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 			serviceFilesArtifacts = append(serviceFilesArtifacts, filesArtifact)
 		}
 
-		fileMount.filesArtifacts = serviceFilesArtifacts
+		fileMount.FilesArtifacts = serviceFilesArtifacts
 		service.Files = append(service.Files, fileMount)
 	}
 
@@ -259,19 +262,22 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(addServiceInstru
 	// TODO: update the plan yaml based on an add_service
 }
 
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(addServiceInstruction *instructions_plan.ScheduledInstruction) error {
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(renderTemplatesInstruction *instructions_plan.ScheduledInstruction) error {
+	arguments := renderTemplatesInstruction.GetInstruction().GetArguments()
 	var filesArtifact *FilesArtifact
 
 	// get the name of returned files artifact
-	// give the FilesArtifact the uuid of the originating instruction
-	filesArtifactName := addServiceInstruction.GetReturnedValue().String()
+	artifactName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, render_templates.ArtifactNameArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%s'", render_templates.ArtifactNameArgName)
+	}
+	filesArtifactName := artifactName.GoString()
 	filesArtifact = &FilesArtifact{
-		Uuid: string(addServiceInstruction.GetUuid()),
+		Uuid: string(renderTemplatesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
 		Name: filesArtifactName,
 	}
 
 	// get files of returned files artifact off render templates config
-	arguments := addServiceInstruction.GetInstruction().GetArguments()
 	renderTemplateConfig, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, render_templates.TemplateAndDataByDestinationRelFilepathArg)
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%s'", render_templates.TemplateAndDataByDestinationRelFilepathArg)
