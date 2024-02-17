@@ -25,14 +25,16 @@ type Service struct {
 	Entrypoint []string               `yaml:"entrypoint,omitempty"` // done
 	EnvVars    []*EnvironmentVariable `yaml:"envVars,omitempty"`    // done
 	Ports      []*Port                `yaml:"ports,omitempty"`      // done
-	Files      []*FileMount           `yaml:"files,omitempty"`
+	Files      []*FileMount           `yaml:"files,omitempty"`      // done
+
+	// TODO: support remaining fields in the ServiceConfig
 }
 
 // FilesArtifact represents a collection of files.
 type FilesArtifact struct {
-	Uuid  string            `yaml:"uuid,omitempty"`
-	Name  string            `yaml:"name,omitempty"`
-	Files map[string]string `yaml:"files,omitempty"`
+	Uuid  string   `yaml:"uuid,omitempty"`
+	Name  string   `yaml:"name,omitempty"`
+	Files []string `yaml:"files,omitempty"`
 }
 
 // EnvironmentVariable represents an environment variable.

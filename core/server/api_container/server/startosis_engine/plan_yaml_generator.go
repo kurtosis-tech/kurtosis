@@ -8,7 +8,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
@@ -130,6 +132,8 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 			pyg.updatePlanYamlFromRunPython(scheduledInstruction)
 		case render_templates.RenderTemplatesBuiltinName:
 			err = pyg.updatePlanYamlFromRenderTemplates(scheduledInstruction)
+		case upload_files.UploadFilesBuiltinName:
+			err = pyg.updatePlanYamlFromUploadFiles(scheduledInstruction)
 		default:
 			return nil, nil
 		}
@@ -256,35 +260,59 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(addServiceInstruct
 	// TODO: update the plan yaml based on an add_service
 }
 
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(addServiceInstruction *instructions_plan.ScheduledInstruction) error {
-	panic("remove service not implemented yet")
-	return nil
-	// TODO: update the plan yaml based on an add_service
-}
-
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(renderTemplatesInstruction *instructions_plan.ScheduledInstruction) error {
-	arguments := renderTemplatesInstruction.GetInstruction().GetArguments()
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(uploadFilesInstruction *instructions_plan.ScheduledInstruction) error {
 	var filesArtifact *FilesArtifact
 
 	// get the name of returned files artifact
-	artifactName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, render_templates.ArtifactNameArgName)
-	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%s'", render_templates.ArtifactNameArgName)
+	filesArtifactName, castErr := kurtosis_types.SafeCastToString(uploadFilesInstruction.GetReturnedValue(), "files artifact name")
+	if castErr != nil {
+		return castErr
 	}
-	filesArtifactName := artifactName.GoString()
+	filesArtifact = &FilesArtifact{
+		Uuid: string(uploadFilesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
+		Name: filesArtifactName,
+	}
+
+	// get files of returned files artifact off render templates config
+	arguments := uploadFilesInstruction.GetInstruction().GetArguments()
+	src, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, upload_files.SrcArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", upload_files.SrcArgName)
+	}
+	filesArtifact.Files = []string{src.GoString()}
+
+	// add the files artifact to the yaml and index
+	pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
+	pyg.filesArtifactIndex[filesArtifactName] = filesArtifact
+	return nil
+}
+
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(renderTemplatesInstruction *instructions_plan.ScheduledInstruction) error {
+	var filesArtifact *FilesArtifact
+
+	// get the name of returned files artifact
+	filesArtifactName, castErr := kurtosis_types.SafeCastToString(renderTemplatesInstruction.GetReturnedValue(), "files artifact name")
+	if castErr != nil {
+		return castErr
+	}
 	filesArtifact = &FilesArtifact{
 		Uuid: string(renderTemplatesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
 		Name: filesArtifactName,
 	}
 
 	// get files of returned files artifact off render templates config
+	arguments := renderTemplatesInstruction.GetInstruction().GetArguments()
 	renderTemplateConfig, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, render_templates.TemplateAndDataByDestinationRelFilepathArg)
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%s'", render_templates.TemplateAndDataByDestinationRelFilepathArg)
 	}
-	files := map[string]string{}
-	for _, filepath := range renderTemplateConfig.AttrNames() {
-		files[filepath] = "" // TODO: are files just the file names/the paths at those files? is it possible to get any other information about them
+	files := []string{}
+	for _, filepath := range renderTemplateConfig.Keys() {
+		filepathStr, castErr := kurtosis_types.SafeCastToString(filepath, "filepath")
+		if castErr != nil {
+			return castErr
+		}
+		files = append(files, filepathStr)
 	}
 	filesArtifact.Files = files
 
