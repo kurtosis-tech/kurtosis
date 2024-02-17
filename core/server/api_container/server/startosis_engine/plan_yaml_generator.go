@@ -145,8 +145,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 
 	// start building Service Yaml object
 	service := &Service{}
-	// TODO: mock uuid generator so I can add uuids
-	//service.Uuid = string(addServiceInstruction.GetUuid()) // uuid of the object is the uuid of the instruction that created that object
+	//service.Uuid = string(addServiceInstruction.GetUuid()) 	// TODO: mock uuid generator so I can add uuids, uuid of the object is the uuid of the instruction that created that object
 
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, add_service.ServiceNameArgName)
 	if err != nil {
@@ -158,14 +157,14 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", add_service.ServiceConfigArgName)
 	}
-	serviceConfig, err := starlarkServiceConfig.ToKurtosisType( // is this an expensive call? it's made twice - once during interpretation
+	serviceConfig, err := starlarkServiceConfig.ToKurtosisType( // is this an expensive call?
 		pyg.serviceNetwork,
 		pyg.locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		pyg.planYaml.PackageId,
 		pyg.packageContentProvider,
 		pyg.packageReplaceOptions)
 
-	service.Image = serviceConfig.GetContainerImageName() // TODO: support image build specs
+	service.Image = serviceConfig.GetContainerImageName() // TODO: support image build specs, image registry specs, nix build specs
 	service.Cmd = serviceConfig.GetCmdArgs()
 	service.Entrypoint = serviceConfig.GetEntrypointArgs()
 
@@ -191,27 +190,29 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 		service.EnvVars = append(service.EnvVars, envVar)
 	}
 
-	// adding a file, also means adding a files artifact IF it doesn't exist already
-	// 1. create the files artifact, with the correct identifier
-	// 2. add the files artifact to the plan yaml if it doesn't alrady exist
+	// file mounts have two cases:
+	// 1. the referenced files artifact already exists in the plan, in which case add the referenced files artifact
+	// 2. the referenced files artifact does not already exist in the plan, in which case the file MUST have been passed in via a top level arg OR is invalid
+	// 	  in this case,
+	// 	  - create new files artifact
+	//	  - add it to the service's file mount accordingly
+	//	  - add the files artifact to the plan
 	service.Files = []*FileMount{}
-	// but the question is where did the artifact identifier come from? is it a new one or is it an old one?
-	// if it's an old one that was already created, how do we know that it was already created
-	// but there's a difference between it being created and it coming from somewhere
 	for mountPath, artifactIdentifiers := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-		// create files artifact objects
-		filesArtifacts := []*FilesArtifact{}
+		var fileMount *FileMount
+		fileMount = &FileMount{
+			MountPath: mountPath,
+		}
+
+		var serviceFilesArtifacts []*FilesArtifact
 		for _, identifier := range artifactIdentifiers {
-			// is there already a files artifact that exists with this name from a previous instruction?
-			// is so, use that
 			var filesArtifact *FilesArtifact
+			// if there's already a files artifact that exists with this name from a previous instruction, reference that
 			if potentialFilesArtifact, ok := pyg.filesArtifactIndex[identifier]; ok {
-				// if so use that one
-				filesArtifacts = append(filesArtifacts, &FilesArtifact{
-					Uuid:  potentialFilesArtifact.Uuid,
-					Name:  potentialFilesArtifact.Name,
-					Files: nil, // leave out the files for the services part of the yaml
-				})
+				filesArtifact = &FilesArtifact{
+					Uuid: potentialFilesArtifact.Uuid,
+					Name: potentialFilesArtifact.Name,
+				}
 			} else {
 				// otherwise create a new one
 				// the only information we have about a files artifact that didn't already exist is the name
@@ -220,26 +221,17 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 					Name: identifier, // TODO: check that the identifier the files artifact name and NOT a files artifact uuid
 				}
 				pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
-
-				// add it to the index
 				pyg.filesArtifactIndex[identifier] = filesArtifact
 			}
-			// if the files artifact haven't already been tracked, add it to list of known files artifacts
-			if _, ok := pyg.filesArtifactIndex[identifier]; !ok {
-				pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
-				pyg.filesArtifactIndex[identifier] = filesArtifact
-			}
-			filesArtifacts = append(filesArtifacts, filesArtifact)
+			serviceFilesArtifacts = append(serviceFilesArtifacts, filesArtifact)
 		}
 
-		fileMount := &FileMount{
-			MountPath:      mountPath,
-			filesArtifacts: filesArtifacts,
-		}
+		fileMount.filesArtifacts = serviceFilesArtifacts
 		service.Files = append(service.Files, fileMount)
 	}
 
 	pyg.planYaml.Services = append(pyg.planYaml.Services, service)
+	pyg.serviceIndex[service.Name] = service
 	return nil
 }
 
@@ -268,32 +260,31 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(addServiceInstru
 }
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(addServiceInstruction *instructions_plan.ScheduledInstruction) error {
-	// all i really want from a rendered template is the files artifact name
-	// the name is in the returned value
-	// so then i can add this to the plan yaml files artifacts with the name, uuid of the instruction that it originated from
+	var filesArtifact *FilesArtifact
+
+	// get the name of returned files artifact
+	// give the FilesArtifact the uuid of the originating instruction
+	filesArtifactName := addServiceInstruction.GetReturnedValue().String()
+	filesArtifact = &FilesArtifact{
+		Uuid: string(addServiceInstruction.GetUuid()),
+		Name: filesArtifactName,
+	}
+
+	// get files of returned files artifact off render templates config
 	arguments := addServiceInstruction.GetInstruction().GetArguments()
 	renderTemplateConfig, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, render_templates.TemplateAndDataByDestinationRelFilepathArg)
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%s'", render_templates.TemplateAndDataByDestinationRelFilepathArg)
 	}
-
 	files := map[string]string{}
 	for _, filepath := range renderTemplateConfig.AttrNames() {
-		files[filepath] = ""
+		files[filepath] = "" // TODO: are files just the file names/the paths at those files? is it possible to get any other information about them
 	}
+	filesArtifact.Files = files
 
-	returnedFilesArtifactNameStarlarkVal := addServiceInstruction.GetReturnedValue()
-	returnedFilesArtifactName := returnedFilesArtifactNameStarlarkVal.String()
-	instructionUuid := string(addServiceInstruction.GetUuid())
-
-	filesArtifact := &FilesArtifact{
-		Uuid:  instructionUuid,
-		Name:  returnedFilesArtifactName,
-		Files: files,
-	}
+	// add the files artifact to the yaml and index
 	pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
-	// add the files artifact to all known files artifacts
-	pyg.filesArtifactIndex[returnedFilesArtifactName] = filesArtifact
+	pyg.filesArtifactIndex[filesArtifactName] = filesArtifact
 
 	return nil
 }

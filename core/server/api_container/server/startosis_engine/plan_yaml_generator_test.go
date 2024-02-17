@@ -67,6 +67,81 @@ func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
 }
 
+func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
+	packageId := "github.com/kurtosis-tech/plan-yaml-prac"
+	mainFunctionName := ""
+	relativePathToMainFile := "main.star"
+
+	serializedScript := `def run(plan, args):
+    hi_files_artifact = plan.render_templates(
+        config={
+            "hi.txt":struct(
+                template="hello world!",
+                data={}
+            )
+        },
+        name="hi-file"
+    )
+
+    plan.add_service(
+        name="tedi",
+        config=ServiceConfig(
+            image="ubuntu:latest",
+            cmd=["cat", "/root/hi.txt"],
+            ports={
+                "dashboard":PortSpec(
+                    number=1234,
+                    application_protocol="http",
+                    transport_protocol="TCP"
+                )
+            },
+            env_vars={
+                "PASSWORD": "tedi"
+            },
+            files={
+                "/root": hi_files_artifact,
+            }
+        )
+    )
+`
+	serializedJsonParams := "{}"
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 2, instructionsPlan.Size())
+
+	pyg := NewPlanYamlGenerator(
+		instructionsPlan,
+		suite.serviceNetwork,
+		packageId,
+		suite.packageContentProvider,
+		"", // figure out if this is needed
+		noPackageReplaceOptions,
+	)
+	yamlBytes, err := pyg.GenerateYaml()
+	require.NoError(suite.T(), err)
+
+	expectedYamlString := `packageId: github.com/kurtosis-tech/postgres-package
+services:
+- name: tedi
+  image: ubuntu:latest
+  envVars:
+  - key: PASSWORD
+	value: tedi
+  ports:
+  - name: dashboard
+    number: 1234
+    transportProtocol: TCP
+    applicationProtocol: http
+  files:
+  - name: hi_files_artifact
+files_artifacts:
+  - name: hi_files_artifact
+	files:
+	- "/root"
+`
+	require.Equal(suite.T(), expectedYamlString, string(yamlBytes))
+}
+
 func (suite *PlanYamlGeneratorTestSuite) TestPlanYamlGeneratorVerySimpleScript() {
 	script := `
 def run(plan):
