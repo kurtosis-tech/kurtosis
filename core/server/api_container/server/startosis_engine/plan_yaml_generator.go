@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
@@ -76,7 +77,11 @@ type PlanYamlGeneratorImpl struct {
 
 	// index of files artifact uuid
 	// this provides a look up to see what files artifacts have been processed
-	filesArtifactIndex map[string]bool
+	filesArtifactIndex map[string]*FilesArtifact
+
+	serviceIndex map[string]*Service
+
+	taskIndex map[string]*Task
 
 	// Representation of plan in yaml the plan is being processed, the yaml gets updated
 	planYaml *PlanYaml
@@ -120,6 +125,8 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 			pyg.updatePlanYamlFromRunSh(scheduledInstruction)
 		case tasks.RunPythonBuiltinName:
 			pyg.updatePlanYamlFromRunPython(scheduledInstruction)
+		case render_templates.RenderTemplatesBuiltinName:
+			err = pyg.updatePlanYamlFromRenderTemplates(scheduledInstruction)
 		default:
 			return nil, nil
 		}
@@ -195,15 +202,32 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 		// create files artifact objects
 		filesArtifacts := []*FilesArtifact{}
 		for _, identifier := range artifactIdentifiers {
-			filesArtifact := &FilesArtifact{
-				Uuid:  identifier,
-				Name:  "",                  // TODO: how do we get this if the FilesArtifact wasn't created by a different instruction
-				Files: map[string]string{}, // TODO: how do we get this if FilesArtifact wasn't created by a different instruction
+			// is there already a files artifact that exists with this name from a previous instruction?
+			// is so, use that
+			var filesArtifact *FilesArtifact
+			if potentialFilesArtifact, ok := pyg.filesArtifactIndex[identifier]; ok {
+				// if so use that one
+				filesArtifacts = append(filesArtifacts, &FilesArtifact{
+					Uuid:  potentialFilesArtifact.Uuid,
+					Name:  potentialFilesArtifact.Name,
+					Files: nil, // leave out the files for the services part of the yaml
+				})
+			} else {
+				// otherwise create a new one
+				// the only information we have about a files artifact that didn't already exist is the name
+				// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
+				filesArtifact = &FilesArtifact{
+					Name: identifier, // TODO: check that the identifier the files artifact name and NOT a files artifact uuid
+				}
+				pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
+
+				// add it to the index
+				pyg.filesArtifactIndex[identifier] = filesArtifact
 			}
 			// if the files artifact haven't already been tracked, add it to list of known files artifacts
 			if _, ok := pyg.filesArtifactIndex[identifier]; !ok {
 				pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
-				pyg.filesArtifactIndex[identifier] = true
+				pyg.filesArtifactIndex[identifier] = filesArtifact
 			}
 			filesArtifacts = append(filesArtifacts, filesArtifact)
 		}
@@ -219,27 +243,65 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	return nil
 }
 
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRemoveService(RemoveServiceInstruction *instructions_plan.ScheduledInstruction) {
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRemoveService(RemoveServiceInstruction *instructions_plan.ScheduledInstruction) error {
+	panic("remove service not implemented yet")
+	return nil
 	// TODO: update the plan yaml based on an add_service
 }
 
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(addServiceInstruction *instructions_plan.ScheduledInstruction) {
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(addServiceInstruction *instructions_plan.ScheduledInstruction) error {
+	panic("run sh not implemented yet")
+	return nil
 	// TODO: update the plan yaml based on an add_service
 }
 
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(addServiceInstruction *instructions_plan.ScheduledInstruction) {
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(addServiceInstruction *instructions_plan.ScheduledInstruction) error {
+	panic("run python not implemented yet")
+	return nil
 	// TODO: update the plan yaml based on an add_service
 }
 
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(addServiceInstruction *instructions_plan.ScheduledInstruction) {
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(addServiceInstruction *instructions_plan.ScheduledInstruction) error {
+	panic("remove service not implemented yet")
+	return nil
 	// TODO: update the plan yaml based on an add_service
 }
 
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(addServiceInstruction *instructions_plan.ScheduledInstruction) {
-	// TODO: update the plan yaml based on an add_service
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(addServiceInstruction *instructions_plan.ScheduledInstruction) error {
+	// all i really want from a rendered template is the files artifact name
+	// the name is in the returned value
+	// so then i can add this to the plan yaml files artifacts with the name, uuid of the instruction that it originated from
+	arguments := addServiceInstruction.GetInstruction().GetArguments()
+	renderTemplateConfig, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, render_templates.TemplateAndDataByDestinationRelFilepathArg)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%s'", render_templates.TemplateAndDataByDestinationRelFilepathArg)
+	}
+
+	files := map[string]string{}
+	for _, filepath := range renderTemplateConfig.AttrNames() {
+		files[filepath] = ""
+	}
+
+	returnedFilesArtifactNameStarlarkVal := addServiceInstruction.GetReturnedValue()
+	returnedFilesArtifactName := returnedFilesArtifactNameStarlarkVal.String()
+	instructionUuid := string(addServiceInstruction.GetUuid())
+
+	filesArtifact := &FilesArtifact{
+		Uuid:  instructionUuid,
+		Name:  returnedFilesArtifactName,
+		Files: files,
+	}
+	pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
+	// add the files artifact to all known files artifacts
+	pyg.filesArtifactIndex[returnedFilesArtifactName] = filesArtifact
+
+	return nil
 }
 
 func convertPlanYamlToYaml(planYaml *PlanYaml) ([]byte, error) {
+	// unravel all the indices and add them to the plan
+	// add some sort of tie breaking so yaml's are deterministic
+
 	yamlBytes, err := yaml.Marshal(planYaml)
 	if err != nil {
 		return []byte{}, err

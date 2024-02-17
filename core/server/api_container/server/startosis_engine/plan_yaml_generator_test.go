@@ -59,9 +59,9 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Return(apiContainerInfo)
 }
 
-//func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
-//	suite.Run(t, new(PlanYamlGeneratorTestSuite))
-//}
+func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
+	suite.Run(t, new(PlanYamlGeneratorTestSuite))
+}
 
 func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
@@ -395,6 +395,83 @@ def run(
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedPostgresPackageStarlark, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
+
+	pyg := NewPlanYamlGenerator(
+		instructionsPlan,
+		suite.serviceNetwork,
+		packageId,
+		suite.packageContentProvider,
+		"", // figure out if this is needed
+		noPackageReplaceOptions,
+	)
+	yamlBytes, err := pyg.GenerateYaml()
+	require.NoError(suite.T(), err)
+
+	expectedYamlString := `packageId: github.com/kurtosis-tech/postgres-package
+services:
+- name: postgres
+  image: postgres:alpine
+  envVars:
+  - key: POSTGRES_USER
+	value: postgres
+  - key: POSTGRES_PASSWORD
+    value: MyPassword1!
+  - key: PGDATA
+    value: /data//pgdata
+  - key: POSTGRES_DB
+    value: postgres
+  ports:
+  - name: postgresql
+    number: 5432
+    transportProtocol: TCP
+    applicationProtocol: postgresql
+  files:
+	
+`
+	require.Equal(suite.T(), expectedYamlString, string(yamlBytes))
+}
+
+func (suite *PlanYamlGeneratorTestSuite) TestSimpleScriptWithFilesArtifact() {
+	packageId := "github.com/kurtosis-tech/plan-yaml-prac"
+	mainFunctionName := ""
+	relativePathToMainFile := "main.star"
+
+	serializedScript := `def run(plan, args):
+    hi_files_artifact = plan.render_templates(
+        config={
+            "hi.txt":struct(
+                template="hello world!",
+                data={}
+            )
+        },
+        name="hi-file"
+    )
+
+    plan.add_service(
+        name="tedi",
+        config=ServiceConfig(
+            image="ubuntu:latest",
+            cmd=["cat", "/root/hi.txt"],
+            ports={
+                "dashboard":PortSpec(
+                    number=1234,
+                    application_protocol="http",
+                    transport_protocol="TCP"
+                )
+            },
+            env_vars={
+                "PASSWORD": "tedi"
+            },
+            files={
+                "/root": hi_files_artifact,
+            }
+        )
+    )
+`
+	serializedJsonParams := "{}"
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
 	pyg := NewPlanYamlGenerator(
 		instructionsPlan,

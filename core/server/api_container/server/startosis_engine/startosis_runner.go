@@ -177,6 +177,7 @@ func (runner *StartosisRunner) Run(
 			if err != nil {
 				starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromWarning(err.Error())
 			}
+			logrus.Infof("PLAN YAML:\n %v", string(planYaml))
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg(string(planYaml))
 			return
 		}
