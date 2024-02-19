@@ -3,7 +3,7 @@ title: StoreSpec
 sidebar_label: StoreSpec
 ---
 
-The `StoreSpec` is used to configure how to store a file on the a [`run_sh`][run-sh-reference] and a [`run_python`][run-python-reference] container as a files artifact
+The `StoreSpec` is used to configure how to store a file on a [`run_sh`][run-sh-reference] or a [`run_python`][run-python-reference] container as a files artifact
 
 ```python
 config = StoreSpec(
