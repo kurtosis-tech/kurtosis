@@ -24,12 +24,13 @@ jobs:
           if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
             echo "::set-output name=change::false"
           else
+            echo "indeed its true"
             echo "::set-output name=change::true"
           fi
         id: check
   gofmt:
     needs: check-if-code-change
-    if: ${{ needs.check-if-code-change.outputs.change == true }}
+    if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
     name: gofmt
     runs-on: ubuntu-latest
     steps:
