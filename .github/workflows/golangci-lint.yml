@@ -24,7 +24,7 @@ jobs:
   check-if-code-change:
     runs-on: ubuntu-latest
     outputs:
-      change: ${{ steps.check.change }}
+      change: ${{ steps.check.outputs.change }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,7 +36,7 @@ jobs:
           else
             echo "::set-output name=change::true"
           fi
-        id: check  
+        id: check
   golangci:
     needs: check-if-code-change
     if: ${{ needs.check-if-code-change.outputs.change == true }}

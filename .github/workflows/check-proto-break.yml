@@ -11,7 +11,7 @@ jobs:
   check-if-code-change:
     runs-on: ubuntu-latest
     outputs:
-      change: ${{ steps.check.change }}
+      change: ${{ steps.check.outputs.change }}
     steps:
       - uses: actions/checkout@v4
         with:
