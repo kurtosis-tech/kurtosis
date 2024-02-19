@@ -19,11 +19,9 @@ jobs:
           fetch-depth: 0
       - run: |
           if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
-            echo "hello world"
-            echo "::set-output name=change::true"
-          else
-            echo "good bbye world world"
             echo "::set-output name=change::false"
+          else
+            echo "::set-output name=change::true"
           fi
         id: check
   check-proto-break:
