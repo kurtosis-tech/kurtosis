@@ -59,6 +59,7 @@ func KurtosisPlanInstructions(
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
+	nonBlockingMode bool,
 ) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
 		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions),
@@ -70,8 +71,8 @@ func KurtosisPlanInstructions(
 		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore),
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		start_service.NewStartService(serviceNetwork),
-		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore),
-		tasks.NewRunShService(serviceNetwork, runtimeValueStore),
+		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore, nonBlockingMode),
+		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode),
 		stop_service.NewStopService(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
 		upload_files.NewUploadFiles(packageId, serviceNetwork, packageContentProvider, packageReplaceOptions),

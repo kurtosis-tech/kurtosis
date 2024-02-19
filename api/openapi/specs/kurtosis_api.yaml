@@ -1125,6 +1125,9 @@ components:
           description: Defaults to empty
         image_download_mode:
           $ref: "#/components/schemas/ImageDownloadMode"
+        non_blocking_mode:
+          type: boolean
+          description: Defaults to false
       required:
         - serialized_script
 
@@ -1168,6 +1171,9 @@ components:
           description: Defaults to empty
         image_download_mode:
           $ref: "#/components/schemas/ImageDownloadMode"
+        non_blocking_mode:
+          type: boolean
+          description: Defaults to false
 
     KurtosisFeatureFlag:
       type: string

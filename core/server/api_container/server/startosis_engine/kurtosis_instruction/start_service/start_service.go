@@ -97,3 +97,7 @@ func (builtin *StartServiceCapabilities) FillPersistableAttributes(builder *encl
 		builtin.serviceName,
 	)
 }
+
+func (builtin *StartServiceCapabilities) Description() string {
+	return fmt.Sprintf("Starting service '%v'", builtin.serviceName)
+}

@@ -26,10 +26,12 @@ import (
 const (
 	RunShBuiltinName = "run_sh"
 
-	defaultRunShImageName = "badouralix/curl-jq"
+	defaultRunShImageName  = "badouralix/curl-jq"
+	shScriptPrintCharLimit = 80
+	runningShScriptPrefix  = "Running sh script"
 )
 
-func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, nonBlockingMode bool) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RunShBuiltinName,
@@ -82,6 +84,7 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 				name:              "",
+				nonBlockingMode:   nonBlockingMode,
 				serviceConfig:     nil, // populated at interpretation time
 				run:               "",  // populated at interpretation time
 				resultUuid:        "",  // populated at interpretation time
@@ -105,9 +108,10 @@ type RunShCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 	serviceNetwork    service_network.ServiceNetwork
 
-	resultUuid string
-	name       string
-	run        string
+	resultUuid      string
+	name            string
+	run             string
+	nonBlockingMode bool
 
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
@@ -248,8 +252,12 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		}
 	}
 
-	if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
-		return "", stacktrace.Propagate(err, "attempted to remove the temporary task container but failed")
+	// If the user indicated not to block on removing services after tasks, don't remove the service.
+	// The user will have to remove the task service themselves, or it will get cleaned up with Kurtosis clean.
+	if !builtin.nonBlockingMode {
+		if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
+			return "", stacktrace.Propagate(err, "attempted to remove the temporary task container but failed")
+		}
 	}
 
 	return instructionResult, err
@@ -264,6 +272,13 @@ func (builtin *RunShCapabilities) TryResolveWith(instructionsAreEqual bool, _ *e
 
 func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	builder.SetType(RunShBuiltinName)
+}
+
+func (builtin *RunShCapabilities) Description() string {
+	if len(builtin.run) < shScriptPrintCharLimit {
+		return fmt.Sprintf("%v: `%v`", runningShScriptPrefix, builtin.run)
+	}
+	return runningShScriptPrefix
 }
 
 func getCommandToRun(builtin *RunShCapabilities) (string, error) {

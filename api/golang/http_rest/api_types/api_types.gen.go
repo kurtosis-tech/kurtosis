@@ -334,6 +334,9 @@ type RunStarlarkPackage struct {
 	// MainFunctionName The name of the main function, the default value is "run"
 	MainFunctionName *string `json:"main_function_name,omitempty"`
 
+	// NonBlockingMode Defaults to false
+	NonBlockingMode *bool `json:"non_blocking_mode,omitempty"`
+
 	// Parallelism Defaults to 4
 	Parallelism *int32 `json:"parallelism,omitempty"`
 
@@ -362,6 +365,9 @@ type RunStarlarkScript struct {
 
 	// MainFunctionName The name of the main function, the default value is "run"
 	MainFunctionName *string `json:"main_function_name,omitempty"`
+
+	// NonBlockingMode Defaults to false
+	NonBlockingMode *bool `json:"non_blocking_mode,omitempty"`
 
 	// Parallelism Defaults to 4
 	Parallelism *int32 `json:"parallelism,omitempty"`

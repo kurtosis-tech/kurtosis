@@ -1,8 +1,7 @@
-import { Box, Button, ButtonGroup, Flex } from "@chakra-ui/react";
+import { Box, Button, ButtonGroup, Flex, Icon } from "@chakra-ui/react";
 import Dagre from "@dagrejs/dagre";
 import { RemoveFunctions } from "kurtosis-ui-components";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
-import { FiPlusCircle } from "react-icons/fi";
 import {
   Background,
   BackgroundVariant,
@@ -18,11 +17,13 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { EnclaveFullInfo } from "../../../types";
 import { KurtosisArtifactNode } from "./KurtosisArtifactNode";
-import { KurtosisExecNode } from "./KurtosisExecNode";
+import { nodeIcons } from "./KurtosisNode";
+import { KurtosisPythonNode } from "./KurtosisPythonNode";
 import { KurtosisServiceNode } from "./KurtosisServiceNode";
 import { KurtosisShellNode } from "./KurtosisShellNode";
 import { generateStarlarkFromGraph, getNodeDependencies } from "./utils";
 import { useVariableContext } from "./VariableContextProvider";
+import "./Visualiser.css";
 
 const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
 const getLayoutedElements = <T extends object>(nodes: Node<T>[], edges: Edge<any>[]) => {
@@ -52,7 +53,7 @@ const nodeTypes = {
   serviceNode: KurtosisServiceNode,
   artifactNode: KurtosisArtifactNode,
   shellNode: KurtosisShellNode,
-  execNode: KurtosisExecNode,
+  pythonNode: KurtosisPythonNode,
 };
 
 export type VisualiserImperativeAttributes = {
@@ -97,6 +98,9 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
         ports: [],
         env: [],
         files: [],
+        execStepEnabled: "false",
+        execStepCommand: "",
+        execStepAcceptableCodes: [],
         isValid: false,
       });
       addNodes({
@@ -146,22 +150,27 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
       });
     };
 
-    const handleAddExecNode = () => {
+    const handleAddPythonNode = () => {
       const id = uuidv4();
       updateData(id, {
-        type: "exec",
-        execName: "",
-        serviceName: "",
+        type: "python",
+        pythonName: "",
         command: "",
-        acceptableCodes: [],
+        packages: [],
+        image: "",
+        args: [],
+        files: [],
+        store: "",
+        wait_enabled: "true",
+        wait: "",
         isValid: false,
       });
       addNodes({
         id,
         position: getNewNodePosition(),
-        width: 400,
-        style: { width: "400px" },
-        type: "execNode",
+        width: 650,
+        style: { width: "650px" },
+        type: "pythonNode",
         data: {},
       });
     };
@@ -181,6 +190,7 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
             source: from,
             target: to,
             animated: true,
+            type: "straight",
             style: { strokeWidth: "3px" },
           })),
         );
@@ -222,17 +232,17 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
       <Flex flexDirection={"column"} h={"100%"} gap={"8px"}>
         <ButtonGroup paddingInline={6}>
           <Button onClick={onLayout}>Do Layout</Button>
-          <Button leftIcon={<FiPlusCircle />} onClick={handleAddServiceNode}>
+          <Button leftIcon={<Icon as={nodeIcons["service"]} />} onClick={handleAddServiceNode}>
             Add Service Node
           </Button>
-          <Button leftIcon={<FiPlusCircle />} onClick={handleAddArtifactNode}>
+          <Button leftIcon={<Icon as={nodeIcons["artifact"]} />} onClick={handleAddArtifactNode}>
             Add Files Node
           </Button>
-          <Button leftIcon={<FiPlusCircle />} onClick={handleAddShellNode}>
+          <Button leftIcon={<Icon as={nodeIcons["shell"]} />} onClick={handleAddShellNode}>
             Add Shell Node
           </Button>
-          <Button leftIcon={<FiPlusCircle />} onClick={handleAddExecNode}>
-            Add Exec Node
+          <Button leftIcon={<Icon as={nodeIcons["python"]} />} onClick={handleAddPythonNode}>
+            Add Python Node
           </Button>
         </ButtonGroup>
         <Box bg={"gray.900"} flex={"1"}>
