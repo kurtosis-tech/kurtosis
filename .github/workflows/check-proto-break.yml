@@ -26,7 +26,7 @@ jobs:
         id: check
   check-proto-break:
     needs: check-if-code-change
-    if: ${{ needs.check-if-code-change.outputs.change == true }}
+    if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-go@v3

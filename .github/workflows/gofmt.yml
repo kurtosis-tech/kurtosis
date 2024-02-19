@@ -24,7 +24,6 @@ jobs:
           if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
             echo "::set-output name=change::false"
           else
-            echo "indeed its true"
             echo "::set-output name=change::true"
           fi
         id: check
