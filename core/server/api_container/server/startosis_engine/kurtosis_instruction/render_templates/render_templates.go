@@ -168,6 +168,10 @@ func (builtin *RenderTemplatesCapabilities) FillPersistableAttributes(builder *e
 	)
 }
 
+func (builtin *RenderTemplatesCapabilities) Description() string {
+	return fmt.Sprintf("Rendering a template to a files artifact with name '%v'", builtin.artifactName)
+}
+
 func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*render_templates.TemplateData, *startosis_errors.InterpretationError) {
 	templateAndDataByDestRelFilepath := make(map[string]*render_templates.TemplateData)
 	for _, relPathInFilesArtifactKey := range templatesAndData.Keys() {

@@ -189,6 +189,8 @@ func formatInfo(infoMessage string) string {
 func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction, verbosity run.Verbosity) string {
 	var serializedInstruction string
 	switch verbosity {
+	case run.Description:
+		serializedInstruction = instruction.Description
 	case run.Brief:
 		serializedInstruction = formatInstructionToReadableString(instruction, false)
 	case run.Detailed:

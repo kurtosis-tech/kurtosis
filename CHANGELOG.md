@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.86.25](https://github.com/kurtosis-tech/kurtosis/compare/0.86.24...0.86.25) (2024-02-16)
+
+
+### Features
+
+* emui builder python nodes ([#2170](https://github.com/kurtosis-tech/kurtosis/issues/2170)) ([26ad571](https://github.com/kurtosis-tech/kurtosis/commit/26ad5716548edec84e5276ddfe972203c7d5838d))
+* kurtosis run `--non-blocking-tasks` ([#2153](https://github.com/kurtosis-tech/kurtosis/issues/2153)) ([6c70247](https://github.com/kurtosis-tech/kurtosis/commit/6c70247531eb0343434101fe54cf6ef028ded873))
+
+
+### Bug Fixes
+
+* allow for single quotes in run_python ([#2172](https://github.com/kurtosis-tech/kurtosis/issues/2172)) ([4048368](https://github.com/kurtosis-tech/kurtosis/commit/4048368f9fe38d28f1e912a108b79cdbac17a1b7)), closes [#2171](https://github.com/kurtosis-tech/kurtosis/issues/2171)
+
+## [0.86.24](https://github.com/kurtosis-tech/kurtosis/compare/0.86.23...0.86.24) (2024-02-15)
+
+
+### Features
+
+* added a `description` field to instructions ([#2147](https://github.com/kurtosis-tech/kurtosis/issues/2147)) ([9085cfd](https://github.com/kurtosis-tech/kurtosis/commit/9085cfd7d1ad51b65e2087e124cc24cb487364b8))
+
+## [0.86.23](https://github.com/kurtosis-tech/kurtosis/compare/0.86.22...0.86.23) (2024-02-15)
+
+
+### Bug Fixes
+
+* replace nix installer ([#2163](https://github.com/kurtosis-tech/kurtosis/issues/2163)) ([8f68547](https://github.com/kurtosis-tech/kurtosis/commit/8f68547ed7ec0959dabd5c2fa2ddec1a78f43847))
+
+## [0.86.22](https://github.com/kurtosis-tech/kurtosis/compare/0.86.21...0.86.22) (2024-02-15)
+
+
+### Bug Fixes
+
+* allow building images in arm64 ([#2161](https://github.com/kurtosis-tech/kurtosis/issues/2161)) ([acd884f](https://github.com/kurtosis-tech/kurtosis/commit/acd884fb1a8292b450e66c8f48156f4cef52a082))
+
 ## [0.86.21](https://github.com/kurtosis-tech/kurtosis/compare/0.86.20...0.86.21) (2024-02-15)
 
 

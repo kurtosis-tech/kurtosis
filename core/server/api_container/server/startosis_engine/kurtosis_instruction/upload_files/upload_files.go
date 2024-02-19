@@ -213,3 +213,7 @@ func (builtin *UploadFilesCapabilities) FillPersistableAttributes(builder *encla
 		builtin.artifactName, builtin.filesArtifactMd5,
 	)
 }
+
+func (builtin *UploadFilesCapabilities) Description() string {
+	return fmt.Sprintf("Uploading file '%v' to files artifact '%v'", builtin.src, builtin.artifactName)
+}

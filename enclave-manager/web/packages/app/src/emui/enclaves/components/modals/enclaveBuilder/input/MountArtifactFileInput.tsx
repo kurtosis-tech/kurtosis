@@ -10,7 +10,7 @@ export const MountArtifactFileInput = (props: KurtosisFormInputProps<KurtosisSer
   const { variables } = useVariableContext();
   const artifactVariableOptions = useMemo((): SelectOption[] => {
     return variables
-      .filter((variable) => variable.id.match(/^(?:artifact|shell)\.[^.]+$/))
+      .filter((variable) => variable.id.match(/^(?:artifact|shell|python)\.[^.]+$/))
       .map((variable) => ({ display: variable.displayName, value: `{{${variable.id}}}` }));
   }, [variables]);
 

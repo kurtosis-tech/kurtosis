@@ -101,3 +101,7 @@ func (builtin *RemoveServiceCapabilities) FillPersistableAttributes(builder *enc
 		builtin.serviceName,
 	)
 }
+
+func (builtin *RemoveServiceCapabilities) Description() string {
+	return fmt.Sprintf("Removing service '%v'", builtin.serviceName)
+}

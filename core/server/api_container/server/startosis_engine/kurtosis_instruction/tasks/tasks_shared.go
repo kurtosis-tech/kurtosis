@@ -297,7 +297,7 @@ func formatErrorMessage(errorMessage string, errorFromExec string) string {
 func removeService(ctx context.Context, serviceNetwork service_network.ServiceNetwork, serviceName string) error {
 	_, err := serviceNetwork.RemoveService(ctx, serviceName)
 	if err != nil {
-		return stacktrace.NewError("error occurred while removing task with name %v", serviceName)
+		return stacktrace.Propagate(err, "error occurred while removing task with name %v", serviceName)
 	}
 	return nil
 }
