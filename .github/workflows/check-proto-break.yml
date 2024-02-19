@@ -19,14 +19,16 @@ jobs:
           fetch-depth: 0
       - run: |
           if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
+            echo "hello world"
             echo "::set-output name=change::true"
           else
+            echo "good bbye world world"
             echo "::set-output name=change::false"
           fi
         id: check
   check-proto-break:
     needs: check-if-code-change
-    if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
+    if: ${{ needs.check-if-code-change.outputs.change == true }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-go@v3
