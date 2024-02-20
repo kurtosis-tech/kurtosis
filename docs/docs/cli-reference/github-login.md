@@ -10,7 +10,7 @@ To authorize Kurtosis CLI to GitHub, use:
 kurtosis github login
 ```
 
-This enables use of any private GitHub assets that a user has access via a [locator](../advanced-concepts/locators.md) in operations like `kurtosis run`, `import_module`, or `upload_files`. To see an application of this, follow this [guide](../guides/running-private-packages.mdnn) to learn how to run a private package.
+This enables use of any private GitHub assets that a user has access via a [locator](../advanced-concepts/locators.md) in operations like `kurtosis run`, `import_module`, or `upload_files`. To see an application of this, follow this [guide](../guides/running-private-packages.md) to learn how to run a private package.
 
 The command will output a one time code. Copy the code and press enter to open a GitHub window that will instruct you to enter the code. After entering the code, authorize Kurtosis CLI and navigate back to the terminal. Your Kurtosis engine will restart automatically so GitHub auth takes effect.
 
