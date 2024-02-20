@@ -23,3 +23,6 @@ Kurtosis starts services based on a provided image definition in the `image` arg
         target_stage=""
     )
 ```
+:::info 
+Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on the build context being in the package.
+:::
