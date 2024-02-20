@@ -171,3 +171,7 @@ func (builtin *StoreServiceFilesCapabilities) FillPersistableAttributes(builder 
 		builtin.artifactName, nil,
 	)
 }
+
+func (builtin *StoreServiceFilesCapabilities) Description() string {
+	return fmt.Sprintf("Storing files from service '%v' at path '%v' to files artifact with name '%v'", builtin.serviceName, builtin.src, builtin.artifactName)
+}

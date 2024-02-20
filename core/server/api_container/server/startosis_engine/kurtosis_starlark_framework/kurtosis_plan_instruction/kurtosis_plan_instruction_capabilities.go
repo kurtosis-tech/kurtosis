@@ -22,4 +22,7 @@ type KurtosisPlanInstructionCapabilities interface {
 	// FillPersistableAttributes adds to the builder the attributes of the instruction that needs to be persisted to the
 	// enclave database to power idempotent runs.
 	FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder)
+
+	// Description Brief description of the instruction based on its contents
+	Description() string
 }

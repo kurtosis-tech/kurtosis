@@ -1326,6 +1326,8 @@ export interface components {
             /** @description Defaults to empty */
             cloud_user_id?: string;
             image_download_mode?: components["schemas"]["ImageDownloadMode"];
+            /** @description Defaults to false */
+            non_blocking_mode?: boolean;
         };
         RunStarlarkPackage: {
             /** @description Parameters data for the Starlark package main function */
@@ -1354,6 +1356,8 @@ export interface components {
             /** @description Defaults to empty */
             cloud_user_id?: string;
             image_download_mode?: components["schemas"]["ImageDownloadMode"];
+            /** @description Defaults to false */
+            non_blocking_mode?: boolean;
         };
         /**
          * @description 0 - NO_INSTRUCTIONS_CACHING

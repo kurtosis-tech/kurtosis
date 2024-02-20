@@ -99,3 +99,7 @@ func (builtin *PrintCapabilities) TryResolveWith(instructionsAreEqual bool, _ *e
 func (builtin *PrintCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	builder.SetType(PrintBuiltinName)
 }
+
+func (builtin *PrintCapabilities) Description() string {
+	return "Printing a message"
+}

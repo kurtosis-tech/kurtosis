@@ -110,7 +110,17 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for script '%v'", oldSerializedParams)
 	}
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(runConfig.MainFunctionName, serializedScript, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId, runConfig.ImageDownload)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(
+		runConfig.MainFunctionName,
+		serializedScript,
+		serializedParams,
+		runConfig.DryRun,
+		runConfig.Parallelism,
+		runConfig.ExperimentalFeatureFlags,
+		runConfig.CloudInstanceId,
+		runConfig.CloudUserId,
+		runConfig.ImageDownload,
+		runConfig.NonBlockingMode)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	stream, err := enclaveCtx.client.RunStarlarkScript(ctxWithCancel, executeStartosisScriptArgs)
@@ -172,7 +182,8 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 		runConfig.ExperimentalFeatureFlags,
 		runConfig.CloudInstanceId,
 		runConfig.CloudUserId,
-		runConfig.ImageDownload)
+		runConfig.ImageDownload,
+		runConfig.NonBlockingMode)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
@@ -297,7 +308,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	}()
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId, runConfig.ImageDownload)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId, runConfig.ImageDownload, runConfig.NonBlockingMode)
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
@@ -605,9 +616,21 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 	cloudInstanceId string,
 	cloudUserId string,
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
+	nonBlockingMode bool,
 ) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 
-	return binding_constructors.NewRunStarlarkPackageArgs(packageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId, imageDownloadMode), nil
+	return binding_constructors.NewRunStarlarkPackageArgs(
+		packageName,
+		relativePathToMainFile,
+		mainFunctionName,
+		serializedParams,
+		dryRun,
+		parallelism,
+		experimentalFeatures,
+		cloudInstanceId,
+		cloudUserId,
+		imageDownloadMode,
+		nonBlockingMode), nil
 }
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {

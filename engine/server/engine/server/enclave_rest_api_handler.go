@@ -601,6 +601,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
 		// clone_package below
 		StarlarkPackageContent: nil,
+		NonBlockingMode:        request.Body.NonBlockingMode,
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
@@ -673,6 +674,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkScripts(ctx 
 		CloudInstanceId:      request.Body.CloudInstanceId,
 		CloudUserId:          request.Body.CloudUserId,
 		ImageDownloadMode:    utils.MapPointer(request.Body.ImageDownloadMode, to_grpc.ToGrpcImageDownloadMode),
+		NonBlockingMode:      request.Body.NonBlockingMode,
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
