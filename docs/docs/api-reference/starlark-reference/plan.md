@@ -455,6 +455,8 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
 
+The `store` atrribute expects a list of paths or [`StoreSpec`][store-spec-reference] objects.
+
 The instruction returns a `struct` with [future references][future-references-reference] to the output and exit code of the Python script, alongside with future-reference to the file artifact names that were generated.
 * `result.output` is a future reference to the output of the command
 * `result.code` is a future reference to the exit code
@@ -529,6 +531,8 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
 ```
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
+
+The `store` atrribute expects a list of paths or [`StoreSpec`][store-spec-reference] objects.
 
 The instruction returns a `struct` with [future references][future-references-reference] to the output and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
    * `result.output` is a future reference to the output of the command
@@ -725,3 +729,4 @@ plan.print(recipe_result["code"])
 [starlark-types-get-http-recipe]: ./get-http-request-recipe.md
 [service-starlark-reference]: ./service.md
 [starlark-types-port-spec]: ./port-spec.md
+[store-spec-reference]: ./store-spec.md
