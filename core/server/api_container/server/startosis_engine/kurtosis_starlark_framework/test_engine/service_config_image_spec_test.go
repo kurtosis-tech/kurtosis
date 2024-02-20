@@ -2,9 +2,9 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"testing"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -57,7 +57,7 @@ func (t *serviceConfigImageSpecTest) Assert(typeValue builtin_argument.KurtosisV
 		testNoPackageReplaceOptions)
 	require.Nil(t, interpretationErr)
 
-	expectedImageRegistrySpec := image_spec.NewImagSpec(testContainerImageName, testRegistryUsername, testRegistryPassword, testRegistryAddr)
+	expectedImageRegistrySpec := image_registry_spec.NewImageRegistrySpec(testContainerImageName, testRegistryUsername, testRegistryPassword, testRegistryAddr)
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		nil,

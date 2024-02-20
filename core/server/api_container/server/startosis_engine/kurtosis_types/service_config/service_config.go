@@ -692,11 +692,11 @@ func convertImage(
 		}
 		return imageName, imageBuildSpec, nil, nil, nil
 	} else if isImageRegistrySpecStarlarkType {
-		imageSpec, interpretationErr := imageSpecStarlarkType.ToKurtosisType()
+		imageRegistrySpec, interpretationErr := imageSpecStarlarkType.ToKurtosisType()
 		if interpretationErr != nil {
 			return "", nil, nil, nil, interpretationErr
 		}
-		return imageSpec.GetImageName(), nil, imageSpec, nil, nil
+		return imageRegistrySpec.GetImageName(), nil, imageRegistrySpec, nil, nil
 	} else if isNixBuildSpecStarlarkType {
 		nixBuildSpec, interpretationErr := nixBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {

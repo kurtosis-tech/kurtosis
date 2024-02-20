@@ -1,7 +1,7 @@
 package service_config
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -140,7 +140,7 @@ func (irs *ImageSpec) GetUsernameIfSet() (string, *startosis_errors.Interpretati
 	return registryAddrStr, nil
 }
 
-func (irs *ImageSpec) ToKurtosisType() (*image_spec.ImageSpec, *startosis_errors.InterpretationError) {
+func (irs *ImageSpec) ToKurtosisType() (*image_registry_spec.ImageRegistrySpec, *startosis_errors.InterpretationError) {
 	image, err := irs.GetImage()
 	if err != nil {
 		return nil, err
@@ -161,5 +161,5 @@ func (irs *ImageSpec) ToKurtosisType() (*image_spec.ImageSpec, *startosis_errors
 		return nil, err
 	}
 
-	return image_spec.NewImagSpec(image, username, password, registryAddr), nil
+	return image_registry_spec.NewImageRegistrySpec(image, username, password, registryAddr), nil
 }
