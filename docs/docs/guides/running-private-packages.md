@@ -26,10 +26,10 @@ A GitHub screen should pop up in your browser instructing you to enter the one-t
 
 ![github-enter-code](../../static/img/guides/github-enter-code.jpg)
 
-After entering the code, GitHub will prompt you to authorize Kurtosis CLI. Kurtosis CLI only requests read access to public and private repositories. 
+After entering the code, GitHub will prompt you to authorize Kurtosis CLI. Kurtosis CLI requests [`repo`](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) access to repositories for the ability to read and pull from private repositories.
 
 :::info Private Packages within GitHub Orgs
-If the private package you'd like to develop on lives in a GitHub org, the organization must also authorize Kurtosis CLI.
+If the private package you'd like to develop on lives in a GitHub org, the organization must also authorize Kurtosis CLI. To have an organization you are a part of authorize Kurtosis CLI, click the `Request` button next to the organization name on the authorization page, then notify your org admins to accept the request via email.
 :::
 
 
@@ -50,7 +50,7 @@ Behind the scenes, authorizing Kurtosis CLI means GitHub will generate an OAuth 
 
 Now, run a private package! Get the locator of the private package you have access to that you'd like to run that. For this example, we'll assume there's a private package at `github.com/tedim52/my-private-package`
 ```
-kurtosis run github.com/tedim52/my-private-package
+kurtosis run github.com/private-author/my-private-package
 ```
 
 Now, the package should run! Additionally, any [locators](../advanced-concepts/locators.md)  (e.g. in `upload_files` or `import_module`) that refer to resources in private GitHub repositories you have access to, are also authorized. 
