@@ -12,7 +12,7 @@ config = ServiceConfig(
     # the underlying container engine.
     # If a string is provided, Kurtosis will by default detect if images exists locally, or pull from container registry if not.
     # The string form is syntactic sugar for ImageSpec with only image set
-    # ImageSpec referring to private registries limiteed to Docker
+    # ImageSpec referring to private registries limited to Docker
     # Reach out to the team if you want to run Kurtosis with private images on Kubernetes
     # If an ImageBuildSpec is provided, Kurtosis will build the image.
     # MANDATORY
