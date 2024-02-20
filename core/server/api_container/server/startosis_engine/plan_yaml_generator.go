@@ -33,6 +33,8 @@ import (
 //
 // go through all the kurtosis builtins and figure out which ones we need to accommodate for and which ones we don't need to accommodate for
 
+// TODO: refactor this so plan yaml is generated as instructionsPlan is created, otherwise a lot of duplicate operations happen to parse the arguments
+
 // PlanYamlGenerator generates a yaml representation of a [plan].
 type PlanYamlGenerator interface {
 	// GenerateYaml converts [plan] into a byte array that represents a yaml with information in the plan.
@@ -77,9 +79,18 @@ type PlanYamlGeneratorImpl struct {
 
 	packageReplaceOptions map[string]string
 
+	// stores all future references returned from instructions so they can be referenced later
+	futureReferencesStore map[string]string
+
+	// technically files artifacts are future references but we store them separately bc they are easily identifiable
+	// and have a distinct structure (FilesArtifact)
 	filesArtifactIndex map[string]*FilesArtifact
-	serviceIndex       map[string]*Service
-	taskIndex          map[string]*Task
+
+	// Store service index needed to see in case a service is referenced by a remove service, or store service later in the plan
+	serviceIndex map[string]*Service
+
+	// TODO: do we need a task index?
+	taskIndex map[string]*Task
 
 	// Representation of plan in yaml the plan is being processed, the yaml gets updated
 	planYaml *PlanYaml
@@ -306,9 +317,105 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(renderTempla
 }
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *instructions_plan.ScheduledInstruction) error {
-	panic("run sh not implemented yet")
+	var task *Task
+
+	// set instruction uuid
+	task = &Task{
+		Uuid:     string(runShInstruction.GetUuid()),
+		TaskType: SHELL,
+	}
+
+	// get runcmd, image, env vars and set them in the yaml
+	arguments := runShInstruction.GetInstruction().GetArguments()
+	runCommand, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, tasks.RunArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.RunArgName)
+	}
+	task.RunCmd = runCommand.GoString()
+
+	var image string
+	if arguments.IsSet(tasks.ImageNameArgName) {
+		imageStarlark, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, tasks.ImageNameArgName)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.ImageNameArgName)
+		}
+		image = imageStarlark.GoString()
+	} else {
+		image = tasks.DefaultRunShImageName
+	}
+	task.Image = image
+
+	var envVars []*EnvironmentVariable
+	var envVarsMap map[string]string
+	if arguments.IsSet(tasks.EnvVarsArgName) {
+		envVarsStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, tasks.EnvVarsArgName)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.EnvVarsArgName)
+		}
+		if envVarsStarlark != nil && envVarsStarlark.Len() > 0 {
+			var interpretationErr *startosis_errors.InterpretationError
+			envVarsMap, interpretationErr = kurtosis_types.SafeCastToMapStringString(envVarsStarlark, tasks.EnvVarsArgName)
+			if interpretationErr != nil {
+				return interpretationErr
+			}
+		}
+	}
+	for key, val := range envVarsMap {
+		envVars = append(envVars, &EnvironmentVariable{
+			Key:   key,
+			Value: val,
+		})
+	}
+	task.EnvVars = envVars
+
+	// for files:
+	//	1. either the referenced files artifact already exists in the plan, in which case, look for it and reference it via instruction uuid
+	// 	2. the referenced files artifact is new, in which case we add it to the plan
+	if arguments.IsSet(tasks.FilesArgName) {
+		filesStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, tasks.FilesArgName)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.FilesArgName)
+		}
+		if filesStarlark.Len() > 0 {
+			filesArtifactMountDirPaths, interpretationErr := kurtosis_types.SafeCastToMapStringString(filesStarlark, tasks.FilesArgName)
+			if interpretationErr != nil {
+				return interpretationErr
+			}
+			for mountPath, fileArtifactName := range filesArtifactMountDirPaths {
+				var filesArtifact *FilesArtifact
+				// if there's already a files artifact that exists with this name from a previous instruction, reference that
+				if potentialFilesArtifact, ok := pyg.filesArtifactIndex[fileArtifactName]; ok {
+					filesArtifact = &FilesArtifact{
+						Uuid: potentialFilesArtifact.Uuid,
+						Name: potentialFilesArtifact.Name,
+					}
+				} else {
+					// otherwise create a new one
+					// the only information we have about a files artifact that didn't already exist is the name
+					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
+					filesArtifact = &FilesArtifact{
+						Name: fileArtifactName,
+					}
+					pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
+					pyg.filesArtifactIndex[fileArtifactName] = filesArtifact
+				}
+
+				task.Files = append(task.Files, &FileMount{
+					MountPath:      mountPath,
+					FilesArtifacts: []*FilesArtifact{filesArtifact},
+				})
+			}
+		}
+	}
+
+	// for store
+	// - all files artifacts product from store are new files artifact that are added to the plan
+	//		- add them to files artifacts list
+	// 		- add them to the store section of run sh
+
+	// add task to index, do we even need a tasks index?
+	pyg.planYaml.Tasks = append(pyg.planYaml.Tasks, task)
 	return nil
-	// TODO: update the plan yaml based on an add_service
 }
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstruction *instructions_plan.ScheduledInstruction) error {
@@ -318,7 +425,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 }
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreService(storeServiceInstruction *instructions_plan.ScheduledInstruction) error {
-	panic("")
+	panic("store service not implemented yet")
 	return nil
 }
 

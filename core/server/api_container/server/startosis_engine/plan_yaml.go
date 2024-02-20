@@ -9,6 +9,7 @@ const (
 	PYTHON TaskType = "python"
 )
 
+// TODO: there's really no point in making any of these references, consider just making them copies
 type PlanYaml struct {
 	PackageId      string           `yaml:"packageId,omitempty"`
 	Services       []*Service       `yaml:"services,omitempty"`
@@ -77,8 +78,8 @@ type Task struct {
 	EnvVars []*EnvironmentVariable `yaml:"envVar,omitempty"`
 
 	// only exists on PYTHON tasks
-	PythonPackages []string `yaml:"pythonPackages"`
-	PythonArgs     []string `yaml:"pythonArgs"`
+	PythonPackages []string `yaml:"pythonPackages,omitempty"`
+	PythonArgs     []string `yaml:"pythonArgs,omitempty"`
 }
 
 // TaskType represents the type of task (either PYTHON or SHELL)

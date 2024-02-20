@@ -1,9 +1,14 @@
 packageId: github.com/kurtosis-tech/plan-yaml-prac
-services:
-- name: database
-  image: postgres:latest
-- name: tedi
-  image: ubuntu:latest
-  envVars:
-  - key: DB_URL
-    value: '{{kurtosis:7e76b78877ff4b8189840894ebee2664:ip_address.runtime_value}}'
+filesArtifacts:
+- uuid: a623b3ee1e794f788a2308f3fecdcd05
+  name: bye-file
+  files:
+  - bye.txt
+tasks:
+- taskType: sh
+  uuid: 50022233681a4c398489e5d79818aeed
+  command: echo $(cat /root/bye.txt) > hi.txt
+  image: badouralix/curl-jq
+  envVar:
+  - key: HELLO
+    value: Hello!

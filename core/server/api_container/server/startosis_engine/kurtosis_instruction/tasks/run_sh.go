@@ -26,7 +26,7 @@ import (
 const (
 	RunShBuiltinName = "run_sh"
 
-	defaultRunShImageName = "badouralix/curl-jq"
+	DefaultRunShImageName = "badouralix/curl-jq"
 )
 
 func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, nonBlockingMode bool) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -131,7 +131,7 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 		}
 		image = imageStarlark.GoString()
 	} else {
-		image = defaultRunShImageName
+		image = DefaultRunShImageName
 	}
 
 	var filesArtifactExpansion *service_directory.FilesArtifactsExpansion

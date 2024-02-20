@@ -80,21 +80,27 @@ func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
-    database = plan.add_service(
-        name="database",
-        config=ServiceConfig(
-            image="postgres:latest",
-        )
+    bye_files_artifact = plan.render_templates(
+        name="bye-file",
+        config={
+            "bye.txt": struct(
+                template="Bye bye!",
+                data={}
+            )
+        }
     )
 
-    plan.add_service(
-        name="tedi",
-        config=ServiceConfig(
-            image="ubuntu:latest",
-            env_vars={
-                "DB_URL": database.ip_address 
-            },
-        )
+    plan.run_sh(
+        run="echo $(cat /root/bye.txt) > hi.txt",
+        env_vars = {
+            "HELLO": "Hello!"
+        },
+        files = {
+            "/root": bye_files_artifact,
+        },
+        store=[
+            StoreSpec(src="/hi.txt", name="hi-file")
+        ]
     )
 `
 	serializedJsonParams := "{}"
