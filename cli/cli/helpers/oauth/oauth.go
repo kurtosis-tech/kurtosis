@@ -51,6 +51,7 @@ func AuthFlow() (string, string, error) {
 		Scopes:       minimumScopes,
 		DisplayCode: func(code, verificationURL string) error {
 			fmt.Fprintf(os.Stdout, "First copy your one-time code: %s\n", code)
+			fmt.Fprintf(os.Stdout, "Then, press Enter to be directed to a browser window where you'll enter this code.\n")
 			return nil
 		},
 		BrowseURL: func(authURL string) error {

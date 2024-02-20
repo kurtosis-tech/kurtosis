@@ -7,6 +7,10 @@ sidebar_position: 14
 
 Kurtosis CLI supports the ability to run private packages hosted on GitHub via `kurtosis github login`. This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md) and a package hosted GitHub that is private.
 
+:::warn
+GitHub Login is not yet supported over Kubernetes backend. Please create an [issue](https://github.com/kurtosis-tech/kurtosis/issues) to request this feature!
+:::
+
 ### 1. Authorize Kurtosis CLI OAuth Application
 
 Using Kurtosis CLI, run:
@@ -49,4 +53,4 @@ Now, run a private package! Get the locator of the private package you have acce
 kurtosis run github.com/tedim52/my-private-package
 ```
 
-Now, the package should run! Additionally, any [locators](../advanced-concepts/locators.md) that refer to resources in private GitHub repositories you have access to (eg. in`upload_files` or `import_module`) are also enabled. 
+Now, the package should run! Additionally, any [locators](../advanced-concepts/locators.md)  (e.g. in `upload_files` or `import_module`) that refer to resources in private GitHub repositories you have access to, are also authorized. 
