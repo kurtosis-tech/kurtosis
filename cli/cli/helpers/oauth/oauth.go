@@ -40,7 +40,7 @@ type OAuth interface {
 func AuthFlow() (string, string, error) {
 	httpClient := &http.Client{} // nolint: exhaustruct
 
-	minimumScopes := []string{"repo", "read:org", "gist"}
+	minimumScopes := []string{"repo:read", "read:org"}
 
 	callbackURI := "http://127.0.0.1/callback"
 	flow := &oauth.Flow{ // nolint: exhaustruct
