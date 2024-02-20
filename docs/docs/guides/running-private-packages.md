@@ -28,7 +28,14 @@ After entering the code, GitHub will prompt you to authorize Kurtosis CLI. Kurto
 If the private package you'd like to develop on lives in a GitHub org, the organization must also authorize Kurtosis CLI.
 :::
 
-Once you have authorized Kurtosis CLI, you'll be redirected to a success page. Now, navigate back to your terminal. Your Kurtosis engine will automatically restart for GitHub auth to take effect.
+
+Once you have authorized Kurtosis CLI, you'll be redirected to a success page.
+
+![github-success](../../static/img/guides/github-success.jpg)
+
+Now, navigate back to your terminal. Your Kurtosis engine will automatically restart for GitHub auth to take effect.
+
+![github-engine-restart](../../static/img/guides/github-engine-restart.jpg)
 
 
 :::info OAuth Token storage
