@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.87.0](https://github.com/kurtosis-tech/kurtosis/compare/0.86.25...0.87.0) (2024-02-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* change registry spec to imagespec ([#2191](https://github.com/kurtosis-tech/kurtosis/issues/2191))
+
+### Features
+
+* change registry spec to imagespec ([#2191](https://github.com/kurtosis-tech/kurtosis/issues/2191)) ([bc20d51](https://github.com/kurtosis-tech/kurtosis/commit/bc20d51fd8fb7d02a8270586dcd4be85564cb415)), closes [#2189](https://github.com/kurtosis-tech/kurtosis/issues/2189)
+
+
+### Bug Fixes
+
+* change default verbosity to description ([#2173](https://github.com/kurtosis-tech/kurtosis/issues/2173)) ([d3b3de9](https://github.com/kurtosis-tech/kurtosis/commit/d3b3de9b6cb7ff0a83488ccbf8756dfb77814c9c))
+* improved some descriptions for starlark instructions ([#2168](https://github.com/kurtosis-tech/kurtosis/issues/2168)) ([d7fdbc5](https://github.com/kurtosis-tech/kurtosis/commit/d7fdbc5fa56f81a9194a68f37d1ab9549dc45abd))
+
+## [0.86.25](https://github.com/kurtosis-tech/kurtosis/compare/0.86.24...0.86.25) (2024-02-16)
+
+
+### Features
+
+* emui builder python nodes ([#2170](https://github.com/kurtosis-tech/kurtosis/issues/2170)) ([26ad571](https://github.com/kurtosis-tech/kurtosis/commit/26ad5716548edec84e5276ddfe972203c7d5838d))
+* kurtosis run `--non-blocking-tasks` ([#2153](https://github.com/kurtosis-tech/kurtosis/issues/2153)) ([6c70247](https://github.com/kurtosis-tech/kurtosis/commit/6c70247531eb0343434101fe54cf6ef028ded873))
+
+
+### Bug Fixes
+
+* allow for single quotes in run_python ([#2172](https://github.com/kurtosis-tech/kurtosis/issues/2172)) ([4048368](https://github.com/kurtosis-tech/kurtosis/commit/4048368f9fe38d28f1e912a108b79cdbac17a1b7)), closes [#2171](https://github.com/kurtosis-tech/kurtosis/issues/2171)
+
 ## [0.86.24](https://github.com/kurtosis-tech/kurtosis/compare/0.86.23...0.86.24) (2024-02-15)
 
 
