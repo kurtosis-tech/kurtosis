@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -32,7 +32,7 @@ func NewMetricsReportingKurtosisBackend(underlying backend_interface.KurtosisBac
 	return &MetricsReportingKurtosisBackend{underlying: underlying}
 }
 
-func (backend *MetricsReportingKurtosisBackend) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+func (backend *MetricsReportingKurtosisBackend) FetchImage(ctx context.Context, image string, registrySpec *image_spec.ImageSpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	pulledFromRemote, architecture, err := backend.underlying.FetchImage(ctx, image, registrySpec, downloadMode)
 	if err != nil {
 		return false, "", stacktrace.Propagate(err, "An error occurred pulling image '%v'", image)

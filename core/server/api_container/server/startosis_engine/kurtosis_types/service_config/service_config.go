@@ -6,7 +6,7 @@ import (
 	"path"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -255,7 +255,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	var imageName string
 	var maybeNixBuildSpec *nix_build_spec.NixBuildSpec
 	var maybeImageBuildSpec *image_build_spec.ImageBuildSpec
-	var maybeImageRegistrySpec *image_registry_spec.ImageRegistrySpec
+	var maybeImageRegistrySpec *image_spec.ImageSpec
 	rawImageAttrValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](config.KurtosisValueTypeDefault, ImageAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -671,15 +671,15 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 
 // If [image] is an ImageBuildSpec type, returns name for the image to build and ImageBuildSpec converted to KurtosisType
 // If [image] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
-// If [image] is an ImageRegistrySpec type, returns the name for the image and the ImageRegistrySpec converted to KurtosisType
+// If [image] is an ImageSpec type, returns the name for the image and the ImageSpec converted to KurtosisType
 func convertImage(
 	image starlark.Value,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *image_registry_spec.ImageRegistrySpec, *nix_build_spec.NixBuildSpec, *startosis_errors.InterpretationError) {
+	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *image_spec.ImageSpec, *nix_build_spec.NixBuildSpec, *startosis_errors.InterpretationError) {
 	imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := image.(*ImageBuildSpec)
-	imageRegistrySpecStarlarkType, isImageRegistrySpecStarlarkType := image.(*ImageRegistrySpec)
+	imageSpecStarlarkType, isImageRegistrySpecStarlarkType := image.(*ImageSpec)
 	nixBuildSpecStarlarkType, isNixBuildSpecStarlarkType := image.(*NixBuildSpec)
 	if isImageBuildSpecStarlarkType {
 		imageBuildSpec, interpretationErr := imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
@@ -692,11 +692,11 @@ func convertImage(
 		}
 		return imageName, imageBuildSpec, nil, nil, nil
 	} else if isImageRegistrySpecStarlarkType {
-		imageRegistrySpec, interpretationErr := imageRegistrySpecStarlarkType.ToKurtosisType()
+		imageSpec, interpretationErr := imageSpecStarlarkType.ToKurtosisType()
 		if interpretationErr != nil {
 			return "", nil, nil, nil, interpretationErr
 		}
-		return imageRegistrySpec.GetImageName(), nil, imageRegistrySpec, nil, nil
+		return imageSpec.GetImageName(), nil, imageSpec, nil, nil
 	} else if isNixBuildSpecStarlarkType {
 		nixBuildSpec, interpretationErr := nixBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {

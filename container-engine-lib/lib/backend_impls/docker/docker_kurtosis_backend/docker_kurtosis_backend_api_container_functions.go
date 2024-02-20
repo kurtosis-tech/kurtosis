@@ -2,7 +2,7 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_spec"
 	"net"
 	"time"
 
@@ -37,7 +37,7 @@ const (
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
-var emptyRegistrySpecAsPublicImage *image_registry_spec.ImageRegistrySpec = nil
+var emptyRegistrySpecAsPublicImage *image_spec.ImageSpec = nil
 
 func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,

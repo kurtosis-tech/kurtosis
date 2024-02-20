@@ -1,7 +1,7 @@
 package docker_manager
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
 	"net"
 
@@ -36,7 +36,7 @@ type CreateAndStartContainerArgs struct {
 	restartPolicy                            RestartPolicy
 	imageDownloadMode                        image_download_mode.ImageDownloadMode
 	user                                     *service_user.ServiceUser
-	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
+	imageRegistrySpec                        *image_spec.ImageSpec
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -66,7 +66,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	restartPolicy                            RestartPolicy
 	imageDownloadMode                        image_download_mode.ImageDownloadMode
 	user                                     *service_user.ServiceUser
-	imageRegistrySpec                        *image_registry_spec.ImageRegistrySpec
+	imageRegistrySpec                        *image_spec.ImageSpec
 }
 
 /*
@@ -292,7 +292,7 @@ func (builder *CreateAndStartContainerArgsBuilder) WithUser(user *service_user.S
 	return builder
 }
 
-func (builder *CreateAndStartContainerArgsBuilder) WithImageRegistrySpec(imageRegistrySpec *image_registry_spec.ImageRegistrySpec) *CreateAndStartContainerArgsBuilder {
+func (builder *CreateAndStartContainerArgsBuilder) WithImageRegistrySpec(imageRegistrySpec *image_spec.ImageSpec) *CreateAndStartContainerArgsBuilder {
 	builder.imageRegistrySpec = imageRegistrySpec
 	return builder
 }
