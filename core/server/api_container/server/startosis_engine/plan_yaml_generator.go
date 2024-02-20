@@ -31,7 +31,7 @@ import (
 // run_sh -> Task but returns a files artifact so create that
 // run_python -> Task but returns a files artifact so create that
 //
-// go through all the kurtosis builtins and figure out which ones we need to accommodate for and which ones we don't need to accomodate for
+// go through all the kurtosis builtins and figure out which ones we need to accommodate for and which ones we don't need to accommodate for
 
 // PlanYamlGenerator generates a yaml representation of a [plan].
 type PlanYamlGenerator interface {

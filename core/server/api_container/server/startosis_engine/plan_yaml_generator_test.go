@@ -302,8 +302,6 @@ func (suite *PlanYamlGeneratorTestSuite) TestConvertPlanYamlToYamlBytes(t *testi
 	tasks := []*Task{
 		{
 			TaskType: PYTHON,
-			Name:     "updateSomething",
-			Command:  "do something",
 			Image:    "jqcurl",
 			EnvVars:  []*EnvironmentVariable{},
 		},
