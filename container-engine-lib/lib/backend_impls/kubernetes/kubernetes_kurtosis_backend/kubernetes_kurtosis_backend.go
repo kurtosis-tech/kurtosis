@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	apiv1 "k8s.io/api/core/v1"
 
@@ -117,7 +117,7 @@ func NewCLIModeKubernetesKurtosisBackend(
 	)
 }
 
-func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string, registrySpec *image_spec.ImageSpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	logrus.Warnf("FetchImage isn't implemented for Kubernetes yet")
 	return false, "", nil
 }

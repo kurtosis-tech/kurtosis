@@ -25,7 +25,7 @@ import (
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/go-units"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
@@ -1233,7 +1233,7 @@ func (manager *DockerManager) GetContainersByNetworkId(ctx context.Context, netw
 // [FetchImageIfMissing] uses the local [dockerImage] if it's available.
 // If unavailable, will attempt to fetch the latest image.
 // Returns error if local [dockerImage] is unavailable and pulling image fails.
-func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerImage string, registrySpec *image_spec.ImageSpec) (bool, error) {
+func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerImage string, registrySpec *image_registry_spec.ImageRegistrySpec) (bool, error) {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
 	// this allows us to be deterministic in our behaviour
@@ -1262,7 +1262,7 @@ func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerIma
 // [FetchLatestImage] always attempts to retrieve the latest [dockerImage].
 // If retrieving the latest [dockerImage] fails, the local image will be used.
 // Returns error, if no local image is available after retrieving latest fails.
-func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage string, registrySpec *image_spec.ImageSpec) error {
+func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage string, registrySpec *image_registry_spec.ImageRegistrySpec) error {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
 	// this allows us to be deterministic in our behaviour
@@ -1295,7 +1295,7 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 	return nil
 }
 
-func (manager *DockerManager) FetchImage(ctx context.Context, image string, registrySpec *image_spec.ImageSpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+func (manager *DockerManager) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	var err error
 	var pulledFromRemote bool = true
 	logrus.Debugf("Fetching image '%s' with image download mode: %s", image, downloadMode)
@@ -1608,7 +1608,7 @@ func (manager *DockerManager) isImageAvailableLocally(imageName string) (bool, e
 	return numMatchingImages > 0, nil
 }
 
-func (manager *DockerManager) pullImage(context context.Context, imageName string, registrySpec *image_spec.ImageSpec) error {
+func (manager *DockerManager) pullImage(context context.Context, imageName string, registrySpec *image_registry_spec.ImageRegistrySpec) error {
 	// As we're using the docker client with no timeout to pull the image, we quickly check with the client that has
 	// a timeout whether the docker engine is reachable.
 	if _, err := manager.dockerClient.Ping(context); err != nil {
@@ -2239,7 +2239,7 @@ func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.En
 	return config
 }
 
-func pullImage(dockerClient *client.Client, imageName string, imageSpec *image_spec.ImageSpec, platform string) (error, bool) {
+func pullImage(dockerClient *client.Client, imageName string, registrySpec *image_registry_spec.ImageRegistrySpec, platform string) (error, bool) {
 	// Own context for pulling images because we do not want to cancel this works in case the main context in the request is cancelled
 	// if the fist request fails the image will be ready for following request making the process faster
 	pullImageCtx := context.Background()
@@ -2250,13 +2250,13 @@ func pullImage(dockerClient *client.Client, imageName string, imageSpec *image_s
 		PrivilegeFunc: nil,
 		Platform:      platform,
 	}
-	if imageSpec != nil {
+	if registrySpec != nil {
 		authConfig := registry.AuthConfig{
-			Username:      imageSpec.GetUsername(),
-			Password:      imageSpec.GetPassword(),
+			Username:      registrySpec.GetUsername(),
+			Password:      registrySpec.GetPassword(),
 			Email:         "",
 			Auth:          "",
-			ServerAddress: imageSpec.GetRegistryAddr(),
+			ServerAddress: registrySpec.GetRegistryAddr(),
 			IdentityToken: "",
 			RegistryToken: "",
 		}
