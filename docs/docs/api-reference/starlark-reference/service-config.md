@@ -220,7 +220,7 @@ config = ServiceConfig(
     }
 )
 ```
-Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package.
+Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.
 More info can be found on [locators referring to local resources here][locators] and how to turn your script into a Kurtosis [package][package] here.
 
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
