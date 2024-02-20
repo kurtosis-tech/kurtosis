@@ -231,6 +231,10 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 	)
 }
 
+func (builtin *AddServiceCapabilities) Description() string {
+	return fmt.Sprintf("Adding service with name '%v' and image '%v'", builtin.serviceName, builtin.serviceConfig.GetContainerImageName())
+}
+
 func validateAndConvertConfigAndReadyCondition(
 	serviceNetwork service_network.ServiceNetwork,
 	rawConfig starlark.Value,

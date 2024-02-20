@@ -23,7 +23,9 @@ export const SelectArgumentInput = <DataModel extends object>({
   return (
     <Select {...register(name, { disabled: disabled, required: isRequired, validate: validate })} {...props}>
       {options.map((option) => (
-        <option value={option.value}>{option.display}</option>
+        <option key={option.value} value={option.value}>
+          {option.display}
+        </option>
       ))}
     </Select>
   );

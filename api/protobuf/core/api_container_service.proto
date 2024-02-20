@@ -170,6 +170,9 @@ message RunStarlarkScriptArgs {
 
   // Defaults to empty
   optional ImageDownloadMode image_download_mode = 9;
+
+  // Defaults to false
+  optional bool non_blocking_mode = 10;
 }
 
 message RunStarlarkPackageArgs {
@@ -217,6 +220,9 @@ message RunStarlarkPackageArgs {
 
   // Defaults to empty
   optional ImageDownloadMode image_download_mode = 14;
+
+  // Defaults to false
+  optional bool non_blocking_mode = 15;
 }
 
 enum KurtosisFeatureFlag {
@@ -256,6 +262,8 @@ message StarlarkInstruction {
   string executable_instruction = 4;
 
   bool is_skipped = 5;
+
+  string description = 6;
 }
 
 message StarlarkInstructionResult {

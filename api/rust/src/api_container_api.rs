@@ -181,6 +181,9 @@ pub struct RunStarlarkScriptArgs {
     /// Defaults to empty
     #[prost(enumeration = "ImageDownloadMode", optional, tag = "9")]
     pub image_download_mode: ::core::option::Option<i32>,
+    /// Defaults to false
+    #[prost(bool, optional, tag = "10")]
+    pub non_blocking_mode: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -224,6 +227,9 @@ pub struct RunStarlarkPackageArgs {
     /// Defaults to empty
     #[prost(enumeration = "ImageDownloadMode", optional, tag = "14")]
     pub image_download_mode: ::core::option::Option<i32>,
+    /// Defaults to false
+    #[prost(bool, optional, tag = "15")]
+    pub non_blocking_mode: ::core::option::Option<bool>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -308,6 +314,8 @@ pub struct StarlarkInstruction {
     pub executable_instruction: ::prost::alloc::string::String,
     #[prost(bool, tag = "5")]
     pub is_skipped: bool,
+    #[prost(string, tag = "6")]
+    pub description: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
