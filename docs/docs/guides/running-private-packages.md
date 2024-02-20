@@ -1,0 +1,45 @@
+---
+title: Running Private Packages with GitHub Login
+sidebar_label: Running Private Packages
+slug: /private-packages
+sidebar_position: 14
+---
+
+Kurtosis CLI supports the ability to run private packages hosted on GitHub via `kurtosis github login`. This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md) and a package hosted GitHub that is private.
+
+### 1. Authorize Kurtosis CLI OAuth Application
+
+Using Kurtosis CLI, run:
+```bash
+kurtosis github login
+```
+
+The following prompt should be displayed. After copying the one time code, press enter.
+
+![github-one-time-code](../../static/img/guides/one-time-code.jpg)
+
+A GitHub screen should pop up in your browser instructing you to enter the one-time code you just copied in your terminal. 
+
+![github-enter-code](../../static/img/guides/github-enter-code.jpg)
+
+After entering the code, GitHub will prompt you to authorize Kurtosis CLI. Kurtosis CLI only requests read access to public and private repositories. 
+
+:::info Private Packages within GitHub Orgs
+If the private package you'd like to develop on lives in a GitHub org, the organization must also authorize Kurtosis CLI.
+:::
+
+Once you have authorized Kurtosis CLI, you'll be redirected to a success page. Now, navigate back to your terminal. Your Kurtosis engine will automatically restart for GitHub auth to take effect.
+
+
+:::info OAuth Token storage
+Behind the scenes, authorizing Kurtosis CLI means GitHub will generate an OAuth token that Kurtosis CLI can use to perform GitHub operations on your behalf. Following GitHub CLI, we attempt to securely store this token in system credential storage. If system credential store is unavailable, we store it in a plain text file in your Kurtosis config directory at `kurtosis config path`.
+:::
+
+### Run a Private Package
+
+Now, run a private package! Get the locator of the private package you have access to that you'd like to run that. For this example, we'll assume there's a private package at `github.com/tedim52/my-private-package`
+```
+kurtosis run github.com/tedim52/my-private-package
+```
+
+Now, the package should run! Additionally, any [locators](../advanced-concepts/locators.md) that refer to resources in private GitHub repositories you have access to (eg. in`upload_files` or `import_module`) are also enabled. 
