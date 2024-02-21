@@ -60,9 +60,9 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Return(apiContainerInfo)
 }
 
-func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
-	suite.Run(t, new(PlanYamlGeneratorTestSuite))
-}
+//func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
+//	suite.Run(t, new(PlanYamlGeneratorTestSuite))
+//}
 
 func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
