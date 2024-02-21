@@ -2,7 +2,7 @@ import { isDefined } from "kurtosis-ui-components";
 import { useCallback } from "react";
 import { Controller } from "react-hook-form";
 import { Mention, MentionsInput } from "react-mentions";
-import { KurtosisFormInputProps } from "../../../form/types";
+import { KurtosisFormInputProps } from "../../form/types";
 import { useVariableContext } from "../VariableContextProvider";
 import "./MentionStringArgumentInput.css";
 

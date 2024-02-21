@@ -11,8 +11,8 @@ import {
 } from "@chakra-ui/react";
 import { isDefined } from "kurtosis-ui-components";
 import { FormProvider, useForm } from "react-hook-form";
-import { KurtosisFormControl } from "../../../form/KurtosisFormControl";
-import { StringArgumentInput } from "../../../form/StringArgumentInput";
+import { KurtosisFormControl } from "../../form/KurtosisFormControl";
+import { StringArgumentInput } from "../../form/StringArgumentInput";
 
 type NewFileModalProps = {
   isOpen: boolean;

@@ -15,7 +15,7 @@ import {
   XYPosition,
 } from "reactflow";
 import { v4 as uuidv4 } from "uuid";
-import { EnclaveFullInfo } from "../../../types";
+import { EnclaveFullInfo } from "../../types";
 import { KurtosisArtifactNode } from "./KurtosisArtifactNode";
 import { nodeIcons } from "./KurtosisNode";
 import { KurtosisPythonNode } from "./KurtosisPythonNode";

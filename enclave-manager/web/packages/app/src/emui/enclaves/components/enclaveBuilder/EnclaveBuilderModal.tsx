@@ -21,11 +21,11 @@ import { Edge, Node, ReactFlowProvider } from "reactflow";
 import "reactflow/dist/style.css";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
-import { ViewStarlarkModal } from "./enclaveBuilder/modals/ViewStarlarkModal";
-import { KurtosisNodeData } from "./enclaveBuilder/types";
-import { getInitialGraphStateFromEnclave, getNodeName } from "./enclaveBuilder/utils";
-import { useVariableContext, VariableContextProvider } from "./enclaveBuilder/VariableContextProvider";
-import { Visualiser, VisualiserImperativeAttributes } from "./enclaveBuilder/Visualiser";
+import { ViewStarlarkModal } from "./modals/ViewStarlarkModal";
+import { KurtosisNodeData } from "./types";
+import { getInitialGraphStateFromEnclave, getNodeName } from "./utils";
+import { useVariableContext, VariableContextProvider } from "./VariableContextProvider";
+import { Visualiser, VisualiserImperativeAttributes } from "./Visualiser";
 
 type EnclaveBuilderModalProps = {
   isOpen: boolean;

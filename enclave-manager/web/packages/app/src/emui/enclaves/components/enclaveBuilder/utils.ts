@@ -1,7 +1,7 @@
 import { isDefined, RemoveFunctions, stringifyError } from "kurtosis-ui-components";
 import { Edge, Node } from "reactflow";
 import { Result } from "true-myth";
-import { EnclaveFullInfo } from "../../../types";
+import { EnclaveFullInfo } from "../../types";
 import { KurtosisNodeData, KurtosisServiceNodeData, Variable } from "./types";
 
 export const EMUI_BUILD_STATE_KEY = "EMUI_BUILD_STATE";

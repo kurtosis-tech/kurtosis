@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { NodeProps } from "reactflow";
-import { KurtosisFormControl } from "../../form/KurtosisFormControl";
-import { StringArgumentInput } from "../../form/StringArgumentInput";
+import { KurtosisFormControl } from "../form/KurtosisFormControl";
+import { StringArgumentInput } from "../form/StringArgumentInput";
 import { FileTreeArgumentInput } from "./input/FileTreeArgumentInput";
 import { validateName } from "./input/validators";
 import { KurtosisNode } from "./KurtosisNode";

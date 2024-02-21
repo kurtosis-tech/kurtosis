@@ -1,8 +1,8 @@
 import { Grid, GridItem } from "@chakra-ui/react";
 import { useMemo } from "react";
-import { SelectArgumentInput, SelectOption } from "../../../form/SelectArgumentInput";
-import { StringArgumentInput } from "../../../form/StringArgumentInput";
-import { KurtosisFormInputProps } from "../../../form/types";
+import { SelectArgumentInput, SelectOption } from "../../form/SelectArgumentInput";
+import { StringArgumentInput } from "../../form/StringArgumentInput";
+import { KurtosisFormInputProps } from "../../form/types";
 import { KurtosisServiceNodeData } from "../types";
 import { useVariableContext } from "../VariableContextProvider";
 

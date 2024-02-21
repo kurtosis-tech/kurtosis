@@ -6,8 +6,8 @@ import { FiEdit2 } from "react-icons/fi";
 import { useSettings } from "../../settings";
 import { EnclaveFullInfo } from "../types";
 import { CreateOrConfigureEnclaveDrawer } from "./configuration/drawer/CreateOrConfigureEnclaveDrawer";
-import { starlarkScriptContainsEMUIBuildState } from "./modals/enclaveBuilder/utils";
-import { EnclaveBuilderModal } from "./modals/EnclaveBuilderModal";
+import { EnclaveBuilderModal } from "./enclaveBuilder/EnclaveBuilderModal";
+import { starlarkScriptContainsEMUIBuildState } from "./enclaveBuilder/utils";
 import { PackageLoadingModal } from "./modals/PackageLoadingModal";
 
 type EditEnclaveButtonProps = ButtonProps & {

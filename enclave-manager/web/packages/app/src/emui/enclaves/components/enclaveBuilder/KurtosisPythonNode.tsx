@@ -2,23 +2,23 @@ import { Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react"
 import { isDefined } from "kurtosis-ui-components";
 import { memo } from "react";
 import { NodeProps } from "reactflow";
-import { BooleanArgumentInput } from "../../form/BooleanArgumentInput";
-import { CodeEditorInput } from "../../form/CodeEditorInput";
-import { DictArgumentInput } from "../../form/DictArgumentInput";
-import { KurtosisFormControl } from "../../form/KurtosisFormControl";
-import { ListArgumentInput } from "../../form/ListArgumentInput";
-import { StringArgumentInput } from "../../form/StringArgumentInput";
+import { BooleanArgumentInput } from "../form/BooleanArgumentInput";
+import { CodeEditorInput } from "../form/CodeEditorInput";
+import { KurtosisFormControl } from "../form/KurtosisFormControl";
+import { ListArgumentInput } from "../form/ListArgumentInput";
+import { StringArgumentInput } from "../form/StringArgumentInput";
+import { KurtosisFormInputProps } from "../form/types";
 import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
 import { MountArtifactFileInput } from "./input/MountArtifactFileInput";
 import { validateDockerLocator, validateDurationString, validateName } from "./input/validators";
 import { KurtosisNode } from "./KurtosisNode";
-import { KurtosisFileMount, KurtosisShellNodeData } from "./types";
+import { KurtosisFileMount, KurtosisPythonNodeData } from "./types";
 import { useVariableContext } from "./VariableContextProvider";
 
-export const KurtosisShellNode = memo(
+export const KurtosisPythonNode = memo(
   ({ id, selected }: NodeProps) => {
     const { data } = useVariableContext();
-    const nodeData = data[id] as KurtosisShellNodeData;
+    const nodeData = data[id] as KurtosisPythonNodeData;
 
     if (!isDefined(nodeData)) {
       return null;
@@ -27,43 +27,66 @@ export const KurtosisShellNode = memo(
     return (
       <KurtosisNode id={id} selected={selected} minWidth={650} maxWidth={800}>
         <Flex gap={"16px"}>
-          <KurtosisFormControl<KurtosisShellNodeData> name={"shellName"} label={"Shell Name"} isRequired>
-            <StringArgumentInput name={"shellName"} size={"sm"} isRequired validate={validateName} />
+          <KurtosisFormControl<KurtosisPythonNodeData> name={"pythonName"} label={"Python Name"} isRequired>
+            <StringArgumentInput name={"pythonName"} size={"sm"} isRequired validate={validateName} />
           </KurtosisFormControl>
-          <KurtosisFormControl<KurtosisShellNodeData> name={"image"} label={"Container Image"}>
+          <KurtosisFormControl<KurtosisPythonNodeData> name={"image"} label={"Container Image"}>
             <StringArgumentInput
               size={"sm"}
               name={"image"}
               validate={validateDockerLocator}
-              placeholder={"Default: badouralix/curl-jq"}
+              placeholder={"Default: python:3.11-alpine"}
             />
           </KurtosisFormControl>
         </Flex>
         <Tabs>
           <TabList>
-            <Tab>Script</Tab>
-            <Tab>Environment</Tab>
+            <Tab>Code</Tab>
+            <Tab>Packages</Tab>
+            <Tab>Arguments</Tab>
             <Tab>Files</Tab>
             <Tab>Advanced</Tab>
           </TabList>
 
           <TabPanels>
             <TabPanel>
-              <KurtosisFormControl<KurtosisShellNodeData> name={"command"} label={"Script to run"} isRequired>
-                <CodeEditorInput name={"command"} fileName={`${id}.sh`} isRequired />
+              <KurtosisFormControl<KurtosisPythonNodeData> name={"command"} label={"Code to run"} isRequired>
+                <CodeEditorInput name={"command"} fileName={`${id}.py`} isRequired />
               </KurtosisFormControl>
             </TabPanel>
             <TabPanel>
-              <KurtosisFormControl<KurtosisShellNodeData> name={"env"} label={"Environment Variables"}>
-                <DictArgumentInput<KurtosisShellNodeData>
-                  name={"env"}
-                  KeyFieldComponent={StringArgumentInput}
-                  ValueFieldComponent={MentionStringArgumentInput}
+              <KurtosisFormControl<KurtosisPythonNodeData>
+                name={"packages"}
+                label={"Packages"}
+                isRequired
+                helperText={"Names of packages that need to be installed prior to running this code"}
+              >
+                <ListArgumentInput<KurtosisPythonNodeData>
+                  FieldComponent={PackageInput}
+                  createNewValue={() => ({ packageName: "" })}
+                  name={"packages"}
+                  size={"sm"}
+                  isRequired
+                  validate={validateName}
                 />
               </KurtosisFormControl>
             </TabPanel>
             <TabPanel>
-              <KurtosisFormControl<KurtosisShellNodeData>
+              <KurtosisFormControl<KurtosisPythonNodeData>
+                name={"args"}
+                label={"Arguments"}
+                helperText={"Arguments to be passed to the Python script"}
+              >
+                <ListArgumentInput<KurtosisPythonNodeData>
+                  name={"args"}
+                  FieldComponent={PythonArgInput}
+                  createNewValue={() => ({ arg: "" })}
+                  isRequired
+                />
+              </KurtosisFormControl>
+            </TabPanel>
+            <TabPanel>
+              <KurtosisFormControl<KurtosisPythonNodeData>
                 name={"files"}
                 label={"Input Files"}
                 helperText={"Choose where to mount artifacts on this execution tasks filesystem"}
@@ -77,38 +100,36 @@ export const KurtosisShellNode = memo(
                   })}
                 />
               </KurtosisFormControl>
-              <KurtosisFormControl<KurtosisShellNodeData>
+              <KurtosisFormControl<KurtosisPythonNodeData>
                 name={"store"}
                 label={"Output File/Directory"}
                 helperText={
                   "Choose which files to expose from this execution task. You can use either an absolute path, a directory, or a glob."
                 }
-                isRequired
               >
-                <MentionStringArgumentInput<KurtosisShellNodeData>
+                <MentionStringArgumentInput<KurtosisPythonNodeData>
                   name={"store"}
                   placeholder={"/some/output/location"}
-                  isRequired
                 />
               </KurtosisFormControl>
             </TabPanel>
             <TabPanel>
               <Flex flexDirection={"column"} gap={"16px"}>
-                <KurtosisFormControl<KurtosisShellNodeData>
+                <KurtosisFormControl<KurtosisPythonNodeData>
                   name={"wait_enabled"}
                   label={"Wait enabled"}
                   isRequired
                   helperText={"Whether kurtosis should wait a preset time for this step to complete."}
                 >
-                  <BooleanArgumentInput<KurtosisShellNodeData> name={"wait_enabled"} />
+                  <BooleanArgumentInput<KurtosisPythonNodeData> name={"wait_enabled"} />
                 </KurtosisFormControl>
-                <KurtosisFormControl<KurtosisShellNodeData>
+                <KurtosisFormControl<KurtosisPythonNodeData>
                   name={"wait"}
                   label={"Wait"}
                   isDisabled={nodeData.wait_enabled === "false"}
                   helperText={"Whether kurtosis should wait a preset time for this step to complete."}
                 >
-                  <StringArgumentInput<KurtosisShellNodeData>
+                  <StringArgumentInput<KurtosisPythonNodeData>
                     name={"wait"}
                     isDisabled={nodeData.wait_enabled === "false"}
                     size={"sm"}
@@ -125,3 +146,23 @@ export const KurtosisShellNode = memo(
   },
   (oldProps, newProps) => oldProps.id === newProps.id && oldProps.selected === newProps.selected,
 );
+
+const PackageInput = (props: KurtosisFormInputProps<KurtosisPythonNodeData>) => {
+  return (
+    <StringArgumentInput<KurtosisPythonNodeData>
+      {...props}
+      size={"sm"}
+      name={`${props.name as `packages.${number}`}.packageName`}
+    />
+  );
+};
+
+const PythonArgInput = (props: KurtosisFormInputProps<KurtosisPythonNodeData>) => {
+  return (
+    <MentionStringArgumentInput<KurtosisPythonNodeData>
+      {...props}
+      width={"400px"}
+      name={`${props.name as `args.${number}`}.arg`}
+    />
+  );
+};

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSettings } from "../../settings";
 import { KURTOSIS_BUILD_ENCLAVE_URL_ARG } from "./configuration/drawer/constants";
-import { EnclaveBuilderModal } from "./modals/EnclaveBuilderModal";
+import { EnclaveBuilderModal } from "./enclaveBuilder/EnclaveBuilderModal";
 
 export const BuildEnclave = () => {
   const { settings } = useSettings();

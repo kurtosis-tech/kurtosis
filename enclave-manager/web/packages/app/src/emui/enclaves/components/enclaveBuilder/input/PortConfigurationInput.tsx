@@ -1,8 +1,8 @@
 import { Grid, GridItem } from "@chakra-ui/react";
-import { IntegerArgumentInput } from "../../../form/IntegerArgumentInput";
-import { OptionsArgumentInput } from "../../../form/OptionArgumentInput";
-import { StringArgumentInput } from "../../../form/StringArgumentInput";
-import { KurtosisFormInputProps } from "../../../form/types";
+import { IntegerArgumentInput } from "../../form/IntegerArgumentInput";
+import { OptionsArgumentInput } from "../../form/OptionArgumentInput";
+import { StringArgumentInput } from "../../form/StringArgumentInput";
+import { KurtosisFormInputProps } from "../../form/types";
 import { KurtosisServiceNodeData } from "../types";
 
 export const PortConfigurationField = (props: KurtosisFormInputProps<KurtosisServiceNodeData>) => (
