@@ -19,8 +19,8 @@ type PlanYaml struct {
 
 // Service represents a service in the system.
 type Service struct {
-	Uuid       string                 `yaml:"uuid,omitempty"`       // done
 	Name       string                 `yaml:"name,omitempty"`       // done
+	Uuid       string                 `yaml:"uuid,omitempty"`       // done
 	Image      string                 `yaml:"image,omitempty"`      // done
 	Cmd        []string               `yaml:"command,omitempty"`    // done
 	Entrypoint []string               `yaml:"entrypoint,omitempty"` // done
@@ -33,8 +33,8 @@ type Service struct {
 
 // FilesArtifact represents a collection of files.
 type FilesArtifact struct {
-	Uuid  string   `yaml:"uuid,omitempty"`
 	Name  string   `yaml:"name,omitempty"`
+	Uuid  string   `yaml:"uuid,omitempty"`
 	Files []string `yaml:"files,omitempty"`
 }
 
@@ -67,9 +67,9 @@ type FileMount struct {
 
 // Task represents a task to be executed.
 type Task struct {
-	TaskType TaskType         `yaml:"taskType,omitempty"` // done
-	Uuid     string           `yaml:"uuid"`               // done
 	Name     string           `yaml:"name,omitempty"`     // done
+	Uuid     string           `yaml:"uuid"`               // done
+	TaskType TaskType         `yaml:"taskType,omitempty"` // done
 	RunCmd   string           `yaml:"command,omitempty"`  // done
 	Image    string           `yaml:"image,omitempty"`    // done
 	Files    []*FileMount     `yaml:"files,omitempty"`    // done
