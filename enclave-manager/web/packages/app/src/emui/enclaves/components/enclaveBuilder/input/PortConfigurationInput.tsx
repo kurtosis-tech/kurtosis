@@ -16,6 +16,13 @@ export const PortConfigurationField = (props: KurtosisFormInputProps<KurtosisSer
       />
     </GridItem>
     <GridItem>
+      <IntegerArgumentInput<KurtosisServiceNodeData>
+        {...props}
+        name={`${props.name as `ports.${number}`}.port`}
+        size={"sm"}
+      />
+    </GridItem>
+    <GridItem>
       <StringArgumentInput<KurtosisServiceNodeData>
         {...props}
         size={"sm"}
@@ -31,18 +38,11 @@ export const PortConfigurationField = (props: KurtosisFormInputProps<KurtosisSer
         }}
       />
     </GridItem>
-    <GridItem>
+    <GridItem display={"flex"} alignItems={"center"}>
       <OptionsArgumentInput<KurtosisServiceNodeData>
         {...props}
         options={["TCP", "UDP"]}
         name={`${props.name as `ports.${number}`}.transportProtocol`}
-      />
-    </GridItem>
-    <GridItem>
-      <IntegerArgumentInput<KurtosisServiceNodeData>
-        {...props}
-        name={`${props.name as `ports.${number}`}.port`}
-        size={"sm"}
       />
     </GridItem>
   </Grid>
