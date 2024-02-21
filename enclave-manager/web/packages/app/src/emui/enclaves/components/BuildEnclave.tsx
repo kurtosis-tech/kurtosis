@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSettings } from "../../settings";
 import { KURTOSIS_BUILD_ENCLAVE_URL_ARG } from "./configuration/drawer/constants";
-import { EnclaveBuilderModal } from "./enclaveBuilder/EnclaveBuilderModal";
+import { EnclaveBuilderDrawer } from "./enclaveBuilder/EnclaveBuilderDrawer";
 
 export const BuildEnclave = () => {
   const { settings } = useSettings();
@@ -27,5 +27,5 @@ export const BuildEnclave = () => {
     return null;
   }
 
-  return <EnclaveBuilderModal isOpen={buildEnclaveOpen} onClose={handleCloseBuildEnclave} />;
+  return <EnclaveBuilderDrawer isOpen={buildEnclaveOpen} onClose={handleCloseBuildEnclave} />;
 };

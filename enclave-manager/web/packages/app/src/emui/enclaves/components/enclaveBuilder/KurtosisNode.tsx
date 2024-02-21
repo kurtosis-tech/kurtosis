@@ -1,7 +1,7 @@
 import { Flex, Icon, IconButton, Text, useToken } from "@chakra-ui/react";
 import { isDefined } from "kurtosis-ui-components";
 import { debounce } from "lodash";
-import { FC, memo, PropsWithChildren, useEffect, useMemo } from "react";
+import { FC, memo, PropsWithChildren, useCallback, useEffect, useMemo } from "react";
 import { DefaultValues, FormProvider, useForm } from "react-hook-form";
 import { FiCpu, FiFile, FiTerminal, FiTrash } from "react-icons/fi";
 import { RxCornerBottomRight } from "react-icons/rx";
@@ -39,14 +39,7 @@ type KurtosisNodeProps = PropsWithChildren<{
 }>;
 
 export const KurtosisNode = memo(
-  <DataType extends KurtosisNodeData>({
-    id,
-
-    selected,
-    minWidth,
-    maxWidth,
-    children,
-  }: KurtosisNodeProps) => {
+  <DataType extends KurtosisNodeData>({ id, selected, minWidth, maxWidth, children }: KurtosisNodeProps) => {
     const { data } = useVariableContext();
     const nodeData = data[id] as DataType;
 
@@ -168,21 +161,33 @@ type ZoomAwareNodeContentProps = PropsWithChildren<{
 
 const ZoomAwareNodeContent = ({ name, type, onDelete, children }: ZoomAwareNodeContentProps) => {
   const viewport = useViewport();
+  return (
+    <ZoomAwareNodeContentImpl name={name} type={type} onDelete={onDelete} zoom={viewport.zoom}>
+      {children}
+    </ZoomAwareNodeContentImpl>
+  );
+};
+
+type ZoomAwareNodeContentImplProps = ZoomAwareNodeContentProps & { zoom: number };
+
+const ZoomAwareNodeContentImpl = memo(({ name, type, onDelete, zoom, children }: ZoomAwareNodeContentImplProps) => {
   const { zoomOut, zoomIn } = useReactFlow();
+  const handleScroll = useCallback(
+    (e: React.WheelEvent<HTMLDivElement>) => {
+      if (e.currentTarget.scrollTop === 0 && e.deltaY < 0) {
+        zoomIn();
+      }
+      if (
+        Math.abs(e.currentTarget.scrollHeight - e.currentTarget.clientHeight - e.currentTarget.scrollTop) <= 1 &&
+        e.deltaY > 0
+      ) {
+        zoomOut();
+      }
+    },
+    [zoomOut, zoomIn],
+  );
 
-  const handleScroll = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (e.currentTarget.scrollTop === 0 && e.deltaY < 0) {
-      zoomIn();
-    }
-    if (
-      Math.abs(e.currentTarget.scrollHeight - e.currentTarget.clientHeight - e.currentTarget.scrollTop) <= 1 &&
-      e.deltaY > 0
-    ) {
-      zoomOut();
-    }
-  };
-
-  if (viewport.zoom < 0.4) {
+  if (zoom < 0.4) {
     return (
       <Flex gap={"20px"} alignItems={"center"} justifyContent={"center"} h={"100%"}>
         <Icon as={nodeIcons[type]} h={"40px"} w={"40px"} />
@@ -228,4 +233,4 @@ const ZoomAwareNodeContent = ({ name, type, onDelete, children }: ZoomAwareNodeC
       </Flex>
     </>
   );
-};
+});

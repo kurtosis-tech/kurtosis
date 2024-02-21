@@ -6,7 +6,7 @@ import { FiEdit2 } from "react-icons/fi";
 import { useSettings } from "../../settings";
 import { EnclaveFullInfo } from "../types";
 import { CreateOrConfigureEnclaveDrawer } from "./configuration/drawer/CreateOrConfigureEnclaveDrawer";
-import { EnclaveBuilderModal } from "./enclaveBuilder/EnclaveBuilderModal";
+import { EnclaveBuilderDrawer } from "./enclaveBuilder/EnclaveBuilderDrawer";
 import { starlarkScriptContainsEMUIBuildState } from "./enclaveBuilder/utils";
 import { PackageLoadingModal } from "./modals/PackageLoadingModal";
 
@@ -114,7 +114,7 @@ const EditFromScriptButton = ({ enclave, ...buttonProps }: EditFromScriptButtonP
           Edit
         </Button>
       </Tooltip>
-      <EnclaveBuilderModal
+      <EnclaveBuilderDrawer
         isOpen={showBuilderModal}
         onClose={() => setShowBuilderModal(false)}
         existingEnclave={enclave}
