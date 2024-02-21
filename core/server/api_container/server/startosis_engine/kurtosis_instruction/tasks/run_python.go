@@ -217,7 +217,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	}
 
 	if arguments.IsSet(StoreFilesArgName) {
-		storeSpecList, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
+		storeSpecList, interpretationErr := ParseStoreFilesArg(builtin.serviceNetwork, arguments)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}

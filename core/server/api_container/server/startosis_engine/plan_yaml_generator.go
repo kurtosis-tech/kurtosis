@@ -159,7 +159,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 
 	// start building Service Yaml object
 	service := &Service{}
-	//service.Uuid = string(addServiceInstruction.GetUuid()) 	// TODO: mock uuid generator so I can add uuids, uuid of the object is the uuid of the instruction that created that object
+	service.Uuid = string(addServiceInstruction.GetUuid()) // TODO: mock uuid generator for testing
 
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, add_service.ServiceNameArgName)
 	if err != nil {
@@ -320,8 +320,14 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 	var task *Task
 
 	// set instruction uuid
+	instructionUuid := string(runShInstruction.GetUuid())
+	// get the name of
+	//runShInstructionName, castErr := kurtosis_types.SafeCastToString(runShInstruction.GetInstruction(), "")
+	//if castErr != nil {
+	//	return castErr
+	//}
 	task = &Task{
-		Uuid:     string(runShInstruction.GetUuid()),
+		Uuid:     instructionUuid,
 		TaskType: SHELL,
 	}
 
@@ -396,6 +402,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 					filesArtifact = &FilesArtifact{
 						Name: fileArtifactName,
 					}
+					// add to the index and append to the plan yaml
 					pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
 					pyg.filesArtifactIndex[fileArtifactName] = filesArtifact
 				}
@@ -412,6 +419,27 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 	// - all files artifacts product from store are new files artifact that are added to the plan
 	//		- add them to files artifacts list
 	// 		- add them to the store section of run sh
+	var store []*FilesArtifact
+	storeSpecs, err := tasks.ParseStoreFilesArg(pyg.serviceNetwork, arguments)
+	// TODO: catch this error
+	//if err != startosis_errors.WrapWithInterpretationError(nil, "") { catch this error
+	//	return err
+	//}
+	for _, storeSpec := range storeSpecs {
+		// add the FilesArtifact to list of all files artifacts and index
+		var newFilesArtifactFromStoreSpec = &FilesArtifact{
+			Uuid:  instructionUuid,
+			Name:  storeSpec.GetName(),
+			Files: []string{storeSpec.GetSrc()},
+		}
+		pyg.filesArtifactIndex[storeSpec.GetName()] = newFilesArtifactFromStoreSpec
+		pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, newFilesArtifactFromStoreSpec)
+		store = append(store, &FilesArtifact{
+			Name:  storeSpec.GetName(),
+			Files: []string{storeSpec.GetSrc()},
+		})
+	}
+	task.Store = store // TODO: be consistent about how I'm setting lists in the plan yamls, probably should add wrappers to the plan yaml
 
 	// add task to index, do we even need a tasks index?
 	pyg.planYaml.Tasks = append(pyg.planYaml.Tasks, task)

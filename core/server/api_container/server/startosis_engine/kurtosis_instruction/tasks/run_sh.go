@@ -168,7 +168,7 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	}
 
 	if arguments.IsSet(StoreFilesArgName) {
-		storeSpecList, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
+		storeSpecList, interpretationErr := ParseStoreFilesArg(builtin.serviceNetwork, arguments)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}

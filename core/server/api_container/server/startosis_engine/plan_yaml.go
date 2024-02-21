@@ -67,15 +67,16 @@ type FileMount struct {
 
 // Task represents a task to be executed.
 type Task struct {
-	TaskType TaskType         `yaml:"taskType,omitempty"`
-	Uuid     string           `yaml:"uuid"`
-	RunCmd   string           `yaml:"command,omitempty"`
-	Image    string           `yaml:"image,omitempty"`
-	Files    []*FileMount     `yaml:"files,omitempty"`
-	Store    []*FilesArtifact `yaml:"store,omitempty"`
+	TaskType TaskType         `yaml:"taskType,omitempty"` // done
+	Uuid     string           `yaml:"uuid"`               // done
+	Name     string           `yaml:"name,omitempty"`     // done
+	RunCmd   string           `yaml:"command,omitempty"`  // done
+	Image    string           `yaml:"image,omitempty"`    // done
+	Files    []*FileMount     `yaml:"files,omitempty"`    // done
+	Store    []*FilesArtifact `yaml:"store,omitempty"`    // done
 
 	// only exists on SHELL tasks
-	EnvVars []*EnvironmentVariable `yaml:"envVar,omitempty"`
+	EnvVars []*EnvironmentVariable `yaml:"envVar,omitempty"` // done
 
 	// only exists on PYTHON tasks
 	PythonPackages []string `yaml:"pythonPackages,omitempty"`

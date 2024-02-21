@@ -1,14 +1,27 @@
 packageId: github.com/kurtosis-tech/plan-yaml-prac
 filesArtifacts:
-- uuid: a623b3ee1e794f788a2308f3fecdcd05
+- uuid: 3be6717c9bd74d9292f085bf87e8aef0
   name: bye-file
   files:
   - bye.txt
+- uuid: 4960a37e86e24f06966e17a2f2a78e7e
+  name: hi-file
+  files:
+  - /hi.txt
 tasks:
 - taskType: sh
-  uuid: 50022233681a4c398489e5d79818aeed
+  uuid: 4960a37e86e24f06966e17a2f2a78e7e
   command: echo $(cat /root/bye.txt) > hi.txt
   image: badouralix/curl-jq
+  files:
+  - mountPath: /root
+    filesArtifacts:
+    - uuid: 3be6717c9bd74d9292f085bf87e8aef0
+      name: bye-file
+  store:
+  - name: hi-file
+    files:
+    - /hi.txt
   envVar:
   - key: HELLO
     value: Hello!
