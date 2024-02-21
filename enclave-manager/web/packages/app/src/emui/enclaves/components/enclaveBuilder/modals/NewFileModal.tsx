@@ -9,7 +9,6 @@ import {
   ModalHeader,
   ModalOverlay,
 } from "@chakra-ui/react";
-import { isDefined } from "kurtosis-ui-components";
 import { FormProvider, useForm } from "react-hook-form";
 import { KurtosisFormControl } from "../../form/KurtosisFormControl";
 import { StringArgumentInput } from "../../form/StringArgumentInput";
@@ -25,7 +24,8 @@ export const NewFileModal = ({ isOpen, onClose, onConfirm }: NewFileModalProps) 
   });
 
   const onValidSubmit = (data: { fileName: string }) => {
-    onConfirm(data.fileName);
+    onConfirm(`${data.fileName.startsWith("/") ? "" : "/"}${data.fileName}`);
+    formMethods.reset({ fileName: "" });
   };
 
   return (
@@ -42,18 +42,7 @@ export const NewFileModal = ({ isOpen, onClose, onConfirm }: NewFileModalProps) 
               helperText={"Enter the full file name for this file (including its path)"}
               isRequired
             >
-              <StringArgumentInput
-                name={"fileName"}
-                placeholder={"/some/path/to/file.txt"}
-                validate={(v?: string) => {
-                  if (!isDefined(v)) {
-                    return "input must be defined";
-                  }
-                  if (!v.startsWith("/")) {
-                    return "File paths must start with a /";
-                  }
-                }}
-              />
+              <StringArgumentInput name={"fileName"} placeholder={"/some/path/to/file.txt"} />
             </KurtosisFormControl>
           </ModalBody>
           <ModalFooter>
