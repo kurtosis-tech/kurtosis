@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.87.1](https://github.com/kurtosis-tech/kurtosis/compare/0.87.0...0.87.1) (2024-02-21)
+
+
+### Features
+
+* use description field in emui logs ([#2199](https://github.com/kurtosis-tech/kurtosis/issues/2199)) ([ad00ee1](https://github.com/kurtosis-tech/kurtosis/commit/ad00ee13c1cab56cd6fb7455dd62900f7fa6b0c0))
+
+
+### Bug Fixes
+
+* admonition in github guide ([#2195](https://github.com/kurtosis-tech/kurtosis/issues/2195)) ([c2d4d42](https://github.com/kurtosis-tech/kurtosis/commit/c2d4d428e7b2d174cee6161370177eca26a13979))
+* Fix the connect to enclave CLI commands in the EM UI ([#2203](https://github.com/kurtosis-tech/kurtosis/issues/2203)) ([2218f4b](https://github.com/kurtosis-tech/kurtosis/commit/2218f4bb561d5b3e15977f3c28d8c3c7a1811699))
+
 ## [0.87.0](https://github.com/kurtosis-tech/kurtosis/compare/0.86.25...0.87.0) (2024-02-20)
 
 
