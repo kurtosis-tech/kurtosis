@@ -80,8 +80,8 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
         },
         ...data.ports.flatMap((port, i) => [
           {
-            id: `service.${id}.port.${i}`,
-            displayName: `service.${data.serviceName}.port.${port.portName}`,
+            id: `service.${id}.ports.${i}`,
+            displayName: `service.${data.serviceName}.ports.${port.portName}`,
             value: `"{}://{}:{}".format(${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${
               port.portName
             }"].application_protocol, ${normaliseNameToStarlarkVariable(
@@ -89,20 +89,20 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
             )}.hostname, ${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${port.portName}"].number)`,
           },
           {
-            id: `service.${id}.port.${i}.port`,
-            displayName: `service.${data.serviceName}.port.${port.portName}.port`,
-            value: `${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${port.portName}"].number`,
+            id: `service.${id}.ports.${i}.port`,
+            displayName: `service.${data.serviceName}.ports.${port.portName}.port`,
+            value: `str(${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${port.portName}"].number)`,
           },
           {
-            id: `service.${id}.port.${i}.applicationProtocol`,
-            displayName: `service.${data.serviceName}.port.${port.portName}.application_protocol`,
+            id: `service.${id}.ports.${i}.applicationProtocol`,
+            displayName: `service.${data.serviceName}.ports.${port.portName}.application_protocol`,
             value: `${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${
               port.portName
             }"].application_protocol`,
           },
         ]),
         ...data.env.map((env, i) => ({
-          id: `service.${id}.env.${i}`,
+          id: `service.${id}.env.${i}.value`,
           displayName: `service.${data.serviceName}.env.${env.key}`,
           value: `"${env.value}"`,
         })),
@@ -126,7 +126,7 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
           value: `${normaliseNameToStarlarkVariable(data.shellName)}.files_artifacts[0]`,
         },
         ...data.env.map((env, i) => ({
-          id: `shell.${id}.env.${i}`,
+          id: `shell.${id}.env.${i}.value`,
           displayName: `shell.${data.shellName}.env.${env.key}`,
           value: `"${env.value}"`,
         })),
@@ -141,7 +141,7 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
           value: `${normaliseNameToStarlarkVariable(data.pythonName)}.files_artifacts[0]`,
         },
         ...data.args.map((arg, i) => ({
-          id: `python.${id}.args.${i}`,
+          id: `python.${id}.args.${i}.arg`,
           displayName: `python.${data.pythonName}.args[${i}]`,
           value: `"${arg.arg}"`,
         })),

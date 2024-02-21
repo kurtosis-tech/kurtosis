@@ -1,7 +1,8 @@
 import { isDefined } from "kurtosis-ui-components";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Controller } from "react-hook-form";
 import { Mention, MentionsInput } from "react-mentions";
+import { useNodeId } from "reactflow";
 import { KurtosisFormInputProps } from "../../form/types";
 import { useVariableContext } from "../VariableContextProvider";
 import "./MentionStringArgumentInput.css";
@@ -15,23 +16,34 @@ export const MentionStringArgumentInput = <DataModel extends object>({
   validate,
   disabled,
   width,
-  size,
   tabIndex,
 }: MentionStringArgumentInputProps<DataModel>) => {
-  const { variables } = useVariableContext();
+  const { variables, data } = useVariableContext();
+  const nodeId = useNodeId();
+
+  const allowedVariables = useMemo(() => {
+    if (!isDefined(nodeId)) {
+      return variables;
+    }
+    const nodeData = data[nodeId];
+    // Exclude the variable currently being edited
+    const excludedVariable = `${nodeData.type}.${nodeId}.${name}`;
+    console.log(excludedVariable);
+    return variables.filter((v) => v.id !== excludedVariable);
+  }, [variables]);
 
   const handleQuery = useCallback(
     (query?: string) => {
       if (!isDefined(query)) {
         return [];
       }
-      const suggestions = variables.map((v) => ({ display: v.displayName, id: v.id }));
+      const suggestions = allowedVariables.map((v) => ({ display: v.displayName, id: v.id }));
       const queryTerms = query.toLowerCase().split(/\s+|\./);
       return suggestions.filter((variable) =>
         queryTerms.every((term) => variable.display.toLowerCase().includes(term)),
       );
     },
-    [variables],
+    [allowedVariables],
   );
 
   return (
