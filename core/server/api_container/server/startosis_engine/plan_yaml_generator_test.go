@@ -80,36 +80,18 @@ func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
-    bye_files_artifact = plan.render_templates(
-        name="bye-file",
-        config={
-            "bye.txt": struct(
-                template="Bye bye!",
-                data={}
-            )
-        }
+    plan.add_service(
+        name="tedi",
+        config=ServiceConfig(
+            image="postgres:alpine",
+            cmd=["touch", "hi.txt"],
+        )
     )
 
-    plan.run_python(
-        run = """
-import requests
-response = requests.get("https://docs.kurtosis.com")
-print(response.status_code)      
-    """,
-        image = "python:3.11-alpine",
-        args = [
-            "something",
-        ],
-        packages = [
-            "selenium",
-            "requests",
-        ],
-        files = {
-            "/root": bye_files_artifact,
-        },
-        store=[
-            StoreSpec(src="/hi.txt", name="hi-file")
-        ]
+    hi_files_artifact = plan.store_service_files(
+        name="hi-file",
+        src="hi.txt",
+        service_name="tedi",
     )
 `
 	serializedJsonParams := "{}"

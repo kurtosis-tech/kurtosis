@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -42,25 +43,25 @@ type PlanYamlGenerator interface {
 	//
 	//
 	//
-	// packageId: github.com/kurtosis-tech/postgres-package
+	//packageId: github.com/kurtosis-tech/postgres-package
 	//
-	// services:
-	// 	- uuid:
+	//services:
+	//	- uuid:
 	//	- name:
-	//    service_config:
+	//   service_config:
 	//	  	image:
 	//		env_var:
 	//		...
 	//
 	//
-	// files_artifacts:
+	//files_artifacts:
 	//
 	//
 	//
 	//
 	//
 	//
-	// tasks:
+	//tasks:
 	//
 	//
 
@@ -141,8 +142,11 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 			err = pyg.updatePlanYamlFromRenderTemplates(scheduledInstruction)
 		case upload_files.UploadFilesBuiltinName:
 			err = pyg.updatePlanYamlFromUploadFiles(scheduledInstruction)
+		case store_service_files.StoreServiceFilesBuiltinName:
+			err = pyg.updatePlanYamlFromStoreServiceFiles(scheduledInstruction)
 		default:
-			return nil, nil
+			// skip if this instruction is not one that will update the plan yaml
+			continue
 		}
 		if err != nil {
 			return nil, err
@@ -185,12 +189,16 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	// ports
 	service.Ports = []*Port{}
 	for portName, configPort := range serviceConfig.GetPrivatePorts() { // TODO: support public ports
+
 		port := &Port{
-			TransportProtocol:   TransportProtocol(configPort.GetTransportProtocol().String()),
-			ApplicationProtocol: ApplicationProtocol(*configPort.GetMaybeApplicationProtocol()),
-			Name:                portName,
-			Number:              configPort.GetNumber(),
+			TransportProtocol: TransportProtocol(configPort.GetTransportProtocol().String()),
+			Name:              portName,
+			Number:            configPort.GetNumber(),
 		}
+		if configPort.GetMaybeApplicationProtocol() != nil {
+			port.ApplicationProtocol = ApplicationProtocol(*configPort.GetMaybeApplicationProtocol())
+		}
+
 		service.Ports = append(service.Ports, port)
 	}
 
@@ -435,8 +443,8 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 		pyg.filesArtifactIndex[storeSpec.GetName()] = newFilesArtifactFromStoreSpec
 		pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, newFilesArtifactFromStoreSpec)
 		store = append(store, &FilesArtifact{
-			Name:  storeSpec.GetName(),
-			Files: []string{storeSpec.GetSrc()},
+			Uuid: instructionUuid,
+			Name: storeSpec.GetName(),
 		})
 	}
 	task.Store = store // TODO: be consistent about how I'm setting lists in the plan yamls, probably should add wrappers to the plan yaml
@@ -594,8 +602,8 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 		pyg.filesArtifactIndex[storeSpec.GetName()] = newFilesArtifactFromStoreSpec
 		pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, newFilesArtifactFromStoreSpec)
 		store = append(store, &FilesArtifact{
-			Name:  storeSpec.GetName(),
-			Files: []string{storeSpec.GetSrc()},
+			Uuid: instructionUuid,
+			Name: storeSpec.GetName(),
 		})
 	}
 	task.Store = store // TODO: be consistent about how I'm setting lists in the plan yamls, probably should add wrappers to the plan yaml
@@ -605,15 +613,48 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 	return nil
 }
 
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreService(storeServiceInstruction *instructions_plan.ScheduledInstruction) error {
-	panic("store service not implemented yet")
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreServiceFiles(storeServiceFilesInstruction *instructions_plan.ScheduledInstruction) error {
+	var filesArtifact *FilesArtifact
+
+	// get the name of returned files artifact
+	filesArtifactName, castErr := kurtosis_types.SafeCastToString(storeServiceFilesInstruction.GetReturnedValue(), "files artifact name")
+	if castErr != nil {
+		return castErr
+	}
+	filesArtifact = &FilesArtifact{
+		Uuid: string(storeServiceFilesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
+		Name: filesArtifactName,
+	}
+
+	arguments := storeServiceFilesInstruction.GetInstruction().GetArguments()
+	// set the uuid to be the uuid of the service that this files artifact comes from
+	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, store_service_files.ServiceNameArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", store_service_files.ServiceNameArgName)
+	}
+	if service, ok := pyg.serviceIndex[serviceName.GoString()]; !ok {
+		return startosis_errors.NewInterpretationError("A service that hasn't been tracked was found on a store service instruction.")
+	} else {
+		filesArtifact.Uuid = service.Uuid
+	}
+
+	// parse for files
+	src, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, store_service_files.SrcArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", store_service_files.SrcArgName)
+	}
+	filesArtifact.Files = []string{src.GoString()}
+
+	// add it to the index and the plan yaml
+	pyg.filesArtifactIndex[filesArtifactName] = filesArtifact
+	pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
 	return nil
 }
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRemoveService(RemoveServiceInstruction *instructions_plan.ScheduledInstruction) error {
+	// TODO: update the plan yaml based on an add_service
 	panic("remove service not implemented yet")
 	return nil
-	// TODO: update the plan yaml based on an add_service
 }
 
 func convertPlanYamlToYaml(planYaml *PlanYaml) ([]byte, error) {
