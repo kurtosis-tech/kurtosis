@@ -1,11 +1,19 @@
 import { ButtonGroup, CircularProgress, Flex, Icon, Tag } from "@chakra-ui/react";
 import { StarlarkRunResponseLine } from "enclave-manager-sdk/build/api_container_service_pb";
-import { AppPageLayout, isAsyncIterable, LogLineMessage, LogViewer, stringifyError } from "kurtosis-ui-components";
+import {
+  AppPageLayout,
+  isAsyncIterable,
+  LogLineMessage,
+  LogViewer,
+  stringifyError,
+  TitledBox,
+} from "kurtosis-ui-components";
 import { useEffect, useState } from "react";
 import { FiCheck, FiX } from "react-icons/fi";
 import { Location, useBlocker, useLocation, useNavigate } from "react-router-dom";
 import { EditEnclaveButton } from "../../components/EditEnclaveButton";
 import { LogNavigationWarningModal } from "../../components/modals/LogNavigationWarningModal";
+import { ServicesTable } from "../../components/tables/ServicesTable";
 import { DeleteEnclavesButton } from "../../components/widgets/DeleteEnclavesButton";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { useEnclaveFromParams } from "../EnclaveRouteContext";
@@ -145,6 +153,15 @@ export const EnclaveLogs = () => {
           }
           logsFileName={`${enclave.name.replaceAll(/\s+/g, "_")}-logs.txt`}
         />
+        {progressPercent === 100 && enclave.services?.isOk && (
+          <TitledBox title={"Services"}>
+            <ServicesTable
+              enclaveUUID={enclave.enclaveUuid}
+              enclaveShortUUID={enclave.shortenedUuid}
+              servicesResponse={enclave.services.value}
+            />
+          </TitledBox>
+        )}
         <LogNavigationWarningModal
           isOpen={blocker.state === "blocked"}
           onCancel={() => {
