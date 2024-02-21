@@ -447,9 +447,162 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 }
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstruction *instructions_plan.ScheduledInstruction) error {
-	panic("run python not implemented yet")
+	var task *Task
+
+	// set instruction uuid
+	instructionUuid := string(runPythonInstruction.GetUuid())
+	// get the name of
+	//runShInstructionName, castErr := kurtosis_types.SafeCastToString(runShInstruction.GetInstruction(), "")
+	//if castErr != nil {
+	//	return castErr
+	//}
+	task = &Task{
+		Uuid:     instructionUuid,
+		TaskType: PYTHON,
+	}
+
+	// get runcmd, image and set them in the yaml
+	arguments := runPythonInstruction.GetInstruction().GetArguments()
+	runCommand, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, tasks.RunArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.RunArgName)
+	}
+	task.RunCmd = runCommand.GoString()
+
+	var image string
+	if arguments.IsSet(tasks.ImageNameArgName) {
+		imageStarlark, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, tasks.ImageNameArgName)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.ImageNameArgName)
+		}
+		image = imageStarlark.GoString()
+	} else {
+		image = tasks.DefaultRunShImageName
+	}
+	task.Image = image
+
+	var envVars []*EnvironmentVariable
+	var envVarsMap map[string]string
+	if arguments.IsSet(tasks.EnvVarsArgName) {
+		envVarsStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, tasks.EnvVarsArgName)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.EnvVarsArgName)
+		}
+		if envVarsStarlark != nil && envVarsStarlark.Len() > 0 {
+			var interpretationErr *startosis_errors.InterpretationError
+			envVarsMap, interpretationErr = kurtosis_types.SafeCastToMapStringString(envVarsStarlark, tasks.EnvVarsArgName)
+			if interpretationErr != nil {
+				return interpretationErr
+			}
+		}
+	}
+	for key, val := range envVarsMap {
+		envVars = append(envVars, &EnvironmentVariable{
+			Key:   key,
+			Value: val,
+		})
+	}
+	task.EnvVars = envVars
+
+	// python args and python packages
+	if arguments.IsSet(tasks.PythonArgumentsArgName) {
+		argsValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, tasks.PythonArgumentsArgName)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting passed argument information")
+		}
+		argsList, sliceParsingErr := kurtosis_types.SafeCastToStringSlice(argsValue, tasks.PythonArgumentsArgName)
+		if sliceParsingErr != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of passed arguments to a golang string slice")
+		}
+		for _, arg := range argsList {
+			task.PythonArgs = append(task.PythonArgs, arg)
+		}
+	}
+
+	if arguments.IsSet(tasks.PackagesArgName) {
+		packagesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, tasks.PackagesArgName)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting packages information")
+		}
+		packagesList, sliceParsingErr := kurtosis_types.SafeCastToStringSlice(packagesValue, tasks.PackagesArgName)
+		if sliceParsingErr != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of packages to a golang string slice")
+		}
+		for _, pkg := range packagesList {
+			task.PythonPackages = append(task.PythonPackages, pkg)
+		}
+	}
+
+	// for files:
+	//	1. either the referenced files artifact already exists in the plan, in which case, look for it and reference it via instruction uuid
+	// 	2. the referenced files artifact is new, in which case we add it to the plan
+	if arguments.IsSet(tasks.FilesArgName) {
+		filesStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, tasks.FilesArgName)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.FilesArgName)
+		}
+		if filesStarlark.Len() > 0 {
+			filesArtifactMountDirPaths, interpretationErr := kurtosis_types.SafeCastToMapStringString(filesStarlark, tasks.FilesArgName)
+			if interpretationErr != nil {
+				return interpretationErr
+			}
+			for mountPath, fileArtifactName := range filesArtifactMountDirPaths {
+				var filesArtifact *FilesArtifact
+				// if there's already a files artifact that exists with this name from a previous instruction, reference that
+				if potentialFilesArtifact, ok := pyg.filesArtifactIndex[fileArtifactName]; ok {
+					filesArtifact = &FilesArtifact{
+						Uuid: potentialFilesArtifact.Uuid,
+						Name: potentialFilesArtifact.Name,
+					}
+				} else {
+					// otherwise create a new one
+					// the only information we have about a files artifact that didn't already exist is the name
+					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
+					filesArtifact = &FilesArtifact{
+						Name: fileArtifactName,
+					}
+					// add to the index and append to the plan yaml
+					pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
+					pyg.filesArtifactIndex[fileArtifactName] = filesArtifact
+				}
+
+				task.Files = append(task.Files, &FileMount{
+					MountPath:      mountPath,
+					FilesArtifacts: []*FilesArtifact{filesArtifact},
+				})
+			}
+		}
+	}
+
+	// for store
+	// - all files artifacts product from store are new files artifact that are added to the plan
+	//		- add them to files artifacts list
+	// 		- add them to the store section of run sh
+	var store []*FilesArtifact
+	storeSpecs, err := tasks.ParseStoreFilesArg(pyg.serviceNetwork, arguments)
+	// TODO: catch this error
+	//if err != startosis_errors.WrapWithInterpretationError(nil, "") { catch this error
+	//	return err
+	//}
+	for _, storeSpec := range storeSpecs {
+		// add the FilesArtifact to list of all files artifacts and index
+		var newFilesArtifactFromStoreSpec = &FilesArtifact{
+			Uuid:  instructionUuid,
+			Name:  storeSpec.GetName(),
+			Files: []string{storeSpec.GetSrc()},
+		}
+		pyg.filesArtifactIndex[storeSpec.GetName()] = newFilesArtifactFromStoreSpec
+		pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, newFilesArtifactFromStoreSpec)
+		store = append(store, &FilesArtifact{
+			Name:  storeSpec.GetName(),
+			Files: []string{storeSpec.GetSrc()},
+		})
+	}
+	task.Store = store // TODO: be consistent about how I'm setting lists in the plan yamls, probably should add wrappers to the plan yaml
+
+	// add task to index, do we even need a tasks index?
+	pyg.planYaml.Tasks = append(pyg.planYaml.Tasks, task)
 	return nil
-	// TODO: update the plan yaml based on an add_service
 }
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreService(storeServiceInstruction *instructions_plan.ScheduledInstruction) error {

@@ -90,11 +90,20 @@ func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
         }
     )
 
-    plan.run_sh(
-        run="echo $(cat /root/bye.txt) > hi.txt",
-        env_vars = {
-            "HELLO": "Hello!"
-        },
+    plan.run_python(
+        run = """
+import requests
+response = requests.get("https://docs.kurtosis.com")
+print(response.status_code)      
+    """,
+        image = "python:3.11-alpine",
+        args = [
+            "something",
+        ],
+        packages = [
+            "selenium",
+            "requests",
+        ],
         files = {
             "/root": bye_files_artifact,
         },

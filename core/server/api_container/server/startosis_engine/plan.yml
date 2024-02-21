@@ -1,27 +1,30 @@
 packageId: github.com/kurtosis-tech/plan-yaml-prac
 filesArtifacts:
-- uuid: 3be6717c9bd74d9292f085bf87e8aef0
+- uuid: e620890750a54f1ca98ac962c7bd3b06
   name: bye-file
   files:
   - bye.txt
-- uuid: 4960a37e86e24f06966e17a2f2a78e7e
+- uuid: b09ae123685241fdae0c59b8b2ba0171
   name: hi-file
   files:
   - /hi.txt
 tasks:
-- taskType: sh
-  uuid: 4960a37e86e24f06966e17a2f2a78e7e
-  command: echo $(cat /root/bye.txt) > hi.txt
-  image: badouralix/curl-jq
+- taskType: python
+  uuid: b09ae123685241fdae0c59b8b2ba0171
+  command: "\nimport requests\nresponse = requests.get(\"https://docs.kurtosis.com\")\nprint(response.status_code)
+    \     \n    "
+  image: python:3.11-alpine
   files:
   - mountPath: /root
     filesArtifacts:
-    - uuid: 3be6717c9bd74d9292f085bf87e8aef0
+    - uuid: e620890750a54f1ca98ac962c7bd3b06
       name: bye-file
   store:
   - name: hi-file
     files:
     - /hi.txt
-  envVar:
-  - key: HELLO
-    value: Hello!
+  pythonPackages:
+  - selenium
+  - requests
+  pythonArgs:
+  - something
