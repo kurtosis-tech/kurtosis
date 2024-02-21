@@ -181,6 +181,9 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 		pyg.planYaml.PackageId,
 		pyg.packageContentProvider,
 		pyg.packageReplaceOptions)
+	if err != nil {
+		return err
+	}
 
 	service.Image = serviceConfig.GetContainerImageName() // TODO: support image build specs, image registry specs, nix build specs
 	service.Cmd = serviceConfig.GetCmdArgs()
