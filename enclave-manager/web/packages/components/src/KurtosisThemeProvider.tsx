@@ -352,7 +352,6 @@ const theme = extendTheme({
       baseStyle: {
         content: {
           bg: "gray.500",
-          p: "8px",
         },
       },
     },
