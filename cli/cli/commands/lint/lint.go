@@ -200,8 +200,9 @@ func validateDocString(fileOrDirToLintArg []string) error {
 	}
 
 	fileOrDirToCheckForDocString := fileOrDirToLintArg[0]
+	lastPartOfFileToCheck := path.Base(fileOrDirToCheckForDocString)
 
-	if fileOrDirToCheckForDocString == mainDotStarFilename {
+	if lastPartOfFileToCheck == mainDotStarFilename {
 		return parseDocString(fileOrDirToCheckForDocString)
 	}
 
