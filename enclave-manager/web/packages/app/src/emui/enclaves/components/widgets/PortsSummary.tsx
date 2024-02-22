@@ -1,7 +1,7 @@
 import {
   Card,
-  Flex,
   Popover,
+  PopoverBody,
   PopoverContent,
   PopoverTrigger,
   Table,
@@ -29,11 +29,11 @@ export const PortsSummary = ({ privatePorts, publicPorts }: PortsSummaryProps) =
         </Text>
       </PopoverTrigger>
       <PopoverContent maxWidth={"50vw"} w={"unset"}>
-        <Flex flexDirection={"row"} gap={"16px"}>
+        <PopoverBody flexDirection={"row"} gap={"16px"}>
           <Card>
             <PortTable privatePorts={privatePorts} publicPorts={publicPorts} />
           </Card>
-        </Flex>
+        </PopoverBody>
       </PopoverContent>
     </Popover>
   );

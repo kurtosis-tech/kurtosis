@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.87.1](https://github.com/kurtosis-tech/kurtosis/compare/0.87.0...0.87.1) (2024-02-21)
+
+
+### Features
+
+* use description field in emui logs ([#2199](https://github.com/kurtosis-tech/kurtosis/issues/2199)) ([ad00ee1](https://github.com/kurtosis-tech/kurtosis/commit/ad00ee13c1cab56cd6fb7455dd62900f7fa6b0c0))
+
+
+### Bug Fixes
+
+* admonition in github guide ([#2195](https://github.com/kurtosis-tech/kurtosis/issues/2195)) ([c2d4d42](https://github.com/kurtosis-tech/kurtosis/commit/c2d4d428e7b2d174cee6161370177eca26a13979))
+* Fix the connect to enclave CLI commands in the EM UI ([#2203](https://github.com/kurtosis-tech/kurtosis/issues/2203)) ([2218f4b](https://github.com/kurtosis-tech/kurtosis/commit/2218f4bb561d5b3e15977f3c28d8c3c7a1811699))
+
+## [0.87.0](https://github.com/kurtosis-tech/kurtosis/compare/0.86.25...0.87.0) (2024-02-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* change registry spec to imagespec ([#2191](https://github.com/kurtosis-tech/kurtosis/issues/2191))
+
+### Features
+
+* change registry spec to imagespec ([#2191](https://github.com/kurtosis-tech/kurtosis/issues/2191)) ([bc20d51](https://github.com/kurtosis-tech/kurtosis/commit/bc20d51fd8fb7d02a8270586dcd4be85564cb415)), closes [#2189](https://github.com/kurtosis-tech/kurtosis/issues/2189)
+
+
+### Bug Fixes
+
+* change default verbosity to description ([#2173](https://github.com/kurtosis-tech/kurtosis/issues/2173)) ([d3b3de9](https://github.com/kurtosis-tech/kurtosis/commit/d3b3de9b6cb7ff0a83488ccbf8756dfb77814c9c))
+* improved some descriptions for starlark instructions ([#2168](https://github.com/kurtosis-tech/kurtosis/issues/2168)) ([d7fdbc5](https://github.com/kurtosis-tech/kurtosis/commit/d7fdbc5fa56f81a9194a68f37d1ab9549dc45abd))
+
 ## [0.86.25](https://github.com/kurtosis-tech/kurtosis/compare/0.86.24...0.86.25) (2024-02-16)
 
 

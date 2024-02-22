@@ -11,12 +11,32 @@ config = ServiceConfig(
     # This image can be pulled from a remote container registry, picked up from the local cache, or built by Kurtosis using
     # the underlying container engine.
     # If a string is provided, Kurtosis will by default detect if images exists locally, or pull from container registry if not.
-    # If an ImageBuildSpec is provided, Kurtosis will build the image.
-    # If an ImageRegistrySpec is provided, Kurtosis will pull the image from the given registry with the given credentials
-    # Note for now ImageRegistrySpec is Docker only and the authentication gets ignored on Kubernetes
+    # The string form is syntactic sugar for ImageSpec with only image set
+    # ImageSpec referring to private registries limited to Docker
     # Reach out to the team if you want to run Kurtosis with private images on Kubernetes
+    # If an ImageBuildSpec is provided, Kurtosis will build the image.
     # MANDATORY
     image = "kurtosistech/example-datastore-server",
+    
+    OR
+
+    image = ImageSpec(
+        #  The name of the image that needs to be pulled qualified with the registry
+        # MANDATORY
+        name = "my.registry.io/my-user/my-image",
+    
+        # The username that will be used to pull the image from the given registry
+        # OPTIONAL
+        username = "my-user",
+    
+        # The password that will be used to pull the image from the given registry
+        # OPTIONAL        
+        password = "password",
+    
+        # The URL of the registry
+        # OPTIONAL        
+        registry = "http://my.registry.io/"
+    )
     
     OR
     
@@ -33,24 +53,6 @@ config = ServiceConfig(
         # Stage of image build to target for multi-stage container image
         # OPTIONAL
         target_stage=""
-    )
-
-    OR
-
-    image = ImageRegistrySpec(
-        #  The name of the image that needs to be pulled qualified with the registry
-        # MANDATORY
-        name = "my.registry.io/my-user/my-image",
-
-        # The username that will be used to pull the image from the given registry
-        # MANDATORY
-        username = "my-user",
-
-        # The password that will be used to pull the image from the given registry
-        password = "password",
-
-        # The URL of the registry
-        registry = "http://my.registry.io/"
     )
     
     OR
@@ -91,6 +93,16 @@ config = ServiceConfig(
             # Application protocol for the port
             # Optional
             application_protocol = "http",
+
+            # Kurtosis will automatically perform a check to ensure all declared UDP and TCP ports are open and ready for traffic and connections upon startup.
+            # You may specify a custom wait timeout duration or disable the feature entirely.
+            # You may specify a custom wait timeout duration with a string:
+            #  wait = "2m"
+            # Or, you can disable this feature by setting the value to None:
+            #  wait = None
+            # The feature is enabled by default with a default timeout of 15s
+            # OPTIONAL (DEFAULT:"15s")
+            wait = "4s"            
         ),
     },
 
@@ -208,7 +220,7 @@ config = ServiceConfig(
     }
 )
 ```
-Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package.
+Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.
 More info can be found on [locators referring to local resources here][locators] and how to turn your script into a Kurtosis [package][package] here.
 
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.

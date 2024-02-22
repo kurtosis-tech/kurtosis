@@ -46,6 +46,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   };
 
   const instanceUUID = Cookies.get("_kurtosis_instance_id") || "";
+  const apiKey = Cookies.get("_kurtosis_api_key") || "";
 
   return (
     <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange} variant={"kurtosisHeaderLine"}>
@@ -58,7 +59,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
           <Flex gap={"8px"} alignItems={"center"} pb={"16px"}>
             <DeleteEnclavesButton enclaves={[enclave]} />
             <EditEnclaveButton enclave={enclave} />
-            <ConnectEnclaveButton enclave={enclave} instanceUUID={instanceUUID} />
+            <ConnectEnclaveButton enclave={enclave} instanceUUID={instanceUUID} apiKey={apiKey} />
           </Flex>
         </Flex>
         <TabPanels>
