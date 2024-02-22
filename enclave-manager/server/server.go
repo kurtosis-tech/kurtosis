@@ -444,9 +444,9 @@ func (c *WebServer) GetStarlarkScriptPlanYaml(
 
 	request := &connect.Request[kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs]{
 		Msg: &kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs{
-			SerializedScript: req.Msg.StarlarkPackagePlanYamlArgs.SerializedScript,
-			SerializedParams: req.Msg.StarlarkPackagePlanYamlArgs.SerializedParams,
-			MainFunctionName: req.Msg.StarlarkPackagePlanYamlArgs.MainFunctionName,
+			SerializedScript: req.Msg.StarlarkScriptPlanYamlArgs.SerializedScript,
+			SerializedParams: req.Msg.StarlarkScriptPlanYamlArgs.SerializedParams,
+			MainFunctionName: req.Msg.StarlarkScriptPlanYamlArgs.MainFunctionName,
 		},
 	}
 	result, err := (*apiContainerServiceClient).GetStarlarkScriptPlanYaml(ctx, request)
@@ -479,10 +479,10 @@ func (c *WebServer) GetStarlarkPackagePlanYaml(
 
 	request := &connect.Request[kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs]{
 		Msg: &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
-			PackageId:              req.Msg.StarlarkScriptPlanYamlArgs.PackageId,
-			SerializedParams:       req.Msg.StarlarkScriptPlanYamlArgs.SerializedParams,
-			RelativePathToMainFile: req.Msg.StarlarkScriptPlanYamlArgs.RelativePathToMainFile,
-			MainFunctionName:       req.Msg.StarlarkScriptPlanYamlArgs.MainFunctionName,
+			PackageId:              req.Msg.StarlarkPackagePlanYamlArgs.PackageId,
+			SerializedParams:       req.Msg.StarlarkPackagePlanYamlArgs.SerializedParams,
+			RelativePathToMainFile: req.Msg.StarlarkPackagePlanYamlArgs.RelativePathToMainFile,
+			MainFunctionName:       req.Msg.StarlarkPackagePlanYamlArgs.MainFunctionName,
 		},
 	}
 	result, err := (*apiContainerServiceClient).GetStarlarkPackagePlanYaml(ctx, request)

@@ -441,43 +441,10 @@ export class GetStarlarkRunRequest extends Message<GetStarlarkRunRequest> {
 }
 
 /**
- * @generated from message kurtosis_enclave_manager.PlanYaml
- */
-export class PlanYaml extends Message<PlanYaml> {
-  /**
-   * @generated from field: string plan_yaml = 1;
-   */
-  planYaml = "";
-
-  constructor(data?: PartialMessage<PlanYaml>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "kurtosis_enclave_manager.PlanYaml";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "plan_yaml", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PlanYaml {
-    return new PlanYaml().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PlanYaml {
-    return new PlanYaml().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PlanYaml {
-    return new PlanYaml().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: PlanYaml | PlainMessage<PlanYaml> | undefined, b: PlanYaml | PlainMessage<PlanYaml> | undefined): boolean {
-    return proto3.util.equals(PlanYaml, a, b);
-  }
-}
-
-/**
+ * ==============================================================================================
+ *                               Get Starlark Plan Yaml
+ * ==============================================================================================
+ *
  * @generated from message kurtosis_enclave_manager.StarlarkScriptPlanYamlArgs
  */
 export class StarlarkScriptPlanYamlArgs extends Message<StarlarkScriptPlanYamlArgs> {
@@ -492,9 +459,9 @@ export class StarlarkScriptPlanYamlArgs extends Message<StarlarkScriptPlanYamlAr
   apicPort = 0;
 
   /**
-   * @generated from field: api_container_api.StarlarkScriptPlanYamlArgs starlark_package_plan_yaml_args = 3;
+   * @generated from field: api_container_api.StarlarkScriptPlanYamlArgs starlark_script_plan_yaml_args = 3;
    */
-  starlarkPackagePlanYamlArgs?: StarlarkScriptPlanYamlArgs$1;
+  starlarkScriptPlanYamlArgs?: StarlarkScriptPlanYamlArgs$1;
 
   constructor(data?: PartialMessage<StarlarkScriptPlanYamlArgs>) {
     super();
@@ -506,7 +473,7 @@ export class StarlarkScriptPlanYamlArgs extends Message<StarlarkScriptPlanYamlAr
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "apic_ip_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "apic_port", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
-    { no: 3, name: "starlark_package_plan_yaml_args", kind: "message", T: StarlarkScriptPlanYamlArgs$1 },
+    { no: 3, name: "starlark_script_plan_yaml_args", kind: "message", T: StarlarkScriptPlanYamlArgs$1 },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StarlarkScriptPlanYamlArgs {
@@ -541,9 +508,9 @@ export class StarlarkPackagePlanYamlArgs extends Message<StarlarkPackagePlanYaml
   apicPort = 0;
 
   /**
-   * @generated from field: api_container_api.StarlarkPackagePlanYamlArgs starlark_script_plan_yaml_args = 3;
+   * @generated from field: api_container_api.StarlarkPackagePlanYamlArgs starlark_package_plan_yaml_args = 3;
    */
-  starlarkScriptPlanYamlArgs?: StarlarkPackagePlanYamlArgs$1;
+  starlarkPackagePlanYamlArgs?: StarlarkPackagePlanYamlArgs$1;
 
   constructor(data?: PartialMessage<StarlarkPackagePlanYamlArgs>) {
     super();
@@ -555,7 +522,7 @@ export class StarlarkPackagePlanYamlArgs extends Message<StarlarkPackagePlanYaml
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "apic_ip_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "apic_port", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
-    { no: 3, name: "starlark_script_plan_yaml_args", kind: "message", T: StarlarkPackagePlanYamlArgs$1 },
+    { no: 3, name: "starlark_package_plan_yaml_args", kind: "message", T: StarlarkPackagePlanYamlArgs$1 },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StarlarkPackagePlanYamlArgs {

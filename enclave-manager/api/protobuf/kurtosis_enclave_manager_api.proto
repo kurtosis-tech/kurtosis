@@ -21,8 +21,8 @@ service KurtosisEnclaveManagerServer {
   rpc DownloadFilesArtifact(DownloadFilesArtifactRequest) returns (stream api_container_api.StreamedDataChunk) {};
   rpc DestroyEnclave(engine_api.DestroyEnclaveArgs) returns (google.protobuf.Empty) {};
   rpc GetStarlarkRun(GetStarlarkRunRequest) returns (api_container_api.GetStarlarkRunResponse) {};
-  rpc GetStarlarkScriptPlanYaml(StarlarkScriptPlanYamlArgs) returns (PlanYaml) {};
-  rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (PlanYaml) {};
+  rpc GetStarlarkScriptPlanYaml(StarlarkScriptPlanYamlArgs) returns (api_container_api.PlanYaml) {};
+  rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (api_container_api.PlanYaml) {};
 }
 
 message HealthCheckRequest {
@@ -82,11 +82,6 @@ message GetStarlarkRunRequest{
 // ==============================================================================================
 //                               Get Starlark Plan Yaml
 // ==============================================================================================
-
-message PlanYaml {
-  string plan_yaml = 1;
-}
-
 message StarlarkScriptPlanYamlArgs {
   string apic_ip_address = 1;
   int32 apic_port = 2;

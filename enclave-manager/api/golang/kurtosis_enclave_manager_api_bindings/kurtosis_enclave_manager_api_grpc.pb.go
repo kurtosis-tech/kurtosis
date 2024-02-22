@@ -54,8 +54,8 @@ type KurtosisEnclaveManagerServerClient interface {
 	DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactRequest, opts ...grpc.CallOption) (KurtosisEnclaveManagerServer_DownloadFilesArtifactClient, error)
 	DestroyEnclave(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetStarlarkRun(ctx context.Context, in *GetStarlarkRunRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error)
-	GetStarlarkScriptPlanYaml(ctx context.Context, in *StarlarkScriptPlanYamlArgs, opts ...grpc.CallOption) (*PlanYaml, error)
-	GetStarlarkPackagePlanYaml(ctx context.Context, in *StarlarkPackagePlanYamlArgs, opts ...grpc.CallOption) (*PlanYaml, error)
+	GetStarlarkScriptPlanYaml(ctx context.Context, in *StarlarkScriptPlanYamlArgs, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
+	GetStarlarkPackagePlanYaml(ctx context.Context, in *StarlarkPackagePlanYamlArgs, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
 }
 
 type kurtosisEnclaveManagerServerClient struct {
@@ -266,8 +266,8 @@ func (c *kurtosisEnclaveManagerServerClient) GetStarlarkRun(ctx context.Context,
 	return out, nil
 }
 
-func (c *kurtosisEnclaveManagerServerClient) GetStarlarkScriptPlanYaml(ctx context.Context, in *StarlarkScriptPlanYamlArgs, opts ...grpc.CallOption) (*PlanYaml, error) {
-	out := new(PlanYaml)
+func (c *kurtosisEnclaveManagerServerClient) GetStarlarkScriptPlanYaml(ctx context.Context, in *StarlarkScriptPlanYamlArgs, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	out := new(kurtosis_core_rpc_api_bindings.PlanYaml)
 	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetStarlarkScriptPlanYaml_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -275,8 +275,8 @@ func (c *kurtosisEnclaveManagerServerClient) GetStarlarkScriptPlanYaml(ctx conte
 	return out, nil
 }
 
-func (c *kurtosisEnclaveManagerServerClient) GetStarlarkPackagePlanYaml(ctx context.Context, in *StarlarkPackagePlanYamlArgs, opts ...grpc.CallOption) (*PlanYaml, error) {
-	out := new(PlanYaml)
+func (c *kurtosisEnclaveManagerServerClient) GetStarlarkPackagePlanYaml(ctx context.Context, in *StarlarkPackagePlanYamlArgs, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	out := new(kurtosis_core_rpc_api_bindings.PlanYaml)
 	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetStarlarkPackagePlanYaml_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -300,8 +300,8 @@ type KurtosisEnclaveManagerServerServer interface {
 	DownloadFilesArtifact(*DownloadFilesArtifactRequest, KurtosisEnclaveManagerServer_DownloadFilesArtifactServer) error
 	DestroyEnclave(context.Context, *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error)
 	GetStarlarkRun(context.Context, *GetStarlarkRunRequest) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error)
-	GetStarlarkScriptPlanYaml(context.Context, *StarlarkScriptPlanYamlArgs) (*PlanYaml, error)
-	GetStarlarkPackagePlanYaml(context.Context, *StarlarkPackagePlanYamlArgs) (*PlanYaml, error)
+	GetStarlarkScriptPlanYaml(context.Context, *StarlarkScriptPlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
+	GetStarlarkPackagePlanYaml(context.Context, *StarlarkPackagePlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
 }
 
 // UnimplementedKurtosisEnclaveManagerServerServer should be embedded to have forward compatible implementations.
@@ -344,10 +344,10 @@ func (UnimplementedKurtosisEnclaveManagerServerServer) DestroyEnclave(context.Co
 func (UnimplementedKurtosisEnclaveManagerServerServer) GetStarlarkRun(context.Context, *GetStarlarkRunRequest) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStarlarkRun not implemented")
 }
-func (UnimplementedKurtosisEnclaveManagerServerServer) GetStarlarkScriptPlanYaml(context.Context, *StarlarkScriptPlanYamlArgs) (*PlanYaml, error) {
+func (UnimplementedKurtosisEnclaveManagerServerServer) GetStarlarkScriptPlanYaml(context.Context, *StarlarkScriptPlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStarlarkScriptPlanYaml not implemented")
 }
-func (UnimplementedKurtosisEnclaveManagerServerServer) GetStarlarkPackagePlanYaml(context.Context, *StarlarkPackagePlanYamlArgs) (*PlanYaml, error) {
+func (UnimplementedKurtosisEnclaveManagerServerServer) GetStarlarkPackagePlanYaml(context.Context, *StarlarkPackagePlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStarlarkPackagePlanYaml not implemented")
 }
 
