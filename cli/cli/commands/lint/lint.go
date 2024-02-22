@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis-package-indexer/server/crawler"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -25,6 +26,10 @@ const (
 	formatFlagShortKey     = "f"
 	formatFlagDefaultValue = "false"
 
+	checkDocStringFlagKey      = "check-docstring"
+	checkDocStringFlagShortKey = "c"
+	checkDocStringDefaultValue = "true"
+
 	pyBlackDockerImage      = "pyfound/black:23.9.1"
 	dockerRunCmd            = "run"
 	removeContainerOnExit   = "--rm"
@@ -39,6 +44,8 @@ const (
 	dirVolumeSeparator      = ":"
 	presentWorkingDirectory = "."
 	versionArg              = "version"
+
+	mainDotStarFilename = "main.star"
 
 	linterFailedAsThingsNeedToBeReformattedExitCode = 1
 	linterFailedWithInternalErrorsExitCode          = 123
@@ -74,7 +81,15 @@ var LintCmd = &lowlevel.LowlevelKurtosisCommand{
 			Type:      flags.FlagType_Bool,
 			Default:   formatFlagDefaultValue,
 		},
+		{
+			Key:       checkDocStringFlagKey,
+			Usage:     "Use this flag to check whether the doc string is valid or not",
+			Shorthand: checkDocStringFlagShortKey,
+			Type:      flags.FlagType_Bool,
+			Default:   checkDocStringDefaultValue,
+		},
 	},
+
 	RunFunc: run,
 }
 
@@ -90,6 +105,11 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	}
 	if !formatFlag {
 		dockerRunSuffix = append(dockerRunSuffix, checkFlagForBlack)
+	}
+
+	checkDocStringFlag, err := flags.GetBool(checkDocStringFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "an error occurred getting the value of the flag '%v'", checkDocStringFlagKey)
 	}
 
 	logrus.Infof("This depends on '%v'; first run may take a while as we might have to download it", pyBlackDockerImage)
@@ -132,6 +152,36 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		fmt.Println(string(cmdOutput))
 	}
 
+	if checkDocStringFlag {
+		if len(fileOrDirToLintArg) != 1 {
+			return stacktrace.Propagate(err, "Doc string validation only works with one argument, either a full path to a '%v' file or a directory containing it got '%v' arguments", mainDotStarFilename, len(fileOrDirToLintArg))
+		}
+
+		fileOrDirToCheckForDocString := fileOrDirToLintArg[0]
+
+		if fileOrDirToCheckForDocString == mainDotStarFilename {
+			return parseDocString(fileOrDirToCheckForDocString)
+		}
+
+		fileInfo, _ := os.Stat(fileOrDirToCheckForDocString)
+		if !fileInfo.IsDir() {
+			return stacktrace.Propagate(err, "Passed argument '%v' isn't a '%v' file nor is it a directory", fileOrDirToLintArg[0], mainDotStarFilename)
+		}
+
+		entries, err := os.ReadDir(fileOrDirToCheckForDocString)
+		if err != nil {
+			return stacktrace.Propagate(err, "Couldn't read directory '%v' for doc string validation")
+		}
+
+		for _, entry := range entries {
+			if entry.Name() == mainDotStarFilename {
+				return parseDocString(path.Join(fileOrDirToCheckForDocString, entry.Name()))
+			}
+		}
+
+		return stacktrace.Propagate(err, "Couldn't find a '%v' file in the passed directory '%v'", fileOrDirToCheckForDocString)
+	}
+
 	return nil
 }
 
@@ -165,4 +215,16 @@ func getVolumeToMountAndPathToLint(pathOfFileOrDirToLint string) (string, string
 	} else {
 		return path.Dir(absolutePathForFileOrDirToLint), path.Base(absolutePathForFileOrDirToLint), nil
 	}
+}
+
+func parseDocString(mainStarFilepath string) error {
+	contents, err := os.ReadFile(mainStarFilepath)
+	if err != nil {
+		return stacktrace.Propagate(err, "")
+	}
+	contentsAsStr := string(contents)
+	if _, err := crawler.ParseMainDotStarContent(contentsAsStr); err != nil {
+		return stacktrace.Propagate(err, "an error occurred while parsing the doc string")
+	}
+	return nil
 }
