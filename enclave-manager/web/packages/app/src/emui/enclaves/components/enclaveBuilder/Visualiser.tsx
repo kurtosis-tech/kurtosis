@@ -2,6 +2,7 @@ import { Box, Button, ButtonGroup, Flex, Icon } from "@chakra-ui/react";
 import Dagre from "@dagrejs/dagre";
 import { RemoveFunctions } from "kurtosis-ui-components";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
+import { FiShare2 } from "react-icons/fi";
 import {
   Background,
   BackgroundVariant,
@@ -15,7 +16,7 @@ import {
   XYPosition,
 } from "reactflow";
 import { v4 as uuidv4 } from "uuid";
-import { EnclaveFullInfo } from "../../../types";
+import { EnclaveFullInfo } from "../../types";
 import { KurtosisArtifactNode } from "./KurtosisArtifactNode";
 import { nodeIcons } from "./KurtosisNode";
 import { KurtosisPythonNode } from "./KurtosisPythonNode";
@@ -229,22 +230,34 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
     );
 
     return (
-      <Flex flexDirection={"column"} h={"100%"} gap={"8px"}>
-        <ButtonGroup paddingInline={6}>
-          <Button onClick={onLayout}>Do Layout</Button>
-          <Button leftIcon={<Icon as={nodeIcons["service"]} />} onClick={handleAddServiceNode}>
-            Add Service Node
-          </Button>
-          <Button leftIcon={<Icon as={nodeIcons["artifact"]} />} onClick={handleAddArtifactNode}>
-            Add Files Node
-          </Button>
-          <Button leftIcon={<Icon as={nodeIcons["shell"]} />} onClick={handleAddShellNode}>
-            Add Shell Node
-          </Button>
-          <Button leftIcon={<Icon as={nodeIcons["python"]} />} onClick={handleAddPythonNode}>
-            Add Python Node
-          </Button>
-        </ButtonGroup>
+      <Flex position="relative" flexDirection={"column"} h={"100%"} gap={"8px"}>
+        <Box
+          borderRadius={"5px"}
+          position={"absolute"}
+          zIndex={"99999"}
+          top={"20px"}
+          left={"20px"}
+          bg={"gray.800"}
+          p={"8px"}
+        >
+          <ButtonGroup size={"sm"}>
+            <Button leftIcon={<Icon as={FiShare2} />} onClick={onLayout}>
+              Auto-Layout
+            </Button>
+            <Button leftIcon={<Icon as={nodeIcons["service"]} />} onClick={handleAddServiceNode}>
+              Add Service Node
+            </Button>
+            <Button leftIcon={<Icon as={nodeIcons["artifact"]} />} onClick={handleAddArtifactNode}>
+              Add Files Node
+            </Button>
+            <Button leftIcon={<Icon as={nodeIcons["shell"]} />} onClick={handleAddShellNode}>
+              Add Shell Node
+            </Button>
+            <Button leftIcon={<Icon as={nodeIcons["python"]} />} onClick={handleAddPythonNode}>
+              Add Python Node
+            </Button>
+          </ButtonGroup>
+        </Box>
         <Box bg={"gray.900"} flex={"1"}>
           <ReactFlow
             minZoom={0.1}

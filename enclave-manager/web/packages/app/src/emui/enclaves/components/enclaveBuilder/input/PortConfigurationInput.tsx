@@ -1,8 +1,8 @@
 import { Grid, GridItem } from "@chakra-ui/react";
-import { IntegerArgumentInput } from "../../../form/IntegerArgumentInput";
-import { OptionsArgumentInput } from "../../../form/OptionArgumentInput";
-import { StringArgumentInput } from "../../../form/StringArgumentInput";
-import { KurtosisFormInputProps } from "../../../form/types";
+import { IntegerArgumentInput } from "../../form/IntegerArgumentInput";
+import { OptionsArgumentInput } from "../../form/OptionArgumentInput";
+import { StringArgumentInput } from "../../form/StringArgumentInput";
+import { KurtosisFormInputProps } from "../../form/types";
 import { KurtosisServiceNodeData } from "../types";
 
 export const PortConfigurationField = (props: KurtosisFormInputProps<KurtosisServiceNodeData>) => (
@@ -13,6 +13,13 @@ export const PortConfigurationField = (props: KurtosisFormInputProps<KurtosisSer
         size={"sm"}
         placeholder={"Port Name (eg postgres)"}
         name={`${props.name as `ports.${number}`}.portName`}
+      />
+    </GridItem>
+    <GridItem>
+      <IntegerArgumentInput<KurtosisServiceNodeData>
+        {...props}
+        name={`${props.name as `ports.${number}`}.port`}
+        size={"sm"}
       />
     </GridItem>
     <GridItem>
@@ -31,18 +38,11 @@ export const PortConfigurationField = (props: KurtosisFormInputProps<KurtosisSer
         }}
       />
     </GridItem>
-    <GridItem>
+    <GridItem display={"flex"} alignItems={"center"}>
       <OptionsArgumentInput<KurtosisServiceNodeData>
         {...props}
         options={["TCP", "UDP"]}
         name={`${props.name as `ports.${number}`}.transportProtocol`}
-      />
-    </GridItem>
-    <GridItem>
-      <IntegerArgumentInput<KurtosisServiceNodeData>
-        {...props}
-        name={`${props.name as `ports.${number}`}.port`}
-        size={"sm"}
       />
     </GridItem>
   </Grid>
