@@ -8,17 +8,18 @@ import {
   ModalOverlay,
 } from "@chakra-ui/react";
 import { FileDisplay } from "kurtosis-ui-components";
+import { apiKey, instanceUUID } from "../../../../cookies";
 import { EnclaveFullInfo } from "../../types";
 
 export type ConnectEnclaveModalProps = {
   enclave: EnclaveFullInfo;
-  instanceUUID: string;
   isOpen: boolean;
   onClose: () => void;
 };
 
-export const ConnectEnclaveModal = ({ isOpen, onClose, enclave, instanceUUID }: ConnectEnclaveModalProps) => {
+export const ConnectEnclaveModal = ({ isOpen, onClose, enclave }: ConnectEnclaveModalProps) => {
   const commands = `
+  export KURTOSIS_CLOUD_API_KEY="${apiKey}"
   kurtosis cloud load ${instanceUUID}
   kurtosis enclave connect ${enclave.name}
   kurtosis enclave inspect ${enclave.name}`;

@@ -2,9 +2,9 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"testing"
 
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -14,38 +14,32 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type serviceConfigImageRegistrySpecTest struct {
+type serviceConfigImageSpecMinimalTest struct {
 	*testing.T
 	serviceNetwork         *service_network.MockServiceNetwork
 	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
-func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageRegistrySpec() {
-	suite.run(&serviceConfigImageRegistrySpecTest{
+func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageSpecImageOnly() {
+	suite.run(&serviceConfigImageSpecMinimalTest{
 		T:                      suite.T(),
 		serviceNetwork:         suite.serviceNetwork,
 		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
-func (t *serviceConfigImageRegistrySpecTest) GetStarlarkCode() string {
-	imageRegistrySpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q)",
-		service_config.ImageRegistrySpecTypeName,
+func (t *serviceConfigImageSpecMinimalTest) GetStarlarkCode() string {
+	imageSpec := fmt.Sprintf("%s(%s=%q)",
+		service_config.ImageSpecTypeName,
 		service_config.ImageAttr,
 		testContainerImageName,
-		service_config.RegistryAddrAttr,
-		testRegistryAddr,
-		service_config.RegistryUsernameAttr,
-		testRegistryUsername,
-		service_config.RegistryPasswordAttr,
-		testRegistryPassword,
 	)
 	return fmt.Sprintf("%s(%s=%s)",
 		service_config.ServiceConfigTypeName,
-		service_config.ImageAttr, imageRegistrySpec)
+		service_config.ImageAttr, imageSpec)
 }
 
-func (t *serviceConfigImageRegistrySpecTest) Assert(typeValue builtin_argument.KurtosisValueType) {
+func (t *serviceConfigImageSpecMinimalTest) Assert(typeValue builtin_argument.KurtosisValueType) {
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
@@ -57,7 +51,7 @@ func (t *serviceConfigImageRegistrySpecTest) Assert(typeValue builtin_argument.K
 		testNoPackageReplaceOptions)
 	require.Nil(t, interpretationErr)
 
-	expectedImageRegistrySpec := image_registry_spec.NewImageRegistrySpec(testContainerImageName, testRegistryUsername, testRegistryPassword, testRegistryAddr)
+	expectedImageRegistrySpec := image_registry_spec.NewImageRegistrySpec(testContainerImageName, "", "", "")
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		nil,

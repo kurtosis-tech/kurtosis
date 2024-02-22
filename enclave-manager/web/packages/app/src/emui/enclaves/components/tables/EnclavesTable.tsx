@@ -1,6 +1,6 @@
 import { Button, Checkbox, Text } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import { FilesArtifactNameAndUuid, ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
+import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
 import { EnclaveContainersStatus } from "enclave-manager-sdk/build/engine_service_pb";
 import { GetPackagesResponse, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { DataTable, FormatDateTime, isDefined } from "kurtosis-ui-components";
@@ -10,10 +10,11 @@ import { Link } from "react-router-dom";
 import { Result } from "true-myth";
 import { useKurtosisPackageIndexerClient } from "../../../../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { EnclaveFullInfo } from "../../types";
-import { EnclaveArtifactsSummary } from "../widgets/EnclaveArtifactsSummary";
 import { EnclaveServicesSummary } from "../widgets/EnclaveServicesSummary";
 import { EnclaveStatus } from "../widgets/EnclaveStatus";
 import { PackageLinkButton } from "../widgets/PackageLinkButton";
+import { PortsSummary } from "../widgets/PortsSummary";
+import { getPortTableRows, PortsTableRow } from "./PortsTable";
 
 type EnclaveTableRow = {
   uuid: string;
@@ -22,7 +23,7 @@ type EnclaveTableRow = {
   created: DateTime | null;
   source: "loading" | KurtosisPackage | null;
   services: "loading" | ServiceInfo[] | null;
-  artifacts: "loading" | FilesArtifactNameAndUuid[] | null;
+  ports: "loading" | PortsTableRow[] | null;
 };
 
 const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResponse, string>): EnclaveTableRow => {
@@ -43,10 +44,18 @@ const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResp
       : enclave.services.isOk
       ? Object.values(enclave.services.value.serviceInfo)
       : null,
-    artifacts: !isDefined(enclave.filesAndArtifacts)
+    ports: !isDefined(enclave.services)
       ? "loading"
-      : enclave.filesAndArtifacts.isOk
-      ? enclave.filesAndArtifacts.value.fileNamesAndUuids
+      : enclave.services.isOk
+      ? Object.values(enclave.services.value.serviceInfo).flatMap((service) =>
+          getPortTableRows(
+            enclave.enclaveUuid,
+            service.serviceUuid,
+            service.privatePorts,
+            service.maybePublicPorts,
+            service.maybePublicIpAddr,
+          ),
+        )
       : null,
   };
 };
@@ -128,9 +137,9 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
         cell: (servicesCell) => <EnclaveServicesSummary services={servicesCell.getValue()} />,
         meta: { centerAligned: true },
       }),
-      columnHelper.accessor("artifacts", {
-        header: "File artifacts",
-        cell: (artifactsCell) => <EnclaveArtifactsSummary artifacts={artifactsCell.getValue()} />,
+      columnHelper.accessor("ports", {
+        header: "Ports",
+        cell: (portsCell) => <PortsSummary ports={portsCell.getValue()} />,
         meta: { centerAligned: true },
       }),
     ],
