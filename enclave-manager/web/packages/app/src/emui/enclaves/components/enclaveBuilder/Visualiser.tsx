@@ -240,7 +240,7 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
           bg={"gray.800"}
           p={"8px"}
         >
-          <ButtonGroup>
+          <ButtonGroup size={"sm"}>
             <Button leftIcon={<Icon as={FiShare2} />} onClick={onLayout}>
               Auto-Layout
             </Button>
