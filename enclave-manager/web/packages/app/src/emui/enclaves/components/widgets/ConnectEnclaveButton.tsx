@@ -6,11 +6,9 @@ import { ConnectEnclaveModal } from "../modals/ConnectEnclaveModal";
 
 type ConnectEnclaveButtonProps = ButtonProps & {
   enclave: EnclaveFullInfo;
-  instanceUUID: string;
-  apiKey: string;
 };
 
-export const ConnectEnclaveButton = ({ enclave, instanceUUID, apiKey, ...buttonProps }: ConnectEnclaveButtonProps) => {
+export const ConnectEnclaveButton = ({ enclave, ...buttonProps }: ConnectEnclaveButtonProps) => {
   const [showModal, setShowModal] = useState(false);
 
   return (
@@ -27,13 +25,7 @@ export const ConnectEnclaveButton = ({ enclave, instanceUUID, apiKey, ...buttonP
           Connect
         </Button>
       </Tooltip>
-      <ConnectEnclaveModal
-        enclave={enclave}
-        instanceUUID={instanceUUID}
-        apiKey={apiKey}
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-      />
+      <ConnectEnclaveModal enclave={enclave} isOpen={showModal} onClose={() => setShowModal(false)} />
     </>
   );
 };

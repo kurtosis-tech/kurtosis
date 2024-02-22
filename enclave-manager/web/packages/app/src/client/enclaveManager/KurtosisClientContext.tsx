@@ -1,7 +1,7 @@
 import { Flex, Heading, Spinner } from "@chakra-ui/react";
-import Cookies from "js-cookie";
 import { assertDefined, isDefined, KurtosisAlert, stringifyError } from "kurtosis-ui-components";
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
+import { jwtToken } from "../../cookies";
 import { KURTOSIS_CLOUD_EM_PAGE, KURTOSIS_CLOUD_EM_URL } from "../constants";
 import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
 import { KurtosisClient } from "./KurtosisClient";
@@ -68,8 +68,6 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
           if (isNaN(port)) {
             throw Error(`Port ${port} is not a number.`);
           }
-
-          const jwtToken = Cookies.get("_kurtosis_jwt_token");
 
           if (isDefined(jwtToken)) {
             newClient = new AuthenticatedKurtosisClient(

@@ -1,5 +1,4 @@
 import { Flex, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
-import Cookies from "js-cookie";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { AppPageLayout, HoverLineTabList, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
@@ -45,9 +44,6 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
     navigator(`/enclave/${enclave.shortenedUuid}/${tab.path}`);
   };
 
-  const instanceUUID = Cookies.get("_kurtosis_instance_id") || "";
-  const apiKey = Cookies.get("_kurtosis_api_key") || "";
-
   return (
     <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange} variant={"kurtosisHeaderLine"}>
       <AppPageLayout preventPageScroll={activeTab === "logs"}>
@@ -59,7 +55,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
           <Flex gap={"8px"} alignItems={"center"} pb={"16px"}>
             <DeleteEnclavesButton enclaves={[enclave]} />
             <EditEnclaveButton enclave={enclave} />
-            <ConnectEnclaveButton enclave={enclave} instanceUUID={instanceUUID} apiKey={apiKey} />
+            <ConnectEnclaveButton enclave={enclave} />
           </Flex>
         </Flex>
         <TabPanels>

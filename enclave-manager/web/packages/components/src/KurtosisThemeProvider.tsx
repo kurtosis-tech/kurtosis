@@ -348,13 +348,6 @@ const theme = extendTheme({
         icon: { color: "gray.400", fontSize: "18px !important" },
       },
     },
-    Popover: {
-      baseStyle: {
-        content: {
-          bg: "gray.500",
-        },
-      },
-    },
     Progress: progressTheme,
     Switch: {
       defaultProps: {
