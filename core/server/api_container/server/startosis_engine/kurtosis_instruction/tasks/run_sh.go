@@ -26,7 +26,7 @@ import (
 const (
 	RunShBuiltinName = "run_sh"
 
-	DefaultRunShImageName = "badouralix/curl-jq"
+	DefaultRunShImageName  = "badouralix/curl-jq"
 	shScriptPrintCharLimit = 80
 	runningShScriptPrefix  = "Running sh script"
 )
