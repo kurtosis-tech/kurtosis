@@ -196,7 +196,7 @@ func getVolumeToMountAndPathToLint(pathOfFileOrDirToLint string) (string, string
 
 func validateDocString(fileOrDirToLintArg []string) error {
 	if len(fileOrDirToLintArg) != 1 {
-		return stacktrace.Propagate(err, "Doc string validation only works with one argument, either a full path to a '%v' file or a directory containing it got '%v' arguments", mainDotStarFilename, len(fileOrDirToLintArg))
+		return stacktrace.NewError("Doc string validation only works with one argument, either a full path to a '%v' file or a directory containing it got '%v' arguments", mainDotStarFilename, len(fileOrDirToLintArg))
 	}
 
 	fileOrDirToCheckForDocString := fileOrDirToLintArg[0]
@@ -207,7 +207,7 @@ func validateDocString(fileOrDirToLintArg []string) error {
 
 	fileInfo, _ := os.Stat(fileOrDirToCheckForDocString)
 	if !fileInfo.IsDir() {
-		return stacktrace.Propagate(err, "Passed argument '%v' isn't a '%v' file nor is it a directory", fileOrDirToLintArg[0], mainDotStarFilename)
+		return stacktrace.NewError("Passed argument '%v' isn't a '%v' file nor is it a directory", fileOrDirToLintArg[0], mainDotStarFilename)
 	}
 
 	entries, err := os.ReadDir(fileOrDirToCheckForDocString)
