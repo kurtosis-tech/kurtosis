@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -112,6 +113,12 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		return stacktrace.Propagate(err, "an error occurred getting the value of the flag '%v'", checkDocStringFlagKey)
 	}
 
+	if checkDocStringFlag {
+		if err = validateDocString(fileOrDirToLintArg); err != nil {
+			return stacktrace.Propagate(err, "an error occurred while validating the doc string")
+		}
+	}
+
 	logrus.Infof("This depends on '%v'; first run may take a while as we might have to download it", pyBlackDockerImage)
 
 	if _, err := exec.LookPath(dockerBinary); err != nil {
@@ -152,36 +159,6 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		fmt.Println(string(cmdOutput))
 	}
 
-	if checkDocStringFlag {
-		if len(fileOrDirToLintArg) != 1 {
-			return stacktrace.Propagate(err, "Doc string validation only works with one argument, either a full path to a '%v' file or a directory containing it got '%v' arguments", mainDotStarFilename, len(fileOrDirToLintArg))
-		}
-
-		fileOrDirToCheckForDocString := fileOrDirToLintArg[0]
-
-		if fileOrDirToCheckForDocString == mainDotStarFilename {
-			return parseDocString(fileOrDirToCheckForDocString)
-		}
-
-		fileInfo, _ := os.Stat(fileOrDirToCheckForDocString)
-		if !fileInfo.IsDir() {
-			return stacktrace.Propagate(err, "Passed argument '%v' isn't a '%v' file nor is it a directory", fileOrDirToLintArg[0], mainDotStarFilename)
-		}
-
-		entries, err := os.ReadDir(fileOrDirToCheckForDocString)
-		if err != nil {
-			return stacktrace.Propagate(err, "Couldn't read directory '%v' for doc string validation")
-		}
-
-		for _, entry := range entries {
-			if entry.Name() == mainDotStarFilename {
-				return parseDocString(path.Join(fileOrDirToCheckForDocString, entry.Name()))
-			}
-		}
-
-		return stacktrace.Propagate(err, "Couldn't find a '%v' file in the passed directory '%v'", fileOrDirToCheckForDocString)
-	}
-
 	return nil
 }
 
@@ -217,12 +194,46 @@ func getVolumeToMountAndPathToLint(pathOfFileOrDirToLint string) (string, string
 	}
 }
 
+func validateDocString(fileOrDirToLintArg []string) error {
+	if len(fileOrDirToLintArg) != 1 {
+		return stacktrace.Propagate(err, "Doc string validation only works with one argument, either a full path to a '%v' file or a directory containing it got '%v' arguments", mainDotStarFilename, len(fileOrDirToLintArg))
+	}
+
+	fileOrDirToCheckForDocString := fileOrDirToLintArg[0]
+
+	if fileOrDirToCheckForDocString == mainDotStarFilename {
+		return parseDocString(fileOrDirToCheckForDocString)
+	}
+
+	fileInfo, _ := os.Stat(fileOrDirToCheckForDocString)
+	if !fileInfo.IsDir() {
+		return stacktrace.Propagate(err, "Passed argument '%v' isn't a '%v' file nor is it a directory", fileOrDirToLintArg[0], mainDotStarFilename)
+	}
+
+	entries, err := os.ReadDir(fileOrDirToCheckForDocString)
+	if err != nil {
+		return stacktrace.Propagate(err, "Couldn't read directory '%v' for doc string validation", fileOrDirToCheckForDocString)
+	}
+
+	for _, entry := range entries {
+		if entry.Name() == mainDotStarFilename {
+			return parseDocString(path.Join(fileOrDirToCheckForDocString, entry.Name()))
+		}
+	}
+
+	return stacktrace.Propagate(err, "Couldn't find a '%v' file in the passed directory '%v'", mainDotStarFilename, fileOrDirToCheckForDocString)
+}
+
 func parseDocString(mainStarFilepath string) error {
 	contents, err := os.ReadFile(mainStarFilepath)
 	if err != nil {
 		return stacktrace.Propagate(err, "")
 	}
 	contentsAsStr := string(contents)
+	currentOutput := logrus.StandardLogger().Out
+	defer logrus.SetOutput(currentOutput)
+	// we disable the output as the crawler pollutes the screen otherwise
+	logrus.SetOutput(io.Discard)
 	if _, err := crawler.ParseMainDotStarContent(contentsAsStr); err != nil {
 		return stacktrace.Propagate(err, "an error occurred while parsing the doc string")
 	}
