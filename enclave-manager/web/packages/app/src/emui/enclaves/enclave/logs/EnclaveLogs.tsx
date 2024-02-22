@@ -1,11 +1,36 @@
-import { ButtonGroup, CircularProgress, Flex, Icon, Tag } from "@chakra-ui/react";
+import {
+  ButtonGroup,
+  CircularProgress,
+  Flex,
+  FormControl,
+  FormLabel,
+  Icon,
+  IconButton,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverCloseButton,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTrigger,
+  Switch,
+  Tag,
+} from "@chakra-ui/react";
 import { StarlarkRunResponseLine } from "enclave-manager-sdk/build/api_container_service_pb";
-import { AppPageLayout, isAsyncIterable, LogLineMessage, LogViewer, stringifyError } from "kurtosis-ui-components";
-import { useEffect, useState } from "react";
-import { FiCheck, FiX } from "react-icons/fi";
+import {
+  AppPageLayout,
+  isAsyncIterable,
+  LogLineMessage,
+  LogViewer,
+  stringifyError,
+  TitledBox,
+} from "kurtosis-ui-components";
+import { useEffect, useMemo, useState } from "react";
+import { FiCheck, FiSettings, FiX } from "react-icons/fi";
 import { Location, useBlocker, useLocation, useNavigate } from "react-router-dom";
 import { EditEnclaveButton } from "../../components/EditEnclaveButton";
 import { LogNavigationWarningModal } from "../../components/modals/LogNavigationWarningModal";
+import { ServicesTable } from "../../components/tables/ServicesTable";
 import { DeleteEnclavesButton } from "../../components/widgets/DeleteEnclavesButton";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { useEnclaveFromParams } from "../EnclaveRouteContext";
@@ -20,10 +45,17 @@ type EnclaveLogStage =
 
 const LOG_STARTING_EXECUTION = "Starting execution";
 
-export function starlarkResponseLineToLogLineMessage(l: StarlarkRunResponseLine): LogLineMessage {
+export function starlarkResponseLineToLogLineMessage(
+  l: StarlarkRunResponseLine,
+  shouldUseDescriptionField: boolean,
+): LogLineMessage {
   switch (l.runResponseLine.case) {
     case "instruction":
-      return { message: l.runResponseLine.value.executableInstruction };
+      return {
+        message: shouldUseDescriptionField
+          ? l.runResponseLine.value.description
+          : l.runResponseLine.value.executableInstruction,
+      };
     case "progressInfo":
       return { message: l.runResponseLine.value.currentStepInfo[l.runResponseLine.value.currentStepNumber] };
     case "instructionResult":
@@ -46,7 +78,17 @@ export const EnclaveLogs = () => {
   const navigator = useNavigate();
   const location = useLocation() as Location<{ logs: AsyncIterable<StarlarkRunResponseLine> }>;
   const [progress, setProgress] = useState<EnclaveLogStage>({ stage: "waiting" });
-  const [logLines, setLogLines] = useState<LogLineMessage[]>([]);
+  const [shouldUseDescriptionField, setShouldUseDescriptionField] = useState(true);
+  const [rawLogLines, setRawLogLines] = useState<(StarlarkRunResponseLine | { message: string; status: "error" })[]>(
+    [],
+  );
+  const logLines = useMemo((): LogLineMessage[] => {
+    return rawLogLines.map((rawLogLine) =>
+      rawLogLine.hasOwnProperty("status")
+        ? (rawLogLine as LogLineMessage)
+        : starlarkResponseLineToLogLineMessage(rawLogLine as StarlarkRunResponseLine, shouldUseDescriptionField),
+    );
+  }, [rawLogLines, shouldUseDescriptionField]);
 
   const blocker = useBlocker(({ currentLocation, nextLocation }) => currentLocation.pathname !== nextLocation.pathname);
 
@@ -54,15 +96,15 @@ export const EnclaveLogs = () => {
     let cancelled = false;
     (async () => {
       if (location.state && isAsyncIterable(location.state.logs)) {
-        setLogLines([]);
+        setRawLogLines([]);
         setProgress({ stage: "waiting" });
         try {
           for await (const line of location.state.logs) {
             if (cancelled) {
               return;
             }
-            const parsedLine = starlarkResponseLineToLogLineMessage(line);
-            setLogLines((logLines) => [...logLines, parsedLine]);
+            const parsedLine = starlarkResponseLineToLogLineMessage(line, shouldUseDescriptionField);
+            setRawLogLines((logLines) => [...logLines, line]);
             setProgress((oldProgress) => {
               if (line.runResponseLine.case === "progressInfo") {
                 if (oldProgress.stage === "waiting") {
@@ -97,7 +139,7 @@ export const EnclaveLogs = () => {
           if (cancelled) {
             return;
           }
-          setLogLines((logLines) => [...logLines, { message: `Error: ${stringifyError(error)}`, status: "error" }]);
+          setRawLogLines((logLines) => [...logLines, { message: `Error: ${stringifyError(error)}`, status: "error" }]);
           await Promise.all([refreshStarlarkRun(enclave), refreshServices(enclave), refreshFilesAndArtifacts(enclave)]);
         } finally {
           updateStarlarkFinishedInEnclave(enclave);
@@ -123,6 +165,10 @@ export const EnclaveLogs = () => {
       ? 100
       : 0;
 
+  const handleToggleDescriptive = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setShouldUseDescriptionField(e.target.checked);
+  };
+
   return (
     <AppPageLayout preventPageScroll>
       <>
@@ -134,6 +180,29 @@ export const EnclaveLogs = () => {
             <Flex justifyContent={"space-between"} alignItems={"center"} width={"100%"}>
               <ProgressSummary progress={progress} />
               <ButtonGroup>
+                <Popover>
+                  <PopoverTrigger>
+                    <IconButton icon={<FiSettings />} aria-label={"Settings"} />
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <PopoverArrow />
+                    <PopoverCloseButton />
+                    <PopoverHeader>Settings</PopoverHeader>
+                    <PopoverBody>
+                      <FormControl display="flex" alignItems="center" justifyContent={"center"} mb={"0"}>
+                        <FormLabel htmlFor={"descriptive"} size={"sm"}>
+                          Use descriptive starlark output
+                        </FormLabel>
+                        <Switch
+                          id={"descriptive"}
+                          size={"sm"}
+                          isChecked={shouldUseDescriptionField}
+                          onChange={handleToggleDescriptive}
+                        />
+                      </FormControl>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
                 <DeleteEnclavesButton enclaves={[enclave]} size={"md"} />
                 <EditEnclaveButton
                   enclave={enclave}
@@ -145,6 +214,15 @@ export const EnclaveLogs = () => {
           }
           logsFileName={`${enclave.name.replaceAll(/\s+/g, "_")}-logs.txt`}
         />
+        {progressPercent === 100 && enclave.services?.isOk && (
+          <TitledBox title={"Services"}>
+            <ServicesTable
+              enclaveUUID={enclave.enclaveUuid}
+              enclaveShortUUID={enclave.shortenedUuid}
+              servicesResponse={enclave.services.value}
+            />
+          </TitledBox>
+        )}
         <LogNavigationWarningModal
           isOpen={blocker.state === "blocked"}
           onCancel={() => {

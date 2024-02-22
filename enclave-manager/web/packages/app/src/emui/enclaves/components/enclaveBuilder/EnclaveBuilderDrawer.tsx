@@ -1,15 +1,15 @@
 import {
   Button,
   ButtonGroup,
+  Drawer,
+  DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerOverlay,
   Flex,
   ListItem,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
   Text,
   Tooltip,
   UnorderedList,
@@ -21,19 +21,19 @@ import { Edge, Node, ReactFlowProvider } from "reactflow";
 import "reactflow/dist/style.css";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
-import { ViewStarlarkModal } from "./enclaveBuilder/modals/ViewStarlarkModal";
-import { KurtosisNodeData } from "./enclaveBuilder/types";
-import { getInitialGraphStateFromEnclave, getNodeName } from "./enclaveBuilder/utils";
-import { useVariableContext, VariableContextProvider } from "./enclaveBuilder/VariableContextProvider";
-import { Visualiser, VisualiserImperativeAttributes } from "./enclaveBuilder/Visualiser";
+import { ViewStarlarkModal } from "./modals/ViewStarlarkModal";
+import { KurtosisNodeData } from "./types";
+import { getInitialGraphStateFromEnclave, getNodeName } from "./utils";
+import { useVariableContext, VariableContextProvider } from "./VariableContextProvider";
+import { Visualiser, VisualiserImperativeAttributes } from "./Visualiser";
 
-type EnclaveBuilderModalProps = {
+type EnclaveBuilderDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
   existingEnclave?: RemoveFunctions<EnclaveFullInfo>;
 };
 
-export const EnclaveBuilderModal = (props: EnclaveBuilderModalProps) => {
+export const EnclaveBuilderDrawer = (props: EnclaveBuilderDrawerProps) => {
   const variableContextKey = useRef(0);
   const [error, setError] = useState<string>();
 
@@ -82,22 +82,22 @@ export const EnclaveBuilderModal = (props: EnclaveBuilderModalProps) => {
 
   return (
     <VariableContextProvider key={variableContextKey.current} initialData={initialData}>
-      <EnclaveBuilderModalImpl {...props} initialNodes={initialNodes} initialEdges={initialEdges} />
+      <EnclaveBuilderDrawerImpl {...props} initialNodes={initialNodes} initialEdges={initialEdges} />
     </VariableContextProvider>
   );
 };
 
-type EnclaveBuilderModalImplProps = EnclaveBuilderModalProps & {
+type EnclaveBuilderDrawerImplProps = EnclaveBuilderDrawerProps & {
   initialNodes: Node[];
   initialEdges: Edge[];
 };
-const EnclaveBuilderModalImpl = ({
+const EnclaveBuilderDrawerImpl = ({
   isOpen,
   onClose,
   existingEnclave,
   initialNodes,
   initialEdges,
-}: EnclaveBuilderModalImplProps) => {
+}: EnclaveBuilderDrawerImplProps) => {
   const navigator = useNavigate();
   const visualiserRef = useRef<VisualiserImperativeAttributes | null>(null);
   const { createEnclave, runStarlarkScript } = useEnclavesContext();
@@ -158,14 +158,14 @@ const EnclaveBuilderModalImpl = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={!isLoading ? onClose : () => null} closeOnEsc={false}>
-      <ModalOverlay />
-      <ModalContent h={"89vh"} minW={"1300px"}>
-        <ModalHeader>
+    <Drawer size={"full"} isOpen={isOpen} onClose={!isLoading ? onClose : () => null} closeOnEsc={false}>
+      <DrawerOverlay />
+      <DrawerContent>
+        <DrawerHeader>
           {isDefined(existingEnclave) ? `Editing ${existingEnclave.name}` : "Build a new Enclave"}
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody paddingInline={"0"}>
+        </DrawerHeader>
+        <DrawerCloseButton />
+        <DrawerBody paddingInline={"0"} p={"0"}>
           {isDefined(error) && <KurtosisAlert message={error} />}
           <ReactFlowProvider>
             <Visualiser
@@ -175,8 +175,8 @@ const EnclaveBuilderModalImpl = ({
               existingEnclave={existingEnclave}
             />
           </ReactFlowProvider>
-        </ModalBody>
-        <ModalFooter>
+        </DrawerBody>
+        <DrawerFooter>
           <ButtonGroup>
             <Button onClick={onClose} isDisabled={isLoading}>
               Close
@@ -207,13 +207,13 @@ const EnclaveBuilderModalImpl = ({
               </Button>
             </Tooltip>
           </ButtonGroup>
-        </ModalFooter>
-      </ModalContent>
+        </DrawerFooter>
+      </DrawerContent>
       <ViewStarlarkModal
         isOpen={isDefined(currentStarlarkPreview)}
         onClose={() => setCurrentStarlarkPreview(undefined)}
         starlark={currentStarlarkPreview}
       />
-    </Modal>
+    </Drawer>
   );
 };

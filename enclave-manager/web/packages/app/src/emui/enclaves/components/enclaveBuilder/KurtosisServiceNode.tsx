@@ -1,13 +1,14 @@
 import { Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import { isDefined } from "kurtosis-ui-components";
 import { memo } from "react";
 import { NodeProps } from "reactflow";
-import { BooleanArgumentInput } from "../../form/BooleanArgumentInput";
-import { DictArgumentInput } from "../../form/DictArgumentInput";
-import { IntegerArgumentInput } from "../../form/IntegerArgumentInput";
-import { KurtosisFormControl } from "../../form/KurtosisFormControl";
-import { ListArgumentInput } from "../../form/ListArgumentInput";
-import { StringArgumentInput } from "../../form/StringArgumentInput";
-import { KurtosisFormInputProps } from "../../form/types";
+import { BooleanArgumentInput } from "../form/BooleanArgumentInput";
+import { DictArgumentInput } from "../form/DictArgumentInput";
+import { IntegerArgumentInput } from "../form/IntegerArgumentInput";
+import { KurtosisFormControl } from "../form/KurtosisFormControl";
+import { ListArgumentInput } from "../form/ListArgumentInput";
+import { StringArgumentInput } from "../form/StringArgumentInput";
+import { KurtosisFormInputProps } from "../form/types";
 import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
 import { MountArtifactFileInput } from "./input/MountArtifactFileInput";
 import { PortConfigurationField } from "./input/PortConfigurationInput";
@@ -20,6 +21,10 @@ export const KurtosisServiceNode = memo(
   ({ id, selected }: NodeProps) => {
     const { data } = useVariableContext();
     const nodeData = data[id] as KurtosisServiceNodeData;
+
+    if (!isDefined(nodeData)) {
+      return null;
+    }
 
     return (
       <KurtosisNode id={id} selected={selected} minWidth={650} maxWidth={800}>

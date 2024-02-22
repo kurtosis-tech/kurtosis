@@ -27,6 +27,8 @@ const (
 	RunShBuiltinName = "run_sh"
 
 	DefaultRunShImageName = "badouralix/curl-jq"
+	shScriptPrintCharLimit = 80
+	runningShScriptPrefix  = "Running sh script"
 )
 
 func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, nonBlockingMode bool) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -273,7 +275,10 @@ func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_pla
 }
 
 func (builtin *RunShCapabilities) Description() string {
-	return "Running a one time bash script"
+	if len(builtin.run) < shScriptPrintCharLimit {
+		return fmt.Sprintf("%v: `%v`", runningShScriptPrefix, builtin.run)
+	}
+	return runningShScriptPrefix
 }
 
 func getCommandToRun(builtin *RunShCapabilities) (string, error) {

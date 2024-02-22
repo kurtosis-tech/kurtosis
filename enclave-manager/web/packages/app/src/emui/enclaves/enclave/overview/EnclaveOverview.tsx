@@ -45,7 +45,11 @@ export const EnclaveOverview = ({ enclave }: EnclaveOverviewProps) => {
       <TitledBox title={"Services"}>
         {!isDefined(enclave.services) && <Spinner />}
         {isDefined(enclave.services) && enclave.services.isOk && (
-          <ServicesTable servicesResponse={enclave.services.value} enclaveShortUUID={enclave.shortenedUuid} />
+          <ServicesTable
+            servicesResponse={enclave.services.value}
+            enclaveUUID={enclave.enclaveUuid}
+            enclaveShortUUID={enclave.shortenedUuid}
+          />
         )}
         {isDefined(enclave.services) && enclave.services.isErr && <KurtosisAlert message={enclave.services.error} />}
       </TitledBox>

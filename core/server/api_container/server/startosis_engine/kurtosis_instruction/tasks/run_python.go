@@ -328,7 +328,7 @@ func (builtin *RunPythonCapabilities) FillPersistableAttributes(builder *enclave
 }
 
 func (builtin *RunPythonCapabilities) Description() string {
-	return "Running a one time python script"
+	return "Running Python script"
 }
 
 func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {
@@ -362,9 +362,9 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 		maybePythonArgumentsWithRuntimeValueReplaced = append(maybePythonArgumentsWithRuntimeValueReplaced, maybePythonArgumentWithRuntimeValueReplaced)
 	}
 	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, spaceDelimiter)
-
+	runEscaped := strings.ReplaceAll(builtin.run, `"`, `\"`)
 	if len(argumentsAsString) > 0 {
-		return fmt.Sprintf("python -c '%s' %s", builtin.run, argumentsAsString), nil
+		return fmt.Sprintf(`python -c "%s" %s`, runEscaped, argumentsAsString), nil
 	}
-	return fmt.Sprintf("python -c '%s'", builtin.run), nil
+	return fmt.Sprintf(`python -c "%s"`, runEscaped), nil
 }
