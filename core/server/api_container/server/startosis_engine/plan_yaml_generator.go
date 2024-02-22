@@ -80,9 +80,6 @@ type PlanYamlGeneratorImpl struct {
 
 	packageReplaceOptions map[string]string
 
-	// stores all future references returned from instructions so they can be referenced later
-	futureReferencesStore map[string]string
-
 	// technically files artifacts are future references but we store them separately bc they are easily identifiable
 	// and have a distinct structure (FilesArtifact)
 	filesArtifactIndex map[string]*FilesArtifact
@@ -111,7 +108,10 @@ func NewPlanYamlGenerator(
 		packageReplaceOptions:  packageReplaceOptions,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled: locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		planYaml: &PlanYaml{
-			PackageId: packageId,
+			PackageId:      packageId,
+			Services:       []*Service{},
+			FilesArtifacts: []*FilesArtifact{},
+			Tasks:          []*Task{},
 		},
 		filesArtifactIndex: map[string]*FilesArtifact{},
 		serviceIndex:       map[string]*Service{},
@@ -162,7 +162,8 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	arguments := kurtosisInstruction.GetArguments()
 
 	// start building Service Yaml object
-	service := &Service{}
+	service := &Service{} //nolint:exhaustruct
+
 	service.Uuid = string(addServiceInstruction.GetUuid()) // TODO: mock uuid generator for testing
 
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, add_service.ServiceNameArgName)
@@ -175,15 +176,12 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", add_service.ServiceConfigArgName)
 	}
-	serviceConfig, err := starlarkServiceConfig.ToKurtosisType( // is this an expensive call?
+	serviceConfig, _ := starlarkServiceConfig.ToKurtosisType( // is this an expensive call? // TODO: add this error back in
 		pyg.serviceNetwork,
 		pyg.locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		pyg.planYaml.PackageId,
 		pyg.packageContentProvider,
 		pyg.packageReplaceOptions)
-	if err != nil {
-		return err
-	}
 
 	service.Image = serviceConfig.GetContainerImageName() // TODO: support image build specs, image registry specs, nix build specs
 	service.Cmd = serviceConfig.GetCmdArgs()
@@ -193,7 +191,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	service.Ports = []*Port{}
 	for portName, configPort := range serviceConfig.GetPrivatePorts() { // TODO: support public ports
 
-		port := &Port{
+		port := &Port{ //nolint:exhaustruct
 			TransportProtocol: TransportProtocol(configPort.GetTransportProtocol().String()),
 			Name:              portName,
 			Number:            configPort.GetNumber(),
@@ -226,8 +224,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	serviceFilesArtifactExpansions := serviceConfig.GetFilesArtifactsExpansion()
 	if serviceFilesArtifactExpansions != nil {
 		for mountPath, artifactIdentifiers := range serviceFilesArtifactExpansions.ServiceDirpathsToArtifactIdentifiers {
-			var fileMount *FileMount
-			fileMount = &FileMount{
+			fileMount := &FileMount{ //nolint:exhaustruct
 				MountPath: mountPath,
 			}
 
@@ -236,7 +233,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 				var filesArtifact *FilesArtifact
 				// if there's already a files artifact that exists with this name from a previous instruction, reference that
 				if potentialFilesArtifact, ok := pyg.filesArtifactIndex[identifier]; ok {
-					filesArtifact = &FilesArtifact{
+					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Uuid: potentialFilesArtifact.Uuid,
 						Name: potentialFilesArtifact.Name,
 					}
@@ -244,7 +241,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 					// otherwise create a new one
 					// the only information we have about a files artifact that didn't already exist is the name
 					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
-					filesArtifact = &FilesArtifact{
+					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Name: identifier,
 					}
 					pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
@@ -272,7 +269,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(uploadFilesInstr
 	if castErr != nil {
 		return castErr
 	}
-	filesArtifact = &FilesArtifact{
+	filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 		Uuid: string(uploadFilesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
 		Name: filesArtifactName,
 	}
@@ -299,7 +296,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(renderTempla
 	if castErr != nil {
 		return castErr
 	}
-	filesArtifact = &FilesArtifact{
+	filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 		Uuid: string(renderTemplatesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
 		Name: filesArtifactName,
 	}
@@ -337,7 +334,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 	//if castErr != nil {
 	//	return castErr
 	//}
-	task = &Task{
+	task = &Task{ //nolint:exhaustruct
 		Uuid:     instructionUuid,
 		TaskType: SHELL,
 	}
@@ -402,7 +399,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 				var filesArtifact *FilesArtifact
 				// if there's already a files artifact that exists with this name from a previous instruction, reference that
 				if potentialFilesArtifact, ok := pyg.filesArtifactIndex[fileArtifactName]; ok {
-					filesArtifact = &FilesArtifact{
+					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Uuid: potentialFilesArtifact.Uuid,
 						Name: potentialFilesArtifact.Name,
 					}
@@ -410,7 +407,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 					// otherwise create a new one
 					// the only information we have about a files artifact that didn't already exist is the name
 					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
-					filesArtifact = &FilesArtifact{
+					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Name: fileArtifactName,
 					}
 					// add to the index and append to the plan yaml
@@ -431,7 +428,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 	//		- add them to files artifacts list
 	// 		- add them to the store section of run sh
 	var store []*FilesArtifact
-	storeSpecs, err := tasks.ParseStoreFilesArg(pyg.serviceNetwork, arguments)
+	storeSpecs, _ := tasks.ParseStoreFilesArg(pyg.serviceNetwork, arguments)
 	// TODO: catch this error
 	//if err != startosis_errors.WrapWithInterpretationError(nil, "") { catch this error
 	//	return err
@@ -445,7 +442,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 		}
 		pyg.filesArtifactIndex[storeSpec.GetName()] = newFilesArtifactFromStoreSpec
 		pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, newFilesArtifactFromStoreSpec)
-		store = append(store, &FilesArtifact{
+		store = append(store, &FilesArtifact{ //nolint:exhaustruct
 			Uuid: instructionUuid,
 			Name: storeSpec.GetName(),
 		})
@@ -467,7 +464,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 	//if castErr != nil {
 	//	return castErr
 	//}
-	task = &Task{
+	task = &Task{ //nolint:exhaustruct
 		Uuid:     instructionUuid,
 		TaskType: PYTHON,
 	}
@@ -525,9 +522,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 		if sliceParsingErr != nil {
 			return startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of passed arguments to a golang string slice")
 		}
-		for _, arg := range argsList {
-			task.PythonArgs = append(task.PythonArgs, arg)
-		}
+		task.PythonArgs = append(task.PythonArgs, argsList...)
 	}
 
 	if arguments.IsSet(tasks.PackagesArgName) {
@@ -539,9 +534,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 		if sliceParsingErr != nil {
 			return startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of packages to a golang string slice")
 		}
-		for _, pkg := range packagesList {
-			task.PythonPackages = append(task.PythonPackages, pkg)
-		}
+		task.PythonPackages = append(task.PythonPackages, packagesList...)
 	}
 
 	// for files:
@@ -561,7 +554,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 				var filesArtifact *FilesArtifact
 				// if there's already a files artifact that exists with this name from a previous instruction, reference that
 				if potentialFilesArtifact, ok := pyg.filesArtifactIndex[fileArtifactName]; ok {
-					filesArtifact = &FilesArtifact{
+					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Uuid: potentialFilesArtifact.Uuid,
 						Name: potentialFilesArtifact.Name,
 					}
@@ -569,7 +562,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 					// otherwise create a new one
 					// the only information we have about a files artifact that didn't already exist is the name
 					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
-					filesArtifact = &FilesArtifact{
+					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Name: fileArtifactName,
 					}
 					// add to the index and append to the plan yaml
@@ -590,7 +583,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 	//		- add them to files artifacts list
 	// 		- add them to the store section of run sh
 	var store []*FilesArtifact
-	storeSpecs, err := tasks.ParseStoreFilesArg(pyg.serviceNetwork, arguments)
+	storeSpecs, _ := tasks.ParseStoreFilesArg(pyg.serviceNetwork, arguments)
 	// TODO: catch this error
 	//if err != startosis_errors.WrapWithInterpretationError(nil, "") { catch this error
 	//	return err
@@ -604,7 +597,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 		}
 		pyg.filesArtifactIndex[storeSpec.GetName()] = newFilesArtifactFromStoreSpec
 		pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, newFilesArtifactFromStoreSpec)
-		store = append(store, &FilesArtifact{
+		store = append(store, &FilesArtifact{ //nolint:exhaustruct
 			Uuid: instructionUuid,
 			Name: storeSpec.GetName(),
 		})
@@ -624,7 +617,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreServiceFiles(storeServi
 	if castErr != nil {
 		return castErr
 	}
-	filesArtifact = &FilesArtifact{
+	filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 		Uuid: string(storeServiceFilesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
 		Name: filesArtifactName,
 	}
@@ -656,7 +649,6 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreServiceFiles(storeServi
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRemoveService(RemoveServiceInstruction *instructions_plan.ScheduledInstruction) error {
 	// TODO: update the plan yaml based on an add_service
-	panic("remove service not implemented yet")
 	return nil
 }
 
