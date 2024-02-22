@@ -1,5 +1,8 @@
 export function parsePackageUrl(packageUrl: string) {
-  const components = packageUrl.replace(/https?:\/\//, "").split("/");
+  const components = packageUrl
+    .replace(/https?:\/\//, "")
+    .replace(/(?<=github\.com\/([^/])+\/([^/])+)\/tree\/main/, "")
+    .split("/");
   if (components.length < 3) {
     throw Error(`Illegal url, invalid number of components: ${packageUrl}`);
   }

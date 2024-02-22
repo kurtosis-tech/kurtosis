@@ -6,4 +6,13 @@ describe("New Enclave package search", () => {
     cy.focused().type("github.com/kurtosis-tech/package-template-repo");
     cy.contains("Package Template Repo");
   });
+
+  it("Can find an enclave with a github url", () => {
+    cy.goToEnclaveList();
+    cy.contains("New Enclave").click().wait(500);
+    cy.contains("Exact Match").should("not.exist");
+    cy.focused().type("https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app");
+    cy.contains("Exact Match");
+    cy.contains("Redis Voting App");
+  });
 });
