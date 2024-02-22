@@ -24,6 +24,8 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   inspectFilesArtifactContents: grpc.MethodDefinition<api_container_service_pb.InspectFilesArtifactContentsRequest, api_container_service_pb.InspectFilesArtifactContentsResponse>;
   connectServices: grpc.MethodDefinition<api_container_service_pb.ConnectServicesArgs, api_container_service_pb.ConnectServicesResponse>;
   getStarlarkRun: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.GetStarlarkRunResponse>;
+  getStarlarkScriptPlanYaml: grpc.MethodDefinition<api_container_service_pb.StarlarkScriptPlanYamlArgs, api_container_service_pb.PlanYaml>;
+  getStarlarkPackagePlanYaml: grpc.MethodDefinition<api_container_service_pb.StarlarkPackagePlanYamlArgs, api_container_service_pb.PlanYaml>;
 }
 
 export const ApiContainerServiceService: IApiContainerServiceService;
@@ -45,6 +47,8 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   inspectFilesArtifactContents: grpc.handleUnaryCall<api_container_service_pb.InspectFilesArtifactContentsRequest, api_container_service_pb.InspectFilesArtifactContentsResponse>;
   connectServices: grpc.handleUnaryCall<api_container_service_pb.ConnectServicesArgs, api_container_service_pb.ConnectServicesResponse>;
   getStarlarkRun: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.GetStarlarkRunResponse>;
+  getStarlarkScriptPlanYaml: grpc.handleUnaryCall<api_container_service_pb.StarlarkScriptPlanYamlArgs, api_container_service_pb.PlanYaml>;
+  getStarlarkPackagePlanYaml: grpc.handleUnaryCall<api_container_service_pb.StarlarkPackagePlanYamlArgs, api_container_service_pb.PlanYaml>;
 }
 
 export class ApiContainerServiceClient extends grpc.Client {
@@ -94,4 +98,10 @@ export class ApiContainerServiceClient extends grpc.Client {
   getStarlarkRun(argument: google_protobuf_empty_pb.Empty, callback: grpc.requestCallback<api_container_service_pb.GetStarlarkRunResponse>): grpc.ClientUnaryCall;
   getStarlarkRun(argument: google_protobuf_empty_pb.Empty, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetStarlarkRunResponse>): grpc.ClientUnaryCall;
   getStarlarkRun(argument: google_protobuf_empty_pb.Empty, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetStarlarkRunResponse>): grpc.ClientUnaryCall;
+  getStarlarkScriptPlanYaml(argument: api_container_service_pb.StarlarkScriptPlanYamlArgs, callback: grpc.requestCallback<api_container_service_pb.PlanYaml>): grpc.ClientUnaryCall;
+  getStarlarkScriptPlanYaml(argument: api_container_service_pb.StarlarkScriptPlanYamlArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.PlanYaml>): grpc.ClientUnaryCall;
+  getStarlarkScriptPlanYaml(argument: api_container_service_pb.StarlarkScriptPlanYamlArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.PlanYaml>): grpc.ClientUnaryCall;
+  getStarlarkPackagePlanYaml(argument: api_container_service_pb.StarlarkPackagePlanYamlArgs, callback: grpc.requestCallback<api_container_service_pb.PlanYaml>): grpc.ClientUnaryCall;
+  getStarlarkPackagePlanYaml(argument: api_container_service_pb.StarlarkPackagePlanYamlArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.PlanYaml>): grpc.ClientUnaryCall;
+  getStarlarkPackagePlanYaml(argument: api_container_service_pb.StarlarkPackagePlanYamlArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.PlanYaml>): grpc.ClientUnaryCall;
 }

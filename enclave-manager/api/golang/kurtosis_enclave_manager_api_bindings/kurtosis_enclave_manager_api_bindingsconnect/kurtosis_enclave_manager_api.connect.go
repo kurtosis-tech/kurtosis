@@ -73,6 +73,12 @@ const (
 	// KurtosisEnclaveManagerServerGetStarlarkRunProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's GetStarlarkRun RPC.
 	KurtosisEnclaveManagerServerGetStarlarkRunProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetStarlarkRun"
+	// KurtosisEnclaveManagerServerGetStarlarkScriptPlanYamlProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's GetStarlarkScriptPlanYaml RPC.
+	KurtosisEnclaveManagerServerGetStarlarkScriptPlanYamlProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetStarlarkScriptPlanYaml"
+	// KurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlProcedure is the fully-qualified name of
+	// the KurtosisEnclaveManagerServer's GetStarlarkPackagePlanYaml RPC.
+	KurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetStarlarkPackagePlanYaml"
 )
 
 // KurtosisEnclaveManagerServerClient is a client for the
@@ -90,6 +96,8 @@ type KurtosisEnclaveManagerServerClient interface {
 	DownloadFilesArtifact(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StreamedDataChunk], error)
 	DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error)
 	GetStarlarkRun(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error)
+	GetStarlarkScriptPlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs]) (*connect.Response[kurtosis_enclave_manager_api_bindings.PlanYaml], error)
+	GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_enclave_manager_api_bindings.PlanYaml], error)
 }
 
 // NewKurtosisEnclaveManagerServerClient constructs a client for the
@@ -163,6 +171,16 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerGetStarlarkRunProcedure,
 			opts...,
 		),
+		getStarlarkScriptPlanYaml: connect.NewClient[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs, kurtosis_enclave_manager_api_bindings.PlanYaml](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerGetStarlarkScriptPlanYamlProcedure,
+			opts...,
+		),
+		getStarlarkPackagePlanYaml: connect.NewClient[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs, kurtosis_enclave_manager_api_bindings.PlanYaml](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -180,6 +198,8 @@ type kurtosisEnclaveManagerServerClient struct {
 	downloadFilesArtifact          *connect.Client[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest, kurtosis_core_rpc_api_bindings.StreamedDataChunk]
 	destroyEnclave                 *connect.Client[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty]
 	getStarlarkRun                 *connect.Client[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest, kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse]
+	getStarlarkScriptPlanYaml      *connect.Client[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs, kurtosis_enclave_manager_api_bindings.PlanYaml]
+	getStarlarkPackagePlanYaml     *connect.Client[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs, kurtosis_enclave_manager_api_bindings.PlanYaml]
 }
 
 // Check calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check.
@@ -246,6 +266,18 @@ func (c *kurtosisEnclaveManagerServerClient) GetStarlarkRun(ctx context.Context,
 	return c.getStarlarkRun.CallUnary(ctx, req)
 }
 
+// GetStarlarkScriptPlanYaml calls
+// kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetStarlarkScriptPlanYaml.
+func (c *kurtosisEnclaveManagerServerClient) GetStarlarkScriptPlanYaml(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs]) (*connect.Response[kurtosis_enclave_manager_api_bindings.PlanYaml], error) {
+	return c.getStarlarkScriptPlanYaml.CallUnary(ctx, req)
+}
+
+// GetStarlarkPackagePlanYaml calls
+// kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetStarlarkPackagePlanYaml.
+func (c *kurtosisEnclaveManagerServerClient) GetStarlarkPackagePlanYaml(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_enclave_manager_api_bindings.PlanYaml], error) {
+	return c.getStarlarkPackagePlanYaml.CallUnary(ctx, req)
+}
+
 // KurtosisEnclaveManagerServerHandler is an implementation of the
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer service.
 type KurtosisEnclaveManagerServerHandler interface {
@@ -261,6 +293,8 @@ type KurtosisEnclaveManagerServerHandler interface {
 	DownloadFilesArtifact(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk]) error
 	DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error)
 	GetStarlarkRun(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error)
+	GetStarlarkScriptPlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs]) (*connect.Response[kurtosis_enclave_manager_api_bindings.PlanYaml], error)
+	GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_enclave_manager_api_bindings.PlanYaml], error)
 }
 
 // NewKurtosisEnclaveManagerServerHandler builds an HTTP handler from the service implementation. It
@@ -329,6 +363,16 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		svc.GetStarlarkRun,
 		opts...,
 	)
+	kurtosisEnclaveManagerServerGetStarlarkScriptPlanYamlHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerGetStarlarkScriptPlanYamlProcedure,
+		svc.GetStarlarkScriptPlanYaml,
+		opts...,
+	)
+	kurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlProcedure,
+		svc.GetStarlarkPackagePlanYaml,
+		opts...,
+	)
 	return "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisEnclaveManagerServerCheckProcedure:
@@ -355,6 +399,10 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 			kurtosisEnclaveManagerServerDestroyEnclaveHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetStarlarkRunProcedure:
 			kurtosisEnclaveManagerServerGetStarlarkRunHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerGetStarlarkScriptPlanYamlProcedure:
+			kurtosisEnclaveManagerServerGetStarlarkScriptPlanYamlHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlProcedure:
+			kurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -410,4 +458,12 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) DestroyEnclave(context.C
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) GetStarlarkRun(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetStarlarkRun is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) GetStarlarkScriptPlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs]) (*connect.Response[kurtosis_enclave_manager_api_bindings.PlanYaml], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetStarlarkScriptPlanYaml is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_enclave_manager_api_bindings.PlanYaml], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetStarlarkPackagePlanYaml is not implemented"))
 }

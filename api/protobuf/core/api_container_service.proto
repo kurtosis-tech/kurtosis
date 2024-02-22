@@ -57,9 +57,8 @@ service ApiContainerService {
   // Gets yaml representing the plan the script will execute in an enclave
   rpc GetStarlarkScriptPlanYaml(StarlarkScriptPlanYamlArgs) returns (PlanYaml) {};
 
-
   // Gets yaml representing the plan the package will execute in an enclave
-  rpc GetStarlarkPackaePlanYaml(StarlarkPackagePlanYamlArgs) returns (PlanYaml) {};
+  rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (PlanYaml) {};
 }
 
 // ==============================================================================================

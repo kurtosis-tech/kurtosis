@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConnectServicesArgs, ConnectServicesResponse, DownloadFilesArtifactArgs, ExecCommandArgs, ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse, GetServicesArgs, GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsRequest, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, RunStarlarkPackageArgs, RunStarlarkScriptArgs, StarlarkRunResponseLine, StoreFilesArtifactFromServiceArgs, StoreFilesArtifactFromServiceResponse, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse, StreamedDataChunk, UploadFilesArtifactResponse, WaitForHttpGetEndpointAvailabilityArgs, WaitForHttpPostEndpointAvailabilityArgs } from "./api_container_service_pb.js";
+import { ConnectServicesArgs, ConnectServicesResponse, DownloadFilesArtifactArgs, ExecCommandArgs, ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse, GetServicesArgs, GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsRequest, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, PlanYaml, RunStarlarkPackageArgs, RunStarlarkScriptArgs, StarlarkPackagePlanYamlArgs, StarlarkRunResponseLine, StarlarkScriptPlanYamlArgs, StoreFilesArtifactFromServiceArgs, StoreFilesArtifactFromServiceResponse, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse, StreamedDataChunk, UploadFilesArtifactResponse, WaitForHttpGetEndpointAvailabilityArgs, WaitForHttpPostEndpointAvailabilityArgs } from "./api_container_service_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -182,6 +182,28 @@ export declare const ApiContainerService: {
       readonly name: "GetStarlarkRun",
       readonly I: typeof Empty,
       readonly O: typeof GetStarlarkRunResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * Gets yaml representing the plan the script will execute in an enclave
+     *
+     * @generated from rpc api_container_api.ApiContainerService.GetStarlarkScriptPlanYaml
+     */
+    readonly getStarlarkScriptPlanYaml: {
+      readonly name: "GetStarlarkScriptPlanYaml",
+      readonly I: typeof StarlarkScriptPlanYamlArgs,
+      readonly O: typeof PlanYaml,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * Gets yaml representing the plan the package will execute in an enclave
+     *
+     * @generated from rpc api_container_api.ApiContainerService.GetStarlarkPackagePlanYaml
+     */
+    readonly getStarlarkPackagePlanYaml: {
+      readonly name: "GetStarlarkPackagePlanYaml",
+      readonly I: typeof StarlarkPackagePlanYamlArgs,
+      readonly O: typeof PlanYaml,
       readonly kind: MethodKind.Unary,
     },
   }
