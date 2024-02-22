@@ -28,9 +28,8 @@ export const MentionStringArgumentInput = <DataModel extends object>({
     const nodeData = data[nodeId];
     // Exclude the variable currently being edited
     const excludedVariable = `${nodeData.type}.${nodeId}.${name}`;
-    console.log(excludedVariable);
     return variables.filter((v) => v.id !== excludedVariable);
-  }, [variables]);
+  }, [data, nodeId, name, variables]);
 
   const handleQuery = useCallback(
     (query?: string) => {
