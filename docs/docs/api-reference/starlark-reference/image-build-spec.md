@@ -1,6 +1,6 @@
 ---
-title: Image Build Spec
-sidebar_label: Image Build Spec
+title: ImageBuildSpec
+sidebar_label: ImageBuildSpec
 ---
 
 Kurtosis starts services based on a provided image definition in the `image` arg of [`ServiceConfig`](./service-config.md). You can provide Kurtosis with a published image to use or alternatively, use `ImageBuildSpec` to instruct Kurtosis to build the Docker image the service will be started from. 
