@@ -1,4 +1,5 @@
 import { Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import { isDefined } from "kurtosis-ui-components";
 import { memo } from "react";
 import { NodeProps } from "reactflow";
 import { BooleanArgumentInput } from "../form/BooleanArgumentInput";
@@ -20,6 +21,10 @@ export const KurtosisServiceNode = memo(
   ({ id, selected }: NodeProps) => {
     const { data } = useVariableContext();
     const nodeData = data[id] as KurtosisServiceNodeData;
+
+    if (!isDefined(nodeData)) {
+      return null;
+    }
 
     return (
       <KurtosisNode id={id} selected={selected} minWidth={650} maxWidth={800}>
