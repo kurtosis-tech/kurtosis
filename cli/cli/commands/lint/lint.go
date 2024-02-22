@@ -84,7 +84,7 @@ var LintCmd = &lowlevel.LowlevelKurtosisCommand{
 		},
 		{
 			Key:       checkDocStringFlagKey,
-			Usage:     "Use this flag to check whether the doc string is valid or not",
+			Usage:     fmt.Sprintf("Use this flag to check whether the doc string is valid or not. This requires you to pass a single path to a '%v' or a directory containing a '%v'", mainDotStarFilename, mainDotStarFilename),
 			Shorthand: checkDocStringFlagShortKey,
 			Type:      flags.FlagType_Bool,
 			Default:   checkDocStringDefaultValue,
@@ -115,7 +115,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 
 	if checkDocStringFlag {
 		if err = validateDocString(fileOrDirToLintArg); err != nil {
-			return stacktrace.Propagate(err, "an error occurred while validating the doc string")
+			return stacktrace.Propagate(err, "an error occurred while running the doc string validator")
 		}
 	}
 
