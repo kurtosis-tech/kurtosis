@@ -521,7 +521,6 @@ An error occurred executing instruction (number 4) at DEFAULT_PACKAGE_ID_FOR_SCR
   09/May/2023:19:18:41 +0000: Attempting to connect to the database...
   09/May/2023:19:18:41 +0000: {"code":"PGRST000","details":"connection to server at \"10.1.0.3\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\n","hint":null,"message":"Database connection error. Retrying the connection."}
   09/May/2023:19:18:41 +0000: connection to server at "10.1.0.3", port 5432 failed: FATAL:  password authentication failed for user "postgres"
-
   postgrest: thread killed
 
   == FINISHED SERVICE 'api' LOGS ===================================
