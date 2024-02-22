@@ -68,7 +68,7 @@ type FileMount struct {
 // Task represents a task to be executed.
 type Task struct {
 	Name     string           `yaml:"name,omitempty"`     // done
-	Uuid     string           `yaml:"uuid"`               // done
+	Uuid     string           `yaml:"uuid,omitempty"`     // done
 	TaskType TaskType         `yaml:"taskType,omitempty"` // done
 	RunCmd   string           `yaml:"command,omitempty"`  // done
 	Image    string           `yaml:"image,omitempty"`    // done
