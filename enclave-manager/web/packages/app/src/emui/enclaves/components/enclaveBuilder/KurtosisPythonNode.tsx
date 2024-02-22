@@ -8,9 +8,10 @@ import { KurtosisFormControl } from "../form/KurtosisFormControl";
 import { ListArgumentInput } from "../form/ListArgumentInput";
 import { StringArgumentInput } from "../form/StringArgumentInput";
 import { KurtosisFormInputProps } from "../form/types";
+import { ImageConfigInput } from "./input/ImageConfigInput";
 import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
 import { MountArtifactFileInput } from "./input/MountArtifactFileInput";
-import { validateDockerLocator, validateDurationString, validateName } from "./input/validators";
+import { validateDurationString, validateName } from "./input/validators";
 import { KurtosisNode } from "./KurtosisNode";
 import { KurtosisFileMount, KurtosisPythonNodeData } from "./types";
 import { useVariableContext } from "./VariableContextProvider";
@@ -30,13 +31,8 @@ export const KurtosisPythonNode = memo(
           <KurtosisFormControl<KurtosisPythonNodeData> name={"pythonName"} label={"Python Name"} isRequired>
             <StringArgumentInput name={"pythonName"} size={"sm"} isRequired validate={validateName} />
           </KurtosisFormControl>
-          <KurtosisFormControl<KurtosisPythonNodeData> name={"image"} label={"Container Image"}>
-            <StringArgumentInput
-              size={"sm"}
-              name={"image"}
-              validate={validateDockerLocator}
-              placeholder={"Default: python:3.11-alpine"}
-            />
+          <KurtosisFormControl<KurtosisPythonNodeData> name={"image.image"} label={"Container Image"}>
+            <ImageConfigInput />
           </KurtosisFormControl>
         </Flex>
         <Tabs>

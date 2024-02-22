@@ -22,10 +22,24 @@ export type KurtosisAcceptableCode = {
   value: number;
 };
 
+export type KurtosisImageType = "image" | "dockerfile" | "nix";
+
+export type KurtosisImageConfig = {
+  image: string;
+  type: KurtosisImageType;
+  registryUsername: string;
+  registryPassword: string;
+  registry: string;
+  buildContextDir: string;
+  targetStage: string;
+  flakeLocationDir: string;
+  flakeOutput: string;
+};
+
 export type KurtosisServiceNodeData = {
   type: "service";
   serviceName: string;
-  image: string;
+  image: KurtosisImageConfig;
   env: KurtosisEnvironmentVar[];
   ports: KurtosisPort[];
   files: KurtosisFileMount[];
@@ -45,7 +59,7 @@ export type KurtosisShellNodeData = {
   type: "shell";
   shellName: string;
   command: string;
-  image: string;
+  image: KurtosisImageConfig;
   env: KurtosisEnvironmentVar[];
   files: KurtosisFileMount[];
   store: string;
@@ -61,7 +75,7 @@ export type KurtosisPythonNodeData = {
   type: "python";
   pythonName: string;
   command: string;
-  image: string;
+  image: KurtosisImageConfig;
   packages: KurtosisPythonPackage[];
   args: KurtosisPythonArg[];
   files: KurtosisFileMount[];

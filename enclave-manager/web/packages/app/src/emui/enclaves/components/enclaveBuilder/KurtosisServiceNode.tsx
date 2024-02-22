@@ -9,10 +9,11 @@ import { KurtosisFormControl } from "../form/KurtosisFormControl";
 import { ListArgumentInput } from "../form/ListArgumentInput";
 import { StringArgumentInput } from "../form/StringArgumentInput";
 import { KurtosisFormInputProps } from "../form/types";
+import { ImageConfigInput } from "./input/ImageConfigInput";
 import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
 import { MountArtifactFileInput } from "./input/MountArtifactFileInput";
 import { PortConfigurationField } from "./input/PortConfigurationInput";
-import { validateDockerLocator, validateName } from "./input/validators";
+import { validateName } from "./input/validators";
 import { KurtosisNode } from "./KurtosisNode";
 import { KurtosisFileMount, KurtosisPort, KurtosisServiceNodeData } from "./types";
 import { useVariableContext } from "./VariableContextProvider";
@@ -32,8 +33,8 @@ export const KurtosisServiceNode = memo(
           <KurtosisFormControl<KurtosisServiceNodeData> name={"serviceName"} label={"Service Name"} isRequired>
             <StringArgumentInput name={"serviceName"} size={"sm"} isRequired validate={validateName} />
           </KurtosisFormControl>
-          <KurtosisFormControl<KurtosisServiceNodeData> name={"image"} label={"Container Image"} isRequired>
-            <StringArgumentInput size={"sm"} name={"image"} isRequired validate={validateDockerLocator} />
+          <KurtosisFormControl<KurtosisServiceNodeData> name={"image.image"} label={"Container Image"} isRequired>
+            <ImageConfigInput />
           </KurtosisFormControl>
         </Flex>
         <Tabs>
