@@ -13,6 +13,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/docker_compose_transpiler"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"io"
 	"math"
 	"net/http"
@@ -34,7 +37,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
@@ -96,6 +98,8 @@ type ApiContainerService struct {
 
 	startosisRunner *startosis_engine.StartosisRunner
 
+	startosisInterpreter *startosis_engine.StartosisInterpreter
+
 	packageContentProvider startosis_packages.PackageContentProvider
 
 	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy
@@ -109,6 +113,7 @@ func NewApiContainerService(
 	filesArtifactStore *enclave_data_directory.FilesArtifactStore,
 	serviceNetwork service_network.ServiceNetwork,
 	startosisRunner *startosis_engine.StartosisRunner,
+	startosisInterpreter *startosis_engine.StartosisInterpreter,
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
 	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy,
 	metricsClient metrics_client.MetricsClient,
@@ -117,6 +122,7 @@ func NewApiContainerService(
 		filesArtifactStore:     filesArtifactStore,
 		serviceNetwork:         serviceNetwork,
 		startosisRunner:        startosisRunner,
+		startosisInterpreter:   startosisInterpreter,
 		packageContentProvider: startosisModuleContentProvider,
 		restartPolicy:          restartPolicy,
 		starlarkRun: &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
@@ -249,6 +255,12 @@ func (apicService *ApiContainerService) InspectFilesArtifactContents(_ context.C
 }
 
 func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
+
+	var scriptWithRunFunction string
+	var interpretationError *startosis_errors.InterpretationError
+	var isRemote bool
+	var detectedPackageId string
+	var detectedPackageReplaceOptions map[string]string
 	packageIdFromArgs := args.GetPackageId()
 	parallelism := int(args.GetParallelism())
 	if parallelism == 0 {
@@ -261,12 +273,6 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 	nonBlockingMode := args.GetNonBlockingMode()
-
-	var scriptWithRunFunction string
-	var interpretationError *startosis_errors.InterpretationError
-	var isRemote bool
-	var detectedPackageId string
-	var detectedPackageReplaceOptions map[string]string
 	var actualRelativePathToMainFile string
 	if args.ClonePackage != nil {
 		scriptWithRunFunction, actualRelativePathToMainFile, detectedPackageId, detectedPackageReplaceOptions, interpretationError =
@@ -594,9 +600,89 @@ func (apicService *ApiContainerService) GetStarlarkRun(_ context.Context, _ *emp
 	return apicService.starlarkRun, nil
 }
 
-func (apicService *ApiContainerService) GetStarlark
+func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	packageIdFromArgs := args.GetPackageId()
+	serializedParams := args.GetSerializedParams()
+	requestedRelativePathToMainFile := args.GetRelativePathToMainFile()
+	mainFuncName := args.GetMainFunctionName()
 
+	var scriptWithRunFunction string
+	var interpretationError *startosis_errors.InterpretationError
+	var detectedPackageId string
+	var detectedPackageReplaceOptions map[string]string
+	var actualRelativePathToMainFile string
+	scriptWithRunFunction, actualRelativePathToMainFile, detectedPackageId, detectedPackageReplaceOptions, interpretationError =
+		apicService.runStarlarkPackageSetup(packageIdFromArgs, true, nil, requestedRelativePathToMainFile)
+	if interpretationError != nil {
+		return nil, interpretationError
+	}
 
+	var apiInterpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
+	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret( // tedi: why interpret return an api interpretation error instead of a starlark one?
+		ctx,
+		detectedPackageId,
+		mainFuncName,
+		detectedPackageReplaceOptions,
+		actualRelativePathToMainFile,
+		scriptWithRunFunction,
+		serializedParams,
+		false,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0))
+	if apiInterpretationError != nil {
+		interpretationError = startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
+		return nil, interpretationError
+	}
+	pyg := startosis_engine.NewPlanYamlGenerator(
+		instructionsPlan,
+		apicService.serviceNetwork,
+		packageIdFromArgs,
+		apicService.packageContentProvider,
+		"",
+		detectedPackageReplaceOptions)
+	planYamlBytes, err := pyg.GenerateYaml()
+	if err != nil {
+		return nil, err
+	}
+
+	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: string(planYamlBytes)}, nil
+}
+
+func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	serializedStarlarkScript := args.GetSerializedScript()
+	serializedParams := args.GetSerializedParams()
+	mainFuncName := args.GetMainFunctionName()
+	noPackageReplaceOptions := map[string]string{}
+
+	var apiInterpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
+	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret( // tedi: why interpret return an api interpretation error instead of a starlark one?
+		ctx,
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		mainFuncName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		serializedStarlarkScript,
+		serializedParams,
+		false,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0))
+	if apiInterpretationError != nil {
+		return nil, startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
+	}
+	pyg := startosis_engine.NewPlanYamlGenerator(
+		instructionsPlan,
+		apicService.serviceNetwork,
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		apicService.packageContentProvider,
+		"",
+		noPackageReplaceOptions)
+	planYamlBytes, err := pyg.GenerateYaml()
+	if err != nil {
+		return nil, err
+	}
+
+	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: string(planYamlBytes)}, nil
+}
 
 // ====================================================================================================
 //
