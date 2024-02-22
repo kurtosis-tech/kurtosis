@@ -522,7 +522,6 @@ An error occurred executing instruction (number 4) at DEFAULT_PACKAGE_ID_FOR_SCR
   09/May/2023:19:18:41 +0000: {"code":"PGRST000","details":"connection to server at \"10.1.0.3\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\n","hint":null,"message":"Database connection error. Retrying the connection."}
   09/May/2023:19:18:41 +0000: connection to server at "10.1.0.3", port 5432 failed: FATAL:  password authentication failed for user "postgres"
   postgrest: thread killed
-
   == FINISHED SERVICE 'api' LOGS ===================================
   Caused by: An error occurred while waiting for all TCP and UDP ports to be open
   Caused by: Unsuccessful ports check for IP '10.1.0.4' and port spec '{number:3000 transportProtocol:0 applicationProtocol:0xc006662e10 wait:0xc00662d510}', even after '2' retries with '500' milliseconds in between retries. Timeout '15s' has been reached
