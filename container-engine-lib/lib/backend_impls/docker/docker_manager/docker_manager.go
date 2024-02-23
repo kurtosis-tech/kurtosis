@@ -1267,7 +1267,7 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting containers with labels '%+v'", labelsFilterList)
 	}
-	return result, nil
+	return resp, nil
 }
 
 func (manager *DockerManager) GetContainersByNetworkId(ctx context.Context, networkId string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
