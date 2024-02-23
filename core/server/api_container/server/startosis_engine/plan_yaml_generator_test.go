@@ -79,19 +79,14 @@ func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
 	mainFunctionName := ""
 	relativePathToMainFile := "main.star"
 
-	serializedScript := `def run(plan, args):
-    plan.add_service(
-        name="tedi",
-        config=ServiceConfig(
-            image="postgres:alpine",
-            cmd=["touch", "hi.txt"],
-        )
-    )
+	serializedScript := `postgres_package = import_module("github.com/kurtosis-tech/postgres-package/main.star")
 
-    hi_files_artifact = plan.store_service_files(
-        name="hi-file",
-        src="hi.txt",
-        service_name="tedi",
+def run(plan, args):
+    postgres_package.run(plan)
+    result = plan.exec(
+        service_name = "postgres",
+        recipe = ExecRecipe(command = ["echo", "Hello, world"]),
+        acceptable_codes=[0]
     )
 `
 	serializedJsonParams := "{}"
