@@ -8,9 +8,10 @@ import { DictArgumentInput } from "../form/DictArgumentInput";
 import { KurtosisFormControl } from "../form/KurtosisFormControl";
 import { ListArgumentInput } from "../form/ListArgumentInput";
 import { StringArgumentInput } from "../form/StringArgumentInput";
+import { ImageConfigInput } from "./input/ImageConfigInput";
 import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
 import { MountArtifactFileInput } from "./input/MountArtifactFileInput";
-import { validateDockerLocator, validateDurationString, validateName } from "./input/validators";
+import { validateDurationString, validateName } from "./input/validators";
 import { KurtosisNode } from "./KurtosisNode";
 import { KurtosisFileMount, KurtosisShellNodeData } from "./types";
 import { useVariableContext } from "./VariableContextProvider";
@@ -30,13 +31,8 @@ export const KurtosisShellNode = memo(
           <KurtosisFormControl<KurtosisShellNodeData> name={"shellName"} label={"Shell Name"} isRequired>
             <StringArgumentInput name={"shellName"} size={"sm"} isRequired validate={validateName} />
           </KurtosisFormControl>
-          <KurtosisFormControl<KurtosisShellNodeData> name={"image"} label={"Container Image"}>
-            <StringArgumentInput
-              size={"sm"}
-              name={"image"}
-              validate={validateDockerLocator}
-              placeholder={"Default: badouralix/curl-jq"}
-            />
+          <KurtosisFormControl<KurtosisShellNodeData> name={"image.image"} label={"Container Image"}>
+            <ImageConfigInput />
           </KurtosisFormControl>
         </Flex>
         <Tabs>

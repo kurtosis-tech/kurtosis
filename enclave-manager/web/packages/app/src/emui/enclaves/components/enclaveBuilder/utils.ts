@@ -2,7 +2,7 @@ import { isDefined, RemoveFunctions, stringifyError } from "kurtosis-ui-componen
 import { Edge, Node } from "reactflow";
 import { Result } from "true-myth";
 import { EnclaveFullInfo } from "../../types";
-import { KurtosisNodeData, KurtosisServiceNodeData, Variable } from "./types";
+import { KurtosisImageConfig, KurtosisNodeData, KurtosisServiceNodeData, Variable } from "./types";
 
 export const EMUI_BUILD_STATE_KEY = "EMUI_BUILD_STATE";
 
@@ -277,6 +277,28 @@ export function generateStarlarkFromGraph(
     return `"${formatString}".format(${references.join(", ")})`;
   };
 
+  const renderImageConfig = (config: KurtosisImageConfig): string => {
+    switch (config.type) {
+      case "image":
+        if ([config.registryUsername, config.registryPassword, config.registry].every((v) => v === "")) {
+          return interpolateValue(config.image);
+        }
+        return `ImageSpec(name=${interpolateValue(config.image)}, username=${interpolateValue(
+          config.registryUsername,
+        )}, password=${config.registryPassword}, registry=${interpolateValue(config.registry)})`;
+      case "dockerfile":
+        return `ImageBuildSpec(image_name=${interpolateValue(config.image)}, build_context_dir=${interpolateValue(
+          config.buildContextDir,
+        )}, target_stage=${interpolateValue(config.targetStage)})`;
+      case "nix":
+        return `NixBuildSpec(image_name=${interpolateValue(config.image)}, build_context_dir=${interpolateValue(
+          config.buildContextDir,
+        )}, flake_location_dir=${interpolateValue(config.flakeLocationDir)}, flake_output=${interpolateValue(
+          config.flakeOutput,
+        )})`;
+    }
+  };
+
   let starlark = "def run(plan):\n";
   for (const node of sortedNodes) {
     const nodeData = data[node.id];
@@ -285,7 +307,7 @@ export function generateStarlarkFromGraph(
       starlark += `    ${serviceName} = plan.add_service(\n`;
       starlark += `        name = ${interpolateValue(nodeData.serviceName)},\n`;
       starlark += `        config = ServiceConfig (\n`;
-      starlark += `            image = ${interpolateValue(nodeData.image)},\n`;
+      starlark += `            image = ${renderImageConfig(nodeData.image)},\n`;
       starlark += `            ports = {\n`;
       for (const { portName, port, applicationProtocol, transportProtocol } of nodeData.ports) {
         starlark += `                ${interpolateValue(portName)}: PortSpec(\n`;
@@ -343,7 +365,7 @@ export function generateStarlarkFromGraph(
       const shellName = normaliseNameToStarlarkVariable(nodeData.shellName);
       starlark += `    ${shellName} = plan.run_sh(\n`;
       starlark += `        run = """${escapeString(nodeData.command)}""",\n`;
-      const image = interpolateValue(nodeData.image);
+      const image = renderImageConfig(nodeData.image);
       if (image !== '""') {
         starlark += `        image = ${image},\n`;
       }
@@ -371,7 +393,7 @@ export function generateStarlarkFromGraph(
       const pythonName = normaliseNameToStarlarkVariable(nodeData.pythonName);
       starlark += `    ${pythonName} = plan.run_python(\n`;
       starlark += `        run = """${escapeString(nodeData.command)}""",\n`;
-      const image = interpolateValue(nodeData.image);
+      const image = renderImageConfig(nodeData.image);
       if (image !== '""') {
         starlark += `        image = ${image},\n`;
       }
