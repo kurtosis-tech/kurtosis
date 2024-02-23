@@ -33,6 +33,7 @@ const (
 	timeBetweenWaitForApiContainerAvailabilityRetries = 1 * time.Second
 
 	apicDebugServerPort = 50103 // in ClI this is 50101 and in engine is 50102
+	emptyUrl            = ""
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
@@ -129,7 +130,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new wait with default values")
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerTransportProtocol, consts.HttpApplicationProtocol, defaultWait, "")
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerTransportProtocol, consts.HttpApplicationProtocol, defaultWait, emptyUrl)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -163,7 +164,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	if shouldStartInDebugMode {
-		debugServerPortSpec, err := port_spec.NewPortSpec(uint16(apicDebugServerPort), apiContainerTransportProtocol, consts.HttpApplicationProtocol, defaultWait, "")
+		debugServerPortSpec, err := port_spec.NewPortSpec(uint16(apicDebugServerPort), apiContainerTransportProtocol, consts.HttpApplicationProtocol, defaultWait, emptyUrl)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,

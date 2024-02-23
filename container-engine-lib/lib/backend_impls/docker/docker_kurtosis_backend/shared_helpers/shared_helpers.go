@@ -48,6 +48,8 @@ const (
 	containerLogsFilename                = "output.log"
 	createdDirPerms                      = 0755
 	numContainersToDumpAtOnce            = 20
+
+	emptyUrl = ""
 )
 
 // !!!WARNING!!!
@@ -185,7 +187,7 @@ func GetPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 	if privatePortSpec.GetMaybeApplicationProtocol() != nil {
 		maybeApplicationProtocol = *privatePortSpec.GetMaybeApplicationProtocol()
 	}
-	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, privatePortSpec.GetTransportProtocol(), maybeApplicationProtocol, privatePortSpec.GetWait(), "")
+	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, privatePortSpec.GetTransportProtocol(), maybeApplicationProtocol, privatePortSpec.GetWait(), emptyUrl)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err, "An error occurred creating public port spec with host machine port num '%v',  transport protocol '%v' and application protocol '%v'", hostMachinePortNumUint16, privatePortSpec.GetTransportProtocol().String(), maybeApplicationProtocol)
