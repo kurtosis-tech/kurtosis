@@ -234,8 +234,8 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 				// if there's already a files artifact that exists with this name from a previous instruction, reference that
 				if potentialFilesArtifact, ok := pyg.filesArtifactIndex[identifier]; ok {
 					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-						Uuid: potentialFilesArtifact.Uuid,
 						Name: potentialFilesArtifact.Name,
+						Uuid: potentialFilesArtifact.Uuid,
 					}
 				} else {
 					// otherwise create a new one
@@ -270,8 +270,8 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(uploadFilesInstr
 		return castErr
 	}
 	filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-		Uuid: string(uploadFilesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
 		Name: filesArtifactName,
+		Uuid: string(uploadFilesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
 	}
 
 	// get files of returned files artifact off render templates config
@@ -400,8 +400,8 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 				// if there's already a files artifact that exists with this name from a previous instruction, reference that
 				if potentialFilesArtifact, ok := pyg.filesArtifactIndex[fileArtifactName]; ok {
 					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-						Uuid: potentialFilesArtifact.Uuid,
 						Name: potentialFilesArtifact.Name,
+						Uuid: potentialFilesArtifact.Uuid,
 					}
 				} else {
 					// otherwise create a new one
@@ -469,7 +469,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 		TaskType: PYTHON,
 	}
 
-	// get runcmd, image and set them in the yaml
+	// get run cmd, image and set them in the yaml
 	arguments := runPythonInstruction.GetInstruction().GetArguments()
 	runCommand, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, tasks.RunArgName)
 	if err != nil {
@@ -644,6 +644,12 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreServiceFiles(storeServi
 	// add it to the index and the plan yaml
 	pyg.filesArtifactIndex[filesArtifactName] = filesArtifact
 	pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
+	return nil
+}
+
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instructions_plan.ScheduledInstruction) error {
+	// TODO: update the plan yaml based on an add_service
+
 	return nil
 }
 

@@ -21,7 +21,7 @@ type PlanYaml struct {
 type Service struct {
 	Name       string                 `yaml:"name,omitempty"`       // done
 	Uuid       string                 `yaml:"uuid,omitempty"`       // done
-	Image      string                 `yaml:"image,omitempty"`      // done
+	Image      string                 `yaml:"image,omitempty"`      // done // TOOD: support ImageBuildSpec
 	Cmd        []string               `yaml:"command,omitempty"`    // done
 	Entrypoint []string               `yaml:"entrypoint,omitempty"` // done
 	EnvVars    []*EnvironmentVariable `yaml:"envVars,omitempty"`    // done
