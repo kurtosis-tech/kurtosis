@@ -1,9 +1,9 @@
-import { Flex, Icon, IconButton, Text, useToken } from "@chakra-ui/react";
+import { Box, Flex, Icon, IconButton, Text, useToken } from "@chakra-ui/react";
 import { isDefined } from "kurtosis-ui-components";
 import { debounce } from "lodash";
-import { FC, memo, PropsWithChildren, useCallback, useEffect, useMemo } from "react";
+import { FC, memo, PropsWithChildren, ReactElement, useCallback, useEffect, useMemo } from "react";
 import { DefaultValues, FormProvider, useForm } from "react-hook-form";
-import { FiCpu, FiFile, FiTerminal, FiTrash } from "react-icons/fi";
+import { FiCpu, FiFile, FiPackage, FiTerminal, FiTrash } from "react-icons/fi";
 import { RxCornerBottomRight } from "react-icons/rx";
 import { Handle, NodeResizeControl, Position, useReactFlow, useViewport } from "reactflow";
 import { KurtosisNodeData } from "../types";
@@ -15,6 +15,7 @@ const colors: Record<KurtosisNodeData["type"], string> = {
   artifact: "yellow.900",
   shell: "red.900",
   python: "red.900",
+  package: "kurtosisGreen.700",
 };
 
 export const nodeIcons: Record<KurtosisNodeData["type"], FC> = {
@@ -22,6 +23,7 @@ export const nodeIcons: Record<KurtosisNodeData["type"], FC> = {
   artifact: FiFile,
   shell: FiTerminal,
   python: FiTerminal,
+  package: FiPackage,
 };
 
 const nodeTypeReadable: Record<KurtosisNodeData["type"], string> = {
@@ -29,6 +31,7 @@ const nodeTypeReadable: Record<KurtosisNodeData["type"], string> = {
   artifact: "Files",
   shell: "Shell execution task",
   python: "Python execution task",
+  package: "Package",
 };
 
 type KurtosisNodeProps = PropsWithChildren<{
@@ -36,10 +39,21 @@ type KurtosisNodeProps = PropsWithChildren<{
   selected: boolean;
   minWidth: number;
   maxWidth: number;
+  // Optional element to show outside of the zoom aware behaviour
+  portalContent?: ReactElement;
+  backgroundColor?: string;
 }>;
 
 export const KurtosisNode = memo(
-  <DataType extends KurtosisNodeData>({ id, selected, minWidth, maxWidth, children }: KurtosisNodeProps) => {
+  <DataType extends KurtosisNodeData>({
+    id,
+    selected,
+    minWidth,
+    maxWidth,
+    portalContent,
+    backgroundColor,
+    children,
+  }: KurtosisNodeProps) => {
     const { data } = useVariableContext();
     const nodeData = data[id] as DataType;
 
@@ -54,6 +68,8 @@ export const KurtosisNode = memo(
         minWidth={minWidth}
         maxWidth={maxWidth}
         nodeData={nodeData}
+        portalContent={portalContent}
+        backgroundColor={backgroundColor}
       >
         {children}
       </KurtosisNodeImpl>
@@ -68,6 +84,8 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
   selected,
   minWidth,
   maxWidth,
+  portalContent,
+  backgroundColor,
   children,
 }: KurtosisNodeImplProps<DataType>) => {
   const { updateData, removeData } = useVariableContext();
@@ -93,7 +111,7 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
     () =>
       debounce(async () => {
         const isValid = await formMethods.trigger();
-        updateData(id, { ...formMethods.getValues(), isValid });
+        updateData(id, (oldData) => ({ ...oldData, ...formMethods.getValues(), isValid }));
       }, 500),
     [updateData, formMethods, id],
   );
@@ -114,8 +132,6 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
         flexDirection={"column"}
         height={"100%"}
         borderRadius={"8px"}
-        p={"10px"}
-        bg={"gray.600"}
         borderWidth={"3px"}
         outline={"3px solid transparent"}
         outlineOffset={"3px"}
@@ -145,9 +161,19 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
         >
           <RxCornerBottomRight style={{ position: "absolute", right: 5, bottom: 5 }} />
         </NodeResizeControl>
-        <ZoomAwareNodeContent name={name} type={nodeData.type} onDelete={handleDeleteNode}>
-          {children}
-        </ZoomAwareNodeContent>
+        <Flex
+          flexDirection={"column"}
+          borderWidth={"10px"}
+          borderColor={"gray.600"}
+          h={"100%"}
+          w={"100%"}
+          bg={backgroundColor || "gray.600"}
+        >
+          <ZoomAwareNodeContent name={name} type={nodeData.type} onDelete={handleDeleteNode}>
+            {children}
+          </ZoomAwareNodeContent>
+          {isDefined(portalContent) && portalContent}
+        </Flex>
       </Flex>
     </FormProvider>
   );
@@ -189,7 +215,7 @@ const ZoomAwareNodeContentImpl = memo(({ name, type, onDelete, zoom, children }:
 
   if (zoom < 0.4) {
     return (
-      <Flex gap={"20px"} alignItems={"center"} justifyContent={"center"} h={"100%"}>
+      <Flex gap={"20px"} alignItems={"center"} justifyContent={"center"} h={"100%"} bg={"gray.600"}>
         <Icon as={nodeIcons[type]} h={"40px"} w={"40px"} />
         <Text fontSize={"40px"} textAlign={"center"} p={"20px"}>
           {name || <i>Unnamed</i>}
@@ -200,7 +226,7 @@ const ZoomAwareNodeContentImpl = memo(({ name, type, onDelete, zoom, children }:
 
   return (
     <>
-      <Flex justifyContent={"space-between"} alignItems={"center"} minH={"0"}>
+      <Flex justifyContent={"space-between"} alignItems={"center"} minH={"0"} bg={"gray.600"}>
         <Flex gap={"8px"} alignItems={"center"}>
           <Icon as={nodeIcons[type]} w={"20px"} h={"20px"} />
           <Text fontWeight={"semibold"}>{name || <i>Unnamed</i>}</Text>
@@ -222,7 +248,6 @@ const ZoomAwareNodeContentImpl = memo(({ name, type, onDelete, zoom, children }:
         flexDirection={"column"}
         bg={"gray.800"}
         p={"16px 16px"}
-        flex={"1"}
         overflowY={"scroll"}
         className={"nodrag nowheel"}
         sx={{ cursor: "initial" }}
@@ -231,6 +256,7 @@ const ZoomAwareNodeContentImpl = memo(({ name, type, onDelete, zoom, children }:
       >
         {children}
       </Flex>
+      <Box flex={"1"} w={"100%"} className={"nodrag"} />
     </>
   );
 });

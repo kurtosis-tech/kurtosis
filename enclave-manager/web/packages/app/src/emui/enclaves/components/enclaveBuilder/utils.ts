@@ -48,6 +48,9 @@ export function getNodeName(kurtosisNodeData: KurtosisNodeData): string {
   if (kurtosisNodeData.type === "python") {
     return kurtosisNodeData.pythonName;
   }
+  if (kurtosisNodeData.type === "package") {
+    return kurtosisNodeData.name;
+  }
   throw new Error(`Unknown node type.`);
 }
 
@@ -228,6 +231,7 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
       });
     }
   });
+  console.log(dependencies);
   return dependencies;
 }
 

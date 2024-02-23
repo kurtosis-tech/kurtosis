@@ -186,15 +186,15 @@ export abstract class KurtosisClient {
   }
 
   async createEnclave(
-    enclaveName: string,
-    apiContainerLogLevel: string,
+    enclaveName?: string,
+    apiContainerLogLevel?: string,
     productionMode?: boolean,
     apiContainerVersionTag?: string,
   ) {
     return asyncResult(() => {
       const request = new CreateEnclaveArgs({
-        enclaveName,
-        apiContainerLogLevel,
+        enclaveName: enclaveName || "",
+        apiContainerLogLevel: apiContainerLogLevel || "info",
         mode: productionMode ? EnclaveMode.PRODUCTION : EnclaveMode.TEST,
         apiContainerVersionTag: apiContainerVersionTag || "",
       });
@@ -245,15 +245,16 @@ export abstract class KurtosisClient {
     packageId: string,
     args: Record<string, any>,
   ) {
-    // Not currently using asyncResult as the return type here is an asyncIterable
-    const request = new StarlarkPackagePlanYamlArgsRequest({
-      apicIpAddress: apicInfo.bridgeIpAddress,
-      apicPort: apicInfo.grpcPortInsideEnclave,
-      starlarkPackagePlanYamlArgs: new StarlarkPackagePlanYamlArgs({
-        packageId: packageId,
-        serializedParams: JSON.stringify(args),
-      }),
+    return asyncResult(() => {
+      const request = new StarlarkPackagePlanYamlArgsRequest({
+        apicIpAddress: apicInfo.bridgeIpAddress,
+        apicPort: apicInfo.grpcPortInsideEnclave,
+        starlarkPackagePlanYamlArgs: new StarlarkPackagePlanYamlArgs({
+          packageId: packageId,
+          serializedParams: JSON.stringify(args),
+        }),
+      });
+      return this.client.getStarlarkPackagePlanYaml(request, this.getHeaderOptions());
     });
-    return this.client.getStarlarkPackagePlanYaml(request, this.getHeaderOptions());
   }
 }

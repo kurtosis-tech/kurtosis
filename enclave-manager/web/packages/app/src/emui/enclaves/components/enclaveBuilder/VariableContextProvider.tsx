@@ -5,7 +5,7 @@ import { getVariablesFromNodes } from "./utils";
 type VariableContextState = {
   data: Record<string, KurtosisNodeData>;
   variables: Variable[];
-  updateData: (id: string, data: KurtosisNodeData) => void;
+  updateData: (id: string, data: KurtosisNodeData | ((oldData: KurtosisNodeData) => KurtosisNodeData)) => void;
   removeData: (id: string) => void;
 };
 
@@ -27,9 +27,12 @@ export const VariableContextProvider = ({ initialData, children }: PropsWithChil
     return getVariablesFromNodes(data);
   }, [data]);
 
-  const updateData = useCallback((id: string, data: KurtosisNodeData) => {
-    setData((oldData) => ({ ...oldData, [id]: data }));
-  }, []);
+  const updateData = useCallback(
+    (id: string, data: KurtosisNodeData | ((oldData: KurtosisNodeData) => KurtosisNodeData)) => {
+      setData((oldData) => ({ ...oldData, [id]: typeof data === "object" ? data : data(oldData[id]) }));
+    },
+    [],
+  );
 
   const removeData = useCallback((id: string) => {
     setData((oldData) => {

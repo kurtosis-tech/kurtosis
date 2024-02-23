@@ -85,8 +85,37 @@ export type KurtosisPythonNodeData = {
   isValid: boolean;
 };
 
+export type KurtosisPackageNodeData = {
+  type: "package";
+  name: string;
+  packageId: string;
+  args: Record<string, any>;
+  isValid: boolean;
+};
+
 export type KurtosisNodeData =
   | KurtosisArtifactNodeData
   | KurtosisServiceNodeData
   | KurtosisShellNodeData
-  | KurtosisPythonNodeData;
+  | KurtosisPythonNodeData
+  | KurtosisPackageNodeData;
+
+export type PlanPort = {
+  name: string;
+  number: number;
+  transportProtocol: "TCP" | "UDP";
+  applicationProtocol: string;
+};
+
+export type PlanService = {
+  name: string;
+  uuid: string;
+  image: string;
+  envVars: KurtosisEnvironmentVar[];
+  ports: PlanPort[];
+};
+
+export type PlanYaml = {
+  packageId: string;
+  services: PlanService[];
+};
