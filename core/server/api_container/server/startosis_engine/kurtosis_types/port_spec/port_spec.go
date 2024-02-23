@@ -195,7 +195,9 @@ func (portSpec *PortSpec) ToKurtosisType() (*port_spec.PortSpec, *startosis_erro
 		return nil, interpretationErr
 	}
 
-	urlValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](
+	// TODO we don't put the automatic value of URL in the object as the service name isn't available here
+	// As no one uses the PortSpec in the backend we don't really care for now
+	urlValue, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](
 		portSpec.KurtosisValueTypeDefault, UrlAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
