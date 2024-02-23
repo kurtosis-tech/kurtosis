@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.87.2](https://github.com/kurtosis-tech/kurtosis/compare/0.87.1...0.87.2) (2024-02-23)
+
+
+### Features
+
+* EMUI handle loading a package (or subpackage) from github urls ([#2207](https://github.com/kurtosis-tech/kurtosis/issues/2207)) ([e584751](https://github.com/kurtosis-tech/kurtosis/commit/e584751e60f9ec9a53295d6952bfa728874bb9b1))
+* enclave builder imagespec support ([#2206](https://github.com/kurtosis-tech/kurtosis/issues/2206)) ([f0e316e](https://github.com/kurtosis-tech/kurtosis/commit/f0e316ec211adda1b334a1c194e4eedc0b15a3de))
+* enclave builder improvements from feedback ([#2202](https://github.com/kurtosis-tech/kurtosis/issues/2202)) ([003005c](https://github.com/kurtosis-tech/kurtosis/commit/003005c13e867f7e2868111d45519a4bf5c83c03))
+* improve access to the EMUI 'ports' fields ([#2201](https://github.com/kurtosis-tech/kurtosis/issues/2201)) ([486ea2e](https://github.com/kurtosis-tech/kurtosis/commit/486ea2e067cdf7223d78b7fd974012fc69e75e85))
+
 ## [0.87.1](https://github.com/kurtosis-tech/kurtosis/compare/0.87.0...0.87.1) (2024-02-21)
 
 
