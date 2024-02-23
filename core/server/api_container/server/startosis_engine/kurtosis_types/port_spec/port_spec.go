@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
+	"net/url"
 	"reflect"
 	"strings"
 )
@@ -20,7 +21,7 @@ const (
 	PortApplicationProtocolAttr = "application_protocol"
 	WaitAttr                    = "wait"
 
-	urlAttr = "url"
+	UrlAttr = "url"
 
 	maxPortNumber                 = 65535
 	minPortNumber                 = 1
@@ -67,6 +68,20 @@ func NewPortSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 						return builtin_argument.DurationOrNone(value, WaitAttr)
 					},
 				},
+				{
+					Name:              UrlAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						if err := builtin_argument.NonEmptyString(value, UrlAttr); err != nil {
+							return err
+						}
+						if _, err := url.ParseRequestURI(value.String()); err != nil {
+							return startosis_errors.WrapWithInterpretationError(err, "an error occurred while validating the passed url")
+						}
+						return nil
+					},
+				},
 			},
 		},
 
@@ -95,6 +110,7 @@ func CreatePortSpecUsingGoValues(
 	transportProtocol port_spec.TransportProtocol,
 	maybeApplicationProtocol *string,
 	maybeWaitTimeout string,
+	maybeUrl *string,
 ) (*PortSpec, *startosis_errors.InterpretationError) {
 	args := []starlark.Value{
 		starlark.MakeInt(int(portNumber)),
@@ -112,23 +128,16 @@ func CreatePortSpecUsingGoValues(
 		args = append(args, nil)
 	}
 
-	if maybeApplicationProtocol == nil || *maybeApplicationProtocol == "" {
+	if maybeUrl != nil && *maybeUrl != "" {
+		args = append(args, starlark.String(*maybeUrl))
+	} else if maybeApplicationProtocol == nil || *maybeApplicationProtocol == "" {
 		args = append(args, nil)
 	} else {
 		portUrl := fmt.Sprintf("%v://%v:%v", *maybeApplicationProtocol, serviceName, portNumber)
 		args = append(args, starlark.String(portUrl))
 	}
 
-	portUrlDefinition := &builtin_argument.BuiltinArgument{
-		Name:              urlAttr,
-		IsOptional:        true,
-		ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-		Validator:         nil,
-	}
-
 	argumentDefinitions := NewPortSpecType().KurtosisBaseBuiltin.Arguments
-	argumentDefinitions = append(argumentDefinitions, portUrlDefinition)
-
 	argumentValuesSet := builtin_argument.NewArgumentValuesSet(argumentDefinitions, args)
 	kurtosisDefaultValue, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(PortSpecTypeName, argumentValuesSet)
 	if interpretationErr != nil {
@@ -193,11 +202,19 @@ func (portSpec *PortSpec) ToKurtosisType() (*port_spec.PortSpec, *startosis_erro
 		return nil, interpretationErr
 	}
 
+	urlValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](
+		portSpec.KurtosisValueTypeDefault, UrlAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	parsedUrlValue := urlValue.GoString()
+
 	parsedPortSpec, err := port_spec.NewPortSpec(
 		parsedPortNumber,
 		parsedTransportProtocol,
 		parsedPortApplicationProtocol,
 		parsedWait,
+		parsedUrlValue,
 	)
 	if err != nil {
 		// this should never happen since we're checking every attribute defensively here
