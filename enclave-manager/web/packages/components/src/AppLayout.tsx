@@ -70,6 +70,7 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
             pb={MAIN_APP_BOTTOM_PADDING}
             flexDirection={"column"}
             flex={"1"}
+            gap={"16px"}
           >
             {children}
           </Flex>

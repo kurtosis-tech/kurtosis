@@ -9,11 +9,14 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"io"
 	"math"
 	"net"
+	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 	"sync"
@@ -23,6 +26,8 @@ import (
 	"github.com/docker/go-units"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/utils"
 
@@ -153,6 +158,8 @@ const (
 
 	// Per https://github.com/hashicorp/waypoint/pull/1937/files
 	buildkitSessionSharedKey = ""
+
+	nixCmdPath = "/nix/var/nix/profiles/default/bin/nix"
 )
 
 type RestartPolicy string
@@ -396,26 +403,7 @@ func (manager *DockerManager) GetNetworksByLabels(ctx context.Context, labels ma
 		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with labels '%+v'", labels)
 	}
 
-	dnets := make([]types.NetworkResource, 0)
-	if dockerNetworks != nil {
-		// Podman API inconsistency - filter out the union matches that podman returns while docker only returns the intersect matches when filtering by label
-		for _, net := range dockerNetworks {
-			allLabelsMatch := true
-
-			for label, val := range labels {
-				if netValue, exists := net.Labels[label]; !exists || netValue != val {
-					allLabelsMatch = false
-					break
-				}
-			}
-
-			if allLabelsMatch {
-				dnets = append(dnets, net)
-			}
-		}
-	}
-
-	networks, err := newNetworkListFromDockerNetworkList(dnets)
+	networks, err := newNetworkListFromDockerNetworkList(dockerNetworks)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new network list from Docker network list '%+v'", dockerNetworks)
 	}
@@ -641,6 +629,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 	}
 	containerHostConfigPtr, err := manager.getContainerHostConfig(
 		args.addedCapabilities,
+		args.securityOpts,
 		args.networkMode,
 		args.bindMounts,
 		args.volumeMounts,
@@ -1278,24 +1267,6 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting containers with labels '%+v'", labelsFilterList)
 	}
-	result := make([]*docker_manager_types.Container, 0)
-	if resp != nil {
-		// Podman API inconsistency - filter out the union matches that podman returns while docker only returns the intersect matches when filtering by label
-		for _, container := range resp {
-			allLabelsMatch := true
-			for label, val := range labels {
-				if container.GetLabels() != nil {
-					if containerValue, exists := container.GetLabels()[label]; !exists || containerValue != val {
-						allLabelsMatch = false
-						break
-					}
-				}
-			}
-			if allLabelsMatch {
-				result = append(result, container)
-			}
-		}
-	}
 	return result, nil
 }
 
@@ -1398,6 +1369,58 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, regi
 	}
 
 	return pulledFromRemote, imageArchitecture, nil
+}
+
+func (manager *DockerManager) NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error) {
+	flakeReference := nixBuildSpec.GetFullFlakeReference()
+
+	// Flake generates a link to the nix store containing the image result, to avoid collision with a possible existing one from the
+	// build context (from the user env) and which would result when trying to overwrite it, we create a unique one
+	hasher := md5.New()
+	hasher.Write([]byte(flakeReference))
+	resultLink := fmt.Sprintf("nix-result-%x", hasher.Sum(nil))
+
+	cmd := exec.Command(
+		nixCmdPath, "build", flakeReference,
+		"--print-out-paths",
+		"--extra-experimental-features", "flakes nix-command",
+		"--out-link", resultLink)
+
+	var errBuffer strings.Builder
+	cmd.Stderr = &errBuffer
+	imageFileRaw, err := cmd.Output()
+	if err != nil {
+		errMsg := errBuffer.String()
+		logrus.WithError(err).Error(errMsg)
+		return "", stacktrace.Propagate(err, "Failed to build nix image with Nix.")
+	}
+	imageFile := strings.TrimSpace(string(imageFileRaw))
+	logrus.Debugf("Nix flake image on attribute %s, result on image file %s", flakeReference, imageFile)
+
+	imageTags, err := image_utils.GetRepoTags(imageFile)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to get image tags from Nix image %s", imageFile)
+	}
+
+	if len(imageTags) == 0 {
+		return "", stacktrace.NewError("Generated image %s did not have any tags", imageFile)
+	} else if len(imageTags) > 1 {
+		logrus.Warnf("Generated image %s had multiple tags: %v. We'll select the first.", imageFile, imageTags)
+	}
+	imageTag := imageTags[0]
+
+	image, err := os.Open(imageFile)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to open generated Nix image on %s", imageFile)
+	}
+
+	_, err = manager.dockerClient.ImageLoad(ctx, image, false)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to load Nix image %s in docker", imageFile)
+	}
+	logrus.Debugf("Nix generated image file %s is loaded into docker", imageFile)
+
+	return imageTag, nil
 }
 
 func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
@@ -1701,6 +1724,7 @@ Args:
 */
 func (manager *DockerManager) getContainerHostConfig(
 	addedCapabilities map[ContainerCapability]bool,
+	securityOpts map[ContainerSecurityOpt]bool,
 	networkMode DockerManagerNetworkMode,
 	bindMounts map[string]string,
 	volumeMounts map[string]string,
@@ -1764,6 +1788,12 @@ func (manager *DockerManager) getContainerHostConfig(
 	for capability := range addedCapabilities {
 		capabilityStr := string(capability)
 		addedCapabilitiesSlice = append(addedCapabilitiesSlice, capabilityStr)
+	}
+
+	securityOptsSlice := []string{}
+	for securityOpt := range securityOpts {
+		securityOptStr := string(securityOpt)
+		securityOptsSlice = append(securityOptsSlice, securityOptStr)
 	}
 
 	extraHosts := []string{}
@@ -1867,7 +1897,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Privileged:      false,
 		PublishAllPorts: false,
 		ReadonlyRootfs:  false,
-		SecurityOpt:     nil,
+		SecurityOpt:     securityOptsSlice,
 		StorageOpt:      nil,
 		Tmpfs:           nil,
 		UTSMode:         "",

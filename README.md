@@ -1,35 +1,40 @@
 
 <img src="./readme-static-files/logo.png" width="1200">
 
+[![Follow us on X, formerly Twitter](https://img.shields.io/twitter/follow/KurtosisTech?style=social)](https://twitter.com/Kurtosistech)
+[![Number of GitHub stars](https://img.shields.io/github/stars/kurtosis-tech/kurtosis)](https://github.com/kurtosis-tech/kurtosis/stargazers)
+
 ----
 
 What is Kurtosis?
 =================
-[Kurtosis](https://www.kurtosis.com) is a platform for packaging and launching environments of containerized services ("distributed applications") with a focus on approachability for the average developer. What Docker did for shipping binaries, Kurtosis aims to do even better for distributed applications. 
+
+Have you ever tried to build on top of a colleague's work, or contribute to an open source project, just to get stuck on the first steps of spinning up a stack to play with? [Kurtosis](https://www.kurtosis.com) handles the complexity of spinning up ephemeral dev or test stacks so you can focus on developing, not configuring.
 
 Kurtosis is formed of:
+- A packaging system for distributing backend stack definitions, which can run on docker or on kubernetes
+- A runtime with a per-stack file management system for reproducibly initializing the state of your stack
+- A set of tools to enable devs to interact with their stacks, like they do on docker or k8s
 
-- A language for declaring a distributed application in Python syntax ([Starlark](https://github.com/google/starlark-go/blob/master/doc/spec.md))
-- A packaging system for sharing and reusing distributed application components
-- A runtime that makes a Kurtosis app Just Work, independent of whether it's running on Docker or Kubernetes, local or in the cloud
-- A set of tools to ease common distributed app development needs (e.g. a log aggregator to ease log-diving, automatic port-forwarding to ease connectivity, a `kurtosis service shell` command to ease container filesystem exploration, etc.)
+Why use Kurtosis?
+=========================
 
-Why should I use Kurtosis?
+Kurtosis is best for:
+
+- Reusing the logic in your stack definitions for all of: local dev, scheduled testing in CI, and ad-hoc larger-scale testing on k8s clusters
+- Giving other devs a way to spin up your application, and commonly used variations of it, with one-liners, via Kurtosis' packaging and parameterization systems
+- Handling complex setup logic in your backend stack, like passing arbitrary data between services as they start up, and enforcing arbitrary wait conditions
+
+How is Kurtosis different than Docker Compose or Helm?
 ==========================
-Kurtosis shines when creating, working with, and destroying self-contained distributed application environments. Currently, our users report this to be most useful when:
 
-- You're developing on your application and you need to rapidly iterate on it
-- You want to try someone's containerized service or distributed application without setting up an environment, dependencies, etc.
-- You want to spin up your distributed application in ephemeral environments as part of your integration tests
-- You want to ad-hoc test your application on a big cloud cluster
-- You're the author of a containerized service or distributed application and you want to give your users a one-liner to try it
-- You want to get an instance of your application running in the cloud without provisioning or administering a Kubernetes cluster
+Kurtosis operates at a level higher than Docker Compose or Helm, and produces stacks running on either of the underlying engines (the Docker engine, or Kubernetes).
+Because of this additional layer of abstraction, we are able to introduce several features to improve the experience of spinning up ephemeral stacks:
 
-If you're in web3, we have even more specific web3 usecases [here](https://web3.kurtosis.com).
-
-Check out an introductory demo video here:
-
-<video width="630" height="300" src="https://github.com/kurtosis-tech/kurtosis/assets/11703004/f908aa4a-b340-44c8-b948-46993dcdb96e"></video>
+- A per-stack file management system that enables portable state initialization for dev or test stacks
+- Stack-level parameterizability; users have a powerful and flexible way (beyond messing with env vars) to affect modifications in their stacks
+- First-class plug-and-play composability; it's expected for users to import stack definitions into larger stacks, and this experience is optimized
+- The ability to get all of the above, but running over _either_ the docker engine or k8s, at your election
 
 How do I get going?
 ===================
@@ -53,11 +58,7 @@ If you have an issue or feature request, we'd love to hear about it through one 
 
 ### Going further
 
-To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis] or one of these packages:
-
-- [Ethereum](https://github.com/kurtosis-tech/ethereum-package): fully functional private Ethereum network in Kurtosis with Flashbots MEV-boost, any EL and CL client combination, and a collection of network monitoring tools.
-- [DIVE](https://github.com/HugoByte/DIVE): A CLI + Kurtosis package by [Hugobyte](https://hugobyte.com) for the ICON ecosystem that can spin up EVM, Cosmos, or JVM networks with a bridge between them.
-- [NEAR](https://github.com/kurtosis-tech/near-package): A private NEAR network in Kurtosis.
+To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis]! 
 
 To learn about how to write Kurtosis packages, check out our [quickstart][quickstart-reference].
 
@@ -66,40 +67,6 @@ To read about how Kurtosis works, see [our documentation][docs].
 To see where we're going with the product, check out the roadmap [here](https://github.com/kurtosis-tech/kurtosis/wiki/Short%E2%80%90term-Roadmap).
 
 Got more questions? Drop them in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a) where we, or other community members, can help answer.
-
-Why Kurtosis over Compose, Helm, or Terraform?
-==============================================
-These tools have been around for over a decade, yet most developers still struggle to build distributed applications. Why? In a sentence: building distributed applications is hard, and these tools still haven't made it easy enough for the average developer.
-
-Some of our observations:
-
-- No tool works across the whole software lifecycle: Compose is oriented around quick local environments rather than Prod environments, while Helm and Terraform are the opposite. This often means a dedicated DevOps team handles Prod deployment, leading to the same "throw it across the wall" problem the DevOps movement was founded around.
-- Compose, Helm, and Terraform use fully declarative paradigms, making difficult the sequential "first this, then this" logic necessary for many prototyping workflows.
-- The inherently declarative nature of all three make [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) difficult, leading to frequent copy-pasting.
-- All three tend to leave resources hanging around that the developer needs to manually clean up.
-- Compose and Helm favor "run it and see what happens" over validation & error-checking, resulting in debugging time and longer dev cycles.
-- A significant percentage of developers don't understand how Docker works, and [most don't understand Kubernetes or Terraform][stackoverflow-2022-developer-survey--other-tools].
-
-Here's what our users tell us they like about Kurtosis:
-
-- **It's understandable:** you write code in Python syntax, and you get your distributed application the other side. Variables and functions keep your code DRY.
-- **It's portable:** your application runs with a one-liner independent of where you run it. You can build your application on your local Docker, and in seconds get the same thing on your friend's laptop or a Kubernetes cluster in the cloud.
-- **It can handle sequential dependencies:** for example, "first generate these files, then use them when starting a service".
-- **It's reliable and reproducible:** Kurtosis started as a testing tool and is built to be safe: deterministic execution order, validation to catch errors before runtime, built-in support for inter-service dependencies and readiness checks, etc. Your distributed app should spin up the same way, every time.
-- **It abstracts away complexity while being configurable:** instantiating a distributed application is as simple as calling its function with the parameters you want. For example, instantiating a Postgres server with modified username and password:
-
-  On the CLI...
-  ```bash
-  kurtosis run github.com/kurtosis-tech/postgres-package '{"user": "bobmarley", "password": "buffalosoldier"}'
-  ```
-
-  Inside an environment definition...
-  ```python
-  postgres = import_module("github.com/kurtosis-tech/postgres-package/main.star")
-
-  def run(plan):
-    postgres.run(plan, user = "bobmarley", password = "buffalosoldier")
-  ```
 
 Contributing to Kurtosis
 ========================
@@ -228,13 +195,13 @@ sudo apt update
 sudo apt install goreleaser
 ```
 
-#### Node (16.14 or above) and Yarn
+#### Node (20.* or above) and Yarn
 
 On MacOS, using `NVM`:
 ```bash
 brew install nvm
 mkdir ~/.nvm
-nvm install 16.14.0
+nvm install 20.11.0
 npm install -g yarn
 ```
 
@@ -242,7 +209,7 @@ On Ubuntu, using `NVM`:
 ```bash
 curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
 source ~/.bashrc
-nvm install 16.14.0
+nvm install 20.11.0
 npm install -g yarn
 ```
 
@@ -393,6 +360,7 @@ ktdebug version
 
 
 For running CLI with Delve debug client:
+
 1. Build the CLI dev binary and run the command you want to debug (kurtosis version in this example), but first pass "dlv-terminal" as the first argument (this will start the Delve client in the terminal)
 ```bash
 cli/cli/scripts/build.sh
@@ -409,6 +377,99 @@ ktdebug dlv-terminal version
 ```
 <img src="./readme-static-files/dlv-terminal.png" />
 4. You can see [more Delve commands here][delve-docs]
+
+
+For running Kurtosis engine with Golang remote debug:
+
+1. Run the main build script with the first argument `debug_mode` as true. This will generate a new Kurtosis engine container image which will contain the `debug` suffix in the name.
+```bash
+scripts/build.sh true 
+```
+2. Add the breakpoint in the line where you want to stop the cursor
+   <img src="./readme-static-files/goland-engine-breakpoint.png" />
+3. Run the engine in debug mode with the `ktdev engine start --debug-mode` or the `ktdev engine restart --debug-mode` commands
+```bash
+source ./scripts/set_kt_alias.sh
+ktdev engine start --debug-mode 
+```
+4. Then choose the "Engine-remote-debug" run configuration in the "run panel"
+5. Press the "debug" button
+   <img src="./readme-static-files/goland-engine-debug-button.png" />
+6. Make a call to the engine's server (you can use the Kurtosis CLI or Postman) in order to reach out the breakpoint in the code
+7. Use the debug panel to inspect the variables value and continue with the debug flow
+   <img src="./readme-static-files/goland-debug-panel.png" />
+8. You can debug the CLI and the Kurtosis engine's server at the same time by running it with `ktdebug` instead of `ktdev` mentioned in a previous step, remember to run both remote debug configurations in the Goland IDE.
+```bash
+source ./scripts/set_kt_alias.sh
+ktdebug engine start
+```
+
+Additional steps if you are debugging Kurtosis engine in K8s:
+
+1. Upload the engine's image for debug to the K8s cluster
+```bash
+# for example:
+k3d image load kurtosistech/engine:5ec6eb-dirty-debug
+```
+2. Run the port-forward script before pressing the debug button in Golang (in another terminal instance) to bind the host's port to the container's debug server port
+```bash
+scripts/port-forward-engine-debug.sh
+```
+3. Do not forget to run the Kurtosis gateway after calling the engine's server (in another terminal instance also)
+```bash
+ktdev gateway
+```
+
+For running Kurtosis APIC with Golang remote debug:
+1. Run the main build script with the first argument `debug_mode` as true. This will generate a new Kurtosis APIC container image which will contain the `debug` suffix in the name.
+```bash
+scripts/build.sh true 
+```
+2. Add the breakpoint in the line where you want to stop the cursor.
+   <img src="./readme-static-files/goland-apic-breakpoint.png" />
+3. Run the Kurtosis engine in debug more or not depending on if you want to also debug the engine.
+```bash
+source ./scripts/set_kt_alias.sh
+ktdev engine start --debug-mode
+
+OR
+
+ktdev engine start # you will have to build the engine in the regular way `engine/scripts/build.sh` if you choose this version
+```
+4. Add a new enclave in debug mode with the `enclave add` command and passing the `debug-mode` flag. This will create a new APIC container with the debug server port bounded and waiting for a connection.
+IMPORTANT: You can only run one enclave in debug mode so far, if you want to run another one it will fail due the debug port is already in use, 
+```bash
+ktdev enclave add --debug-mode 
+```
+5. Then choose the "APIC-remote-debug" run configuration in the "run panel"
+6. Press the "debug" button
+   <img src="./readme-static-files/goland-apic-debug-button.png" />
+7. Find the APIC's GRPC server port in the host machine (you can check it in Docker Desktop or using the Docker CLI, it's the one bounded with the container's 7443 port)
+8. Make a call to the APIC's server (you can use the Kurtosis CLI or Postman) in order to reach out the breakpoint in the code
+9. Use the debug panel to inspect the variables value and continue with the debug flow
+   <img src="./readme-static-files/goland-debug-panel.png" />
+10. You can debug the CLI, the Kurtosis engine's server and the Kurtosis APIC's server at the same time by running it with `ktdebug` instead of `ktdev` mentioned in a previous step, remember to run the three remote debug configurations in the Goland IDE.
+```bash
+source ./scripts/set_kt_alias.sh
+ktdev engine start --debug-mode
+ktdebug enclave add
+```
+
+Additional steps if you are debugging Kurtosis engine in K8s:
+
+1. Upload the APIC's image for debug to the K8s cluster
+```bash
+# for example:
+k3d image load kurtosistech/core:5ec6eb-dirty-debug
+```
+2. Run the port-forward script before pressing the debug button in Golang (in another terminal instance) to bind the host's port to the container's debug server port
+```bash
+scripts/port-forward-apic-debug.sh enclave-name
+```
+3. Do not forget to run the Kurtosis gateway after calling the APIC's server (in another terminal instance also)
+```bash
+ktdev gateway
+```
 
 </details>
 

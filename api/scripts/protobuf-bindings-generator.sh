@@ -41,6 +41,8 @@ GO_MOD_FILE_MODULE_KEYWORD="module"  # Keyword in the go.mod file for specifying
 # ----------------------------------------- Typescript -----------------------------------------------
 NODE_GRPC_TOOLS_PROTOC_BIN_FILENAME="grpc_tools_node_protoc"    # For some reason, Node gRPC has its own 'protoc' binary
 NODE_GRPC_TOOLS_PROTOC_PLUGIN_BIN_FILENAME="grpc_tools_node_protoc_plugin"  # The name of the plugin binary that will be used by 'protoc'
+NODE_ES_TOOLS_PROTOC_BIN_FILENAME="protoc-gen-es"
+NODE_CONNECT_ES_TOOLS_PROTOC_BIN_FILENAME="protoc-gen-connect-es"
 NODE_GRPC_TOOLS_INSTALL_COMMAND="npm install -g grpc-tools"
 WEB_GRPC_PROTOC_BIN_FILENAME="protoc-gen-grpc-web"
 WEB_GRPC_INSTALL_COMMAND="brew install protoc-gen-grpc-web"
@@ -222,6 +224,24 @@ generate_typescript_bindings() {
         echo "Error: Got an empty filepath when looking for the Node gRPC tools protoc plugin binary '${NODE_GRPC_TOOLS_PROTOC_PLUGIN_BIN_FILENAME}'; have you installed the tools with '${NODE_GRPC_TOOLS_PROTOC_PLUGIN_BIN_FILENAME}'?" >&2
         return 1
     fi
+    
+    if ! node_es_protoc_bin_filepath="$(which "${NODE_ES_TOOLS_PROTOC_BIN_FILENAME}")"; then
+        echo "Error: Couldn't find Node gRPC tools protoc plugin binary '${NODE_ES_TOOLS_PROTOC_BIN_FILENAME}' on the PATH" >&2
+        return 1
+    fi
+    if [ -z "${node_es_protoc_bin_filepath}" ]; then
+        echo "Error: Got an empty filepath when looking for the Node gRPC tools protoc plugin binary '${NODE_ES_TOOLS_PROTOC_BIN_FILENAME}'" >&2
+        return 1
+    fi
+
+    if ! node_connect_es_protoc_bin_filepath="$(which "${NODE_CONNECT_ES_TOOLS_PROTOC_BIN_FILENAME}")"; then
+        echo "Error: Couldn't find Node gRPC tools protoc plugin binary '${NODE_CONNECT_ES_TOOLS_PROTOC_BIN_FILENAME}' on the PATH" >&2
+        return 1
+    fi
+    if [ -z "${node_connect_es_protoc_bin_filepath}" ]; then
+        echo "Error: Got an empty filepath when looking for the Node gRPC tools protoc plugin binary '${NODE_CONNECT_ES_TOOLS_PROTOC_BIN_FILENAME}'" >&2
+        return 1
+    fi
 
     for input_filepath in $(find "${input_abs_dirpath}" -type f -name "*${PROTOBUF_FILE_EXT}"); do
       # NOTE: Generating Node bindings
@@ -249,10 +269,10 @@ generate_typescript_bindings() {
 
         if ! "${node_protoc_bin_filepath}" \
               -I="${input_abs_dirpath}" \
-              "--plugin=protoc-gen-es=${api_dir_path}/typescript/node_modules/.bin/protoc-gen-es" \
+              "--plugin=protoc-gen-es=${node_es_protoc_bin_filepath}" \
               "--es_out=${output_abs_dirpath}/connect" \
               "--es_opt=target=js+dts" \
-              "--plugin=protoc-gen-connect-es=${api_dir_path}/typescript/node_modules/.bin/protoc-gen-connect-es" \
+              "--plugin=protoc-gen-connect-es=${node_connect_es_protoc_bin_filepath}" \
               "--connect-es_out=${output_abs_dirpath}/connect" \
               "--connect-es_opt=target=js+dts" \
               "${input_filepath}"; then

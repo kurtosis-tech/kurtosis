@@ -528,6 +528,11 @@ jobs:
     docker:
       - image: "docker/tilt-releaser@sha256:<< pipeline.parameters.tilt-releaser-version >>"
     resource_class: large
+    parameters:
+      all_architectures:
+        description: "Whether we should build all architectures or not"
+        type: boolean
+        default: false
     steps:
       - checkout
 
@@ -552,25 +557,32 @@ jobs:
             - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
 
       - run: |
-          cli/cli/scripts/build.sh true
+          cli/cli/scripts/build.sh << parameters.all_architectures >>
 
-      - save_cache:
-          key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
-          paths:
-            - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
-            - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
 
-      - persist_to_workspace:
-          root: .
-          paths:
-            - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
-            - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
-            - "./<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
+      # only save cache and persist to workspace the CLI built for just the CircleCI architecture
+      - when:
+          condition:
+            equal: [ false, << parameters.all_architectures >> ]
+          steps:
+            - save_cache:
+                key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
+                paths:
+                  - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
+                  - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
+
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
+                  - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+                  - "./<< pipeline.parameters.starlark-test-taints-and-tolerations >>"
 
   build_golang_testsuite:
     executor: ubuntu_vm
     parameters:
       <<: *param_cli_cluster_backend
+    parallelism: 4
     steps:
       - checkout
 
@@ -604,7 +616,7 @@ jobs:
             equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/golang/scripts/test.sh kubernetes; then
+                if ! ./internal_testsuites/golang/scripts/test.sh kubernetes true; then
                   touch /tmp/testsuite-failed
                 fi
 
@@ -615,7 +627,7 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/golang/scripts/test.sh; then
+                if ! ./internal_testsuites/golang/scripts/test.sh docker true; then
                   touch /tmp/testsuite-failed
                 fi
 
@@ -766,9 +778,9 @@ jobs:
               false
             fi
       - run:
-          name: "Verify Kurtosis cleaned up all its volumes (except for the log storage volume, so we can persist service logs)"
+          name: "Verify Kurtosis cleaned up all its volumes (except for the log storage and github auth storage volumes)"
           command: |
-            if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l ) -eq 1 ]; then
+            if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l ) -eq 2 ]; then
               docker volume ls
               false
             fi
@@ -880,6 +892,10 @@ jobs:
       - run: "${KURTOSIS_BINPATH} files download test-enclave rendered-file ."
       - run: "${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf --name stored-file"
       - run: "${KURTOSIS_BINPATH} files download test-enclave stored-file ."
+
+      # Check Dump Contains files
+      - run: "${KURTOSIS_BINPATH} enclave dump test-enclave test-dump"
+      - run: "ls test-dump/files/rendered-file"
 
       # Module inside an enclave
       - run: "${KURTOSIS_BINPATH} enclave ls"
@@ -1001,9 +1017,9 @@ jobs:
                     false
                   fi
             - run:
-                name: "Verify Kurtosis cleaned up all its volumes (except for the log storage volume, so we can persist service logs)"
+                name: "Verify Kurtosis cleaned up all its volumes (except for the log storage and github auth storage volumes)"
                 command: |
-                  if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l) -eq 1 ]; then
+                  if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l) -eq 2 ]; then
                     docker volume ls
                     false
                   fi
@@ -1468,6 +1484,11 @@ workflows:
                 - main
 
       - build_cli:
+          <<: *filters_ignore_main
+
+      - build_cli:
+          all_architectures: true
+          name: "Check if CLI builds for all os and arch pairs"
           <<: *filters_ignore_main
 
       - test_enclave_manager_web_ui:

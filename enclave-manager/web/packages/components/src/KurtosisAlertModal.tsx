@@ -11,6 +11,7 @@ import {
   ModalOverlay,
   Text,
 } from "@chakra-ui/react";
+import { isDefined } from "./utils";
 
 type KurtosisAlertModalProps = {
   title: string;
@@ -18,8 +19,8 @@ type KurtosisAlertModalProps = {
   isOpen: boolean;
   isLoading?: boolean;
   onClose: () => void;
-  onConfirm: () => void;
-  confirmText: string;
+  onConfirm?: () => void;
+  confirmText?: string;
   confirmButtonProps?: ButtonProps;
 };
 
@@ -47,9 +48,11 @@ export const KurtosisAlertModal = ({
             <Button color={"gray.100"} onClick={onClose} isDisabled={isLoading}>
               Dismiss
             </Button>
-            <Button onClick={onConfirm} {...confirmButtonProps} isLoading={isLoading}>
-              {confirmText}
-            </Button>
+            {isDefined(onConfirm) && (
+              <Button onClick={onConfirm} {...confirmButtonProps} isLoading={isLoading}>
+                {confirmText}
+              </Button>
+            )}
           </Flex>
         </ModalFooter>
       </ModalContent>

@@ -2,10 +2,12 @@ package backend_interface
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"io"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
@@ -46,6 +48,8 @@ type KurtosisBackend interface {
 		imageVersionTag string,
 		grpcPortNum uint16,
 		envVars map[string]string,
+		shouldStartInDebugMode bool,
+		githubAuthToken string,
 	) (
 		*engine.Engine,
 		error,
@@ -139,6 +143,7 @@ type KurtosisBackend interface {
 		// Must not conflict with the custom environment variables
 		ownIpAddressEnvVar string,
 		customEnvVars map[string]string,
+		shouldStartInDebugMode bool,
 	) (
 		*api_container.APIContainer,
 		error,
@@ -353,4 +358,6 @@ type KurtosisBackend interface {
 	// BuildImage builds a container image based on the [imageBuildSpec] with [imageName]
 	// Returns image architecture and if error occurred
 	BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error)
+
+	NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error)
 }

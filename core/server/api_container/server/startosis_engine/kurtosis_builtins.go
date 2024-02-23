@@ -59,6 +59,7 @@ func KurtosisPlanInstructions(
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
+	nonBlockingMode bool,
 ) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
 		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions),
@@ -70,8 +71,8 @@ func KurtosisPlanInstructions(
 		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore),
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		start_service.NewStartService(serviceNetwork),
-		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore),
-		tasks.NewRunShService(serviceNetwork, runtimeValueStore),
+		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore, nonBlockingMode),
+		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode),
 		stop_service.NewStopService(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
 		upload_files.NewUploadFiles(packageId, serviceNetwork, packageContentProvider, packageReplaceOptions),
@@ -112,7 +113,8 @@ func KurtosisTypeConstructors() []*starlark.Builtin {
 		starlark.NewBuiltin(service_config.ServiceConfigTypeName, service_config.NewServiceConfigType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.ReadyConditionTypeName, service_config.NewReadyConditionType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.ImageBuildSpecTypeName, service_config.NewImageBuildSpecType().CreateBuiltin()),
-		starlark.NewBuiltin(service_config.ImageRegistrySpecTypeName, service_config.NewImageRegistrySpec().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.NixBuildSpecTypeName, service_config.NewNixBuildSpecType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.ImageSpecTypeName, service_config.NewImageSpec().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.UserTypeName, service_config.NewUserType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.TolerationTypeName, service_config.NewTolerationType().CreateBuiltin()),
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -18,9 +19,10 @@ import (
 )
 
 const (
-	engineVersionFlagKey   = "version"
-	logLevelFlagKey        = "log-level"
-	enclavePoolSizeFlagKey = "enclave-pool-size"
+	engineVersionFlagKey           = "version"
+	logLevelFlagKey                = "log-level"
+	enclavePoolSizeFlagKey         = "enclave-pool-size"
+	githubAuthTokenOverrideFlagKey = "github-auth-token"
 
 	defaultEngineVersion                   = ""
 	restartEngineOnSameVersionIfAnyRunning = false
@@ -62,6 +64,13 @@ var RestartCmd = &lowlevel.LowlevelKurtosisCommand{
 			Type:      flags.FlagType_Uint8,
 			Default:   strconv.Itoa(int(defaults.DefaultEngineEnclavePoolSize)),
 		},
+		{
+			Key:       githubAuthTokenOverrideFlagKey,
+			Usage:     "The GitHub auth token that should be used to authorize git operations such as accessing packages in private repositories. Overrides existing GitHub auth config if a user is logged in.",
+			Shorthand: "",
+			Type:      flags.FlagType_String,
+			Default:   defaults.DefaultGitHubAuthTokenOverride,
+		},
 	},
 	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
@@ -92,6 +101,11 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", logLevelStr)
 	}
 
+	githubAuthTokenOverride, err := flags.GetString(githubAuthTokenOverrideFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting GitHub auth token override flag with key '%v'. This is a bug in Kurtosis", githubAuthTokenOverrideFlagKey)
+	}
+
 	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
@@ -102,9 +116,20 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine Container Version using flag with key '%v'; this is a bug in Kurtosis", engineVersionFlagKey)
 	}
 
+	isDebugMode, err := flags.GetBool(defaults.DebugModeFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
+	}
+
+	shouldStartInDebugMode := defaults.DefaultEnableDebugMode
+	if isDebugMode {
+		engineVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
+		shouldStartInDebugMode = true
+	}
+
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}

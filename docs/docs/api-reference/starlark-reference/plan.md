@@ -455,6 +455,8 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
 
+The `store` atrribute expects a list of paths or [`StoreSpec`][store-spec-reference] objects.
+
 The instruction returns a `struct` with [future references][future-references-reference] to the output and exit code of the Python script, alongside with future-reference to the file artifact names that were generated.
 * `result.output` is a future reference to the output of the command
 * `result.code` is a future reference to the exit code
@@ -476,6 +478,13 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # Image the command will be run on
         # OPTIONAL (Default: badouralix/curl-jq)
         image = "badouralix/curl-jq",
+
+        # Defines environment variables that should be set inside the Docker container running the task.
+        # OPTIONAL (Default: {})
+        env_vars = {
+            "VAR_1": "VALUE_1",
+            "VAR_2": "VALUE_2",
+        },
 
         # A mapping of path_on_task_where_contents_will_be_mounted -> files_artifact_id_to_mount
         # For more information about file artifacts, see below.
@@ -523,6 +532,8 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
 
+The `store` atrribute expects a list of paths or [`StoreSpec`][store-spec-reference] objects.
+
 The instruction returns a `struct` with [future references][future-references-reference] to the output and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
    * `result.output` is a future reference to the output of the command
    * `result.code` is a future reference to the exit code
@@ -550,7 +561,7 @@ The instruction returns a `struct` with [future references][future-references-re
         ..., 
         config=ServiceConfig(
             name="service_one", 
-            files={"/src": results.file_artifacts[0]}, # copies the directory task into service_one 
+            files={"/src": result.file_artifacts[0]}, # copies the directory task into service_one 
         )
     ) # the path to the file will look like: /src/task/test.txt
 
@@ -558,7 +569,7 @@ The instruction returns a `struct` with [future references][future-references-re
         ..., 
         config=ServiceConfig(
             name="service_two", 
-            files={"/src": results.file_artifacts[1]}, # copies the file test.txt into service_two
+            files={"/src": result.file_artifacts[1]}, # copies the file test.txt into service_two
         ),
     ) # the path to the file will look like: /src/test.txt
 ```
@@ -718,3 +729,4 @@ plan.print(recipe_result["code"])
 [starlark-types-get-http-recipe]: ./get-http-request-recipe.md
 [service-starlark-reference]: ./service.md
 [starlark-types-port-spec]: ./port-spec.md
+[store-spec-reference]: ./store-spec.md

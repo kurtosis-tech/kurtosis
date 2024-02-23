@@ -2,8 +2,9 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -36,6 +37,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 				testContainerImageName,
 				nil,
 				nil,
+				nil,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
 				nil,
@@ -51,6 +53,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 				map[string]string{},
 				nil,
 				nil,
+				map[string]string{},
 			)
 			require.NoError(suite.T(), err)
 

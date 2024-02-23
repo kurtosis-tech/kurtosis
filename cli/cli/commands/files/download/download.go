@@ -12,13 +12,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/files"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/metrics-library/golang/lib/metrics_client"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -38,15 +37,10 @@ const (
 	noExtractFlagKey          = "no-extract"
 	noExtractFlagDefaultValue = "false"
 
-	filesArtifactExtension                = ".tgz"
-	filesArtifactPermission               = 0o744
 	filesArtifactDestinationDirPermission = 0o777
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
-
-	defaultTmpDir = ""
-	tmpDirPattern = "tmp-dir-for-download-*"
 )
 
 var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -139,45 +133,19 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", enclaveIdentifier)
 	}
 
-	artifactBytes, err := enclaveCtx.DownloadFilesArtifact(ctx, artifactIdentifier)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred downloading files with identifier '%v' from enclave '%v'", artifactIdentifier, enclaveIdentifier)
-	}
-
-	fileNameToWriteTo := fmt.Sprintf("%v%v", artifactIdentifier, filesArtifactExtension)
-	destinationPathToDownloadFileTo := path.Join(absoluteDestinationPath, fileNameToWriteTo)
-
 	// if the user doesn't want to extract, we just download and return
 	if shouldNotExtract {
-		err = os.WriteFile(destinationPathToDownloadFileTo, artifactBytes, filesArtifactPermission)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while writing bytes to file '%v' with permission '%v'", destinationPathToDownloadFileTo, filesArtifactPermission)
+		if err = files.DownloadFilesArtifactToLocation(ctx, enclaveCtx, artifactIdentifier, absoluteDestinationPath); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while downloading file '%v' to '%v' for enclave '%v'", artifactIdentifier, absoluteDestinationPath, enclaveIdentifier)
 		}
-		logrus.Infof("File package with identifier '%v' downloaded to '%v'", artifactIdentifier, destinationPathToDownloadFileTo)
+		logrus.Infof("File package with identifier '%v' downloaded to '%v'", artifactIdentifier, absoluteDestinationPath)
 		return nil
 	}
 
-	tmpDirPath, err := os.MkdirTemp(defaultTmpDir, tmpDirPattern)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating a temporary directory to download the files artifact with identifier '%v' to", artifactIdentifier)
-	}
-	shouldCleanupTmpDir := false
-	defer func() {
-		if shouldCleanupTmpDir {
-			os.RemoveAll(tmpDirPath)
-		}
-	}()
-	tmpFileToWriteTo := path.Join(tmpDirPath, fileNameToWriteTo)
-	err = os.WriteFile(tmpFileToWriteTo, artifactBytes, filesArtifactPermission)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while writing bytes to file '%v' with permission '%v'", tmpDirPath, filesArtifactPermission)
-	}
-	err = archiver.Unarchive(tmpFileToWriteTo, absoluteDestinationPath)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while extracting '%v' to '%v'", tmpFileToWriteTo, destinationPathToDownloadFileTo)
+	if err = files.DownloadAndExtractFilesArtifact(ctx, enclaveCtx, artifactIdentifier, absoluteDestinationPath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while downloading and extracting file '%v' to '%v' for enclave '%v'", artifactIdentifier, absoluteDestinationPath, enclaveIdentifier)
 	}
 	logrus.Infof("File package with identifier '%v' extracted to '%v'", artifactIdentifier, absoluteDestinationPath)
 
-	shouldCleanupTmpDir = true
 	return nil
 }

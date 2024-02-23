@@ -2,10 +2,12 @@ package metrics_reporting
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"io"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
@@ -52,6 +54,8 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	shouldStartInDebugMode bool,
+	githubAuthToken string,
 ) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
 		ctx,
@@ -59,9 +63,11 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		envVars,
+		shouldStartInDebugMode,
+		githubAuthToken,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v'", imageOrgAndRepo, imageVersionTag)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v' and debug mode '%v'", imageOrgAndRepo, imageVersionTag, shouldStartInDebugMode)
 	}
 	return result, nil
 }
@@ -198,6 +204,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	enclaveDataVolumeDirpath string,
 	ownIpEnvVar string,
 	customEnvVars map[string]string,
+	shouldStartInDebugMode bool,
 ) (*api_container.APIContainer, error) {
 	if _, found := customEnvVars[ownIpEnvVar]; found {
 		return nil, stacktrace.NewError("Requested own IP environment variable '%v' conflicts with custom environment variable", ownIpEnvVar)
@@ -211,6 +218,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 		enclaveDataVolumeDirpath,
 		ownIpEnvVar,
 		customEnvVars,
+		shouldStartInDebugMode,
 	)
 	if err != nil {
 		// WARNING: remember not to print 'customEnvVars' because it could end up creating a secret info leak
@@ -463,4 +471,8 @@ func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx con
 
 func (backend *MetricsReportingKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
 	return backend.underlying.BuildImage(ctx, imageName, imageBuildSpec)
+}
+
+func (backend *MetricsReportingKurtosisBackend) NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error) {
+	return backend.underlying.NixBuild(ctx, nixBuildSpec)
 }

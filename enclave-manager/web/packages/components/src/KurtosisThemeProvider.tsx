@@ -331,7 +331,7 @@ const theme = extendTheme({
     Form: formsTheme,
     Input: {
       baseStyle: {
-        field: { _dark: { bg: "gray.850" } },
+        field: { _dark: { bg: "gray.850" }, _placeholder: { color: "gray.200" } },
       },
     },
     Menu: {
@@ -346,14 +346,6 @@ const theme = extendTheme({
           borderRadius: "6px",
         },
         icon: { color: "gray.400", fontSize: "18px !important" },
-      },
-    },
-    Popover: {
-      baseStyle: {
-        content: {
-          bg: "gray.500",
-          p: "8px",
-        },
       },
     },
     Progress: progressTheme,
@@ -438,7 +430,12 @@ export const KurtosisThemeProvider = ({
   ...chakraProps
 }: PropsWithChildren<Omit<ChakraProviderProps, "theme">>) => {
   return (
-    <ChakraProvider theme={theme} toastOptions={{ defaultOptions: { position: "top" } }} {...chakraProps}>
+    <ChakraProvider
+      theme={theme}
+      toastOptions={{ defaultOptions: { position: "top" } }}
+      portalZIndex={40 /* https://github.com/chakra-ui/chakra-ui/issues/3269 */}
+      {...chakraProps}
+    >
       <ColorModeFixer />
       <Fonts />
       {children}

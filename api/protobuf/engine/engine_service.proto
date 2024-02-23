@@ -51,6 +51,10 @@ message CreateEnclaveArgs {
   optional string api_container_log_level = 3;
 
   optional EnclaveMode mode = 4;
+
+  // Whether the APIC's container should run with the debug server to receive a remote debug connection
+  // This is not an EnclaveMode because we will need to debug both current Modes (Test and Prod)
+  optional bool should_apic_run_in_debug_mode = 5;
 }
 
 enum EnclaveMode {

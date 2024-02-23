@@ -1,5 +1,7 @@
 import {
   Button,
+  FormControl,
+  FormLabel,
   Input,
   InputGroup,
   InputRightElement,
@@ -10,6 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Switch,
   Text,
 } from "@chakra-ui/react";
 import { CopyButton, NavButton, Navigation, NavigationDivider } from "kurtosis-ui-components";
@@ -21,8 +24,10 @@ import { PiLinkSimpleBold } from "react-icons/pi";
 import { Link, useLocation } from "react-router-dom";
 import { KURTOSIS_CLOUD_CONNECT_URL } from "../client/constants";
 import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
+import { settingKeys, useSettings } from "./settings";
 
 export const Navbar = () => {
+  const { updateSetting, settings } = useSettings();
   const location = useLocation();
   const kurtosisClient = useKurtosisClient();
   const [showAboutDialog, setShowAboutDialog] = useState(false);
@@ -78,7 +83,32 @@ export const Navbar = () => {
                 />
               </InputRightElement>
             </InputGroup>
-            <Text></Text>
+            <Text
+              as={"h2"}
+              fontSize={"lg"}
+              m={"16px 0"}
+              pt={"16px"}
+              borderTopWidth={"1px"}
+              borderTopColor={"gray.60"}
+              fontWeight={"semibold"}
+            >
+              Settings:
+            </Text>
+            <FormControl display="flex" alignItems="center">
+              <FormLabel htmlFor="experimental-build" mb="0">
+                Enable experimental enclave builder interface?
+              </FormLabel>
+              <Switch
+                id="experimental-build"
+                onChange={() =>
+                  updateSetting(
+                    settingKeys.ENABLE_EXPERIMENTAL_BUILD_ENCLAVE,
+                    !settings.ENABLE_EXPERIMENTAL_BUILD_ENCLAVE,
+                  )
+                }
+                isChecked={settings.ENABLE_EXPERIMENTAL_BUILD_ENCLAVE}
+              />
+            </FormControl>
           </ModalBody>
 
           <ModalFooter>

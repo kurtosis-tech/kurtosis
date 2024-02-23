@@ -146,7 +146,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	mainFuncName := args.GetMainFunctionName()
 	experimentalFeatures := args.GetExperimentalFeatures()
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
-
+	nonBlockingMode := args.GetNonBlockingMode()
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 
 	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript)
@@ -155,7 +155,19 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	}
 	noPackageReplaceOptions := map[string]string{}
 
-	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, noPackageReplaceOptions, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, downloadMode, args.GetExperimentalFeatures(), stream)
+	apicService.runStarlark(
+		parallelism,
+		dryRun,
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		noPackageReplaceOptions,
+		mainFuncName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		serializedStarlarkScript,
+		serializedParams,
+		downloadMode,
+		nonBlockingMode,
+		args.GetExperimentalFeatures(),
+		stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 		PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
@@ -248,6 +260,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	mainFuncName := args.GetMainFunctionName()
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
+	nonBlockignMode := args.GetNonBlockingMode()
 
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
@@ -280,7 +293,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
-	apicService.runStarlark(parallelism, dryRun, detectedPackageId, detectedPackageReplaceOptions, mainFuncName, actualRelativePathToMainFile, scriptWithRunFunction, serializedParams, downloadMode, args.ExperimentalFeatures, stream)
+	apicService.runStarlark(parallelism, dryRun, detectedPackageId, detectedPackageReplaceOptions, mainFuncName, actualRelativePathToMainFile, scriptWithRunFunction, serializedParams, downloadMode, nonBlockignMode, args.ExperimentalFeatures, stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 		PackageId:              packageIdFromArgs,
@@ -823,10 +836,11 @@ func (apicService *ApiContainerService) runStarlark(
 	serializedStarlark string,
 	serializedParams string,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
+	nonBlockingMode bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():

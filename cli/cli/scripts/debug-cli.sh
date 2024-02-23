@@ -47,13 +47,26 @@ fi
 # The funky ${1+"${@}"} incantation is how you feed arguments exactly as-is to a child script in Bash
 # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if
 #  ${1} exists, evaluate ${@}"
-cli_arguments=${1+"${@}"}
+cli_arguments_and_flags=${1+"${@}"}
 first_argument=$1
 headless_val="true"
 if [ "${first_argument}" == "dlv-terminal" ]; then
   headless_val="false"
   # The CLI's arguments start from the second position
-  cli_arguments=${2+"${@:2}"}
+  cli_arguments_and_flags=${2+"${@:2}"}
 fi
 
-dlv --listen="127.0.0.1:${CLI_DEBUG_SERVER_PORT}" --headless="${headless_val}" --api-version=2 --check-go-version=false --only-same-user=false exec "${cli_binary_filepath}" ${cli_arguments}
+# Split between program arguments and flags
+cli_arguments=""
+cli_flags=""
+for argument_or_flag in ${cli_arguments_and_flags}
+do
+  # If it's a flag
+  if [[ ${argument_or_flag} == -* ]]; then
+    cli_flags="${cli_flags} ${argument_or_flag}"
+  else
+    cli_arguments="${cli_arguments} ${argument_or_flag}"
+  fi
+done
+
+dlv --listen="127.0.0.1:${CLI_DEBUG_SERVER_PORT}" --headless="${headless_val}" --api-version=2 --check-go-version=false --only-same-user=false exec "${cli_binary_filepath}" ${cli_arguments} -- "--debug-mode" ${cli_flags}
