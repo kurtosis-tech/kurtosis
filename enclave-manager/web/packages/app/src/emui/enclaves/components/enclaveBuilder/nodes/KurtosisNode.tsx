@@ -6,9 +6,9 @@ import { DefaultValues, FormProvider, useForm } from "react-hook-form";
 import { FiCpu, FiFile, FiTerminal, FiTrash } from "react-icons/fi";
 import { RxCornerBottomRight } from "react-icons/rx";
 import { Handle, NodeResizeControl, Position, useReactFlow, useViewport } from "reactflow";
-import { KurtosisNodeData } from "./types";
-import { getNodeName } from "./utils";
-import { useVariableContext } from "./VariableContextProvider";
+import { KurtosisNodeData } from "../types";
+import { getNodeName } from "../utils";
+import { useVariableContext } from "../VariableContextProvider";
 
 const colors: Record<KurtosisNodeData["type"], string> = {
   service: "blue.900",

@@ -1,11 +1,11 @@
 import { memo } from "react";
 import { NodeProps } from "reactflow";
-import { KurtosisFormControl } from "../form/KurtosisFormControl";
-import { StringArgumentInput } from "../form/StringArgumentInput";
-import { FileTreeArgumentInput } from "./input/FileTreeArgumentInput";
-import { validateName } from "./input/validators";
+import { KurtosisFormControl } from "../../form/KurtosisFormControl";
+import { StringArgumentInput } from "../../form/StringArgumentInput";
+import { FileTreeArgumentInput } from "../input/FileTreeArgumentInput";
+import { validateName } from "../input/validators";
+import { KurtosisArtifactNodeData } from "../types";
 import { KurtosisNode } from "./KurtosisNode";
-import { KurtosisArtifactNodeData } from "./types";
 
 export const KurtosisArtifactNode = memo(
   ({ id, selected }: NodeProps) => {

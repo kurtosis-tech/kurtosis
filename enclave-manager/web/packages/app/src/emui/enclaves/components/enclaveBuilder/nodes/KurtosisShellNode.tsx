@@ -2,19 +2,19 @@ import { Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react"
 import { isDefined } from "kurtosis-ui-components";
 import { memo } from "react";
 import { NodeProps } from "reactflow";
-import { BooleanArgumentInput } from "../form/BooleanArgumentInput";
-import { CodeEditorInput } from "../form/CodeEditorInput";
-import { DictArgumentInput } from "../form/DictArgumentInput";
-import { KurtosisFormControl } from "../form/KurtosisFormControl";
-import { ListArgumentInput } from "../form/ListArgumentInput";
-import { StringArgumentInput } from "../form/StringArgumentInput";
-import { ImageConfigInput } from "./input/ImageConfigInput";
-import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
-import { MountArtifactFileInput } from "./input/MountArtifactFileInput";
-import { validateDurationString, validateName } from "./input/validators";
+import { BooleanArgumentInput } from "../../form/BooleanArgumentInput";
+import { CodeEditorInput } from "../../form/CodeEditorInput";
+import { DictArgumentInput } from "../../form/DictArgumentInput";
+import { KurtosisFormControl } from "../../form/KurtosisFormControl";
+import { ListArgumentInput } from "../../form/ListArgumentInput";
+import { StringArgumentInput } from "../../form/StringArgumentInput";
+import { ImageConfigInput } from "../input/ImageConfigInput";
+import { MentionStringArgumentInput } from "../input/MentionStringArgumentInput";
+import { MountArtifactFileInput } from "../input/MountArtifactFileInput";
+import { validateDurationString, validateName } from "../input/validators";
+import { KurtosisFileMount, KurtosisShellNodeData } from "../types";
+import { useVariableContext } from "../VariableContextProvider";
 import { KurtosisNode } from "./KurtosisNode";
-import { KurtosisFileMount, KurtosisShellNodeData } from "./types";
-import { useVariableContext } from "./VariableContextProvider";
 
 export const KurtosisShellNode = memo(
   ({ id, selected }: NodeProps) => {

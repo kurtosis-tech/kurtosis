@@ -17,11 +17,11 @@ import {
 } from "reactflow";
 import { v4 as uuidv4 } from "uuid";
 import { EnclaveFullInfo } from "../../types";
-import { KurtosisArtifactNode } from "./KurtosisArtifactNode";
-import { nodeIcons } from "./KurtosisNode";
-import { KurtosisPythonNode } from "./KurtosisPythonNode";
-import { KurtosisServiceNode } from "./KurtosisServiceNode";
-import { KurtosisShellNode } from "./KurtosisShellNode";
+import { KurtosisArtifactNode } from "./nodes/KurtosisArtifactNode";
+import { nodeIcons } from "./nodes/KurtosisNode";
+import { KurtosisPythonNode } from "./nodes/KurtosisPythonNode";
+import { KurtosisServiceNode } from "./nodes/KurtosisServiceNode";
+import { KurtosisShellNode } from "./nodes/KurtosisShellNode";
 import { generateStarlarkFromGraph, getNodeDependencies } from "./utils";
 import { useVariableContext } from "./VariableContextProvider";
 import "./Visualiser.css";
