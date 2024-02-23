@@ -67,6 +67,11 @@ func (arguments *ArgumentValuesSet) IsSet(argumentName string) bool {
 	return true
 }
 
+func (arguments *ArgumentValuesSet) AddArgument(argumentDefinition *BuiltinArgument, value starlark.Value) {
+	arguments.argumentsDefinition = append(arguments.argumentsDefinition, argumentDefinition)
+	arguments.values = append(arguments.values, value)
+}
+
 // ExtractArgumentValue compute the value associated with the argumentName and store it in the argumentValuePointer
 // It throws an exception if the argument is optional and unset in this ArgumentValuesSet
 //

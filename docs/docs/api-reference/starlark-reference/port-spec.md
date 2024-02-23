@@ -35,7 +35,10 @@ port_spec = PortSpec(
 ```
 The above constructor returns a `PortSpec` object that defines information about a port for use in [`add_service`][add-service-reference].
 
-The `wait` field represents the timeout duration that Kurtosis will use when checking whether or not a service's declared UDP or TCP port are open and ready for traffic and connections upon startup. This is the default way to perform a readiness check using Kurtosis. However, there are other ways to perform a readiness check. Specifically, you can also use [`ServiceConfig.ReadyConditions`][ready-conditions] to check if a service is ready with a a REST call, or you can use the [Wait][wait] instruction if you need to perform a one-off readiness check after service startup.
+The `wait` field represents the timeout duration that Kurtosis will use when checking whether a service's declared UDP or TCP port are open and ready for traffic and connections upon startup. This is the default way to perform a readiness check using Kurtosis. However, there are other ways to perform a readiness check. Specifically, you can also use [`ServiceConfig.ReadyConditions`][ready-conditions] to check if a service is ready with a a REST call, or you can use the [Wait][wait] instruction if you need to perform a one-off readiness check after service startup.
+
+In addition to the passed arguments a `PortSpec` object also has the `url` attribute that is set if the `application_protocol` is non-empty. It returns
+a concatenation of application protocol, service name and port number in the following format `APPLICATION_PROTOCOL://SERVICE_NAME:PORT_NUMBER`.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [future-references-reference]: ../../advanced-concepts/future-references.md
