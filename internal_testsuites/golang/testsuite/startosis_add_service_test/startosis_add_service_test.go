@@ -36,6 +36,8 @@ def run(plan):
 	datastore_1 = plan.add_service(name = SERVICE_NAME, config = config)
 	datastore_2 = plan.add_service(name = SERVICE_NAME_2, config = config)
 
+	plan.verify(datastore_1.ports["grpc"].url == "grpc://` + serviceName + `:" + str(GRPC_PORT))
+
 	test_hostname_cmd = "nc -zv {0} {1}".format(datastore_1.hostname, GRPC_PORT)
 	connection_result = plan.exec(
 		recipe = ExecRecipe(

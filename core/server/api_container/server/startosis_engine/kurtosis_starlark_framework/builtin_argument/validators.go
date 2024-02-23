@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
+	"net/url"
 	"reflect"
 	"regexp"
 	"strings"
@@ -190,4 +191,19 @@ func parseMapStringString(value starlark.Value, attributeName string) (map[strin
 		stringMap[mapKeyStr.GoString()] = mapValueStr.GoString()
 	}
 	return stringMap, nil
+}
+
+func ValidateURL(value starlark.Value, argNameForLogging string) *startosis_errors.InterpretationError {
+	valueStr, ok := value.(starlark.String)
+	if !ok {
+		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a starlark.String but was '%s'", argNameForLogging, reflect.TypeOf(value))
+	}
+	if len(valueStr.GoString()) == 0 {
+		return startosis_errors.NewInterpretationError("Value for '%s' was an empty string. This is disallowed", argNameForLogging)
+	}
+
+	if _, err := url.ParseQuery(valueStr.GoString()); err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Value for '%v' '%v' isn't a valid URI", argNameForLogging, valueStr.String())
+	}
+	return nil
 }

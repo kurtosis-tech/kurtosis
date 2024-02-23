@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
-	"net/url"
 	"reflect"
 	"strings"
 )
@@ -73,13 +72,7 @@ func NewPortSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						if err := builtin_argument.NonEmptyString(value, UrlAttr); err != nil {
-							return err
-						}
-						if _, err := url.ParseRequestURI(value.String()); err != nil {
-							return startosis_errors.WrapWithInterpretationError(err, "an error occurred while validating the passed url")
-						}
-						return nil
+						return builtin_argument.ValidateURL(value, UrlAttr)
 					},
 				},
 			},
