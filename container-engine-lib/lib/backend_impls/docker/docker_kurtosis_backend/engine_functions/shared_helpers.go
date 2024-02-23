@@ -210,7 +210,7 @@ func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spe
 		//TODO we are passing nil wait so far because the wait's serialization/deserialization logic is not added yet because
 		//TODO the port wait feature is in the design stage and its name and fields could change,
 		//TODO we will include this in a next PR
-		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, emptyApplicationProtocol, nil)
+		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, emptyApplicationProtocol, nil, "")
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,

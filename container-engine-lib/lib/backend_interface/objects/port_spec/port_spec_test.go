@@ -14,18 +14,19 @@ var (
 var portWaitForTest = NewWait(5 * time.Second)
 
 func TestConstructorErrorsOnUnrecognizedProtocol(t *testing.T) {
-	_, err := NewPortSpec(123, TransportProtocol(999), "", portWaitForTest)
+	_, err := NewPortSpec(123, TransportProtocol(999), "", portWaitForTest, "")
 	require.Error(t, err)
 }
 
 func TestNewPortSpec_WithApplicationProtocolPresent(t *testing.T) {
-	spec, err := NewPortSpec(123, TransportProtocol_TCP, httpAppProtocol, portWaitForTest)
+	spec, err := NewPortSpec(123, TransportProtocol_TCP, httpAppProtocol, portWaitForTest, "")
 
 	privatePortSpec := &privatePortSpec{
 		123,
 		TransportProtocol_TCP,
 		&httpAppProtocol,
 		portWaitForTest,
+		nil,
 	}
 
 	specActual := &PortSpec{
@@ -37,13 +38,14 @@ func TestNewPortSpec_WithApplicationProtocolPresent(t *testing.T) {
 }
 
 func TestNewPortSpec_WithApplicationProtocolAbsent(t *testing.T) {
-	spec, err := NewPortSpec(123, TransportProtocol_TCP, "", portWaitForTest)
+	spec, err := NewPortSpec(123, TransportProtocol_TCP, "", portWaitForTest, "")
 
 	privatePortSpec := &privatePortSpec{
 		123,
 		TransportProtocol_TCP,
 		nil,
 		portWaitForTest,
+		nil,
 	}
 
 	specActual := &PortSpec{
@@ -55,7 +57,7 @@ func TestNewPortSpec_WithApplicationProtocolAbsent(t *testing.T) {
 }
 
 func TestPortSpecMarshallers(t *testing.T) {
-	originalPortSpec, err := NewPortSpec(123, TransportProtocol_TCP, httpAppProtocol, portWaitForTest)
+	originalPortSpec, err := NewPortSpec(123, TransportProtocol_TCP, httpAppProtocol, portWaitForTest, "")
 	require.NoError(t, err)
 
 	marshaledPortSpec, err := json.Marshal(originalPortSpec)

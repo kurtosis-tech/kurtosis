@@ -21,7 +21,7 @@ func newFluentbitContainerConfigProvider(config *FluentbitConfig, tcpPortNumber 
 }
 
 func (fluent *fluentbitContainerConfigProvider) GetPrivateTcpPortSpec() (*port_spec.PortSpec, error) {
-	privateTcpPortSpec, err := port_spec.NewPortSpec(fluent.tcpPortNumber, tcpTransportProtocol, httpProtocolStr, nil)
+	privateTcpPortSpec, err := port_spec.NewPortSpec(fluent.tcpPortNumber, tcpTransportProtocol, httpProtocolStr, nil, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -34,7 +34,7 @@ func (fluent *fluentbitContainerConfigProvider) GetPrivateTcpPortSpec() (*port_s
 }
 
 func (fluent *fluentbitContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
-	privateHttpPortSpec, err := port_spec.NewPortSpec(fluent.httpPortNumber, httpTransportProtocol, httpProtocolStr, nil)
+	privateHttpPortSpec, err := port_spec.NewPortSpec(fluent.httpPortNumber, httpTransportProtocol, httpProtocolStr, nil, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

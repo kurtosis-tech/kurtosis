@@ -56,7 +56,7 @@ func NewGatewayConnectionProvider(ctx context.Context, kubernetesConfig *restcli
 
 func (provider *GatewayConnectionProvider) ForEngine(engine *engine.Engine) (GatewayConnectionToKurtosis, error) {
 	// Forward public GRPC ports of engine
-	enginePublicGrpcPortSpec, err := port_spec.NewPortSpec(kurtosis_context.DefaultGrpcEngineServerPortNum, port_spec.TransportProtocol_TCP, httpApplicationProtocol, noWait)
+	enginePublicGrpcPortSpec, err := port_spec.NewPortSpec(kurtosis_context.DefaultGrpcEngineServerPortNum, port_spec.TransportProtocol_TCP, httpApplicationProtocol, noWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a port-spec describing the public GRPC port of a Kurtosis engine, instead a non-nil error was returned")
 	}
@@ -78,7 +78,7 @@ func (provider *GatewayConnectionProvider) ForEnclaveApiContainer(enclaveInfo *k
 	apiContainerInfo := enclaveInfo.ApiContainerInfo
 	// We want the port on the kubernetes pod that tbe api container is listening on
 	grpcPortUint16 := uint16(apiContainerInfo.GetGrpcPortInsideEnclave())
-	apiContainerGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortUint16, port_spec.TransportProtocol_TCP, httpApplicationProtocol, noWait)
+	apiContainerGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortUint16, port_spec.TransportProtocol_TCP, httpApplicationProtocol, noWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a port spec describing api container GRPC port on port number'%v', instead a non-nil error was returned", grpcPortUint16)
 	}

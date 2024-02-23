@@ -64,7 +64,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating a wait with default values")
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -137,7 +137,7 @@ func CreateEngine(
 	}
 	logrus.Infof("Reverse proxy started.")
 
-	enclaveManagerUIPortSpec, err := port_spec.NewPortSpec(uint16(enclaveManagerUIPort), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	enclaveManagerUIPortSpec, err := port_spec.NewPortSpec(uint16(enclaveManagerUIPort), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -147,12 +147,7 @@ func CreateEngine(
 		)
 	}
 
-	enclaveManagerApiPortSpec, err := port_spec.NewPortSpec(
-		uint16(enclaveManagerAPIPort),
-		consts.EngineTransportProtocol,
-		consts.HttpApplicationProtocol,
-		defaultWait,
-	)
+	enclaveManagerApiPortSpec, err := port_spec.NewPortSpec(uint16(enclaveManagerAPIPort), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -162,7 +157,7 @@ func CreateEngine(
 		)
 	}
 
-	restAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	restAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -217,12 +212,7 @@ func CreateEngine(
 
 	// Configure the debug port only if it's required
 	if shouldStartInDebugMode {
-		debugServerPortSpec, err := port_spec.NewPortSpec(
-			uint16(engineDebugServerPort),
-			consts.EngineTransportProtocol,
-			consts.HttpApplicationProtocol,
-			defaultWait,
-		)
+		debugServerPortSpec, err := port_spec.NewPortSpec(uint16(engineDebugServerPort), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait, "")
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,

@@ -31,13 +31,13 @@ func TestForUserServiceContainer(t *testing.T) {
 	port1Id := "port1"
 	port1Num := uint16(23)
 	port1Protocol := port_spec.TransportProtocol_TCP
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "", portWaitForTest)
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "", portWaitForTest, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 	port2Id := "port2"
 	port2Num := uint16(45)
 	port2Protocol := port_spec.TransportProtocol_TCP
 	port2ApplicationProtocol := consts.HttpApplicationProtocol
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, port2ApplicationProtocol, portWaitForTest)
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, port2ApplicationProtocol, portWaitForTest, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 	privatePorts := map[string]*port_spec.PortSpec{
 		port1Id: port1Spec,

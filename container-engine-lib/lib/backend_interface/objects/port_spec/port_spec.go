@@ -20,13 +20,7 @@ type privatePortSpec struct {
 }
 
 // This method accepts port number, transportProtocol, and application protocol (which is optional), and port wait
-func NewPortSpec(
-	number uint16,
-	transportProtocol TransportProtocol,
-	maybeApplicationProtocol string,
-	wait *Wait,
-	maybeUrl string,
-) (*PortSpec, error) {
+func NewPortSpec(number uint16, transportProtocol TransportProtocol, maybeApplicationProtocol string, wait *Wait, maybeUrl string) (*PortSpec, error) {
 	var appProtocol *string
 	if maybeApplicationProtocol != "" {
 		appProtocol = &maybeApplicationProtocol

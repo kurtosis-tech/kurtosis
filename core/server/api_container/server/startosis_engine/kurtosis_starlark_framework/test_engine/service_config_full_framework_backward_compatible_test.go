@@ -68,14 +68,14 @@ func (t *serviceConfigFullTestCaseBackwardCompatible) Assert(typeValue builtin_a
 	waitDuration, errParseDuration := time.ParseDuration(testWaitConfiguration)
 	require.NoError(t, errParseDuration)
 
-	privatePortSpec, errPrivatePortSpec := port_spec.NewPortSpec(testPrivatePortNumber, testPrivatePortProtocol, testPrivateApplicationProtocol, port_spec.NewWait(waitDuration))
+	privatePortSpec, errPrivatePortSpec := port_spec.NewPortSpec(testPrivatePortNumber, testPrivatePortProtocol, testPrivateApplicationProtocol, port_spec.NewWait(waitDuration), "")
 	require.NoError(t, errPrivatePortSpec)
 	expectedPrivatePorts := map[string]*port_spec.PortSpec{
 		testPrivatePortId: privatePortSpec,
 	}
 	require.Equal(t, expectedPrivatePorts, serviceConfig.GetPrivatePorts())
 
-	portSpec, errPublicPortSpec := port_spec.NewPortSpec(testPublicPortNumber, testPublicPortProtocol, testPrivateApplicationProtocol, port_spec.NewWait(waitDuration))
+	portSpec, errPublicPortSpec := port_spec.NewPortSpec(testPublicPortNumber, testPublicPortProtocol, testPrivateApplicationProtocol, port_spec.NewWait(waitDuration), "")
 	require.NoError(t, errPublicPortSpec)
 	expectedPublicPorts := map[string]*port_spec.PortSpec{
 		testPublicPortId: portSpec,
