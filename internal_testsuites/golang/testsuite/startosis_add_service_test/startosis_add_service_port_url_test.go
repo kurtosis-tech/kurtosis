@@ -9,10 +9,7 @@ import (
 )
 
 const (
-	serviceName  = "datastore-1"
-	serviceName2 = "datastore-2"
-
-	addServiceAndTestConnectionScript = `
+	addServicePortTest = `
 CONTAINER_IMAGE = "kurtosistech/example-datastore-server"
 SERVICE_NAME = "` + serviceName + `"
 SERVICE_NAME_2 = "` + serviceName2 + `"
@@ -20,7 +17,19 @@ GRPC_PORT = 1323
 SUCCESS_CODE = 0
 
 def run(plan):
-	plan.print("Adding services " + SERVICE_NAME + " and " + SERVICE_NAME_2)
+	config = ServiceConfig(
+		image = CONTAINER_IMAGE,
+		max_cpu=500,
+		min_cpu=100,
+		memory_allocation=256,
+		max_memory=1024,
+		min_memory=512,
+		ports = {
+			"grpc": PortSpec(number = GRPC_PORT, transport_protocol = "TCP", application_protocol="grpc")
+		}
+	)
+	datastore_1 = plan.add_service(name = SERVICE_NAME, config = config)
+	plan.verify(datastore_1.ports["grpc"].url, "==", "grpc://` + serviceName + `:" + str(GRPC_PORT))
 	
 	config = ServiceConfig(
 		image = CONTAINER_IMAGE,
@@ -30,55 +39,26 @@ def run(plan):
 		max_memory=1024,
 		min_memory=512,
 		ports = {
-			"grpc": PortSpec(number = GRPC_PORT, transport_protocol = "TCP")
+			"grpc": PortSpec(number = GRPC_PORT, transport_protocol = "TCP", url="http://foobar:9932", application_protocol="grpc")
 		}
 	)
-	datastore_1 = plan.add_service(name = SERVICE_NAME, config = config)
 	datastore_2 = plan.add_service(name = SERVICE_NAME_2, config = config)
-
-	test_hostname_cmd = "nc -zv {0} {1}".format(datastore_1.hostname, GRPC_PORT)
-	connection_result = plan.exec(
-		recipe = ExecRecipe(
-			command=["sh", "-c", test_hostname_cmd],
-		),
-		service_name = SERVICE_NAME_2,
-	)
-	plan.verify(connection_result["code"], "==", SUCCESS_CODE)
-	
-	test_ip_address_cmd = "nc -zv {0} {1}".format(datastore_1.ip_address, GRPC_PORT) 
-	connection_result = plan.exec(
-		recipe = ExecRecipe(
-			command=["sh", "-c", test_ip_address_cmd],
-		),
-		service_name = SERVICE_NAME_2,
-	)
-	plan.verify(connection_result["code"], "==", SUCCESS_CODE)
+	plan.verify(datastore_2.ports["grpc"].url, "==", "http://foobar:9932")
 `
 )
 
-func (suite *StartosisAddServiceTestSuite) TestAddTwoServicesAndTestConnection() {
+func (suite *StartosisAddServiceTestSuite) TestAddServicePortUrl() {
 	ctx := context.Background()
-	runResult, err := suite.RunScript(ctx, addServiceAndTestConnectionScript)
+	runResult, err := suite.RunScript(ctx, addServicePortTest)
 
 	t := suite.T()
 
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 
-	expectedScriptOutput := `Adding services ` + serviceName + ` and ` + serviceName2 + `
-Service '` + serviceName + `' added with service UUID '[a-z-0-9]+'
+	expectedScriptOutput := `Service '` + serviceName + `' added with service UUID '[a-z-0-9]+'
+Verification succeeded. Value is '"grpc://datastore-1:1323"'.
 Service '` + serviceName2 + `' added with service UUID '[a-z-0-9]+'
-Command returned with exit code '0' and the following output:
---------------------
-[a-z-0-9]+ \([0-9\.]+:1323\) open
-
---------------------
-Verification succeeded. Value is '0'.
-Command returned with exit code '0' and the following output:
---------------------
-[0-9\.]+ \([0-9\.]+:1323\) open
-
---------------------
-Verification succeeded. Value is '0'.
+Verification succeeded. Value is '"http://foobar:9932"'.
 `
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
