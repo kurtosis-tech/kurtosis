@@ -430,7 +430,12 @@ export const KurtosisThemeProvider = ({
   ...chakraProps
 }: PropsWithChildren<Omit<ChakraProviderProps, "theme">>) => {
   return (
-    <ChakraProvider theme={theme} toastOptions={{ defaultOptions: { position: "top" } }} {...chakraProps}>
+    <ChakraProvider
+      theme={theme}
+      toastOptions={{ defaultOptions: { position: "top" } }}
+      portalZIndex={40 /* https://github.com/chakra-ui/chakra-ui/issues/3269 */}
+      {...chakraProps}
+    >
       <ColorModeFixer />
       <Fonts />
       {children}
