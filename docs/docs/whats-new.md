@@ -17,9 +17,7 @@ Enclave Builder UI
 
 You can now build enclaves without writing code using the enclave builder UI:
 
-<p align="center">
-  <img src="../static/img/whats-new/2024-02-26/enclave-builder.png" />
-</p>
+![enclave-builder.png](../static/img/whats-new/2024-02-26/enclave-builder.png)
 
 The UI will automatically generate Starlark for you, which can be viewed with the "Preview" button.
 
@@ -48,9 +46,7 @@ Human-friendly plan steps
 
 The default way `kurtosis run` describes plan steps is now human-friendly:
 
-<p align="center">
-  <img src="../static/img/whats-new/2024-02-26/human-friendly-descriptions.png" />
-</p>
+![human-friendly-descriptions.png](../static/img/whats-new/2024-02-26/human-friendly-descriptions.png)
 
 You can return to the previous way by adding `--verbosity brief` to your `kurtosis run` flags.
 
@@ -58,8 +54,6 @@ You can return to the previous way by adding `--verbosity brief` to your `kurtos
 
 You can now submit bugs from the Kurtosis app itself using the button in the bottom-left:
 
-<p align="center">
-  <img src="../static/img/whats-new/2024-02-26/bug-reports.png" />
-</p>
+![bug-reports.png](../static/img/whats-new/2024-02-26/bug-reports.png)
 
 We're very interested in your feedback about the above features, so let us know what you think!
