@@ -127,7 +127,7 @@ func testPrivatePorts(t *testing.T) map[string]*port_spec.PortSpec {
 	port1Protocol := port_spec.TransportProtocol_TCP
 	appProtocol1 := "app-protocol1"
 	wait1 := port_spec.NewWait(5 * time.Minute)
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, appProtocol1, wait1)
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, appProtocol1, wait1, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
@@ -135,7 +135,7 @@ func testPrivatePorts(t *testing.T) map[string]*port_spec.PortSpec {
 	port2Protocol := port_spec.TransportProtocol_TCP
 	appProtocol2 := "app-protocol2"
 	wait2 := port_spec.NewWait(24 * time.Second)
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, appProtocol2, wait2)
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, appProtocol2, wait2, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
 	input := map[string]*port_spec.PortSpec{
@@ -153,7 +153,7 @@ func testPublicPorts(t *testing.T) map[string]*port_spec.PortSpec {
 	port1Protocol := port_spec.TransportProtocol_TCP
 	appProtocol1 := "app-protocol1-public"
 	wait1 := port_spec.NewWait(5 * time.Minute)
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, appProtocol1, wait1)
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, appProtocol1, wait1, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
@@ -161,7 +161,7 @@ func testPublicPorts(t *testing.T) map[string]*port_spec.PortSpec {
 	port2Protocol := port_spec.TransportProtocol_TCP
 	appProtocol2 := "app-protocol2-public"
 	wait2 := port_spec.NewWait(24 * time.Second)
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, appProtocol2, wait2)
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, appProtocol2, wait2, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
 	input := map[string]*port_spec.PortSpec{

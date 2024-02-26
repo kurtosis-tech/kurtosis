@@ -156,6 +156,8 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, erro
 		portProtocolStr := portSpecFragments[portProtocolIndex]
 		portApplicationProtocolStr := ""
 		var portWait *port_spec.Wait = nil
+		// TODO we aren't serializing this
+		portUrl := ""
 
 		if numPortSpecFragments == numPortSpecFragmentsWithOptionalFields {
 			optionalFieldsFragments := strings.Split(portSpecFragments[portSpecOptionalFieldsIndex], portSpecOptionalFieldsSeparator)
@@ -196,7 +198,7 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, erro
 			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
 		}
 
-		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, portApplicationProtocolStr, portWait)
+		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, portApplicationProtocolStr, portWait, portUrl)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,

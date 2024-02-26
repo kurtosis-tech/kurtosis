@@ -1037,7 +1037,7 @@ func TestScanPort(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest)
+	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest, "")
 	require.NoError(t, err)
 
 	scanPortTimeout := 5 * time.Second
@@ -1045,7 +1045,7 @@ func TestScanPort(t *testing.T) {
 	err = scanPort(localhost, tcpPortSpec, scanPortTimeout)
 	require.NoError(t, err)
 
-	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "", portWaitForTest)
+	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "", portWaitForTest, "")
 	require.NoError(t, err)
 
 	err = scanPort(localhost, udpPortSpec, scanPortTimeout)
@@ -1062,10 +1062,10 @@ func TestWaitUntilAllTCPAndUDPPortsAreOpen_Success(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest)
+	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest, "")
 	require.NoError(t, err)
 
-	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "", portWaitForTest)
+	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "", portWaitForTest, "")
 	require.NoError(t, err)
 
 	ports := map[string]*port_spec.PortSpec{
@@ -1090,13 +1090,13 @@ func TestWaitUntilAllTCPAndUDPPortsAreOpen_Fails(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest)
+	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest, "")
 	require.NoError(t, err)
 
-	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "", portWaitForTest)
+	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "", portWaitForTest, "")
 	require.NoError(t, err)
 
-	closedPortSpec, err := port_spec.NewPortSpec(closedPortNumber, port_spec.TransportProtocol_TCP, "", portWaitForTest)
+	closedPortSpec, err := port_spec.NewPortSpec(closedPortNumber, port_spec.TransportProtocol_TCP, "", portWaitForTest, "")
 	require.NoError(t, err)
 
 	ports := map[string]*port_spec.PortSpec{

@@ -43,12 +43,13 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 		number := port.GetNumber()
 		transportProtocol := port.GetTransportProtocol()
 		maybeApplicationProtocol := port.GetMaybeApplicationProtocol()
+		maybeUrl := port.GetUrl()
 		var maybeWaitTimeout string
 		if port.GetWait() != nil {
 			maybeWaitTimeout = port.GetWait().GetTimeout().String()
 		}
 
-		portSpec, interpretationErr := port_spec.CreatePortSpecUsingGoValues(number, transportProtocol, maybeApplicationProtocol, maybeWaitTimeout)
+		portSpec, interpretationErr := port_spec.CreatePortSpecUsingGoValues(serviceName.GoString(), number, transportProtocol, maybeApplicationProtocol, maybeWaitTimeout, maybeUrl)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}

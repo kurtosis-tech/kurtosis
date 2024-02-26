@@ -65,7 +65,7 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -74,7 +74,7 @@ func CreateEngine(
 			consts.KurtosisServersTransportProtocol.String(),
 		)
 	}
-	privateRESTAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait)
+	privateRESTAPIPortSpec, err := port_spec.NewPortSpec(engine.RESTAPIPortAddr, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait, "")
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
