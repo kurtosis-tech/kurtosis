@@ -716,8 +716,24 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instru
 	return nil
 }
 
-func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRemoveService(RemoveServiceInstruction *instructions_plan.ScheduledInstruction) error {
-	// TODO: update the plan yaml based on an add_service
+func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRemoveService(removeServiceInstruction *instructions_plan.ScheduledInstruction) error {
+	arguments := removeServiceInstruction.GetInstruction().GetArguments()
+
+	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, remove_service.ServiceNameArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", remove_service.ServiceNameArgName)
+	}
+
+	delete(pyg.serviceIndex, serviceName.GoString())
+
+	for idx, service := range pyg.planYaml.Services {
+		if service.Name == serviceName.GoString() {
+			pyg.planYaml.Services[idx] = pyg.planYaml.Services[len(pyg.planYaml.Services)-1]
+			pyg.planYaml.Services = pyg.planYaml.Services[:len(pyg.planYaml.Services)-1]
+			return nil
+		}
+	}
+
 	return nil
 }
 
