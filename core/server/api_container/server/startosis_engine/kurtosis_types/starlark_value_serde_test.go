@@ -76,11 +76,15 @@ func (suite *StarlarkValueSerdeSuite) TestStarlarkValueSerde_Dict() {
 }
 
 func (suite *StarlarkValueSerdeSuite) TestStarlarkValueSerde_Service() {
+	applicationProtocol := "http"
+	maybeUrl := "http://my-test-service:443"
 	port, interpretationErr := port_spec.CreatePortSpecUsingGoValues(
+		"my-test-service",
 		uint16(443),
 		port_spec_core.TransportProtocol_TCP,
-		nil,
+		&applicationProtocol,
 		"10s",
+		&maybeUrl,
 	)
 	require.Nil(suite.T(), interpretationErr)
 	ports := starlark.NewDict(1)
@@ -95,7 +99,7 @@ func (suite *StarlarkValueSerdeSuite) TestStarlarkValueSerde_Service() {
 	require.Nil(suite.T(), interpretationErr)
 
 	serializedStarlarkValue := suite.serde.Serialize(serviceObj)
-	expectedSerializedServiceObj := `Service(name="test-service", hostname="test-service-hostname", ip_address="192.168.0.22", ports={"http": PortSpec(number=443, transport_protocol="TCP", wait="10s")})`
+	expectedSerializedServiceObj := `Service(name="test-service", hostname="test-service-hostname", ip_address="192.168.0.22", ports={"http": PortSpec(number=443, transport_protocol="TCP", application_protocol="http", wait="10s", url="http://my-test-service:443")})`
 	require.Equal(suite.T(), expectedSerializedServiceObj, serializedStarlarkValue)
 
 	deserializedStarlarkValue, interpretationErr := suite.serde.Deserialize(serializedStarlarkValue)
