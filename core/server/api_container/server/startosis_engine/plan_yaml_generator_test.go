@@ -69,24 +69,46 @@ func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 }
 
 func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
-	barModulePath := "github.com/foo/bar/hi.txt"
-	seedModules := map[string]string{
-		barModulePath: "a=\"World!\"",
-	}
-	require.Nil(suite.T(), suite.packageContentProvider.BulkAddFileContent(seedModules))
+	barModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
+	barModuleContents := `# Use an existing docker image as a base
+FROM alpine:latest
+
+# Run commands to install necessary dependencies
+RUN apk add --update nodejs npm
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install app dependencies
+RUN npm install
+
+# Expose a port the app runs on
+EXPOSE 3000
+
+# Define environment variable
+ENV NODE_ENV=production
+
+# Command to run the application
+CMD ["node", "app.js"]
+`
+	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(barModulePath, barModuleContents))
 
 	packageId := "github.com/kurtosis-tech/plan-yaml-prac"
 	mainFunctionName := ""
 	relativePathToMainFile := "main.star"
 
-	serializedScript := `postgres_package = import_module("github.com/kurtosis-tech/postgres-package/main.star")
-
-def run(plan, args):
-    postgres_package.run(plan)
-    result = plan.exec(
-        service_name = "postgres",
-        recipe = ExecRecipe(command = ["echo", "Hello, world"]),
-        acceptable_codes=[0]
+	serializedScript := `def run(plan, args):
+    plan.add_service(
+        name="tedi",
+        config=ServiceConfig(
+            image=ImageBuildSpec(
+                image_name="smth",
+                build_context_dir="./"
+            )
+        )
     )
 `
 	serializedJsonParams := "{}"
@@ -153,7 +175,6 @@ services:
 func (suite *PlanYamlGeneratorTestSuite) TestPlanYamlGeneratorSimplerScripButNotSoSimple() {
 	script := `
 def run(plan):
-
 	
 	service_name = "partyService"
 
