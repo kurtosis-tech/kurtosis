@@ -73,6 +73,7 @@ const sidebars = {
         'faq',
         'best-practices',
         'roadmap',
+        'whats-new',
         'changelog',
     ],
 };
