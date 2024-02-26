@@ -5,7 +5,7 @@ slug: /private-packages
 sidebar_position: 14
 ---
 
-Kurtosis CLI supports the ability to run private packages hosted on GitHub via `kurtosis github login`. This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md) and a package hosted GitHub that is private.
+Kurtosis CLI supports the ability to run private packages hosted on GitHub via `kurtosis github login`. This guide assumes that you have [Kurtosis installed](../get-started/installing-the-cli.md) and a package hosted on GitHub that is private.
 
 :::note
 GitHub Login is not yet supported over Kubernetes backend. Please create an [issue](https://github.com/kurtosis-tech/kurtosis/issues) to request this feature!
@@ -29,7 +29,7 @@ A GitHub screen should pop up in your browser instructing you to enter the one-t
 After entering the code, GitHub will prompt you to authorize Kurtosis CLI. Kurtosis CLI requests [`repo`](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) access to repositories for the ability to read and pull from private repositories.
 
 :::info OAuth Token Scopes
-While `repo` gives Kurtosis read and write access to private repositories, Kurtosis only performs read operations. GitHub does not support a `[repo:read`](https://github.com/jollygoodcode/jollygoodcode.github.io/issues/6) OAuth scope, but an alternative is to use [fine-grained personal access tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens) to restrict Kurtosis CLI read/write and repository permissions. This token can be passed to Kurtosis CLI via the [`kurtosis engine start --github-auth-token=<>`](../cli-reference/engine-start.md) flag.
+While `repo` gives Kurtosis read and write access to private repositories, Kurtosis only performs read operations. GitHub does not support a [`repo:read`](https://github.com/jollygoodcode/jollygoodcode.github.io/issues/6) OAuth scope, but an alternative is to use [fine-grained personal access tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens) to restrict Kurtosis CLI read/write and repository permissions. This token can be passed to Kurtosis CLI via the [`kurtosis engine start --github-auth-token=<>`](../cli-reference/engine-start.md) flag.
 :::
 
 :::note Private Packages within GitHub Orgs
