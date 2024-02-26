@@ -28,7 +28,11 @@ A GitHub screen should pop up in your browser instructing you to enter the one-t
 
 After entering the code, GitHub will prompt you to authorize Kurtosis CLI. Kurtosis CLI requests [`repo`](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) access to repositories for the ability to read and pull from private repositories.
 
-:::info Private Packages within GitHub Orgs
+:::info OAuth Token Scopes
+While `repo` gives Kurtosis read and write access to private repositories, Kurtosis only performs read operations. GitHub does not support a repo `[repo:read`](https://github.com/jollygoodcode/jollygoodcode.github.io/issues/6) OAuth scope, but an alternative is to use [fine-grained personal access tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens) to restrict Kurtosis CLI read/write and repository permissions. This token can be pass to Kurtosis CLI via the [`kurtosis engine start --github-auth-token=<>`](../cli-reference/engine-start.md) flag.
+:::
+
+:::note Private Packages within GitHub Orgs
 If the private package you'd like to develop on lives in a GitHub org, the organization must also authorize Kurtosis CLI. To have an organization you are a part of authorize Kurtosis CLI, click the `Request` button next to the organization name on the authorization page, then notify your org admins to accept the request via email.
 :::
 
