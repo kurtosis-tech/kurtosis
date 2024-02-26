@@ -3,7 +3,7 @@ title: ImageSpec
 sidebar_label: ImageSpec
 ---
 
-The `ImageSpec` object constructor allows for providing detailed information about a container image for use in the [`ServiceConfig.image`](./service-config.md#image) property. It is most commonly used when pulling an image from a non-Dockerhub container repository.
+The `ImageSpec` object constructor allows for providing detailed information about a container image for use in the [`ServiceConfig.image`](./service-config.md) property. It is most commonly used when pulling an image from a non-Dockerhub container repository.
 
 Signature
 ---------
