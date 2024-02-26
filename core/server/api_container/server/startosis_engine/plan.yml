@@ -1,7 +1,0 @@
-packageId: github.com/kurtosis-tech/plan-yaml-prac
-services:
-- name: tedi
-  uuid: e77f8c7514c34c6f804f3332ddd1a16f
-  image:
-    name: smth
-    registry: ./server

@@ -99,34 +99,39 @@ CMD ["node", "app.js"]
 	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(serverModulePath, ""))
 
 	packageId := "github.com/kurtosis-tech/plan-yaml-prac"
-	locatorOfModuleInWhichThisBuiltinIsBeingCalled := "github.com/kurtosis-tech/plan-yaml-prac/main.star" // this is going to cause problems, this value is different for every builtin in the plan and thus needs to be set per instruction
 	mainFunctionName := ""
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
     plan.add_service(
-        name="tedi",
+        name="db",
         config=ServiceConfig(
-            image=ImageSpec(
-                image="smth",
-			    username="tedi",
-				password="tedi",
-                registry="./server"
-            )
+            image="postgres:alpine",
+            env_vars = {
+                "POSTGRES_DB": "tedi",
+                "POSTGRES_USER": "tedi",
+                "POSTGRES_PASSWORD": "tedi",
+            }
         )
     )
+
+    result = plan.exec(
+        service_name = "db",
+        recipe = ExecRecipe(command = ["echo", "Hello, world"]),
+        acceptable_codes=[156],
+    )
+    plan.print(result)
 `
 	serializedJsonParams := "{}"
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
 	require.Nil(suite.T(), interpretationError)
-	require.Equal(suite.T(), 1, instructionsPlan.Size())
+	require.Equal(suite.T(), 3, instructionsPlan.Size())
 
 	pyg := NewPlanYamlGenerator(
 		instructionsPlan,
 		suite.serviceNetwork,
 		packageId,
 		suite.packageContentProvider,
-		locatorOfModuleInWhichThisBuiltinIsBeingCalled, // figure out if this is needed
 		noPackageReplaceOptions,
 	)
 	yamlBytes, err := pyg.GenerateYaml()
@@ -158,7 +163,6 @@ def run(plan):
 		suite.serviceNetwork,
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		suite.packageContentProvider,
-		"", // figure out if this is needed
 		noPackageReplaceOptions)
 	yamlBytes, err := pyg.GenerateYaml()
 	require.NoError(suite.T(), err)
@@ -210,7 +214,6 @@ def run(plan):
 		suite.serviceNetwork,
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		suite.packageContentProvider,
-		"", // figure out if this is needed
 		noPackageReplaceOptions)
 	yamlBytes, err := pyg.GenerateYaml()
 	require.NoError(suite.T(), err)
@@ -265,7 +268,6 @@ def run(plan):
 		suite.serviceNetwork,
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		suite.packageContentProvider,
-		"", // figure out if this is needed
 		noPackageReplaceOptions)
 	yamlBytes, err := pyg.GenerateYaml()
 	require.NoError(suite.T(), err)
@@ -477,7 +479,6 @@ def run(
 		suite.serviceNetwork,
 		packageId,
 		suite.packageContentProvider,
-		"", // figure out if this is needed
 		noPackageReplaceOptions,
 	)
 	yamlBytes, err := pyg.GenerateYaml()
@@ -554,7 +555,6 @@ func (suite *PlanYamlGeneratorTestSuite) TestSimpleScriptWithFilesArtifact() {
 		suite.serviceNetwork,
 		packageId,
 		suite.packageContentProvider,
-		"", // figure out if this is needed
 		noPackageReplaceOptions,
 	)
 	yamlBytes, err := pyg.GenerateYaml()

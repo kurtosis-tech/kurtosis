@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
@@ -14,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
@@ -77,8 +79,6 @@ type PlanYamlGeneratorImpl struct {
 
 	packageContentProvider startosis_packages.PackageContentProvider
 
-	locatorOfModuleInWhichThisBuiltInIsBeingCalled string
-
 	packageReplaceOptions map[string]string
 
 	// technically files artifacts are future references but we store them separately bc they are easily identifiable
@@ -100,14 +100,12 @@ func NewPlanYamlGenerator(
 	serviceNetwork service_network.ServiceNetwork,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageReplaceOptions map[string]string) *PlanYamlGeneratorImpl {
 	return &PlanYamlGeneratorImpl{
 		plan:                   plan,
 		serviceNetwork:         serviceNetwork,
 		packageContentProvider: packageContentProvider,
 		packageReplaceOptions:  packageReplaceOptions,
-		locatorOfModuleInWhichThisBuiltInIsBeingCalled: locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		planYaml: &PlanYaml{
 			PackageId:      packageId,
 			Services:       []*Service{},
@@ -145,6 +143,8 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 			err = pyg.updatePlanYamlFromUploadFiles(scheduledInstruction)
 		case store_service_files.StoreServiceFilesBuiltinName:
 			err = pyg.updatePlanYamlFromStoreServiceFiles(scheduledInstruction)
+		case exec.ExecBuiltinName:
+			err = pyg.updatePlanYamlFromExec(scheduledInstruction)
 		default:
 			// skip if this instruction is not one that will update the plan yaml
 			continue
@@ -179,7 +179,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	}
 	serviceConfig, serviceConfigErr := starlarkServiceConfig.ToKurtosisType( // is this an expensive call? // TODO: add this error back in
 		pyg.serviceNetwork,
-		pyg.locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		kurtosisInstruction.GetPositionInOriginalScript().GetFilename(),
 		pyg.planYaml.PackageId,
 		pyg.packageContentProvider,
 		pyg.packageReplaceOptions)
@@ -678,7 +678,41 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreServiceFiles(storeServi
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instructions_plan.ScheduledInstruction) error {
 	// TODO: update the plan yaml based on an add_service
+	var task *Task
 
+	arguments := execInstruction.GetInstruction().GetArguments()
+	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, exec.ServiceNameArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", exec.ServiceNameArgName)
+	}
+	task = &Task{
+		ServiceName: serviceNameArgumentValue.GoString(),
+	}
+
+	execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, exec.RecipeArgName)
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", exec.RecipeArgName)
+	}
+	commandStarlarkList, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](execRecipe.KurtosisValueTypeDefault, recipe.CommandAttr)
+	if interpretationErr != nil {
+		return interpretationErr
+	}
+	task.RunCmd = commandStarlarkList.String()
+
+	acceptableCodes := []int64{0}
+	if arguments.IsSet(exec.AcceptableCodesArgName) {
+		acceptableCodesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, exec.AcceptableCodesArgName)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%v' argument", acceptableCodes)
+		}
+		acceptableCodes, err = kurtosis_types.SafeCastToIntegerSlice(acceptableCodesValue)
+		if err != nil {
+			return startosis_errors.WrapWithInterpretationError(err, "Unable to parse '%v' argument", acceptableCodes)
+		}
+	}
+	task.AcceptableCodes = acceptableCodes
+
+	pyg.planYaml.Tasks = append(pyg.planYaml.Tasks, task)
 	return nil
 }
 

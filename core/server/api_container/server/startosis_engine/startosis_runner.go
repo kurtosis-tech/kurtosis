@@ -170,7 +170,6 @@ func (runner *StartosisRunner) Run(
 				runner.startosisInterpreter.serviceNetwork,
 				packageId,
 				runner.startosisInterpreter.packageContentProvider,
-				"", // don't think this matters? but figure out if it does
 				packageReplaceOptions,
 			)
 			planYaml, err := pyg.GenerateYaml()

@@ -7,6 +7,7 @@ const (
 
 	SHELL  TaskType = "sh"
 	PYTHON TaskType = "python"
+	EXEC   TaskType = "exec"
 )
 
 // TODO: there's really no point in making any of these references, consider just making them copies
@@ -92,6 +93,10 @@ type Task struct {
 	// only exists on PYTHON tasks
 	PythonPackages []string `yaml:"pythonPackages,omitempty"`
 	PythonArgs     []string `yaml:"pythonArgs,omitempty"`
+
+	// service name
+	ServiceName     string  `yaml:"serviceName,omitempty"`
+	AcceptableCodes []int64 `yaml:"acceptableCodes,omitempty"`
 }
 
 // TaskType represents the type of task (either PYTHON or SHELL)
