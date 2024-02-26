@@ -2,18 +2,18 @@
 title: What's New In Kurtosis
 sidebar_label: What's New
 slug: '/whats-new'
+toc_max_heading_level: 2
 ---
 
-<!-- !!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
-<!--                   ATTENTION KURTOSIANS                              -->
-<!--   Keep the latest on top, so users don't have to scroll to bottom   -->
-<!-- !!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+What's New In Kurtosis
+======================
+
+For detailed information about the changes in each release, see [the changelog](/changelog).
 
 2024-02-26
-==========
+----------
 
-Enclave Builder UI
-------------------
+### Enclave Builder UI
 
 You can now build enclaves without writing code using the enclave builder UI:
 
@@ -23,8 +23,7 @@ The UI will automatically generate Starlark for you, which can be viewed with th
 
 To enable the enclave builder UI, go to the "About" icon in the bottom-left corner of the Kurtosis app and select "Enable experimental enclave builder interface". You'll then see an "Enclave Builder" button in the Enclave List screen.
 
-Kurtosis Github Action
-----------------------
+### Kurtosis Github Action
 
 You can now run Kurtosis inside your GH Actions CI using [our prebuilt Action](https://github.com/kurtosis-tech/kurtosis-github-action).
 
@@ -41,8 +40,7 @@ You can now run Kurtosis inside your GH Actions CI using [our prebuilt Action](h
 
 This can be useful for integration & end-to-end tests, and can be paired with [ImageBuildSpec](https://docs.kurtosis.com/api-reference/starlark-reference/image-build-spec/) so that Kurtosis will both build the image and instantiate the environment.
 
-Human-friendly plan steps
--------------------------
+### Human-friendly plan steps
 
 The default way `kurtosis run` describes plan steps is now human-friendly:
 
@@ -50,7 +48,7 @@ The default way `kurtosis run` describes plan steps is now human-friendly:
 
 You can return to the previous way by adding `--verbosity brief` to your `kurtosis run` flags.
 
-# Bugs & Feedback
+### Bugs & Feedback
 
 You can now submit bugs from the Kurtosis app itself using the button in the bottom-left:
 
