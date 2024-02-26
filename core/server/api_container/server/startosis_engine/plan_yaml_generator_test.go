@@ -60,17 +60,18 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Return(apiContainerInfo)
 }
 
-//func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
-//	suite.Run(t, new(PlanYamlGeneratorTestSuite))
-//}
+func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
+	suite.Run(t, new(PlanYamlGeneratorTestSuite))
+}
 
 func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
 }
 
 func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
-	barModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
-	barModuleContents := `# Use an existing docker image as a base
+	dockerfileModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server/Dockerfile"
+	serverModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
+	dockerfileContents := `# Use an existing docker image as a base
 FROM alpine:latest
 
 # Run commands to install necessary dependencies
@@ -94,9 +95,11 @@ ENV NODE_ENV=production
 # Command to run the application
 CMD ["node", "app.js"]
 `
-	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(barModulePath, barModuleContents))
+	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(dockerfileModulePath, dockerfileContents))
+	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(serverModulePath, ""))
 
 	packageId := "github.com/kurtosis-tech/plan-yaml-prac"
+	locatorOfModuleInWhichThisBuiltinIsBeingCalled := "github.com/kurtosis-tech/plan-yaml-prac/main.star" // this is going to cause problems, this value is different for every builtin in the plan and thus needs to be set per instruction
 	mainFunctionName := ""
 	relativePathToMainFile := "main.star"
 
@@ -104,9 +107,11 @@ CMD ["node", "app.js"]
     plan.add_service(
         name="tedi",
         config=ServiceConfig(
-            image=ImageBuildSpec(
-                image_name="smth",
-                build_context_dir="./"
+            image=ImageSpec(
+                image="smth",
+			    username="tedi",
+				password="tedi",
+                registry="./server"
             )
         )
     )
@@ -114,14 +119,14 @@ CMD ["node", "app.js"]
 	serializedJsonParams := "{}"
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
 	require.Nil(suite.T(), interpretationError)
-	require.Equal(suite.T(), 2, instructionsPlan.Size())
+	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
 	pyg := NewPlanYamlGenerator(
 		instructionsPlan,
 		suite.serviceNetwork,
 		packageId,
 		suite.packageContentProvider,
-		"", // figure out if this is needed
+		locatorOfModuleInWhichThisBuiltinIsBeingCalled, // figure out if this is needed
 		noPackageReplaceOptions,
 	)
 	yamlBytes, err := pyg.GenerateYaml()
@@ -283,9 +288,14 @@ func (suite *PlanYamlGeneratorTestSuite) TestConvertPlanYamlToYamlBytes(t *testi
 
 	services := []*Service{
 		{
-			Name:  "tedi",
-			Uuid:  "uuid",
-			Image: "postgres:alpine",
+			Name: "tedi",
+			Uuid: "uuid",
+			Image: &ImageSpec{
+				ImageName:           "postgres",
+				BuildContextLocator: "",
+				TargetStage:         "",
+				Registry:            "",
+			},
 			EnvVars: []*EnvironmentVariable{
 				{
 					Key:   "kevin",
@@ -294,9 +304,14 @@ func (suite *PlanYamlGeneratorTestSuite) TestConvertPlanYamlToYamlBytes(t *testi
 			},
 		},
 		{
-			Name:  "kaleb",
-			Uuid:  "uuid",
-			Image: "postgres:alpine",
+			Name: "kaleb",
+			Uuid: "uuid",
+			Image: &ImageSpec{
+				ImageName:           "something",
+				BuildContextLocator: "",
+				TargetStage:         "",
+				Registry:            "",
+			},
 			EnvVars: []*EnvironmentVariable{
 				{
 					Key:   "kevin",

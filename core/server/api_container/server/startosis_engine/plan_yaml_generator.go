@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -176,14 +177,42 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", add_service.ServiceConfigArgName)
 	}
-	serviceConfig, _ := starlarkServiceConfig.ToKurtosisType( // is this an expensive call? // TODO: add this error back in
+	serviceConfig, serviceConfigErr := starlarkServiceConfig.ToKurtosisType( // is this an expensive call? // TODO: add this error back in
 		pyg.serviceNetwork,
 		pyg.locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		pyg.planYaml.PackageId,
 		pyg.packageContentProvider,
 		pyg.packageReplaceOptions)
+	if serviceConfigErr != nil {
+		return serviceConfigErr
+	}
 
-	service.Image = serviceConfig.GetContainerImageName() // TODO: support image build specs, image registry specs, nix build specs
+	// get image info
+	rawImageAttrValue, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](starlarkServiceConfig.KurtosisValueTypeDefault, service_config.ImageAttr)
+	if interpretationErr != nil {
+		return interpretationErr
+	}
+	image := &ImageSpec{
+		ImageName: serviceConfig.GetContainerImageName(),
+	}
+	imageBuildSpec := serviceConfig.GetImageBuildSpec()
+	if imageBuildSpec != nil {
+		switch img := rawImageAttrValue.(type) {
+		case *service_config.ImageBuildSpec:
+			contextLocator, err := img.GetBuildContextLocator()
+			if err != nil {
+				return err
+			}
+			image.BuildContextLocator = contextLocator
+		}
+		image.TargetStage = imageBuildSpec.GetTargetStage()
+	}
+	imageSpec := serviceConfig.GetImageRegistrySpec()
+	if imageSpec != nil {
+		image.Registry = imageSpec.GetRegistryAddr()
+	}
+	service.Image = image
+
 	service.Cmd = serviceConfig.GetCmdArgs()
 	service.Entrypoint = serviceConfig.GetEntrypointArgs()
 

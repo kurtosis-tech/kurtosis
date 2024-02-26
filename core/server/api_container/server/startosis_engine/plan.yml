@@ -1,13 +1,7 @@
 packageId: github.com/kurtosis-tech/plan-yaml-prac
 services:
-- uuid: 2418173d9f184bd5a850b4ae8a1d0e06
-  name: tedi
-  image: postgres:alpine
-  command:
-  - touch
-  - hi.txt
-filesArtifacts:
-- uuid: 2418173d9f184bd5a850b4ae8a1d0e06
-  name: hi-file
-  files:
-  - hi.txt
+- name: tedi
+  uuid: e77f8c7514c34c6f804f3332ddd1a16f
+  image:
+    name: smth
+    registry: ./server

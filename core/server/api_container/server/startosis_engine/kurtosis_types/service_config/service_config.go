@@ -709,7 +709,6 @@ func convertImage(
 		}
 		return imageName, nil, nil, nil, nil
 	}
-
 }
 
 func convertTolerations(tolerationsList *starlark.List) ([]v1.Toleration, *startosis_errors.InterpretationError) {

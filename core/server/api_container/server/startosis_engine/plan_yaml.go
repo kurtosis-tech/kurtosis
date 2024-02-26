@@ -21,7 +21,7 @@ type PlanYaml struct {
 type Service struct {
 	Name       string                 `yaml:"name,omitempty"`       // done
 	Uuid       string                 `yaml:"uuid,omitempty"`       // done
-	Image      string                 `yaml:"image,omitempty"`      // done // TOOD: support ImageBuildSpec
+	Image      *ImageSpec             `yaml:"image,omitempty"`      // done // TOOD: support ImageBuildSpec
 	Cmd        []string               `yaml:"command,omitempty"`    // done
 	Entrypoint []string               `yaml:"entrypoint,omitempty"` // done
 	EnvVars    []*EnvironmentVariable `yaml:"envVars,omitempty"`    // done
@@ -29,6 +29,17 @@ type Service struct {
 	Files      []*FileMount           `yaml:"files,omitempty"`      // done
 
 	// TODO: support remaining fields in the ServiceConfig
+}
+
+type ImageSpec struct {
+	ImageName string `yaml:"name,omitempty"`
+
+	// for built images
+	BuildContextLocator string `yaml:"buildContextLocator,omitempty"`
+	TargetStage         string `yaml:"targetStage,omitempty"`
+
+	// for images from registry
+	Registry string `yaml:"registry,omitempty"`
 }
 
 // FilesArtifact represents a collection of files.
