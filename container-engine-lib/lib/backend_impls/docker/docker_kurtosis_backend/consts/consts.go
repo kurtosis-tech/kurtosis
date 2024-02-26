@@ -33,6 +33,8 @@ const (
 	HttpApplicationProtocol                             = "http"
 
 	GitHubAuthStorageDirPath = "/kurtosis-data/github-auth/"
+
+	EmptyApplicationURL = ""
 )
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner

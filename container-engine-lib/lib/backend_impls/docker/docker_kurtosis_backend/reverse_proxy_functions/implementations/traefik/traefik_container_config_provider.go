@@ -17,7 +17,6 @@ const (
 	printfCmdName    = "printf"
 	mkdirCmdName     = "mkdir"
 	shCmdFlag        = "-c"
-	emptyUrl         = ""
 )
 
 type traefikContainerConfigProvider struct {
@@ -72,7 +71,7 @@ func (traefik *traefikContainerConfigProvider) GetContainerArgs(
 	}
 
 	// Publish HTTP and Dashboard entrypoint ports
-	privateHttpPortSpec, err := port_spec.NewPortSpec(httpPort, port_spec.TransportProtocol_TCP, consts.HttpApplicationProtocol, defaultWait, emptyUrl)
+	privateHttpPortSpec, err := port_spec.NewPortSpec(httpPort, port_spec.TransportProtocol_TCP, consts.HttpApplicationProtocol, defaultWait, consts.EmptyApplicationURL)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -85,7 +84,7 @@ func (traefik *traefikContainerConfigProvider) GetContainerArgs(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private http port spec to a Docker port")
 	}
-	privateDashboardPortSpec, err := port_spec.NewPortSpec(dashboardPort, port_spec.TransportProtocol_TCP, consts.HttpApplicationProtocol, defaultWait, emptyUrl)
+	privateDashboardPortSpec, err := port_spec.NewPortSpec(dashboardPort, port_spec.TransportProtocol_TCP, consts.HttpApplicationProtocol, defaultWait, consts.EmptyApplicationURL)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
