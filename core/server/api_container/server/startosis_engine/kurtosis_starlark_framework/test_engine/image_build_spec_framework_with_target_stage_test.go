@@ -10,13 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type imageBuildSpecTest struct {
+type imageBuildSpecWithTargetStageTest struct {
 	*testing.T
 
 	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
-func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTest() {
+func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecWithTargetStageTest() {
 	suite.packageContentProvider.EXPECT().
 		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
 		Times(1).
@@ -33,7 +33,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTest() {
 	})
 }
 
-func (t *imageBuildSpecTest) GetStarlarkCode() string {
+func (t *imageBuildSpecWithTargetStageTest) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
@@ -43,10 +43,10 @@ func (t *imageBuildSpecTest) GetStarlarkCode() string {
 		service_config.BuildFileAttr,
 		testBuildFile,
 		service_config.TargetStageAttr,
-		testEmptyTargetStage)
+		testTargetStage)
 }
 
-func (t *imageBuildSpecTest) Assert(typeValue builtin_argument.KurtosisValueType) {
+func (t *imageBuildSpecWithTargetStageTest) Assert(typeValue builtin_argument.KurtosisValueType) {
 	imageBuildSpecStarlark, ok := typeValue.(*service_config.ImageBuildSpec)
 	require.True(t, ok)
 
@@ -58,5 +58,5 @@ func (t *imageBuildSpecTest) Assert(typeValue builtin_argument.KurtosisValueType
 	require.Nil(t, err)
 	require.Equal(t, testOnDiskContainerImagePath, imageBuildSpec.GetContainerImageFilePath())
 	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
-	require.Equal(t, testEmptyTargetStage, imageBuildSpec.GetTargetStage())
+	require.Equal(t, testTargetStage, imageBuildSpec.GetTargetStage())
 }

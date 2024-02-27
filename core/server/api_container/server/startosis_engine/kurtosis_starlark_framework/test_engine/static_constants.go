@@ -30,6 +30,7 @@ var (
 	testBuildContextDir                = "./"
 	testBuildFile                      = ""
 	testCustomBuildFile                = "foo.Dockerfile"
+	testEmptyTargetStage               = ""
 	testTargetStage                    = "builder"
 	testBuildContextLocator            = testModulePackageId
 	testContainerImageLocator          = "github.com/kurtosistech/test-package/Dockerfile"

@@ -43,7 +43,7 @@ func (t *imageBuildSpecWithCustomBuildFileTest) GetStarlarkCode() string {
 		service_config.BuildFileAttr,
 		testCustomBuildFile,
 		service_config.TargetStageAttr,
-		testTargetStage)
+		testEmptyTargetStage)
 }
 
 func (t *imageBuildSpecWithCustomBuildFileTest) Assert(typeValue builtin_argument.KurtosisValueType) {
@@ -58,5 +58,5 @@ func (t *imageBuildSpecWithCustomBuildFileTest) Assert(typeValue builtin_argumen
 	require.Nil(t, err)
 	require.Equal(t, testOnDiskContainerImageCustomPath, imageBuildSpec.GetContainerImageFilePath())
 	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
-	require.Equal(t, testTargetStage, imageBuildSpec.GetTargetStage())
+	require.Equal(t, testEmptyTargetStage, imageBuildSpec.GetTargetStage())
 }
