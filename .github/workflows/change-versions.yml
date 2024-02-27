@@ -9,16 +9,16 @@ jobs:
     if: contains(github.head_ref, 'release-please')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
           fetch-depth: 0
       - name: Change versions
-        run: | 
+        run: |
           api/scripts/update-package-versions.sh "$(cat version.txt)"
           api/scripts/update-own-version-constants.sh "$(cat version.txt)"
           enclave-manager/web/scripts/update-package-versions.sh "$(cat version.txt)"
           scripts/update-license-version.sh "$(cat version.txt)"
-      - uses: stefanzweifel/git-auto-commit-action@v4
+      - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
