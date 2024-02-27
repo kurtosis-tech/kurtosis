@@ -27,7 +27,7 @@ import (
 
 const (
 	unixSocketPrefix    = "unix://"
-	systemDaemonSocket  = "/var/run/docker.sock"
+	systemDaemonSocket  = "/var/run/podman/podman.sock"
 	userOwnDaemonSocket = "/.docker/run/docker.sock"
 
 	noTempDirPrefix    = ""
@@ -108,6 +108,8 @@ func getLocalDockerKurtosisBackend(
 			client.EnvOverrideHost)
 		dockerClientOpts = append(dockerClientOpts, client.FromEnv)
 	}
+
+	logrus.Debugf("creating docker manager with client options: %+v", dockerClientOpts)
 
 	localDockerBackend, err := getDockerKurtosisBackend(dockerClientOpts, optionalApiContainerModeArgs)
 	if err != nil {

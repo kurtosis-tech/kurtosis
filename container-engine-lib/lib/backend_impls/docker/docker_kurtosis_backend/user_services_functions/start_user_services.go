@@ -654,15 +654,15 @@ func createStartServiceOperation(
 			}
 		}
 
-		if logsCollectorAddress == "" {
-			return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
-		}
+		// if logsCollectorAddress == "" {
+		// 	return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
+		// }
 
 		// The container will be configured to send the logs to the Fluentbit logs collector server
-		fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
-			logsCollectorAddress,
-			logsCollectorLabels,
-		)
+		// fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
+		// 	logsCollectorAddress,
+		// 	logsCollectorLabels,
+		// )
 
 		createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 			containerImageName,
@@ -688,8 +688,6 @@ func createStartServiceOperation(
 			true,
 		).WithVolumeMounts(
 			volumeMounts,
-		).WithLoggingDriver(
-			fluentdLoggingDriverCnfg,
 		).WithRestartPolicy(
 			restartPolicy,
 		).WithUser(user)
