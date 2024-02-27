@@ -97,3 +97,7 @@ func (builtin *StopServiceCapabilities) FillPersistableAttributes(builder *encla
 		builtin.serviceName,
 	)
 }
+
+func (builtin *StopServiceCapabilities) Description() string {
+	return fmt.Sprintf("Stopping service '%v'", builtin.serviceName)
+}

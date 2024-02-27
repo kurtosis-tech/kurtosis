@@ -155,6 +155,10 @@ func (builtin *VerifyCapabilities) FillPersistableAttributes(builder *enclave_pl
 	builder.SetType(VerifyBuiltinName)
 }
 
+func (builtin *VerifyCapabilities) Description() string {
+	return fmt.Sprintf("Verifying whether two values meet a certain condition '%v'", builtin.assertion)
+}
+
 // Verify verifies whether the currentValue matches the targetValue w.r.t. the assertion operator
 // TODO: This and ValidateVerificationToken below are used by both verify and wait. Refactor it to a better place
 func Verify(currentValue starlark.Comparable, assertion string, targetValue starlark.Comparable) error {

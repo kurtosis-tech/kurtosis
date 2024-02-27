@@ -52,6 +52,7 @@ func NewWebsocketPump[T interface{}](ctx echo.Context, cors cors.Cors) (*Websock
 
 	ctxWithCancel, cancelFunc := context.WithCancel(context.Background())
 
+	// nolint: exhaustruct
 	pump := &WebsocketPump[T]{
 		websocket:       conn,
 		inputChan:       make(chan *T),

@@ -1048,6 +1048,8 @@ func (manager *KubernetesManager) CreatePod(
 	podVolumes []apiv1.Volume,
 	podServiceAccountName string,
 	restartPolicy apiv1.RestartPolicy,
+	tolerations []apiv1.Toleration,
+	nodeSelectors map[string]string,
 ) (*apiv1.Pod, error) {
 	podClient := manager.kubernetesClientSet.CoreV1().Pods(namespaceName)
 
@@ -1079,7 +1081,7 @@ func (manager *KubernetesManager) CreatePod(
 		TerminationGracePeriodSeconds: nil,
 		ActiveDeadlineSeconds:         nil,
 		DNSPolicy:                     "",
-		NodeSelector:                  nil,
+		NodeSelector:                  nodeSelectors,
 		ServiceAccountName:            podServiceAccountName,
 		DeprecatedServiceAccount:      "",
 		AutomountServiceAccountToken:  nil,
@@ -1089,27 +1091,29 @@ func (manager *KubernetesManager) CreatePod(
 		HostIPC:                       false,
 		ShareProcessNamespace:         nil,
 		SecurityContext:               nil,
-		ImagePullSecrets:              nil,
-		Hostname:                      "",
-		Subdomain:                     "",
-		Affinity:                      nil,
-		SchedulerName:                 "",
-		Tolerations:                   nil,
-		HostAliases:                   nil,
-		PriorityClassName:             "",
-		Priority:                      nil,
-		DNSConfig:                     nil,
-		ReadinessGates:                nil,
-		RuntimeClassName:              nil,
-		EnableServiceLinks:            nil,
-		PreemptionPolicy:              nil,
-		Overhead:                      nil,
-		TopologySpreadConstraints:     nil,
-		SetHostnameAsFQDN:             nil,
-		OS:                            nil,
-		HostUsers:                     nil,
-		SchedulingGates:               nil,
-		ResourceClaims:                nil,
+		// TODO add support for ImageRegistrySpec to Kubernetes by adding the right secret here
+		// You will have to first publish the secret using the Kubernetes API
+		ImagePullSecrets:          nil,
+		Hostname:                  "",
+		Subdomain:                 "",
+		Affinity:                  nil,
+		SchedulerName:             "",
+		Tolerations:               tolerations,
+		HostAliases:               nil,
+		PriorityClassName:         "",
+		Priority:                  nil,
+		DNSConfig:                 nil,
+		ReadinessGates:            nil,
+		RuntimeClassName:          nil,
+		EnableServiceLinks:        nil,
+		PreemptionPolicy:          nil,
+		Overhead:                  nil,
+		TopologySpreadConstraints: nil,
+		SetHostnameAsFQDN:         nil,
+		OS:                        nil,
+		HostUsers:                 nil,
+		SchedulingGates:           nil,
+		ResourceClaims:            nil,
 	}
 
 	podToCreate := &apiv1.Pod{
@@ -1847,7 +1851,8 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 					return stacktrace.NewError(
 						"Container '%v' using image '%v' in pod '%v' in namespace '%v' is stuck in state '%v'. This likely means:\n"+
 							"1) There's a typo in either the image name or the tag name\n"+
-							"2) The image isn't accessible to Kubernetes (e.g. it's a local image, or it's in a private image registry that Kubernetes can't access)",
+							"2) The image isn't accessible to Kubernetes (e.g. it's a local image, or it's in a private image registry that Kubernetes can't access)\n"+
+							"3) The image's platform/architecture might not match",
 						containerName,
 						containerStatus.Image,
 						pod.Name,

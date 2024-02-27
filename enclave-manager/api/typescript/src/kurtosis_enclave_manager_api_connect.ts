@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { DownloadFilesArtifactRequest, GetListFilesArtifactNamesAndUuidsRequest, GetServicesRequest, GetStarlarkRunRequest, HealthCheckRequest, HealthCheckResponse, InspectFilesArtifactContentsRequest, RunStarlarkPackageRequest } from "./kurtosis_enclave_manager_api_pb.js";
+import { DownloadFilesArtifactRequest, GetListFilesArtifactNamesAndUuidsRequest, GetServicesRequest, GetStarlarkRunRequest, HealthCheckRequest, HealthCheckResponse, InspectFilesArtifactContentsRequest, RunStarlarkPackageRequest, RunStarlarkScriptRequest } from "./kurtosis_enclave_manager_api_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 import { CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
 import { GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, StarlarkRunResponseLine, StreamedDataChunk } from "./api_container_service_pb.js";
@@ -65,6 +65,15 @@ export const KurtosisEnclaveManagerServer = {
     runStarlarkPackage: {
       name: "RunStarlarkPackage",
       I: RunStarlarkPackageRequest,
+      O: StarlarkRunResponseLine,
+      kind: MethodKind.ServerStreaming,
+    },
+    /**
+     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.RunStarlarkScript
+     */
+    runStarlarkScript: {
+      name: "RunStarlarkScript",
+      I: RunStarlarkScriptRequest,
       O: StarlarkRunResponseLine,
       kind: MethodKind.ServerStreaming,
     },

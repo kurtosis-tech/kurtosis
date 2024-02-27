@@ -6,7 +6,7 @@ set -euo pipefail   # Bash "strict mode"
 GO_VERSION=1.20
 
 # FOR NODE, WE PIN THE EXACT VERSION NUMBER
-NODE_VERSION=16.14
+NODE_VERSION=20.11
 
 
 RED_BG=$(tput setab 1)

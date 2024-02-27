@@ -34,6 +34,19 @@ var (
 	testOnDiskContextDirPath     = "kurtosis-data/test-package"
 	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"
 
+	testNixContextDir           = "./"
+	testNixImageName            = "test-image"
+	testNixFlakeOutput          = "foo"
+	testNixFlakeLocationDir     = "./server/app"
+	testOnDiskNixContextDirPath = "kurtosis-data/test-package"
+	testOnDiskNixFlakePath      = "kurtosis-data/test-package/server/app/flake.nix"
+	testOnDiskNixFlakeDir       = "kurtosis-data/test-package/server/app"
+	testNixFlakeLocator         = "github.com/kurtosistech/test-package/server/app/flake.nix"
+
+	testRegistryAddr     = "http://registry.test.io"
+	testRegistryUsername = "kurtosis"
+	testRegistryPassword = "password"
+
 	testPrivatePortId              = "grpc"
 	testPrivatePortNumber          = uint16(1323)
 	testPrivatePortProtocolStr     = "TCP"
@@ -113,4 +126,14 @@ var (
 		testServiceConfigLabelsKey1: testServiceConfigLabelsValue1,
 		testServiceConfigLabelsKey2: testServiceConfigLabelsValue2,
 	}
+
+	testNodeSelectorKey1   = "k3s.io/hostname"
+	testNodeSelectorValue1 = "asrock-berlin-03"
+	testNodeSelectors      = map[string]string{
+		testNodeSelectorKey1: testNodeSelectorValue1,
+	}
+
+	testTolerationKey     = "test-key"
+	testTolerationValue   = "test-value"
+	testTolerationSeconds = int64(64)
 )

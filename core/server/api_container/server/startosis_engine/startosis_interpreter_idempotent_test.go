@@ -28,6 +28,8 @@ const (
 	enclaveUuid = enclave.EnclaveUUID("enclave-uuid")
 
 	noInputParams = "{}"
+
+	defaultNonBlockingMode = false
 )
 
 var noPackageReplaceOptions = map[string]string{}
@@ -95,6 +97,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		script,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -110,6 +113,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		script,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
@@ -150,6 +154,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -170,6 +175,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
@@ -211,6 +217,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -229,6 +236,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
@@ -264,6 +272,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -284,6 +293,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
@@ -325,6 +335,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -346,6 +357,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
@@ -396,6 +408,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -422,6 +435,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)

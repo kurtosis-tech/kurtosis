@@ -1,17 +1,13 @@
 import { Button } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import {
-  GetServicesResponse,
-  Port,
-  ServiceInfo,
-  ServiceStatus,
-} from "enclave-manager-sdk/build/api_container_service_pb";
+import { GetServicesResponse, ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DataTable, RemoveFunctions } from "kurtosis-ui-components";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ImageButton } from "../widgets/ImageButton";
 import { PortsSummary } from "../widgets/PortsSummary";
 import { ServiceStatusTag } from "../widgets/ServiceStatus";
+import { getPortTableRows, PortsTableRow } from "./PortsTable";
 
 type ServicesTableRow = {
   serviceUUID: string;
@@ -19,31 +15,35 @@ type ServicesTableRow = {
   status: ServiceStatus;
   // started: DateTime | null; TODO: The api needs to support this field
   image?: string;
-  ports: { privatePorts: Record<string, Port>; publicPorts: Record<string, Port> };
+  ports: PortsTableRow[];
 };
 
-const serviceToRow = (service: ServiceInfo): ServicesTableRow => {
+const serviceToRow = (enclaveUUID: string, service: ServiceInfo): ServicesTableRow => {
   return {
     serviceUUID: service.shortenedUuid,
     name: service.name,
     status: service.serviceStatus,
     image: service.container?.imageName,
-    ports: {
-      privatePorts: service.privatePorts,
-      publicPorts: service.maybePublicPorts,
-    },
+    ports: getPortTableRows(
+      enclaveUUID,
+      service.serviceUuid,
+      service.privatePorts,
+      service.maybePublicPorts,
+      service.maybePublicIpAddr,
+    ),
   };
 };
 
 const columnHelper = createColumnHelper<ServicesTableRow>();
 
 type ServicesTableProps = {
+  enclaveUUID: string;
   enclaveShortUUID: string;
   servicesResponse: RemoveFunctions<GetServicesResponse>;
 };
 
-export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: ServicesTableProps) => {
-  const services = Object.values(servicesResponse.serviceInfo).map(serviceToRow);
+export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse }: ServicesTableProps) => {
+  const services = Object.values(servicesResponse.serviceInfo).map((service) => serviceToRow(enclaveUUID, service));
 
   const columns = useMemo<ColumnDef<ServicesTableRow, any>[]>(
     () => [
@@ -67,14 +67,8 @@ export const ServicesTable = ({ enclaveShortUUID, servicesResponse }: ServicesTa
       }),
       columnHelper.accessor("ports", {
         header: "Ports",
-        cell: (portsCell) => (
-          <PortsSummary
-            privatePorts={portsCell.getValue().privatePorts}
-            publicPorts={portsCell.getValue().publicPorts}
-          />
-        ),
-        sortingFn: (a, b) =>
-          Object.keys(a.original.ports.publicPorts).length - Object.keys(b.original.ports.publicPorts).length,
+        cell: (portsCell) => <PortsSummary ports={portsCell.getValue()} />,
+        meta: { centerAligned: true },
       }),
       columnHelper.accessor("serviceUUID", {
         header: "Logs",
