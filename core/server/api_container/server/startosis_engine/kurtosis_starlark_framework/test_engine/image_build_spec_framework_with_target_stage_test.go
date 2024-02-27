@@ -27,7 +27,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecWithTargetStage
 		Times(1).
 		Return(testOnDiskContainerImagePath, nil)
 
-	suite.run(&imageBuildSpecTest{
+	suite.run(&imageBuildSpecWithTargetStageTest{
 		T:                      suite.T(),
 		packageContentProvider: suite.packageContentProvider,
 	})
