@@ -491,7 +491,7 @@ def run(plan, args):
     api = plan.add_service(
         name = "api", # Naming our PostgREST service "api"
         config = ServiceConfig(
-            image = "postgrest/postgrest:v10.2.0.20230209",
+            image = "postgrest/postgrest:v10.2.0",
             env_vars = {
                 "PGRST_DB_URI": postgres_url,
                 "PGRST_DB_ANON_ROLE": POSTGRES_USER,
@@ -511,10 +511,10 @@ kurtosis clean -a && kurtosis run --enclave kurtosis-postgres .
 We got a failure, just like we might when building a real system!
 
 ```text
-> add_service name="api" config=ServiceConfig(image="postgrest/postgrest:v10.2.0.20230209", ports={"http": PortSpec(number=3000, application_protocol="http")}, env_vars={"PGRST_DB_ANON_ROLE": "app_user", "PGRST_DB_URI": "postgresql://postgres:password@{{kurtosis:4d65eca66b5749df8988419ae31dda21:ip_address.runtime_value}}:5432/app_db"})
+> add_service name="api" config=ServiceConfig(image="postgrest/postgrest:v10.2.0", ports={"http": PortSpec(number=3000, application_protocol="http")}, env_vars={"PGRST_DB_ANON_ROLE": "app_user", "PGRST_DB_URI": "postgresql://postgres:password@{{kurtosis:4d65eca66b5749df8988419ae31dda21:ip_address.runtime_value}}:5432/app_db"})
 There was an error executing Starlark code
 An error occurred executing instruction (number 4) at DEFAULT_PACKAGE_ID_FOR_SCRIPT[54:27]:
-  add_service(name="api", config=ServiceConfig(image="postgrest/postgrest:v10.2.0.20230209", ports={"http": PortSpec(number=3000, application_protocol="http")}, env_vars={"PGRST_DB_ANON_ROLE": "app_user", "PGRST_DB_URI": "postgresql://postgres:password@{{kurtosis:4d65eca66b5749df8988419ae31dda21:ip_address.runtime_value}}:5432/app_db"}))
+  add_service(name="api", config=ServiceConfig(image="postgrest/postgrest:v10.2.0", ports={"http": PortSpec(number=3000, application_protocol="http")}, env_vars={"PGRST_DB_ANON_ROLE": "app_user", "PGRST_DB_URI": "postgresql://postgres:password@{{kurtosis:4d65eca66b5749df8988419ae31dda21:ip_address.runtime_value}}:5432/app_db"}))
   Caused by: Unexpected error occurred starting service 'api'
   Caused by: An error occurred waiting for all TCP and UDP ports being open for service 'api' with private IP '10.1.0.4'; as the most common error is a wrong service configuration, here you can find the service logs:
   == SERVICE 'api' LOGS ===================================
@@ -775,7 +775,7 @@ def run(plan, args):
     api = plan.add_service(
         name = "api",
         config = ServiceConfig(
-            image = "postgrest/postgrest:v10.2.0.20230209",
+            image = "postgrest/postgrest:v10.2.0",
             env_vars = {
                 "PGRST_DB_URI": postgres_url,
                 "PGRST_DB_ANON_ROLE": POSTGRES_USER,
