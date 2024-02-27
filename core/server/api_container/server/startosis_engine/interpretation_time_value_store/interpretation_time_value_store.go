@@ -1,0 +1,36 @@
+package interpretation_time_value_store
+
+import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/stacktrace"
+)
+
+type InterpretationTimeValueStore struct {
+	serviceValues *serviceInterpretationValueRepository
+	serde         *kurtosis_types.StarlarkValueSerde
+}
+
+func CreateInterpretationTimeValueStore(enclaveDb *enclave_db.EnclaveDB, serde *kurtosis_types.StarlarkValueSerde) (*InterpretationTimeValueStore, error) {
+	serviceValuesRepository, err := getOrCreateNewServiceInterpretationTimeValueRepository(enclaveDb, serde)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred creating interpretation time service value repository")
+	}
+	return &InterpretationTimeValueStore{serviceValues: serviceValuesRepository, serde: serde}, nil
+}
+
+func (itvs *InterpretationTimeValueStore) AddService(name service.ServiceName, service *kurtosis_types.Service) error {
+	if err := itvs.serviceValues.AddService(name, service); err != nil {
+		return stacktrace.Propagate(err, "an error occurred while adding '%v' for service '%v' to db", service, name)
+	}
+	return nil
+}
+
+func (itvs *InterpretationTimeValueStore) GetService(name service.ServiceName) (*kurtosis_types.Service, error) {
+	serviceStarlark, err := itvs.serviceValues.GetService(name)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred fetching interpretation time value for '%v' from db", name)
+	}
+	return serviceStarlark, nil
+}
