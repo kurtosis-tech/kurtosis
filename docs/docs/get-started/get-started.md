@@ -6,10 +6,10 @@ sidebar_position: 1
 hide_table_of_contents: true
 ---
 
-[Kurtosis](https://github.com/kurtosis-tech/kurtosis) is a tool for packaging and launching environments of containerized services where you want them, the way you want them, with one liners.
+[Kurtosis](https://github.com/kurtosis-tech/kurtosis) is a tool for packaging and launching microservice stacks where you want them, the way you want them, with one liners.
 
 - Get started with a [quickstart](quickstart.md) to launch an environment.
-- Dive deeper with [basic Kurtosis concepts](basic-concepts.md).
+- Learn about the [basic Kurtosis concepts](basic-concepts.md).
 - Write your own environment definition with a guide on [writing a package](write-your-first-package.md).
 
 To quickly see what Kurtosis feels like, check out the example snippets below:
