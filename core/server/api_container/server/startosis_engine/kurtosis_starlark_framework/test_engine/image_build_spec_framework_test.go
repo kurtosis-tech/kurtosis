@@ -2,11 +2,12 @@ package test_engine
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type imageBuildSpecTest struct {
@@ -33,12 +34,14 @@ func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTest() {
 }
 
 func (t *imageBuildSpecTest) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
+	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
 		service_config.BuildContextAttr,
 		testBuildContextDir,
+		service_config.BuildFileAttr,
+		testBuildFile,
 		service_config.TargetStageAttr,
 		testTargetStage)
 }
