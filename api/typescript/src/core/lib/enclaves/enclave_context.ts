@@ -304,6 +304,8 @@ export class EnclaveContext {
         return ok(serviceContext);
     }
 
+    // TODO: Add getServiceContexts
+
     // Docs available at https://docs.kurtosis.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
     public async getServices(): Promise<Result<Map<ServiceName, ServiceUUID>, Error>> {
         const getAllServicesArgMap: Map<string, boolean> = new Map<string,boolean>()

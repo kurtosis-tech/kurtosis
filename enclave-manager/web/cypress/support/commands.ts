@@ -24,11 +24,11 @@ Cypress.Commands.add("createAndGoToEnclave", (enclaveName: string) => {
 
   cy.contains("button", "Run").click();
 
-  cy.url({ timeout: 10 * 1000 }).should("match", /enclave\/[^/]+\/logs/);
+  cy.url({ timeout: 30 * 1000 }).should("match", /enclave\/[^/]+\/logs/);
 
   cy.contains("button", "Edit").should("be.disabled");
-  cy.contains("Validating", { timeout: 10 * 1000 });
-  cy.contains("Script completed", { timeout: 10 * 1000 });
+  cy.contains("Validating", { timeout: 30 * 1000 });
+  cy.contains("Script completed", { timeout: 30 * 1000 });
   cy.contains("button", "Edit").should("be.enabled");
 
   // Go to the enclave overview

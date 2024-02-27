@@ -353,6 +353,19 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 	return failedServiceChecksRegularMap
 }
 
+func (builtin *AddServicesCapabilities) Description() string {
+	return fmt.Sprintf("Adding '%v' services with names '%v'", len(builtin.serviceConfigs), getNamesAsCommaSeparatedList(builtin.serviceConfigs))
+}
+
+func getNamesAsCommaSeparatedList(serviceConfigs map[service.ServiceName]*service.ServiceConfig) string {
+	var serviceNames []string
+	serviceNameSeparator := ","
+	for serviceName := range serviceConfigs {
+		serviceNames = append(serviceNames, string(serviceName))
+	}
+	return strings.Join(serviceNames, serviceNameSeparator)
+}
+
 func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
 	ctx context.Context,
 	wg *sync.WaitGroup,

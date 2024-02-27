@@ -1,33 +1,36 @@
-import { Button, Menu, MenuButton, Tooltip } from "@chakra-ui/react";
-import { FiPlus } from "react-icons/fi";
+import { Button, ButtonGroup, Tooltip } from "@chakra-ui/react";
+import { FiPlus, FiTool } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { KURTOSIS_CREATE_ENCLAVE_URL_ARG } from "../configuration/drawer/constants";
+import { useSettings } from "../../../settings";
+import { KURTOSIS_BUILD_ENCLAVE_URL_ARG, KURTOSIS_CREATE_ENCLAVE_URL_ARG } from "../configuration/drawer/constants";
 
 export const CreateEnclaveButton = () => {
+  const { settings } = useSettings();
   const navigate = useNavigate();
   return (
-    <>
-      <Menu matchWidth>
-        <Tooltip label={"Create a new enclave"} openDelay={1000}>
-          <MenuButton
-            as={Button}
-            colorScheme={"green"}
-            leftIcon={<FiPlus />}
+    <ButtonGroup>
+      {settings.ENABLE_EXPERIMENTAL_BUILD_ENCLAVE && (
+        <Tooltip label={"Build a new enclave"} openDelay={1000}>
+          <Button
+            colorScheme={"blue"}
+            leftIcon={<FiTool />}
             size={"sm"}
-            onClick={() => navigate(`#${KURTOSIS_CREATE_ENCLAVE_URL_ARG}`)}
+            onClick={() => navigate(`#${KURTOSIS_BUILD_ENCLAVE_URL_ARG}`)}
           >
-            New Enclave
-          </MenuButton>
+            Build Enclave
+          </Button>
         </Tooltip>
-        {/*<MenuList>*/}
-        {/*  <MenuItem onClick={() => navigate(`#${KURTOSIS_CREATE_ENCLAVE_URL_ARG}`)} icon={<FiSettings />}>*/}
-        {/*    Manual*/}
-        {/*  </MenuItem>*/}
-        {/*  <MenuItem onClick={() => navigate("/catalog")} icon={<FiPackage />}>*/}
-        {/*    Catalog*/}
-        {/*  </MenuItem>*/}
-        {/*</MenuList>*/}
-      </Menu>
-    </>
+      )}
+      <Tooltip label={"Create a new enclave"} openDelay={1000}>
+        <Button
+          colorScheme={"green"}
+          leftIcon={<FiPlus />}
+          size={"sm"}
+          onClick={() => navigate(`#${KURTOSIS_CREATE_ENCLAVE_URL_ARG}`)}
+        >
+          New Enclave
+        </Button>
+      </Tooltip>
+    </ButtonGroup>
   );
 };

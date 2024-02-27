@@ -88,20 +88,16 @@ const config = {
 						activeBasePath: '/sdk'
 					},
 					{
-						href: 'https://web3.kurtosis.com',
+						to: '/whats-new',
 						position: 'left',
-						label: 'Kurtosis for Web3',
+						label: "What's New",
+						activeBasePath: '/whats-new'
 					},
-					{
-						href: 'https://www.kurtosis.com/release-notes',
-						position: 'left',
-						label: 'Release Notes',
-					},
-					{
-						href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml',
-						position: 'right',
-						label: 'Report Docs Issue',
-					},
+                    {
+                        href: 'https://github.com/kurtosis-tech/kurtosis/',
+                        position: 'right',
+                        className: 'header-github-link',
+                    }
 				],
 			},
 			footer: {

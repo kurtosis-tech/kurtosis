@@ -54,7 +54,6 @@ type DockerEnclaveObjectAttributesProvider interface {
 		serviceUUID service.ServiceUUID,
 	) (DockerObjectAttributes, error)
 	ForSinglePersistentDirectoryVolume(
-		serviceUUID service.ServiceUUID,
 		persistentKey service_directory.DirectoryPersistentKey,
 	) (DockerObjectAttributes, error)
 	ForLogsCollector(tcpPortId string, tcpPortSpec *port_spec.PortSpec, httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error)
@@ -317,24 +316,21 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 
 // In Docker we get one volume per persistent directory
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(
-	serviceUUID service.ServiceUUID,
 	persistentKey service_directory.DirectoryPersistentKey,
 ) (
 	DockerObjectAttributes,
 	error,
 ) {
-	serviceUuidStr := string(serviceUUID)
-
 	guidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the persistent directory volume for service '%v'", serviceUuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the persistent directory volume for persistentKey '%v'", persistentKey)
 	}
 
 	name, err := provider.getNameForEnclaveObject([]string{
 		string(persistentKey),
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object using GUID '%v' and service GUID '%v'", guidStr, serviceUuidStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volume name object using GUID '%v' and persistent key '%v'", guidStr, persistentKey)
 	}
 
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
@@ -342,11 +338,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSinglePersistentDi
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifact expansion volume with UUID '%v'", guidStr)
 	}
 
-	serviceUuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceUuidStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceUuidStr)
-	}
-	labels[docker_label_key.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
 	labels[docker_label_key.VolumeTypeDockerLabelKey] = label_value_consts.PersistentDirectoryVolumeTypeDockerLabelValue
 	// TODO Create a KurtosisResourceDockerLabelKey object, like Kubernetes, and apply the "user-service" label here?
 

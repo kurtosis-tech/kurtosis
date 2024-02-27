@@ -1,6 +1,6 @@
 ---
 title: How do idempotent runs work?
-sidebar_label: Idempotent Runs
+sidebar_label: How do idempotent runs work?
 ---
 
 Background

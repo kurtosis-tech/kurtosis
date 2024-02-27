@@ -57,7 +57,7 @@ export function transformFormArgsToKurtosisArgs(data: Record<string, any>, kurto
       case ArgumentValueType.LIST:
         return value.map((v: any) => transformValue(innerValuetype, v));
       case ArgumentValueType.BOOL:
-        return isDefined(value) ? isStringTrue(value) : null;
+        return isDefined(value) && value !== "" ? isStringTrue(value) : null;
       case ArgumentValueType.INTEGER:
         return isNaN(value) || isNaN(parseFloat(value)) ? null : parseFloat(value);
       case ArgumentValueType.STRING:

@@ -43,7 +43,6 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 		userLabels map[string]string,
 	) (KubernetesObjectAttributes, error)
 	ForSinglePersistentDirectoryVolume(
-		serviceUUID service.ServiceUUID,
 		persistentKey service_directory.DirectoryPersistentKey,
 	) (KubernetesObjectAttributes, error)
 	ForUserServiceIngress(
@@ -242,10 +241,9 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataDir
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(serviceUUID service.ServiceUUID, persistentKey service_directory.DirectoryPersistentKey) (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(persistentKey service_directory.DirectoryPersistentKey) (KubernetesObjectAttributes, error) {
 	hasher := md5.New()
 	hasher.Write([]byte(provider.enclaveId))
-	hasher.Write([]byte(serviceUUID))
 	hasher.Write([]byte(persistentKey))
 	persistentKeyHash := hex.EncodeToString(hasher.Sum(nil))
 

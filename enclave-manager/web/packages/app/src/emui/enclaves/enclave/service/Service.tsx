@@ -1,6 +1,5 @@
 import { Flex, Spinner, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { ServiceInfo } from "enclave-manager-sdk/build/api_container_service_pb";
-import Cookies from "js-cookie";
 import { AppPageLayout, HoverLineTabList, isDefined, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { FunctionComponent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -13,7 +12,7 @@ import { ServiceOverview } from "./overview/ServiceOverview";
 
 const tabs: {
   path: string;
-  element: FunctionComponent<{ enclave: EnclaveFullInfo; service: ServiceInfo; instanceUUID: string }>;
+  element: FunctionComponent<{ enclave: EnclaveFullInfo; service: ServiceInfo }>;
 }[] = [
   { path: "overview", element: ServiceOverview },
   { path: "logs", element: ServiceLogs },
@@ -69,8 +68,6 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
     navigator(`/enclave/${enclave.shortenedUuid}/service/${service.shortenedUuid}/${tab.path}`);
   };
 
-  const instanceUUID = Cookies.get("_kurtosis_instance_id") || "";
-
   return (
     <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange} variant={"kurtosisHeaderLine"}>
       <AppPageLayout>
@@ -87,7 +84,7 @@ const ServiceImpl = ({ enclave, service }: ServiceImplProps) => {
         <TabPanels>
           {tabs.map((tab) => (
             <TabPanel key={tab.path}>
-              <tab.element enclave={enclave} service={service} instanceUUID={instanceUUID} />
+              <tab.element enclave={enclave} service={service} />
             </TabPanel>
           ))}
         </TabPanels>

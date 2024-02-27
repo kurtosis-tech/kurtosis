@@ -73,6 +73,7 @@ We support storage classes that support dynamic provisioning; here are some of t
 2. For DigitalOcean we recommend [`do-block-storage`](https://github.com/digitalocean/csi-digitalocean/?tab=readme-ov-file#installing-to-kubernetes) but your cluster should have this out of the box
 3. K3s the default provisioner `local-path` should just work out of the box
 4. For minikube the default provisioner `standard` should just work out of the box
+5. On Docker Desktop Kubernetes the default provisioner is `hostpath`
 
 For any other cloud setup please reach out to us by creating an issue on our [GitHub](https://github.com/kurtosis-tech/kurtosis)
 
