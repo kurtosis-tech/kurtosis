@@ -18,7 +18,7 @@ jobs:
     if: contains(github.head_ref, 'release-please') != true && contains(github.head_ref, 'breaking-release') == true
     runs-on: ubuntu-latest
     steps:
-      - uses: 8BitJonny/gh-get-current-pr@v3
+      - uses: 8BitJonny/gh-get-current-pr@3.0.0
         with:
           sha: ${{ github.event.pull_request.head.sha }}
         id: PR
