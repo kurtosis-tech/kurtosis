@@ -124,8 +124,7 @@ func (imageBuildSpec *ImageBuildSpec) GetBuildFile() (string, *startosis_errors.
 		return "", interpretationErr
 	}
 	if !found {
-		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			BuildFileAttr, ImageBuildSpecTypeName)
+		return "", nil
 	}
 	buildFileStr := buildFile.GoString()
 	return buildFileStr, nil
