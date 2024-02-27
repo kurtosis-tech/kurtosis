@@ -1,6 +1,9 @@
 package service_config
 
 import (
+	"path"
+	"path/filepath"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -9,8 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
-	"path"
-	"path/filepath"
 )
 
 const (
@@ -18,9 +19,9 @@ const (
 
 	BuiltImageNameAttr = "image_name"
 	BuildContextAttr   = "build_context_dir"
+	BuildFileAttr      = "build_file"
 	TargetStageAttr    = "target_stage"
 
-	// Currently only supports container images named Dockerfile
 	defaultContainerImageFileName = "Dockerfile"
 )
 
@@ -43,6 +44,14 @@ func NewImageBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor 
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, BuildContextAttr)
+					},
+				},
+				{
+					Name:              BuildFileAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, BuildFileAttr)
 					},
 				},
 				{
@@ -112,6 +121,20 @@ func (imageBuildSpec *ImageBuildSpec) GetBuildContextLocator() (string, *startos
 	return buildContextLocatorStr, nil
 }
 
+// Name of the build file (Dockerfile)
+func (imageBuildSpec *ImageBuildSpec) GetBuildFile() (string, *startosis_errors.InterpretationError) {
+	buildFile, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](imageBuildSpec.KurtosisValueTypeDefault, BuildFileAttr)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
+	if !found {
+		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
+			BuildFileAttr, ImageBuildSpecTypeName)
+	}
+	buildFileStr := buildFile.GoString()
+	return buildFileStr, nil
+}
+
 // GetTargetStage is used for specifying which stage of a multi-stage container image build to execute
 // Default value is the empty string for single stage image builds (common case)
 // Info on target stage and multi-stag builds for Docker images: https://docs.docker.com/build/building/multi-stage/
@@ -138,8 +161,14 @@ func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
 		return nil, interpretationErr
 	}
 
+	buildFile, interpretationErr := imageBuildSpec.GetBuildFile()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
 	buildContextDirPathOnDisk, containerImageFilePathOnDisk, interpretationErr := getOnDiskImageBuildSpecPaths(
 		buildContextLocator,
+		buildFile,
 		packageId,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageContentProvider,
@@ -159,6 +188,7 @@ func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
 // Returns the filepath of the build context directory and container image on APIC based on package info
 func getOnDiskImageBuildSpecPaths(
 	buildContextLocator string,
+	buildFile string,
 	packageId string,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageContentProvider startosis_packages.PackageContentProvider,
@@ -175,6 +205,9 @@ func getOnDiskImageBuildSpecPaths(
 
 	// get on disk directory path of Dockerfile
 	containerImageAbsoluteLocator := path.Join(contextDirAbsoluteLocator, defaultContainerImageFileName)
+	if buildFile != "" {
+		containerImageAbsoluteLocator = path.Join(contextDirAbsoluteLocator, buildFile)
+	}
 
 	containerImagePathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsolutePackageFilePath(containerImageAbsoluteLocator)
 	if interpretationErr != nil {
