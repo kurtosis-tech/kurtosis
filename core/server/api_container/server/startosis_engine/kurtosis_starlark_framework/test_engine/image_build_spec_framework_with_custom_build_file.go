@@ -56,7 +56,7 @@ func (t *imageBuildSpecWithCustomBuildFileTest) Assert(typeValue builtin_argumen
 		t.packageContentProvider,
 		testNoPackageReplaceOptions)
 	require.Nil(t, err)
-	require.Equal(t, testOnDiskContainerCustomImagePath, imageBuildSpec.GetContainerImageFilePath())
+	require.Equal(t, testOnDiskContainerImageCustomPath, imageBuildSpec.GetContainerImageFilePath())
 	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
 	require.Equal(t, testTargetStage, imageBuildSpec.GetTargetStage())
 }
