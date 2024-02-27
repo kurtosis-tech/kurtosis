@@ -16,15 +16,11 @@ type privatePortSpec struct {
 	TransportProtocol   TransportProtocol
 	ApplicationProtocol *string
 	Wait                *Wait
+	Url                 *string
 }
 
 // This method accepts port number, transportProtocol, and application protocol (which is optional), and port wait
-func NewPortSpec(
-	number uint16,
-	transportProtocol TransportProtocol,
-	maybeApplicationProtocol string,
-	wait *Wait,
-) (*PortSpec, error) {
+func NewPortSpec(number uint16, transportProtocol TransportProtocol, maybeApplicationProtocol string, wait *Wait, maybeUrl string) (*PortSpec, error) {
 	var appProtocol *string
 	if maybeApplicationProtocol != "" {
 		appProtocol = &maybeApplicationProtocol
@@ -35,11 +31,17 @@ func NewPortSpec(
 		return nil, stacktrace.NewError("Unrecognized transportProtocol '%v'", transportProtocol.String())
 	}
 
+	var url *string
+	if maybeUrl != "" {
+		url = &maybeUrl
+	}
+
 	internalPortSpec := &privatePortSpec{
 		Number:              number,
 		TransportProtocol:   transportProtocol,
 		ApplicationProtocol: appProtocol,
 		Wait:                wait,
+		Url:                 url,
 	}
 
 	portSpecObj := &PortSpec{internalPortSpec}
@@ -57,6 +59,10 @@ func (spec *PortSpec) GetTransportProtocol() TransportProtocol {
 
 func (spec *PortSpec) GetMaybeApplicationProtocol() *string {
 	return spec.privatePortSpec.ApplicationProtocol
+}
+
+func (spec *PortSpec) GetUrl() *string {
+	return spec.privatePortSpec.Url
 }
 
 func (spec *PortSpec) GetWait() *Wait {

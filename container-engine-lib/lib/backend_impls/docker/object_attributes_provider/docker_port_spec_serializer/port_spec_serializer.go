@@ -77,6 +77,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 
 		//TODO we are not serializing the port wait so far, because this in design stage and the name
 		//TODO and even the fields could change, so we don't want to brake anything until we add the port wait configs to users
+		//TODO we aren't serializing URL for now
 		if previousPortId, found := usedPortSpecStrs[portSpecStr]; found {
 			return nil, stacktrace.NewError(
 				"Port '%v' declares spec string '%v', but that spec string is already in use for port '%v'",
@@ -212,7 +213,7 @@ func deserializePortSpecStrUsingDelimiters(
 		//TODO we are passing nil wait so far because the wait's serialization/deserialization logic is not added yet because
 		//TODO the port wait feature is in the design stage and its name and fields could change,
 		//TODO we will include this in a next PR
-		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, portApplicationProtocolStr, nil)
+		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, portApplicationProtocolStr, nil, "")
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,

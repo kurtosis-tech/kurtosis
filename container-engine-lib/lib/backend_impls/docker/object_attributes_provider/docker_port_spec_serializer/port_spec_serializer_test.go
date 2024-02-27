@@ -15,13 +15,13 @@ func TestValidSerDe(t *testing.T) {
 	port1Id := "port1"
 	port1Num := uint16(23)
 	port1Protocol := port_spec.TransportProtocol_TCP
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "", portWaitForTest)
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "", portWaitForTest, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := uint16(45)
 	port2Protocol := port_spec.TransportProtocol_TCP
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "", portWaitForTest)
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "", portWaitForTest, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
 	input := map[string]*port_spec.PortSpec{
@@ -68,7 +68,7 @@ func TestDisallowedCharsSerialization(t *testing.T) {
 		portId := "ohyeah" + disallowedChar
 		portNum := uint16(45)
 		portProtocol := port_spec.TransportProtocol_TCP
-		portSpec, err := port_spec.NewPortSpec(portNum, portProtocol, "", portWaitForTest)
+		portSpec, err := port_spec.NewPortSpec(portNum, portProtocol, "", portWaitForTest, "")
 		require.NoError(t, err, "An unexpected error occurred creating port spec for port with ID '%v'", portId)
 
 		ports := map[string]*port_spec.PortSpec{
@@ -86,13 +86,13 @@ func TestDuplicatedPortNumDifferentProtoSerialization(t *testing.T) {
 	port1Id := "port1"
 	port1Num := dupedPortNum
 	port1Protocol := port_spec.TransportProtocol_TCP
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "", portWaitForTest)
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "", portWaitForTest, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := dupedPortNum
 	port2Protocol := port_spec.TransportProtocol_UDP
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "", portWaitForTest)
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "", portWaitForTest, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
 	input := map[string]*port_spec.PortSpec{
@@ -110,13 +110,13 @@ func TestDuplicatedPortNumSameProtoSerialization(t *testing.T) {
 	port1Id := "port1"
 	port1Num := dupedPortNum
 	port1Protocol := port_spec.TransportProtocol_TCP
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "", portWaitForTest)
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "", portWaitForTest, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := dupedPortNum
 	port2Protocol := port_spec.TransportProtocol_TCP
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "", portWaitForTest)
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "", portWaitForTest, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
 	input := map[string]*port_spec.PortSpec{
@@ -190,25 +190,25 @@ func TestNoPortProtosHaveDisallowedChars(t *testing.T) {
 }
 
 func TestValidatePortSpec_ValidApplicationProtocol(t *testing.T) {
-	spec, _ := port_spec.NewPortSpec(100, port_spec.TransportProtocol_UDP, "H-ttp.2", portWaitForTest)
+	spec, _ := port_spec.NewPortSpec(100, port_spec.TransportProtocol_UDP, "H-ttp.2", portWaitForTest, "")
 	err := validatePortSpec("PortId", spec)
 	require.Nil(t, err, "Error cannot be nil")
 }
 
 func TestValidatePortSpec_InvalidPortId(t *testing.T) {
-	spec, _ := port_spec.NewPortSpec(100, port_spec.TransportProtocol_TCP, "https", portWaitForTest)
+	spec, _ := port_spec.NewPortSpec(100, port_spec.TransportProtocol_TCP, "https", portWaitForTest, "")
 	err := validatePortSpec(",portid/", spec)
 	require.NotNil(t, err, "Error cannot be nil")
 	require.ErrorContains(t, err, fmt.Sprintf("Port ID '%v' contains disallowed char '%v'", ",portid/", portSpecsSeparator))
 }
 
 func TestValidatePortSpec_InvalidApplicationProtocol(t *testing.T) {
-	spec, _ := port_spec.NewPortSpec(100, port_spec.TransportProtocol_TCP, "/https,", portWaitForTest)
+	spec, _ := port_spec.NewPortSpec(100, port_spec.TransportProtocol_TCP, "/https,", portWaitForTest, "")
 	err := validatePortSpec("PortId", spec)
 	require.NotNil(t, err, "Error cannot be nil")
 	require.ErrorContains(t, err, fmt.Sprintf("Application Protocol '%v' associated with port ID '%v' contains disallowed char '%v'", "/https,", "PortId", portNumAndProtocolSeparator))
 
-	spec, _ = port_spec.NewPortSpec(100, port_spec.TransportProtocol_UDP, " H-ttp.2", portWaitForTest)
+	spec, _ = port_spec.NewPortSpec(100, port_spec.TransportProtocol_UDP, " H-ttp.2", portWaitForTest, "")
 	err = validatePortSpec("PortId", spec)
 	require.NotNil(t, err, "Error cannot be nil")
 	require.ErrorContains(t, err, "application protocol ' H-ttp.2' associated with port ID 'PortId' contains invalid character(s). It must only contain [a-zA-Z0-9+.-]")
@@ -216,8 +216,8 @@ func TestValidatePortSpec_InvalidApplicationProtocol(t *testing.T) {
 
 func TestSerializeMethod_ValidPortSpecs(t *testing.T) {
 	specs := map[string]*port_spec.PortSpec{}
-	portOne, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_TCP, "", portWaitForTest)
-	portTwo, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_UDP, "https", portWaitForTest)
+	portOne, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_TCP, "", portWaitForTest, "")
+	portTwo, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_UDP, "https", portWaitForTest, "")
 
 	specs["portOne"] = portOne
 	specs["portTwo"] = portTwo
@@ -236,8 +236,8 @@ func TestDeSerializeMethod_ValidPortSpecs(t *testing.T) {
 	expectedSpecs := map[string]*port_spec.PortSpec{}
 
 	//TODO use portWaitForTest when we include the wait serialization/deserialization
-	expectedPortOne, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_TCP, "", nil)
-	expectedPortTwo, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_UDP, "https", nil)
+	expectedPortOne, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_TCP, "", nil, "")
+	expectedPortTwo, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_UDP, "https", nil, "")
 	expectedSpecs["portOne"] = expectedPortOne
 	expectedSpecs["portTwo"] = expectedPortTwo
 

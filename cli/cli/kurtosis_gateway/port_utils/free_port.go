@@ -10,6 +10,7 @@ import (
 const (
 	tcpProtocolStr           = "tcp"
 	emptyApplicationProtocol = ""
+	emptyUrl                 = ""
 )
 
 var noWait *port_spec.Wait = nil
@@ -31,7 +32,7 @@ func GetFreeTcpPort(networkInterface string) (resultFreePortSpec *port_spec.Port
 	portNumber := localHostPortListener.Addr().(*net.TCPAddr).Port
 	portNumberUint16 := uint16(portNumber)
 
-	localHostPortSpec, err := port_spec.NewPortSpec(portNumberUint16, port_spec.TransportProtocol_TCP, emptyApplicationProtocol, noWait)
+	localHostPortSpec, err := port_spec.NewPortSpec(portNumberUint16, port_spec.TransportProtocol_TCP, emptyApplicationProtocol, noWait, emptyUrl)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a free open port on localhost, instead a non-nil error was returned")
 	}
