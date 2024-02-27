@@ -46,7 +46,7 @@ func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
 		service_config.BuildContextAttr,
 		testBuildContextDir,
 		service_config.BuildFileAttr,
-		testBuildFile,
+		testEmptyBuildFile,
 		service_config.TargetStageAttr,
 		testTargetStage)
 	return fmt.Sprintf("%s(%s=%s)",

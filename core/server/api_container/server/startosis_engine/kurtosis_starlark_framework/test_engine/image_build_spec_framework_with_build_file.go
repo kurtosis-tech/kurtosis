@@ -10,30 +10,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type imageBuildSpecWithCustomBuildFileTest struct {
+type imageBuildSpecWithBuildFileTest struct {
 	*testing.T
 
 	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
-func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTestWithCustomBuildFile() {
+func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTestWithBuildFile() {
 	suite.packageContentProvider.EXPECT().
 		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
 		Times(1).
 		Return(testBuildContextLocator, nil)
 
 	suite.packageContentProvider.EXPECT().
-		GetOnDiskAbsolutePackageFilePath(testContainerImageCustomLocator).
+		GetOnDiskAbsolutePackageFilePath(testContainerImageLocatorWithBuildFile).
 		Times(1).
-		Return(testOnDiskContainerImageCustomPath, nil)
+		Return(testOnDiskContainerImagePathWithBuildFile, nil)
 
-	suite.run(&imageBuildSpecWithCustomBuildFileTest{
+	suite.run(&imageBuildSpecWithBuildFileTest{
 		T:                      suite.T(),
 		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
-func (t *imageBuildSpecWithCustomBuildFileTest) GetStarlarkCode() string {
+func (t *imageBuildSpecWithBuildFileTest) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
@@ -41,12 +41,12 @@ func (t *imageBuildSpecWithCustomBuildFileTest) GetStarlarkCode() string {
 		service_config.BuildContextAttr,
 		testBuildContextDir,
 		service_config.BuildFileAttr,
-		testCustomBuildFile,
+		testBuildFile,
 		service_config.TargetStageAttr,
 		testEmptyTargetStage)
 }
 
-func (t *imageBuildSpecWithCustomBuildFileTest) Assert(typeValue builtin_argument.KurtosisValueType) {
+func (t *imageBuildSpecWithBuildFileTest) Assert(typeValue builtin_argument.KurtosisValueType) {
 	imageBuildSpecStarlark, ok := typeValue.(*service_config.ImageBuildSpec)
 	require.True(t, ok)
 
@@ -56,7 +56,7 @@ func (t *imageBuildSpecWithCustomBuildFileTest) Assert(typeValue builtin_argumen
 		t.packageContentProvider,
 		testNoPackageReplaceOptions)
 	require.Nil(t, err)
-	require.Equal(t, testOnDiskContainerImageCustomPath, imageBuildSpec.GetContainerImageFilePath())
+	require.Equal(t, testOnDiskContainerImagePathWithBuildFile, imageBuildSpec.GetContainerImageFilePath())
 	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
 	require.Equal(t, testEmptyTargetStage, imageBuildSpec.GetTargetStage())
 }

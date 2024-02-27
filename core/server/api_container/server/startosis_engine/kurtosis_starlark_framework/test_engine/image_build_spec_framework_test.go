@@ -41,7 +41,7 @@ func (t *imageBuildSpecTest) GetStarlarkCode() string {
 		service_config.BuildContextAttr,
 		testBuildContextDir,
 		service_config.BuildFileAttr,
-		testBuildFile,
+		testEmptyBuildFile,
 		service_config.TargetStageAttr,
 		testEmptyTargetStage)
 }
