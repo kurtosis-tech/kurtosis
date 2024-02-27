@@ -126,3 +126,9 @@ Cargo.lock
 
 # Lerna debug
 lerna-debug.log
+
+# We ignore these files at the base of the monorepo because the monorepo isn't a library that gets shipped rather it
+# contains several libraries that get shipped
+yarn.lock
+package.json
+package-lock.json
