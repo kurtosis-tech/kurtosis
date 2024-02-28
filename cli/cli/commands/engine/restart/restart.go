@@ -3,6 +3,9 @@ package restart
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -14,8 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -123,7 +124,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 
 	shouldStartInDebugMode := defaults.DefaultEnableDebugMode
 	if isDebugMode {
-		engineVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
+		engineVersion = fmt.Sprintf("%s-%s", kurtosis_version.GetVersion(), defaults.DefaultKurtosisContainerDebugImageNameSuffix)
 		shouldStartInDebugMode = true
 	}
 

@@ -7,6 +7,7 @@ package api_container_launcher
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -52,7 +53,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 ) {
 	resultApiContainer, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		kurtosis_version.KurtosisVersion,
+		kurtosis_version.GetVersion(),
 		logLevel,
 		enclaveId,
 		grpcListenPort,
@@ -67,7 +68,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		shouldStartInDebugMode,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", kurtosis_version.KurtosisVersion)
+		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", kurtosis_version.GetVersion())
 	}
 	return resultApiContainer, nil
 }

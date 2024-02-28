@@ -3,6 +3,9 @@ package feedback
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -11,26 +14,24 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
-	"net/url"
-	"strings"
 )
 
-const (
-	commandShortDescription = "Give feedback"
-	commandDescription      = "Give feedback, file a bug report or feature request, or get help from the Kurtosis team. " +
-		"See below for the many ways you can get in touch with us.\n\n" +
-		"TIP: You can quickly type and send us feedback directly from the CLI. For example, " +
-		"`kurtosis feedback \"I enjoy the enclave naming theme\"` will open the Kurtosis GitHub " +
-		"\"Create New Issue\" page with the description pre-filled with \"I enjoy the enclave naming theme\".\n\n" +
-		"This command can be used to deliver feedback to the Kurtosis team!\n\n" +
-		"* Pass in your feedback as an argument using double quotations (e.g. kurtosis feedback \"my feedback\"), and press enter; this will open our GitHub Issues templates, pre-filled with your feedback/arg.\n" +
-		"* Pass in the --email flag to open a draft email, pre-filled with your feedback/arg, to send to feedback@kurtosistech.com.\n" +
-		"* Pass in the --calendly flag to open our Calendly link to schedule a 1:1 session with us for feedback and questions you may have!\n\n" +
-		"See below for the some direct links as well.\n\n" +
-		"* For bugs/issues, let us know in our GitHub " + user_support_constants.GitHubChooseNewIssuesUrl + "?version=" + kurtosis_version.KurtosisVersion + ".\n" +
-		"* For general feedback, click here to email us " + user_support_constants.FeedbackEmailLink + ".\n" +
-		"* If you need help getting started, schedule an on-boarding session with us on " + user_support_constants.KurtosisOnBoardCalendlyUrl + "."
+var commandDescription = "Give feedback, file a bug report or feature request, or get help from the Kurtosis team. " +
+	"See below for the many ways you can get in touch with us.\n\n" +
+	"TIP: You can quickly type and send us feedback directly from the CLI. For example, " +
+	"`kurtosis feedback \"I enjoy the enclave naming theme\"` will open the Kurtosis GitHub " +
+	"\"Create New Issue\" page with the description pre-filled with \"I enjoy the enclave naming theme\".\n\n" +
+	"This command can be used to deliver feedback to the Kurtosis team!\n\n" +
+	"* Pass in your feedback as an argument using double quotations (e.g. kurtosis feedback \"my feedback\"), and press enter; this will open our GitHub Issues templates, pre-filled with your feedback/arg.\n" +
+	"* Pass in the --email flag to open a draft email, pre-filled with your feedback/arg, to send to feedback@kurtosistech.com.\n" +
+	"* Pass in the --calendly flag to open our Calendly link to schedule a 1:1 session with us for feedback and questions you may have!\n\n" +
+	"See below for the some direct links as well.\n\n" +
+	"* For bugs/issues, let us know in our GitHub " + user_support_constants.GitHubChooseNewIssuesUrl + "?version=" + kurtosis_version.GetVersion() + ".\n" +
+	"* For general feedback, click here to email us " + user_support_constants.FeedbackEmailLink + ".\n" +
+	"* If you need help getting started, schedule an on-boarding session with us on " + user_support_constants.KurtosisOnBoardCalendlyUrl + "."
 
+const (
+	commandShortDescription            = "Give feedback"
 	emailFlagKey                       = "email"
 	calendlyFlagKey                    = "calendly"
 	bugFeedbackFlagKey                 = "bug"
@@ -277,7 +278,7 @@ func getGitHubIssueURL(
 	gitHubIssueURL := fmt.Sprintf(
 		"%s&version=%v&description=%s&background-and-motivation=%s",
 		gitHubIssueBaseUrl,
-		kurtosis_version.KurtosisVersion,
+		kurtosis_version.GetVersion(),
 		userEncodedMsgStr,
 		userEncodedMsgStr,
 	)

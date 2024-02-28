@@ -1,0 +1,53 @@
+on:
+  push:
+
+name: Nix based workflows
+jobs:
+  full_check:
+    name: Run full flake check
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v4
+      - name: Set Nix cache on GH Actions
+        uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Check Nix flake inputs
+        uses: DeterminateSystems/flake-checker-action@v5
+      - name: Check Flake outputs
+        # Disable sandbox because some tests need access to internet
+        run: nix flake check --option sandbox false
+
+  full_ete:
+    name: Full ETE tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v4
+      - name: Set Nix cache on GH Actions
+        uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Check Nix flake inputs
+        uses: DeterminateSystems/flake-checker-action@v5
+      - name: ETE Test with VM
+        # Disable sandbox because ete fetches images from the public repo
+        run: nix run .#integrationTest --option sandbox false
+
+  full_test:
+    name: Run test on all assets
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v4
+      - name: Set Nix cache on GH Actions
+        uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Check Nix flake inputs
+        uses: DeterminateSystems/flake-checker-action@v5
+        # Disable sandbox because some tests need access to internet
+      - name: Run tests on Core
+        run: nix build -L .#checks.x86_64-linux.core  --option sandbox false
+      - name: Run tests on Engine
+        run: nix build -L .#checks.x86_64-linux.engine  --option sandbox false
+      - name: Run tests on CLI
+        run: nix build -L .#checks.x86_64-linux.cli  --option sandbox false

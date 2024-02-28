@@ -52,7 +52,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 ) {
 	publicIpAddr, publicGrpcPortSpec, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		kurtosis_version.KurtosisVersion,
+		kurtosis_version.GetVersion(),
 		logLevel,
 		grpcListenPortNum,
 		metricsUserID,
@@ -68,7 +68,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		shouldStartInDebugMode,
 		githubAuthToken)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.GetVersion())
 	}
 	return publicIpAddr, publicGrpcPortSpec, nil
 }

@@ -48,7 +48,7 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 		metrics_client.NewMetricsClientCreatorOption(
 			source.KurtosisCLISource,
-			kurtosis_version.KurtosisVersion,
+			kurtosis_version.GetVersion(),
 			metricsUserId,
 			clusterType,
 			sendUserMetrics,
@@ -79,7 +79,7 @@ func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
 	logger := logrus.StandardLogger()
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 		metrics_client.NewMetricsClientCreatorOption(source.KurtosisCLISource,
-			kurtosis_version.KurtosisVersion,
+			kurtosis_version.GetVersion(),
 			metricsUserId,
 			clusterType,
 			sendUserMetrics,

@@ -2,6 +2,7 @@ package version
 
 import (
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
@@ -32,7 +33,7 @@ func init() {
 
 func run(cmd *cobra.Command, args []string) error {
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
-	keyValuePrinter.AddPair(cliVersionKey, kurtosis_version.KurtosisVersion)
+	keyValuePrinter.AddPair(cliVersionKey, kurtosis_version.GetVersion())
 	keyValuePrinter.Print()
 
 	fmt.Println()

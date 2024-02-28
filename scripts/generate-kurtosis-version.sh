@@ -9,10 +9,7 @@ root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Constants
 # ==================================================================================================
 
-KURTOSIS_VERSION_PACKAGE_DIR="kurtosis_version"
-KURTOSIS_VERSION_GO_FILE="kurtosis_version.go"
-KURTOSIS_VERSION_PACKAGE_NAME="github.com/kurtosis-tech/kurtosis/kurtosis_version"
-KURTOSIS_VERSION_PACKAGE_GOSUM_PATH="go.sum"
+KURTOSIS_VERSION_TEXT_FILE="kurtosis_version.txt"
 
 
 # ==================================================================================================
@@ -43,13 +40,7 @@ if [ -z "${new_version}" ]; then
     fi
 fi
 
-kurtosis_version_go_file_abs_path="${root_dirpath}/${KURTOSIS_VERSION_PACKAGE_DIR}/${KURTOSIS_VERSION_GO_FILE}"
+kurtosis_version_go_file_abs_path="${root_dirpath}/${KURTOSIS_VERSION_TEXT_FILE}"
 cat << EOF > "${kurtosis_version_go_file_abs_path}"
-package ${KURTOSIS_VERSION_PACKAGE_DIR}
-
-const (
-	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE BUILD PROCESS !!!!!!!!!!!!!!!
-	KurtosisVersion = "${new_version}"
-	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE BUILD PROCESS !!!!!!!!!!!!!!!
-)
+"${new_version}"
 EOF

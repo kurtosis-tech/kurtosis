@@ -3,6 +3,8 @@ module github.com/kurtosis-tech/kurtosis/api/golang
 go 1.20
 
 replace (
+	github.com/kurtosis-tech/kurtosis/cloud/api/golang => ../../cloud/api/golang
+	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/utils => ../../utils
 )
@@ -14,10 +16,10 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2
-	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230803130419-099ee7a4e3dc
-	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230818184218-f4e3e773463b
-	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0-20230803130419-099ee7a4e3dc
-	github.com/kurtosis-tech/kurtosis/utils v0.0.0-20240104153602-385833de9d76 // this version needs to be fixed for outside people to import api/golang
+	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/utils v0.0.0 // Local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/sirupsen/logrus v1.9.3

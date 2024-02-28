@@ -26,8 +26,6 @@ import (
 	"github.com/docker/go-units"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/utils"
 
@@ -1371,57 +1369,6 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, regi
 	return pulledFromRemote, imageArchitecture, nil
 }
 
-func (manager *DockerManager) NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error) {
-	flakeReference := nixBuildSpec.GetFullFlakeReference()
-
-	// Flake generates a link to the nix store containing the image result, to avoid collision with a possible existing one from the
-	// build context (from the user env) and which would result when trying to overwrite it, we create a unique one
-	hasher := md5.New()
-	hasher.Write([]byte(flakeReference))
-	resultLink := fmt.Sprintf("nix-result-%x", hasher.Sum(nil))
-
-	cmd := exec.Command(
-		nixCmdPath, "build", flakeReference,
-		"--print-out-paths",
-		"--extra-experimental-features", "flakes nix-command",
-		"--out-link", resultLink)
-
-	var errBuffer strings.Builder
-	cmd.Stderr = &errBuffer
-	imageFileRaw, err := cmd.Output()
-	if err != nil {
-		errMsg := errBuffer.String()
-		logrus.WithError(err).Error(errMsg)
-		return "", stacktrace.Propagate(err, "Failed to build nix image with Nix.")
-	}
-	imageFile := strings.TrimSpace(string(imageFileRaw))
-	logrus.Debugf("Nix flake image on attribute %s, result on image file %s", flakeReference, imageFile)
-
-	imageTags, err := image_utils.GetRepoTags(imageFile)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to get image tags from Nix image %s", imageFile)
-	}
-
-	if len(imageTags) == 0 {
-		return "", stacktrace.NewError("Generated image %s did not have any tags", imageFile)
-	} else if len(imageTags) > 1 {
-		logrus.Warnf("Generated image %s had multiple tags: %v. We'll select the first.", imageFile, imageTags)
-	}
-	imageTag := imageTags[0]
-
-	image, err := os.Open(imageFile)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to open generated Nix image on %s", imageFile)
-	}
-
-	_, err = manager.dockerClient.ImageLoad(ctx, image, false)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to load Nix image %s in docker", imageFile)
-	}
-	logrus.Debugf("Nix generated image file %s is loaded into docker", imageFile)
-
-	return imageTag, nil
-}
 
 func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
 	buildContextDirPath := imageBuildSpec.GetBuildContextDir()

@@ -8,6 +8,12 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/analytics"
@@ -47,11 +53,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"io"
-	"net/http"
-	"os"
-	"strings"
-	"time"
 )
 
 const (
@@ -207,7 +208,7 @@ func checkCLIVersion(cmd *cobra.Command) {
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the latest Kurtosis CLI version.")
 		logrus.Debugf("Checking latest version error: %v", err)
-		logrus.Warningf("Your current version is '%v'. You can manually upgrade the CLI tool following these instructions: %v", kurtosis_version.KurtosisVersion, user_support_constants.UpgradeCLIInstructionsPage)
+		logrus.Warningf("Your current version is '%v'. You can manually upgrade the CLI tool following these instructions: %v", kurtosis_version.GetVersion(), user_support_constants.UpgradeCLIInstructionsPage)
 		return
 	}
 
@@ -217,7 +218,7 @@ func checkCLIVersion(cmd *cobra.Command) {
 }
 
 func isLatestCLIVersion() (bool, string, error) {
-	ownVersionStr := kurtosis_version.KurtosisVersion
+	ownVersionStr := kurtosis_version.GetVersion()
 	latestVersionStr, err := getLatestCLIReleaseVersion()
 	if err != nil {
 		return false, "", stacktrace.Propagate(err, "An error occurred getting the latest release version number from the GitHub public API")
