@@ -6,7 +6,7 @@ type VariableContextState = {
   data: Record<string, KurtosisNodeData>;
   variables: Variable[];
   updateData: (id: string, data: KurtosisNodeData | ((oldData: KurtosisNodeData) => KurtosisNodeData)) => void;
-  removeData: (id: string) => void;
+  removeData: (id: { id: string }[]) => void;
 };
 
 const VariableContext = createContext<VariableContextState>({
@@ -34,10 +34,12 @@ export const VariableContextProvider = ({ initialData, children }: PropsWithChil
     [],
   );
 
-  const removeData = useCallback((id: string) => {
+  const removeData = useCallback((ids: { id: string }[]) => {
     setData((oldData) => {
       const r = { ...oldData };
-      delete r[id];
+      for (const { id } of ids) {
+        delete r[id];
+      }
       return r;
     });
   }, []);

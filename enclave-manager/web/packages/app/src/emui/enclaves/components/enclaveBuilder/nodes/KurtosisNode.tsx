@@ -88,6 +88,7 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
   children,
 }: KurtosisNodeImplProps<DataType>) => {
   const { updateData, removeData } = useVariableContext();
+  const { getNodes } = useReactFlow();
   const color = colors[nodeData.type];
   const chakraColor = useToken("colors", color);
   const formMethods = useForm<DataType>({
@@ -101,8 +102,14 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
   const handleDeleteNode = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    deleteElements({ nodes: [{ id }] });
-    removeData(id);
+    const nodesToRemove = [
+      { id },
+      ...getNodes()
+        .filter((n) => n.parentNode === id)
+        .map((n) => ({ id: n.id })),
+    ];
+    deleteElements({ nodes: nodesToRemove });
+    removeData(nodesToRemove);
   };
 
   const handleChange = useMemo(
@@ -167,7 +174,12 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
           w={"100%"}
           bg={backgroundColor || "gray.600"}
         >
-          <ZoomAwareNodeContent name={nodeData.name} type={nodeData.type} onDelete={handleDeleteNode}>
+          <ZoomAwareNodeContent
+            name={nodeData.name}
+            type={nodeData.type}
+            isDisabled={nodeData.isFromPackage}
+            onDelete={handleDeleteNode}
+          >
             {children}
           </ZoomAwareNodeContent>
           {isDefined(portalContent) && portalContent}
@@ -180,13 +192,14 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
 type ZoomAwareNodeContentProps = PropsWithChildren<{
   name: string;
   type: KurtosisNodeData["type"];
+  isDisabled?: boolean;
   onDelete: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }>;
 
-const ZoomAwareNodeContent = ({ name, type, onDelete, children }: ZoomAwareNodeContentProps) => {
+const ZoomAwareNodeContent = ({ name, type, isDisabled, onDelete, children }: ZoomAwareNodeContentProps) => {
   const viewport = useViewport();
   return (
-    <ZoomAwareNodeContentImpl name={name} type={type} onDelete={onDelete} zoom={viewport.zoom}>
+    <ZoomAwareNodeContentImpl name={name} type={type} isDisabled={isDisabled} onDelete={onDelete} zoom={viewport.zoom}>
       {children}
     </ZoomAwareNodeContentImpl>
   );
@@ -194,67 +207,70 @@ const ZoomAwareNodeContent = ({ name, type, onDelete, children }: ZoomAwareNodeC
 
 type ZoomAwareNodeContentImplProps = ZoomAwareNodeContentProps & { zoom: number };
 
-const ZoomAwareNodeContentImpl = memo(({ name, type, onDelete, zoom, children }: ZoomAwareNodeContentImplProps) => {
-  const { zoomOut, zoomIn } = useReactFlow();
-  const handleScroll = useCallback(
-    (e: React.WheelEvent<HTMLDivElement>) => {
-      if (e.currentTarget.scrollTop === 0 && e.deltaY < 0) {
-        zoomIn();
-      }
-      if (
-        Math.abs(e.currentTarget.scrollHeight - e.currentTarget.clientHeight - e.currentTarget.scrollTop) <= 1 &&
-        e.deltaY > 0
-      ) {
-        zoomOut();
-      }
-    },
-    [zoomOut, zoomIn],
-  );
-
-  if (zoom < 0.4) {
-    return (
-      <Flex gap={"20px"} alignItems={"center"} justifyContent={"center"} h={"100%"} bg={"gray.600"}>
-        <Icon as={nodeIcons[type]} h={"40px"} w={"40px"} />
-        <Text fontSize={"40px"} textAlign={"center"} p={"20px"}>
-          {name || <i>Unnamed</i>}
-        </Text>
-      </Flex>
+const ZoomAwareNodeContentImpl = memo(
+  ({ name, type, isDisabled, onDelete, zoom, children }: ZoomAwareNodeContentImplProps) => {
+    const { zoomOut, zoomIn } = useReactFlow();
+    const handleScroll = useCallback(
+      (e: React.WheelEvent<HTMLDivElement>) => {
+        if (e.currentTarget.scrollTop === 0 && e.deltaY < 0) {
+          zoomIn();
+        }
+        if (
+          Math.abs(e.currentTarget.scrollHeight - e.currentTarget.clientHeight - e.currentTarget.scrollTop) <= 1 &&
+          e.deltaY > 0
+        ) {
+          zoomOut();
+        }
+      },
+      [zoomOut, zoomIn],
     );
-  }
 
-  return (
-    <>
-      <Flex justifyContent={"space-between"} alignItems={"center"} minH={"0"} bg={"gray.600"}>
-        <Flex gap={"8px"} alignItems={"center"}>
-          <Icon as={nodeIcons[type]} w={"20px"} h={"20px"} />
-          <Text fontWeight={"semibold"}>{name || <i>Unnamed</i>}</Text>
-          <Text color={"gray.300"}>
-            <i>{nodeTypeReadable[type]}</i>
+    if (zoom < 0.4) {
+      return (
+        <Flex gap={"20px"} alignItems={"center"} justifyContent={"center"} h={"100%"} bg={"gray.600"}>
+          <Icon as={nodeIcons[type]} h={"40px"} w={"40px"} />
+          <Text fontSize={"40px"} textAlign={"center"} p={"20px"}>
+            {name || <i>Unnamed</i>}
           </Text>
         </Flex>
-        <IconButton
-          className={"nodrag"}
-          aria-label={"Delete node"}
-          icon={<FiTrash />}
-          colorScheme={"red"}
-          variant={"ghost"}
-          size={"sm"}
-          onClick={onDelete}
-        />
-      </Flex>
-      <Flex
-        flexDirection={"column"}
-        bg={"gray.800"}
-        p={"16px 16px"}
-        overflowY={"scroll"}
-        className={"nodrag nowheel"}
-        sx={{ cursor: "initial" }}
-        onWheel={handleScroll}
-        gap={"16px"}
-      >
-        {children}
-      </Flex>
-      <Box flex={"1"} w={"100%"} className={"nodrag"} />
-    </>
-  );
-});
+      );
+    }
+
+    return (
+      <>
+        <Flex justifyContent={"space-between"} alignItems={"center"} minH={"0"} bg={"gray.600"}>
+          <Flex gap={"8px"} alignItems={"center"}>
+            <Icon as={nodeIcons[type]} w={"20px"} h={"20px"} />
+            <Text fontWeight={"semibold"}>{name || <i>Unnamed</i>}</Text>
+            <Text color={"gray.300"}>
+              <i>{nodeTypeReadable[type]}</i>
+            </Text>
+          </Flex>
+          <IconButton
+            className={"nodrag"}
+            aria-label={"Delete node"}
+            icon={<FiTrash />}
+            colorScheme={"red"}
+            variant={"ghost"}
+            size={"sm"}
+            onClick={onDelete}
+            isDisabled={isDisabled}
+          />
+        </Flex>
+        <Flex
+          flexDirection={"column"}
+          bg={"gray.800"}
+          p={"16px 16px"}
+          overflowY={"scroll"}
+          className={"nodrag nowheel"}
+          sx={{ cursor: "initial" }}
+          onWheel={handleScroll}
+          gap={"16px"}
+        >
+          {children}
+        </Flex>
+        <Box flex={"1"} w={"100%"} className={"nodrag"} />
+      </>
+    );
+  },
+);

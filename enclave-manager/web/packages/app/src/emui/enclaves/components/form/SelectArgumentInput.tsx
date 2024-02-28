@@ -21,7 +21,11 @@ export const SelectArgumentInput = <DataModel extends object>({
   const { register } = useFormContext<DataModel>();
 
   return (
-    <Select {...register(name, { disabled: disabled, required: isRequired, validate: validate })} {...props}>
+    <Select
+      {...register(name, { disabled: disabled, required: isRequired, validate: validate })}
+      isDisabled={disabled}
+      {...props}
+    >
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.display}

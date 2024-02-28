@@ -57,7 +57,9 @@ export const KurtosisPackageNode = memo(
           const parsedPlan = YAML.parse(plan.value.planYaml) as PlanYaml;
 
           // Remove current children
-          deleteElements({ nodes: getNodes().filter((node) => node.parentNode === id) });
+          const nodesToRemove = getNodes().filter((node) => node.parentNode === id);
+          deleteElements({ nodes: nodesToRemove });
+          removeData(nodesToRemove);
           addNodes([
             ...parsedPlan.services.map((service, i) => ({
               type: "serviceNode",
@@ -73,10 +75,11 @@ export const KurtosisPackageNode = memo(
             updateData(service.uuid, {
               type: "service",
               name: service.name,
+              isFromPackage: true,
               env: service.envVars,
               image: {
                 type: "image",
-                image: service.image,
+                image: service.image.name,
                 registryUsername: "",
                 registryPassword: "",
                 registry: "",

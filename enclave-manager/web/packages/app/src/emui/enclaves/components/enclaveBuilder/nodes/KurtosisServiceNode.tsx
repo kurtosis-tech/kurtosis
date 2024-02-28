@@ -30,11 +30,27 @@ export const KurtosisServiceNode = memo(
     return (
       <KurtosisNode id={id} selected={selected} minWidth={650} maxWidth={800}>
         <Flex gap={"16px"}>
-          <KurtosisFormControl<KurtosisServiceNodeData> name={"name"} label={"Service Name"} isRequired>
-            <StringArgumentInput name={"name"} size={"sm"} isRequired validate={validateName} />
+          <KurtosisFormControl<KurtosisServiceNodeData>
+            name={"name"}
+            label={"Service Name"}
+            isRequired
+            isDisabled={nodeData.isFromPackage}
+          >
+            <StringArgumentInput
+              name={"name"}
+              size={"sm"}
+              isRequired
+              validate={validateName}
+              isReadOnly={nodeData.isFromPackage}
+            />
           </KurtosisFormControl>
-          <KurtosisFormControl<KurtosisServiceNodeData> name={"image.image"} label={"Container Image"} isRequired>
-            <ImageConfigInput />
+          <KurtosisFormControl<KurtosisServiceNodeData>
+            name={"image.image"}
+            label={"Container Image"}
+            isRequired
+            isDisabled={nodeData.isFromPackage}
+          >
+            <ImageConfigInput disabled={nodeData.isFromPackage} />
           </KurtosisFormControl>
         </Flex>
         <Tabs>
@@ -47,19 +63,29 @@ export const KurtosisServiceNode = memo(
 
           <TabPanels>
             <TabPanel>
-              <KurtosisFormControl<KurtosisServiceNodeData> name={"env"} label={"Environment Variables"}>
+              <KurtosisFormControl<KurtosisServiceNodeData>
+                name={"env"}
+                label={"Environment Variables"}
+                isDisabled={nodeData.isFromPackage}
+              >
                 <DictArgumentInput<KurtosisServiceNodeData>
                   name={"env"}
+                  disabled={nodeData.isFromPackage}
                   KeyFieldComponent={StringArgumentInput}
                   ValueFieldComponent={MentionStringArgumentInput}
                 />
               </KurtosisFormControl>
             </TabPanel>
             <TabPanel>
-              <KurtosisFormControl<KurtosisServiceNodeData> name={"ports"} label={"Ports"}>
+              <KurtosisFormControl<KurtosisServiceNodeData>
+                name={"ports"}
+                label={"Ports"}
+                isDisabled={nodeData.isFromPackage}
+              >
                 <ListArgumentInput
                   name={"ports"}
                   FieldComponent={PortConfigurationField}
+                  disabled={nodeData.isFromPackage}
                   createNewValue={(): KurtosisPort => ({
                     name: "",
                     applicationProtocol: "",
@@ -74,10 +100,12 @@ export const KurtosisServiceNode = memo(
                 name={"files"}
                 label={"Files"}
                 helperText={"Choose where to mount artifacts on this services filesystem"}
+                isDisabled={nodeData.isFromPackage}
               >
                 <ListArgumentInput
                   name={"files"}
                   FieldComponent={MountArtifactFileInput}
+                  disabled={nodeData.isFromPackage}
                   createNewValue={(): KurtosisFileMount => ({
                     mountPoint: "",
                     name: "",
@@ -91,27 +119,31 @@ export const KurtosisServiceNode = memo(
                   name={"execStepEnabled"}
                   label={"Exec step enabled"}
                   isRequired
+                  isDisabled={nodeData.isFromPackage}
                   helperText={"Whether kurtosis should execute a command in this service once the service is ready."}
                 >
-                  <BooleanArgumentInput<KurtosisServiceNodeData> name={"execStepEnabled"} />
+                  <BooleanArgumentInput<KurtosisServiceNodeData>
+                    name={"execStepEnabled"}
+                    disabled={nodeData.isFromPackage}
+                  />
                 </KurtosisFormControl>
                 <KurtosisFormControl<KurtosisServiceNodeData>
                   name={"execStepCommand"}
                   label={"Command"}
                   isRequired={nodeData.execStepEnabled === "true"}
-                  isDisabled={nodeData.execStepEnabled === "false"}
+                  isDisabled={nodeData.execStepEnabled === "false" || nodeData.isFromPackage}
                 >
                   <MentionStringArgumentInput
                     size={"sm"}
                     name={"execStepCommand"}
                     isRequired={nodeData.execStepEnabled === "true"}
-                    disabled={nodeData.execStepEnabled === "false"}
+                    disabled={nodeData.execStepEnabled === "false" || nodeData.isFromPackage}
                   />
                 </KurtosisFormControl>
                 <KurtosisFormControl<KurtosisServiceNodeData>
                   name={"execStepAcceptableCodes"}
                   label={"Acceptable Exit Codes"}
-                  isDisabled={nodeData.execStepEnabled === "false"}
+                  isDisabled={nodeData.execStepEnabled === "false" || nodeData.isFromPackage}
                   helperText={
                     "If the executed command returns a code not on this list starlark will fail. Defaults to [0]"
                   }
@@ -121,7 +153,7 @@ export const KurtosisServiceNode = memo(
                     size={"sm"}
                     name={"execStepAcceptableCodes"}
                     createNewValue={() => ({ value: 0 })}
-                    disabled={nodeData.execStepEnabled === "false"}
+                    disabled={nodeData.execStepEnabled === "false" || nodeData.isFromPackage}
                   />
                 </KurtosisFormControl>
               </Flex>

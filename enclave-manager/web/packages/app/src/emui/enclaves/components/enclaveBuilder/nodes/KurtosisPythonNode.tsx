@@ -28,11 +28,26 @@ export const KurtosisPythonNode = memo(
     return (
       <KurtosisNode id={id} selected={selected} minWidth={650} maxWidth={800}>
         <Flex gap={"16px"}>
-          <KurtosisFormControl<KurtosisPythonNodeData> name={"name"} label={"Python Name"} isRequired>
-            <StringArgumentInput name={"name"} size={"sm"} isRequired validate={validateName} />
+          <KurtosisFormControl<KurtosisPythonNodeData>
+            name={"name"}
+            label={"Python Name"}
+            isRequired
+            isDisabled={nodeData.isFromPackage}
+          >
+            <StringArgumentInput
+              name={"name"}
+              size={"sm"}
+              isRequired
+              validate={validateName}
+              disabled={nodeData.isFromPackage}
+            />
           </KurtosisFormControl>
-          <KurtosisFormControl<KurtosisPythonNodeData> name={"image.image"} label={"Container Image"}>
-            <ImageConfigInput />
+          <KurtosisFormControl<KurtosisPythonNodeData>
+            name={"image.image"}
+            label={"Container Image"}
+            isDisabled={nodeData.isFromPackage}
+          >
+            <ImageConfigInput disabled={nodeData.isFromPackage} />
           </KurtosisFormControl>
         </Flex>
         <Tabs>
@@ -46,8 +61,13 @@ export const KurtosisPythonNode = memo(
 
           <TabPanels>
             <TabPanel>
-              <KurtosisFormControl<KurtosisPythonNodeData> name={"command"} label={"Code to run"} isRequired>
-                <CodeEditorInput name={"command"} fileName={`${id}.py`} isRequired />
+              <KurtosisFormControl<KurtosisPythonNodeData>
+                name={"command"}
+                label={"Code to run"}
+                isRequired
+                isDisabled={nodeData.isFromPackage}
+              >
+                <CodeEditorInput name={"command"} fileName={`${id}.py`} isRequired disabled={nodeData.isFromPackage} />
               </KurtosisFormControl>
             </TabPanel>
             <TabPanel>
@@ -55,6 +75,7 @@ export const KurtosisPythonNode = memo(
                 name={"packages"}
                 label={"Packages"}
                 isRequired
+                isDisabled={nodeData.isFromPackage}
                 helperText={"Names of packages that need to be installed prior to running this code"}
               >
                 <ListArgumentInput<KurtosisPythonNodeData>
@@ -63,6 +84,7 @@ export const KurtosisPythonNode = memo(
                   name={"packages"}
                   size={"sm"}
                   isRequired
+                  disabled={nodeData.isFromPackage}
                   validate={validateName}
                 />
               </KurtosisFormControl>
@@ -71,12 +93,14 @@ export const KurtosisPythonNode = memo(
               <KurtosisFormControl<KurtosisPythonNodeData>
                 name={"args"}
                 label={"Arguments"}
+                isDisabled={nodeData.isFromPackage}
                 helperText={"Arguments to be passed to the Python script"}
               >
                 <ListArgumentInput<KurtosisPythonNodeData>
                   name={"args"}
                   FieldComponent={PythonArgInput}
                   createNewValue={() => ({ arg: "" })}
+                  disabled={nodeData.isFromPackage}
                   isRequired
                 />
               </KurtosisFormControl>
@@ -85,11 +109,13 @@ export const KurtosisPythonNode = memo(
               <KurtosisFormControl<KurtosisPythonNodeData>
                 name={"files"}
                 label={"Input Files"}
+                isDisabled={nodeData.isFromPackage}
                 helperText={"Choose where to mount artifacts on this execution tasks filesystem"}
               >
                 <ListArgumentInput
                   name={"files"}
                   FieldComponent={MountArtifactFileInput}
+                  disabled={nodeData.isFromPackage}
                   createNewValue={(): KurtosisFileMount => ({
                     mountPoint: "",
                     name: "",
@@ -99,12 +125,14 @@ export const KurtosisPythonNode = memo(
               <KurtosisFormControl<KurtosisPythonNodeData>
                 name={"store"}
                 label={"Output File/Directory"}
+                isDisabled={nodeData.isFromPackage}
                 helperText={
                   "Choose which files to expose from this execution task. You can use either an absolute path, a directory, or a glob."
                 }
               >
                 <MentionStringArgumentInput<KurtosisPythonNodeData>
                   name={"store"}
+                  disabled={nodeData.isFromPackage}
                   placeholder={"/some/output/location"}
                 />
               </KurtosisFormControl>
@@ -115,19 +143,23 @@ export const KurtosisPythonNode = memo(
                   name={"wait_enabled"}
                   label={"Wait enabled"}
                   isRequired
+                  isDisabled={nodeData.isFromPackage}
                   helperText={"Whether kurtosis should wait a preset time for this step to complete."}
                 >
-                  <BooleanArgumentInput<KurtosisPythonNodeData> name={"wait_enabled"} />
+                  <BooleanArgumentInput<KurtosisPythonNodeData>
+                    name={"wait_enabled"}
+                    disabled={nodeData.isFromPackage}
+                  />
                 </KurtosisFormControl>
                 <KurtosisFormControl<KurtosisPythonNodeData>
                   name={"wait"}
                   label={"Wait"}
-                  isDisabled={nodeData.wait_enabled === "false"}
+                  isDisabled={nodeData.wait_enabled === "false" || nodeData.isFromPackage}
                   helperText={"Whether kurtosis should wait a preset time for this step to complete."}
                 >
                   <StringArgumentInput<KurtosisPythonNodeData>
                     name={"wait"}
-                    isDisabled={nodeData.wait_enabled === "false"}
+                    disabled={nodeData.wait_enabled === "false" || nodeData.isFromPackage}
                     size={"sm"}
                     placeholder={"180s"}
                     validate={nodeData.wait_enabled === "false" ? undefined : validateDurationString}

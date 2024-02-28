@@ -46,9 +46,21 @@ export const ListArgumentInput = <DataModel extends object>({
             isRequired={otherProps.isRequired}
             name={`${otherProps.name as `args.${string}`}.${i}`}
           >
-            <FieldComponent name={`${otherProps.name}.${i}` as any} isRequired validate={otherProps.validate} />
+            <FieldComponent
+              name={`${otherProps.name}.${i}` as any}
+              isRequired
+              validate={otherProps.validate}
+              disabled={otherProps.disabled}
+            />
           </KurtosisSubtypeFormControl>
-          <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"} variant={"outline"}>
+          <Button
+            onClick={() => remove(i)}
+            leftIcon={<FiDelete />}
+            size={"sm"}
+            colorScheme={"red"}
+            variant={"outline"}
+            isDisabled={otherProps.disabled}
+          >
             Delete
           </Button>
         </Flex>
@@ -60,6 +72,7 @@ export const ListArgumentInput = <DataModel extends object>({
           colorScheme={"kurtosisGreen"}
           size={"sm"}
           variant={"outline"}
+          disabled={otherProps.disabled}
         >
           Add
         </Button>

@@ -19,21 +19,20 @@ export const BooleanArgumentInput = <DataModel extends object>({
     return (
       <Switch
         {...register(props.name, {
-          disabled: props.disabled,
           required: props.isRequired,
           // any required to force this initial value to work.
           value: true as any,
           validate: props.validate,
         })}
+        isReadOnly={props.disabled}
       />
     );
   } else {
     return (
-      <RadioGroup defaultValue={currentDefault}>
+      <RadioGroup defaultValue={currentDefault} isDisabled={props.disabled}>
         <Stack direction={"row"}>
           <Radio
             {...register(props.name, {
-              disabled: props.disabled,
               required: props.isRequired,
               validate: props.validate,
             })}
@@ -43,7 +42,6 @@ export const BooleanArgumentInput = <DataModel extends object>({
           </Radio>
           <Radio
             {...register(props.name, {
-              disabled: props.disabled,
               required: props.isRequired,
               validate: props.validate,
             })}

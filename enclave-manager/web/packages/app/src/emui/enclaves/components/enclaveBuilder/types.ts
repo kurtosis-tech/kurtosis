@@ -39,6 +39,7 @@ export type KurtosisImageConfig = {
 export type KurtosisServiceNodeData = {
   type: "service";
   name: string;
+  isFromPackage?: boolean;
   image: KurtosisImageConfig;
   env: KurtosisEnvironmentVar[];
   ports: KurtosisPort[];
@@ -51,6 +52,7 @@ export type KurtosisServiceNodeData = {
 export type KurtosisArtifactNodeData = {
   type: "artifact";
   name: string;
+  isFromPackage?: boolean;
   files: Record<string, string>;
   isValid: boolean;
 };
@@ -58,6 +60,7 @@ export type KurtosisArtifactNodeData = {
 export type KurtosisShellNodeData = {
   type: "shell";
   name: string;
+  isFromPackage?: boolean;
   command: string;
   image: KurtosisImageConfig;
   env: KurtosisEnvironmentVar[];
@@ -74,6 +77,7 @@ export type KurtosisPythonArg = { arg: string };
 export type KurtosisPythonNodeData = {
   type: "python";
   name: string;
+  isFromPackage?: boolean;
   command: string;
   image: KurtosisImageConfig;
   packages: KurtosisPythonPackage[];
@@ -88,6 +92,7 @@ export type KurtosisPythonNodeData = {
 export type KurtosisPackageNodeData = {
   type: "package";
   name: string;
+  isFromPackage?: boolean;
   packageId: string;
   args: Record<string, any>;
   isValid: boolean;
@@ -110,7 +115,7 @@ export type PlanPort = {
 export type PlanService = {
   name: string;
   uuid: string;
-  image: string;
+  image: { name: string };
   envVars: KurtosisEnvironmentVar[];
   ports: PlanPort[];
 };

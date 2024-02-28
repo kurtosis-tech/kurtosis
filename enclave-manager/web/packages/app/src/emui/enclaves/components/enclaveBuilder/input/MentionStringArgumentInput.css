@@ -3,7 +3,7 @@
   height: var(--input-height);
   font-size: var(--input-font-size);
   border: 1px solid;
-  border-color: inherit;
+  border-color: var(--chakra-colors-chakra-border-color);
   border-radius: var(--input-border-radius);
   outline: 2px solid transparent;
   outline-offset: 2px;
@@ -39,6 +39,10 @@
 
   &:focus-visible {
     outline: none;
+  }
+
+  &[disabled=""] {
+    color: var(--chakra-colors-gray-200);
   }
 }
 

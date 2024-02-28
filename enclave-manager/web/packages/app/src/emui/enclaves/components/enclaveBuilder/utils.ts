@@ -210,7 +210,6 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
       });
     }
   });
-  console.log(dependencies);
   return dependencies;
 }
 
