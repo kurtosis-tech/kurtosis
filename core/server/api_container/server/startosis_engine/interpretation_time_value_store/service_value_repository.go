@@ -19,7 +19,6 @@ type serviceInterpretationValueRepository struct {
 	starlarkValueSerde *kurtosis_types.StarlarkValueSerde
 }
 
-// TODO add tests for this module
 func getOrCreateNewServiceInterpretationTimeValueRepository(
 	enclaveDb *enclave_db.EnclaveDB,
 	starlarkValueSerde *kurtosis_types.StarlarkValueSerde,
@@ -27,13 +26,13 @@ func getOrCreateNewServiceInterpretationTimeValueRepository(
 	if err := enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(serviceInterpretationValueBucketName)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while creating the recipe result database bucket")
+			return stacktrace.Propagate(err, "An error occurred while creating the bucket for the service interpretation time value repository")
 		}
 		logrus.Debugf("Recipe result bucket: '%+v'", bucket)
 
 		return nil
 	}); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while building the recipe result repository")
+		return nil, stacktrace.Propagate(err, "An error occurred while building service interpretation time value repository")
 	}
 
 	repository := &serviceInterpretationValueRepository{

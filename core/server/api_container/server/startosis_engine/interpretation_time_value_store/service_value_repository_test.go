@@ -30,7 +30,7 @@ func TestAddAndGetTest(t *testing.T) {
 	maybeUrl := ""
 
 	port, interpretationErr := port_spec.CreatePortSpecUsingGoValues(
-		"my-test-service",
+		string(serviceName),
 		uint16(443),
 		port_spec_core.TransportProtocol_TCP,
 		&applicationProtocol,

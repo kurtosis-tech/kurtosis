@@ -116,7 +116,7 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 	builtin.serviceConfigs = serviceConfigs
 	builtin.readyConditions = readyConditions
 
-	resultUuids, returnValue, interpretationErr := makeAddServicesInterpretationReturnValue(builtin.serviceConfigs, builtin.runtimeValueStore, builtin.interpretationTimeValueStore)
+	resultUuids, returnValue, interpretationErr := makeAndPersistAddServicesInterpretationReturnValue(builtin.serviceConfigs, builtin.runtimeValueStore, builtin.interpretationTimeValueStore)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -206,7 +206,7 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 			serviceMsg := fmt.Sprintf("Service '%v' error:\n%v\n", serviceName, serviceErr)
 			allServiceChecksErrMsg = allServiceChecksErrMsg + serviceMsg
 		}
-		return "", stacktrace.NewError("An error occurred while checking al service, these are the errors by service:\n%s", allServiceChecksErrMsg)
+		return "", stacktrace.NewError("An error occurred while checking all service, these are the errors by service:\n%s", allServiceChecksErrMsg)
 	}
 	defer func() {
 		if shouldDeleteAllStartedServices {
@@ -454,7 +454,7 @@ func validateAndConvertConfigsAndReadyConditions(
 	return convertedServiceConfigs, readyConditionsByServiceName, nil
 }
 
-func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.ServiceName]*service.ServiceConfig, runtimeValueStore *runtime_value_store.RuntimeValueStore, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) (map[service.ServiceName]string, *starlark.Dict, *startosis_errors.InterpretationError) {
+func makeAndPersistAddServicesInterpretationReturnValue(serviceConfigs map[service.ServiceName]*service.ServiceConfig, runtimeValueStore *runtime_value_store.RuntimeValueStore, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) (map[service.ServiceName]string, *starlark.Dict, *startosis_errors.InterpretationError) {
 	servicesObjectDict := starlark.NewDict(len(serviceConfigs))
 	resultUuids := map[service.ServiceName]string{}
 	var err error
@@ -472,7 +472,7 @@ func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.Service
 			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "Unable to generate the object that should be returned by the '%s' builtin", AddServicesBuiltinName)
 		}
 		if err = interpretationTimeValueStore.AddService(serviceName, serviceObject); err != nil {
-			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "an error occurred while persisting the return value for service with name '%v'", serviceName)
+			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting the return value for service with name '%v'", serviceName)
 		}
 	}
 	return resultUuids, servicesObjectDict, nil

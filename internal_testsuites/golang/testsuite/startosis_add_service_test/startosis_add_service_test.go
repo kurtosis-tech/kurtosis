@@ -70,7 +70,7 @@ func (suite *StartosisAddServiceTestSuite) TestAddTwoServicesAndTestConnection()
 	expectedScriptOutput := `Adding services ` + serviceName + ` and ` + serviceName2 + `
 Service '` + serviceName + `' added with service UUID '[a-z-0-9]+'
 Service '` + serviceName2 + `' added with service UUID '[a-z-0-9]+'
-Fetched service '` + "" + `'
+Fetched service '` + serviceName + `'
 Service\(name="datastore-1", hostname="datastore-1", ip_address="[0-9\.]+", ports=\{"grpc": PortSpec\(number=1323, transport_protocol="TCP", wait="2m0s"\)\}\)
 Command returned with exit code '0' and the following output:
 --------------------

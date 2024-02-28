@@ -59,7 +59,7 @@ func (builtin *GetServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 
 	serviceStarlarkValue, err := builtin.interpretationTimeStore.GetService(serviceName)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "an error occurred while fetching service '%v' from the store", serviceName)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while fetching service '%v' from the store", serviceName)
 	}
 
 	return serviceStarlarkValue, nil

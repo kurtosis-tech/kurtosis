@@ -15,14 +15,14 @@ type InterpretationTimeValueStore struct {
 func CreateInterpretationTimeValueStore(enclaveDb *enclave_db.EnclaveDB, serde *kurtosis_types.StarlarkValueSerde) (*InterpretationTimeValueStore, error) {
 	serviceValuesRepository, err := getOrCreateNewServiceInterpretationTimeValueRepository(enclaveDb, serde)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "an error occurred creating interpretation time service value repository")
+		return nil, stacktrace.Propagate(err, "An error occurred creating interpretation time value store")
 	}
 	return &InterpretationTimeValueStore{serviceValues: serviceValuesRepository, serde: serde}, nil
 }
 
 func (itvs *InterpretationTimeValueStore) AddService(name service.ServiceName, service *kurtosis_types.Service) error {
 	if err := itvs.serviceValues.AddService(name, service); err != nil {
-		return stacktrace.Propagate(err, "an error occurred while adding '%v' for service '%v' to db", service, name)
+		return stacktrace.Propagate(err, "An error occurred while adding value '%v' for service '%v' to db", service, name)
 	}
 	return nil
 }
@@ -30,7 +30,7 @@ func (itvs *InterpretationTimeValueStore) AddService(name service.ServiceName, s
 func (itvs *InterpretationTimeValueStore) GetService(name service.ServiceName) (*kurtosis_types.Service, error) {
 	serviceStarlark, err := itvs.serviceValues.GetService(name)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "an error occurred fetching interpretation time value for '%v' from db", name)
+		return nil, stacktrace.Propagate(err, "An error occurred fetching interpretation time value for '%v' from db", name)
 	}
 	return serviceStarlark, nil
 }
