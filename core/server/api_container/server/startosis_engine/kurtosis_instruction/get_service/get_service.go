@@ -39,7 +39,9 @@ func NewGetService(interpretationTimeStore *interpretation_time_value_store.Inte
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &GetServiceCapabilities{interpretationTimeStore: interpretationTimeStore, serviceName: ""}
 		},
-		DefaultDisplayArguments: nil,
+		DefaultDisplayArguments: map[string]bool{
+			ServiceNameArgName: true,
+		},
 	}
 }
 
