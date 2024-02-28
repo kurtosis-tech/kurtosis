@@ -55,6 +55,8 @@ func (builtin *GetServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 	}
 	serviceName := service.ServiceName(serviceNameArgumentValue.GoString())
 
+	builtin.serviceName = serviceName
+
 	serviceStarlarkValue, err := builtin.interpretationTimeStore.GetService(serviceName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "an error occurred while fetching service '%v' from the store", serviceName)
