@@ -77,7 +77,7 @@ export const KurtosisPackageNode = memo(
               type: "service",
               name: service.name,
               isFromPackage: true,
-              env: service.envVars,
+              env: service.envVars || [],
               image: {
                 type: "image",
                 image: service.image.name,
@@ -89,10 +89,10 @@ export const KurtosisPackageNode = memo(
                 flakeLocationDir: "",
                 flakeOutput: "",
               },
-              ports: service.ports.map((port) => ({
+              ports: (service.ports || []).map((port) => ({
                 name: port.name,
                 port: port.number,
-                applicationProtocol: port.applicationProtocol,
+                applicationProtocol: port.applicationProtocol || "",
                 transportProtocol: port.transportProtocol,
               })),
               execStepEnabled: "false",

@@ -109,15 +109,15 @@ export type PlanPort = {
   name: string;
   number: number;
   transportProtocol: "TCP" | "UDP";
-  applicationProtocol: string;
+  applicationProtocol?: string;
 };
 
 export type PlanService = {
   name: string;
   uuid: string;
   image: { name: string };
-  envVars: KurtosisEnvironmentVar[];
-  ports: PlanPort[];
+  envVars?: KurtosisEnvironmentVar[];
+  ports?: PlanPort[];
 };
 
 export type PlanYaml = {

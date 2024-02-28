@@ -2,7 +2,13 @@ import { isDefined, RemoveFunctions, stringifyError } from "kurtosis-ui-componen
 import { Edge, Node } from "reactflow";
 import { Result } from "true-myth";
 import { EnclaveFullInfo } from "../../types";
-import { KurtosisImageConfig, KurtosisNodeData, KurtosisServiceNodeData, Variable } from "./types";
+import {
+  KurtosisImageConfig,
+  KurtosisNodeData,
+  KurtosisPackageNodeData,
+  KurtosisServiceNodeData,
+  Variable,
+} from "./types";
 
 export const EMUI_BUILD_STATE_KEY = "EMUI_BUILD_STATE";
 
@@ -219,11 +225,17 @@ export function generateStarlarkFromGraph(
   data: Record<string, KurtosisNodeData>,
   existingEnclave?: RemoveFunctions<EnclaveFullInfo>,
 ): string {
+  const nodeLookup = nodes.reduce((acc: Record<string, Node>, cur) => ({ ...acc, [cur.id]: cur }), {});
+  const primaryNodes = nodes.filter((node) => !isDefined(node.parentNode));
+  const primaryEdges = edges
+    .map((edge) => ({ ...edge, source: nodeLookup[edge.source].parentNode || edge.source }))
+    .filter((e) => e.target !== e.source);
+
   // Topological sort
   const sortedNodes: Node<KurtosisServiceNodeData>[] = [];
-  let remainingEdges = [...edges].filter((e) => e.target !== e.source);
-  while (remainingEdges.length > 0 || sortedNodes.length !== nodes.length) {
-    const nodesToRemove = nodes
+  let remainingEdges = [...primaryEdges];
+  while (remainingEdges.length > 0 || sortedNodes.length !== primaryNodes.length) {
+    const nodesToRemove = primaryNodes
       .filter((node) => remainingEdges.every((edge) => edge.target !== node.id)) // eslint-disable-line no-loop-func
       .filter((node) => !sortedNodes.includes(node));
 
@@ -259,6 +271,39 @@ export function generateStarlarkFromGraph(
     return `"${formatString}".format(${references.join(", ")})`;
   };
 
+  function objectToStarlark(o: any, indent: number) {
+    const padLeft = "".padStart(indent, " ");
+    if (!isDefined(o)) {
+      return "None";
+    }
+    if (Array.isArray(o)) {
+      let result = `[`;
+      o.forEach((arrayValue) => {
+        result += `${objectToStarlark(arrayValue, indent + 4)},\n`;
+      });
+      result += `${padLeft}],\n`;
+    }
+    if (typeof o === "number") {
+      return `${o}`;
+    }
+    if (typeof o === "string") {
+      return interpolateValue(o);
+    }
+    if (typeof o === "boolean") {
+      return o ? "True" : "False";
+    }
+    if (typeof o === "object") {
+      let result = "{";
+      Object.entries(o).forEach(([key, value]) => {
+        result += `\n${padLeft}${interpolateValue(key)}: ${objectToStarlark(value, indent + 4)},`;
+      });
+      result += `${padLeft}}`;
+      return result;
+    }
+
+    throw new Error(`Unable to convert the object ${o} to starlark`);
+  }
+
   const renderImageConfig = (config: KurtosisImageConfig): string => {
     switch (config.type) {
       case "image":
@@ -281,7 +326,20 @@ export function generateStarlarkFromGraph(
     }
   };
 
-  let starlark = "def run(plan):\n";
+  let starlark = "";
+  const packageNodeData = sortedNodes
+    .map((n) => data[n.id])
+    .filter((d) => d.type === "package") as KurtosisPackageNodeData[];
+  for (const nodeData of packageNodeData) {
+    const module_name = `${normaliseNameToStarlarkVariable(nodeData.name)}_module`;
+    // Todo handle other paths
+    starlark += `${module_name} = import_module(${interpolateValue(nodeData.packageId + "/main.star")})\n`;
+  }
+  if (packageNodeData.length > 0) {
+    starlark += "\n";
+  }
+
+  starlark += "def run(plan):\n";
   for (const node of sortedNodes) {
     const nodeData = data[node.id];
     if (nodeData.type === "service") {
@@ -403,6 +461,12 @@ export function generateStarlarkFromGraph(
       if (nodeData.wait_enabled === "false" || wait !== '""') {
         starlark += `        wait=${nodeData.wait_enabled === "true" ? wait : "None"},\n`;
       }
+      starlark += `    )\n\n`;
+    }
+
+    if (nodeData.type === "package") {
+      const packageName = normaliseNameToStarlarkVariable(nodeData.name);
+      starlark += `    ${packageName} = ${packageName}_module.run(plan, **${objectToStarlark(nodeData.args, 8)}`;
       starlark += `    )\n\n`;
     }
   }
