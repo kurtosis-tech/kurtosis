@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -32,7 +33,8 @@ func NewAddService(
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	packageReplaceOptions map[string]string,
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServiceBuiltinName,
@@ -74,6 +76,8 @@ func NewAddService(
 
 				resultUuid:     "",  // populated at interpretation time
 				readyCondition: nil, // populated at interpretation time
+
+				interpretationTimeValueStore: interpretationTimeValueStore,
 			}
 		},
 
@@ -96,6 +100,8 @@ type AddServiceCapabilities struct {
 	packageId              string
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
+
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 
 	resultUuid string
 }
@@ -133,6 +139,11 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(serviceName, builtin.serviceConfig, builtin.resultUuid)
 	if interpretationErr != nil {
 		return nil, interpretationErr
+	}
+
+	err = builtin.interpretationTimeValueStore.PutService(builtin.serviceName, returnValue)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting return value for service '%v'", serviceName)
 	}
 	return returnValue, nil
 }

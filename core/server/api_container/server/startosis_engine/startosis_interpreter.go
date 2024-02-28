@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/plan_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
@@ -56,21 +57,23 @@ type StartosisInterpreter struct {
 	serviceNetwork service_network.ServiceNetwork
 	recipeExecutor *runtime_value_store.RuntimeValueStore
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
-	packageContentProvider startosis_packages.PackageContentProvider
-	starlarkValueSerde     *kurtosis_types.StarlarkValueSerde
-	enclaveEnvVars         string
+	packageContentProvider       startosis_packages.PackageContentProvider
+	starlarkValueSerde           *kurtosis_types.StarlarkValueSerde
+	enclaveEnvVars               string
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) *StartosisInterpreter {
 	return &StartosisInterpreter{
-		mutex:                  &sync.Mutex{},
-		serviceNetwork:         serviceNetwork,
-		recipeExecutor:         runtimeValueStore,
-		packageContentProvider: packageContentProvider,
-		enclaveEnvVars:         enclaveVarEnvs,
-		starlarkValueSerde:     starlarkValueSerde,
+		mutex:                        &sync.Mutex{},
+		serviceNetwork:               serviceNetwork,
+		recipeExecutor:               runtimeValueStore,
+		packageContentProvider:       packageContentProvider,
+		enclaveEnvVars:               enclaveVarEnvs,
+		starlarkValueSerde:           starlarkValueSerde,
+		interpretationTimeValueStore: interpretationTimeValueStore,
 	}
 }
 
@@ -270,7 +273,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	if mainFuncParamsNum >= minimumParamsRequiredForPlan {
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
-			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.packageContentProvider, packageReplaceOptions, nonBlockingMode)
+			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.packageContentProvider, packageReplaceOptions, nonBlockingMode, interpreter.interpretationTimeValueStore)
 			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, interpreter.starlarkValueSerde, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}

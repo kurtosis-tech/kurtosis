@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -26,9 +27,10 @@ type KurtosisPlanInstructionTestSuite struct {
 	starlarkThread *starlark.Thread
 	starlarkEnv    starlark.StringDict
 
-	serviceNetwork         *service_network.MockServiceNetwork
-	runtimeValueStore      *runtime_value_store.RuntimeValueStore
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
+	serviceNetwork               *service_network.MockServiceNetwork
+	runtimeValueStore            *runtime_value_store.RuntimeValueStore
+	packageContentProvider       *mock_package_content_provider.MockPackageContentProvider
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
 func TestKurtosisPlanInstructionSuite(t *testing.T) {
@@ -46,6 +48,10 @@ func (suite *KurtosisPlanInstructionTestSuite) SetupTest() {
 	runtimeValueStoreForTest, err := runtime_value_store.CreateRuntimeValueStore(serde, enclaveDb)
 	suite.Require().NoError(err)
 	suite.runtimeValueStore = runtimeValueStoreForTest
+
+	interpretationTimeValueStore, err := interpretation_time_value_store.CreateInterpretationTimeValueStore(enclaveDb, serde)
+	suite.Require().NoError(err)
+	suite.interpretationTimeValueStore = interpretationTimeValueStore
 
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
 }
