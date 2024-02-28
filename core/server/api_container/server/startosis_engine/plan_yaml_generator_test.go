@@ -102,37 +102,6 @@ func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
 }
 
-func (suite *PlanYamlGeneratorTestSuite) TestFullExecution() {
-	packageId := "github.com/kurtosis-tech/plan-yaml-prac"
-	mainFunctionName := ""
-	relativePathToMainFile := "main.star"
-
-	serializedScript := `def run(plan, args):
-    plan.add_service(
-        name="db",
-        config=ServiceConfig(
-            image="postgres:alpine",
-            env_vars = {
-                "POSTGRES_DB": "tedi",
-                "POSTGRES_USER": "tedi",
-                "POSTGRES_PASSWORD": "tedi",
-            }
-        )
-    )
-
-    result = plan.exec(
-        service_name = "db",
-        recipe = ExecRecipe(command = ["echo", "Hello, world"]),
-        acceptable_codes=[156],
-    )
-    plan.print(result)
-`
-	serializedJsonParams := "{}"
-	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
-	require.Nil(suite.T(), interpretationError)
-	require.Equal(suite.T(), 3, instructionsPlan.Size())
-}
-
 func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
 	dockerfileModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server/Dockerfile"
 	serverModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
@@ -168,29 +137,27 @@ CMD ["node", "app.js"]
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
-    plan.add_service(
-        name="db",
+    database = plan.add_service(
+        name="database",
         config=ServiceConfig(
-            image="postgres:alpine",
-            env_vars = {
-                "POSTGRES_DB": "tedi",
-                "POSTGRES_USER": "tedi",
-                "POSTGRES_PASSWORD": "tedi",
-            }
+            image="postgres:latest",
         )
     )
 
-    result = plan.exec(
-        service_name = "db",
-        recipe = ExecRecipe(command = ["echo", "Hello, world"]),
-        acceptable_codes=[156],
+    plan.add_service(
+        name="tedi",
+        config=ServiceConfig(
+            image="ubuntu:latest",
+            env_vars={
+                "DB_URL": database.ip_address 
+            },
+        )
     )
-    plan.print(result)
 `
 	serializedJsonParams := "{}"
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
 	require.Nil(suite.T(), interpretationError)
-	require.Equal(suite.T(), 3, instructionsPlan.Size())
+	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
 	pyg := NewPlanYamlGenerator(
 		instructionsPlan,

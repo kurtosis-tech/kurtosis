@@ -687,6 +687,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instru
 	}
 	task = &Task{ //nolint:exhaustruct
 		ServiceName: serviceNameArgumentValue.GoString(),
+		TaskType:    EXEC,
 	}
 
 	execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, exec.RecipeArgName)
