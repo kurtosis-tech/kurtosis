@@ -17,7 +17,7 @@ type Mode = { type: "loading" } | { type: "error"; error: string } | { type: "re
 
 export const KurtosisPackageNode = memo(
   ({ id, selected, zIndex }: NodeProps) => {
-    const { getNodes, deleteElements, addNodes } = useReactFlow();
+    const { getNodes, deleteElements, setNodes } = useReactFlow();
     const [showPackageConfigModal, setShowPackageConfigModal] = useState(false);
     const [mode, setMode] = useState<Mode>({ type: "ready" });
     const kurtosisClient = useKurtosisClient();
@@ -60,10 +60,11 @@ export const KurtosisPackageNode = memo(
           const nodesToRemove = getNodes().filter((node) => node.parentNode === id);
           deleteElements({ nodes: nodesToRemove });
           removeData(nodesToRemove);
-          addNodes([
+          setNodes((nodes) => [
+            ...nodes,
             ...parsedPlan.services.map((service, i) => ({
               type: "serviceNode",
-              id: service.uuid,
+              id: `${id}.${service.name}`,
               parentNode: id,
               data: {},
               extent: "parent" as "parent",
@@ -72,7 +73,7 @@ export const KurtosisPackageNode = memo(
             })),
           ]);
           parsedPlan.services.forEach((service) =>
-            updateData(service.uuid, {
+            updateData(`${id}.${service.name}`, {
               type: "service",
               name: service.name,
               isFromPackage: true,
