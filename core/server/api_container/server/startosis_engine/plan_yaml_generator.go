@@ -192,7 +192,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	if interpretationErr != nil {
 		return interpretationErr
 	}
-	image := &ImageSpec{
+	image := &ImageSpec{ //nolint:exhaustruct
 		ImageName: serviceConfig.GetContainerImageName(),
 	}
 	imageBuildSpec := serviceConfig.GetImageBuildSpec()
@@ -685,7 +685,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instru
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", exec.ServiceNameArgName)
 	}
-	task = &Task{
+	task = &Task{ //nolint:exhaustruct
 		ServiceName: serviceNameArgumentValue.GoString(),
 	}
 
