@@ -23,7 +23,7 @@ const (
 )
 
 func TestAddAndGetTest(t *testing.T) {
-	repository := getRecipeResultRepositoryForTest(t)
+	repository := getServiceInterpretationTimeValueRepository(t)
 	require.NotNil(t, repository)
 
 	applicationProtocol := ""
@@ -53,7 +53,7 @@ func TestAddAndGetTest(t *testing.T) {
 	require.Equal(t, expectedService.String(), actualService.String())
 }
 
-func getRecipeResultRepositoryForTest(t *testing.T) *serviceInterpretationValueRepository {
+func getServiceInterpretationTimeValueRepository(t *testing.T) *serviceInterpretationValueRepository {
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer func() {
 		err = os.Remove(file.Name())

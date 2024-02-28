@@ -28,7 +28,7 @@ func getOrCreateNewServiceInterpretationTimeValueRepository(
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred while creating the bucket for the service interpretation time value repository")
 		}
-		logrus.Debugf("Recipe result bucket: '%+v'", bucket)
+		logrus.Debugf("Service value interpretation time store bucket: '%+v'", bucket)
 
 		return nil
 	}); err != nil {
