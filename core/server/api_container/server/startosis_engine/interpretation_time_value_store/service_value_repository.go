@@ -65,7 +65,7 @@ func (repository *serviceInterpretationValueRepository) AddService(name service.
 
 func (repository *serviceInterpretationValueRepository) GetService(name service.ServiceName) (*kurtosis_types.Service, error) {
 	logrus.Debugf("Getting service interpretation time value for service '%v'", name)
-	value := &kurtosis_types.Service{}
+	var value *kurtosis_types.Service
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(serviceInterpretationValueBucketName)
