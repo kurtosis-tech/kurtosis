@@ -32,7 +32,7 @@ func (t *portSpecMinimalTestCase) Assert(typeValue builtin_argument.KurtosisValu
 
 	waitDuration, errParsingDuration := time.ParseDuration(testWaitDefaultValue)
 	require.NoError(t, errParsingDuration)
-	expectedPortSpec, errPortCreation := port_spec.NewPortSpec(testPrivatePortNumber, port_spec.TransportProtocol_TCP, "", port_spec.NewWait(waitDuration))
+	expectedPortSpec, errPortCreation := port_spec.NewPortSpec(testPrivatePortNumber, port_spec.TransportProtocol_TCP, "", port_spec.NewWait(waitDuration), "")
 	require.NoError(t, errPortCreation)
 	require.Equal(t, expectedPortSpec, portSpec)
 

@@ -31,3 +31,10 @@ Or to lint multiple files or directories at the same time
 ```bash
 kurtosis lint this.star that.star also-this.star my-favorite-directory/
 ```
+
+To validate a `main.star` doc string use the `-c` or the `--check-docstring` flag. Note that this requires
+you pass a single path to a `main.star` or a single directory containing a `main.star`
+
+```bash
+kurtosis lint . -c
+```

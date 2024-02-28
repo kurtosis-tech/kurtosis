@@ -1851,7 +1851,8 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 					return stacktrace.NewError(
 						"Container '%v' using image '%v' in pod '%v' in namespace '%v' is stuck in state '%v'. This likely means:\n"+
 							"1) There's a typo in either the image name or the tag name\n"+
-							"2) The image isn't accessible to Kubernetes (e.g. it's a local image, or it's in a private image registry that Kubernetes can't access)",
+							"2) The image isn't accessible to Kubernetes (e.g. it's a local image, or it's in a private image registry that Kubernetes can't access)\n"+
+							"3) The image's platform/architecture might not match",
 						containerName,
 						containerStatus.Image,
 						pod.Name,

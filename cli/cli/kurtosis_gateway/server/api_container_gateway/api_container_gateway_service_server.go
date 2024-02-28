@@ -307,7 +307,7 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 			continue
 		}
 		portNumberUint16 := uint16(coreApiPort.GetNumber())
-		remotePortSpec, err := port_spec.NewPortSpec(portNumberUint16, port_spec.TransportProtocol_TCP, coreApiPort.GetMaybeApplicationProtocol(), nil)
+		remotePortSpec, err := port_spec.NewPortSpec(portNumberUint16, port_spec.TransportProtocol_TCP, coreApiPort.GetMaybeApplicationProtocol(), nil, "")
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to create port spec describing remote port '%v', instead a non-nil error was returned", portSpecId)
 		}

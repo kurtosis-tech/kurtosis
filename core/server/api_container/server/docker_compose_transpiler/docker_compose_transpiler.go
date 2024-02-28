@@ -225,7 +225,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 
 		// PORTS
 		if composeService.Ports != nil {
-			portSpecsDict, err := getStarlarkPortSpecs(composeService.Ports)
+			portSpecsDict, err := getStarlarkPortSpecs(serviceName, composeService.Ports)
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the port specs dict for service '%s'", serviceName)
 			}
@@ -367,7 +367,7 @@ func getStarlarkImageBuildSpec(composeBuild *types.BuildConfig, serviceName stri
 }
 
 // TODO: Support public ports
-func getStarlarkPortSpecs(composePorts []types.ServicePortConfig) (*starlark.Dict, error) {
+func getStarlarkPortSpecs(serviceName string, composePorts []types.ServicePortConfig) (*starlark.Dict, error) {
 	portSpecs := starlark.NewDict(len(composePorts))
 
 	for portIdx, dockerPort := range composePorts {
@@ -380,10 +380,12 @@ func getStarlarkPortSpecs(composePorts []types.ServicePortConfig) (*starlark.Dic
 		}
 
 		portSpec, interpretationErr := port_spec_starlark.CreatePortSpecUsingGoValues(
+			serviceName,
 			uint16(dockerPort.Target),
 			kurtosisProto,
 			nil, // Application protocol (which Compose doesn't have)
 			"",  // Wait timeout (which Compose doesn't have a way to override)
+			nil, // No way to change the URL for the port
 		)
 		if interpretationErr != nil {
 			return nil, stacktrace.Propagate(interpretationErr, "An error occurred creating a %s object from port #%d", port_spec_starlark.PortSpecTypeName, portIdx)
