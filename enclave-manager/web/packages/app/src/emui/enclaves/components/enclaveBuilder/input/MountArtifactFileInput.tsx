@@ -30,7 +30,7 @@ export const MountArtifactFileInput = (props: KurtosisFormInputProps<KurtosisSer
           {...props}
           size={"sm"}
           placeholder={"Select an Artifact"}
-          name={`${props.name as `files.${number}`}.artifactName`}
+          name={`${props.name as `files.${number}`}.name`}
         />
       </GridItem>
     </Grid>

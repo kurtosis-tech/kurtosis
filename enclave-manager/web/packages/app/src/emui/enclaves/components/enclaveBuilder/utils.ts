@@ -35,25 +35,6 @@ export function getInitialGraphStateFromEnclave<T extends object>(
   }
 }
 
-export function getNodeName(kurtosisNodeData: KurtosisNodeData): string {
-  if (kurtosisNodeData.type === "service") {
-    return kurtosisNodeData.serviceName;
-  }
-  if (kurtosisNodeData.type === "artifact") {
-    return kurtosisNodeData.artifactName;
-  }
-  if (kurtosisNodeData.type === "shell") {
-    return kurtosisNodeData.shellName;
-  }
-  if (kurtosisNodeData.type === "python") {
-    return kurtosisNodeData.pythonName;
-  }
-  if (kurtosisNodeData.type === "package") {
-    return kurtosisNodeData.name;
-  }
-  throw new Error(`Unknown node type.`);
-}
-
 function normaliseNameToStarlarkVariable(name: string) {
   return name.replace(/\s|-/g, "_").toLowerCase();
 }
@@ -73,40 +54,38 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
       return [
         {
           id: `service.${id}.name`,
-          displayName: `${data.serviceName}.name`,
-          value: `${normaliseNameToStarlarkVariable(data.serviceName)}.name`,
+          displayName: `${data.name}.name`,
+          value: `${normaliseNameToStarlarkVariable(data.name)}.name`,
         },
         {
           id: `service.${id}.hostname`,
-          displayName: `${data.serviceName}.hostname`,
-          value: `${normaliseNameToStarlarkVariable(data.serviceName)}.hostname`,
+          displayName: `${data.name}.hostname`,
+          value: `${normaliseNameToStarlarkVariable(data.name)}.hostname`,
         },
         ...data.ports.flatMap((port, i) => [
           {
             id: `service.${id}.ports.${i}`,
-            displayName: `${data.serviceName}.ports.${port.portName}`,
-            value: `"{}://{}:{}".format(${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${
-              port.portName
+            displayName: `${data.name}.ports.${port.name}`,
+            value: `"{}://{}:{}".format(${normaliseNameToStarlarkVariable(data.name)}.ports["${
+              port.name
             }"].application_protocol, ${normaliseNameToStarlarkVariable(
-              data.serviceName,
-            )}.hostname, ${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${port.portName}"].number)`,
+              data.name,
+            )}.hostname, ${normaliseNameToStarlarkVariable(data.name)}.ports["${port.name}"].number)`,
           },
           {
             id: `service.${id}.ports.${i}.port`,
-            displayName: `${data.serviceName}.ports.${port.portName}.port`,
-            value: `str(${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${port.portName}"].number)`,
+            displayName: `${data.name}.ports.${port.name}.port`,
+            value: `str(${normaliseNameToStarlarkVariable(data.name)}.ports["${port.name}"].number)`,
           },
           {
             id: `service.${id}.ports.${i}.applicationProtocol`,
-            displayName: `${data.serviceName}.ports.${port.portName}.application_protocol`,
-            value: `${normaliseNameToStarlarkVariable(data.serviceName)}.ports["${
-              port.portName
-            }"].application_protocol`,
+            displayName: `${data.name}.ports.${port.name}.application_protocol`,
+            value: `${normaliseNameToStarlarkVariable(data.name)}.ports["${port.name}"].application_protocol`,
           },
         ]),
         ...data.env.map((env, i) => ({
           id: `service.${id}.env.${i}.value`,
-          displayName: `${data.serviceName}.env.${env.key}`,
+          displayName: `${data.name}.env.${env.key}`,
           value: `"${env.value}"`,
         })),
       ];
@@ -115,8 +94,8 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
       return [
         {
           id: `artifact.${id}`,
-          displayName: `${data.artifactName}`,
-          value: `${normaliseNameToStarlarkVariable(data.artifactName)}`,
+          displayName: `${data.name}`,
+          value: `${normaliseNameToStarlarkVariable(data.name)}`,
         },
       ];
     }
@@ -125,12 +104,12 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
       return [
         {
           id: `shell.${id}`,
-          displayName: `${data.shellName}`,
-          value: `${normaliseNameToStarlarkVariable(data.shellName)}.files_artifacts[0]`,
+          displayName: `${data.name}`,
+          value: `${normaliseNameToStarlarkVariable(data.name)}.files_artifacts[0]`,
         },
         ...data.env.map((env, i) => ({
           id: `shell.${id}.env.${i}.value`,
-          displayName: `${data.shellName}.env.${env.key}`,
+          displayName: `${data.name}.env.${env.key}`,
           value: `"${env.value}"`,
         })),
       ];
@@ -140,12 +119,12 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
       return [
         {
           id: `python.${id}`,
-          displayName: `${data.pythonName}`,
-          value: `${normaliseNameToStarlarkVariable(data.pythonName)}.files_artifacts[0]`,
+          displayName: `${data.name}`,
+          value: `${normaliseNameToStarlarkVariable(data.name)}.files_artifacts[0]`,
         },
         ...data.args.map((arg, i) => ({
           id: `python.${id}.args.${i}.arg`,
-          displayName: `${data.pythonName}.args[${i}]`,
+          displayName: `${data.name}.args[${i}]`,
           value: `"${arg.arg}"`,
         })),
       ];
@@ -165,7 +144,7 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
   };
   Object.entries(nodes).forEach(([id, data]) => {
     if (data.type === "service") {
-      const nameMatches = data.serviceName.match(variablePattern);
+      const nameMatches = data.name.match(variablePattern);
       if (nameMatches) {
         getDependenciesFor(id).add(nameMatches[2]);
       }
@@ -176,13 +155,13 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
         }
       });
       data.ports.forEach((port) => {
-        const portMatches = port.portName.match(variablePattern) || port.applicationProtocol.match(variablePattern);
+        const portMatches = port.name.match(variablePattern) || port.applicationProtocol.match(variablePattern);
         if (portMatches) {
           getDependenciesFor(id).add(portMatches[2]);
         }
       });
       data.files.forEach((file) => {
-        const fileMatches = file.mountPoint.match(variablePattern) || file.artifactName.match(variablePattern);
+        const fileMatches = file.mountPoint.match(variablePattern) || file.name.match(variablePattern);
         if (fileMatches) {
           getDependenciesFor(id).add(fileMatches[2]);
         }
@@ -195,7 +174,7 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
       }
     }
     if (data.type === "shell") {
-      const nameMatches = data.shellName.match(variablePattern);
+      const nameMatches = data.name.match(variablePattern);
       if (nameMatches) {
         getDependenciesFor(id).add(nameMatches[2]);
       }
@@ -206,14 +185,14 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
         }
       });
       data.files.forEach((file) => {
-        const fileMatches = file.mountPoint.match(variablePattern) || file.artifactName.match(variablePattern);
+        const fileMatches = file.mountPoint.match(variablePattern) || file.name.match(variablePattern);
         if (fileMatches) {
           getDependenciesFor(id).add(fileMatches[2]);
         }
       });
     }
     if (data.type === "python") {
-      const nameMatches = data.pythonName.match(variablePattern);
+      const nameMatches = data.name.match(variablePattern);
       if (nameMatches) {
         getDependenciesFor(id).add(nameMatches[2]);
       }
@@ -224,7 +203,7 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
         }
       });
       data.files.forEach((file) => {
-        const fileMatches = file.mountPoint.match(variablePattern) || file.artifactName.match(variablePattern);
+        const fileMatches = file.mountPoint.match(variablePattern) || file.name.match(variablePattern);
         if (fileMatches) {
           getDependenciesFor(id).add(fileMatches[2]);
         }
@@ -307,14 +286,14 @@ export function generateStarlarkFromGraph(
   for (const node of sortedNodes) {
     const nodeData = data[node.id];
     if (nodeData.type === "service") {
-      const serviceName = normaliseNameToStarlarkVariable(nodeData.serviceName);
+      const serviceName = normaliseNameToStarlarkVariable(nodeData.name);
       starlark += `    ${serviceName} = plan.add_service(\n`;
-      starlark += `        name = ${interpolateValue(nodeData.serviceName)},\n`;
+      starlark += `        name = ${interpolateValue(nodeData.name)},\n`;
       starlark += `        config = ServiceConfig (\n`;
       starlark += `            image = ${renderImageConfig(nodeData.image)},\n`;
       starlark += `            ports = {\n`;
-      for (const { portName, port, applicationProtocol, transportProtocol } of nodeData.ports) {
-        starlark += `                ${interpolateValue(portName)}: PortSpec(\n`;
+      for (const { name, port, applicationProtocol, transportProtocol } of nodeData.ports) {
+        starlark += `                ${interpolateValue(name)}: PortSpec(\n`;
         starlark += `                    number = ${port},\n`;
         starlark += `                    transport_protocol = "${transportProtocol}",\n`;
         starlark += `                    application_protocol = ${interpolateValue(applicationProtocol)},\n`;
@@ -327,8 +306,8 @@ export function generateStarlarkFromGraph(
       }
       starlark += `            },\n`;
       starlark += `            files = {\n`;
-      for (const { mountPoint, artifactName } of nodeData.files) {
-        starlark += `                ${interpolateValue(mountPoint)}: ${interpolateValue(artifactName)},\n`;
+      for (const { mountPoint, name } of nodeData.files) {
+        starlark += `                ${interpolateValue(mountPoint)}: ${interpolateValue(name)},\n`;
       }
       starlark += `            },\n`;
       starlark += `        ),\n`;
@@ -337,7 +316,7 @@ export function generateStarlarkFromGraph(
       if (nodeData.execStepEnabled === "true") {
         const execName = `${serviceName}_exec`;
         starlark += `    ${execName} = plan.exec(\n`;
-        starlark += `        service_name = ${interpolateValue(nodeData.serviceName)},\n`;
+        starlark += `        service_name = ${interpolateValue(nodeData.name)},\n`;
         starlark += `        recipe = ExecRecipe(\n`;
         starlark += `            command = [${nodeData.execStepCommand.split(" ").map(interpolateValue).join(", ")}],`;
         starlark += `        ),\n`;
@@ -351,9 +330,9 @@ export function generateStarlarkFromGraph(
     }
 
     if (nodeData.type === "artifact") {
-      const artifactName = normaliseNameToStarlarkVariable(nodeData.artifactName);
+      const artifactName = normaliseNameToStarlarkVariable(nodeData.name);
       starlark += `    ${artifactName} = plan.render_templates(\n`;
-      starlark += `        name = "${nodeData.artifactName}",\n`;
+      starlark += `        name = "${nodeData.name}",\n`;
       starlark += `        config = {\n`;
       for (const [fileName, fileText] of Object.entries(nodeData.files)) {
         starlark += `            "${fileName}": struct(\n`;
@@ -366,7 +345,7 @@ export function generateStarlarkFromGraph(
     }
 
     if (nodeData.type === "shell") {
-      const shellName = normaliseNameToStarlarkVariable(nodeData.shellName);
+      const shellName = normaliseNameToStarlarkVariable(nodeData.name);
       starlark += `    ${shellName} = plan.run_sh(\n`;
       starlark += `        run = """${escapeString(nodeData.command)}""",\n`;
       const image = renderImageConfig(nodeData.image);
@@ -379,8 +358,8 @@ export function generateStarlarkFromGraph(
       }
       starlark += `        },\n`;
       starlark += `        files = {\n`;
-      for (const { mountPoint, artifactName } of nodeData.files) {
-        starlark += `            ${interpolateValue(mountPoint)}: ${interpolateValue(artifactName)},\n`;
+      for (const { mountPoint, name } of nodeData.files) {
+        starlark += `            ${interpolateValue(mountPoint)}: ${interpolateValue(name)},\n`;
       }
       starlark += `        },\n`;
       starlark += `        store = [\n`;
@@ -394,7 +373,7 @@ export function generateStarlarkFromGraph(
     }
 
     if (nodeData.type === "python") {
-      const pythonName = normaliseNameToStarlarkVariable(nodeData.pythonName);
+      const pythonName = normaliseNameToStarlarkVariable(nodeData.name);
       starlark += `    ${pythonName} = plan.run_python(\n`;
       starlark += `        run = """${escapeString(nodeData.command)}""",\n`;
       const image = renderImageConfig(nodeData.image);
@@ -412,8 +391,8 @@ export function generateStarlarkFromGraph(
       }
       starlark += `        ],\n`;
       starlark += `        files = {\n`;
-      for (const { mountPoint, artifactName } of nodeData.files) {
-        starlark += `            ${interpolateValue(mountPoint)}: ${interpolateValue(artifactName)},\n`;
+      for (const { mountPoint, name } of nodeData.files) {
+        starlark += `            ${interpolateValue(mountPoint)}: ${interpolateValue(name)},\n`;
       }
       starlark += `        },\n`;
       if (nodeData.store !== "") {
@@ -434,7 +413,7 @@ export function generateStarlarkFromGraph(
     for (const existingService of Object.values(existingEnclave.services.value.serviceInfo)) {
       const serviceNoLongerExists = sortedNodes.every((node) => {
         const nodeData = data[node.id];
-        return nodeData.type !== "service" || nodeData.serviceName !== existingService.name;
+        return nodeData.type !== "service" || nodeData.name !== existingService.name;
       });
       if (serviceNoLongerExists) {
         starlark += `    plan.remove_service(name = "${existingService.name}")\n`;

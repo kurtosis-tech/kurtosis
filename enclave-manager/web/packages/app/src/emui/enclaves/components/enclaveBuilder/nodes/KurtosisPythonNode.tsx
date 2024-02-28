@@ -28,8 +28,8 @@ export const KurtosisPythonNode = memo(
     return (
       <KurtosisNode id={id} selected={selected} minWidth={650} maxWidth={800}>
         <Flex gap={"16px"}>
-          <KurtosisFormControl<KurtosisPythonNodeData> name={"pythonName"} label={"Python Name"} isRequired>
-            <StringArgumentInput name={"pythonName"} size={"sm"} isRequired validate={validateName} />
+          <KurtosisFormControl<KurtosisPythonNodeData> name={"name"} label={"Python Name"} isRequired>
+            <StringArgumentInput name={"name"} size={"sm"} isRequired validate={validateName} />
           </KurtosisFormControl>
           <KurtosisFormControl<KurtosisPythonNodeData> name={"image.image"} label={"Container Image"}>
             <ImageConfigInput />
@@ -92,7 +92,7 @@ export const KurtosisPythonNode = memo(
                   FieldComponent={MountArtifactFileInput}
                   createNewValue={(): KurtosisFileMount => ({
                     mountPoint: "",
-                    artifactName: "",
+                    name: "",
                   })}
                 />
               </KurtosisFormControl>

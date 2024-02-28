@@ -61,7 +61,7 @@ export const Toolbar = () => {
     const id = uuidv4();
     updateData(id, {
       type: "service",
-      serviceName: "",
+      name: "",
       image: {
         image: "",
         type: "image",
@@ -93,7 +93,7 @@ export const Toolbar = () => {
 
   const handleAddArtifactNode = () => {
     const id = uuidv4();
-    updateData(id, { type: "artifact", artifactName: "", files: {}, isValid: false });
+    updateData(id, { type: "artifact", name: "", files: {}, isValid: false });
     addNodes({
       id,
       position: getNewNodePosition(),
@@ -108,7 +108,7 @@ export const Toolbar = () => {
     const id = uuidv4();
     updateData(id, {
       type: "shell",
-      shellName: "",
+      name: "",
       command: "",
       image: {
         image: "",
@@ -142,7 +142,7 @@ export const Toolbar = () => {
     const id = uuidv4();
     updateData(id, {
       type: "python",
-      pythonName: "",
+      name: "",
       command: "",
       packages: [],
       image: {

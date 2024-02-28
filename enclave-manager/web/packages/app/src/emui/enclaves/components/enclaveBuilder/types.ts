@@ -5,7 +5,7 @@ export type Variable = {
 };
 
 export type KurtosisPort = {
-  portName: string;
+  name: string;
   port: number;
   transportProtocol: "TCP" | "UDP";
   applicationProtocol: string;
@@ -15,7 +15,7 @@ export type KurtosisEnvironmentVar = { key: string; value: string };
 
 export type KurtosisFileMount = {
   mountPoint: string;
-  artifactName: string;
+  name: string;
 };
 
 export type KurtosisAcceptableCode = {
@@ -38,7 +38,7 @@ export type KurtosisImageConfig = {
 
 export type KurtosisServiceNodeData = {
   type: "service";
-  serviceName: string;
+  name: string;
   image: KurtosisImageConfig;
   env: KurtosisEnvironmentVar[];
   ports: KurtosisPort[];
@@ -50,14 +50,14 @@ export type KurtosisServiceNodeData = {
 };
 export type KurtosisArtifactNodeData = {
   type: "artifact";
-  artifactName: string;
+  name: string;
   files: Record<string, string>;
   isValid: boolean;
 };
 
 export type KurtosisShellNodeData = {
   type: "shell";
-  shellName: string;
+  name: string;
   command: string;
   image: KurtosisImageConfig;
   env: KurtosisEnvironmentVar[];
@@ -73,7 +73,7 @@ export type KurtosisPythonArg = { arg: string };
 
 export type KurtosisPythonNodeData = {
   type: "python";
-  pythonName: string;
+  name: string;
   command: string;
   image: KurtosisImageConfig;
   packages: KurtosisPythonPackage[];

@@ -72,7 +72,7 @@ export const KurtosisPackageNode = memo(
           parsedPlan.services.forEach((service) =>
             updateData(service.uuid, {
               type: "service",
-              serviceName: service.name,
+              name: service.name,
               env: service.envVars,
               image: {
                 type: "image",
@@ -86,7 +86,7 @@ export const KurtosisPackageNode = memo(
                 flakeOutput: "",
               },
               ports: service.ports.map((port) => ({
-                portName: port.name,
+                name: port.name,
                 port: port.number,
                 applicationProtocol: port.applicationProtocol,
                 transportProtocol: port.transportProtocol,

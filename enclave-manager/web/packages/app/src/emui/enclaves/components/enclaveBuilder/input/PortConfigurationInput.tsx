@@ -12,7 +12,7 @@ export const PortConfigurationField = (props: KurtosisFormInputProps<KurtosisSer
         {...props}
         size={"sm"}
         placeholder={"Port Name (eg postgres)"}
-        name={`${props.name as `ports.${number}`}.portName`}
+        name={`${props.name as `ports.${number}`}.name`}
       />
     </GridItem>
     <GridItem>

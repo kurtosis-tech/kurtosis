@@ -30,8 +30,8 @@ export const KurtosisServiceNode = memo(
     return (
       <KurtosisNode id={id} selected={selected} minWidth={650} maxWidth={800}>
         <Flex gap={"16px"}>
-          <KurtosisFormControl<KurtosisServiceNodeData> name={"serviceName"} label={"Service Name"} isRequired>
-            <StringArgumentInput name={"serviceName"} size={"sm"} isRequired validate={validateName} />
+          <KurtosisFormControl<KurtosisServiceNodeData> name={"name"} label={"Service Name"} isRequired>
+            <StringArgumentInput name={"name"} size={"sm"} isRequired validate={validateName} />
           </KurtosisFormControl>
           <KurtosisFormControl<KurtosisServiceNodeData> name={"image.image"} label={"Container Image"} isRequired>
             <ImageConfigInput />
@@ -61,7 +61,7 @@ export const KurtosisServiceNode = memo(
                   name={"ports"}
                   FieldComponent={PortConfigurationField}
                   createNewValue={(): KurtosisPort => ({
-                    portName: "",
+                    name: "",
                     applicationProtocol: "",
                     transportProtocol: "TCP",
                     port: 0,
@@ -80,7 +80,7 @@ export const KurtosisServiceNode = memo(
                   FieldComponent={MountArtifactFileInput}
                   createNewValue={(): KurtosisFileMount => ({
                     mountPoint: "",
-                    artifactName: "",
+                    name: "",
                   })}
                 />
               </KurtosisFormControl>

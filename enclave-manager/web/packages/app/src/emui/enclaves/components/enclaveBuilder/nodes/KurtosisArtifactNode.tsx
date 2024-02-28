@@ -11,8 +11,8 @@ export const KurtosisArtifactNode = memo(
   ({ id, selected }: NodeProps) => {
     return (
       <KurtosisNode id={id} selected={selected} minWidth={300} maxWidth={800}>
-        <KurtosisFormControl<KurtosisArtifactNodeData> name={"artifactName"} label={"Artifact Name"} isRequired>
-          <StringArgumentInput size={"sm"} name={"artifactName"} isRequired validate={validateName} />
+        <KurtosisFormControl<KurtosisArtifactNodeData> name={"name"} label={"Artifact Name"} isRequired>
+          <StringArgumentInput size={"sm"} name={"name"} isRequired validate={validateName} />
         </KurtosisFormControl>
         <KurtosisFormControl name={"files"} label={"Files"}>
           <FileTreeArgumentInput name={"files"} />

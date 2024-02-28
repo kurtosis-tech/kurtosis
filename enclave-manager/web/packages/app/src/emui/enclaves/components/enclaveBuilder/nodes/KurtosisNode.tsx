@@ -7,7 +7,6 @@ import { FiCpu, FiFile, FiPackage, FiTerminal, FiTrash } from "react-icons/fi";
 import { RxCornerBottomRight } from "react-icons/rx";
 import { Handle, NodeResizeControl, Position, useReactFlow, useViewport } from "reactflow";
 import { KurtosisNodeData } from "../types";
-import { getNodeName } from "../utils";
 import { useVariableContext } from "../VariableContextProvider";
 
 const colors: Record<KurtosisNodeData["type"], string> = {
@@ -91,7 +90,6 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
   const { updateData, removeData } = useVariableContext();
   const color = colors[nodeData.type];
   const chakraColor = useToken("colors", color);
-  const name = useMemo(() => getNodeName(nodeData), [nodeData]);
   const formMethods = useForm<DataType>({
     defaultValues: nodeData as DefaultValues<DataType>,
     mode: "onBlur",
@@ -169,7 +167,7 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
           w={"100%"}
           bg={backgroundColor || "gray.600"}
         >
-          <ZoomAwareNodeContent name={name} type={nodeData.type} onDelete={handleDeleteNode}>
+          <ZoomAwareNodeContent name={nodeData.name} type={nodeData.type} onDelete={handleDeleteNode}>
             {children}
           </ZoomAwareNodeContent>
           {isDefined(portalContent) && portalContent}
