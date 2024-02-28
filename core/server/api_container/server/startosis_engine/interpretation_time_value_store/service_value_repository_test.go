@@ -22,7 +22,7 @@ const (
 	ipAddress              = starlark.String("172.23.34.44")
 )
 
-func TestAddAndGetTest(t *testing.T) {
+func TestPutGet_Succeed(t *testing.T) {
 	repository := getServiceInterpretationTimeValueRepository(t)
 	require.NotNil(t, repository)
 
@@ -51,6 +51,15 @@ func TestAddAndGetTest(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, expectedService.AttrNames(), actualService.AttrNames())
 	require.Equal(t, expectedService.String(), actualService.String())
+}
+
+func TestPutGetFail_ForMissingServiceName(t *testing.T) {
+	repository := getServiceInterpretationTimeValueRepository(t)
+	require.NotNil(t, repository)
+
+	actualService, err := repository.GetService(serviceName)
+	require.Error(t, err)
+	require.Nil(t, actualService)
 }
 
 func getServiceInterpretationTimeValueRepository(t *testing.T) *serviceInterpretationValueRepository {

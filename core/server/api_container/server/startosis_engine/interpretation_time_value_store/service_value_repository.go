@@ -85,7 +85,7 @@ func (repository *serviceInterpretationValueRepository) GetService(name service.
 
 		// if an empty value was found we return an error
 		if isEmptyValue {
-			return stacktrace.NewError("An empty value was found for service '%v'; this is unexpected", name)
+			return stacktrace.NewError("An empty value was found for service '%v'; this is a bug in Kurtosis", name)
 		}
 
 		deserializedValue, interpretationErr := repository.starlarkValueSerde.Deserialize(serviceSerializedValueStr)
