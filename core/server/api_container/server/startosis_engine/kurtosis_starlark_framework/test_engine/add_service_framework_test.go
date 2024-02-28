@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
@@ -22,9 +23,10 @@ import (
 
 type addServiceTestCase struct {
 	*testing.T
-	serviceNetwork         *service_network.MockServiceNetwork
-	runtimeValueStore      *runtime_value_store.RuntimeValueStore
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
+	serviceNetwork               *service_network.MockServiceNetwork
+	runtimeValueStore            *runtime_value_store.RuntimeValueStore
+	packageContentProvider       *mock_package_content_provider.MockPackageContentProvider
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
@@ -67,10 +69,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 	)
 
 	suite.run(&addServiceTestCase{
-		T:                      suite.T(),
-		serviceNetwork:         suite.serviceNetwork,
-		runtimeValueStore:      suite.runtimeValueStore,
-		packageContentProvider: suite.packageContentProvider,
+		T:                            suite.T(),
+		serviceNetwork:               suite.serviceNetwork,
+		runtimeValueStore:            suite.runtimeValueStore,
+		packageContentProvider:       suite.packageContentProvider,
+		interpretationTimeValueStore: suite.interpretationTimeValueStore,
 	})
 }
 
@@ -80,7 +83,8 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 		t.runtimeValueStore,
 		testModulePackageId,
 		t.packageContentProvider,
-		testNoPackageReplaceOptions)
+		testNoPackageReplaceOptions,
+		t.interpretationTimeValueStore)
 }
 
 func (t *addServiceTestCase) GetStarlarkCode() string {

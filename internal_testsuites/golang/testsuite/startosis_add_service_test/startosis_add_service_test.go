@@ -36,6 +36,9 @@ def run(plan):
 	datastore_1 = plan.add_service(name = SERVICE_NAME, config = config)
 	datastore_2 = plan.add_service(name = SERVICE_NAME_2, config = config)
 
+	ds1_through_get = plan.get_service(SERVICE_NAME)
+	plan.print(ds1_through_get)
+
 	test_hostname_cmd = "nc -zv {0} {1}".format(datastore_1.hostname, GRPC_PORT)
 	connection_result = plan.exec(
 		recipe = ExecRecipe(
@@ -67,6 +70,8 @@ func (suite *StartosisAddServiceTestSuite) TestAddTwoServicesAndTestConnection()
 	expectedScriptOutput := `Adding services ` + serviceName + ` and ` + serviceName2 + `
 Service '` + serviceName + `' added with service UUID '[a-z-0-9]+'
 Service '` + serviceName2 + `' added with service UUID '[a-z-0-9]+'
+Fetched service '` + serviceName + `'
+Service\(name="datastore-1", hostname="datastore-1", ip_address="[0-9\.]+", ports=\{"grpc": PortSpec\(number=1323, transport_protocol="TCP", wait="2m0s"\)\}\)
 Command returned with exit code '0' and the following output:
 --------------------
 [a-z-0-9]+ \([0-9\.]+:1323\) open

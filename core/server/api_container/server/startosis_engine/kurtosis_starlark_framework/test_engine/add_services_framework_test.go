@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"io"
 	"net/http"
 	"net/url"
@@ -25,9 +26,10 @@ import (
 
 type addServicesTestCase struct {
 	*testing.T
-	serviceNetwork         *service_network.MockServiceNetwork
-	runtimeValueStore      *runtime_value_store.RuntimeValueStore
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
+	serviceNetwork               *service_network.MockServiceNetwork
+	runtimeValueStore            *runtime_value_store.RuntimeValueStore
+	packageContentProvider       *mock_package_content_provider.MockPackageContentProvider
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
@@ -201,10 +203,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 	}, nil)
 
 	suite.run(&addServicesTestCase{
-		T:                      suite.T(),
-		serviceNetwork:         suite.serviceNetwork,
-		runtimeValueStore:      suite.runtimeValueStore,
-		packageContentProvider: suite.packageContentProvider,
+		T:                            suite.T(),
+		serviceNetwork:               suite.serviceNetwork,
+		runtimeValueStore:            suite.runtimeValueStore,
+		packageContentProvider:       suite.packageContentProvider,
+		interpretationTimeValueStore: suite.interpretationTimeValueStore,
 	})
 }
 
@@ -214,7 +217,8 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		t.runtimeValueStore,
 		testModulePackageId,
 		t.packageContentProvider,
-		testNoPackageReplaceOptions)
+		testNoPackageReplaceOptions,
+		t.interpretationTimeValueStore)
 }
 
 func (t *addServicesTestCase) GetStarlarkCode() string {
