@@ -14,6 +14,7 @@ import {
 } from "reactflow";
 import { EnclaveFullInfo } from "../../types";
 import { KurtosisArtifactNode } from "./nodes/KurtosisArtifactNode";
+import { KurtosisExecNode } from "./nodes/KurtosisExecNode";
 import { KurtosisPackageNode } from "./nodes/KurtosisPackageNode";
 import { KurtosisPythonNode } from "./nodes/KurtosisPythonNode";
 import { KurtosisServiceNode } from "./nodes/KurtosisServiceNode";
@@ -25,6 +26,7 @@ import "./Visualiser.css";
 
 const nodeTypes = {
   serviceNode: KurtosisServiceNode,
+  execNode: KurtosisExecNode,
   artifactNode: KurtosisArtifactNode,
   shellNode: KurtosisShellNode,
   pythonNode: KurtosisPythonNode,

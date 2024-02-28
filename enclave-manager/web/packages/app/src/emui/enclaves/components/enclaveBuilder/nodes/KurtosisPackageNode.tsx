@@ -64,7 +64,7 @@ export const KurtosisPackageNode = memo(
             ...nodes,
             ...parsedPlan.services.map((service, i) => ({
               type: "serviceNode",
-              id: `${id}.${service.name}`,
+              id: `${id}:${service.name}`,
               parentNode: id,
               data: {},
               extent: "parent" as "parent",
@@ -73,7 +73,7 @@ export const KurtosisPackageNode = memo(
             })),
           ]);
           parsedPlan.services.forEach((service) =>
-            updateData(`${id}.${service.name}`, {
+            updateData(`${id}:${service.name}`, {
               type: "service",
               name: service.name,
               isFromPackage: true,
@@ -95,9 +95,6 @@ export const KurtosisPackageNode = memo(
                 applicationProtocol: port.applicationProtocol || "",
                 transportProtocol: port.transportProtocol,
               })),
-              execStepEnabled: "false",
-              execStepCommand: "",
-              execStepAcceptableCodes: [],
               isValid: true,
               files: [],
             }),

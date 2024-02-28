@@ -44,11 +44,19 @@ export type KurtosisServiceNodeData = {
   env: KurtosisEnvironmentVar[];
   ports: KurtosisPort[];
   files: KurtosisFileMount[];
-  execStepEnabled: "true" | "false";
-  execStepCommand: string;
-  execStepAcceptableCodes: KurtosisAcceptableCode[];
   isValid: boolean;
 };
+
+export type KurtosisExecNodeData = {
+  type: "exec";
+  name: string;
+  isFromPackage?: boolean;
+  isValid: boolean;
+  service: string;
+  command: string;
+  acceptableCodes: KurtosisAcceptableCode[];
+};
+
 export type KurtosisArtifactNodeData = {
   type: "artifact";
   name: string;
@@ -101,6 +109,7 @@ export type KurtosisPackageNodeData = {
 export type KurtosisNodeData =
   | KurtosisArtifactNodeData
   | KurtosisServiceNodeData
+  | KurtosisExecNodeData
   | KurtosisShellNodeData
   | KurtosisPythonNodeData
   | KurtosisPackageNodeData;

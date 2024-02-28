@@ -76,9 +76,6 @@ export const Toolbar = () => {
       ports: [],
       env: [],
       files: [],
-      execStepEnabled: "false",
-      execStepCommand: "",
-      execStepAcceptableCodes: [],
       isValid: false,
     });
     addNodes({
@@ -87,6 +84,26 @@ export const Toolbar = () => {
       width: 650,
       style: { width: "650px" },
       type: "serviceNode",
+      data: {},
+    });
+  };
+
+  const handleAddExecNode = () => {
+    const id = uuidv4();
+    updateData(id, {
+      type: "exec",
+      name: "",
+      service: "",
+      command: "",
+      acceptableCodes: [],
+      isValid: false,
+    });
+    addNodes({
+      id,
+      position: getNewNodePosition(),
+      width: 650,
+      style: { width: "650px" },
+      type: "execNode",
       data: {},
     });
   };
@@ -211,6 +228,9 @@ export const Toolbar = () => {
         </Button>
         <Button leftIcon={<Icon as={nodeIcons["artifact"]} />} onClick={handleAddArtifactNode}>
           Add Files Node
+        </Button>
+        <Button leftIcon={<Icon as={nodeIcons["exec"]} />} onClick={handleAddExecNode}>
+          Add Exec Node
         </Button>
         <Button leftIcon={<Icon as={nodeIcons["shell"]} />} onClick={handleAddShellNode}>
           Add Shell Node

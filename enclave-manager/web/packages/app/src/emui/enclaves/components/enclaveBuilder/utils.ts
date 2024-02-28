@@ -60,7 +60,7 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
       return [
         {
           id: `service.${id}.name`,
-          displayName: `${data.name}.name`,
+          displayName: `${data.name}`,
           value: `${normaliseNameToStarlarkVariable(data.name)}.name`,
         },
         {
@@ -172,11 +172,15 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
           getDependenciesFor(id).add(fileMatches[2]);
         }
       });
-      if (data.execStepEnabled === "true") {
-        const commandMatches = data.execStepCommand.match(variablePattern);
-        if (commandMatches) {
-          getDependenciesFor(id).add(commandMatches[2]);
-        }
+    }
+    if (data.type === "exec") {
+      const serviceMatches = data.service.match(variablePattern);
+      if (serviceMatches) {
+        getDependenciesFor(id).add(serviceMatches[2]);
+      }
+      const commandMatches = data.command.match(variablePattern);
+      if (commandMatches) {
+        getDependenciesFor(id).add(commandMatches[2]);
       }
     }
     if (data.type === "shell") {
@@ -252,7 +256,7 @@ export function generateStarlarkFromGraph(
     {} as Record<string, Variable>,
   );
   const interpolateValue = (input: string): string => {
-    let formatString = input;
+    let formatString = input.replaceAll('"', '\\"');
     let variableMatches = formatString.match(variablePattern);
     if (!isDefined(variableMatches)) {
       return `"${formatString}"`;
@@ -369,21 +373,20 @@ export function generateStarlarkFromGraph(
       starlark += `            },\n`;
       starlark += `        ),\n`;
       starlark += `    )\n\n`;
+    }
 
-      if (nodeData.execStepEnabled === "true") {
-        const execName = `${serviceName}_exec`;
-        starlark += `    ${execName} = plan.exec(\n`;
-        starlark += `        service_name = ${interpolateValue(nodeData.name)},\n`;
-        starlark += `        recipe = ExecRecipe(\n`;
-        starlark += `            command = [${nodeData.execStepCommand.split(" ").map(interpolateValue).join(", ")}],`;
-        starlark += `        ),\n`;
-        if (nodeData.execStepAcceptableCodes.length > 0) {
-          starlark += `        acceptable_codes = [${nodeData.execStepAcceptableCodes
-            .map(({ value }) => value)
-            .join(", ")}],\n`;
-        }
-        starlark += `    )\n\n`;
+    if (nodeData.type === "exec") {
+      const serviceName = normaliseNameToStarlarkVariable(interpolateValue(nodeData.service).replace(/\.name$/, ""));
+      const execName = `${serviceName}_exec`;
+      starlark += `    ${execName} = plan.exec(\n`;
+      starlark += `        service_name = ${interpolateValue(nodeData.service)},\n`;
+      starlark += `        recipe = ExecRecipe(\n`;
+      starlark += `            command = [${nodeData.command.split(" ").map(interpolateValue).join(", ")}],`;
+      starlark += `        ),\n`;
+      if (nodeData.acceptableCodes.length > 0) {
+        starlark += `        acceptable_codes = [${nodeData.acceptableCodes.map(({ value }) => value).join(", ")}],\n`;
       }
+      starlark += `    )\n\n`;
     }
 
     if (nodeData.type === "artifact") {
@@ -474,9 +477,9 @@ export function generateStarlarkFromGraph(
   // Delete any services from any existing enclave that aren't defined anymore
   if (isDefined(existingEnclave) && existingEnclave.services?.isOk) {
     for (const existingService of Object.values(existingEnclave.services.value.serviceInfo)) {
-      const serviceNoLongerExists = sortedNodes.every((node) => {
+      const serviceNoLongerExists = nodes.every((node) => {
         const nodeData = data[node.id];
-        return nodeData.type !== "service" || nodeData.name !== existingService.name;
+        return !isDefined(nodeData) || nodeData.type !== "service" || nodeData.name !== existingService.name;
       });
       if (serviceNoLongerExists) {
         starlark += `    plan.remove_service(name = "${existingService.name}")\n`;

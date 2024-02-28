@@ -14,6 +14,7 @@ const colors: Record<KurtosisNodeData["type"], string> = {
   artifact: "yellow.900",
   shell: "red.900",
   python: "red.900",
+  exec: "red.900",
   package: "kurtosisGreen.700",
 };
 
@@ -22,12 +23,14 @@ export const nodeIcons: Record<KurtosisNodeData["type"], FC> = {
   artifact: FiFile,
   shell: FiTerminal,
   python: FiTerminal,
+  exec: FiTerminal,
   package: FiPackage,
 };
 
 const nodeTypeReadable: Record<KurtosisNodeData["type"], string> = {
   service: "Service",
   artifact: "Files",
+  exec: "Service execution task",
   shell: "Shell execution task",
   python: "Python execution task",
   package: "Package",
