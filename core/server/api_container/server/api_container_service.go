@@ -638,7 +638,6 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		apicService.serviceNetwork,
 		packageIdFromArgs,
 		apicService.packageContentProvider,
-		"",
 		detectedPackageReplaceOptions)
 	planYamlBytes, err := pyg.GenerateYaml()
 	if err != nil {
@@ -674,7 +673,6 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 		apicService.serviceNetwork,
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		apicService.packageContentProvider,
-		"",
 		noPackageReplaceOptions)
 	planYamlBytes, err := pyg.GenerateYaml()
 	if err != nil {

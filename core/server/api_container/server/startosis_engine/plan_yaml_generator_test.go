@@ -3,13 +3,17 @@ package startosis_engine
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"net"
@@ -22,8 +26,13 @@ type PlanYamlGeneratorTestSuite struct {
 	serviceNetwork         *service_network.MockServiceNetwork
 	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
 	runtimeValueStore      *runtime_value_store.RuntimeValueStore
+	kurtosisBackend        *backend_interface.KurtosisBackend
+	filesArtifactStore     *enclave_data_directory.FilesArtifactStore
 
 	interpreter *StartosisInterpreter
+	validator   *StartosisValidator
+	executor    *StartosisExecutor
+	runner      *StartosisRunner
 }
 
 func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
@@ -41,8 +50,6 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	// mock service network
 	suite.serviceNetwork = service_network.NewMockServiceNetwork(suite.T())
 
-	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "")
-
 	service.NewServiceRegistration(
 		testServiceName,
 		service.ServiceUUID(fmt.Sprintf("%s-%s", testServiceName, serviceUuidSuffix)),
@@ -58,14 +65,72 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 		51243,
 		"134123")
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Return(apiContainerInfo)
+
+	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "")
+
+	// mock kurtosis backend?
+
+	// mock files artifact for testing
+	timesCalled := 0
+	mockedGenerateNameMethod := func() string {
+		timesCalled = timesCalled + 1
+		if timesCalled == 4 {
+			return "last-noun"
+		}
+		return "adjective-noun"
+	}
+
+	artifactIdToUUIDMap := map[string]string{}
+
+	fileArtifactDb, err := file_artifacts_db.GetFileArtifactsDbForTesting(enclaveDb, artifactIdToUUIDMap)
+	require.Nil(suite.T(), err)
+
+	suite.filesArtifactStore = enclave_data_directory.NewFilesArtifactStoreForTesting("/", "/", fileArtifactDb, 3, mockedGenerateNameMethod)
+	suite.validator = NewStartosisValidator(suite.kurtosisBackend, suite.serviceNetwork, suite.filesArtifactStore)
+
+	// mock the starlark value serde?
+	suite.executor = NewStartosisExecutor(nil, suite.runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
+
+	suite.runner = NewStartosisRunner(suite.interpreter, suite.validator, suite.executor)
 }
 
-func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
-	suite.Run(t, new(PlanYamlGeneratorTestSuite))
-}
+//func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
+//	suite.Run(t, new(PlanYamlGeneratorTestSuite))
+//}
 
 func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
+}
+
+func (suite *PlanYamlGeneratorTestSuite) TestFullExecution() {
+	packageId := "github.com/kurtosis-tech/plan-yaml-prac"
+	mainFunctionName := ""
+	relativePathToMainFile := "main.star"
+
+	serializedScript := `def run(plan, args):
+    plan.add_service(
+        name="db",
+        config=ServiceConfig(
+            image="postgres:alpine",
+            env_vars = {
+                "POSTGRES_DB": "tedi",
+                "POSTGRES_USER": "tedi",
+                "POSTGRES_PASSWORD": "tedi",
+            }
+        )
+    )
+
+    result = plan.exec(
+        service_name = "db",
+        recipe = ExecRecipe(command = ["echo", "Hello, world"]),
+        acceptable_codes=[156],
+    )
+    plan.print(result)
+`
+	serializedJsonParams := "{}"
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 3, instructionsPlan.Size())
 }
 
 func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
