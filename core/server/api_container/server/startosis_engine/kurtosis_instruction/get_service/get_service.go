@@ -66,7 +66,7 @@ func (builtin *GetServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 }
 
 func (builtin *GetServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if exists := validatorEnvironment.DoesServiceNameExist(builtin.serviceName); exists != startosis_validator.ComponentNotFound {
+	if exists := validatorEnvironment.DoesServiceNameExist(builtin.serviceName); exists == startosis_validator.ComponentNotFound {
 		return startosis_errors.NewValidationError("Service '%v' required by '%v' instruction doesn't exist", builtin.serviceName, GetServiceBuiltinName)
 	}
 	return nil
