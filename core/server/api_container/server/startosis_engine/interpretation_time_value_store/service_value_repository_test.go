@@ -44,7 +44,7 @@ func TestAddAndGetTest(t *testing.T) {
 	expectedService, interpretationErr := kurtosis_types.CreateService(serviceNameStarlarkStr, hostName, ipAddress, ports)
 	require.Nil(t, interpretationErr)
 
-	err := repository.AddService(serviceName, expectedService)
+	err := repository.PutService(serviceName, expectedService)
 	require.Nil(t, err)
 
 	actualService, err := repository.GetService(serviceName)

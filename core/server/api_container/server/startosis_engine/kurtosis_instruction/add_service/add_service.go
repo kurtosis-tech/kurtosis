@@ -141,7 +141,7 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, interpretationErr
 	}
 
-	err = builtin.interpretationTimeValueStore.AddService(builtin.serviceName, returnValue)
+	err = builtin.interpretationTimeValueStore.PutService(builtin.serviceName, returnValue)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting return value for service '%v'", serviceName)
 	}

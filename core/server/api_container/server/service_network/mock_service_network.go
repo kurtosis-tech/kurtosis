@@ -62,7 +62,7 @@ func (_m *MockServiceNetwork) AddService(ctx context.Context, serviceName servic
 	return r0, r1
 }
 
-// MockServiceNetwork_AddService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddService'
+// MockServiceNetwork_AddService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PutService'
 type MockServiceNetwork_AddService_Call struct {
 	*mock.Call
 }
@@ -72,7 +72,7 @@ type MockServiceNetwork_AddService_Call struct {
 //   - serviceName service.ServiceName
 //   - serviceConfig *service.ServiceConfig
 func (_e *MockServiceNetwork_Expecter) AddService(ctx interface{}, serviceName interface{}, serviceConfig interface{}) *MockServiceNetwork_AddService_Call {
-	return &MockServiceNetwork_AddService_Call{Call: _e.mock.On("AddService", ctx, serviceName, serviceConfig)}
+	return &MockServiceNetwork_AddService_Call{Call: _e.mock.On("PutService", ctx, serviceName, serviceConfig)}
 }
 
 func (_c *MockServiceNetwork_AddService_Call) Run(run func(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig)) *MockServiceNetwork_AddService_Call {

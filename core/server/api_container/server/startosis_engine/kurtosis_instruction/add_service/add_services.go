@@ -471,7 +471,7 @@ func makeAndPersistAddServicesInterpretationReturnValue(serviceConfigs map[servi
 		if err := servicesObjectDict.SetKey(serviceNameStr, serviceObject); err != nil {
 			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "Unable to generate the object that should be returned by the '%s' builtin", AddServicesBuiltinName)
 		}
-		if err = interpretationTimeValueStore.AddService(serviceName, serviceObject); err != nil {
+		if err = interpretationTimeValueStore.PutService(serviceName, serviceObject); err != nil {
 			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting the return value for service with name '%v'", serviceName)
 		}
 	}

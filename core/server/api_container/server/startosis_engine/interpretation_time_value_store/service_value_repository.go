@@ -43,7 +43,7 @@ func getOrCreateNewServiceInterpretationTimeValueRepository(
 	return repository, nil
 }
 
-func (repository *serviceInterpretationValueRepository) AddService(name service.ServiceName, service *kurtosis_types.Service) error {
+func (repository *serviceInterpretationValueRepository) PutService(name service.ServiceName, service *kurtosis_types.Service) error {
 	logrus.Debugf("Saving service interpretation value '%v' for service with name '%v' to", service, name)
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(serviceInterpretationValueBucketName)
@@ -83,9 +83,9 @@ func (repository *serviceInterpretationValueRepository) GetService(name service.
 
 		serviceSerializedValueStr := string(serviceSerializedValue)
 
-		// this will the case if the key was saved with an empty value
+		// if an empty value was found we return an error
 		if isEmptyValue {
-			return nil
+			return stacktrace.NewError("An empty value was found for service '%v'; this is unexpected", name)
 		}
 
 		deserializedValue, interpretationErr := repository.starlarkValueSerde.Deserialize(serviceSerializedValueStr)

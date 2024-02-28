@@ -20,8 +20,8 @@ func CreateInterpretationTimeValueStore(enclaveDb *enclave_db.EnclaveDB, serde *
 	return &InterpretationTimeValueStore{serviceValues: serviceValuesRepository, serde: serde}, nil
 }
 
-func (itvs *InterpretationTimeValueStore) AddService(name service.ServiceName, service *kurtosis_types.Service) error {
-	if err := itvs.serviceValues.AddService(name, service); err != nil {
+func (itvs *InterpretationTimeValueStore) PutService(name service.ServiceName, service *kurtosis_types.Service) error {
+	if err := itvs.serviceValues.PutService(name, service); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while adding value '%v' for service '%v' to db", service, name)
 	}
 	return nil
