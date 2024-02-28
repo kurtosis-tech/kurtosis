@@ -33,7 +33,6 @@ Cypress.Commands.add("createAndGoToEnclave", (enclaveName: string) => {
 
   // Go to the enclave overview
   cy.contains("Go to Enclave Overview").click();
-  cy.contains("[role='dialog'] button", "Continue").click();
   cy.url().should("match", /enclave\/[^/]+/);
 });
 
