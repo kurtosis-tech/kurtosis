@@ -97,6 +97,22 @@ services will be rolled back and the instruction will return an execution error.
 
 :::
 
+get_service
+-----------
+
+The `get_service` instruction allows you to get a [Service][service-starlark-reference] object from a service name. This is
+useful in situations if you don't have access to the [Service][service-starlark-reference] returned by the `add_service` or `add_services`
+instructions anymore; perhaps you are in a different function or have imported and run another Kurtosis package.
+
+```python
+# Returns a Service object (see the Service page in the sidebar)
+service = plan.get_service(
+  # The name of the service to get
+  # MANDATORY
+  name = "my-service"
+)
+```
+
 verify
 ------
 
