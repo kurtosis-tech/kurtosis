@@ -39,7 +39,6 @@ jobs:
         id: check
   golangci:
     needs: check-if-code-change
-    if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
     name: golang-lint
     runs-on: ubuntu-latest
     strategy:
