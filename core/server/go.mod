@@ -1,6 +1,8 @@
 module github.com/kurtosis-tech/kurtosis/core/server
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
@@ -17,7 +19,7 @@ replace (
 )
 
 require (
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
