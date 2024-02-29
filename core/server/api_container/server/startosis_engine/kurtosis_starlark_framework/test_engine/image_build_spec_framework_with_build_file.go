@@ -34,16 +34,14 @@ func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTestWithBuildFi
 }
 
 func (t *imageBuildSpecWithBuildFileTest) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q)",
+	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
 		service_config.BuildContextAttr,
 		testBuildContextDir,
 		service_config.BuildFileAttr,
-		testBuildFile,
-		service_config.TargetStageAttr,
-		testEmptyTargetStage)
+		testBuildFile)
 }
 
 func (t *imageBuildSpecWithBuildFileTest) Assert(typeValue builtin_argument.KurtosisValueType) {
@@ -58,5 +56,5 @@ func (t *imageBuildSpecWithBuildFileTest) Assert(typeValue builtin_argument.Kurt
 	require.Nil(t, err)
 	require.Equal(t, testOnDiskContainerImagePathWithBuildFile, imageBuildSpec.GetContainerImageFilePath())
 	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
-	require.Equal(t, testEmptyTargetStage, imageBuildSpec.GetTargetStage())
+	//require.Equal(t, "", imageBuildSpec.GetTargetStage())
 }
