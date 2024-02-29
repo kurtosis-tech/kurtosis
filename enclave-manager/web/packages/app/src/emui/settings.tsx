@@ -2,16 +2,14 @@ import { isDefined, maybeParse } from "kurtosis-ui-components";
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
 
 type Settings = {
-  ENABLE_EXPERIMENTAL_BUILD_ENCLAVE: boolean;
   SAVED_PACKAGES: string[];
 };
 
 export const settingKeys: { [k in keyof Settings]: k } = {
-  ENABLE_EXPERIMENTAL_BUILD_ENCLAVE: "ENABLE_EXPERIMENTAL_BUILD_ENCLAVE",
   SAVED_PACKAGES: "SAVED_PACKAGES",
 } as const;
 
-const defaultSettings: Settings = { ENABLE_EXPERIMENTAL_BUILD_ENCLAVE: false, SAVED_PACKAGES: [] };
+const defaultSettings: Settings = { SAVED_PACKAGES: [] };
 
 const SETTINGS_LOCAL_STORAGE_KEY = "kurtosis-settings";
 

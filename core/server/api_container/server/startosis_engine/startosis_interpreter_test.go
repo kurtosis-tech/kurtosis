@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
@@ -53,9 +54,10 @@ const (
 
 type StartosisInterpreterTestSuite struct {
 	suite.Suite
-	serviceNetwork         *service_network.MockServiceNetwork
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
-	runtimeValueStore      *runtime_value_store.RuntimeValueStore
+	serviceNetwork               *service_network.MockServiceNetwork
+	packageContentProvider       *mock_package_content_provider.MockPackageContentProvider
+	runtimeValueStore            *runtime_value_store.RuntimeValueStore
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 
 	interpreter *StartosisInterpreter
 }
@@ -71,7 +73,12 @@ func (suite *StartosisInterpreterTestSuite) SetupTest() {
 	suite.runtimeValueStore = runtimeValueStore
 	suite.serviceNetwork = service_network.NewMockServiceNetwork(suite.T())
 
-	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "")
+	interpretationTimeValueStore, err := interpretation_time_value_store.CreateInterpretationTimeValueStore(enclaveDb, dummySerde)
+	require.NoError(suite.T(), err)
+	suite.interpretationTimeValueStore = interpretationTimeValueStore
+	require.NotNil(suite.T(), interpretationTimeValueStore)
+
+	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore)
 
 	service.NewServiceRegistration(
 		testServiceName,

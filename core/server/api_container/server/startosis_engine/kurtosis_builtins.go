@@ -6,8 +6,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/get_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
@@ -60,10 +62,12 @@ func KurtosisPlanInstructions(
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
 	nonBlockingMode bool,
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
 ) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
-		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions),
-		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions),
+		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore),
+		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore),
+		get_service.NewGetService(interpretationTimeValueStore),
 		verify.NewVerify(runtimeValueStore),
 		exec.NewExec(serviceNetwork, runtimeValueStore),
 		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),

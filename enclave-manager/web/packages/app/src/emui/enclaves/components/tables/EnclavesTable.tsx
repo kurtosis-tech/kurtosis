@@ -54,6 +54,7 @@ const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResp
             service.privatePorts,
             service.maybePublicPorts,
             service.maybePublicIpAddr,
+            service.name,
           ),
         )
       : null,
