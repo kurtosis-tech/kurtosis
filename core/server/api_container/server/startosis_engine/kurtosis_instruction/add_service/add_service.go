@@ -26,6 +26,8 @@ const (
 
 	ServiceNameArgName   = "name"
 	ServiceConfigArgName = "config"
+
+	addServiceDescriptionFormatStr = "Adding service with name '%v' and image '%v'"
 )
 
 func NewAddService(
@@ -103,7 +105,8 @@ type AddServiceCapabilities struct {
 
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 
-	resultUuid string
+	resultUuid  string
+	description string
 }
 
 func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -135,6 +138,8 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServiceBuiltinName)
 	}
+
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(addServiceDescriptionFormatStr, builtin.serviceName, builtin.serviceConfig.GetContainerImageName()))
 
 	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(serviceName, builtin.serviceConfig, builtin.resultUuid)
 	if interpretationErr != nil {
@@ -243,7 +248,7 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 }
 
 func (builtin *AddServiceCapabilities) Description() string {
-	return fmt.Sprintf("Adding service with name '%v' and image '%v'", builtin.serviceName, builtin.serviceConfig.GetContainerImageName())
+	return builtin.description
 }
 
 func validateAndConvertConfigAndReadyCondition(
