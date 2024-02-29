@@ -140,12 +140,11 @@ message AwsEnvironment {
 
 message UpdateAddressArgs {
   string access_token = 1;
-  optional string first_name = 2;
-  optional string last_name = 3;
-  string line_1 = 4;
-  optional string line_2 = 5;
-  string city = 6;
-  string state = 7;
-  string postal_code = 8;
-  string country = 9;
+  string name = 2;
+  string line_1 = 3;
+  optional string line_2 = 4;
+  string city = 5;
+  string state = 6;
+  string postal_code = 7;
+  string country = 8;
 }
