@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/path_compression"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -118,7 +119,7 @@ func TestUploadAndDownloadLargeFilesCheckingConsistency(t *testing.T) {
 	require.NoError(t, err)
 
 	// Compute the hash of the initial file, compressed in the same way artifacts are compressed
-	initialFileCompressed, _, _, err := utils.CompressPath(randomFilePath, enforceFileSizeLimit)
+	initialFileCompressed, _, _, err := path_compression.CompressPath(randomFilePath, enforceFileSizeLimit)
 	require.NoError(t, err)
 	md5Hash := md5.New()
 	_, err = io.Copy(md5Hash, initialFileCompressed)

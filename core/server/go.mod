@@ -11,7 +11,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/metrics-library/golang => ../../metrics-library/golang
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
-	github.com/kurtosis-tech/kurtosis/utils => ./../../path-compression
+	github.com/kurtosis-tech/kurtosis/path_compression => ./../../path-compression
 )
 
 require (
@@ -26,7 +26,7 @@ require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
-	google.golang.org/grpc v1.56.3
+	google.golang.org/grpc v1.57.1
 	google.golang.org/protobuf v1.31.0
 )
 
@@ -36,7 +36,7 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/itchyny/gojq v0.12.9
 	github.com/joho/godotenv v1.5.1
-	github.com/kurtosis-tech/kurtosis/utils v0.0.0-20240104153602-385833de9d76
+	github.com/kurtosis-tech/kurtosis/path_compression v0.0.0-00010101000000-000000000000
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
@@ -147,7 +147,7 @@ require (
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230706204954-ccb25ca9f130 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230803162519-f966b187b2e5 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
