@@ -21,7 +21,6 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	KurtosisCloudBackendServer_IsAvailable_FullMethodName                 = "/kurtosis_cloud.KurtosisCloudBackendServer/IsAvailable"
-	KurtosisCloudBackendServer_CreateCloudInstance_FullMethodName         = "/kurtosis_cloud.KurtosisCloudBackendServer/CreateCloudInstance"
 	KurtosisCloudBackendServer_GetCloudInstanceConfig_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetCloudInstanceConfig"
 	KurtosisCloudBackendServer_GetOrCreateApiKey_FullMethodName           = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateApiKey"
 	KurtosisCloudBackendServer_GetOrCreateInstance_FullMethodName         = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateInstance"
@@ -35,7 +34,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KurtosisCloudBackendServerClient interface {
 	IsAvailable(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CreateCloudInstance(ctx context.Context, in *CreateCloudInstanceConfigArgs, opts ...grpc.CallOption) (*CreateCloudInstanceConfigResponse, error)
 	GetCloudInstanceConfig(ctx context.Context, in *GetCloudInstanceConfigArgs, opts ...grpc.CallOption) (*GetCloudInstanceConfigResponse, error)
 	GetOrCreateApiKey(ctx context.Context, in *GetOrCreateApiKeyRequest, opts ...grpc.CallOption) (*GetOrCreateApiKeyResponse, error)
 	GetOrCreateInstance(ctx context.Context, in *GetOrCreateInstanceRequest, opts ...grpc.CallOption) (*GetOrCreateInstanceResponse, error)
@@ -55,15 +53,6 @@ func NewKurtosisCloudBackendServerClient(cc grpc.ClientConnInterface) KurtosisCl
 func (c *kurtosisCloudBackendServerClient) IsAvailable(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_IsAvailable_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *kurtosisCloudBackendServerClient) CreateCloudInstance(ctx context.Context, in *CreateCloudInstanceConfigArgs, opts ...grpc.CallOption) (*CreateCloudInstanceConfigResponse, error) {
-	out := new(CreateCloudInstanceConfigResponse)
-	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_CreateCloudInstance_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +118,6 @@ func (c *kurtosisCloudBackendServerClient) CancelPaymentSubscription(ctx context
 // for forward compatibility
 type KurtosisCloudBackendServerServer interface {
 	IsAvailable(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
-	CreateCloudInstance(context.Context, *CreateCloudInstanceConfigArgs) (*CreateCloudInstanceConfigResponse, error)
 	GetCloudInstanceConfig(context.Context, *GetCloudInstanceConfigArgs) (*GetCloudInstanceConfigResponse, error)
 	GetOrCreateApiKey(context.Context, *GetOrCreateApiKeyRequest) (*GetOrCreateApiKeyResponse, error)
 	GetOrCreateInstance(context.Context, *GetOrCreateInstanceRequest) (*GetOrCreateInstanceResponse, error)
@@ -144,9 +132,6 @@ type UnimplementedKurtosisCloudBackendServerServer struct {
 
 func (UnimplementedKurtosisCloudBackendServerServer) IsAvailable(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsAvailable not implemented")
-}
-func (UnimplementedKurtosisCloudBackendServerServer) CreateCloudInstance(context.Context, *CreateCloudInstanceConfigArgs) (*CreateCloudInstanceConfigResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateCloudInstance not implemented")
 }
 func (UnimplementedKurtosisCloudBackendServerServer) GetCloudInstanceConfig(context.Context, *GetCloudInstanceConfigArgs) (*GetCloudInstanceConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCloudInstanceConfig not implemented")
@@ -192,24 +177,6 @@ func _KurtosisCloudBackendServer_IsAvailable_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KurtosisCloudBackendServerServer).IsAvailable(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _KurtosisCloudBackendServer_CreateCloudInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateCloudInstanceConfigArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(KurtosisCloudBackendServerServer).CreateCloudInstance(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: KurtosisCloudBackendServer_CreateCloudInstance_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).CreateCloudInstance(ctx, req.(*CreateCloudInstanceConfigArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -332,10 +299,6 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsAvailable",
 			Handler:    _KurtosisCloudBackendServer_IsAvailable_Handler,
-		},
-		{
-			MethodName: "CreateCloudInstance",
-			Handler:    _KurtosisCloudBackendServer_CreateCloudInstance_Handler,
 		},
 		{
 			MethodName: "GetCloudInstanceConfig",
