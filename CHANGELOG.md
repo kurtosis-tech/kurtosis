@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.87.3](https://github.com/kurtosis-tech/kurtosis/compare/0.87.2...0.87.3) (2024-02-28)
+
+
+### Features
+
+* add a url field to port that autopopulates if application protocol is set ([#2211](https://github.com/kurtosis-tech/kurtosis/issues/2211)) ([35c913b](https://github.com/kurtosis-tech/kurtosis/commit/35c913b04e02bd995ae78548528eeb2e74dbd1fc))
+* added the get_service instruction ([#2233](https://github.com/kurtosis-tech/kurtosis/issues/2233)) ([7020183](https://github.com/kurtosis-tech/kurtosis/commit/702018374bd8e49f95e5ea11504d637170eb3911))
+* allow users to validate their doc strings via linter ([#2208](https://github.com/kurtosis-tech/kurtosis/issues/2208)) ([a9e583d](https://github.com/kurtosis-tech/kurtosis/commit/a9e583d7cba32b3245140a3e0fad6245cb6fec8f)), closes [#2148](https://github.com/kurtosis-tech/kurtosis/issues/2148)
+
+
+### Bug Fixes
+
+* fixing the Postgrest image label in the docs for the quickstart ([#2225](https://github.com/kurtosis-tech/kurtosis/issues/2225)) ([536a0b3](https://github.com/kurtosis-tech/kurtosis/commit/536a0b39cac736e519c64ed04122c5feee50c3a3))
+* remove package json ([#2226](https://github.com/kurtosis-tech/kurtosis/issues/2226)) ([93bcf62](https://github.com/kurtosis-tech/kurtosis/commit/93bcf62490cab9f408f76f47154f2575c8ca5a85))
+
 ## [0.87.2](https://github.com/kurtosis-tech/kurtosis/compare/0.87.1...0.87.2) (2024-02-23)
 
 
