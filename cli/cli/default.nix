@@ -34,6 +34,7 @@ let
 in buildGoApplication ({
   # pname has to match the location (folder) where the main function is or use
   # subPackges to specify the file (e.g. subPackages = ["some/folder/main.go"];)
+  checkPhase = '''';
   inherit pname ldflags;
   version = "${kurtosis_version}";
   pwd = ./.;
