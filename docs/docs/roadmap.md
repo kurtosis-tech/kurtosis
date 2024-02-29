@@ -18,6 +18,6 @@ Over the next 1-3 months, we will be making investments in our product to enable
 - **Connectivity to and from long-lived enclaves** to standardize, both from a user experience and technically, how one would get traffic to and from the enclave. This scope of work will include making it seamless to set up and manage the connection as well.
 - **Persisting data** across enclaves, services within those enclaves, and beyond the lifecycle of a service and enclave as well. This includes the supporting workflows for trivial manipulation of the data inside a container.
 - **Centralized logging infrastructure** to aggregate logs from everything inside an enclave, making them easily queryable, and storing them somewhere so that they can be used beyond the life of the enclave.
-- **A fully managed cloud offering and accompanying self-service workflows** for a stress-free, easy way to deploy test and dev environments, that live as long as you ened them to, directly onto remote infrastructure.
+- **A fully managed cloud offering and accompanying self-service workflows** for a stress-free, easy way to deploy test and dev environments, that live as long as you need them to, directly onto remote infrastructure.
 
 If any of the investments we are making interest you or if you have feedback for us, please let us know in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/categories/q-a) page, where we are fielding some great questions from our community.
