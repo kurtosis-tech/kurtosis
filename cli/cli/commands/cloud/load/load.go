@@ -34,9 +34,8 @@ const (
 var LoadCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.CloudLoadCmdStr,
 	ShortDescription: "Load a Kurtosis Cloud instance",
-	LongDescription: "Load a remote Kurtosis Cloud instance by providing the instance id." +
-		"Note, the remote instance must be in a running state for this operation to complete successfully." +
-		fmt.Sprintf("Note, you must provide a Kurtosis Cloud API Key in order to load the instance as an environment variable, e.g.: `export %s=abcd...`", cloudhelper.KurtosisCloudApiKeyEnvVarArg) +
+	LongDescription: "Load a remote Kurtosis Cloud instance by providing the instance id. " +
+		fmt.Sprintf("Note, in order to load the instance, you must provide a Kurtosis Cloud API Key as an environment variable, e.g.: `export %s=abcd... `", cloudhelper.KurtosisCloudApiKeyEnvVarArg) +
 		"You can find your Kurtosis Cloud API Key at https://cloud.kurtosis.com/connect",
 	Flags: []*flags.FlagConfig{},
 	Args: []*args.ArgConfig{
