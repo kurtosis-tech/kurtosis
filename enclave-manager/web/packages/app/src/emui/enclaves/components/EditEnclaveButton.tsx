@@ -3,7 +3,6 @@ import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
 import { isDefined } from "kurtosis-ui-components";
 import { useState } from "react";
 import { FiEdit2 } from "react-icons/fi";
-import { useSettings } from "../../settings";
 import { EnclaveFullInfo } from "../types";
 import { CreateOrConfigureEnclaveDrawer } from "./configuration/drawer/CreateOrConfigureEnclaveDrawer";
 import { EnclaveBuilderDrawer } from "./enclaveBuilder/EnclaveBuilderDrawer";
@@ -15,8 +14,6 @@ type EditEnclaveButtonProps = ButtonProps & {
 };
 
 export const EditEnclaveButton = ({ enclave, ...buttonProps }: EditEnclaveButtonProps) => {
-  const { settings } = useSettings();
-
   if (!isDefined(enclave.starlarkRun)) {
     return (
       <Button isLoading={true} colorScheme={"blue"} leftIcon={<FiEdit2 />} size={"sm"} {...buttonProps}>
@@ -35,10 +32,7 @@ export const EditEnclaveButton = ({ enclave, ...buttonProps }: EditEnclaveButton
     );
   }
 
-  if (
-    settings.ENABLE_EXPERIMENTAL_BUILD_ENCLAVE &&
-    starlarkScriptContainsEMUIBuildState(enclave.starlarkRun.value.serializedScript)
-  ) {
+  if (starlarkScriptContainsEMUIBuildState(enclave.starlarkRun.value.serializedScript)) {
     return <EditFromScriptButton enclave={enclave} {...buttonProps} />;
   }
 
