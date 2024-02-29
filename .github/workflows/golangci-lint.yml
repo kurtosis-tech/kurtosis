@@ -39,7 +39,6 @@ jobs:
         id: check
   golangci:
     needs: check-if-code-change
-    if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
     name: golang-lint
     runs-on: ubuntu-latest
     strategy:
@@ -59,12 +58,16 @@ jobs:
           - cli/cli
     steps:
       - uses: actions/setup-go@v5
+        if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
         with:
           go-version: '1.20'
       - uses: actions/checkout@v4
+        if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
       # Generate versions
       - run: scripts/generate-kurtosis-version.sh
+        if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
       - name: lint-container-engine-lib
+        if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
         uses: golangci/golangci-lint-action@v4
         with:
           version: ${{ env.GOLINT_VERSION }}
