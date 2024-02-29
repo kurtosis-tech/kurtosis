@@ -750,12 +750,12 @@ func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.
 func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	packageIdFromArgs string,
 	clonePackage bool,
-	moduleContentIfLocal []byte, // empty if clonePackage is set to true
+	moduleContentIfLocal []byte,   // empty if clonePackage is set to true
 	relativePathToMainFile string, // could be empty
 ) (
-	string, // Entrypoint script to execute
-	string, // Detected relative path (from package root) to main script
-	string, // Detected Package ID detected from [clonePackage] or [moduleContentIfLocal]
+	string,            // Entrypoint script to execute
+	string,            // Detected relative path (from package root) to main script
+	string,            // Detected Package ID detected from [clonePackage] or [moduleContentIfLocal]
 	map[string]string, // Replace options detected from [clonePackage] or [moduleContentIfLocal]
 	*startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
@@ -841,6 +841,7 @@ func (apicService *ApiContainerService) runStarlark(
 	stream grpc.ServerStream,
 ) {
 	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, imageDownloadMode, nonBlockingMode, experimentalFeatures)
+
 	for {
 		select {
 		case <-stream.Context().Done():
