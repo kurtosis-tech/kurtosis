@@ -9,7 +9,7 @@ import { KurtosisFormControl } from "../../form/KurtosisFormControl";
 import { StringArgumentInput } from "../../form/StringArgumentInput";
 import { validateName } from "../input/validators";
 import { ConfigurePackageNodeModal } from "../modals/ConfigurePackageNodeModal";
-import { KurtosisPackageNodeData, PlanYaml } from "../types";
+import { KurtosisPackageNodeData, PlanTask, PlanYaml } from "../types";
 import { useVariableContext } from "../VariableContextProvider";
 import { KurtosisNode } from "./KurtosisNode";
 
@@ -60,21 +60,48 @@ export const KurtosisPackageNode = memo(
           const nodesToRemove = getNodes().filter((node) => node.parentNode === id);
           deleteElements({ nodes: nodesToRemove });
           removeData(nodesToRemove);
-          const nodesToAdd: { type: string; id: string }[] = [
-            ...parsedPlan.services.map((service, i) => ({
-              type: "serviceNode",
-              id: `${id}:${service.uuid}`,
-            })),
-            ...parsedPlan.tasks.map((task, i) => ({
-              type: task.taskType === "exec" ? "execNode" : task.taskType === "python" ? "pythonNode" : "shellNode",
-              id: `${id}:${task.uuid}`,
-            })),
-          ];
-          const serviceNamesToId = parsedPlan.services.reduce(
+
+          const serviceNamesToId = (parsedPlan.services || []).reduce(
             (acc: Record<string, string>, service) => ({ ...acc, [service.name]: `${id}:${service.uuid}` }),
             {},
           );
-          parsedPlan.services.forEach((service) =>
+          const taskLookup = (parsedPlan.tasks || []).reduce(
+            (acc: Record<string, PlanTask>, task) => ({ ...acc, [task.uuid]: task }),
+            {},
+          );
+          const artifactTypes = (parsedPlan.filesArtifacts || []).reduce(
+            (acc: Record<string, string>, artifact) => ({
+              ...acc,
+              [artifact.uuid]:
+                taskLookup[artifact.uuid]?.taskType === "sh"
+                  ? "shell"
+                  : taskLookup[artifact.uuid]?.taskType === "python"
+                  ? "python"
+                  : "artifact",
+            }),
+            {},
+          );
+
+          const plannedArtifacts = (parsedPlan.filesArtifacts || []).filter(
+            (artifact) => !isDefined(taskLookup[artifact.uuid]),
+          );
+
+          const nodesToAdd: { type: string; id: string }[] = [
+            ...(parsedPlan.services || []).map((service, i) => ({
+              type: "serviceNode",
+              id: `${id}:${service.uuid}`,
+            })),
+            ...(parsedPlan.tasks || []).map((task, i) => ({
+              type: task.taskType === "exec" ? "execNode" : task.taskType === "python" ? "pythonNode" : "shellNode",
+              id: `${id}:${task.uuid}`,
+            })),
+            ...plannedArtifacts.map((artifact, i) => ({
+              type: "artifactNode",
+              id: `${id}:${artifact.uuid}`,
+            })),
+          ];
+
+          (parsedPlan.services || []).forEach((service) =>
             updateData(`${id}:${service.uuid}`, {
               type: "service",
               name: service.name,
@@ -103,7 +130,7 @@ export const KurtosisPackageNode = memo(
               entrypoint: (service.entrypoint || []).join(" "),
             }),
           );
-          parsedPlan.tasks.forEach((task) => {
+          (parsedPlan.tasks || []).forEach((task) => {
             if (task.taskType === "exec") {
               const serviceVariable = `{{service.${serviceNamesToId[task.serviceName]}.name}}`;
               updateData(`${id}:${task.uuid}`, {
@@ -112,11 +139,82 @@ export const KurtosisPackageNode = memo(
                 isValid: true,
                 isFromPackage: true,
                 service: serviceVariable,
-                command: task.command,
+                command: (task.command || []).join(" "),
                 acceptableCodes: (task.acceptableCodes || []).map((code) => ({ value: code })),
               });
             }
+            if (task.taskType === "python") {
+              updateData(`${id}:${task.uuid}`, {
+                type: "python",
+                name: `Python ${task.uuid}`,
+                isValid: true,
+                isFromPackage: true,
+                command: (task.command || []).join(" "),
+                image: {
+                  type: "image",
+                  image: task.image,
+                  registryUsername: "",
+                  registryPassword: "",
+                  registry: "",
+                  buildContextDir: "",
+                  targetStage: "",
+                  flakeLocationDir: "",
+                  flakeOutput: "",
+                },
+                packages: [],
+                args: task.pythonArgs.map((arg) => ({ arg })),
+                files: (task.files || []).flatMap((file) =>
+                  file.filesArtifacts.map((artifact) => ({
+                    name: `{{${artifactTypes[artifact.name]}.${id}:${artifact.name}}}`,
+                    mountPoint: file.mountPath,
+                  })),
+                ),
+                store: "", //task.store?.length > 0 ? artifactLookup[task.store[0].uuid].files[0] : [],
+                wait_enabled: "false",
+                wait: "",
+              });
+            }
+            if (task.taskType === "sh") {
+              updateData(`${id}:${task.uuid}`, {
+                type: "shell",
+                name: `Shell ${task.uuid}`,
+                isValid: true,
+                isFromPackage: true,
+                command: (task.command || []).join(" "),
+                image: {
+                  type: "image",
+                  image: task.image,
+                  registryUsername: "",
+                  registryPassword: "",
+                  registry: "",
+                  buildContextDir: "",
+                  targetStage: "",
+                  flakeLocationDir: "",
+                  flakeOutput: "",
+                },
+                env: [],
+                files: (task.files || []).flatMap((file) =>
+                  file.filesArtifacts.map((artifact) => ({
+                    name: `{{${artifactTypes[artifact.name]}.${id}:${artifact.uuid}}}`,
+                    mountPoint: file.mountPath,
+                  })),
+                ),
+                store: "", //task.store?.length > 0 ? artifactLookup[task.store[0].uuid].files[0] : [],
+                wait_enabled: "false",
+                wait: "",
+              });
+            }
           });
+          plannedArtifacts.forEach((artifact) =>
+            updateData(`${id}:${artifact.uuid}`, {
+              type: "artifact",
+              name: artifact.name,
+              isFromPackage: true,
+              isValid: true,
+              files: artifact.files.reduce((acc, file) => ({ ...acc, [file]: "" }), {}),
+            }),
+          );
+
           setNodes((nodes) => [
             ...nodes,
             ...nodesToAdd.map((node, i) => ({

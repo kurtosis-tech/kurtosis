@@ -130,7 +130,7 @@ type PlanArtifactReference = {
 
 type PlanFile = {
   mountPath: string;
-  fileArtifacts: PlanArtifactReference[];
+  filesArtifacts: PlanArtifactReference[];
 };
 
 export type PlanService = {
@@ -147,7 +147,7 @@ export type PlanService = {
 type PlanExecTask = {
   taskType: "exec";
   uuid: string;
-  command: string;
+  command: string[];
   serviceName: string;
   acceptableCodes?: number[];
 };
@@ -155,23 +155,25 @@ type PlanExecTask = {
 type PlanPythonTask = {
   taskType: "python";
   uuid: string;
-  command: string;
+  command?: string[];
   image: string;
-  store: PlanArtifactReference[];
+  files?: PlanFile[];
+  store?: PlanArtifactReference[];
   pythonArgs: string[];
 };
 
 type PlanShTask = {
   taskType: "sh";
   uuid: string;
-  command: string;
+  command?: string[];
   image: string;
-  files: PlanFile[];
+  files?: PlanFile[];
+  store?: PlanArtifactReference[];
 };
 
-type PlanTask = PlanExecTask | PlanPythonTask | PlanShTask;
+export type PlanTask = PlanExecTask | PlanPythonTask | PlanShTask;
 
-type PlanFileArtifact = {
+export type PlanFileArtifact = {
   name: string;
   uuid: string;
   files: string[];
@@ -179,7 +181,7 @@ type PlanFileArtifact = {
 
 export type PlanYaml = {
   packageId: string;
-  services: PlanService[];
-  tasks: PlanTask[];
-  filesArtifacts: PlanFileArtifact[];
+  services?: PlanService[];
+  tasks?: PlanTask[];
+  filesArtifacts?: PlanFileArtifact[];
 };
