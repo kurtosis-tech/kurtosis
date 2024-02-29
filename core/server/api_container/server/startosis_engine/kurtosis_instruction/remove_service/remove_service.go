@@ -46,6 +46,7 @@ func NewRemoveService(serviceNetwork service_network.ServiceNetwork) *kurtosis_p
 				serviceNetwork: serviceNetwork,
 
 				serviceName: "", // populated at interpretation time
+				description: "", // populated at interpretation time
 			}
 		},
 

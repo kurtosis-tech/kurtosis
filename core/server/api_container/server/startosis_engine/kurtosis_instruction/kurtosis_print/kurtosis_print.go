@@ -44,7 +44,8 @@ func NewPrint(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
-				msg: nil, // populated at interpretation time
+				msg:         nil, // populated at interpretation time
+				description: "",  // populated at interpretation time
 			}
 		},
 

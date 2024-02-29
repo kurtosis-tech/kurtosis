@@ -64,6 +64,7 @@ func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork
 
 				artifactName:                      "",  // will be populated at interpretation time
 				templatesAndDataByDestRelFilepath: nil, // will be populated at interpretation time
+				description:                       "",  // populated at interpretation time
 			}
 		},
 

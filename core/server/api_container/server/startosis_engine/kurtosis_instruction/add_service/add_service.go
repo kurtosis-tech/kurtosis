@@ -80,6 +80,7 @@ func NewAddService(
 				readyCondition: nil, // populated at interpretation time
 
 				interpretationTimeValueStore: interpretationTimeValueStore,
+				description:                  "", // populated at interpretation time
 			}
 		},
 

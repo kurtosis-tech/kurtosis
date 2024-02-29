@@ -82,6 +82,7 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				resultUuid:      "",    // will be populated at interpretation time
 				acceptableCodes: nil,   // will be populated at interpretation time
 				skipCodeCheck:   false, // will be populated at interpretation time
+				description:     "",    // populated at interpretation time
 			}
 		},
 

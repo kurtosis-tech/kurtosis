@@ -49,6 +49,7 @@ func NewStartService(serviceNetwork service_network.ServiceNetwork) *kurtosis_pl
 				serviceNetwork: serviceNetwork,
 
 				serviceName: "", // populated at interpretation time
+				description: "", // populated at interpretation time
 			}
 		},
 

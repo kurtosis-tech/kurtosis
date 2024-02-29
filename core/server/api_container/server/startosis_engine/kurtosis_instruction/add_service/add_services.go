@@ -73,6 +73,7 @@ func NewAddServices(
 
 				resultUuids:     map[service.ServiceName]string{}, // populated at interpretation time
 				readyConditions: nil,                              // populated at interpretation time
+				description:     "",                               // populated at interpretation time
 			}
 		},
 

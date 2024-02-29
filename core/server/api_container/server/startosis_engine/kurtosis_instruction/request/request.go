@@ -92,6 +92,7 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 				resultUuid:        "",    // populated at interpretation time
 				acceptableCodes:   nil,   // populated at interpretation time
 				skipCodeCheck:     false, // populated at interpretation time
+				description:       "",    // populated at interpretation time
 			}
 		},
 

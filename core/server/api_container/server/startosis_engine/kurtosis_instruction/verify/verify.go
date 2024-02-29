@@ -76,6 +76,7 @@ func NewVerify(runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtos
 				runtimeValue: "",  // populated at interpretation time
 				assertion:    "",  // populated at interpretation time
 				target:       nil, // populated at interpretation time
+				description:  "",  // populated at interpretation time
 			}
 		},
 

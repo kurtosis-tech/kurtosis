@@ -70,6 +70,7 @@ func NewUploadFiles(
 				filesArtifactMd5:      nil, // populated at interpretation time
 				packageReplaceOptions: packageReplaceOptions,
 				packageId:             packageId,
+				description:           "", // populated at interpretation time
 			}
 		},
 

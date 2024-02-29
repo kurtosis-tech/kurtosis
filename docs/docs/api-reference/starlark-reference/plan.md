@@ -30,6 +30,10 @@ service = plan.add_service(
     # The configuration for this service, as specified via a ServiceConfig object (see the ServiceConfig page in the sidebar)
     # MANDATORY
     config = service_config,
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Adding service with name 'SERVICE_NAME' and image 'SERVICE_IMAGE')
+    description = "adding a service"  
 )
 ```
 

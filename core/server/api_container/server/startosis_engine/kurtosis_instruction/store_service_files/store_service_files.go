@@ -62,6 +62,7 @@ func NewStoreServiceFiles(serviceNetwork service_network.ServiceNetwork) *kurtos
 				serviceName:  "", // populated at interpretation time
 				src:          "", // populated at interpretation time
 				artifactName: "", // populated at interpretation time
+				description:  "", // populated at interpretation time
 			}
 		},
 
