@@ -86,6 +86,10 @@ all_services = plan.add_services(
         "example-datastore-server-1": datastore_server_config_1,
         "example-datastore-server-2": datastore_server_config_2,
     },
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Adding 'NUMBER_OF_SERVICES' services with names 'SERVICE_NAMES')
+    description = "adding a service"
 )
 ```
 
@@ -140,6 +144,10 @@ plan.verify(
     # The target value that value will be compared against.
     # MANDATORY
     target_value = "test2",
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Verifying whether two values meet a certain condition 'ASSERTION')
+    description = "verifying a condition"  
 ) # This fails in runtime given that "test1" == "test2" is false
 
 plan.verify(
@@ -197,6 +205,11 @@ result = plan.exec(
     # You can chain this call with assert to check codes after request is done.
     # OPTIONAL (Defaults to False)
     skip_code_check = False,
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Executing command on service 'SERVICE_NAME')
+    description = "executing a command"
+
 )
 
 plan.print(result["output"])
@@ -238,6 +251,10 @@ plan.remove_service(
     # The service name of the service to be removed.
     # MANDATORY
     name = "my_service",
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Removing service 'SERVICE_NAME')
+    description = "removing a service"
 )
 ```
 
@@ -292,6 +309,10 @@ artifact_name = plan.render_templates(
     # If not specified, it will be auto-generated.
     # OPTIONAL
     name = "my-artifact",
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Rendering a template to a files artifact with name 'ARTIFACT_NAME')
+    description = "rendering a template"  
 )
 ```
 
@@ -327,6 +348,10 @@ http_response = plan.request(
     # You can chain this call with assert to check codes after request is done.
     # OPTIONAL (defaults to False)
     skip_code_check = false,
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Running 'REQUEST_TYPE' request on service 'SERVICE_NAME')
+    description = "making a request"
 )
 plan.print(get_response["body"]) # Prints the body of the request
 plan.print(get_response["code"]) # Prints the result code of the request (e.g. 200, 500)
@@ -470,7 +495,11 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
         # The feature is enabled by default with a default timeout of 180s
         # OPTIONAL (Default: "180s")
         wait="180s"
-    )
+
+        # A human friendly description for the end user of the package
+        # OPTIONAL (Default: Running Python script)
+        description = "Running Python script"
+)
 
     plan.print(result.code)  # returns the future reference to the exit code
     plan.print(result.output) # returns the future reference to the output
@@ -547,6 +576,10 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # The feature is enabled by default with a default timeout of 180s
         # OPTIONAL (Default: "180s")
         wait="180s"
+
+        # A human friendly description for the end user of the package
+        # OPTIONAL (Default: Running sh script)
+        description = "Running sh script"  
     )
 
     plan.print(result.code)  # returns the future reference to the code
@@ -608,6 +641,10 @@ plan.start_service(
     # The service name of the service to be restarted.
     # MANDATORY
     name = "my_service",
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Starting service 'SERVICE_NAME')
+    description = "starting service"
 )
 ```
 
@@ -621,6 +658,10 @@ plan.stop_service(
     # The service name of the service to be stopped.
     # MANDATORY
     name = "my_service",
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Stopping service 'SERVICE_NAME')
+    description = "Stopping service"  
 )
 ```
 
@@ -643,6 +684,10 @@ artifact_name = plan.store_service_files(
     # If not specified, it will be auto-generated.
     # OPTIONAL
     name = "my-favorite-artifact-name",
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Storing files from service 'SERVICE_NAME' at path 'PATH' to files artifact with name 'ARTIFACT_NAME')
+    description = "Storing some files"
 )
 ```
 
@@ -665,6 +710,10 @@ artifact_name = plan.upload_files(
     # If not specified, it will be auto-generated.
     # OPTIONAL
     name = "my-artifact",
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Uploading file 'PATH' to files artifact 'ARTIFACT_NAME')
+    description = "Uploading file"
 )
 ```
 
@@ -719,6 +768,10 @@ recipe_result = plan.wait(
     # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
     # OPTIONAL (Default: "10s")
     timeout = "5m",
+
+    # A human friendly description for the end user of the package
+    # OPTIONAL (Default: Waiting for at most 'TIMEOUT' for service 'SERVICE_NAME' to reach a certain state)
+    description = "Waiting for a certain state"  
 )
 
 # The assertion has passed, so we can use `recipe_result` just like the result of `plan.request` or `plan.exec`
