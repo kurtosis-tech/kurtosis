@@ -34,7 +34,7 @@ jobs:
           if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
             echo "::set-output name=change::false"
           else
-            echo "::set-output name=change::true"
+            echo "::set-output name=change::false"
           fi
         id: check
   golangci:
