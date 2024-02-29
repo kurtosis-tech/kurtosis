@@ -59,6 +59,9 @@ const (
 	// KurtosisCloudBackendServerCancelPaymentSubscriptionProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's CancelPaymentSubscription RPC.
 	KurtosisCloudBackendServerCancelPaymentSubscriptionProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/CancelPaymentSubscription"
+	// KurtosisCloudBackendServerUpdateAddressProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's UpdateAddress RPC.
+	KurtosisCloudBackendServerUpdateAddressProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/UpdateAddress"
 )
 
 // KurtosisCloudBackendServerClient is a client for the kurtosis_cloud.KurtosisCloudBackendServer
@@ -72,6 +75,7 @@ type KurtosisCloudBackendServerClient interface {
 	GetOrCreatePaymentConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error)
 	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
 	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
+	UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -126,6 +130,11 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerCancelPaymentSubscriptionProcedure,
 			opts...,
 		),
+		updateAddress: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerUpdateAddressProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -139,6 +148,7 @@ type kurtosisCloudBackendServerClient struct {
 	getOrCreatePaymentConfig    *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse]
 	refreshDefaultPaymentMethod *connect.Client[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs, emptypb.Empty]
 	cancelPaymentSubscription   *connect.Client[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs, emptypb.Empty]
+	updateAddress               *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs, emptypb.Empty]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -184,6 +194,11 @@ func (c *kurtosisCloudBackendServerClient) CancelPaymentSubscription(ctx context
 	return c.cancelPaymentSubscription.CallUnary(ctx, req)
 }
 
+// UpdateAddress calls kurtosis_cloud.KurtosisCloudBackendServer.UpdateAddress.
+func (c *kurtosisCloudBackendServerClient) UpdateAddress(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error) {
+	return c.updateAddress.CallUnary(ctx, req)
+}
+
 // KurtosisCloudBackendServerHandler is an implementation of the
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
@@ -195,6 +210,7 @@ type KurtosisCloudBackendServerHandler interface {
 	GetOrCreatePaymentConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error)
 	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
 	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
+	UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -245,6 +261,11 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.CancelPaymentSubscription,
 		opts...,
 	)
+	kurtosisCloudBackendServerUpdateAddressHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerUpdateAddressProcedure,
+		svc.UpdateAddress,
+		opts...,
+	)
 	return "/kurtosis_cloud.KurtosisCloudBackendServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
@@ -263,6 +284,8 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerRefreshDefaultPaymentMethodHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerCancelPaymentSubscriptionProcedure:
 			kurtosisCloudBackendServerCancelPaymentSubscriptionHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerUpdateAddressProcedure:
+			kurtosisCloudBackendServerUpdateAddressHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -302,4 +325,8 @@ func (UnimplementedKurtosisCloudBackendServerHandler) RefreshDefaultPaymentMetho
 
 func (UnimplementedKurtosisCloudBackendServerHandler) CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.CancelPaymentSubscription is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.UpdateAddress is not implemented"))
 }
