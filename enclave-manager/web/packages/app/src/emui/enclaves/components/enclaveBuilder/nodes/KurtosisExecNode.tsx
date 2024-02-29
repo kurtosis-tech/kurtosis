@@ -42,7 +42,13 @@ export const KurtosisExecNode = memo(
             isRequired
             isDisabled={nodeData.isFromPackage}
           >
-            <MentionStringArgumentInput size={"sm"} name={"command"} isRequired disabled={nodeData.isFromPackage} />
+            <MentionStringArgumentInput
+              size={"sm"}
+              name={"command"}
+              multiline
+              isRequired
+              disabled={nodeData.isFromPackage}
+            />
           </KurtosisFormControl>
           <KurtosisFormControl<KurtosisExecNodeData>
             name={"acceptableCodes"}
@@ -75,17 +81,20 @@ const AcceptableCodeInput = (props: KurtosisFormInputProps<KurtosisExecNodeData>
   );
 };
 
-const ExecNameUpdater = () => {
+const ExecNameUpdater = memo(() => {
   const { variables } = useVariableContext();
   const { watch, setValue } = useFormContext();
 
   const service = watch("service");
+  const name = watch("name");
 
   useEffect(() => {
     const serviceVariableId = service.replace(/\{\{(.*)}}/, "$1");
     const serviceName = variables.find((v) => v.id === serviceVariableId)?.displayName || "Unknown";
-    setValue("name", `${serviceName} exec`);
-  }, [service]);
+    if (name !== `${serviceName} exec`) {
+      setValue("name", `${serviceName} exec`);
+    }
+  }, [name, service, setValue, variables]);
 
   return null;
-};
+});

@@ -286,6 +286,7 @@ export function generateStarlarkFromGraph(
         result += `${objectToStarlark(arrayValue, indent + 4)},\n`;
       });
       result += `${padLeft}],\n`;
+      return result;
     }
     if (typeof o === "number") {
       return `${o}`;

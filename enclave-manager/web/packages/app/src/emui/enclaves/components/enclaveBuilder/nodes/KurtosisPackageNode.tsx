@@ -16,7 +16,7 @@ import { KurtosisNode } from "./KurtosisNode";
 type Mode = { type: "loading" } | { type: "error"; error: string } | { type: "ready" };
 
 export const KurtosisPackageNode = memo(
-  ({ id, selected, zIndex }: NodeProps) => {
+  ({ id, selected }: NodeProps) => {
     const { getNodes, deleteElements, setNodes } = useReactFlow();
     const [showPackageConfigModal, setShowPackageConfigModal] = useState(false);
     const [mode, setMode] = useState<Mode>({ type: "ready" });
@@ -60,20 +60,22 @@ export const KurtosisPackageNode = memo(
           const nodesToRemove = getNodes().filter((node) => node.parentNode === id);
           deleteElements({ nodes: nodesToRemove });
           removeData(nodesToRemove);
-          setNodes((nodes) => [
-            ...nodes,
+          const nodesToAdd: { type: string; id: string }[] = [
             ...parsedPlan.services.map((service, i) => ({
               type: "serviceNode",
-              id: `${id}:${service.name}`,
-              parentNode: id,
-              data: {},
-              extent: "parent" as "parent",
-              position: { x: 50 + 700 * (i % 2), y: 200 + 700 * Math.floor(i / 2) },
-              zIndex: zIndex + 1,
+              id: `${id}:${service.uuid}`,
             })),
-          ]);
+            ...parsedPlan.tasks.map((task, i) => ({
+              type: task.taskType === "exec" ? "execNode" : task.taskType === "python" ? "pythonNode" : "shellNode",
+              id: `${id}:${task.uuid}`,
+            })),
+          ];
+          const serviceNamesToId = parsedPlan.services.reduce(
+            (acc: Record<string, string>, service) => ({ ...acc, [service.name]: `${id}:${service.uuid}` }),
+            {},
+          );
           parsedPlan.services.forEach((service) =>
-            updateData(`${id}:${service.name}`, {
+            updateData(`${id}:${service.uuid}`, {
               type: "service",
               name: service.name,
               isFromPackage: true,
@@ -97,8 +99,34 @@ export const KurtosisPackageNode = memo(
               })),
               isValid: true,
               files: [],
+              cmd: (service.command || []).join(" "),
+              entrypoint: (service.entrypoint || []).join(" "),
             }),
           );
+          parsedPlan.tasks.forEach((task) => {
+            if (task.taskType === "exec") {
+              const serviceVariable = `{{service.${serviceNamesToId[task.serviceName]}.name}}`;
+              updateData(`${id}:${task.uuid}`, {
+                type: "exec",
+                name: "",
+                isValid: true,
+                isFromPackage: true,
+                service: serviceVariable,
+                command: task.command,
+                acceptableCodes: (task.acceptableCodes || []).map((code) => ({ value: code })),
+              });
+            }
+          });
+          setNodes((nodes) => [
+            ...nodes,
+            ...nodesToAdd.map((node, i) => ({
+              ...node,
+              parentNode: id,
+              data: {},
+              extent: "parent" as "parent",
+              position: { x: 50 + 700 * (i % 3), y: 200 + 700 * Math.floor(i / 3) },
+            })),
+          ]);
 
           setMode({ type: "ready" });
         })();
@@ -106,7 +134,17 @@ export const KurtosisPackageNode = memo(
           cancelled = true;
         };
       }
-    }, [nodeData?.packageId, nodeData?.args]);
+    }, [
+      nodeData?.packageId,
+      nodeData?.args,
+      deleteElements,
+      getNodes,
+      id,
+      kurtosisClient,
+      removeData,
+      setNodes,
+      updateData,
+    ]);
 
     if (!isDefined(nodeData)) {
       return null;

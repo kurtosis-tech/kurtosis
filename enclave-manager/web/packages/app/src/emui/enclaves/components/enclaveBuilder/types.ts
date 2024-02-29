@@ -44,6 +44,8 @@ export type KurtosisServiceNodeData = {
   env: KurtosisEnvironmentVar[];
   ports: KurtosisPort[];
   files: KurtosisFileMount[];
+  entrypoint: string;
+  cmd: string;
   isValid: boolean;
 };
 
@@ -121,15 +123,63 @@ export type PlanPort = {
   applicationProtocol?: string;
 };
 
+type PlanArtifactReference = {
+  name: string;
+  uuid: string;
+};
+
+type PlanFile = {
+  mountPath: string;
+  fileArtifacts: PlanArtifactReference[];
+};
+
 export type PlanService = {
   name: string;
   uuid: string;
   image: { name: string };
   envVars?: KurtosisEnvironmentVar[];
   ports?: PlanPort[];
+  command?: string[];
+  entrypoint?: string[];
+  files: PlanFile[];
+};
+
+type PlanExecTask = {
+  taskType: "exec";
+  uuid: string;
+  command: string;
+  serviceName: string;
+  acceptableCodes?: number[];
+};
+
+type PlanPythonTask = {
+  taskType: "python";
+  uuid: string;
+  command: string;
+  image: string;
+  store: PlanArtifactReference[];
+  pythonArgs: string[];
+};
+
+type PlanShTask = {
+  taskType: "sh";
+  uuid: string;
+  command: string;
+  image: string;
+  files: PlanFile[];
+};
+
+type PlanTask = PlanExecTask | PlanPythonTask | PlanShTask;
+
+type PlanFileArtifact = {
+  name: string;
+  uuid: string;
+  files: string[];
 };
 
 export type PlanYaml = {
   packageId: string;
   services: PlanService[];
+  tasks: PlanTask[];
+  filesArtifacts: PlanFileArtifact[];
 };

@@ -76,6 +76,8 @@ export const Toolbar = () => {
       ports: [],
       env: [],
       files: [],
+      cmd: "",
+      entrypoint: "",
       isValid: false,
     });
     addNodes({

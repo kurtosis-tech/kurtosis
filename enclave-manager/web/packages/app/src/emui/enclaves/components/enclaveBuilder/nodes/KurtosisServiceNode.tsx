@@ -55,6 +55,7 @@ export const KurtosisServiceNode = memo(
             <Tab>Environment</Tab>
             <Tab>Ports</Tab>
             <Tab>Files</Tab>
+            <Tab>Advanced</Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
@@ -107,6 +108,30 @@ export const KurtosisServiceNode = memo(
                   })}
                 />
               </KurtosisFormControl>
+            </TabPanel>
+            <TabPanel>
+              <Flex flexDirection={"column"} gap={"16px"}>
+                <KurtosisFormControl<KurtosisServiceNodeData>
+                  name={"entrypoint"}
+                  label={"Entrypoint"}
+                  helperText={
+                    "The ENTRYPOINT statement hardcoded in a container image's Dockerfile might not be suitable for your needs."
+                  }
+                  isDisabled={nodeData.isFromPackage}
+                >
+                  <StringArgumentInput name={"entrypoint"} size={"sm"} isReadOnly={nodeData.isFromPackage} />
+                </KurtosisFormControl>
+                <KurtosisFormControl<KurtosisServiceNodeData>
+                  name={"cmd"}
+                  label={"CMD"}
+                  helperText={
+                    "The CMD statement hardcoded in a container image's Dockerfile might not be suitable for your needs."
+                  }
+                  isDisabled={nodeData.isFromPackage}
+                >
+                  <StringArgumentInput name={"cmd"} size={"sm"} isReadOnly={nodeData.isFromPackage} />
+                </KurtosisFormControl>
+              </Flex>
             </TabPanel>
           </TabPanels>
         </Tabs>
