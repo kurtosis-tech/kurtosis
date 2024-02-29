@@ -26,6 +26,7 @@ export const getPortTableRows = (
   privatePorts: Record<string, Port>,
   publicPorts: Record<string, Port>,
   publicIp: string,
+  serviceName?: string,
 ): PortsTableRow[] => {
   return Object.entries(privatePorts).map(([name, port]) => {
     let link;
@@ -45,7 +46,7 @@ export const getPortTableRows = (
         transportProtocol: transportProtocolToString(port.transportProtocol),
         privatePort: port.number,
         publicPort: publicPorts[name].number,
-        name,
+        name: isDefined(serviceName) ? `${serviceName}:${name}` : name,
       },
       link: link,
     };

@@ -8,11 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Get current version
         run: echo "CURRENT_VERSION=$(cat version.txt)" >> $GITHUB_ENV
       - name: Tag golang package
-        uses: pkgdeps/git-tag-action@v2
+        uses: pkgdeps/git-tag-action@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           github_repo: ${{ github.repository }}
