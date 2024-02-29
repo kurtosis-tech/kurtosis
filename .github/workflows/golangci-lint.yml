@@ -57,6 +57,7 @@ jobs:
           - internal_testsuites/golang
           - cli/cli
     steps:
+      - if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
       - uses: actions/setup-go@v5
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
         with:
