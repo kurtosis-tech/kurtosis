@@ -137,23 +137,24 @@ CMD ["node", "app.js"]
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
-    database = plan.add_service(
-        name="database",
-        config=ServiceConfig(
-            image="postgres:latest",
-        )
-    )
-
     plan.add_service(
-        name="tedi",
+        name="db",
         config=ServiceConfig(
-            image="ubuntu:latest",
-            env_vars={
-                "DB_URL": database.ip_address 
-            },
+            image="postgres:alpine",
+            env_vars = {
+                "POSTGRES_DB": "tedi",
+                "POSTGRES_USER": "tedi",
+                "POSTGRES_PASSWORD": "tedi",
+            }
         )
     )
 
+    result = plan.exec(
+        service_name = "db",
+        recipe = ExecRecipe(command = ["echo", "Hello, world"]),
+        acceptable_codes=[156],
+    )
+    plan.print(result)
 `
 	serializedJsonParams := "{}"
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)

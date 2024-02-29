@@ -82,7 +82,7 @@ type Task struct {
 	Uuid     int              `yaml:"uuid,omitempty"`     // done
 	Name     string           `yaml:"name,omitempty"`     // done
 	TaskType TaskType         `yaml:"taskType,omitempty"` // done
-	RunCmd   string           `yaml:"command,omitempty"`  // done
+	RunCmd   []string         `yaml:"command,omitempty"`  // done
 	Image    string           `yaml:"image,omitempty"`    // done
 	Files    []*FileMount     `yaml:"files,omitempty"`    // done
 	Store    []*FilesArtifact `yaml:"store,omitempty"`    // done

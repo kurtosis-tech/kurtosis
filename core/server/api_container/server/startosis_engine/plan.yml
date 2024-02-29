@@ -1,13 +1,22 @@
 packageId: github.com/kurtosis-tech/plan-yaml-prac
 services:
 - uuid: 1
-  name: database
+  name: db
   image:
-    name: postgres:latest
-- uuid: 2
-  name: tedi
-  image:
-    name: ubuntu:latest
+    name: postgres:alpine
   envVars:
-  - key: DB_URL
-    value: '{{ kurtosis.1.ip_address }}'
+  - key: POSTGRES_PASSWORD
+    value: tedi
+  - key: POSTGRES_DB
+    value: tedi
+  - key: POSTGRES_USER
+    value: tedi
+tasks:
+- uuid: 2
+  taskType: exec
+  command:
+  - echo
+  - Hello, world
+  serviceName: db
+  acceptableCodes:
+  - 156

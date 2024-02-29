@@ -421,7 +421,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.RunArgName)
 	}
-	task.RunCmd = runCommand.GoString()
+	task.RunCmd = []string{runCommand.GoString()}
 
 	var image string
 	if arguments.IsSet(tasks.ImageNameArgName) {
@@ -550,7 +550,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.RunArgName)
 	}
-	task.RunCmd = runCommand.GoString()
+	task.RunCmd = []string{runCommand.GoString()}
 
 	var image string
 	if arguments.IsSet(tasks.ImageNameArgName) {
@@ -747,7 +747,20 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instru
 	if interpretationErr != nil {
 		return interpretationErr
 	}
-	task.RunCmd = commandStarlarkList.String()
+	// Convert Starlark list to Go slice
+	var cmdList []string
+	iter := commandStarlarkList.Iterate()
+	defer iter.Done()
+	var x starlark.Value
+	for iter.Next(&x) {
+		if i, ok := x.(starlark.String); ok {
+			cmdList = append(cmdList, i.GoString())
+		} else {
+			// Handle the case if the element is not an integer
+			fmt.Println("Non-string element found in Starlark list")
+		}
+	}
+	task.RunCmd = cmdList
 
 	acceptableCodes := []int64{0}
 	if arguments.IsSet(exec.AcceptableCodesArgName) {
