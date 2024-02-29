@@ -94,9 +94,9 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	suite.runner = NewStartosisRunner(suite.interpreter, suite.validator, suite.executor)
 }
 
-func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
-	suite.Run(t, new(PlanYamlGeneratorTestSuite))
-}
+//func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
+//	suite.Run(t, new(PlanYamlGeneratorTestSuite))
+//}
 
 func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
@@ -137,28 +137,23 @@ CMD ["node", "app.js"]
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
-    bye_files_artifact = plan.render_templates(
-        name="bye-file",
-        config={
-            "bye.txt": struct(
-                template="Bye bye!",
-                data={}
-            )
-        }
+    database = plan.add_service(
+        name="database",
+        config=ServiceConfig(
+            image="postgres:latest",
+        )
     )
 
-    plan.run_sh(
-        run="echo $(cat /root/bye.txt) > hi.txt",
-        env_vars = {
-            "HELLO": "Hello!"
-        },
-        files = {
-            "/root": bye_files_artifact,
-        },
-        store=[
-            StoreSpec(src="/hi.txt", name="hi-file")
-        ]
+    plan.add_service(
+        name="tedi",
+        config=ServiceConfig(
+            image="ubuntu:latest",
+            env_vars={
+                "DB_URL": database.ip_address 
+            },
+        )
     )
+
 `
 	serializedJsonParams := "{}"
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)

@@ -1,6 +1,7 @@
 package startosis_engine
 
 import (
+	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
@@ -18,7 +19,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"strings"
 )
 
 // We need the package id and the args, the args need to be filled in
@@ -95,6 +98,8 @@ type PlanYamlGeneratorImpl struct {
 	planYaml *PlanYaml
 
 	uuidGenerator int
+
+	futureReferenceIndex map[string]string
 }
 
 func NewPlanYamlGenerator(
@@ -114,9 +119,12 @@ func NewPlanYamlGenerator(
 			FilesArtifacts: []*FilesArtifact{},
 			Tasks:          []*Task{},
 		},
-		filesArtifactIndex: map[string]*FilesArtifact{},
-		serviceIndex:       map[string]*Service{},
-		taskIndex:          map[string]*Task{}}
+		filesArtifactIndex:   map[string]*FilesArtifact{},
+		serviceIndex:         map[string]*Service{},
+		taskIndex:            map[string]*Task{},
+		uuidGenerator:        0,
+		futureReferenceIndex: map[string]string{},
+	}
 }
 
 func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
@@ -165,17 +173,42 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 
 	// start building Service Yaml object
 	service := &Service{} //nolint:exhaustruct
+	uuid := pyg.generateUuid()
+	service.Uuid = uuid
 
-	service.Uuid = pyg.generateUuid()
-
-	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, add_service.ServiceNameArgName)
-	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", add_service.ServiceNameArgName)
+	// store future references of this service
+	returnValue := addServiceInstruction.GetReturnedValue()
+	returnedService, ok := returnValue.(*kurtosis_types.Service)
+	if !ok {
+		return stacktrace.NewError("Cast to service didn't work")
 	}
-	service.Name = string(serviceName)
-
-	starlarkServiceConfig, err := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, add_service.ServiceConfigArgName)
+	//futureRefServiceName, err := returnedService.GetName()
+	//if err != nil {
+	//	return err
+	//}
+	//pyg.futureReferenceIndex[string(futureRefServiceName)] = fmt.Sprintf("{{ kurtosis.%v.service_name }}", uuid)
+	futureRefIPAddress, err := returnedService.GetIpAddress()
 	if err != nil {
+		return err
+	}
+	pyg.futureReferenceIndex[futureRefIPAddress] = fmt.Sprintf("{{ kurtosis.%v.ip_address }}", uuid)
+	futureRefHostName, err := returnedService.GetHostname()
+	if err != nil {
+		return err
+	}
+	pyg.futureReferenceIndex[futureRefHostName] = fmt.Sprintf("{{ kurtosis.%v.hostname }}", uuid)
+
+	service.Uuid = uuid
+
+	var regErr error
+	serviceName, regErr := builtin_argument.ExtractArgumentValue[starlark.String](arguments, add_service.ServiceNameArgName)
+	if regErr != nil {
+		return startosis_errors.WrapWithInterpretationError(regErr, "Unable to extract value for '%s' argument", add_service.ServiceNameArgName)
+	}
+	service.Name = pyg.swapFutureReference(serviceName.GoString()) // swap future references in the strings
+
+	starlarkServiceConfig, regErr := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, add_service.ServiceConfigArgName)
+	if regErr != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", add_service.ServiceConfigArgName)
 	}
 	serviceConfig, serviceConfigErr := starlarkServiceConfig.ToKurtosisType( // is this an expensive call? // TODO: add this error back in
@@ -214,8 +247,20 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	}
 	service.Image = image
 
-	service.Cmd = serviceConfig.GetCmdArgs()
-	service.Entrypoint = serviceConfig.GetEntrypointArgs()
+	// detect future references
+	cmdArgs := []string{}
+	for _, cmdArg := range serviceConfig.GetCmdArgs() {
+		realCmdArg := pyg.swapFutureReference(cmdArg)
+		cmdArgs = append(cmdArgs, realCmdArg)
+	}
+	service.Cmd = cmdArgs
+
+	entryArgs := []string{}
+	for _, entryArg := range serviceConfig.GetEntrypointArgs() {
+		realEntryArg := pyg.swapFutureReference(entryArg)
+		entryArgs = append(entryArgs, realEntryArg)
+	}
+	service.Entrypoint = entryArgs
 
 	// ports
 	service.Ports = []*Port{}
@@ -236,9 +281,11 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	// env vars
 	service.EnvVars = []*EnvironmentVariable{}
 	for key, val := range serviceConfig.GetEnvVars() {
+		// detect and future references
+		value := pyg.swapFutureReference(val)
 		envVar := &EnvironmentVariable{
 			Key:   key,
-			Value: val,
+			Value: value,
 		}
 		service.EnvVars = append(service.EnvVars, envVar)
 	}
@@ -758,4 +805,16 @@ func getBuiltinNameFromInstruction(instruction *instructions_plan.ScheduledInstr
 func (pyg *PlanYamlGeneratorImpl) generateUuid() int {
 	pyg.uuidGenerator++
 	return pyg.uuidGenerator
+}
+
+// if the string is a future reference, it swaps it out with what it should be
+// else the string s is the same
+func (pyg *PlanYamlGeneratorImpl) swapFutureReference(s string) string {
+	for futureRef, swappedValue := range pyg.futureReferenceIndex {
+		if strings.Contains(s, futureRef) { // TODO: handle case where s contains multiple future references
+			newString := strings.Replace(s, futureRef, swappedValue, -1)
+			return newString
+		}
+	}
+	return s
 }

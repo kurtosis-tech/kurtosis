@@ -1,26 +1,13 @@
 packageId: github.com/kurtosis-tech/plan-yaml-prac
-filesArtifacts:
+services:
 - uuid: 1
-  name: bye-file
-  files:
-  - bye.txt
-- uuid: 3
-  name: hi-file
-  files:
-  - /hi.txt
-tasks:
+  name: database
+  image:
+    name: postgres:latest
 - uuid: 2
-  taskType: sh
-  command: echo $(cat /root/bye.txt) > hi.txt
-  image: badouralix/curl-jq
-  files:
-  - mountPath: /root
-    filesArtifacts:
-    - uuid: 1
-      name: bye-file
-  store:
-  - uuid: 3
-    name: hi-file
-  envVar:
-  - key: HELLO
-    value: Hello!
+  name: tedi
+  image:
+    name: ubuntu:latest
+  envVars:
+  - key: DB_URL
+    value: '{{ kurtosis.1.ip_address }}'
