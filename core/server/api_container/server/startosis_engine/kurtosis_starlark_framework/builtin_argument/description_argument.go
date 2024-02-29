@@ -7,30 +7,30 @@ import (
 )
 
 const (
-	DescriptionArgumentName       = "description"
-	DescriptionArgumentIsOptional = true
+	descriptionArgumentName       = "description"
+	descriptionArgumentIsOptional = true
 )
 
-// CreateDescriptionArgument This is an argument that gets injected into all instructions
-func CreateDescriptionArgument(defaultValue string) *BuiltinArgument {
+// createDescriptionArgument This is an argument that gets injected into all instructions
+func createDescriptionArgument() *BuiltinArgument {
 	return &BuiltinArgument{
-		Name:              DescriptionArgumentName,
-		IsOptional:        DescriptionArgumentIsOptional,
+		Name:              descriptionArgumentName,
+		IsOptional:        descriptionArgumentIsOptional,
 		ZeroValueProvider: ZeroValueProvider[starlark.String],
 		Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-			return NonEmptyString(value, DescriptionArgumentName)
+			return NonEmptyString(value, descriptionArgumentName)
 		},
 		Deprecation: nil,
 	}
 }
 
 func GetDescriptionOrFallBack(arguments *ArgumentValuesSet, fallback string) string {
-	if arguments.IsSet(DescriptionArgumentName) {
-		description, err := ExtractArgumentValue[starlark.String](arguments, DescriptionArgumentName)
+	if arguments.IsSet(descriptionArgumentName) {
+		description, err := ExtractArgumentValue[starlark.String](arguments, descriptionArgumentName)
 		if err == nil {
 			return description.GoString()
 		}
-		logrus.Debugf("An error occurred while extracting user supplied value for '%v'; using fallback '%v'", DescriptionArgumentName, fallback)
+		logrus.Debugf("An error occurred while extracting user supplied value for '%v'; using fallback '%v'", descriptionArgumentName, fallback)
 	}
 	return fallback
 }

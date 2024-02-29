@@ -32,8 +32,9 @@ const (
 	IntervalArgName    = "interval"
 	TimeoutArgName     = "timeout"
 
-	defaultInterval = 1 * time.Second
-	defaultTimeout  = 10 * time.Second
+	defaultInterval      = 1 * time.Second
+	defaultTimeout       = 10 * time.Second
+	descriptionFormatStr = "Waiting for at most '%v' for service '%v' to reach a certain state"
 )
 
 func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -128,7 +129,8 @@ type WaitCapabilities struct {
 	interval    time.Duration
 	timeout     time.Duration
 
-	resultUuid string
+	resultUuid  string
+	description string
 }
 
 func (builtin *WaitCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -218,6 +220,7 @@ func (builtin *WaitCapabilities) Interpret(_ string, arguments *builtin_argument
 	builtin.interval = interval
 	builtin.timeout = timeout
 	builtin.resultUuid = resultUuid
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.timeout, builtin.serviceName))
 
 	return returnValue, nil
 }
@@ -290,5 +293,5 @@ func (builtin *WaitCapabilities) FillPersistableAttributes(builder *enclave_plan
 }
 
 func (builtin *WaitCapabilities) Description() string {
-	return fmt.Sprintf("Waiting for at most '%v' for service '%v' to reach a certain state", builtin.timeout, builtin.serviceName)
+	return builtin.description
 }

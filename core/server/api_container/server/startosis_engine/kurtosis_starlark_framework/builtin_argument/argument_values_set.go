@@ -114,11 +114,11 @@ func (arguments *ArgumentValuesSet) String() string {
 }
 
 func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, args starlark.Tuple, kwargs []starlark.Tuple) ([]starlark.Value, error) {
-	storedValues := make([]starlark.Value, len(argumentDefinitions))
 	var pairs []interface{}
 	// We add the description argument; which comes with all instructions
-	descriptionArgument := CreateDescriptionArgument()
+	descriptionArgument := createDescriptionArgument()
 	argumentDefinitions = append(argumentDefinitions, descriptionArgument)
+	storedValues := make([]starlark.Value, len(argumentDefinitions))
 	for idx, argumentDefinition := range argumentDefinitions {
 		if argumentDefinition.IsOptional {
 			pairs = append(pairs, makeOptional(argumentDefinition.Name))

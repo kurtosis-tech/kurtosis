@@ -22,6 +22,10 @@ const (
 	ServiceNameArgName = "name"
 )
 
+const (
+	descriptionFormatStr = "Stopping service '%v'"
+)
+
 func NewStopService(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
@@ -58,6 +62,8 @@ type StopServiceCapabilities struct {
 	serviceNetwork service_network.ServiceNetwork
 
 	serviceName service.ServiceName
+
+	description string
 }
 
 func (builtin *StopServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -67,6 +73,7 @@ func (builtin *StopServiceCapabilities) Interpret(_ string, arguments *builtin_a
 	}
 
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
 	return starlark.None, nil
 }
 
@@ -99,5 +106,5 @@ func (builtin *StopServiceCapabilities) FillPersistableAttributes(builder *encla
 }
 
 func (builtin *StopServiceCapabilities) Description() string {
-	return fmt.Sprintf("Stopping service '%v'", builtin.serviceName)
+	return builtin.description
 }

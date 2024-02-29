@@ -24,6 +24,10 @@ const (
 	ArtifactNameArgName = "name"
 )
 
+const (
+	descriptionFormatStr = "Storing files from service '%v' at path '%v' to files artifact with name '%v'"
+)
+
 func NewStoreServiceFiles(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
@@ -75,6 +79,7 @@ type StoreServiceFilesCapabilities struct {
 	serviceName  kurtosis_backend_service.ServiceName
 	src          string
 	artifactName string
+	description  string
 }
 
 func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -104,6 +109,7 @@ func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *bui
 
 	builtin.serviceName = kurtosis_backend_service.ServiceName(serviceName.GoString())
 	builtin.src = src.GoString()
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName, builtin.src, builtin.artifactName))
 	return starlark.String(builtin.artifactName), nil
 }
 
@@ -173,5 +179,5 @@ func (builtin *StoreServiceFilesCapabilities) FillPersistableAttributes(builder 
 }
 
 func (builtin *StoreServiceFilesCapabilities) Description() string {
-	return fmt.Sprintf("Storing files from service '%v' at path '%v' to files artifact with name '%v'", builtin.serviceName, builtin.src, builtin.artifactName)
+	return builtin.description
 }

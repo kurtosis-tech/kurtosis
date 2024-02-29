@@ -18,6 +18,8 @@ import (
 const (
 	GetServiceBuiltinName = "get_service"
 	ServiceNameArgName    = "name"
+
+	descriptionFormatStr = "Fetched service '%v'"
 )
 
 func NewGetService(interpretationTimeStore *interpretation_time_value_store.InterpretationTimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -48,6 +50,7 @@ func NewGetService(interpretationTimeStore *interpretation_time_value_store.Inte
 type GetServiceCapabilities struct {
 	interpretationTimeStore *interpretation_time_value_store.InterpretationTimeValueStore
 	serviceName             service.ServiceName
+	description             string
 }
 
 func (builtin *GetServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -78,7 +81,8 @@ func (builtin *GetServiceCapabilities) Execute(_ context.Context, _ *builtin_arg
 	// Note this is a no-op.
 	// Perhaps this instruction should be like `read_file` instead and not a part of any plan
 	// But that shouldn't be done outside a function; so it's here for now
-	return fmt.Sprintf("Fetched service '%v'", builtin.serviceName), nil
+	builtin.description = fmt.Sprintf(descriptionFormatStr, builtin.serviceName)
+	return fmt.Sprintf(descriptionFormatStr, builtin.serviceName), nil
 }
 
 func (builtin *GetServiceCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
@@ -95,5 +99,5 @@ func (builtin *GetServiceCapabilities) FillPersistableAttributes(builder *enclav
 }
 
 func (builtin *GetServiceCapabilities) Description() string {
-	return fmt.Sprintf("Fetched service '%v'", builtin.serviceName)
+	return builtin.description
 }

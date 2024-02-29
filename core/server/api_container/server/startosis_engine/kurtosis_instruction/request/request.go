@@ -35,6 +35,7 @@ var defaultAcceptableCodes = []int64{
 
 const (
 	defaultSkipCodeCheck = false
+	descriptionFormatStr = "Running '%v' request on service '%v'"
 )
 
 const (
@@ -109,6 +110,8 @@ type RequestCapabilities struct {
 	resultUuid        string
 	acceptableCodes   []int64
 	skipCodeCheck     bool
+
+	description string
 }
 
 func (builtin *RequestCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -155,6 +158,7 @@ func (builtin *RequestCapabilities) Interpret(_ string, arguments *builtin_argum
 	builtin.resultUuid = resultUuid
 	builtin.acceptableCodes = acceptableCodes
 	builtin.skipCodeCheck = skipCodeCheck
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.httpRequestRecipe.RequestType(), builtin.serviceName))
 
 	returnValue, interpretationErr := builtin.httpRequestRecipe.CreateStarlarkReturnValue(builtin.resultUuid)
 	if interpretationErr != nil {
@@ -203,7 +207,7 @@ func (builtin *RequestCapabilities) FillPersistableAttributes(builder *enclave_p
 }
 
 func (builtin *RequestCapabilities) Description() string {
-	return fmt.Sprintf("Running '%v' request on service '%v'", builtin.httpRequestRecipe.RequestType(), builtin.serviceName)
+	return builtin.description
 }
 
 func (builtin *RequestCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {
