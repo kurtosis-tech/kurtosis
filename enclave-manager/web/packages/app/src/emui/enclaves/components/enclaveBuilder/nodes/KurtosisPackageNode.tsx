@@ -125,7 +125,12 @@ export const KurtosisPackageNode = memo(
                 transportProtocol: port.transportProtocol,
               })),
               isValid: true,
-              files: [],
+              files: (service.files || []).flatMap((file) =>
+                file.filesArtifacts.map((artifact) => ({
+                  name: `{{${artifactTypes[artifact.uuid]}.${id}:${artifact.uuid}}}`,
+                  mountPoint: file.mountPath,
+                })),
+              ),
               cmd: (service.command || []).join(" "),
               entrypoint: (service.entrypoint || []).join(" "),
             }),
@@ -165,7 +170,7 @@ export const KurtosisPackageNode = memo(
                 args: task.pythonArgs.map((arg) => ({ arg })),
                 files: (task.files || []).flatMap((file) =>
                   file.filesArtifacts.map((artifact) => ({
-                    name: `{{${artifactTypes[artifact.name]}.${id}:${artifact.name}}}`,
+                    name: `{{${artifactTypes[artifact.uuid]}.${id}:${artifact.uuid}}}`,
                     mountPoint: file.mountPath,
                   })),
                 ),
@@ -195,7 +200,7 @@ export const KurtosisPackageNode = memo(
                 env: [],
                 files: (task.files || []).flatMap((file) =>
                   file.filesArtifacts.map((artifact) => ({
-                    name: `{{${artifactTypes[artifact.name]}.${id}:${artifact.uuid}}}`,
+                    name: `{{${artifactTypes[artifact.uuid]}.${id}:${artifact.uuid}}}`,
                     mountPoint: file.mountPath,
                   })),
                 ),
