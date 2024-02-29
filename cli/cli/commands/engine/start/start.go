@@ -133,7 +133,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 	} else if engineVersion == defaultEngineVersion {
 
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.GetVersion())
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize, githubAuthTokenOverride)
 	} else {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel, enclavePoolSize, defaults.DefaultEnableDebugMode, githubAuthTokenOverride)

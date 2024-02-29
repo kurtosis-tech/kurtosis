@@ -1,6 +1,8 @@
 module github.com/kurtosis-tech/kurtosis/cli/cli
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
@@ -112,7 +114,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/google/uuid v1.4.0 // indirect
+	github.com/google/uuid v1.5.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/henvic/httpretty v0.1.3 // indirect
@@ -126,6 +128,8 @@ require (
 	github.com/kurtosis-tech/kurtosis-package-indexer/api/golang v0.0.0-20231220155208-4ae5a14a79d0 // indirect
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
 	github.com/kurtosis-tech/kurtosis/utils v0.0.0 // indirect
+	github.com/kurtosis-tech/starlark-lsp v0.0.0-20231103163737-8f660a80cb17 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
@@ -144,7 +148,6 @@ require (
 	github.com/onsi/gomega v1.27.10 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.9 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

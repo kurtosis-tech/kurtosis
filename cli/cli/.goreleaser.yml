@@ -33,6 +33,9 @@ builds:
               {{- if eq .Arch "arm64"}}CXX=aarch64-linux-musl-g++{{- end }}
           {{- end }}
         {{- end }}
+    # ldflags:
+    #   - >-
+    #     {{- if eq .Os "linux" }}-linkmode external -extldflags "-static"{{- end }}
     tags:
       - osusergo
 # In order for releasing-to-Github to work, we have to create these archives

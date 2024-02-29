@@ -1,11 +1,14 @@
 module github.com/kurtosis-tech/kurtosis/container-engine-lib
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../api/golang
 	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../contexts-config-store
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../engine/launcher
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang => ../metrics-library/golang
 	github.com/kurtosis-tech/kurtosis/utils => ../utils
 )
 
@@ -15,7 +18,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/gammazero/workerpool v1.1.2
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // Local dependency
@@ -58,6 +61,7 @@ require (
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
@@ -73,16 +77,18 @@ require (
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/segmentio/backo-go v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.40.0 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/metric v0.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
@@ -93,6 +99,7 @@ require (
 	google.golang.org/grpc v1.56.3 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/segmentio/analytics-go.v3 v3.1.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.4.0 // indirect

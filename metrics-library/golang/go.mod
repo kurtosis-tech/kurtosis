@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/metrics-library/golang
 
-go 1.15
+go 1.21
 
 require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect

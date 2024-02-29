@@ -68,9 +68,9 @@ done
 # Build Docker image
 
 ## Start by making sure the builder and the context do not already exist. If that's the case remove them
-# kurtosis_docker_builder="kurtosis-docker-builder"
-# docker_buildx_context='kurtosis-docker-builder-context'
-# if podman buildx inspect "${kurtosis_docker_builder}" &>/dev/null; then
+kurtosis_docker_builder="kurtosis-docker-builder"
+docker_buildx_context='kurtosis-docker-builder-context'
+# if docker buildx inspect "${kurtosis_docker_builder}" &>/dev/null; then
 #   echo "Removing docker buildx builder ${kurtosis_docker_builder} as it seems to already exist"
 #   if ! docker buildx rm ${kurtosis_docker_builder} &>/dev/null; then
 #     echo "Failed removing docker buildx builder ${kurtosis_docker_builder}. Try removing it manually with 'docker buildx rm ${kurtosis_docker_builder}' before re-running this script"
@@ -85,7 +85,7 @@ done
 #   fi
 # fi
 
-## Create Docker context and buildx builder
+# ## Create Docker context and buildx builder
 # if ! docker context create "${docker_buildx_context}" &>/dev/null; then
 #   echo "Error: Docker context creation for buildx failed" >&2
 #   exit 1

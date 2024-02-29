@@ -101,7 +101,7 @@ func run(
 
 	shouldApicRunInDebugMode := defaults.DefaultEnableDebugMode
 	if isDebugMode && apiContainerVersion == defaults.DefaultAPIContainerVersion {
-		apiContainerVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
+		apiContainerVersion = fmt.Sprintf("%s-%s", kurtosis_version.GetVersion(), defaults.DefaultKurtosisContainerDebugImageNameSuffix)
 		shouldApicRunInDebugMode = true
 	}
 
