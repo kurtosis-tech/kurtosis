@@ -27,9 +27,8 @@ import {
 } from "kurtosis-ui-components";
 import { useEffect, useMemo, useState } from "react";
 import { FiCheck, FiSettings, FiX } from "react-icons/fi";
-import { Location, useBlocker, useLocation, useNavigate } from "react-router-dom";
+import { Location, useLocation, useNavigate } from "react-router-dom";
 import { EditEnclaveButton } from "../../components/EditEnclaveButton";
-import { LogNavigationWarningModal } from "../../components/modals/LogNavigationWarningModal";
 import { ServicesTable } from "../../components/tables/ServicesTable";
 import { DeleteEnclavesButton } from "../../components/widgets/DeleteEnclavesButton";
 import { useEnclavesContext } from "../../EnclavesContext";
@@ -89,8 +88,6 @@ export const EnclaveLogs = () => {
         : starlarkResponseLineToLogLineMessage(rawLogLine as StarlarkRunResponseLine, shouldUseDescriptionField),
     );
   }, [rawLogLines, shouldUseDescriptionField]);
-
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => currentLocation.pathname !== nextLocation.pathname);
 
   useEffect(() => {
     let cancelled = false;
@@ -223,19 +220,6 @@ export const EnclaveLogs = () => {
             />
           </TitledBox>
         )}
-        <LogNavigationWarningModal
-          isOpen={blocker.state === "blocked"}
-          onCancel={() => {
-            if (blocker.state === "blocked") {
-              blocker.reset();
-            }
-          }}
-          onConfirm={() => {
-            if (blocker.state === "blocked") {
-              blocker.proceed();
-            }
-          }}
-        />
       </>
     </AppPageLayout>
   );
