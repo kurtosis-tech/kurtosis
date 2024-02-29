@@ -49,7 +49,7 @@ jobs:
         directory: [container-engine-lib]
         exclude:
           - shouldCheck: true
-            directory: [container-engine-lib]
+            directory: container-engine-lib
     steps:
       - uses: actions/setup-go@v5
         with:
