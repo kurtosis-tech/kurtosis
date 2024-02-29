@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"strconv"
 	"strings"
 )
 
@@ -174,7 +175,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	// start building Service Yaml object
 	service := &Service{} //nolint:exhaustruct
 	uuid := pyg.generateUuid()
-	service.Uuid = uuid
+	service.Uuid = strconv.Itoa(uuid)
 
 	// store future references of this service
 	returnValue := addServiceInstruction.GetReturnedValue()
@@ -318,7 +319,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
 					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Name: identifier,
-						Uuid: pyg.generateUuid(),
+						Uuid: strconv.Itoa(pyg.generateUuid()),
 					}
 					pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
 					pyg.filesArtifactIndex[identifier] = filesArtifact
@@ -347,7 +348,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(uploadFilesInstr
 	}
 	filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 		Name: filesArtifactName,
-		Uuid: pyg.generateUuid(),
+		Uuid: strconv.Itoa(pyg.generateUuid()),
 	}
 
 	// get files of returned files artifact off render templates config
@@ -373,7 +374,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(renderTempla
 		return castErr
 	}
 	filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-		Uuid: pyg.generateUuid(),
+		Uuid: strconv.Itoa(pyg.generateUuid()),
 		Name: filesArtifactName,
 	}
 
@@ -409,7 +410,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 	//	return castErr
 	//}
 	task = &Task{ //nolint:exhaustruct
-		Uuid:     pyg.generateUuid(),
+		Uuid:     strconv.Itoa(pyg.generateUuid()),
 		TaskType: SHELL,
 	}
 
@@ -483,7 +484,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
 					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Name: fileArtifactName,
-						Uuid: pyg.generateUuid(),
+						Uuid: strconv.Itoa(pyg.generateUuid()),
 					}
 					// add to the index and append to the plan yaml
 					pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
@@ -510,7 +511,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 	//}
 	for _, storeSpec := range storeSpecs {
 		// add the FilesArtifact to list of all files artifacts and index
-		uuid := pyg.generateUuid()
+		uuid := strconv.Itoa(pyg.generateUuid())
 		var newFilesArtifactFromStoreSpec = &FilesArtifact{
 			Uuid:  uuid,
 			Name:  storeSpec.GetName(),
@@ -538,7 +539,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 	//	return castErr
 	//}
 	task = &Task{ //nolint:exhaustruct
-		Uuid:     pyg.generateUuid(),
+		Uuid:     strconv.Itoa(pyg.generateUuid()),
 		TaskType: PYTHON,
 	}
 
@@ -640,7 +641,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
 					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Name: fileArtifactName,
-						Uuid: pyg.generateUuid(),
+						Uuid: strconv.Itoa(pyg.generateUuid()),
 					}
 					// add to the index and append to the plan yaml
 					pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
@@ -667,7 +668,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 	//}
 	for _, storeSpec := range storeSpecs {
 		// add the FilesArtifact to list of all files artifacts and index
-		uuid := pyg.generateUuid()
+		uuid := strconv.Itoa(pyg.generateUuid())
 		var newFilesArtifactFromStoreSpec = &FilesArtifact{
 			Uuid:  uuid,
 			Name:  storeSpec.GetName(),
@@ -696,7 +697,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreServiceFiles(storeServi
 		return castErr
 	}
 	filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-		Uuid: pyg.generateUuid(),
+		Uuid: strconv.Itoa(pyg.generateUuid()),
 		Name: filesArtifactName,
 	}
 
@@ -737,7 +738,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instru
 	task = &Task{ //nolint:exhaustruct
 		ServiceName: serviceNameArgumentValue.GoString(),
 		TaskType:    EXEC,
-		Uuid:        pyg.generateUuid(),
+		Uuid:        strconv.Itoa(pyg.generateUuid()),
 	}
 
 	execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, exec.RecipeArgName)
