@@ -26,13 +26,16 @@ var (
 	testModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
 	testModuleRelativeLocator = "./helpers.star"
 
-	testContainerImageName       = "kurtosistech/example-datastore-server"
-	testBuildContextDir          = "./"
-	testTargetStage              = "builder"
-	testBuildContextLocator      = testModulePackageId
-	testContainerImageLocator    = "github.com/kurtosistech/test-package/Dockerfile"
-	testOnDiskContextDirPath     = "kurtosis-data/test-package"
-	testOnDiskContainerImagePath = "kurtosis-data/test-package/Dockerfile"
+	testContainerImageName                    = "kurtosistech/example-datastore-server"
+	testBuildContextDir                       = "./"
+	testBuildFile                             = "foo.Dockerfile"
+	testTargetStage                           = "builder"
+	testBuildContextLocator                   = testModulePackageId
+	testContainerImageLocator                 = "github.com/kurtosistech/test-package/Dockerfile"
+	testContainerImageLocatorWithBuildFile    = "github.com/kurtosistech/test-package/foo.Dockerfile"
+	testOnDiskContextDirPath                  = "kurtosis-data/test-package"
+	testOnDiskContainerImagePath              = "kurtosis-data/test-package/Dockerfile"
+	testOnDiskContainerImagePathWithBuildFile = "kurtosis-data/test-package/foo.Dockerfile"
 
 	testNixContextDir           = "./"
 	testNixImageName            = "test-image"
