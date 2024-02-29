@@ -83,4 +83,5 @@ func extractExitCodeAfterExecution(err error) int {
 func displayErrorMessageToCli(err error) bool {
 	rootCause := stacktrace.RootCause(err)
 	return !errors.Is(rootCause, command_str_consts.ErrorMessageDueToStarlarkFailure)
+
 }
