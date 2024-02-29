@@ -198,8 +198,6 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	}
 	pyg.futureReferenceIndex[futureRefHostName] = fmt.Sprintf("{{ kurtosis.%v.hostname }}", uuid)
 
-	service.Uuid = uuid
-
 	var regErr error
 	serviceName, regErr := builtin_argument.ExtractArgumentValue[starlark.String](arguments, add_service.ServiceNameArgName)
 	if regErr != nil {
@@ -421,7 +419,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", tasks.RunArgName)
 	}
-	task.RunCmd = []string{runCommand.GoString()}
+	task.RunCmd = []string{pyg.swapFutureReference(runCommand.GoString())}
 
 	var image string
 	if arguments.IsSet(tasks.ImageNameArgName) {
@@ -597,6 +595,9 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 		if sliceParsingErr != nil {
 			return startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of passed arguments to a golang string slice")
 		}
+		for idx, arg := range argsList {
+			argsList[idx] = pyg.swapFutureReference(arg)
+		}
 		task.PythonArgs = append(task.PythonArgs, argsList...)
 	}
 
@@ -748,17 +749,12 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instru
 		return interpretationErr
 	}
 	// Convert Starlark list to Go slice
-	var cmdList []string
-	iter := commandStarlarkList.Iterate()
-	defer iter.Done()
-	var x starlark.Value
-	for iter.Next(&x) {
-		if i, ok := x.(starlark.String); ok {
-			cmdList = append(cmdList, i.GoString())
-		} else {
-			// Handle the case if the element is not an integer
-			fmt.Println("Non-string element found in Starlark list")
-		}
+	cmdList, sliceParsingErr := kurtosis_types.SafeCastToStringSlice(commandStarlarkList, tasks.PythonArgumentsArgName)
+	if sliceParsingErr != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of passed arguments to a golang string slice")
+	}
+	for idx, cmd := range cmdList {
+		cmdList[idx] = pyg.swapFutureReference(cmd)
 	}
 	task.RunCmd = cmdList
 

@@ -5,18 +5,18 @@ services:
   image:
     name: postgres:alpine
   envVars:
-  - key: POSTGRES_PASSWORD
-    value: tedi
   - key: POSTGRES_DB
     value: tedi
   - key: POSTGRES_USER
+    value: tedi
+  - key: POSTGRES_PASSWORD
     value: tedi
 tasks:
 - uuid: 2
   taskType: exec
   command:
   - echo
-  - Hello, world
+  - '{{ kurtosis.1.ip_address }}'
   serviceName: db
   acceptableCodes:
   - 156

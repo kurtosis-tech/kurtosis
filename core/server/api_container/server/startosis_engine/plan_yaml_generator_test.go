@@ -137,7 +137,7 @@ CMD ["node", "app.js"]
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
-    plan.add_service(
+    database = plan.add_service(
         name="db",
         config=ServiceConfig(
             image="postgres:alpine",
@@ -151,7 +151,7 @@ CMD ["node", "app.js"]
 
     result = plan.exec(
         service_name = "db",
-        recipe = ExecRecipe(command = ["echo", "Hello, world"]),
+        recipe = ExecRecipe(command = ["echo", database.ip_address]),
         acceptable_codes=[156],
     )
     plan.print(result)
