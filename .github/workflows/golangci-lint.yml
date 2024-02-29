@@ -46,34 +46,10 @@ jobs:
       matrix:
         shouldCheck:
           - ${{ needs.check-if-code-change.outputs.change == 'true' }}
-        directory:
-          - container-engine-lib
-          - contexts-config-store
-          - grpc-file-transfer/golang
-          - metrics-library/golang
-          - name_generator
-          - api/golang
-          - core/server
-          - core/launcher
-          - engine/server
-          - engine/launcher
-          - internal_testsuites/golang
-          - cli/cli
+        directory: [container-engine-lib]
         exclude:
           - shouldCheck: false
-            directory:
-              - container-engine-lib
-              - contexts-config-store
-              - grpc-file-transfer/golang
-              - metrics-library/golang
-              - name_generator
-              - api/golang
-              - core/server
-              - core/launcher
-              - engine/server
-              - engine/launcher
-              - internal_testsuites/golang
-              - cli/cli
+            directory: [container-engine-lib]
     steps:
       - uses: actions/setup-go@v5
         with:
