@@ -12,6 +12,7 @@
     gomod2nix.url = "github:nix-community/gomod2nix";
     gomod2nix.inputs.nixpkgs.follows = "nixpkgs";
     gomod2nix.inputs.flake-utils.follows = "flake-utils";
+    flake-compat.url = "github:edolstra/flake-compat";
   };
 
   outputs =
