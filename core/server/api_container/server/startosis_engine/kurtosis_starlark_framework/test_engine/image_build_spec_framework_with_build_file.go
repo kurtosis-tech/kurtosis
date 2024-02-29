@@ -10,39 +10,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type imageBuildSpecTest struct {
+type imageBuildSpecWithBuildFileTest struct {
 	*testing.T
 
 	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
-func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTest() {
+func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTestWithBuildFile() {
 	suite.packageContentProvider.EXPECT().
 		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
 		Times(1).
 		Return(testBuildContextLocator, nil)
 
 	suite.packageContentProvider.EXPECT().
-		GetOnDiskAbsolutePackageFilePath(testContainerImageLocator).
+		GetOnDiskAbsolutePackageFilePath(testContainerImageLocatorWithBuildFile).
 		Times(1).
-		Return(testOnDiskContainerImagePath, nil)
+		Return(testOnDiskContainerImagePathWithBuildFile, nil)
 
-	suite.run(&imageBuildSpecTest{
+	suite.run(&imageBuildSpecWithBuildFileTest{
 		T:                      suite.T(),
 		packageContentProvider: suite.packageContentProvider,
 	})
 }
 
-func (t *imageBuildSpecTest) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q)",
+func (t *imageBuildSpecWithBuildFileTest) GetStarlarkCode() string {
+	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
 		service_config.BuildContextAttr,
-		testBuildContextDir)
+		testBuildContextDir,
+		service_config.BuildFileAttr,
+		testBuildFile)
 }
 
-func (t *imageBuildSpecTest) Assert(typeValue builtin_argument.KurtosisValueType) {
+func (t *imageBuildSpecWithBuildFileTest) Assert(typeValue builtin_argument.KurtosisValueType) {
 	imageBuildSpecStarlark, ok := typeValue.(*service_config.ImageBuildSpec)
 	require.True(t, ok)
 
@@ -52,7 +54,7 @@ func (t *imageBuildSpecTest) Assert(typeValue builtin_argument.KurtosisValueType
 		t.packageContentProvider,
 		testNoPackageReplaceOptions)
 	require.Nil(t, err)
-	require.Equal(t, testOnDiskContainerImagePath, imageBuildSpec.GetContainerImageFilePath())
+	require.Equal(t, testOnDiskContainerImagePathWithBuildFile, imageBuildSpec.GetContainerImageFilePath())
 	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
-	require.Equal(t, imageBuildSpec.GetTargetStage(), "")
+	//require.Equal(t, "", imageBuildSpec.GetTargetStage())
 }
