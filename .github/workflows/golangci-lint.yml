@@ -44,26 +44,32 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        shouldCheck:
-          - true
-        directory: [container-engine-lib]
-        exclude:
-          - shouldCheck: true
-            directory: [container-engine-lib]
-    leo-debug: false
+        directory:
+          - container-engine-lib
+          - contexts-config-store
+          - grpc-file-transfer/golang
+          - metrics-library/golang
+          - name_generator
+          - api/golang
+          - core/server
+          - core/launcher
+          - engine/server
+          - engine/launcher
+          - internal_testsuites/golang
+          - cli/cli
     steps:
       - uses: actions/setup-go@v5
-        if: ${{ leo-debug }}
+        if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
         with:
           go-version: '1.20'
       - uses: actions/checkout@v4
-        if: ${{ leo-debug }}
+        if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
       # Generate versions
       - run: scripts/generate-kurtosis-version.sh
-        if: ${{ leo-debug }}
+        if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
       - name: lint-container-engine-lib
         uses: golangci/golangci-lint-action@v4
-        if: ${{ leo-debug }}
+        if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
         with:
           version: ${{ env.GOLINT_VERSION }}
           working-directory: ${{ matrix.directory }}
