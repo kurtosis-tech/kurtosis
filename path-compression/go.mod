@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis/utils
+module github.com/kurtosis-tech/kurtosis/path_compression
 
 go 1.20
 

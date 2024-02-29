@@ -2,7 +2,7 @@ module github.com/kurtosis-tech/kurtosis/container-engine-lib
 
 go 1.20
 
-replace github.com/kurtosis-tech/kurtosis/utils => ../utils
+replace github.com/kurtosis-tech/kurtosis/utils => ./../path-compression
 
 require (
 	github.com/dmarkham/enumer v1.5.5

@@ -11,7 +11,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/metrics-library/golang => ../../metrics-library/golang
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
-	github.com/kurtosis-tech/kurtosis/utils => ../../utils
+	github.com/kurtosis-tech/kurtosis/utils => ./../../path-compression
 )
 
 require (
