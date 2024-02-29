@@ -2,8 +2,6 @@ module github.com/kurtosis-tech/kurtosis/cli/cli
 
 go 1.21
 
-toolchain go1.21.5
-
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang => ../../cloud/api/golang

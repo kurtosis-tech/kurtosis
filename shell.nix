@@ -23,7 +23,7 @@ in pkgs.mkShell {
       goEngineEnv
 
       goreleaser
-      go_1_20
+      go_1_21
       gopls
       golangci-lint
       delve

@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/api/golang
 
-go 1.20
+go 1.21
 
 replace (
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang => ../../cloud/api/golang

@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang
 
-go 1.20
+go 1.21
 
 require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409

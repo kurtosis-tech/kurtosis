@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite
 
-go 1.20
+go 1.21
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
@@ -35,7 +35,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-yaml/yaml v2.1.0+incompatible // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.4.0 // indirect
+	github.com/google/uuid v1.5.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2 // indirect
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // indirect
@@ -47,7 +47,7 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto v0.0.0-20230706204954-ccb25ca9f130 // indirect

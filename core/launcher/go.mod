@@ -2,8 +2,6 @@ module github.com/kurtosis-tech/kurtosis/core/launcher
 
 go 1.21
 
-toolchain go1.21.5
-
 replace (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version

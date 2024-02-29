@@ -17,6 +17,7 @@ in buildGoApplication {
   # pname has to match the location (folder) where the main function is or use
   # subPackges to specify the file (e.g. subPackages = ["some/folder/main.go"];)
   inherit pname ldflags;
+  go = pkgs.go_1_21;
   version = "${kurtosis_version}";
   pwd = ./.;
   src = ./.;

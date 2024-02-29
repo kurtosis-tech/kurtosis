@@ -2,8 +2,6 @@ module github.com/kurtosis-tech/kurtosis/container-engine-lib
 
 go 1.21
 
-toolchain go1.21.5
-
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../api/golang
 	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../contexts-config-store
