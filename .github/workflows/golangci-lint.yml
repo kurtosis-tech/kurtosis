@@ -48,7 +48,7 @@ jobs:
           - ${{ needs.check-if-code-change.outputs.change == 'true' }}
         directory: [container-engine-lib]
         exclude:
-          - shouldCheck: false
+          - shouldCheck: true
             directory: [container-engine-lib]
     steps:
       - uses: actions/setup-go@v5
