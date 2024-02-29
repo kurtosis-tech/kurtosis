@@ -110,6 +110,10 @@ service = plan.get_service(
   # The name of the service to get
   # MANDATORY
   name = "my-service"
+
+  # A human friendly description for the end user of the package
+  # OPTIONAL (Default: Fetching service 'SERVICE_NAME')
+  description = "gets you a service"
 )
 ```
 

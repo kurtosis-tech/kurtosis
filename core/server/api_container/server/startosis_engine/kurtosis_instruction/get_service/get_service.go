@@ -19,7 +19,7 @@ const (
 	GetServiceBuiltinName = "get_service"
 	ServiceNameArgName    = "name"
 
-	descriptionFormatStr = "Fetched service '%v'"
+	descriptionFormatStr = "Fetching service '%v'"
 )
 
 func NewGetService(interpretationTimeStore *interpretation_time_value_store.InterpretationTimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -61,6 +61,7 @@ func (builtin *GetServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 	serviceName := service.ServiceName(serviceNameArgumentValue.GoString())
 
 	builtin.serviceName = serviceName
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
 
 	serviceStarlarkValue, err := builtin.interpretationTimeStore.GetService(serviceName)
 	if err != nil {
@@ -81,8 +82,7 @@ func (builtin *GetServiceCapabilities) Execute(_ context.Context, _ *builtin_arg
 	// Note this is a no-op.
 	// Perhaps this instruction should be like `read_file` instead and not a part of any plan
 	// But that shouldn't be done outside a function; so it's here for now
-	builtin.description = fmt.Sprintf(descriptionFormatStr, builtin.serviceName)
-	return fmt.Sprintf(descriptionFormatStr, builtin.serviceName), nil
+	return fmt.Sprintf("Fetched service '%v'", builtin.serviceName), nil
 }
 
 func (builtin *GetServiceCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
