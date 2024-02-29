@@ -30,6 +30,9 @@ func NewArgumentValuesSet(argumentsDefinition []*BuiltinArgument, values []starl
 }
 
 func CreateNewArgumentValuesSet(builtinName string, argumentsDefinition []*BuiltinArgument, args starlark.Tuple, kwargs []starlark.Tuple) (*ArgumentValuesSet, *startosis_errors.InterpretationError) {
+	// We add the description argument; which comes with all instructions
+	descriptionArgument := createDescriptionArgument()
+	argumentsDefinition = append(argumentsDefinition, descriptionArgument)
 	argumentValues, err := parseArguments(argumentsDefinition, builtinName, args, kwargs)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Cannot construct '%s' from the provided arguments.", builtinName)
@@ -115,9 +118,6 @@ func (arguments *ArgumentValuesSet) String() string {
 
 func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, args starlark.Tuple, kwargs []starlark.Tuple) ([]starlark.Value, error) {
 	var pairs []interface{}
-	// We add the description argument; which comes with all instructions
-	descriptionArgument := createDescriptionArgument()
-	argumentDefinitions = append(argumentDefinitions, descriptionArgument)
 	storedValues := make([]starlark.Value, len(argumentDefinitions))
 	for idx, argumentDefinition := range argumentDefinitions {
 		if argumentDefinition.IsOptional {
