@@ -93,6 +93,8 @@ type PlanYamlGeneratorImpl struct {
 
 	// Representation of plan in yaml the plan is being processed, the yaml gets updated
 	planYaml *PlanYaml
+
+	uuidGenerator int
 }
 
 func NewPlanYamlGenerator(
@@ -114,8 +116,7 @@ func NewPlanYamlGenerator(
 		},
 		filesArtifactIndex: map[string]*FilesArtifact{},
 		serviceIndex:       map[string]*Service{},
-		taskIndex:          map[string]*Task{},
-	}
+		taskIndex:          map[string]*Task{}}
 }
 
 func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
@@ -165,7 +166,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	// start building Service Yaml object
 	service := &Service{} //nolint:exhaustruct
 
-	service.Uuid = string(addServiceInstruction.GetUuid()) // TODO: mock uuid generator for testing
+	service.Uuid = pyg.generateUuid()
 
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, add_service.ServiceNameArgName)
 	if err != nil {
@@ -272,6 +273,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
 					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Name: identifier,
+						Uuid: pyg.generateUuid(),
 					}
 					pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
 					pyg.filesArtifactIndex[identifier] = filesArtifact
@@ -300,7 +302,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromUploadFiles(uploadFilesInstr
 	}
 	filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 		Name: filesArtifactName,
-		Uuid: string(uploadFilesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
+		Uuid: pyg.generateUuid(),
 	}
 
 	// get files of returned files artifact off render templates config
@@ -326,7 +328,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(renderTempla
 		return castErr
 	}
 	filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-		Uuid: string(renderTemplatesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
+		Uuid: pyg.generateUuid(),
 		Name: filesArtifactName,
 	}
 
@@ -356,15 +358,13 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(renderTempla
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *instructions_plan.ScheduledInstruction) error {
 	var task *Task
 
-	// set instruction uuid
-	instructionUuid := string(runShInstruction.GetUuid())
 	// get the name of
 	//runShInstructionName, castErr := kurtosis_types.SafeCastToString(runShInstruction.GetInstruction(), "")
 	//if castErr != nil {
 	//	return castErr
 	//}
 	task = &Task{ //nolint:exhaustruct
-		Uuid:     instructionUuid,
+		Uuid:     pyg.generateUuid(),
 		TaskType: SHELL,
 	}
 
@@ -438,6 +438,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
 					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Name: fileArtifactName,
+						Uuid: pyg.generateUuid(),
 					}
 					// add to the index and append to the plan yaml
 					pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
@@ -464,15 +465,16 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 	//}
 	for _, storeSpec := range storeSpecs {
 		// add the FilesArtifact to list of all files artifacts and index
+		uuid := pyg.generateUuid()
 		var newFilesArtifactFromStoreSpec = &FilesArtifact{
-			Uuid:  instructionUuid,
+			Uuid:  uuid,
 			Name:  storeSpec.GetName(),
 			Files: []string{storeSpec.GetSrc()},
 		}
 		pyg.filesArtifactIndex[storeSpec.GetName()] = newFilesArtifactFromStoreSpec
 		pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, newFilesArtifactFromStoreSpec)
 		store = append(store, &FilesArtifact{ //nolint:exhaustruct
-			Uuid: instructionUuid,
+			Uuid: uuid,
 			Name: storeSpec.GetName(),
 		})
 	}
@@ -486,15 +488,12 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstruction *instructions_plan.ScheduledInstruction) error {
 	var task *Task
 
-	// set instruction uuid
-	instructionUuid := string(runPythonInstruction.GetUuid())
-	// get the name of
 	//runShInstructionName, castErr := kurtosis_types.SafeCastToString(runShInstruction.GetInstruction(), "")
 	//if castErr != nil {
 	//	return castErr
 	//}
 	task = &Task{ //nolint:exhaustruct
-		Uuid:     instructionUuid,
+		Uuid:     pyg.generateUuid(),
 		TaskType: PYTHON,
 	}
 
@@ -593,6 +592,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
 					filesArtifact = &FilesArtifact{ //nolint:exhaustruct
 						Name: fileArtifactName,
+						Uuid: pyg.generateUuid(),
 					}
 					// add to the index and append to the plan yaml
 					pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
@@ -619,15 +619,16 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 	//}
 	for _, storeSpec := range storeSpecs {
 		// add the FilesArtifact to list of all files artifacts and index
+		uuid := pyg.generateUuid()
 		var newFilesArtifactFromStoreSpec = &FilesArtifact{
-			Uuid:  instructionUuid,
+			Uuid:  uuid,
 			Name:  storeSpec.GetName(),
 			Files: []string{storeSpec.GetSrc()},
 		}
 		pyg.filesArtifactIndex[storeSpec.GetName()] = newFilesArtifactFromStoreSpec
 		pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, newFilesArtifactFromStoreSpec)
 		store = append(store, &FilesArtifact{ //nolint:exhaustruct
-			Uuid: instructionUuid,
+			Uuid: uuid,
 			Name: storeSpec.GetName(),
 		})
 	}
@@ -647,21 +648,21 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreServiceFiles(storeServi
 		return castErr
 	}
 	filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-		Uuid: string(storeServiceFilesInstruction.GetUuid()), // give the FilesArtifact the uuid of the originating instruction
+		Uuid: pyg.generateUuid(),
 		Name: filesArtifactName,
 	}
 
 	arguments := storeServiceFilesInstruction.GetInstruction().GetArguments()
 	// set the uuid to be the uuid of the service that this files artifact comes from
-	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, store_service_files.ServiceNameArgName)
-	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", store_service_files.ServiceNameArgName)
-	}
-	if service, ok := pyg.serviceIndex[serviceName.GoString()]; !ok {
-		return startosis_errors.NewInterpretationError("A service that hasn't been tracked was found on a store service instruction.")
-	} else {
-		filesArtifact.Uuid = service.Uuid
-	}
+	//serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, store_service_files.ServiceNameArgName)
+	//if err != nil {
+	//	return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", store_service_files.ServiceNameArgName)
+	//}
+	//if service, ok := pyg.serviceIndex[serviceName.GoString()]; !ok {
+	//	return startosis_errors.NewInterpretationError("A service that hasn't been tracked was found on a store service instruction.")
+	//} else {
+	//	filesArtifact.Uuid = service.Uuid
+	//}
 
 	// parse for files
 	src, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, store_service_files.SrcArgName)
@@ -688,6 +689,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instru
 	task = &Task{ //nolint:exhaustruct
 		ServiceName: serviceNameArgumentValue.GoString(),
 		TaskType:    EXEC,
+		Uuid:        pyg.generateUuid(),
 	}
 
 	execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, exec.RecipeArgName)
@@ -751,4 +753,9 @@ func convertPlanYamlToYaml(planYaml *PlanYaml) ([]byte, error) {
 
 func getBuiltinNameFromInstruction(instruction *instructions_plan.ScheduledInstruction) string {
 	return instruction.GetInstruction().GetCanonicalInstruction(false).GetInstructionName()
+}
+
+func (pyg *PlanYamlGeneratorImpl) generateUuid() int {
+	pyg.uuidGenerator++
+	return pyg.uuidGenerator
 }

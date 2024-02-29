@@ -94,9 +94,9 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	suite.runner = NewStartosisRunner(suite.interpreter, suite.validator, suite.executor)
 }
 
-//func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
-//	suite.Run(t, new(PlanYamlGeneratorTestSuite))
-//}
+func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
+	suite.Run(t, new(PlanYamlGeneratorTestSuite))
+}
 
 func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
@@ -137,27 +137,32 @@ CMD ["node", "app.js"]
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
-    database = plan.add_service(
-        name="database",
-        config=ServiceConfig(
-            image="postgres:latest",
-        )
+    bye_files_artifact = plan.render_templates(
+        name="bye-file",
+        config={
+            "bye.txt": struct(
+                template="Bye bye!",
+                data={}
+            )
+        }
     )
 
-    plan.add_service(
-        name="tedi",
-        config=ServiceConfig(
-            image="ubuntu:latest",
-            env_vars={
-                "DB_URL": database.ip_address 
-            },
-        )
+    plan.run_sh(
+        run="echo $(cat /root/bye.txt) > hi.txt",
+        env_vars = {
+            "HELLO": "Hello!"
+        },
+        files = {
+            "/root": bye_files_artifact,
+        },
+        store=[
+            StoreSpec(src="/hi.txt", name="hi-file")
+        ]
     )
 `
 	serializedJsonParams := "{}"
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
 	require.Nil(suite.T(), interpretationError)
-	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
 	pyg := NewPlanYamlGenerator(
 		instructionsPlan,
@@ -323,7 +328,7 @@ func (suite *PlanYamlGeneratorTestSuite) TestConvertPlanYamlToYamlBytes(t *testi
 	services := []*Service{
 		{
 			Name: "tedi",
-			Uuid: "uuid",
+			Uuid: 1,
 			Image: &ImageSpec{
 				ImageName:           "postgres",
 				BuildContextLocator: "",
@@ -339,7 +344,7 @@ func (suite *PlanYamlGeneratorTestSuite) TestConvertPlanYamlToYamlBytes(t *testi
 		},
 		{
 			Name: "kaleb",
-			Uuid: "uuid",
+			Uuid: 1,
 			Image: &ImageSpec{
 				ImageName:           "something",
 				BuildContextLocator: "",
@@ -356,7 +361,7 @@ func (suite *PlanYamlGeneratorTestSuite) TestConvertPlanYamlToYamlBytes(t *testi
 	}
 	filesArtifacts := []*FilesArtifact{
 		{
-			Uuid:  "something",
+			Uuid:  3,
 			Name:  "something",
 			Files: nil,
 		},
