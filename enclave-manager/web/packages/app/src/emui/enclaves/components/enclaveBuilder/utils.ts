@@ -61,37 +61,49 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
         {
           id: `service.${id}.name`,
           displayName: `${data.name}`,
-          value: `${normaliseNameToStarlarkVariable(data.name)}.name`,
+          value: `${
+            data.isFromPackage ? `plan.get_service(name="${data.name}")` : normaliseNameToStarlarkVariable(data.name)
+          }.name`,
         },
         {
           id: `service.${id}.hostname`,
           displayName: `${data.name}.hostname`,
-          value: `${normaliseNameToStarlarkVariable(data.name)}.hostname`,
+          value: `${
+            data.isFromPackage ? `plan.get_service(name="${data.name}")` : normaliseNameToStarlarkVariable(data.name)
+          }.hostname`,
         },
         {
           id: `service.${id}.ip_address`,
           displayName: `${data.name}.ip_address`,
-          value: `${normaliseNameToStarlarkVariable(data.name)}.ip_address`,
+          value: `${
+            data.isFromPackage ? `plan.get_service(name="${data.name}")` : normaliseNameToStarlarkVariable(data.name)
+          }.ip_address`,
         },
         ...data.ports.flatMap((port, i) => [
           {
             id: `service.${id}.ports.${i}`,
             displayName: `${data.name}.ports.${port.name}`,
-            value: `"{}://{}:{}".format(${normaliseNameToStarlarkVariable(data.name)}.ports["${
-              port.name
-            }"].application_protocol, ${normaliseNameToStarlarkVariable(
-              data.name,
-            )}.hostname, ${normaliseNameToStarlarkVariable(data.name)}.ports["${port.name}"].number)`,
+            value: `"{}://{}:{}".format(${
+              data.isFromPackage ? `plan.get_service(name="${data.name}")` : normaliseNameToStarlarkVariable(data.name)
+            }.ports["${port.name}"].application_protocol, ${
+              data.isFromPackage ? `plan.get_service(name="${data.name}")` : normaliseNameToStarlarkVariable(data.name)
+            }.hostname, ${
+              data.isFromPackage ? `plan.get_service(name="${data.name}")` : normaliseNameToStarlarkVariable(data.name)
+            }.ports["${port.name}"].number)`,
           },
           {
             id: `service.${id}.ports.${i}.port`,
             displayName: `${data.name}.ports.${port.name}.port`,
-            value: `str(${normaliseNameToStarlarkVariable(data.name)}.ports["${port.name}"].number)`,
+            value: `str(${
+              data.isFromPackage ? `plan.get_service(name="${data.name}")` : normaliseNameToStarlarkVariable(data.name)
+            }.ports["${port.name}"].number)`,
           },
           {
             id: `service.${id}.ports.${i}.applicationProtocol`,
             displayName: `${data.name}.ports.${port.name}.application_protocol`,
-            value: `${normaliseNameToStarlarkVariable(data.name)}.ports["${port.name}"].application_protocol`,
+            value: `${
+              data.isFromPackage ? `plan.get_service(name="${data.name}")` : normaliseNameToStarlarkVariable(data.name)
+            }.ports["${port.name}"].application_protocol`,
           },
         ]),
         ...data.env.map((env, i) => ({
