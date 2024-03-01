@@ -29,7 +29,6 @@ export const VariableContextProvider = ({ initialData, children }: PropsWithChil
 
   const updateData = useCallback(
     (id: string, data: KurtosisNodeData | ((oldData: KurtosisNodeData) => KurtosisNodeData)) => {
-      console.log(`${id} was updated`);
       setData((oldData) => ({ ...oldData, [id]: typeof data === "object" ? data : data(oldData[id]) }));
     },
     [],

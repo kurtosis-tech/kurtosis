@@ -38,7 +38,7 @@ export const KurtosisServiceNode = memo(
               size={"sm"}
               isRequired
               validate={validateName}
-              isReadOnly={nodeData.isFromPackage}
+              disabled={nodeData.isFromPackage}
             />
           </KurtosisFormControl>
           <KurtosisFormControl<KurtosisServiceNodeData>
@@ -119,7 +119,7 @@ export const KurtosisServiceNode = memo(
                   }
                   isDisabled={nodeData.isFromPackage}
                 >
-                  <StringArgumentInput name={"entrypoint"} size={"sm"} isReadOnly={nodeData.isFromPackage} />
+                  <MentionStringArgumentInput name={"entrypoint"} size={"sm"} disabled={nodeData.isFromPackage} />
                 </KurtosisFormControl>
                 <KurtosisFormControl<KurtosisServiceNodeData>
                   name={"cmd"}
@@ -129,7 +129,7 @@ export const KurtosisServiceNode = memo(
                   }
                   isDisabled={nodeData.isFromPackage}
                 >
-                  <StringArgumentInput name={"cmd"} size={"sm"} isReadOnly={nodeData.isFromPackage} />
+                  <MentionStringArgumentInput name={"cmd"} size={"sm"} disabled={nodeData.isFromPackage} />
                 </KurtosisFormControl>
               </Flex>
             </TabPanel>

@@ -101,12 +101,27 @@ export const KurtosisPackageNode = memo(
             })),
           ];
 
+          const futureReferencePattern = /\{\{\s*kurtosis\.([^.]+)\.(\S+?)\s*}}/;
+          const convertFutureReferences = (input: string): string => {
+            // All future references are assumed to be for services
+            let result = input;
+            let match = result.match(futureReferencePattern);
+            while (isDefined(match)) {
+              result = result.replaceAll(match[0], `{{service.${id}:${match[1]}.${match[2]}}}`);
+              match = result.match(futureReferencePattern);
+            }
+            return result;
+          };
+
           (parsedPlan.services || []).forEach((service) =>
             updateData(`${id}:${service.uuid}`, {
               type: "service",
               name: service.name,
               isFromPackage: true,
-              env: service.envVars || [],
+              env: (service.envVars || []).map(({ key, value }) => ({
+                key: convertFutureReferences(key),
+                value: convertFutureReferences(value),
+              })),
               image: {
                 type: "image",
                 image: service.image.name,
@@ -131,8 +146,8 @@ export const KurtosisPackageNode = memo(
                   mountPoint: file.mountPath,
                 })),
               ),
-              cmd: (service.command || []).join(" "),
-              entrypoint: (service.entrypoint || []).join(" "),
+              cmd: convertFutureReferences((service.command || []).join(" ")),
+              entrypoint: convertFutureReferences((service.entrypoint || []).join(" ")),
             }),
           );
           (parsedPlan.tasks || []).forEach((task) => {

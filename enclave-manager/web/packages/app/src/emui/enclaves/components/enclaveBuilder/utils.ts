@@ -68,6 +68,11 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
           displayName: `${data.name}.hostname`,
           value: `${normaliseNameToStarlarkVariable(data.name)}.hostname`,
         },
+        {
+          id: `service.${id}.ip_address`,
+          displayName: `${data.name}.ip_address`,
+          value: `${normaliseNameToStarlarkVariable(data.name)}.ip_address`,
+        },
         ...data.ports.flatMap((port, i) => [
           {
             id: `service.${id}.ports.${i}`,
@@ -153,6 +158,14 @@ export function getNodeDependencies(nodes: Record<string, KurtosisNodeData>): Re
       const nameMatches = data.name.match(variablePattern);
       if (nameMatches) {
         getDependenciesFor(id).add(nameMatches[2]);
+      }
+      const cmdMatches = data.cmd.match(variablePattern);
+      if (cmdMatches) {
+        getDependenciesFor(id).add(cmdMatches[2]);
+      }
+      const entrypointMatches = data.entrypoint.match(variablePattern);
+      if (entrypointMatches) {
+        getDependenciesFor(id).add(entrypointMatches[2]);
       }
       data.env.forEach((env) => {
         const envMatches = env.key.match(variablePattern) || env.value.match(variablePattern);
