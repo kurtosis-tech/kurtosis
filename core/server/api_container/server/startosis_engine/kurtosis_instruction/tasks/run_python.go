@@ -38,6 +38,8 @@ const (
 	pipInstallCmd = "pip install"
 
 	successfulPipRunExitCode = 0
+
+	runPythonDefaultDescription = "Running Python script"
 )
 
 func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, nonBlockingMode bool) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -106,6 +108,7 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 				resultUuid:        "",  // populated at interpretation time
 				storeSpecList:     nil,
 				wait:              DefaultWaitTimeoutDurationStr,
+				description:       "", // populated at interpretation time
 			}
 		},
 
@@ -136,6 +139,7 @@ type RunPythonCapabilities struct {
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
 	wait          string
+	description   string
 }
 
 func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -238,6 +242,8 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	}
 	builtin.resultUuid = resultUuid
 
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, runPythonDefaultDescription)
+
 	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return result, nil
 }
@@ -328,7 +334,7 @@ func (builtin *RunPythonCapabilities) FillPersistableAttributes(builder *enclave
 }
 
 func (builtin *RunPythonCapabilities) Description() string {
-	return "Running Python script"
+	return builtin.description
 }
 
 func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {

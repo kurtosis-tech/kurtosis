@@ -33,6 +33,7 @@ const (
 	templateDataFieldKey    = "data"
 	jsonParsingThreadName   = "Unused thread name"
 	jsonParsingModuleId     = "Unused module id"
+	descriptionFormatStr    = "Rendering a template to a files artifact with name '%v'"
 )
 
 func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -63,6 +64,7 @@ func NewRenderTemplatesInstruction(serviceNetwork service_network.ServiceNetwork
 
 				artifactName:                      "",  // will be populated at interpretation time
 				templatesAndDataByDestRelFilepath: nil, // will be populated at interpretation time
+				description:                       "",  // populated at interpretation time
 			}
 		},
 
@@ -79,6 +81,8 @@ type RenderTemplatesCapabilities struct {
 	templatesAndDataByDestRelFilepath map[string]*render_templates.TemplateData
 
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
+
+	description string
 }
 
 func (builtin *RenderTemplatesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -105,6 +109,7 @@ func (builtin *RenderTemplatesCapabilities) Interpret(_ string, arguments *built
 		return nil, interpretationErr
 	}
 	builtin.templatesAndDataByDestRelFilepath = templatesAndDataByDestRelFilepath
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.artifactName))
 	return starlark.String(builtin.artifactName), nil
 }
 
@@ -169,7 +174,7 @@ func (builtin *RenderTemplatesCapabilities) FillPersistableAttributes(builder *e
 }
 
 func (builtin *RenderTemplatesCapabilities) Description() string {
-	return fmt.Sprintf("Rendering a template to a files artifact with name '%v'", builtin.artifactName)
+	return builtin.description
 }
 
 func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*render_templates.TemplateData, *startosis_errors.InterpretationError) {
