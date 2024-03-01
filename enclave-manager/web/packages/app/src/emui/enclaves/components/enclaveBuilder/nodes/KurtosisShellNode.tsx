@@ -11,6 +11,7 @@ import { StringArgumentInput } from "../../form/StringArgumentInput";
 import { ImageConfigInput } from "../input/ImageConfigInput";
 import { MentionStringArgumentInput } from "../input/MentionStringArgumentInput";
 import { MountArtifactFileInput } from "../input/MountArtifactFileInput";
+import { StoreConfigurationInput } from "../input/StoreConfigurationInput";
 import { validateDurationString, validateName } from "../input/validators";
 import { KurtosisFileMount, KurtosisShellNodeData } from "../types";
 import { useVariableContext } from "../VariableContextProvider";
@@ -108,11 +109,11 @@ export const KurtosisShellNode = memo(
                 isRequired
                 isDisabled={nodeData.isFromPackage}
               >
-                <MentionStringArgumentInput<KurtosisShellNodeData>
+                <ListArgumentInput
                   name={"store"}
-                  placeholder={"/some/output/location"}
-                  isRequired
-                  disabled={nodeData.isFromPackage}
+                  FieldComponent={StoreConfigurationInput}
+                  createNewValue={() => ({ name: "", path: "" })}
+                  minLength={1}
                 />
               </KurtosisFormControl>
             </TabPanel>

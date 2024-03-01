@@ -9,7 +9,7 @@ import { KurtosisFormControl } from "../../form/KurtosisFormControl";
 import { StringArgumentInput } from "../../form/StringArgumentInput";
 import { validateName } from "../input/validators";
 import { ConfigurePackageNodeModal } from "../modals/ConfigurePackageNodeModal";
-import { KurtosisPackageNodeData, PlanTask, PlanYaml } from "../types";
+import { KurtosisPackageNodeData, PlanFileArtifact, PlanTask, PlanYaml } from "../types";
 import { useVariableContext } from "../VariableContextProvider";
 import { KurtosisNode } from "./KurtosisNode";
 
@@ -69,21 +69,40 @@ export const KurtosisPackageNode = memo(
             (acc: Record<string, PlanTask>, task) => ({ ...acc, [task.uuid]: task }),
             {},
           );
-          const artifactTypes = (parsedPlan.filesArtifacts || []).reduce(
-            (acc: Record<string, string>, artifact) => ({
-              ...acc,
-              [artifact.uuid]:
-                taskLookup[artifact.uuid]?.taskType === "sh"
-                  ? "shell"
-                  : taskLookup[artifact.uuid]?.taskType === "python"
-                  ? "python"
-                  : "artifact",
-            }),
+          const artifactLookup = (parsedPlan.filesArtifacts || []).reduce(
+            (acc: Record<string, PlanFileArtifact>, filesArtifact) => ({ ...acc, [filesArtifact.uuid]: filesArtifact }),
             {},
           );
 
           const plannedArtifacts = (parsedPlan.filesArtifacts || []).filter(
-            (artifact) => !isDefined(taskLookup[artifact.uuid]),
+            (artifact) =>
+              !(parsedPlan.tasks || []).some(
+                (task) => task.taskType !== "exec" && (task.store || []).some((store) => store.uuid === artifact.uuid),
+              ),
+          );
+
+          const artifactToNodeId = (parsedPlan.filesArtifacts || []).reduce(
+            (acc: Record<string, string>, artifact) => ({
+              ...acc,
+              [artifact.uuid]:
+                parsedPlan.tasks?.find(
+                  (task) => task.taskType !== "exec" && task.store?.some((store) => store.uuid === artifact.uuid),
+                )?.uuid || artifact.uuid,
+            }),
+            {},
+          );
+
+          const artifactTypes = (parsedPlan.filesArtifacts || []).reduce(
+            (acc: Record<string, string>, artifact) => ({
+              ...acc,
+              [artifact.uuid]:
+                taskLookup[artifactToNodeId[artifact.uuid]]?.taskType === "sh"
+                  ? "shell"
+                  : taskLookup[artifactToNodeId[artifact.uuid]]?.taskType === "python"
+                  ? "python"
+                  : "artifact",
+            }),
+            {},
           );
 
           const nodesToAdd: { type: string; id: string }[] = [
@@ -142,7 +161,9 @@ export const KurtosisPackageNode = memo(
               isValid: true,
               files: (service.files || []).flatMap((file) =>
                 file.filesArtifacts.map((artifact) => ({
-                  name: `{{${artifactTypes[artifact.uuid]}.${id}:${artifact.uuid}}}`,
+                  name: `{{${artifactTypes[artifact.uuid]}.${id}:${artifactToNodeId[artifact.uuid]}.store.${
+                    artifact.name
+                  }}}`,
                   mountPoint: file.mountPath,
                 })),
               ),
@@ -185,11 +206,16 @@ export const KurtosisPackageNode = memo(
                 args: task.pythonArgs.map((arg) => ({ arg })),
                 files: (task.files || []).flatMap((file) =>
                   file.filesArtifacts.map((artifact) => ({
-                    name: `{{${artifactTypes[artifact.uuid]}.${id}:${artifact.uuid}}}`,
+                    name: `{{${artifactTypes[artifact.uuid]}.${id}:${artifactToNodeId[artifact.uuid]}.store.${
+                      artifact.name
+                    }}}`,
                     mountPoint: file.mountPath,
                   })),
                 ),
-                store: "", //task.store?.length > 0 ? artifactLookup[task.store[0].uuid].files[0] : [],
+                store: (task.store || []).map((store) => ({
+                  name: store.name,
+                  path: artifactLookup[store.uuid].files[0],
+                })),
                 wait_enabled: "false",
                 wait: "",
               });
@@ -215,11 +241,16 @@ export const KurtosisPackageNode = memo(
                 env: [],
                 files: (task.files || []).flatMap((file) =>
                   file.filesArtifacts.map((artifact) => ({
-                    name: `{{${artifactTypes[artifact.uuid]}.${id}:${artifact.uuid}}}`,
+                    name: `{{${artifactTypes[artifact.uuid]}.${id}:${artifactToNodeId[artifact.uuid]}.store.${
+                      artifact.name
+                    }}}`,
                     mountPoint: file.mountPath,
                   })),
                 ),
-                store: "", //task.store?.length > 0 ? artifactLookup[task.store[0].uuid].files[0] : [],
+                store: (task.store || []).map((store) => ({
+                  name: store.name,
+                  path: artifactLookup[store.uuid].files[0],
+                })),
                 wait_enabled: "false",
                 wait: "",
               });

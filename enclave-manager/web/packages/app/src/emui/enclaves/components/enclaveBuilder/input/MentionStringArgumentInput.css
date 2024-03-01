@@ -14,8 +14,9 @@
   --input-border-radius: var(--chakra-radii-sm);
   --input-height: var(--chakra-sizes-8);
   padding-top: 4px;
+  background-color: var(--chakra-colors-gray-850);
 
-  &[aria-invalid="true"] {
+  &:has(input[aria-invalid="true"]) {
     border-color: var(--chakra-colors-red-300);
     box-shadow: 0 0 0 1px var(--chakra-colors-red-300);
   }

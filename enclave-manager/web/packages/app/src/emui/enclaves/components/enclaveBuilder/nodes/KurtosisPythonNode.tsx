@@ -11,6 +11,7 @@ import { KurtosisFormInputProps } from "../../form/types";
 import { ImageConfigInput } from "../input/ImageConfigInput";
 import { MentionStringArgumentInput } from "../input/MentionStringArgumentInput";
 import { MountArtifactFileInput } from "../input/MountArtifactFileInput";
+import { StoreConfigurationInput } from "../input/StoreConfigurationInput";
 import { validateDurationString, validateName } from "../input/validators";
 import { KurtosisFileMount, KurtosisPythonNodeData } from "../types";
 import { useVariableContext } from "../VariableContextProvider";
@@ -130,10 +131,11 @@ export const KurtosisPythonNode = memo(
                   "Choose which files to expose from this execution task. You can use either an absolute path, a directory, or a glob."
                 }
               >
-                <MentionStringArgumentInput<KurtosisPythonNodeData>
+                <ListArgumentInput
                   name={"store"}
-                  disabled={nodeData.isFromPackage}
-                  placeholder={"/some/output/location"}
+                  FieldComponent={StoreConfigurationInput}
+                  createNewValue={() => ({ name: "", path: "" })}
+                  minLength={1}
                 />
               </KurtosisFormControl>
             </TabPanel>

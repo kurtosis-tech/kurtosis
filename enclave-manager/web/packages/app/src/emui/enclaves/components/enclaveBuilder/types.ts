@@ -67,6 +67,11 @@ export type KurtosisArtifactNodeData = {
   isValid: boolean;
 };
 
+export type KurtosisStore = {
+  name: string;
+  path: string;
+};
+
 export type KurtosisShellNodeData = {
   type: "shell";
   name: string;
@@ -75,7 +80,7 @@ export type KurtosisShellNodeData = {
   image: KurtosisImageConfig;
   env: KurtosisEnvironmentVar[];
   files: KurtosisFileMount[];
-  store: string;
+  store: KurtosisStore[];
   wait_enabled: "true" | "false";
   wait: string;
   isValid: boolean;
@@ -93,7 +98,7 @@ export type KurtosisPythonNodeData = {
   packages: KurtosisPythonPackage[];
   args: KurtosisPythonArg[];
   files: KurtosisFileMount[];
-  store: string;
+  store: KurtosisStore[];
   wait_enabled: "true" | "false";
   wait: string;
   isValid: boolean;

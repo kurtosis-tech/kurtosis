@@ -10,16 +10,18 @@ import { KurtosisFormInputProps } from "./types";
 type ListArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel> & {
   FieldComponent: FC<KurtosisFormInputProps<DataModel>>;
   createNewValue: () => object;
+  minLength?: number;
 };
 
 export const ListArgumentInput = <DataModel extends object>({
   FieldComponent,
   createNewValue,
+  minLength,
   ...otherProps
 }: ListArgumentInputProps<DataModel>) => {
   const toast = useToast();
   const { getValues, setValue } = useFormContext<DataModel>();
-  const { fields, append, remove } = useFieldArray({ name: otherProps.name });
+  const { fields, append, remove } = useFieldArray({ name: otherProps.name, rules: { minLength: minLength } });
 
   const handleValuePaste = (value: string) => {
     try {
@@ -45,6 +47,7 @@ export const ListArgumentInput = <DataModel extends object>({
             disabled={otherProps.disabled}
             isRequired={otherProps.isRequired}
             name={`${otherProps.name as `args.${string}`}.${i}`}
+            flex={1}
           >
             <FieldComponent
               name={`${otherProps.name}.${i}` as any}

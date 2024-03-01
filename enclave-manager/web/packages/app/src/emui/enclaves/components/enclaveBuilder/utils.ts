@@ -104,7 +104,7 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
     if (data.type === "artifact") {
       return [
         {
-          id: `artifact.${id}`,
+          id: `artifact.${id}.store.${data.name}`,
           displayName: `${data.name}`,
           value: `${normaliseNameToStarlarkVariable(data.name)}`,
         },
@@ -113,11 +113,13 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
 
     if (data.type === "shell") {
       return [
-        {
-          id: `shell.${id}`,
-          displayName: `${data.name}`,
-          value: `${normaliseNameToStarlarkVariable(data.name)}.files_artifacts[0]`,
-        },
+        ...data.store.map((store, i) => ({
+          id: `shell.${id}.store.${store.name}`,
+          displayName: `${data.name}.${store.name}`,
+          value: data.isFromPackage
+            ? `"${store.name}"`
+            : `${normaliseNameToStarlarkVariable(data.name)}.files_artifacts[${i}]`,
+        })),
         ...data.env.map((env, i) => ({
           id: `shell.${id}.env.${i}.value`,
           displayName: `${data.name}.env.${env.key}`,
@@ -128,11 +130,13 @@ export function getVariablesFromNodes(nodes: Record<string, KurtosisNodeData>): 
 
     if (data.type === "python") {
       return [
-        {
-          id: `python.${id}`,
-          displayName: `${data.name}`,
-          value: `${normaliseNameToStarlarkVariable(data.name)}.files_artifacts[0]`,
-        },
+        ...data.store.map((store, i) => ({
+          id: `python.${id}.store.${store.name}`,
+          displayName: `${data.name}.${store.name}`,
+          value: data.isFromPackage
+            ? `"${store.name}"`
+            : `${normaliseNameToStarlarkVariable(data.name)}.files_artifacts[${i}]`,
+        })),
         ...data.args.map((arg, i) => ({
           id: `python.${id}.args.${i}.arg`,
           displayName: `${data.name}.args[${i}]`,
@@ -436,9 +440,13 @@ export function generateStarlarkFromGraph(
         starlark += `            ${interpolateValue(mountPoint)}: ${interpolateValue(name)},\n`;
       }
       starlark += `        },\n`;
-      starlark += `        store = [\n`;
-      starlark += `            StoreSpec(src = ${interpolateValue(nodeData.store)}, name="${shellName}"),\n`;
-      starlark += `        ],\n`;
+      if (nodeData.store.length > 0) {
+        starlark += `        store = [\n`;
+        for (const { name, path } of nodeData.store) {
+          starlark += `            StoreSpec(src = ${interpolateValue(path)}, name="${name}"),\n`;
+        }
+        starlark += `        ],\n`;
+      }
       const wait = interpolateValue(nodeData.wait);
       if (nodeData.wait_enabled === "false" || wait !== '""') {
         starlark += `        wait=${nodeData.wait_enabled === "true" ? wait : "None"},\n`;
@@ -469,9 +477,11 @@ export function generateStarlarkFromGraph(
         starlark += `            ${interpolateValue(mountPoint)}: ${interpolateValue(name)},\n`;
       }
       starlark += `        },\n`;
-      if (nodeData.store !== "") {
+      if (nodeData.store.length > 0) {
         starlark += `        store = [\n`;
-        starlark += `            StoreSpec(src = ${interpolateValue(nodeData.store)}, name="${pythonName}"),\n`;
+        for (const { name, path } of nodeData.store) {
+          starlark += `            StoreSpec(src = ${interpolateValue(path)}, name="${name}"),\n`;
+        }
         starlark += `        ],\n`;
       }
       const wait = interpolateValue(nodeData.wait);
