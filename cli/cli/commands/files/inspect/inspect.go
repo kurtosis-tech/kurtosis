@@ -50,7 +50,7 @@ var sizeSuffix = []byte{'K', 'M', 'G', 'T', 'P'}
 var FilesInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.FilesInspectCmdStr,
 	ShortDescription:          "Inspect files of an enclave",
-	LongDescription:           "Inspect the requested file artifact, returning the file tree, metadata and a preview, if avaliable",
+	LongDescription:           "Inspect the requested file artifact, returning the file tree, metadata and a preview, if available",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags:                     []*flags.FlagConfig{},
