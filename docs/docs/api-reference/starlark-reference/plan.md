@@ -89,7 +89,7 @@ all_services = plan.add_services(
 
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Adding 'NUMBER_OF_SERVICES' services with names 'SERVICE_NAMES')
-    description = "adding a service"
+    description = "adding services"
 )
 ```
 
@@ -498,7 +498,7 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
 
         # A human friendly description for the end user of the package
         # OPTIONAL (Default: Running Python script)
-        description = "Running Python script"
+        description = "running python script"
 )
 
     plan.print(result.code)  # returns the future reference to the exit code
@@ -579,7 +579,7 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
 
         # A human friendly description for the end user of the package
         # OPTIONAL (Default: Running sh script)
-        description = "Running sh script"  
+        description = "running sh script"  
     )
 
     plan.print(result.code)  # returns the future reference to the code
@@ -661,7 +661,7 @@ plan.stop_service(
 
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Stopping service 'SERVICE_NAME')
-    description = "Stopping service"  
+    description = "stopping service"  
 )
 ```
 
@@ -687,7 +687,7 @@ artifact_name = plan.store_service_files(
 
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Storing files from service 'SERVICE_NAME' at path 'PATH' to files artifact with name 'ARTIFACT_NAME')
-    description = "Storing some files"
+    description = "storing some files"
 )
 ```
 
@@ -713,7 +713,7 @@ artifact_name = plan.upload_files(
 
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Uploading file 'PATH' to files artifact 'ARTIFACT_NAME')
-    description = "Uploading file"
+    description = "uploading file"
 )
 ```
 
@@ -771,7 +771,7 @@ recipe_result = plan.wait(
 
     # A human friendly description for the end user of the package
     # OPTIONAL (Default: Waiting for at most 'TIMEOUT' for service 'SERVICE_NAME' to reach a certain state)
-    description = "Waiting for a certain state"  
+    description = "waiting for a certain state"  
 )
 
 # The assertion has passed, so we can use `recipe_result` just like the result of `plan.request` or `plan.exec`
