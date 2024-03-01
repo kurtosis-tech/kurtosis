@@ -1,13 +1,14 @@
-import { ExternalLinkIcon } from "@chakra-ui/icons";
-import { Flex, Link, Text } from "@chakra-ui/react";
+import { Flex, Text } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DataTable, isDefined } from "kurtosis-ui-components";
 import { useMemo } from "react";
 import { KURTOSIS_CLOUD_HOST, KURTOSIS_CLOUD_PROTOCOL } from "../../../../client/constants";
+import { instanceUUID } from "../../../../cookies";
 import { transportProtocolToString } from "../utils";
+import { PortMaybeLink } from "../widgets/PortMaybeLink";
 
-type PortsTableRow = {
+export type PortsTableRow = {
   port: {
     transportProtocol: string;
     privatePort: number;
@@ -19,13 +20,13 @@ type PortsTableRow = {
 };
 const shortUUID = (fullUUID: string) => fullUUID.substring(0, 12);
 
-const getPortTableRows = (
-  instanceUUID: string,
+export const getPortTableRows = (
   enclaveUUID: string,
   serviceUUID: string,
   privatePorts: Record<string, Port>,
   publicPorts: Record<string, Port>,
   publicIp: string,
+  serviceName?: string,
 ): PortsTableRow[] => {
   return Object.entries(privatePorts).map(([name, port]) => {
     let link;
@@ -45,7 +46,7 @@ const getPortTableRows = (
         transportProtocol: transportProtocolToString(port.transportProtocol),
         privatePort: port.number,
         publicPort: publicPorts[name].number,
-        name,
+        name: isDefined(serviceName) ? `${serviceName}:${name}` : name,
       },
       link: link,
     };
@@ -55,7 +56,6 @@ const getPortTableRows = (
 const columnHelper = createColumnHelper<PortsTableRow>();
 
 type PortsTableProps = {
-  instanceUUID: string;
   enclaveUUID: string;
   serviceUUID: string;
   privatePorts: Record<string, Port>;
@@ -63,14 +63,7 @@ type PortsTableProps = {
   publicIp: string;
 };
 
-export const PortsTable = ({
-  instanceUUID,
-  enclaveUUID,
-  serviceUUID,
-  privatePorts,
-  publicPorts,
-  publicIp,
-}: PortsTableProps) => {
+export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts, publicIp }: PortsTableProps) => {
   const columns = useMemo<ColumnDef<PortsTableRow, any>[]>(
     () => [
       columnHelper.accessor("port", {
@@ -78,16 +71,7 @@ export const PortsTable = ({
         header: "Name",
         cell: ({ row, getValue }) => (
           <Flex flexDirection={"column"} gap={"10px"}>
-            <Text>
-              {row.original.port.applicationProtocol?.startsWith("http") ? (
-                <Link href={row.original.link} isExternal>
-                  {row.original.port.name}&nbsp;
-                  <ExternalLinkIcon mx="2px" />
-                </Link>
-              ) : (
-                row.original.port.name
-              )}
-            </Text>
+            <PortMaybeLink port={row.original} />
           </Flex>
         ),
       }),
@@ -127,7 +111,7 @@ export const PortsTable = ({
   return (
     <DataTable
       columns={columns}
-      data={getPortTableRows(instanceUUID, enclaveUUID, serviceUUID, privatePorts, publicPorts, publicIp)}
+      data={getPortTableRows(enclaveUUID, serviceUUID, privatePorts, publicPorts, publicIp)}
       defaultSorting={[{ id: "port_name", desc: true }]}
     />
   );

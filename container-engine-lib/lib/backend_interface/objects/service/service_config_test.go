@@ -2,12 +2,17 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
-	"github.com/stretchr/testify/require"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"testing"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
+	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestServiceConfigMarshallers(t *testing.T) {
@@ -42,6 +47,7 @@ func TestServiceConfigMarshallers(t *testing.T) {
 		require.EqualValues(t, publicPortSpec, originalPublicPortSpec)
 	}
 
+	require.Equal(t, originalServiceConfig, newServiceConfig)
 	require.Equal(t, originalServiceConfig.GetEnvVars(), newServiceConfig.GetEnvVars())
 	require.Equal(t, originalServiceConfig.GetCmdArgs(), newServiceConfig.GetCmdArgs())
 	require.Equal(t, originalServiceConfig.GetEnvVars(), newServiceConfig.GetEnvVars())
@@ -54,12 +60,15 @@ func TestServiceConfigMarshallers(t *testing.T) {
 	require.Equal(t, originalServiceConfig.GetMinMemoryAllocationMegabytes(), newServiceConfig.GetMinMemoryAllocationMegabytes())
 	require.Equal(t, originalServiceConfig.GetLabels(), newServiceConfig.GetLabels())
 	require.Equal(t, originalServiceConfig.GetImageBuildSpec(), newServiceConfig.GetImageBuildSpec())
+	require.Equal(t, originalServiceConfig.GetNodeSelectors(), newServiceConfig.GetNodeSelectors())
 }
 
 func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 	serviceConfig, err := CreateServiceConfig(
 		imageName,
 		testImageBuildSpec(),
+		testImageRegistrySpec(),
+		testNixBuildSpec(),
 		testPrivatePorts(t),
 		testPublicPorts(t),
 		[]string{"bin", "bash", "ls"},
@@ -76,6 +85,9 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 			"test-label-key":        "test-label-value",
 			"test-second-label-key": "test-second-label-value",
 		},
+		testServiceUser(),
+		testToleration(),
+		testNodeSelectors(),
 	)
 	require.NoError(t, err)
 	return serviceConfig
@@ -97,9 +109,9 @@ func testFilesArtifactExpansion() *service_directory.FilesArtifactsExpansion {
 			"ENV_VAR1": "env_var1_value",
 			"ENV_VAR2": "env_var2_value",
 		},
-		ServiceDirpathsToArtifactIdentifiers: map[string]string{
-			"/pahth/number1": "first_identifier",
-			"/path/number2":  "second_idenfifier",
+		ServiceDirpathsToArtifactIdentifiers: map[string][]string{
+			"/path/number1": {"first_identifier"},
+			"/path/number2": {"second_identifier"},
 		},
 		ExpanderDirpathsToServiceDirpaths: map[string]string{
 			"/expander/dir1": "/service/dir1",
@@ -115,7 +127,7 @@ func testPrivatePorts(t *testing.T) map[string]*port_spec.PortSpec {
 	port1Protocol := port_spec.TransportProtocol_TCP
 	appProtocol1 := "app-protocol1"
 	wait1 := port_spec.NewWait(5 * time.Minute)
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, appProtocol1, wait1)
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, appProtocol1, wait1, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
@@ -123,7 +135,7 @@ func testPrivatePorts(t *testing.T) map[string]*port_spec.PortSpec {
 	port2Protocol := port_spec.TransportProtocol_TCP
 	appProtocol2 := "app-protocol2"
 	wait2 := port_spec.NewWait(24 * time.Second)
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, appProtocol2, wait2)
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, appProtocol2, wait2, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
 	input := map[string]*port_spec.PortSpec{
@@ -141,7 +153,7 @@ func testPublicPorts(t *testing.T) map[string]*port_spec.PortSpec {
 	port1Protocol := port_spec.TransportProtocol_TCP
 	appProtocol1 := "app-protocol1-public"
 	wait1 := port_spec.NewWait(5 * time.Minute)
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, appProtocol1, wait1)
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, appProtocol1, wait1, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
@@ -149,7 +161,7 @@ func testPublicPorts(t *testing.T) map[string]*port_spec.PortSpec {
 	port2Protocol := port_spec.TransportProtocol_TCP
 	appProtocol2 := "app-protocol2-public"
 	wait2 := port_spec.NewWait(24 * time.Second)
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, appProtocol2, wait2)
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, appProtocol2, wait2, "")
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
 	input := map[string]*port_spec.PortSpec{
@@ -172,4 +184,35 @@ func testImageBuildSpec() *image_build_spec.ImageBuildSpec {
 		"test-image",
 		"path",
 		"")
+}
+
+func testImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
+	return image_registry_spec.NewImageRegistrySpec("test-image", "test-userename", "test-password", "test-registry.io")
+}
+
+func testNixBuildSpec() *nix_build_spec.NixBuildSpec {
+	return nix_build_spec.NewNixBuildSpec("test-image", "path", "", "")
+}
+
+func testServiceUser() *service_user.ServiceUser {
+	su := service_user.NewServiceUser(100)
+	su.SetGID(100)
+	return su
+}
+
+func testToleration() []v1.Toleration {
+	tolerationSeconds := int64(6)
+	return []v1.Toleration{{
+		Key:               "testKey",
+		Operator:          v1.TolerationOpEqual,
+		Value:             "testValue",
+		Effect:            v1.TaintEffectNoExecute,
+		TolerationSeconds: &tolerationSeconds,
+	}}
+}
+
+func testNodeSelectors() map[string]string {
+	return map[string]string{
+		"disktype": "ssd",
+	}
 }

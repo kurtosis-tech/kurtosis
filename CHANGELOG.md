@@ -1,5 +1,339 @@
 # Changelog
 
+## [0.88.0](https://github.com/kurtosis-tech/kurtosis/compare/0.87.3...0.88.0) (2024-02-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove the cloud add and CreateCloudInstance endpoint ([#2234](https://github.com/kurtosis-tech/kurtosis/issues/2234))
+
+### Features
+
+* allow to specify dockerfile name in `image_build_spec` ([#2223](https://github.com/kurtosis-tech/kurtosis/issues/2223)) ([d274170](https://github.com/kurtosis-tech/kurtosis/commit/d274170d07a757b5a0880635f1bf4bd35bb1a165))
+
+
+### Miscellaneous Chores
+
+* remove the cloud add and CreateCloudInstance endpoint ([#2234](https://github.com/kurtosis-tech/kurtosis/issues/2234)) ([0f17729](https://github.com/kurtosis-tech/kurtosis/commit/0f1772963b30b004d9fb5ab99a5b576c3ecb36ae))
+
+## [0.87.3](https://github.com/kurtosis-tech/kurtosis/compare/0.87.2...0.87.3) (2024-02-28)
+
+
+### Features
+
+* add a url field to port that autopopulates if application protocol is set ([#2211](https://github.com/kurtosis-tech/kurtosis/issues/2211)) ([35c913b](https://github.com/kurtosis-tech/kurtosis/commit/35c913b04e02bd995ae78548528eeb2e74dbd1fc))
+* added the get_service instruction ([#2233](https://github.com/kurtosis-tech/kurtosis/issues/2233)) ([7020183](https://github.com/kurtosis-tech/kurtosis/commit/702018374bd8e49f95e5ea11504d637170eb3911))
+* allow users to validate their doc strings via linter ([#2208](https://github.com/kurtosis-tech/kurtosis/issues/2208)) ([a9e583d](https://github.com/kurtosis-tech/kurtosis/commit/a9e583d7cba32b3245140a3e0fad6245cb6fec8f)), closes [#2148](https://github.com/kurtosis-tech/kurtosis/issues/2148)
+
+
+### Bug Fixes
+
+* fixing the Postgrest image label in the docs for the quickstart ([#2225](https://github.com/kurtosis-tech/kurtosis/issues/2225)) ([536a0b3](https://github.com/kurtosis-tech/kurtosis/commit/536a0b39cac736e519c64ed04122c5feee50c3a3))
+* remove package json ([#2226](https://github.com/kurtosis-tech/kurtosis/issues/2226)) ([93bcf62](https://github.com/kurtosis-tech/kurtosis/commit/93bcf62490cab9f408f76f47154f2575c8ca5a85))
+
+## [0.87.2](https://github.com/kurtosis-tech/kurtosis/compare/0.87.1...0.87.2) (2024-02-23)
+
+
+### Features
+
+* EMUI handle loading a package (or subpackage) from github urls ([#2207](https://github.com/kurtosis-tech/kurtosis/issues/2207)) ([e584751](https://github.com/kurtosis-tech/kurtosis/commit/e584751e60f9ec9a53295d6952bfa728874bb9b1))
+* enclave builder imagespec support ([#2206](https://github.com/kurtosis-tech/kurtosis/issues/2206)) ([f0e316e](https://github.com/kurtosis-tech/kurtosis/commit/f0e316ec211adda1b334a1c194e4eedc0b15a3de))
+* enclave builder improvements from feedback ([#2202](https://github.com/kurtosis-tech/kurtosis/issues/2202)) ([003005c](https://github.com/kurtosis-tech/kurtosis/commit/003005c13e867f7e2868111d45519a4bf5c83c03))
+* improve access to the EMUI 'ports' fields ([#2201](https://github.com/kurtosis-tech/kurtosis/issues/2201)) ([486ea2e](https://github.com/kurtosis-tech/kurtosis/commit/486ea2e067cdf7223d78b7fd974012fc69e75e85))
+
+## [0.87.1](https://github.com/kurtosis-tech/kurtosis/compare/0.87.0...0.87.1) (2024-02-21)
+
+
+### Features
+
+* use description field in emui logs ([#2199](https://github.com/kurtosis-tech/kurtosis/issues/2199)) ([ad00ee1](https://github.com/kurtosis-tech/kurtosis/commit/ad00ee13c1cab56cd6fb7455dd62900f7fa6b0c0))
+
+
+### Bug Fixes
+
+* admonition in github guide ([#2195](https://github.com/kurtosis-tech/kurtosis/issues/2195)) ([c2d4d42](https://github.com/kurtosis-tech/kurtosis/commit/c2d4d428e7b2d174cee6161370177eca26a13979))
+* Fix the connect to enclave CLI commands in the EM UI ([#2203](https://github.com/kurtosis-tech/kurtosis/issues/2203)) ([2218f4b](https://github.com/kurtosis-tech/kurtosis/commit/2218f4bb561d5b3e15977f3c28d8c3c7a1811699))
+
+## [0.87.0](https://github.com/kurtosis-tech/kurtosis/compare/0.86.25...0.87.0) (2024-02-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* change registry spec to imagespec ([#2191](https://github.com/kurtosis-tech/kurtosis/issues/2191))
+
+### Features
+
+* change registry spec to imagespec ([#2191](https://github.com/kurtosis-tech/kurtosis/issues/2191)) ([bc20d51](https://github.com/kurtosis-tech/kurtosis/commit/bc20d51fd8fb7d02a8270586dcd4be85564cb415)), closes [#2189](https://github.com/kurtosis-tech/kurtosis/issues/2189)
+
+
+### Bug Fixes
+
+* change default verbosity to description ([#2173](https://github.com/kurtosis-tech/kurtosis/issues/2173)) ([d3b3de9](https://github.com/kurtosis-tech/kurtosis/commit/d3b3de9b6cb7ff0a83488ccbf8756dfb77814c9c))
+* improved some descriptions for starlark instructions ([#2168](https://github.com/kurtosis-tech/kurtosis/issues/2168)) ([d7fdbc5](https://github.com/kurtosis-tech/kurtosis/commit/d7fdbc5fa56f81a9194a68f37d1ab9549dc45abd))
+
+## [0.86.25](https://github.com/kurtosis-tech/kurtosis/compare/0.86.24...0.86.25) (2024-02-16)
+
+
+### Features
+
+* emui builder python nodes ([#2170](https://github.com/kurtosis-tech/kurtosis/issues/2170)) ([26ad571](https://github.com/kurtosis-tech/kurtosis/commit/26ad5716548edec84e5276ddfe972203c7d5838d))
+* kurtosis run `--non-blocking-tasks` ([#2153](https://github.com/kurtosis-tech/kurtosis/issues/2153)) ([6c70247](https://github.com/kurtosis-tech/kurtosis/commit/6c70247531eb0343434101fe54cf6ef028ded873))
+
+
+### Bug Fixes
+
+* allow for single quotes in run_python ([#2172](https://github.com/kurtosis-tech/kurtosis/issues/2172)) ([4048368](https://github.com/kurtosis-tech/kurtosis/commit/4048368f9fe38d28f1e912a108b79cdbac17a1b7)), closes [#2171](https://github.com/kurtosis-tech/kurtosis/issues/2171)
+
+## [0.86.24](https://github.com/kurtosis-tech/kurtosis/compare/0.86.23...0.86.24) (2024-02-15)
+
+
+### Features
+
+* added a `description` field to instructions ([#2147](https://github.com/kurtosis-tech/kurtosis/issues/2147)) ([9085cfd](https://github.com/kurtosis-tech/kurtosis/commit/9085cfd7d1ad51b65e2087e124cc24cb487364b8))
+
+## [0.86.23](https://github.com/kurtosis-tech/kurtosis/compare/0.86.22...0.86.23) (2024-02-15)
+
+
+### Bug Fixes
+
+* replace nix installer ([#2163](https://github.com/kurtosis-tech/kurtosis/issues/2163)) ([8f68547](https://github.com/kurtosis-tech/kurtosis/commit/8f68547ed7ec0959dabd5c2fa2ddec1a78f43847))
+
+## [0.86.22](https://github.com/kurtosis-tech/kurtosis/compare/0.86.21...0.86.22) (2024-02-15)
+
+
+### Bug Fixes
+
+* allow building images in arm64 ([#2161](https://github.com/kurtosis-tech/kurtosis/issues/2161)) ([acd884f](https://github.com/kurtosis-tech/kurtosis/commit/acd884fb1a8292b450e66c8f48156f4cef52a082))
+
+## [0.86.21](https://github.com/kurtosis-tech/kurtosis/compare/0.86.20...0.86.21) (2024-02-15)
+
+
+### Bug Fixes
+
+* Core image builds for arm64 under CI ([#2149](https://github.com/kurtosis-tech/kurtosis/issues/2149)) ([807ddae](https://github.com/kurtosis-tech/kurtosis/commit/807ddae12b9274819f53160a8771da7541f4a4c1))
+
+## [0.86.20](https://github.com/kurtosis-tech/kurtosis/compare/0.86.19...0.86.20) (2024-02-14)
+
+
+### Features
+
+* support `run_sh` and `exec` in enclave builder ([#2158](https://github.com/kurtosis-tech/kurtosis/issues/2158)) ([f784eaf](https://github.com/kurtosis-tech/kurtosis/commit/f784eaf7a24ae282aa470d22e6a9ad721d04cc05))
+
+## [0.86.19](https://github.com/kurtosis-tech/kurtosis/compare/0.86.18...0.86.19) (2024-02-09)
+
+
+### Features
+
+* build nix image ([#2132](https://github.com/kurtosis-tech/kurtosis/issues/2132)) ([0eae9fc](https://github.com/kurtosis-tech/kurtosis/commit/0eae9fc942605f14a04554752a0c0dca7b02b1f7))
+* enclave builder tweaks ([#2142](https://github.com/kurtosis-tech/kurtosis/issues/2142)) ([aaf64ca](https://github.com/kurtosis-tech/kurtosis/commit/aaf64ca6085b13b8d70c15114128455277b98e31))
+* enforce enclave builder validation ([#2144](https://github.com/kurtosis-tech/kurtosis/issues/2144)) ([5dcdd9e](https://github.com/kurtosis-tech/kurtosis/commit/5dcdd9e00c0e4f243d2b2e45e752a8c3483cec97))
+
+
+### Bug Fixes
+
+* emui yaml editor populating with values ([#2079](https://github.com/kurtosis-tech/kurtosis/issues/2079)) ([9bd26a8](https://github.com/kurtosis-tech/kurtosis/commit/9bd26a8f855a4c2ac7d5fb2f73c756079f9735a9))
+
+## [0.86.18](https://github.com/kurtosis-tech/kurtosis/compare/0.86.17...0.86.18) (2024-02-09)
+
+
+### Features
+
+* add files in enclave dump ([#2136](https://github.com/kurtosis-tech/kurtosis/issues/2136)) ([0525d9f](https://github.com/kurtosis-tech/kurtosis/commit/0525d9fbb12561cf4b5a83814baf05d8d1682274))
+
+
+### Bug Fixes
+
+* node selector validation ([#2141](https://github.com/kurtosis-tech/kurtosis/issues/2141)) ([0fee848](https://github.com/kurtosis-tech/kurtosis/commit/0fee84881f83d0b5a911f511a9fcdd889a0b8784))
+
+## [0.86.17](https://github.com/kurtosis-tech/kurtosis/compare/0.86.16...0.86.17) (2024-02-08)
+
+
+### Features
+
+* experimental enclave building in the EMUI ([#2137](https://github.com/kurtosis-tech/kurtosis/issues/2137)) ([8a26a6c](https://github.com/kurtosis-tech/kurtosis/commit/8a26a6cc38e832f92e552b5f32fd6a5c73cf2869))
+* support setting node selectors for user services ([#2135](https://github.com/kurtosis-tech/kurtosis/issues/2135)) ([e176a3a](https://github.com/kurtosis-tech/kurtosis/commit/e176a3aa23e9070ba52f0e8a965191a0eb3cc6b4))
+
+
+### Bug Fixes
+
+* files artifacts expander image debug tag ([#2119](https://github.com/kurtosis-tech/kurtosis/issues/2119)) ([b3f7edd](https://github.com/kurtosis-tech/kurtosis/commit/b3f7eddc9dcb9e02af7c116c5d86dd97dd74f8c2))
+
+## [0.86.16](https://github.com/kurtosis-tech/kurtosis/compare/0.86.15...0.86.16) (2024-02-07)
+
+
+### Features
+
+* kurtosis github login ([#2113](https://github.com/kurtosis-tech/kurtosis/issues/2113)) ([2f0d638](https://github.com/kurtosis-tech/kurtosis/commit/2f0d638c688828de3eb781b11d696883807357ba))
+
+
+### Bug Fixes
+
+* Remove Derek and Karla as default assignees for docs issues ([#2129](https://github.com/kurtosis-tech/kurtosis/issues/2129)) ([2f1eecc](https://github.com/kurtosis-tech/kurtosis/commit/2f1eecc9a935ac19cf4de0fbc26ab852a5248b7f))
+
+## [0.86.15](https://github.com/kurtosis-tech/kurtosis/compare/0.86.14...0.86.15) (2024-02-07)
+
+
+### Features
+
+* Enclave connect ([#2117](https://github.com/kurtosis-tech/kurtosis/issues/2117)) ([d33de7b](https://github.com/kurtosis-tech/kurtosis/commit/d33de7bebb0e997c8b2fd93872a1b676dc3519e7))
+
+
+### Bug Fixes
+
+* Fix the enclave connect button and modal help string in the EM UI ([#2127](https://github.com/kurtosis-tech/kurtosis/issues/2127)) ([a11fb4c](https://github.com/kurtosis-tech/kurtosis/commit/a11fb4c701e7ed8700c7812559aebb03d5d3846b))
+
+## [0.86.14](https://github.com/kurtosis-tech/kurtosis/compare/0.86.13...0.86.14) (2024-02-06)
+
+
+### Bug Fixes
+
+* allow persistent directory to be reused across services ([#2123](https://github.com/kurtosis-tech/kurtosis/issues/2123)) ([eb5bcb9](https://github.com/kurtosis-tech/kurtosis/commit/eb5bcb9053468b054e28efbc40e4ee459caf203e))
+
+## [0.86.13](https://github.com/kurtosis-tech/kurtosis/compare/0.86.12...0.86.13) (2024-02-05)
+
+
+### Features
+
+* add `env_vars` as input to `run_sh` ([#2114](https://github.com/kurtosis-tech/kurtosis/issues/2114)) ([5a30ea7](https://github.com/kurtosis-tech/kurtosis/commit/5a30ea75865bfc5fb9359d3da206124d13ebc45e)), closes [#2050](https://github.com/kurtosis-tech/kurtosis/issues/2050)
+* add nodejs devtools to Nix ([#2099](https://github.com/kurtosis-tech/kurtosis/issues/2099)) ([7bbb2bc](https://github.com/kurtosis-tech/kurtosis/commit/7bbb2bc7a5487b05f91089634beed5e83e3329de))
+* add run docker compose with kurtosis guide ([#2085](https://github.com/kurtosis-tech/kurtosis/issues/2085)) ([7bbe479](https://github.com/kurtosis-tech/kurtosis/commit/7bbe4796a5b1e952fb85d7cf89136b34ad35f70a))
+* Add RunStarlarkScript to enclave manager API ([#2103](https://github.com/kurtosis-tech/kurtosis/issues/2103)) ([1eeb3eb](https://github.com/kurtosis-tech/kurtosis/commit/1eeb3eb3880e8df83c78642dce391070cda9f515))
+
+
+### Bug Fixes
+
+* adding the `core script build call`, which was removed by accident, in the main build script ([#2118](https://github.com/kurtosis-tech/kurtosis/issues/2118)) ([1f73821](https://github.com/kurtosis-tech/kurtosis/commit/1f738216851718bda1ebf9f9bf8936a715ae2cdf))
+* Fix calls to stacktrace in the reverse proxy module ([#2100](https://github.com/kurtosis-tech/kurtosis/issues/2100)) ([a7fefc2](https://github.com/kurtosis-tech/kurtosis/commit/a7fefc235676335d195c4f98a10bb31c5b46a794))
+
+## [0.86.12](https://github.com/kurtosis-tech/kurtosis/compare/0.86.11...0.86.12) (2024-01-25)
+
+
+### Features
+
+* emui add report a bug and info dialog to nav ([#2080](https://github.com/kurtosis-tech/kurtosis/issues/2080)) ([7045ca5](https://github.com/kurtosis-tech/kurtosis/commit/7045ca5d0ed89b8d56c04ce26f9ef01007eb1c25)), closes [#2078](https://github.com/kurtosis-tech/kurtosis/issues/2078) [#2077](https://github.com/kurtosis-tech/kurtosis/issues/2077)
+* support passing toleration to kubernetes ([#2071](https://github.com/kurtosis-tech/kurtosis/issues/2071)) ([7a36ea3](https://github.com/kurtosis-tech/kurtosis/commit/7a36ea35145bdf3f41a7b5c8e357ffd9a4cdfbc6)), closes [#2048](https://github.com/kurtosis-tech/kurtosis/issues/2048)
+
+## [0.86.11](https://github.com/kurtosis-tech/kurtosis/compare/0.86.10...0.86.11) (2024-01-24)
+
+
+### Features
+
+* adding error logs when K8s resource creation fails in the create enclave workflow ([#2074](https://github.com/kurtosis-tech/kurtosis/issues/2074)) ([a35e0a2](https://github.com/kurtosis-tech/kurtosis/commit/a35e0a2cee4bb771ccf095271d4b8bb08cc0bcf4))
+
+## [0.86.10](https://github.com/kurtosis-tech/kurtosis/compare/0.86.9...0.86.10) (2024-01-24)
+
+
+### Features
+
+* emui centered layout ([#2070](https://github.com/kurtosis-tech/kurtosis/issues/2070)) ([3cf2f59](https://github.com/kurtosis-tech/kurtosis/commit/3cf2f596bc559df667d6ce680f4233b542473169))
+
+
+### Bug Fixes
+
+* remove log printing env vars ([#2069](https://github.com/kurtosis-tech/kurtosis/issues/2069)) ([9d9292b](https://github.com/kurtosis-tech/kurtosis/commit/9d9292b11307d9c1586f13bb2deeb1d306167083))
+
+## [0.86.9](https://github.com/kurtosis-tech/kurtosis/compare/0.86.8...0.86.9) (2024-01-22)
+
+
+### Features
+
+* added support for private registries on docker ([#2058](https://github.com/kurtosis-tech/kurtosis/issues/2058)) ([7cda3d0](https://github.com/kurtosis-tech/kurtosis/commit/7cda3d08e4867352cca5c52f7766e04daa73d029))
+* emui strong indicator for form optional/required ([#2062](https://github.com/kurtosis-tech/kurtosis/issues/2062)) ([f0f51b4](https://github.com/kurtosis-tech/kurtosis/commit/f0f51b416221e30c489a2540057af0ba912f1cdf))
+
+## [0.86.8](https://github.com/kurtosis-tech/kurtosis/compare/0.86.7...0.86.8) (2024-01-18)
+
+
+### Bug Fixes
+
+* make compose persistent directory keys unique ([#2056](https://github.com/kurtosis-tech/kurtosis/issues/2056)) ([bb92cba](https://github.com/kurtosis-tech/kurtosis/commit/bb92cba84da7c48cbbf3526b118d8a2e769e7354))
+
+## [0.86.7](https://github.com/kurtosis-tech/kurtosis/compare/0.86.6...0.86.7) (2024-01-16)
+
+
+### Bug Fixes
+
+* emui enable exact package name searching ([#2052](https://github.com/kurtosis-tech/kurtosis/issues/2052)) ([69c57ec](https://github.com/kurtosis-tech/kurtosis/commit/69c57ec4384ab85f87090ddd75037343ae99fee2))
+
+## [0.86.6](https://github.com/kurtosis-tech/kurtosis/compare/0.86.5...0.86.6) (2024-01-16)
+
+
+### Features
+
+* allow any GitHub path on the `upload_files` instruction ([#2044](https://github.com/kurtosis-tech/kurtosis/issues/2044)) ([75fcf3f](https://github.com/kurtosis-tech/kurtosis/commit/75fcf3f208fc00c9352fc457b952d46c2c774bb2))
+
+
+### Bug Fixes
+
+* Make sure that the tags are fetched before testing with git describe ([#2047](https://github.com/kurtosis-tech/kurtosis/issues/2047)) ([b8e7afb](https://github.com/kurtosis-tech/kurtosis/commit/b8e7afb3e1fb3fc30c915b0e255e695cfb4ef3b9))
+
+## [0.86.5](https://github.com/kurtosis-tech/kurtosis/compare/0.86.4...0.86.5) (2024-01-15)
+
+
+### Features
+
+* docker compose integration pt. 2 ([#2043](https://github.com/kurtosis-tech/kurtosis/issues/2043)) ([2a2793b](https://github.com/kurtosis-tech/kurtosis/commit/2a2793bfd6014ff375fc0bb27018df77a5af330f))
+
+## [0.86.4](https://github.com/kurtosis-tech/kurtosis/compare/0.86.3...0.86.4) (2024-01-10)
+
+
+### Bug Fixes
+
+* Don't abort build_enclave_manager_webapp with abort_job_if_only_docs_changes ([#2038](https://github.com/kurtosis-tech/kurtosis/issues/2038)) ([150eb5f](https://github.com/kurtosis-tech/kurtosis/commit/150eb5ffb9aee97d12e109454455797c1f0d7f3a))
+
+## [0.86.3](https://github.com/kurtosis-tech/kurtosis/compare/0.86.2...0.86.3) (2024-01-10)
+
+
+### Bug Fixes
+
+* emui build ([#1826](https://github.com/kurtosis-tech/kurtosis/issues/1826)) ([9ebd0df](https://github.com/kurtosis-tech/kurtosis/commit/9ebd0df155c208f97896878f87102a1cf481ff51))
+
+## [0.86.2](https://github.com/kurtosis-tech/kurtosis/compare/0.86.1...0.86.2) (2024-01-09)
+
+
+### Bug Fixes
+
+* treat size value as megabytes ([#2030](https://github.com/kurtosis-tech/kurtosis/issues/2030)) ([af687cb](https://github.com/kurtosis-tech/kurtosis/commit/af687cb8797a4116a5dddff4fcc47ab10bc31633))
+
+## [0.86.1](https://github.com/kurtosis-tech/kurtosis/compare/0.86.0...0.86.1) (2024-01-08)
+
+
+### Features
+
+* add ability to set uid and gid ([#2024](https://github.com/kurtosis-tech/kurtosis/issues/2024)) ([2102164](https://github.com/kurtosis-tech/kurtosis/commit/2102164e3ed62b62fcca8a08d4733cf65716322d))
+
+## [0.86.0](https://github.com/kurtosis-tech/kurtosis/compare/0.85.56...0.86.0) (2024-01-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* allow to mount multiple artifacts to the same folder in a service. Users will need to replace the `Directory.artifac_name` field key with `Directory.artifac_names` ([#2025](https://github.com/kurtosis-tech/kurtosis/issues/2025))
+* change persistent directory name to deterministic value ([#2006](https://github.com/kurtosis-tech/kurtosis/issues/2006))
+
+### Features
+
+* allow to mount multiple artifacts to the same folder in a service. Users will need to replace the `Directory.artifac_name` field key with `Directory.artifac_names` ([#2025](https://github.com/kurtosis-tech/kurtosis/issues/2025)) ([b51df93](https://github.com/kurtosis-tech/kurtosis/commit/b51df9359f573058268b4b8431fd892d5b4a6840))
+* emui design updates ([#2028](https://github.com/kurtosis-tech/kurtosis/issues/2028)) ([0e480cf](https://github.com/kurtosis-tech/kurtosis/commit/0e480cf7ef3e0077e4c5c352bc0dc2fa76c9ea8e))
+* Engine Traefik Docker labels for REST API reverse proxy routing ([#2019](https://github.com/kurtosis-tech/kurtosis/issues/2019)) ([6541884](https://github.com/kurtosis-tech/kurtosis/commit/6541884dd761fa2901f767e1a0c88b72f2f4874e))
+
+
+### Bug Fixes
+
+* change persistent directory name to deterministic value ([#2006](https://github.com/kurtosis-tech/kurtosis/issues/2006)) ([fa08707](https://github.com/kurtosis-tech/kurtosis/commit/fa08707437c88ffd11d643d3bee7b151121fd6c0)), closes [#1998](https://github.com/kurtosis-tech/kurtosis/issues/1998)
+* log streaming resource leaks ([#2026](https://github.com/kurtosis-tech/kurtosis/issues/2026)) ([7f8db9b](https://github.com/kurtosis-tech/kurtosis/commit/7f8db9bbec29921d7da45b39cf29a00305cd1cc3))
+
+## [0.85.56](https://github.com/kurtosis-tech/kurtosis/compare/0.85.55...0.85.56) (2024-01-05)
+
+
+### Features
+
+* docker compose integration([#2001](https://github.com/kurtosis-tech/kurtosis/issues/2001)) ([385833d](https://github.com/kurtosis-tech/kurtosis/commit/385833de9d7620f4c65473adc763bb38df8fb995))
+
+
+### Bug Fixes
+
+* in api/golang go.mod use a fixed version of the new utils sub package ([#2022](https://github.com/kurtosis-tech/kurtosis/issues/2022)) ([05099e5](https://github.com/kurtosis-tech/kurtosis/commit/05099e5670046332e9db98b5f956650f57dcd77c))
+* Make the reverse proxy connect and disconnect to and from the enclave network idempotent ([#2004](https://github.com/kurtosis-tech/kurtosis/issues/2004)) ([3cc68eb](https://github.com/kurtosis-tech/kurtosis/commit/3cc68eb5fabd30cf04d61755b5dba18525ceb8a2))
+
 ## [0.85.55](https://github.com/kurtosis-tech/kurtosis/compare/0.85.54...0.85.55) (2024-01-03)
 
 

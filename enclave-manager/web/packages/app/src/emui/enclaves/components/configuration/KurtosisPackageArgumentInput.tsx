@@ -1,6 +1,6 @@
 import { PackageArg } from "kurtosis-cloud-indexer-sdk";
-import { KurtosisArgumentTypeInput } from "./inputs/KurtosisArgumentTypeInput";
-import { KurtosisArgumentFormControl } from "./KurtosisArgumentFormControl";
+import { KurtosisFormControl } from "../form/KurtosisFormControl";
+import { KurtosisArgumentTypeInput } from "./KurtosisArgumentTypeInput";
 import { argToTypeString } from "./utils";
 
 type KurtosisPackageArgumentInputProps = {
@@ -22,7 +22,7 @@ export const KurtosisPackageArgumentInput = ({ argument, disabled }: KurtosisPac
     .join(" ");
 
   return (
-    <KurtosisArgumentFormControl
+    <KurtosisFormControl
       name={fieldName}
       label={label}
       type={argToTypeString(argument)}
@@ -38,6 +38,6 @@ export const KurtosisPackageArgumentInput = ({ argument, disabled }: KurtosisPac
         placeholder={argument.defaultValue}
         isRequired={argument.isRequired}
       />
-    </KurtosisArgumentFormControl>
+    </KurtosisFormControl>
   );
 };

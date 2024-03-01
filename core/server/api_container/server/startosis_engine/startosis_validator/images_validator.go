@@ -2,8 +2,11 @@ package startosis_validator
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"sync"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
@@ -49,19 +52,24 @@ func (validator *ImagesValidator) Validate(
 	}()
 
 	wg := &sync.WaitGroup{}
-	for imageName := range environment.imagesToPull {
+	for imageName, maybeImageRegistrySpec := range environment.imagesToPull {
 		wg.Add(1)
-		go fetchImageFromBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, environment.imageDownloadMode, imageValidationErrors, imageValidationStarted, imageValidationFinished)
+		go fetchImageFromBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, maybeImageRegistrySpec, environment.imageDownloadMode, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
 	for imageName, imageBuildSpec := range environment.imagesToBuild {
 		wg.Add(1)
 		go validator.buildImageUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, imageName, imageBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
 	}
+	for imageName, nixBuildSpec := range environment.nixToBuild {
+		wg.Add(1)
+		logrus.Warnf("%v - %v", imageName, nixBuildSpec)
+		go validator.nixBuildUsingBackend(ctx, wg, imageCurrentlyValidating, validator.kurtosisBackend, nixBuildSpec, imageValidationErrors, imageValidationStarted, imageValidationFinished)
+	}
 	wg.Wait()
 	logrus.Debug("All image validation submitted, currently in progress.")
 }
 
-func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, imageCurrentlyDownloading chan bool, backend *backend_interface.KurtosisBackend, imageName string, imageDownloadMode image_download_mode.ImageDownloadMode, pullErrors chan<- error, imageDownloadStarted chan<- string, imageDownloadFinished chan<- *ValidatedImage) {
+func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, imageCurrentlyDownloading chan bool, backend *backend_interface.KurtosisBackend, imageName string, registrySpec *image_registry_spec.ImageRegistrySpec, imageDownloadMode image_download_mode.ImageDownloadMode, pullErrors chan<- error, imageDownloadStarted chan<- string, imageDownloadFinished chan<- *ValidatedImage) {
 	logrus.Debugf("Requesting the download of image: '%s'", imageName)
 	var imagePulledFromRemote bool
 	var imageArch string
@@ -75,7 +83,7 @@ func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, imageCurrent
 	}()
 
 	logrus.Debugf("Starting the download of image: '%s'", imageName)
-	imagePulledFromRemote, imageArch, err := (*backend).FetchImage(ctx, imageName, imageDownloadMode)
+	imagePulledFromRemote, imageArch, err := (*backend).FetchImage(ctx, imageName, registrySpec, imageDownloadMode)
 	if err != nil {
 		logrus.Warnf("Container image '%s' download failed. Error was: '%s'", imageName, err.Error())
 		pullErrors <- startosis_errors.WrapWithValidationError(err, "Failed fetching the required image '%v'.", imageName)
@@ -114,4 +122,37 @@ func (validator *ImagesValidator) buildImageUsingBackend(
 		return
 	}
 	logrus.Debugf("Container image '%s' successfully built", imageName)
+}
+
+func (validator *ImagesValidator) nixBuildUsingBackend(
+	ctx context.Context,
+	wg *sync.WaitGroup,
+	imageCurrentlyBuilding chan bool,
+	backend *backend_interface.KurtosisBackend,
+	nixBuildSpec *nix_build_spec.NixBuildSpec,
+	buildErrors chan<- error,
+	nixBuildStarted chan<- string,
+	nixBuildFinished chan<- *ValidatedImage) {
+	imageRef := nixBuildSpec.GetFullFlakeReference()
+	logrus.Debugf("Requesting the build of image: '%s'", imageRef)
+	var imageName string
+	var imageArch string
+	imageBuiltLocally := true
+	imagePulledFromRemote := false
+	defer wg.Done()
+	imageCurrentlyBuilding <- true
+	nixBuildStarted <- imageRef
+	defer func() {
+		<-imageCurrentlyBuilding
+		nixBuildFinished <- NewValidatedImage(imageName, imagePulledFromRemote, imageBuiltLocally, imageArch)
+	}()
+
+	logrus.Debugf("Starting the build of image: '%s'", imageRef)
+	imageName, err := (*backend).NixBuild(ctx, nixBuildSpec)
+	if err != nil {
+		logrus.Warnf("Container image '%s' build failed. Error was: '%s'", imageRef, err.Error())
+		buildErrors <- startosis_errors.WrapWithValidationError(err, "Failed to build the required image '%v'.", imageRef)
+		return
+	}
+	logrus.Debugf("Container image '%s' successfully built from Nix definition %s", imageName, imageRef)
 }

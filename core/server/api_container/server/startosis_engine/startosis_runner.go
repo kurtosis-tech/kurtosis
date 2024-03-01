@@ -56,6 +56,7 @@ func (runner *StartosisRunner) Run(
 	serializedStartosis string,
 	serializedParams string,
 	imageDownloadMode image_download_mode.ImageDownloadMode,
+	nonBlockingMode bool,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	runner.mutex.Lock()
@@ -76,7 +77,6 @@ func (runner *StartosisRunner) Run(
 			}
 
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg("Made with Kurtosis - https://kurtosis.com")
-
 			close(starlarkRunResponseLines)
 		}()
 
@@ -111,6 +111,7 @@ func (runner *StartosisRunner) Run(
 				relativePathToMainFile,
 				serializedStartosis,
 				serializedParams,
+				nonBlockingMode,
 				enclave_structure.NewEnclaveComponents(),
 				resolver.NewInstructionsPlanMask(0),
 			)
@@ -123,6 +124,7 @@ func (runner *StartosisRunner) Run(
 				relativePathToMainFile,
 				serializedStartosis,
 				serializedParams,
+				nonBlockingMode,
 				runner.startosisExecutor.enclavePlan,
 			)
 		}

@@ -6,8 +6,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/get_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
@@ -59,10 +61,13 @@ func KurtosisPlanInstructions(
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
+	nonBlockingMode bool,
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
 ) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
-		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions),
-		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions),
+		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore),
+		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore),
+		get_service.NewGetService(interpretationTimeValueStore),
 		verify.NewVerify(runtimeValueStore),
 		exec.NewExec(serviceNetwork, runtimeValueStore),
 		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),
@@ -70,8 +75,8 @@ func KurtosisPlanInstructions(
 		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore),
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		start_service.NewStartService(serviceNetwork),
-		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore),
-		tasks.NewRunShService(serviceNetwork, runtimeValueStore),
+		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore, nonBlockingMode),
+		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode),
 		stop_service.NewStopService(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
 		upload_files.NewUploadFiles(packageId, serviceNetwork, packageContentProvider, packageReplaceOptions),
@@ -112,5 +117,9 @@ func KurtosisTypeConstructors() []*starlark.Builtin {
 		starlark.NewBuiltin(service_config.ServiceConfigTypeName, service_config.NewServiceConfigType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.ReadyConditionTypeName, service_config.NewReadyConditionType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.ImageBuildSpecTypeName, service_config.NewImageBuildSpecType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.NixBuildSpecTypeName, service_config.NewNixBuildSpecType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.ImageSpecTypeName, service_config.NewImageSpec().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.UserTypeName, service_config.NewUserType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.TolerationTypeName, service_config.NewTolerationType().CreateBuiltin()),
 	}
 }

@@ -2,12 +2,14 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -24,9 +26,10 @@ import (
 
 type addServicesTestCase struct {
 	*testing.T
-	serviceNetwork         *service_network.MockServiceNetwork
-	runtimeValueStore      *runtime_value_store.RuntimeValueStore
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
+	serviceNetwork               *service_network.MockServiceNetwork
+	runtimeValueStore            *runtime_value_store.RuntimeValueStore
+	packageContentProvider       *mock_package_content_provider.MockPackageContentProvider
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
@@ -51,6 +54,8 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 			expectedServiceConfig1, err := service.CreateServiceConfig(
 				testContainerImageName,
 				nil,
+				nil,
+				nil,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
 				nil,
@@ -64,6 +69,9 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				0,
 				0,
 				map[string]string{},
+				nil,
+				nil,
+				map[string]string{},
 			)
 			require.NoError(suite.T(), err)
 
@@ -72,6 +80,8 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 
 			expectedServiceConfig2, err := service.CreateServiceConfig(
 				testContainerImageName,
+				nil,
+				nil,
 				nil,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
@@ -85,6 +95,9 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
+				map[string]string{},
+				nil,
+				nil,
 				map[string]string{},
 			)
 			require.NoError(suite.T(), err)
@@ -190,10 +203,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 	}, nil)
 
 	suite.run(&addServicesTestCase{
-		T:                      suite.T(),
-		serviceNetwork:         suite.serviceNetwork,
-		runtimeValueStore:      suite.runtimeValueStore,
-		packageContentProvider: suite.packageContentProvider,
+		T:                            suite.T(),
+		serviceNetwork:               suite.serviceNetwork,
+		runtimeValueStore:            suite.runtimeValueStore,
+		packageContentProvider:       suite.packageContentProvider,
+		interpretationTimeValueStore: suite.interpretationTimeValueStore,
 	})
 }
 
@@ -203,7 +217,8 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		t.runtimeValueStore,
 		testModulePackageId,
 		t.packageContentProvider,
-		testNoPackageReplaceOptions)
+		testNoPackageReplaceOptions,
+		t.interpretationTimeValueStore)
 }
 
 func (t *addServicesTestCase) GetStarlarkCode() string {

@@ -1,19 +1,22 @@
 import { Flex, Heading, Spinner } from "@chakra-ui/react";
 import { GetPackagesResponse, KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
+import { ReadPackageResponse } from "kurtosis-cloud-indexer-sdk/build/kurtosis_package_indexer_pb";
 import { isDefined, SavedPackagesProvider } from "kurtosis-ui-components";
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useLayoutEffect, useState } from "react";
 import { Result } from "true-myth";
 import { useKurtosisPackageIndexerClient } from "../../client/packageIndexer/KurtosisPackageIndexerClientContext";
-import { loadSavedPackageNames, storeSavedPackages } from "./storage";
+import { settingKeys, useSettings } from "../settings";
 
 export type CatalogState = {
   catalog: Result<GetPackagesResponse, string>;
+  getSinglePackage: (packageName: string) => Promise<Result<ReadPackageResponse, string>>;
   refreshCatalog: () => Promise<Result<GetPackagesResponse, string>>;
 };
 
 const CatalogContext = createContext<CatalogState>(null as any);
 
 export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
+  const { settings, updateSetting } = useSettings();
   const packageIndexerClient = useKurtosisPackageIndexerClient();
   const [catalog, setCatalog] = useState<Result<GetPackagesResponse, string>>();
   const [savedPackages, setSavedPackages] = useState<KurtosisPackage[]>([]);
@@ -23,28 +26,44 @@ export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
     const catalog = await packageIndexerClient.getPackages();
     setCatalog(catalog);
 
-    if (catalog.isOk) {
-      const savedPackageNames = new Set(loadSavedPackageNames());
-      setSavedPackages(catalog.value.packages.filter((kurtosisPackage) => savedPackageNames.has(kurtosisPackage.name)));
-    }
-
     return catalog;
   }, [packageIndexerClient]);
 
-  const togglePackageSaved = useCallback((kurtosisPackage: KurtosisPackage) => {
-    setSavedPackages((savedPackages) => {
-      const packageSavedAlready = savedPackages.some((p) => p.name === kurtosisPackage.name);
-      const newSavedPackages: KurtosisPackage[] = packageSavedAlready
-        ? savedPackages.filter((p) => p.name !== kurtosisPackage.name)
-        : [...savedPackages, kurtosisPackage];
-      storeSavedPackages(newSavedPackages);
-      return newSavedPackages;
-    });
-  }, []);
+  const togglePackageSaved = useCallback(
+    (kurtosisPackage: KurtosisPackage) => {
+      setSavedPackages((savedPackages) => {
+        const packageSavedAlready = savedPackages.some((p) => p.name === kurtosisPackage.name);
+        const newSavedPackages: KurtosisPackage[] = packageSavedAlready
+          ? savedPackages.filter((p) => p.name !== kurtosisPackage.name)
+          : [...savedPackages, kurtosisPackage];
+        updateSetting(
+          settingKeys.SAVED_PACKAGES,
+          newSavedPackages.map((kurtosisPackage) => kurtosisPackage.name),
+        );
+        return newSavedPackages;
+      });
+    },
+    [updateSetting],
+  );
+
+  const getSinglePackage = useCallback(
+    async (packageName: string) => {
+      return await packageIndexerClient.readPackage(packageName);
+    },
+    [packageIndexerClient],
+  );
 
   useEffect(() => {
     refreshCatalog();
   }, [refreshCatalog]);
+
+  // Use a Layout effect so that the saved packages are set before first render.
+  useLayoutEffect(() => {
+    if (isDefined(catalog) && catalog.isOk) {
+      const savedPackageNames = new Set(settings.SAVED_PACKAGES);
+      setSavedPackages(catalog.value.packages.filter((kurtosisPackage) => savedPackageNames.has(kurtosisPackage.name)));
+    }
+  }, [catalog, settings.SAVED_PACKAGES]);
 
   if (!isDefined(catalog)) {
     return (
@@ -58,7 +77,7 @@ export const CatalogContextProvider = ({ children }: PropsWithChildren) => {
   }
 
   return (
-    <CatalogContext.Provider value={{ catalog, refreshCatalog }}>
+    <CatalogContext.Provider value={{ catalog, refreshCatalog, getSinglePackage }}>
       <SavedPackagesProvider savedPackages={savedPackages} togglePackageSaved={togglePackageSaved}>
         {children}
       </SavedPackagesProvider>

@@ -1,78 +1,79 @@
 import {
-  Card,
   Flex,
+  IconButton,
   Popover,
+  PopoverArrow,
+  PopoverBody,
   PopoverContent,
   PopoverTrigger,
-  Table,
-  Tbody,
-  Td,
+  Spinner,
+  Tag,
   Text,
-  Th,
-  Thead,
-  Tr,
 } from "@chakra-ui/react";
-import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
-import { transportProtocolToString } from "../utils";
+import { isDefined } from "kurtosis-ui-components";
+import { FiChevronDown } from "react-icons/fi";
+import { PortsTableRow } from "../tables/PortsTable";
+import { PortMaybeLink } from "./PortMaybeLink";
 
 type PortsSummaryProps = {
-  privatePorts: Record<string, Port>;
-  publicPorts: Record<string, Port>;
+  ports: "loading" | PortsTableRow[] | null;
 };
 
-export const PortsSummary = ({ privatePorts, publicPorts }: PortsSummaryProps) => {
-  return (
-    <Popover trigger={"hover"} preventOverflow isLazy>
-      <PopoverTrigger>
-        <Text fontWeight={"semibold"} fontSize={"xs"} pl={"8px"}>
-          {Object.keys(publicPorts).length}
-        </Text>
-      </PopoverTrigger>
-      <PopoverContent maxWidth={"50vw"} w={"unset"}>
-        <Flex flexDirection={"row"} gap={"16px"}>
-          <Card>
-            <PortTable privatePorts={privatePorts} publicPorts={publicPorts} />
-          </Card>
-        </Flex>
-      </PopoverContent>
-    </Popover>
-  );
-};
-
-type PortTableProps = {
-  privatePorts: Record<string, Port>;
-  publicPorts: Record<string, Port>;
-};
-
-const PortTable = ({ privatePorts, publicPorts }: PortTableProps) => {
-  if (Object.keys(privatePorts).length === 0) {
-    return <i>No ports</i>;
+export const PortsSummary = ({ ports }: PortsSummaryProps) => {
+  if (!isDefined(ports)) {
+    return <Tag>Unknown</Tag>;
   }
 
+  if (ports === "loading") {
+    return <Spinner size={"xs"} />;
+  }
+
+  if (ports.length === 0) {
+    return (
+      <Text fontWeight={"semibold"} fontSize={"xs"} color={"gray.200"}>
+        <i>No ports</i>
+      </Text>
+    );
+  }
+
+  const sortedPorts = ports.sort((portA, portB) => {
+    if (portA.link.startsWith("http") && portB.link.startsWith("http")) {
+      return portA.port.name.localeCompare(portB.port.name);
+    }
+    if (portA.link.startsWith("http")) {
+      return -1;
+    }
+    if (portB.link.startsWith("http")) {
+      return 1;
+    }
+    return portA.port.name.localeCompare(portB.port.name);
+  });
+  const priorityPorts = sortedPorts.slice(0, 3);
+  const otherPorts = sortedPorts.slice(3);
+
   return (
-    <Table>
-      <Thead>
-        <Tr>
-          <Th>Name</Th>
-          <Th>Port</Th>
-          <Th>Public Port</Th>
-          <Th>Application Protocol</Th>
-        </Tr>
-      </Thead>
-      <Tbody>
-        {Object.entries(publicPorts)
-          .sort(([name1, p1], [name2, p2]) => p1.number - p2.number)
-          .map(([name, port], i) => (
-            <Tr key={i}>
-              <Td>{name}</Td>
-              <Td>
-                {privatePorts[name].number}/{transportProtocolToString(port.transportProtocol)}
-              </Td>
-              <Td fontSize={"xs"}>{port.number}</Td>
-              <Td fontSize={"xs"}>{port.maybeApplicationProtocol || <i>Undefined</i>}</Td>
-            </Tr>
-          ))}
-      </Tbody>
-    </Table>
+    <Flex gap={"4px"} fontWeight={"semibold"} fontSize={"xs"} color={"gray.200"} justifyContent={"center"}>
+      {priorityPorts.map((port, i) => (
+        <>
+          <PortMaybeLink port={port} key={i} />
+          {i < priorityPorts.length - 1 && ", "}
+        </>
+      ))}
+      {otherPorts.length > 0 && (
+        <Popover>
+          <PopoverTrigger>
+            <IconButton icon={<FiChevronDown />} variant={"ghost"} size={"xs"} aria-label={"other ports"} />
+          </PopoverTrigger>
+          <PopoverContent w={"200px"}>
+            <PopoverArrow />
+            <PopoverBody display={"flex"} flexDirection={"column"}>
+              {otherPorts.map((port, i) => (
+                <PortMaybeLink port={port} key={i} />
+              ))}
+            </PopoverBody>
+          </PopoverContent>
+        </Popover>
+      )}
+    </Flex>
   );
 };

@@ -13,6 +13,7 @@ import { mode } from "@chakra-ui/theme-tools";
 import { PropsWithChildren, useEffect } from "react";
 import Fonts from "./theme/Fonts";
 import { formsTheme } from "./theme/formsTheme";
+import { progressTheme } from "./theme/progressTheme";
 import { tabsTheme } from "./theme/tabsTheme";
 import { tagTheme } from "./theme/tagsTheme";
 
@@ -37,13 +38,13 @@ const theme = extendTheme({
   },
   colors: {
     kurtosisGreen: {
-      100: "#18371E",
-      200: "#008c19",
-      300: "#00bb22",
+      100: "#99f7aa",
+      200: "#66f27f",
+      300: "#33ee55",
       400: "#00C223", // The true green
-      500: "#33ee55",
-      600: "#66f27f",
-      700: "#99f7aa",
+      500: "#00bb22",
+      600: "#008c19",
+      700: "#18371E",
     },
     darkBlue: {
       200: "#516A77",
@@ -61,8 +62,21 @@ const theme = extendTheme({
       650: "#292929",
       700: "#1E1E1E",
       800: "#1D1D1D", // selected background
-      850: "#1B1B1D",
+      850: "#1B1B1D", // Accent background
       900: "#111111", // ui background
+    },
+    red: {
+      450: "#BD3737",
+      650: "#943031",
+      900: "#441C1C",
+    },
+    green: {
+      450: "#05A122",
+      650: "#0B7F21",
+    },
+    blue: {
+      450: "#2D6DAB",
+      650: "#285987",
     },
   },
   fontSizes: {
@@ -89,6 +103,16 @@ const theme = extendTheme({
     }),
   },
   components: {
+    Alert: {
+      baseStyle: defineStyle(({ colorScheme }) => ({
+        container: {
+          bg: `${colorScheme}.900`,
+        },
+        icon: {
+          color: `${colorScheme}.500`,
+        },
+      })),
+    },
     Badge: {
       baseStyle: {
         textTransform: "none",
@@ -97,15 +121,32 @@ const theme = extendTheme({
     },
     Button: {
       defaultProps: {
-        variant: "outline",
+        variant: "solid",
       },
       variants: {
-        outline: (props: StyleFunctionProps) => ({
-          _hover: { borderColor: `${props.colorScheme}.400`, bg: `gray.650` },
-          _active: { bg: `gray.700` },
-          color: `${props.colorScheme}.400`,
-          borderColor: "gray.300",
-        }),
+        solid: (props: StyleFunctionProps) => {
+          const bg = ["red", "green", "blue"].includes(props.colorScheme)
+            ? `${props.colorScheme}.650`
+            : `${props.colorScheme}.600`;
+          const bgInteraction = ["red", "green", "blue"].includes(props.colorScheme)
+            ? `${props.colorScheme}.450`
+            : `${props.colorScheme}.400`;
+          return {
+            _hover: { bg: bgInteraction, _disabled: { bg } },
+            _active: { bg: bgInteraction },
+            bg,
+            color: `white`,
+          };
+        },
+        outline: (props: StyleFunctionProps) => {
+          const color = props.colorScheme === "gray" ? "gray.100" : `${props.colorScheme}.400`;
+          return {
+            _hover: { borderColor: `${props.colorScheme}.400`, bg: `gray.650` },
+            _active: { bg: `gray.700` },
+            color,
+            borderColor: "gray.300",
+          };
+        },
         activeFilterControl: (props: StyleFunctionProps) => ({
           _hover: { borderColor: `${props.colorScheme}.200` },
           borderColor: `${props.colorScheme}.400`,
@@ -133,9 +174,6 @@ const theme = extendTheme({
             borderColor: "gray.300",
           };
         },
-        solid: defineStyle((props) => ({
-          color: `white`,
-        })),
         savedSolid: (props: StyleFunctionProps) => {
           const solid = theme.components.Button.variants!.solid(props);
           return {
@@ -274,7 +312,28 @@ const theme = extendTheme({
         },
       })),
     },
+    Drawer: {
+      baseStyle: {
+        overlay: {
+          bg: "blackAlpha.100",
+        },
+        header: {
+          borderBottomWidth: "1px",
+          borderBottomColor: "gray.500",
+        },
+        body: { bg: "gray.900", h: "100%", p: "16px" },
+        footer: {
+          borderTopWidth: "1px",
+          borderTopColor: "gray.500",
+        },
+      },
+    },
     Form: formsTheme,
+    Input: {
+      baseStyle: {
+        field: { _dark: { bg: "gray.850" }, _placeholder: { color: "gray.200" } },
+      },
+    },
     Menu: {
       baseStyle: {
         list: {
@@ -286,17 +345,10 @@ const theme = extendTheme({
         item: {
           borderRadius: "6px",
         },
-        icon: { color: "gray.400", "font-size": "18px !important" },
+        icon: { color: "gray.400", fontSize: "18px !important" },
       },
     },
-    Popover: {
-      baseStyle: {
-        content: {
-          bg: "gray.500",
-          p: "8px",
-        },
-      },
-    },
+    Progress: progressTheme,
     Switch: {
       defaultProps: {
         colorScheme: "green",
@@ -378,7 +430,12 @@ export const KurtosisThemeProvider = ({
   ...chakraProps
 }: PropsWithChildren<Omit<ChakraProviderProps, "theme">>) => {
   return (
-    <ChakraProvider theme={theme} toastOptions={{ defaultOptions: { position: "top" } }} {...chakraProps}>
+    <ChakraProvider
+      theme={theme}
+      toastOptions={{ defaultOptions: { position: "top" } }}
+      portalZIndex={40 /* https://github.com/chakra-ui/chakra-ui/issues/3269 */}
+      {...chakraProps}
+    >
       <ColorModeFixer />
       <Fonts />
       {children}

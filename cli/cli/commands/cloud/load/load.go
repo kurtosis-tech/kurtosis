@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/cloud"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/instance_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
@@ -33,8 +34,9 @@ const (
 var LoadCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.CloudLoadCmdStr,
 	ShortDescription: "Load a Kurtosis Cloud instance",
-	LongDescription: "Load a remote Kurtosis Cloud instance by providing the instance id." +
-		"Note, the remote instance must be in a running state for this operation to complete successfully",
+	LongDescription: "Load a remote Kurtosis Cloud instance by providing the instance id. " +
+		fmt.Sprintf("Note, in order to load the instance, you must provide a Kurtosis Cloud API Key as an environment variable, e.g.: `export %s=abcd... `", cloudhelper.KurtosisCloudApiKeyEnvVarArg) +
+		"You can find your Kurtosis Cloud API Key at https://cloud.kurtosis.com/connect",
 	Flags: []*flags.FlagConfig{},
 	Args: []*args.ArgConfig{
 		instance_id_arg.InstanceIdentifierArg(instanceIdentifierArgKey, instanceIdentifierArgIsGreedy),
@@ -50,6 +52,18 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		return stacktrace.Propagate(err, "Expected a value for instance id arg '%v' but none was found; "+
 			"this is a bug in the Kurtosis CLI!", instanceIdentifierArgKey)
 	}
+
+	contextsConfigStore := store.GetContextsConfigStore()
+	currentContext, err := contextsConfigStore.GetCurrentContext()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while retrieving the current context")
+	}
+
+	if currentContext.Uuid.Value == instanceID {
+		logrus.Infof("Cloud instance %s already loaded", instanceID)
+		return nil
+	}
+
 	logrus.Infof("Loading cloud instance %s", instanceID)
 
 	apiKey, err := cloudhelper.LoadApiKey()
@@ -96,7 +110,6 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		return stacktrace.Propagate(err, "Unable to decode context config")
 	}
 
-	contextsConfigStore := store.GetContextsConfigStore()
 	// We first have to remove the context incase it's already loaded
 	err = contextsConfigStore.RemoveContext(parsedContext.Uuid)
 	if err != nil {

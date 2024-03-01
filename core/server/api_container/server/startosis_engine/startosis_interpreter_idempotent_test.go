@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -28,6 +29,8 @@ const (
 	enclaveUuid = enclave.EnclaveUUID("enclave-uuid")
 
 	noInputParams = "{}"
+
+	defaultNonBlockingMode = false
 )
 
 var noPackageReplaceOptions = map[string]string{}
@@ -60,12 +63,15 @@ func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(starlarkValueSerde, enclaveDb)
 	require.NoError(suite.T(), err)
 
+	interpretationTimeValueStore, err := interpretation_time_value_store.CreateInterpretationTimeValueStore(enclaveDb, starlarkValueSerde)
+	require.Nil(suite.T(), err)
+
 	serviceNetwork := service_network.NewMockServiceNetwork(suite.T())
 	serviceNetwork.EXPECT().GetApiContainerInfo().Maybe().Return(
 		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), uint16(1234), "0.0.0"),
 	)
 	serviceNetwork.EXPECT().GetEnclaveUuid().Maybe().Return(enclaveUuid)
-	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, starlarkValueSerde, "")
+	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, starlarkValueSerde, "", interpretationTimeValueStore)
 }
 
 func TestRunStartosisInterpreterIdempotentTestSuite(t *testing.T) {
@@ -95,6 +101,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		script,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -110,6 +117,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		script,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
@@ -150,6 +158,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -170,6 +179,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
@@ -211,6 +221,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -229,6 +240,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
@@ -264,6 +276,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -284,6 +297,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
@@ -325,6 +339,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -346,6 +361,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
@@ -396,6 +412,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
@@ -422,6 +439,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
+		defaultNonBlockingMode,
 		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)

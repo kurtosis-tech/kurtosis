@@ -2,11 +2,12 @@ package test_engine
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type imageBuildSpecTest struct {
@@ -22,7 +23,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTest() {
 		Return(testBuildContextLocator, nil)
 
 	suite.packageContentProvider.EXPECT().
-		GetOnDiskAbsoluteFilePath(testContainerImageLocator).
+		GetOnDiskAbsolutePackageFilePath(testContainerImageLocator).
 		Times(1).
 		Return(testOnDiskContainerImagePath, nil)
 
@@ -33,14 +34,12 @@ func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTest() {
 }
 
 func (t *imageBuildSpecTest) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
+	return fmt.Sprintf("%s(%s=%q, %s=%q)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
 		service_config.BuildContextAttr,
-		testBuildContextDir,
-		service_config.TargetStageAttr,
-		testTargetStage)
+		testBuildContextDir)
 }
 
 func (t *imageBuildSpecTest) Assert(typeValue builtin_argument.KurtosisValueType) {
@@ -55,5 +54,5 @@ func (t *imageBuildSpecTest) Assert(typeValue builtin_argument.KurtosisValueType
 	require.Nil(t, err)
 	require.Equal(t, testOnDiskContainerImagePath, imageBuildSpec.GetContainerImageFilePath())
 	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
-	require.Equal(t, testTargetStage, imageBuildSpec.GetTargetStage())
+	require.Equal(t, imageBuildSpec.GetTargetStage(), "")
 }

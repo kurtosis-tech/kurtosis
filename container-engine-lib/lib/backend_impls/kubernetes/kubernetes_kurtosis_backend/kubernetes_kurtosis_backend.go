@@ -2,8 +2,11 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"io"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	apiv1 "k8s.io/api/core/v1"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/engine_functions"
@@ -114,7 +117,7 @@ func NewCLIModeKubernetesKurtosisBackend(
 	)
 }
 
-func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
+func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string, registrySpec *image_registry_spec.ImageRegistrySpec, downloadMode image_download_mode.ImageDownloadMode) (bool, string, error) {
 	logrus.Warnf("FetchImage isn't implemented for Kubernetes yet")
 	return false, "", nil
 }
@@ -130,6 +133,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	imageVersionTag string,
 	grpcPortNum uint16,
 	envVars map[string]string,
+	shouldStartInDebugMode bool,
+	githubAuthToken string,
 ) (
 	*engine.Engine,
 	error,
@@ -140,6 +145,8 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 		imageVersionTag,
 		grpcPortNum,
 		envVars,
+		shouldStartInDebugMode,
+		githubAuthToken,
 		backend.kubernetesManager,
 		backend.objAttrsProvider,
 	)
@@ -480,6 +487,11 @@ func (backend *KubernetesKurtosisBackend) DestroyReverseProxy(ctx context.Contex
 func (backend *KubernetesKurtosisBackend) BuildImage(ctx context.Context, imageName string, imageBuildSpec *image_build_spec.ImageBuildSpec) (string, error) {
 	// TODO IMPLEMENT
 	return "", stacktrace.NewError("Building images isn't yet implemented in Kubernetes.")
+}
+
+func (backend *KubernetesKurtosisBackend) NixBuild(ctx context.Context, nixBuildSpec *nix_build_spec.NixBuildSpec) (string, error) {
+	// TODO IMPLEMENT
+	return "", stacktrace.NewError("Nix image building isn't yet implemented in Kubernetes.")
 }
 
 // ====================================================================================================

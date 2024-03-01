@@ -8,14 +8,32 @@ on:
     - edited
 
 jobs:
+  check-if-code-change:
+    runs-on: ubuntu-latest
+    outputs:
+      change: ${{ steps.check.outputs.change }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          go-version: '1.20'
+          fetch-depth: 0
+      - run: |
+          if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
+            echo "::set-output name=change::false"
+          else
+            echo "::set-output name=change::true"
+          fi
+        id: check
   check-proto-break:
+    needs: check-if-code-change
+    if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v5
       with:
         go-version: '1.20'
     - run: go install github.com/bufbuild/buf/cmd/buf@v1.26.1
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Check if PR is breaking

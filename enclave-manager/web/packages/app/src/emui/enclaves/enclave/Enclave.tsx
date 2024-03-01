@@ -1,15 +1,10 @@
 import { Flex, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import {
-  AppPageLayout,
-  FeatureNotImplementedModal,
-  HoverLineTabList,
-  KurtosisAlert,
-  PageTitle,
-} from "kurtosis-ui-components";
-import { FunctionComponent, useState } from "react";
+import { AppPageLayout, HoverLineTabList, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
+import { FunctionComponent } from "react";
 import { EditEnclaveButton } from "../components/EditEnclaveButton";
+import { ConnectEnclaveButton } from "../components/widgets/ConnectEnclaveButton";
 import { DeleteEnclavesButton } from "../components/widgets/DeleteEnclavesButton";
 import { useFullEnclave } from "../EnclavesContext";
 import { EnclaveFullInfo } from "../types";
@@ -44,17 +39,13 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
   const activeTab = params.activeTab || "overview";
   const activeIndex = tabs.findIndex((tab) => tab.path === activeTab);
 
-  const [unavailableModalState, setUnavailableModalState] = useState<
-    { isOpen: false } | { isOpen: true; featureName: string; message?: string; issueUrl: string }
-  >({ isOpen: false });
-
   const handleTabChange = (newTabIndex: number) => {
     const tab = tabs[newTabIndex];
     navigator(`/enclave/${enclave.shortenedUuid}/${tab.path}`);
   };
 
   return (
-    <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange}>
+    <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange} variant={"kurtosisHeaderLine"}>
       <AppPageLayout preventPageScroll={activeTab === "logs"}>
         <Flex justifyContent={"space-between"} alignItems={"flex-end"} width={"100%"}>
           <Flex alignItems={"center"} gap={"8px"}>
@@ -64,14 +55,8 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
           <Flex gap={"8px"} alignItems={"center"} pb={"16px"}>
             <DeleteEnclavesButton enclaves={[enclave]} />
             <EditEnclaveButton enclave={enclave} />
+            <ConnectEnclaveButton enclave={enclave} />
           </Flex>
-          <FeatureNotImplementedModal
-            featureName={unavailableModalState.isOpen ? unavailableModalState.featureName : ""}
-            message={unavailableModalState.isOpen ? unavailableModalState.message : ""}
-            isOpen={unavailableModalState.isOpen}
-            issueUrl={unavailableModalState.isOpen ? unavailableModalState.issueUrl : ""}
-            onClose={() => setUnavailableModalState({ isOpen: false })}
-          />
         </Flex>
         <TabPanels>
           {tabs.map((tab) => (

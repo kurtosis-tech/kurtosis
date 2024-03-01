@@ -10,6 +10,7 @@ import {
   FormErrorMessage,
   FormLabel,
   Icon,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
@@ -29,6 +30,7 @@ import { DownloadButton } from "../DownloadButton";
 import { FindCommand } from "../KeyboardCommands";
 import { useKeyboardAction } from "../useKeyboardAction";
 import { isDefined, isNotEmpty, stringifyError, stripAnsi } from "../utils";
+import { logFontFamily } from "./constants";
 import { LogLine } from "./LogLine";
 import { LogLineMessage } from "./types";
 import { normalizeLogText } from "./utils";
@@ -76,6 +78,7 @@ export const LogViewer = ({
 }: LogViewerProps) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [logLines, setLogLines] = useState(propsLogLines);
+  const logLinesToShow = useMemo(() => logLines.filter(({ message }) => isDefined(message)), [logLines]);
   const [userIsScrolling, setUserIsScrolling] = useState(false);
   const [automaticScroll, setAutomaticScroll] = useState(true);
 
@@ -113,7 +116,7 @@ export const LogViewer = ({
   }, []);
 
   const getLogsValue = () => {
-    return logLines
+    return logLinesToShow
       .map(({ message }) => message)
       .filter(isDefined)
       .map(stripAnsi)
@@ -151,27 +154,41 @@ export const LogViewer = ({
         {isDefined(ProgressWidget) && ProgressWidget}
       </Flex>
       <Flex flexDirection={"column"} position={"relative"} h={"100%"} flex={"1"}>
-        <Virtuoso
-          ref={virtuosoRef}
-          followOutput={automaticScroll}
-          atBottomStateChange={handleBottomStateChange}
-          isScrolling={setUserIsScrolling}
-          style={{ height: "100%", flex: "1" }}
-          data={logLines.filter(({ message }) => isDefined(message))}
-          itemContent={(index, line) => (
-            <LogLine
-              {...line}
-              highlightPattern={searchState.type === "success" ? searchState.pattern : undefined}
-              selected={isIndexSelected(index)}
-            />
-          )}
-        />
+        {logLinesToShow.length === 0 ? (
+          <Flex
+            justifyContent={"center"}
+            alignItems={"center"}
+            fontSize={"sm"}
+            lineHeight="2"
+            fontWeight={400}
+            flex={"1"}
+            fontFamily={logFontFamily}
+          >
+            No logs to display
+          </Flex>
+        ) : (
+          <Virtuoso
+            ref={virtuosoRef}
+            followOutput={automaticScroll}
+            atBottomStateChange={handleBottomStateChange}
+            isScrolling={setUserIsScrolling}
+            style={{ height: "100%", flex: "1" }}
+            data={logLinesToShow}
+            itemContent={(index, line) => (
+              <LogLine
+                {...line}
+                highlightPattern={searchState.type === "success" ? searchState.pattern : undefined}
+                selected={isIndexSelected(index)}
+              />
+            )}
+          />
+        )}
         {isDefined(progressPercent) && (
           <Progress
             value={typeof progressPercent === "number" ? progressPercent : progressPercent === "failed" ? 100 : 0}
             isIndeterminate={progressPercent === "indeterminate"}
             height={"4px"}
-            colorScheme={progressPercent === "failed" ? "red.500" : "kurtosisGreen"}
+            colorScheme={progressPercent === "failed" ? "red" : progressPercent === 100 ? "kurtosisGreen" : "blue"}
           />
         )}
       </Flex>
@@ -348,14 +365,7 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
     return (
       <FormControl isInvalid={searchState.type === "error"}>
         <Flex gap={"16px"} alignItems={"center"}>
-          <InputGroup
-            size="md"
-            width={"296px"}
-            bg={"gray.650"}
-            color={"gray.150"}
-            variant={"filled"}
-            borderRadius={"6px"}
-          >
+          <InputGroup size="md" width={"296px"} color={"gray.150"} variant={"filled"} borderRadius={"6px"}>
             <InputLeftElement pointerEvents="none">
               <Icon as={FiSearch} color="gray.100" />
             </InputLeftElement>
@@ -365,48 +375,50 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
               value={searchState.rawSearchTerm}
               onChange={handleOnChange}
               placeholder={"Search"}
+              _dark={{ bg: "gray.650" }}
             />
             {searchState.type !== "init" && (
               <InputRightElement>
-                <SmallCloseIcon onClick={handleClearSearch} />
+                <IconButton
+                  variant={"ghost"}
+                  icon={<SmallCloseIcon />}
+                  size={"sm"}
+                  onClick={handleClearSearch}
+                  aria-label={"Clear search"}
+                />
               </InputRightElement>
             )}
           </InputGroup>
-          <ButtonGroup>
+          <ButtonGroup size="xs" colorScheme={"darkBlue"} variant={"outline"}>
             <Button
-              size={"sm"}
               ml={2}
               onClick={handlePriorMatchClick}
               isDisabled={searchState.type !== "success" || searchState.searchMatchesIndices.length === 0}
-              colorScheme={"darkBlue"}
               leftIcon={<MdArrowBackIosNew />}
             >
               Previous
             </Button>
             <Button
-              size={"sm"}
               ml={2}
               onClick={handleNextMatchClick}
               isDisabled={searchState.type !== "success" || searchState.searchMatchesIndices.length === 0}
-              colorScheme={"darkBlue"}
               rightIcon={<MdArrowForwardIos />}
             >
               Next
             </Button>
           </ButtonGroup>
           {searchState.rawSearchTerm.length > 0 && (
-            <Flex ml={2} alignItems={"center"}>
+            <Flex alignItems={"center"}>
               {searchState.type === "success" && (
-                <Text
-                  align={"left"}
-                  color={searchState.searchMatchesIndices.length === 0 ? "red" : "kurtosisGreen.400"}
-                >
+                <Text align={"left"} fontSize={"xs"} fontWeight={"semibold"}>
                   {searchState.searchMatchesIndices.length > 0 && searchState.currentSearchIndex !== undefined && (
                     <span>
                       <Editable
                         display={"inline"}
-                        p={0}
-                        m={"0 4px 0 0"}
+                        borderWidth={"1px"}
+                        p={"2px 6px"}
+                        borderColor={"gray.500"}
+                        borderRadius={"6px"}
                         size={"sm"}
                         value={`${searchState.currentSearchIndex + 1}`}
                         onChange={handleIndexInputChange}
@@ -414,9 +426,9 @@ const SearchControls = ({ searchState, onChangeSearchState, logLines }: SearchCo
                         <Tooltip label="Click to edit" shouldWrapChildren={true}>
                           <EditablePreview />
                         </Tooltip>
-                        <EditableInput p={1} width={"50px"} />
+                        <EditableInput width={"50px"} />
                       </Editable>
-                      <>/ </>
+                      <> of </>
                     </span>
                   )}
                   <span>{searchState.searchMatchesIndices.length} matches</span>

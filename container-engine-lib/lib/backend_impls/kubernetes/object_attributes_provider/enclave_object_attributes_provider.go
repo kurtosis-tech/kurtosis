@@ -25,8 +25,6 @@ const (
 
 	enclaveDataDirFragment = "enclave-data-dir"
 
-	persistentServiceDirectoryNameFragment = "service-persistent-directory"
-
 	traefikIngressRouterEntrypointsValue = "web"
 )
 
@@ -45,7 +43,6 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 		userLabels map[string]string,
 	) (KubernetesObjectAttributes, error)
 	ForSinglePersistentDirectoryVolume(
-		serviceUUID service.ServiceUUID,
 		persistentKey service_directory.DirectoryPersistentKey,
 	) (KubernetesObjectAttributes, error)
 	ForUserServiceIngress(
@@ -244,10 +241,9 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveDataDir
 	return objectAttributes, nil
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(serviceUUID service.ServiceUUID, persistentKey service_directory.DirectoryPersistentKey) (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(persistentKey service_directory.DirectoryPersistentKey) (KubernetesObjectAttributes, error) {
 	hasher := md5.New()
 	hasher.Write([]byte(provider.enclaveId))
-	hasher.Write([]byte(serviceUUID))
 	hasher.Write([]byte(persistentKey))
 	persistentKeyHash := hex.EncodeToString(hasher.Sum(nil))
 
@@ -264,7 +260,7 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForSinglePersiste
 	//No userServiceService annotations.
 	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
 
-	name, err := getKubernetesPersistentDirectoryName(persistentKeyHash)
+	name, err := getKubernetesPersistentDirectoryName(string(persistentKey))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create service persistent directory name for hash: '%s'", persistentKeyHash)
 	}
@@ -329,12 +325,11 @@ func getKubernetesObjectName(
 }
 
 func getKubernetesPersistentDirectoryName(
-	persistentServiceDirectoryName string,
+	persistentKey string,
 ) (*kubernetes_object_name.KubernetesObjectName, error) {
 	name, err := getCompositeKubernetesObjectName(
 		[]string{
-			persistentServiceDirectoryNameFragment,
-			persistentServiceDirectoryName,
+			persistentKey,
 		})
 	return name, err
 }

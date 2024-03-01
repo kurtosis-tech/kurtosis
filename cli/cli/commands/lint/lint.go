@@ -4,12 +4,14 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis-package-indexer/server/crawler"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -25,6 +27,10 @@ const (
 	formatFlagShortKey     = "f"
 	formatFlagDefaultValue = "false"
 
+	checkDocStringFlagKey      = "check-docstring"
+	checkDocStringFlagShortKey = "c"
+	checkDocStringDefaultValue = "true"
+
 	pyBlackDockerImage      = "pyfound/black:23.9.1"
 	dockerRunCmd            = "run"
 	removeContainerOnExit   = "--rm"
@@ -39,6 +45,8 @@ const (
 	dirVolumeSeparator      = ":"
 	presentWorkingDirectory = "."
 	versionArg              = "version"
+
+	mainDotStarFilename = "main.star"
 
 	linterFailedAsThingsNeedToBeReformattedExitCode = 1
 	linterFailedWithInternalErrorsExitCode          = 123
@@ -74,7 +82,15 @@ var LintCmd = &lowlevel.LowlevelKurtosisCommand{
 			Type:      flags.FlagType_Bool,
 			Default:   formatFlagDefaultValue,
 		},
+		{
+			Key:       checkDocStringFlagKey,
+			Usage:     fmt.Sprintf("Use this flag to check whether the doc string is valid or not. This requires you to pass a single path to a '%v' or a directory containing a '%v'", mainDotStarFilename, mainDotStarFilename),
+			Shorthand: checkDocStringFlagShortKey,
+			Type:      flags.FlagType_Bool,
+			Default:   checkDocStringDefaultValue,
+		},
 	},
+
 	RunFunc: run,
 }
 
@@ -90,6 +106,17 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	}
 	if !formatFlag {
 		dockerRunSuffix = append(dockerRunSuffix, checkFlagForBlack)
+	}
+
+	checkDocStringFlag, err := flags.GetBool(checkDocStringFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "an error occurred getting the value of the flag '%v'", checkDocStringFlagKey)
+	}
+
+	if checkDocStringFlag {
+		if err = validateDocString(fileOrDirToLintArg); err != nil {
+			return stacktrace.Propagate(err, "an error occurred while running the doc string validator")
+		}
 	}
 
 	logrus.Infof("This depends on '%v'; first run may take a while as we might have to download it", pyBlackDockerImage)
@@ -165,4 +192,51 @@ func getVolumeToMountAndPathToLint(pathOfFileOrDirToLint string) (string, string
 	} else {
 		return path.Dir(absolutePathForFileOrDirToLint), path.Base(absolutePathForFileOrDirToLint), nil
 	}
+}
+
+func validateDocString(fileOrDirToLintArg []string) error {
+	if len(fileOrDirToLintArg) != 1 {
+		return stacktrace.NewError("Doc string validation only works with one argument, either a full path to a '%v' file or a directory containing it got '%v' arguments", mainDotStarFilename, len(fileOrDirToLintArg))
+	}
+
+	fileOrDirToCheckForDocString := fileOrDirToLintArg[0]
+	lastPartOfFileToCheck := path.Base(fileOrDirToCheckForDocString)
+
+	if lastPartOfFileToCheck == mainDotStarFilename {
+		return parseDocString(fileOrDirToCheckForDocString)
+	}
+
+	fileInfo, _ := os.Stat(fileOrDirToCheckForDocString)
+	if !fileInfo.IsDir() {
+		return stacktrace.NewError("Passed argument '%v' isn't a '%v' file nor is it a directory", fileOrDirToLintArg[0], mainDotStarFilename)
+	}
+
+	entries, err := os.ReadDir(fileOrDirToCheckForDocString)
+	if err != nil {
+		return stacktrace.Propagate(err, "Couldn't read directory '%v' for doc string validation", fileOrDirToCheckForDocString)
+	}
+
+	for _, entry := range entries {
+		if entry.Name() == mainDotStarFilename {
+			return parseDocString(path.Join(fileOrDirToCheckForDocString, entry.Name()))
+		}
+	}
+
+	return stacktrace.Propagate(err, "Couldn't find a '%v' file in the passed directory '%v'", mainDotStarFilename, fileOrDirToCheckForDocString)
+}
+
+func parseDocString(mainStarFilepath string) error {
+	contents, err := os.ReadFile(mainStarFilepath)
+	if err != nil {
+		return stacktrace.Propagate(err, "")
+	}
+	contentsAsStr := string(contents)
+	currentOutput := logrus.StandardLogger().Out
+	defer logrus.SetOutput(currentOutput)
+	// we disable the output as the crawler pollutes the screen otherwise
+	logrus.SetOutput(io.Discard)
+	if _, err := crawler.ParseMainDotStarContent(contentsAsStr); err != nil {
+		return stacktrace.Propagate(err, "an error occurred while parsing the doc string")
+	}
+	return nil
 }

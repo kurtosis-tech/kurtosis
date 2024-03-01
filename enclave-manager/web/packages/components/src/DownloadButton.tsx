@@ -56,6 +56,7 @@ export const DownloadButton = <IsIconButton extends boolean>({
         leftIcon={<FiDownload />}
         size={"xs"}
         colorScheme={"darkBlue"}
+        variant={"outline"}
         onClick={handleDownloadClick}
         {...buttonProps}
       >

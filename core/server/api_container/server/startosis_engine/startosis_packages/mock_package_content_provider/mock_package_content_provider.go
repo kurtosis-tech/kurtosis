@@ -32,13 +32,24 @@ func NewMockPackageContentProvider() *MockPackageContentProvider {
 	}
 }
 
-func (provider *MockPackageContentProvider) GetOnDiskAbsoluteFilePath(packageId string) (string, *startosis_errors.InterpretationError) {
-	absFilePath, found := provider.starlarkPackages[packageId]
+func (provider *MockPackageContentProvider) GetOnDiskAbsolutePackageFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
+	absFilePath, found := provider.starlarkPackages[fileInsidePackageUrl]
 	if !found {
-		return "", startosis_errors.NewInterpretationError("Module '%v' not found", packageId)
+		return "", startosis_errors.NewInterpretationError("Module '%v' not found", fileInsidePackageUrl)
 	}
 	if _, err := os.Stat(absFilePath); err != nil {
-		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", packageId)
+		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", fileInsidePackageUrl)
+	}
+	return absFilePath, nil
+}
+
+func (provider *MockPackageContentProvider) GetOnDiskAbsolutePath(repositoryPathURL string) (string, *startosis_errors.InterpretationError) {
+	absFilePath, found := provider.starlarkPackages[repositoryPathURL]
+	if !found {
+		return "", startosis_errors.NewInterpretationError("Module '%v' not found", repositoryPathURL)
+	}
+	if _, err := os.Stat(absFilePath); err != nil {
+		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", repositoryPathURL)
 	}
 	return absFilePath, nil
 }

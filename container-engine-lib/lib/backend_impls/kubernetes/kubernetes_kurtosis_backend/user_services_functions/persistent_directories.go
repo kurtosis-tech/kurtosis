@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -69,7 +68,6 @@ func (volumeAndClaim *kubernetesVolumeWithClaim) GetVolumeMount(mountPath string
 func preparePersistentDirectoriesResources(
 	ctx context.Context,
 	namespace string,
-	serviceUuid service.ServiceUUID,
 	objAttributeProviders object_attributes_provider.KubernetesEnclaveObjectAttributesProvider,
 	serviceMountpointsToPersistentKey map[string]service_directory.PersistentDirectory,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
@@ -80,7 +78,7 @@ func preparePersistentDirectoriesResources(
 	persistentVolumesAndClaims := map[string]*kubernetesVolumeWithClaim{}
 
 	for dirPath, persistentDirectory := range serviceMountpointsToPersistentKey {
-		volumeAttrs, err := objAttributeProviders.ForSinglePersistentDirectoryVolume(serviceUuid, persistentDirectory.PersistentKey)
+		volumeAttrs, err := objAttributeProviders.ForSinglePersistentDirectoryVolume(persistentDirectory.PersistentKey)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the labels for persist service directory '%s'", persistentDirectory.PersistentKey)
 		}

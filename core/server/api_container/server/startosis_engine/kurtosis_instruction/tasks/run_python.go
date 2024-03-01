@@ -40,7 +40,7 @@ const (
 	successfulPipRunExitCode = 0
 )
 
-func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, nonBlockingMode bool) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RunPythonBuiltinName,
@@ -100,6 +100,7 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 				pythonArguments:   nil,
 				packages:          nil,
 				name:              "",
+				nonBlockingMode:   nonBlockingMode,
 				serviceConfig:     nil, // populated at interpretation time
 				run:               "",  // populated at interpretation time
 				resultUuid:        "",  // populated at interpretation time
@@ -124,9 +125,10 @@ type RunPythonCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 	serviceNetwork    service_network.ServiceNetwork
 
-	resultUuid string
-	name       string
-	run        string
+	resultUuid      string
+	name            string
+	run             string
+	nonBlockingMode bool
 
 	pythonArguments []string
 	packages        []string
@@ -192,15 +194,24 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
+			multipleFilesArtifactsMountDirPaths := map[string][]string{}
+			for pathToFile, fileArtifactName := range filesArtifactMountDirPaths {
+				multipleFilesArtifactsMountDirPaths[pathToFile] = []string{fileArtifactName}
+			}
+			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(multipleFilesArtifactsMountDirPaths, builtin.serviceNetwork)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
 		}
 	}
 
+	envVars, interpretationErr := extractEnvVarsIfDefined(arguments)
+	if err != nil {
+		return nil, interpretationErr
+	}
+
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion)
+	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion, envVars)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
 	}
@@ -233,7 +244,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 
 func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	// TODO add validation for python script
-	var serviceDirpathsToArtifactIdentifiers map[string]string
+	var serviceDirpathsToArtifactIdentifiers map[string][]string
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		serviceDirpathsToArtifactIdentifiers = builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers
 	}
@@ -294,8 +305,12 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 		}
 	}
 
-	if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
-		return "", stacktrace.Propagate(err, "attempted to remove the temporary task container but failed")
+	// If the user indicated not to block on removing services after tasks, don't remove the service.
+	// The user will have to remove the task service themselves or it will get cleaned up with Kurtosis clean.
+	if !builtin.nonBlockingMode {
+		if err = removeService(ctx, builtin.serviceNetwork, builtin.name); err != nil {
+			return "", stacktrace.Propagate(err, "attempted to remove the temporary task container but failed")
+		}
 	}
 
 	return instructionResult, err
@@ -310,6 +325,10 @@ func (builtin *RunPythonCapabilities) TryResolveWith(instructionsAreEqual bool, 
 
 func (builtin *RunPythonCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	builder.SetType(RunPythonBuiltinName)
+}
+
+func (builtin *RunPythonCapabilities) Description() string {
+	return "Running Python script"
 }
 
 func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {
@@ -343,9 +362,9 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 		maybePythonArgumentsWithRuntimeValueReplaced = append(maybePythonArgumentsWithRuntimeValueReplaced, maybePythonArgumentWithRuntimeValueReplaced)
 	}
 	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, spaceDelimiter)
-
+	runEscaped := strings.ReplaceAll(builtin.run, `"`, `\"`)
 	if len(argumentsAsString) > 0 {
-		return fmt.Sprintf("python -c '%s' %s", builtin.run, argumentsAsString), nil
+		return fmt.Sprintf(`python -c "%s" %s`, runEscaped, argumentsAsString), nil
 	}
-	return fmt.Sprintf("python -c '%s'", builtin.run), nil
+	return fmt.Sprintf(`python -c "%s"`, runEscaped), nil
 }

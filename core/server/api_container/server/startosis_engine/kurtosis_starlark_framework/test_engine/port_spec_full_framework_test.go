@@ -42,7 +42,7 @@ func (t *portSpecFullTestCase) Assert(typeValue builtin_argument.KurtosisValueTy
 
 	waitDuration, errParsingDuration := time.ParseDuration(testWaitConfiguration)
 	require.NoError(t, errParsingDuration)
-	expectedPortSpec, errPortCreation := port_spec2.NewPortSpec(testPrivatePortNumber, testPrivatePortProtocol, testPrivateApplicationProtocol, port_spec2.NewWait(waitDuration))
+	expectedPortSpec, errPortCreation := port_spec2.NewPortSpec(testPrivatePortNumber, testPrivatePortProtocol, testPrivateApplicationProtocol, port_spec2.NewWait(waitDuration), "")
 	require.NoError(t, errPortCreation)
 	require.Equal(t, expectedPortSpec, portSpec)
 

@@ -3,6 +3,12 @@ package docker_compose_transpiler
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/joho/godotenv"
@@ -15,11 +21,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"os"
-	"path"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -55,6 +56,9 @@ const (
 	defRunStr = "def run(plan):\n"
 
 	newStarlarkLineFmtStr = "    %s\n"
+
+	unixHomePathSymbol         = "~"
+	upstreamRelativePathSymbol = ".."
 )
 
 type ComposeService types.ServiceConfig
@@ -69,11 +73,11 @@ var dockerPortProtosToKurtosisPortProtos = map[string]port_spec.TransportProtoco
 
 var CyclicalDependencyError = stacktrace.NewError("A cycle was detected in the service dependency graph.")
 
-func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, composeRelativeFilepath string) (string, error) {
-	composeAbsFilepath := path.Join(packageAbsDirpath, composeRelativeFilepath)
+func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, relativePathToComposeFile string) (string, error) {
+	composeAbsFilepath := path.Join(packageAbsDirpath, relativePathToComposeFile)
 
 	// Useful for logging to prevent leaking internals of APIC
-	composeFilename := path.Base(composeRelativeFilepath)
+	composeFilename := path.Base(relativePathToComposeFile)
 
 	composeBytes, err := os.ReadFile(composeAbsFilepath)
 	if err != nil {
@@ -119,6 +123,7 @@ func convertComposeToStarlarkScript(composeBytes []byte, envVars map[string]stri
 func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]string) (*types.Project, error) {
 	composeParseConfig := types.ConfigDetails{ //nolint:exhaustruct
 		// Note that we might be able to use the WorkingDir property instead, to parse the entire directory
+		// nolint: exhaustruct
 		ConfigFiles: []types.ConfigFile{{
 			Content: composeBytes,
 		}},
@@ -178,6 +183,7 @@ func createStarlarkScript(
 	return script, nil
 }
 
+// TODO add support for User here
 // Turns DockerCompose Service into Kurtosis ServiceConfigs and returns info needed for creating a valid starlark script
 func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 	map[string]StarlarkServiceConfig, // Map of service names to Kurtosis ServiceConfig's
@@ -219,7 +225,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 
 		// PORTS
 		if composeService.Ports != nil {
-			portSpecsDict, err := getStarlarkPortSpecs(composeService.Ports)
+			portSpecsDict, err := getStarlarkPortSpecs(serviceName, composeService.Ports)
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the port specs dict for service '%s'", serviceName)
 			}
@@ -361,7 +367,7 @@ func getStarlarkImageBuildSpec(composeBuild *types.BuildConfig, serviceName stri
 }
 
 // TODO: Support public ports
-func getStarlarkPortSpecs(composePorts []types.ServicePortConfig) (*starlark.Dict, error) {
+func getStarlarkPortSpecs(serviceName string, composePorts []types.ServicePortConfig) (*starlark.Dict, error) {
 	portSpecs := starlark.NewDict(len(composePorts))
 
 	for portIdx, dockerPort := range composePorts {
@@ -374,10 +380,12 @@ func getStarlarkPortSpecs(composePorts []types.ServicePortConfig) (*starlark.Dic
 		}
 
 		portSpec, interpretationErr := port_spec_starlark.CreatePortSpecUsingGoValues(
+			serviceName,
 			uint16(dockerPort.Target),
 			kurtosisProto,
 			nil, // Application protocol (which Compose doesn't have)
 			"",  // Wait timeout (which Compose doesn't have a way to override)
+			nil, // No way to change the URL for the port
 		)
 		if interpretationErr != nil {
 			return nil, stacktrace.Propagate(interpretationErr, "An error occurred creating a %s object from port #%d", port_spec_starlark.PortSpecTypeName, portIdx)
@@ -435,8 +443,7 @@ func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.D
 // <abs path on host>:<path on container>:= create a persistent directory on container at <path on container>
 // <abs path on host> := create a persistent directory on container at <abs path on host>
 // <rel path on host> := create a persistent directory on container at <rel path on host>
-// Named volumes are currently not supported
-// TODO: Support named volumes https://docs.docker.com/storage/volumes/
+// Named volumes are treated https://docs.docker.com/storage/volumes/ as absolute paths persistence layers, and thus a persistent directory is created
 func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, error) {
 	filesArgSLDict := starlark.NewDict(len(composeVolumes))
 	filesArtifactsToUpload := map[string]string{}
@@ -447,6 +454,21 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 		var shouldPersist bool
 		switch volumeType {
 		case types.VolumeTypeBind:
+			// Handle case where home path is reference
+			if strings.Contains(volume.Source, unixHomePathSymbol) {
+				return nil, map[string]string{}, stacktrace.NewError(
+					"Volume path '%v' uses '%v', likely referencing home path on a unix filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
+						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path",
+					volume.Source, unixHomePathSymbol, volume.Source)
+			}
+			// Handle case where upstream relative path is reference
+			if strings.Contains(volume.Source, upstreamRelativePathSymbol) {
+				return nil, map[string]string{}, stacktrace.NewError(
+					"Volume path '%v' uses '%v', likely referencing an upstream path on a filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
+						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path within the package.",
+					volume.Source, upstreamRelativePathSymbol, volume.Source)
+			}
+
 			// Assume that if an absolute path is specified, user wants to use volume as a persistence layer
 			// Additionally, assume relative paths are read-only
 			shouldPersist = path.IsAbs(volume.Source)
@@ -456,7 +478,7 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 
 		var filesDictValue starlark.Value
 		if shouldPersist {
-			persistenceKey := fmt.Sprintf("volume%d", volumeIdx)
+			persistenceKey := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			persistentDirectory, err := getStarlarkPersistentDirectory(persistenceKey)
 			if err != nil {
 				return nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)

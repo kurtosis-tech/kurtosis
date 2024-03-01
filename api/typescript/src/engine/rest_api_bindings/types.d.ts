@@ -1194,6 +1194,8 @@ export interface components {
             api_container_log_level?: string;
             /** @description Enclave mode, defaults to TEST */
             mode?: components["schemas"]["EnclaveMode"];
+            /** @description Whether the APIC's container should run with the debug server to receive a remote debug connection */
+            should_apic_run_in_debug_mode?: components["schemas"]["ApiContainerDebugMode"];
         };
         /** @enum {string} */
         EnclaveMode: "TEST" | "PRODUCTION";
@@ -1203,6 +1205,11 @@ export interface components {
         EnclaveTargetStatus: "STOP";
         /** @enum {string} */
         ApiContainerStatus: "RUNNING" | "STOPPED" | "NON_EXISTENT";
+        /**
+         * @default false
+         * @enum {boolean}
+         */
+        ApiContainerDebugMode: false | true;
         EnclaveInfo: {
             enclave_uuid: string;
             name: string;
@@ -1319,6 +1326,8 @@ export interface components {
             /** @description Defaults to empty */
             cloud_user_id?: string;
             image_download_mode?: components["schemas"]["ImageDownloadMode"];
+            /** @description Defaults to false */
+            non_blocking_mode?: boolean;
         };
         RunStarlarkPackage: {
             /** @description Parameters data for the Starlark package main function */
@@ -1347,6 +1356,8 @@ export interface components {
             /** @description Defaults to empty */
             cloud_user_id?: string;
             image_download_mode?: components["schemas"]["ImageDownloadMode"];
+            /** @description Defaults to false */
+            non_blocking_mode?: boolean;
         };
         /**
          * @description 0 - NO_INSTRUCTIONS_CACHING

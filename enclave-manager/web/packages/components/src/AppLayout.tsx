@@ -42,7 +42,13 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
 
   if (numberOfChildren === 1) {
     return (
-      <Box w={"100%"} h={preventPageScroll ? `100vh` : "100%"} flex={"1"}>
+      <Flex
+        w={"100%"}
+        h={preventPageScroll ? `100vh` : "100%"}
+        flex={"1"}
+        justifyContent={"center"}
+        alignItems={"center"}
+      >
         <Flex
           position={"absolute"}
           top={"0"}
@@ -64,11 +70,12 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
             pb={MAIN_APP_BOTTOM_PADDING}
             flexDirection={"column"}
             flex={"1"}
+            gap={"16px"}
           >
             {children}
           </Flex>
         </Flex>
-      </Box>
+      </Flex>
     );
   }
 
@@ -76,7 +83,7 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
   if (numberOfChildren === 2 && Array.isArray(children)) {
     return (
       <Flex flexDirection={"column"} width={"100%"} h={preventPageScroll ? `100vh` : "100%"} flex={"1"}>
-        <Box width={"100%"} bg={"gray.850"}>
+        <Flex width={"100%"} bg={"gray.850"} justifyContent={"center"}>
           <Box
             width={"100%"}
             pl={hasNavbar ? MAIN_APP_LEFT_PADDING_WITH_NAV : MAIN_APP_LEFT_PADDING_WITHOUT_NAV}
@@ -86,20 +93,21 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
             <KurtosisBreadcrumbs />
             {children[0]}
           </Box>
-        </Box>
-        <Flex
-          maxWidth={MAIN_APP_MAX_WIDTH}
-          pl={hasNavbar ? MAIN_APP_LEFT_PADDING_WITH_NAV : MAIN_APP_LEFT_PADDING_WITHOUT_NAV}
-          pr={MAIN_APP_RIGHT_PADDING}
-          pt={MAIN_APP_TOP_PADDING}
-          pb={MAIN_APP_BOTTOM_PADDING}
-          w={"100%"}
-          h={"100%"}
-          flex={"1"}
-          flexDirection={"column"}
-          minH={preventPageScroll ? "0" : undefined}
-        >
-          {children[1]}
+        </Flex>
+        <Flex h={"100%"} flex={"1"} flexDirection={"column"} alignItems={"center"}>
+          <Flex
+            maxWidth={MAIN_APP_MAX_WIDTH}
+            pl={hasNavbar ? MAIN_APP_LEFT_PADDING_WITH_NAV : MAIN_APP_LEFT_PADDING_WITHOUT_NAV}
+            pr={MAIN_APP_RIGHT_PADDING}
+            pt={MAIN_APP_TOP_PADDING}
+            pb={MAIN_APP_BOTTOM_PADDING}
+            w={"100%"}
+            flexDirection={"column"}
+            minH={preventPageScroll ? "0" : undefined}
+            flex={"1"}
+          >
+            {children[1]}
+          </Flex>
         </Flex>
       </Flex>
     );
