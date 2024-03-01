@@ -401,16 +401,36 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(renderTempla
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *instructions_plan.ScheduledInstruction) error {
 	var task *Task
+	var interpErr *startosis_errors.InterpretationError
+	taskUuid := pyg.generateUuid()
 
 	// store run sh future references
 	returnValue := runShInstruction.GetReturnedValue()
-	_, ok := returnValue.(*starlarkstruct.Struct)
+	runShStruct, ok := returnValue.(*starlarkstruct.Struct)
 	if !ok {
 		return stacktrace.NewError("Cast to service didn't work")
 	}
+	starlarkCodeVal, err := runShStruct.Attr("code")
+	if err != nil {
+		return err
+	}
+	starlarkCodeFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkCodeVal, "run sh code")
+	if interpErr != nil {
+		return interpErr
+	}
+	pyg.futureReferenceIndex[starlarkCodeFutureRefStr] = fmt.Sprintf("{{ kurtosis.%v.code }}", taskUuid)
+	starlarkOutputVal, err := runShStruct.Attr("output")
+	if err != nil {
+		return err
+	}
+	starlarkOutputFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkOutputVal, "run sh code")
+	if interpErr != nil {
+		return interpErr
+	}
+	pyg.futureReferenceIndex[starlarkOutputFutureRefStr] = fmt.Sprintf("{{ kurtosis.%v.output }}", taskUuid)
 
 	task = &Task{ //nolint:exhaustruct
-		Uuid:     strconv.Itoa(pyg.generateUuid()),
+		Uuid:     strconv.Itoa(taskUuid),
 		TaskType: SHELL,
 	}
 
@@ -533,11 +553,35 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstruction *instructions_plan.ScheduledInstruction) error {
 	var task *Task
+	taskUuid := pyg.generateUuid()
 
 	// store future references
+	returnValue := runPythonInstruction.GetReturnedValue()
+	runPythonStruct, ok := returnValue.(*starlarkstruct.Struct)
+	if !ok {
+		return stacktrace.NewError("Cast to service didn't work")
+	}
+	starlarkCodeVal, err := runPythonStruct.Attr("code")
+	if err != nil {
+		return err
+	}
+	starlarkCodeFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkCodeVal, "run python code")
+	if interpErr != nil {
+		return interpErr
+	}
+	pyg.futureReferenceIndex[starlarkCodeFutureRefStr] = fmt.Sprintf("{{ kurtosis.%v.code }}", taskUuid)
+	starlarkOutputVal, err := runPythonStruct.Attr("output")
+	if err != nil {
+		return err
+	}
+	starlarkOutputFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkOutputVal, "run python output")
+	if interpErr != nil {
+		return interpErr
+	}
+	pyg.futureReferenceIndex[starlarkOutputFutureRefStr] = fmt.Sprintf("{{ kurtosis.%v.output }}", taskUuid)
 
 	task = &Task{ //nolint:exhaustruct
-		Uuid:     strconv.Itoa(pyg.generateUuid()),
+		Uuid:     strconv.Itoa(taskUuid),
 		TaskType: PYTHON,
 	}
 
@@ -700,16 +744,6 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreServiceFiles(storeServi
 	}
 
 	arguments := storeServiceFilesInstruction.GetInstruction().GetArguments()
-	// set the uuid to be the uuid of the service that this files artifact comes from
-	//serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, store_service_files.ServiceNameArgName)
-	//if err != nil {
-	//	return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", store_service_files.ServiceNameArgName)
-	//}
-	//if service, ok := pyg.serviceIndex[serviceName.GoString()]; !ok {
-	//	return startosis_errors.NewInterpretationError("A service that hasn't been tracked was found on a store service instruction.")
-	//} else {
-	//	filesArtifact.Uuid = service.Uuid
-	//}
 
 	// parse for files
 	src, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, store_service_files.SrcArgName)
@@ -727,6 +761,32 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromStoreServiceFiles(storeServi
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instructions_plan.ScheduledInstruction) error {
 	// TODO: update the plan yaml based on an add_service
 	var task *Task
+	taskUuid := pyg.generateUuid()
+
+	// store future references
+	returnValue := execInstruction.GetReturnedValue()
+	execStruct, ok := returnValue.(*starlarkstruct.Struct)
+	if !ok {
+		return stacktrace.NewError("Cast to service didn't work")
+	}
+	starlarkCodeVal, err := execStruct.Attr("code")
+	if err != nil {
+		return err
+	}
+	starlarkCodeFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkCodeVal, "exec code")
+	if interpErr != nil {
+		return interpErr
+	}
+	pyg.futureReferenceIndex[starlarkCodeFutureRefStr] = fmt.Sprintf("{{ kurtosis.%v.code }}", taskUuid)
+	starlarkOutputVal, err := execStruct.Attr("output")
+	if err != nil {
+		return err
+	}
+	starlarkOutputFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkOutputVal, "exec output")
+	if interpErr != nil {
+		return interpErr
+	}
+	pyg.futureReferenceIndex[starlarkOutputFutureRefStr] = fmt.Sprintf("{{ kurtosis.%v.output }}", taskUuid)
 
 	arguments := execInstruction.GetInstruction().GetArguments()
 	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, exec.ServiceNameArgName)
@@ -736,7 +796,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instru
 	task = &Task{ //nolint:exhaustruct
 		ServiceName: serviceNameArgumentValue.GoString(),
 		TaskType:    EXEC,
-		Uuid:        strconv.Itoa(pyg.generateUuid()),
+		Uuid:        strconv.Itoa(taskUuid),
 	}
 
 	execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, exec.RecipeArgName)

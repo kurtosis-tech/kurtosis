@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
@@ -23,11 +24,12 @@ import (
 
 type PlanYamlGeneratorTestSuite struct {
 	suite.Suite
-	serviceNetwork         *service_network.MockServiceNetwork
-	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
-	runtimeValueStore      *runtime_value_store.RuntimeValueStore
-	kurtosisBackend        *backend_interface.KurtosisBackend
-	filesArtifactStore     *enclave_data_directory.FilesArtifactStore
+	serviceNetwork               *service_network.MockServiceNetwork
+	packageContentProvider       *mock_package_content_provider.MockPackageContentProvider
+	runtimeValueStore            *runtime_value_store.RuntimeValueStore
+	kurtosisBackend              *backend_interface.KurtosisBackend
+	filesArtifactStore           *enclave_data_directory.FilesArtifactStore
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 
 	interpreter *StartosisInterpreter
 	validator   *StartosisValidator
@@ -47,6 +49,10 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	require.NoError(suite.T(), err)
 	suite.runtimeValueStore = runtimeValueStore
 
+	// mock interpretation time value store
+	interpretationTimeValueStore, err := interpretation_time_value_store.CreateInterpretationTimeValueStore(enclaveDb, dummySerde)
+	require.NoError(suite.T(), err)
+	suite.interpretationTimeValueStore = interpretationTimeValueStore
 	// mock service network
 	suite.serviceNetwork = service_network.NewMockServiceNetwork(suite.T())
 
@@ -66,7 +72,7 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 		"134123")
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Return(apiContainerInfo)
 
-	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "")
+	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore)
 
 	// mock kurtosis backend?
 
@@ -94,9 +100,9 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	suite.runner = NewStartosisRunner(suite.interpreter, suite.validator, suite.executor)
 }
 
-//func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
-//	suite.Run(t, new(PlanYamlGeneratorTestSuite))
-//}
+func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
+	suite.Run(t, new(PlanYamlGeneratorTestSuite))
+}
 
 func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
@@ -137,51 +143,17 @@ CMD ["node", "app.js"]
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
-    database = plan.add_service(
-        name="db",
-        config=ServiceConfig(
-            image="postgres:alpine",
-            env_vars = {
-                "POSTGRES_DB": "tedi",
-                "POSTGRES_USER": "tedi",
-                "POSTGRES_PASSWORD": "tedi",
-            }
-        )
-    )
-		
-    dencunTime = (5 * 32 * 1) + 5
-    config = ServiceConfig(
-        image="ethpandaops/tx-fuzz:master",
-        entrypoint=["/bin/sh", "-c"],
-        cmd=[
-            " && ".join(
-                [
-                    "apk update",
-                    "apk add curl jq",
-                    'current_epoch=$(curl -s http://{0}:{1}/eth/v2/beacon/blocks/head | jq -r ".version")'.format(
-                        database.ip_address, 5
-                    ),
-                    "echo $current_epoch",
-                    'while [ $current_epoch != "deneb" ]; do echo "waiting for deneb, current epoch is $current_epoch"; current_epoch=$(curl -s http://{0}:{1}/eth/v2/beacon/blocks/head | jq -r ".version"); sleep {2}; done'.format(
-                        database.ip_address,
-                        5,
-                        1,
-                    ),
-                    'echo "sleep is over, starting to send blob transactions"',
-                    "/tx-fuzz.bin blobs --rpc={} --sk={}".format(
-                        database.ip_address,
-                        ["0x12"],
-                    ),
-                ]
-            )
-        ],
-        min_cpu=100,
-        max_cpu=1000,
-        min_memory=256,
-        max_memory=512,
-        node_selectors={"smth":"smth"},
-    )
-    plan.add_service("blob-spammer", config)
+	result = plan.run_sh(
+		run="echo some stuff",
+	)
+
+	database = plan.add_service(name="database", config=ServiceConfig(
+		image="postgres:latest",
+		env_vars={
+			"VAR_1": result.output,
+			"VAR_2": result.code
+		}
+	))
 `
 	serializedJsonParams := "{}"
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
