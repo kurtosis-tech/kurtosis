@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.88.0](https://github.com/kurtosis-tech/kurtosis/compare/0.87.3...0.88.0) (2024-02-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove the cloud add and CreateCloudInstance endpoint ([#2234](https://github.com/kurtosis-tech/kurtosis/issues/2234))
+
+### Features
+
+* allow to specify dockerfile name in `image_build_spec` ([#2223](https://github.com/kurtosis-tech/kurtosis/issues/2223)) ([d274170](https://github.com/kurtosis-tech/kurtosis/commit/d274170d07a757b5a0880635f1bf4bd35bb1a165))
+
+
+### Miscellaneous Chores
+
+* remove the cloud add and CreateCloudInstance endpoint ([#2234](https://github.com/kurtosis-tech/kurtosis/issues/2234)) ([0f17729](https://github.com/kurtosis-tech/kurtosis/commit/0f1772963b30b004d9fb5ab99a5b576c3ecb36ae))
+
 ## [0.87.3](https://github.com/kurtosis-tech/kurtosis/compare/0.87.2...0.87.3) (2024-02-28)
 
 
