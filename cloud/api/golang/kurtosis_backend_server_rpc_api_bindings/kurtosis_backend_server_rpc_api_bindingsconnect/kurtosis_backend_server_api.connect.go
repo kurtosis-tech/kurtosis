@@ -38,9 +38,6 @@ const (
 	// KurtosisCloudBackendServerIsAvailableProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's IsAvailable RPC.
 	KurtosisCloudBackendServerIsAvailableProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/IsAvailable"
-	// KurtosisCloudBackendServerCreateCloudInstanceProcedure is the fully-qualified name of the
-	// KurtosisCloudBackendServer's CreateCloudInstance RPC.
-	KurtosisCloudBackendServerCreateCloudInstanceProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/CreateCloudInstance"
 	// KurtosisCloudBackendServerGetCloudInstanceConfigProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's GetCloudInstanceConfig RPC.
 	KurtosisCloudBackendServerGetCloudInstanceConfigProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetCloudInstanceConfig"
@@ -65,7 +62,6 @@ const (
 // service.
 type KurtosisCloudBackendServerClient interface {
 	IsAvailable(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
-	CreateCloudInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse], error)
 	GetCloudInstanceConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
 	GetOrCreateApiKey(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse], error)
 	GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error)
@@ -89,11 +85,6 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerIsAvailableProcedure,
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
-		),
-		createCloudInstance: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse](
-			httpClient,
-			baseURL+KurtosisCloudBackendServerCreateCloudInstanceProcedure,
-			opts...,
 		),
 		getCloudInstanceConfig: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse](
 			httpClient,
@@ -132,7 +123,6 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 // kurtosisCloudBackendServerClient implements KurtosisCloudBackendServerClient.
 type kurtosisCloudBackendServerClient struct {
 	isAvailable                 *connect.Client[emptypb.Empty, emptypb.Empty]
-	createCloudInstance         *connect.Client[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse]
 	getCloudInstanceConfig      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
 	getOrCreateApiKey           *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse]
 	getOrCreateInstance         *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse]
@@ -144,11 +134,6 @@ type kurtosisCloudBackendServerClient struct {
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
 func (c *kurtosisCloudBackendServerClient) IsAvailable(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return c.isAvailable.CallUnary(ctx, req)
-}
-
-// CreateCloudInstance calls kurtosis_cloud.KurtosisCloudBackendServer.CreateCloudInstance.
-func (c *kurtosisCloudBackendServerClient) CreateCloudInstance(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse], error) {
-	return c.createCloudInstance.CallUnary(ctx, req)
 }
 
 // GetCloudInstanceConfig calls kurtosis_cloud.KurtosisCloudBackendServer.GetCloudInstanceConfig.
@@ -188,7 +173,6 @@ func (c *kurtosisCloudBackendServerClient) CancelPaymentSubscription(ctx context
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
 	IsAvailable(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
-	CreateCloudInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse], error)
 	GetCloudInstanceConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
 	GetOrCreateApiKey(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse], error)
 	GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error)
@@ -208,11 +192,6 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.IsAvailable,
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
-	)
-	kurtosisCloudBackendServerCreateCloudInstanceHandler := connect.NewUnaryHandler(
-		KurtosisCloudBackendServerCreateCloudInstanceProcedure,
-		svc.CreateCloudInstance,
-		opts...,
 	)
 	kurtosisCloudBackendServerGetCloudInstanceConfigHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerGetCloudInstanceConfigProcedure,
@@ -249,8 +228,6 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
 			kurtosisCloudBackendServerIsAvailableHandler.ServeHTTP(w, r)
-		case KurtosisCloudBackendServerCreateCloudInstanceProcedure:
-			kurtosisCloudBackendServerCreateCloudInstanceHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerGetCloudInstanceConfigProcedure:
 			kurtosisCloudBackendServerGetCloudInstanceConfigHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerGetOrCreateApiKeyProcedure:
@@ -274,10 +251,6 @@ type UnimplementedKurtosisCloudBackendServerHandler struct{}
 
 func (UnimplementedKurtosisCloudBackendServerHandler) IsAvailable(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable is not implemented"))
-}
-
-func (UnimplementedKurtosisCloudBackendServerHandler) CreateCloudInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.CreateCloudInstance is not implemented"))
 }
 
 func (UnimplementedKurtosisCloudBackendServerHandler) GetCloudInstanceConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {

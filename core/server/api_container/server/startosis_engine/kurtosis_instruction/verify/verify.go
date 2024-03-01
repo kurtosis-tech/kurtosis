@@ -30,6 +30,7 @@ const (
 	NotInCollectionAssertionToken = "NOT_IN"
 
 	expectedValuesSeparator = ", "
+	descriptionFormatStr    = "Verifying whether two values meet a certain condition '%v'"
 )
 
 var StringTokenToComparisonStarlarkToken = map[string]syntax.Token{
@@ -75,6 +76,7 @@ func NewVerify(runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtos
 				runtimeValue: "",  // populated at interpretation time
 				assertion:    "",  // populated at interpretation time
 				target:       nil, // populated at interpretation time
+				description:  "",  // populated at interpretation time
 			}
 		},
 
@@ -92,6 +94,8 @@ type VerifyCapabilities struct {
 	runtimeValue string
 	assertion    string
 	target       starlark.Comparable
+
+	description string
 }
 
 func (builtin *VerifyCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -111,6 +115,7 @@ func (builtin *VerifyCapabilities) Interpret(_ string, arguments *builtin_argume
 	builtin.assertion = verification.GoString()
 	builtin.runtimeValue = runtimeValue.GoString()
 	builtin.target = target
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.assertion))
 
 	if _, ok := builtin.target.(starlark.Iterable); (builtin.assertion == InCollectionAssertionToken || builtin.assertion == NotInCollectionAssertionToken) && !ok {
 		return nil, startosis_errors.NewInterpretationError("'%v' assertion requires an iterable for target values, got '%v'", builtin.assertion, builtin.target.Type())
@@ -156,7 +161,7 @@ func (builtin *VerifyCapabilities) FillPersistableAttributes(builder *enclave_pl
 }
 
 func (builtin *VerifyCapabilities) Description() string {
-	return fmt.Sprintf("Verifying whether two values meet a certain condition '%v'", builtin.assertion)
+	return builtin.description
 }
 
 // Verify verifies whether the currentValue matches the targetValue w.r.t. the assertion operator

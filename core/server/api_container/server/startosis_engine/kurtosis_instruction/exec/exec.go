@@ -35,6 +35,7 @@ const (
 
 const (
 	defaultSkipCodeCheck = false
+	descriptionFormatStr = "Executing command on service '%v'"
 )
 
 func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -81,6 +82,7 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				resultUuid:      "",    // will be populated at interpretation time
 				acceptableCodes: nil,   // will be populated at interpretation time
 				skipCodeCheck:   false, // will be populated at interpretation time
+				description:     "",    // populated at interpretation time
 			}
 		},
 
@@ -100,6 +102,7 @@ type ExecCapabilities struct {
 	resultUuid      string
 	acceptableCodes []int64
 	skipCodeCheck   bool
+	description     string
 }
 
 func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -147,6 +150,8 @@ func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument
 	builtin.acceptableCodes = acceptableCodes
 	builtin.skipCodeCheck = skipCodeCheck
 
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
+
 	returnValue, interpretationErr := builtin.execRecipe.CreateStarlarkReturnValue(builtin.resultUuid)
 	if interpretationErr != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while generating return value for %v instruction", ExecBuiltinName)
@@ -190,7 +195,7 @@ func (builtin *ExecCapabilities) FillPersistableAttributes(builder *enclave_plan
 }
 
 func (builtin *ExecCapabilities) Description() string {
-	return fmt.Sprintf("Executing command on service '%v'", builtin.serviceName)
+	return builtin.description
 }
 
 func (builtin *ExecCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {

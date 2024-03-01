@@ -5,7 +5,6 @@ sidebar_label: ServiceConfig
 
 The `ServiceConfig` object constructor configures the parameters of a container for the [`plan.add_service`][add-service-reference] function.
 
-
 Signature
 ---------
 ```python
