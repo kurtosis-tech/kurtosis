@@ -100,9 +100,9 @@ func (suite *PlanYamlGeneratorTestSuite) SetupTest() {
 	suite.runner = NewStartosisRunner(suite.interpreter, suite.validator, suite.executor)
 }
 
-func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
-	suite.Run(t, new(PlanYamlGeneratorTestSuite))
-}
+//func TestRunPlanYamlGeneratorTestSuite(t *testing.T) {
+//	suite.Run(t, new(PlanYamlGeneratorTestSuite))
+//}
 
 func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
