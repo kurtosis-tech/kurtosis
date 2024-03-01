@@ -148,13 +148,40 @@ CMD ["node", "app.js"]
             }
         )
     )
-
-    result = plan.exec(
-        service_name = "db",
-        recipe = ExecRecipe(command = ["echo", database.ip_address]),
-        acceptable_codes=[156],
+		
+    dencunTime = (5 * 32 * 1) + 5
+    config = ServiceConfig(
+        image="ethpandaops/tx-fuzz:master",
+        entrypoint=["/bin/sh", "-c"],
+        cmd=[
+            " && ".join(
+                [
+                    "apk update",
+                    "apk add curl jq",
+                    'current_epoch=$(curl -s http://{0}:{1}/eth/v2/beacon/blocks/head | jq -r ".version")'.format(
+                        database.ip_address, 5
+                    ),
+                    "echo $current_epoch",
+                    'while [ $current_epoch != "deneb" ]; do echo "waiting for deneb, current epoch is $current_epoch"; current_epoch=$(curl -s http://{0}:{1}/eth/v2/beacon/blocks/head | jq -r ".version"); sleep {2}; done'.format(
+                        database.ip_address,
+                        5,
+                        1,
+                    ),
+                    'echo "sleep is over, starting to send blob transactions"',
+                    "/tx-fuzz.bin blobs --rpc={} --sk={}".format(
+                        database.ip_address,
+                        ["0x12"],
+                    ),
+                ]
+            )
+        ],
+        min_cpu=100,
+        max_cpu=1000,
+        min_memory=256,
+        max_memory=512,
+        node_selectors={"smth":"smth"},
     )
-    plan.print(result)
+    plan.add_service("blob-spammer", config)
 `
 	serializedJsonParams := "{}"
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)
@@ -324,7 +351,7 @@ func (suite *PlanYamlGeneratorTestSuite) TestConvertPlanYamlToYamlBytes(t *testi
 	services := []*Service{
 		{
 			Name: "tedi",
-			Uuid: 1,
+			Uuid: "1",
 			Image: &ImageSpec{
 				ImageName:           "postgres",
 				BuildContextLocator: "",
@@ -340,7 +367,7 @@ func (suite *PlanYamlGeneratorTestSuite) TestConvertPlanYamlToYamlBytes(t *testi
 		},
 		{
 			Name: "kaleb",
-			Uuid: 1,
+			Uuid: "1",
 			Image: &ImageSpec{
 				ImageName:           "something",
 				BuildContextLocator: "",
@@ -357,7 +384,7 @@ func (suite *PlanYamlGeneratorTestSuite) TestConvertPlanYamlToYamlBytes(t *testi
 	}
 	filesArtifacts := []*FilesArtifact{
 		{
-			Uuid:  3,
+			Uuid:  "3",
 			Name:  "something",
 			Files: nil,
 		},

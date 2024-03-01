@@ -20,7 +20,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"strconv"
 	"strings"
 )
@@ -165,6 +167,7 @@ func (pyg *PlanYamlGeneratorImpl) GenerateYaml() ([]byte, error) {
 	}
 
 	// at the very end, convert the plan yaml representation into a yaml
+	logrus.Infof("FUTURE REFERENCE INDEX: %v", pyg.futureReferenceIndex)
 	return convertPlanYamlToYaml(pyg.planYaml)
 }
 
@@ -183,11 +186,6 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromAddService(addServiceInstruc
 	if !ok {
 		return stacktrace.NewError("Cast to service didn't work")
 	}
-	//futureRefServiceName, err := returnedService.GetName()
-	//if err != nil {
-	//	return err
-	//}
-	//pyg.futureReferenceIndex[string(futureRefServiceName)] = fmt.Sprintf("{{ kurtosis.%v.service_name }}", uuid)
 	futureRefIPAddress, err := returnedService.GetIpAddress()
 	if err != nil {
 		return err
@@ -404,11 +402,13 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRenderTemplates(renderTempla
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *instructions_plan.ScheduledInstruction) error {
 	var task *Task
 
-	// get the name of
-	//runShInstructionName, castErr := kurtosis_types.SafeCastToString(runShInstruction.GetInstruction(), "")
-	//if castErr != nil {
-	//	return castErr
-	//}
+	// store run sh future references
+	returnValue := runShInstruction.GetReturnedValue()
+	_, ok := returnValue.(*starlarkstruct.Struct)
+	if !ok {
+		return stacktrace.NewError("Cast to service didn't work")
+	}
+
 	task = &Task{ //nolint:exhaustruct
 		Uuid:     strconv.Itoa(pyg.generateUuid()),
 		TaskType: SHELL,
@@ -534,10 +534,8 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstruction *instructions_plan.ScheduledInstruction) error {
 	var task *Task
 
-	//runShInstructionName, castErr := kurtosis_types.SafeCastToString(runShInstruction.GetInstruction(), "")
-	//if castErr != nil {
-	//	return castErr
-	//}
+	// store future references
+
 	task = &Task{ //nolint:exhaustruct
 		Uuid:     strconv.Itoa(pyg.generateUuid()),
 		TaskType: PYTHON,
@@ -820,11 +818,11 @@ func (pyg *PlanYamlGeneratorImpl) generateUuid() int {
 // if the string is a future reference, it swaps it out with what it should be
 // else the string s is the same
 func (pyg *PlanYamlGeneratorImpl) swapFutureReference(s string) string {
+	newString := s
 	for futureRef, swappedValue := range pyg.futureReferenceIndex {
-		if strings.Contains(s, futureRef) { // TODO: handle case where s contains multiple future references
-			newString := strings.Replace(s, futureRef, swappedValue, -1)
-			return newString
+		if strings.Contains(s, futureRef) {
+			newString = strings.Replace(s, futureRef, swappedValue, -1)
 		}
 	}
-	return s
+	return newString
 }
