@@ -32,7 +32,6 @@ export const ConfigurePackageNodeModal = ({ isOpen, onClose, initialValues }: Co
 
   const onValidSubmit = (data: Record<string, any>) => {
     if (isDefined(kurtosisPackage)) {
-      console.log(data);
       parentFormMethods.setValue("args", transformFormArgsToKurtosisArgs(data.args, kurtosisPackage));
       parentFormMethods.setValue("packageId", kurtosisPackage.name);
       onClose();
@@ -41,7 +40,6 @@ export const ConfigurePackageNodeModal = ({ isOpen, onClose, initialValues }: Co
 
   useEffect(() => {
     if (isDefined(kurtosisPackage)) {
-      console.log("setting to ", transformKurtosisArgsToFormArgs(initialValues, kurtosisPackage));
       formMethods.setValue("args", transformKurtosisArgsToFormArgs(initialValues, kurtosisPackage));
     }
   }, [kurtosisPackage, initialValues, formMethods]);
