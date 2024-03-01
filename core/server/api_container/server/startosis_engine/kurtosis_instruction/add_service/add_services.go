@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -28,6 +29,8 @@ const (
 	AddServicesBuiltinName = "add_services"
 
 	ConfigsArgName = "configs"
+
+	addServicesDescriptionFormatStr = "Adding '%v' services with names '%v'"
 )
 
 func NewAddServices(
@@ -35,7 +38,8 @@ func NewAddServices(
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	packageReplaceOptions map[string]string,
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServicesBuiltinName,
@@ -59,15 +63,17 @@ func NewAddServices(
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &AddServicesCapabilities{
-				serviceNetwork:         serviceNetwork,
-				runtimeValueStore:      runtimeValueStore,
-				packageId:              packageId,
-				packageContentProvider: packageContentProvider,
-				packageReplaceOptions:  packageReplaceOptions,
-				serviceConfigs:         nil, // populated at interpretation time
+				serviceNetwork:               serviceNetwork,
+				runtimeValueStore:            runtimeValueStore,
+				packageId:                    packageId,
+				packageContentProvider:       packageContentProvider,
+				packageReplaceOptions:        packageReplaceOptions,
+				serviceConfigs:               nil, // populated at interpretation time
+				interpretationTimeValueStore: interpretationTimeValueStore,
 
 				resultUuids:     map[service.ServiceName]string{}, // populated at interpretation time
 				readyConditions: nil,                              // populated at interpretation time
+				description:     "",                               // populated at interpretation time
 			}
 		},
 
@@ -80,17 +86,19 @@ func NewAddServices(
 }
 
 type AddServicesCapabilities struct {
-	serviceNetwork         service_network.ServiceNetwork
-	runtimeValueStore      *runtime_value_store.RuntimeValueStore
-	packageId              string
-	packageContentProvider startosis_packages.PackageContentProvider
-	packageReplaceOptions  map[string]string
+	serviceNetwork               service_network.ServiceNetwork
+	runtimeValueStore            *runtime_value_store.RuntimeValueStore
+	packageId                    string
+	packageContentProvider       startosis_packages.PackageContentProvider
+	packageReplaceOptions        map[string]string
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 
 	serviceConfigs map[service.ServiceName]*service.ServiceConfig
 
 	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
 	resultUuids map[service.ServiceName]string
+	description string
 }
 
 func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -112,7 +120,9 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 	builtin.serviceConfigs = serviceConfigs
 	builtin.readyConditions = readyConditions
 
-	resultUuids, returnValue, interpretationErr := makeAddServicesInterpretationReturnValue(builtin.serviceConfigs, builtin.runtimeValueStore)
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(addServicesDescriptionFormatStr, len(builtin.serviceConfigs), getNamesAsCommaSeparatedList(builtin.serviceConfigs)))
+
+	resultUuids, returnValue, interpretationErr := makeAndPersistAddServicesInterpretationReturnValue(builtin.serviceConfigs, builtin.runtimeValueStore, builtin.interpretationTimeValueStore)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -202,7 +212,7 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 			serviceMsg := fmt.Sprintf("Service '%v' error:\n%v\n", serviceName, serviceErr)
 			allServiceChecksErrMsg = allServiceChecksErrMsg + serviceMsg
 		}
-		return "", stacktrace.NewError("An error occurred while checking al service, these are the errors by service:\n%s", allServiceChecksErrMsg)
+		return "", stacktrace.NewError("An error occurred while checking all service, these are the errors by service:\n%s", allServiceChecksErrMsg)
 	}
 	defer func() {
 		if shouldDeleteAllStartedServices {
@@ -354,7 +364,7 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 }
 
 func (builtin *AddServicesCapabilities) Description() string {
-	return fmt.Sprintf("Adding '%v' services with names '%v'", len(builtin.serviceConfigs), getNamesAsCommaSeparatedList(builtin.serviceConfigs))
+	return builtin.description
 }
 
 func getNamesAsCommaSeparatedList(serviceConfigs map[service.ServiceName]*service.ServiceConfig) string {
@@ -450,7 +460,7 @@ func validateAndConvertConfigsAndReadyConditions(
 	return convertedServiceConfigs, readyConditionsByServiceName, nil
 }
 
-func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.ServiceName]*service.ServiceConfig, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[service.ServiceName]string, *starlark.Dict, *startosis_errors.InterpretationError) {
+func makeAndPersistAddServicesInterpretationReturnValue(serviceConfigs map[service.ServiceName]*service.ServiceConfig, runtimeValueStore *runtime_value_store.RuntimeValueStore, interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) (map[service.ServiceName]string, *starlark.Dict, *startosis_errors.InterpretationError) {
 	servicesObjectDict := starlark.NewDict(len(serviceConfigs))
 	resultUuids := map[service.ServiceName]string{}
 	var err error
@@ -466,6 +476,9 @@ func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.Service
 		}
 		if err := servicesObjectDict.SetKey(serviceNameStr, serviceObject); err != nil {
 			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "Unable to generate the object that should be returned by the '%s' builtin", AddServicesBuiltinName)
+		}
+		if err = interpretationTimeValueStore.PutService(serviceName, serviceObject); err != nil {
+			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting the return value for service with name '%v'", serviceName)
 		}
 	}
 	return resultUuids, servicesObjectDict, nil

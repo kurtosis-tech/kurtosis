@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"net"
 	"os"
 	"path"
@@ -203,6 +204,11 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the runtime value store")
 	}
 
+	interpretationTimeValueStore, err := interpretation_time_value_store.CreateInterpretationTimeValueStore(enclaveDb, starlarkValueSerde)
+	if err != nil {
+		return stacktrace.Propagate(err, "an error occurred while creating the interpretation time value store")
+	}
+
 	// Load the current enclave plan, in case the enclave is being restarted
 	enclavePlan, err := enclave_plan_persistence.Load(enclaveDb)
 	if err != nil {
@@ -210,7 +216,7 @@ func runMain() error {
 	}
 
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
-	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, starlarkValueSerde, serverArgs.EnclaveEnvVars)
+	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, starlarkValueSerde, serverArgs.EnclaveEnvVars, interpretationTimeValueStore)
 	startosisRunner := startosis_engine.NewStartosisRunner(
 		startosisInterpreter,
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),

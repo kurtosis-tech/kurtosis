@@ -20,6 +20,8 @@ const (
 	PrintBuiltinName = "print"
 
 	PrintArgName = "msg"
+
+	descriptionFormatStr = "Printing a message"
 )
 
 func NewPrint(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -42,7 +44,8 @@ func NewPrint(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
-				msg: nil, // populated at interpretation time
+				msg:         nil, // populated at interpretation time
+				description: "",  // populated at interpretation time
 			}
 		},
 
@@ -56,7 +59,8 @@ type PrintCapabilities struct {
 	serviceNetwork    service_network.ServiceNetwork
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
-	msg starlark.Value
+	msg         starlark.Value
+	description string
 }
 
 func (builtin *PrintCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -65,6 +69,7 @@ func (builtin *PrintCapabilities) Interpret(_ string, arguments *builtin_argumen
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", PrintArgName)
 	}
 	builtin.msg = msg
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, descriptionFormatStr)
 	return starlark.None, nil
 }
 
@@ -101,5 +106,5 @@ func (builtin *PrintCapabilities) FillPersistableAttributes(builder *enclave_pla
 }
 
 func (builtin *PrintCapabilities) Description() string {
-	return "Printing a message"
+	return builtin.description
 }

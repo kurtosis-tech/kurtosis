@@ -2,7 +2,6 @@ package cloud
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/cloud/add"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/cloud/load"
 	"github.com/spf13/cobra"
 )
@@ -17,5 +16,4 @@ var CloudCmd = &cobra.Command{
 
 func init() {
 	CloudCmd.AddCommand(load.LoadCmd.MustGetCobraCommand())
-	CloudCmd.AddCommand(add.AddCmd.MustGetCobraCommand())
 }

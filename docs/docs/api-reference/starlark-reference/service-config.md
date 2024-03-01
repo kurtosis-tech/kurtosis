@@ -17,44 +17,49 @@ config = ServiceConfig(
     # If an ImageBuildSpec is provided, Kurtosis will build the image.
     # MANDATORY
     image = "kurtosistech/example-datastore-server",
-    
+
     OR
 
     image = ImageSpec(
         #  The name of the image that needs to be pulled qualified with the registry
         # MANDATORY
         name = "my.registry.io/my-user/my-image",
-    
+
         # The username that will be used to pull the image from the given registry
         # OPTIONAL
         username = "my-user",
-    
+
         # The password that will be used to pull the image from the given registry
-        # OPTIONAL        
+        # OPTIONAL
         password = "password",
-    
+
         # The URL of the registry
-        # OPTIONAL        
+        # OPTIONAL
         registry = "http://my.registry.io/"
     )
-    
+
     OR
-    
+
     image = ImageBuildSpec(
         # Name to give built image
         # MANDATORY
         image_name="kurtosistech/example-datastore-server"
-        
+
         # Locator to build context within the Kurtosis package
         # As of now, Kurtosis expects a Dockerfile at the root of the build context
         # MANDATORY
         build_context_dir="./server"
-        
+
+        # Name of the build file
+        # The default value is "Dockerfile"
+        # OPTIONAL
+        build_file=""
+
         # Stage of image build to target for multi-stage container image
         # OPTIONAL
         target_stage=""
     )
-    
+
     OR
 
     image = NixBuildSpec(
@@ -66,16 +71,16 @@ config = ServiceConfig(
         # This allows to select a sub-package where the context is going be used to build the image
         # MANDATORY
         build_context_dir = "./"
-        
+
         #  The relative path (from the `build_context_dir`) to the folder containing the flake.nix file
         # MANDATORY
         flake_location_dir = "./hello-go",
-        
+
         #  The selector for the Flake output with the image derivation. Fallbacks to the default package.
         flake_output = "containerImage",
     )
 
-    # The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.      
+    # The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.
     # Kurtosis will automatically perform a check to ensure all declared UDP and TCP ports are open and ready for traffic and connections upon startup.
     # You may specify a custom wait timeout duration or disable the feature entirely, learn more via PortSpec docs
     # If no ports are provided, no ports will be exposed on the host machine, unless there is an EXPOSE in the Dockerfile.
@@ -102,13 +107,13 @@ config = ServiceConfig(
             #  wait = None
             # The feature is enabled by default with a default timeout of 15s
             # OPTIONAL (DEFAULT:"15s")
-            wait = "4s"            
+            wait = "4s"
         ),
     },
 
     # A mapping of path_on_container_where_contents_will_be_mounted -> Directory object or file artifact name
     # For more info on what a Directory object is, see below
-    # 
+    #
     # OPTIONAL (Default: {})
     files = {
         "path/to/files/artifact_1/": files_artifact_1,
@@ -135,7 +140,7 @@ config = ServiceConfig(
         "sleep 99",
     ],
 
-    # Defines environment variables that should be set inside the Docker container running the service. 
+    # Defines environment variables that should be set inside the Docker container running the service.
     # This can be necessary for starting containers from Docker images you don’t control, as they’ll often be parameterized with environment variables.
     # OPTIONAL (Default: {})
     env_vars = {
@@ -143,7 +148,7 @@ config = ServiceConfig(
         "VAR_2": "VALUE_2",
     },
 
-    # ENTRYPOINT, CMD, and ENV variables sometimes need to refer to the container's own IP address. 
+    # ENTRYPOINT, CMD, and ENV variables sometimes need to refer to the container's own IP address.
     # If this placeholder string is referenced inside the 'entrypoint', 'cmd', or 'env_vars' properties, the Kurtosis engine will replace it at launch time
     # with the container's actual IP address.
     # OPTIONAL (Default: "KURTOSIS_IP_ADDR_PLACEHOLDER")
@@ -176,8 +181,8 @@ config = ServiceConfig(
     # For Docker, the label syntax and format will follow: "com.kurtosistech.custom.key": "value"
     # For Kubernetes, the label syntax & format will follow: kurtosistech.com.custom/key=value
 
-    # Labels must follow the label standards outlined in [RFC-1035](https://datatracker.ietf.org/doc/html/rfc1035), 
-    # meaning that both the label key and label value must contain at most 63 characters, contain only lowercase 
+    # Labels must follow the label standards outlined in [RFC-1035](https://datatracker.ietf.org/doc/html/rfc1035),
+    # meaning that both the label key and label value must contain at most 63 characters, contain only lowercase
     # alphanumeric characters, dashes (-), underscores (_) or dots (.), start with an alphabetic character, and end with an alphanumeric character.
     # Empty value and capital letters are valid on label values.
     # OPTIONAL
@@ -193,8 +198,8 @@ config = ServiceConfig(
     # Note that the `gid` field is optional
     # OPTIONAL
     user = User(uid=0, gid=0),
-    
-    # An array of Toleration 
+
+    # An array of Toleration
     # This refers to Kubernetes Tolerations https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
     # This has no effect on Docker
     # As of 2024-01-24 Taints and Tolerations to work with Kubernetes you need at least one untainted node
@@ -209,7 +214,7 @@ config = ServiceConfig(
             toleration_seconds = 64,
         )
     ],
-    
+
     # A map of node selectors
     # This refers to Node Selectors in Kubernetes https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
     # This has no effect on Docker

@@ -90,6 +90,7 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				resultUuid:        "",  // populated at interpretation time
 				storeSpecList:     nil,
 				wait:              DefaultWaitTimeoutDurationStr,
+				description:       "", // populated at interpretation time
 			}
 		},
 
@@ -116,6 +117,7 @@ type RunShCapabilities struct {
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
 	wait          string
+	description   string
 }
 
 func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -192,6 +194,12 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	builtin.resultUuid = resultUuid
 	randomUuid := uuid.NewRandom()
 	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
+
+	defaultDescription := runningShScriptPrefix
+	if len(builtin.run) < shScriptPrintCharLimit {
+		defaultDescription = fmt.Sprintf("%v: `%v`", runningShScriptPrefix, builtin.run)
+	}
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, defaultDescription)
 
 	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
 	return result, nil
@@ -275,10 +283,7 @@ func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_pla
 }
 
 func (builtin *RunShCapabilities) Description() string {
-	if len(builtin.run) < shScriptPrintCharLimit {
-		return fmt.Sprintf("%v: `%v`", runningShScriptPrefix, builtin.run)
-	}
-	return runningShScriptPrefix
+	return builtin.description
 }
 
 func getCommandToRun(builtin *RunShCapabilities) (string, error) {
