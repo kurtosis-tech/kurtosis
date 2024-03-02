@@ -20,7 +20,7 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string) (resultEn
 		"%v-%v-%v",
 		testsuiteNameEnclaveIDFragment,
 		testName,
-		time.Now().UnixMicro(),
+		time.Now().Unix(),
 	)
 	enclaveCtx, stopEnclaveFunc, destroyEnclaveFunc, err := util.CreateEmptyEnclave(ctx, enclaveName)
 	require.NoError(t, err, "An error occurred creating enclave '%v'", enclaveName)
