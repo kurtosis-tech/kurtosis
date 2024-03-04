@@ -14,7 +14,7 @@ This has several uses:
 
 Kurtosis is able to do this because of its [multi-phase approach to running Starlark](./multi-phase-runs.md). Kurtosis constructs an abstract representation of the system you want before running anything (much like Terraform), so Kurtosis can compare the current state of the enclave to the desired state of the enclave and skip any unnecessary changes.
 
-To read in much more detail about how enclave edits work, see [here](../advanced-concepts/how-do-idempotent-runs-work.md).
+To read in much more detail about how enclave edits work, see [here](../advanced-concepts/how-do-enclave-edits-work.md).
 
 <!-------------------------- ONLY LINKS BELOW HERE -------------------------------------->
 [enclaves]: ./enclaves.md
