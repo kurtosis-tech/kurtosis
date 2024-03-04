@@ -50,7 +50,7 @@ export const KurtosisServiceNode = memo(
             <ImageConfigInput disabled={nodeData.isFromPackage} />
           </KurtosisFormControl>
         </Flex>
-        <Tabs>
+        <Tabs isLazy>
           <TabList>
             <Tab>Environment</Tab>
             <Tab>Ports</Tab>

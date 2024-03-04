@@ -51,7 +51,7 @@ export const KurtosisPythonNode = memo(
             <ImageConfigInput disabled={nodeData.isFromPackage} />
           </KurtosisFormControl>
         </Flex>
-        <Tabs>
+        <Tabs isLazy>
           <TabList>
             <Tab>Code</Tab>
             <Tab>Packages</Tab>

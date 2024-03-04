@@ -51,7 +51,7 @@ export const KurtosisShellNode = memo(
             <ImageConfigInput disabled={nodeData.isFromPackage} />
           </KurtosisFormControl>
         </Flex>
-        <Tabs>
+        <Tabs isLazy>
           <TabList>
             <Tab>Script</Tab>
             <Tab>Environment</Tab>
