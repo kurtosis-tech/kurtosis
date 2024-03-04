@@ -272,7 +272,6 @@ export const KurtosisPackageNode = memo(
               ...node,
               parentNode: id,
               data: {},
-              extent: "parent" as "parent",
               position: { x: 50 + 700 * (i % 3), y: 200 + 700 * Math.floor(i / 3) },
             })),
           ]);

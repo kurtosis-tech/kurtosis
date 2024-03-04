@@ -90,6 +90,52 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
   backgroundColor,
   children,
 }: KurtosisNodeImplProps<DataType>) => {
+  if (!selected) {
+    return (
+      <>
+        {" "}
+        <Handle
+          type="target"
+          position={Position.Left}
+          style={{ background: "transparent", border: "none" }}
+          isConnectable={false}
+        />
+        <Handle
+          type="source"
+          position={Position.Right}
+          style={{ background: "transparent", border: "none" }}
+          isConnectable={false}
+        />
+        <BasicKurtosisNode type={nodeData.type} name={nodeData.name} />
+      </>
+    );
+  }
+
+  return (
+    <KurtosisFormNode
+      id={id}
+      selected={selected}
+      minWidth={minWidth}
+      maxWidth={maxWidth}
+      nodeData={nodeData}
+      portalContent={portalContent}
+      backgroundColor={backgroundColor}
+    >
+      {children}
+    </KurtosisFormNode>
+  );
+};
+
+const KurtosisFormNode = <DataType extends KurtosisNodeData>({
+  id,
+  nodeData,
+  selected,
+  minWidth,
+  maxWidth,
+  portalContent,
+  backgroundColor,
+  children,
+}: KurtosisNodeImplProps<DataType>) => {
   const { updateData, removeData } = useVariableContext();
   const { getNodes } = useReactFlow();
   const color = colors[nodeData.type];
@@ -229,14 +275,7 @@ const ZoomAwareNodeContentImpl = memo(
     );
 
     if (zoom < 0.4) {
-      return (
-        <Flex gap={"20px"} alignItems={"center"} justifyContent={"center"} h={"100%"} bg={"gray.600"}>
-          <Icon as={nodeIcons[type]} h={"40px"} w={"40px"} />
-          <Text fontSize={"40px"} textAlign={"center"} p={"20px"}>
-            {name || <i>Unnamed</i>}
-          </Text>
-        </Flex>
-      );
+      return <BasicKurtosisNode name={name} type={type} />;
     }
 
     return (
@@ -277,3 +316,18 @@ const ZoomAwareNodeContentImpl = memo(
     );
   },
 );
+
+type BasicKurtosisNodeProps = {
+  type: KurtosisNodeData["type"];
+  name?: string;
+};
+const BasicKurtosisNode = ({ type, name }: BasicKurtosisNodeProps) => {
+  return (
+    <Flex gap={"20px"} alignItems={"center"} justifyContent={"center"} h={"100%"} bg={"gray.600"}>
+      <Icon as={nodeIcons[type]} h={"40px"} w={"40px"} />
+      <Text fontSize={"40px"} textAlign={"center"} p={"20px"}>
+        {name || <i>Unnamed</i>}
+      </Text>
+    </Flex>
+  );
+};
