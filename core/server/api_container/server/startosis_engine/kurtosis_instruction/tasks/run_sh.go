@@ -219,7 +219,10 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 //	TODO Create an mechanism for other services to retrieve files from the task container
 //	Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
+	// swap env vars with their runtime value
+	serviceConfigWithReplacedEnvVars, err := replaceEnvVarsMagicStrings(builtin.runtimeValueStore, builtin.serviceConfig)
+
+	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
 	}
@@ -294,4 +297,48 @@ func getCommandToRun(builtin *RunShCapabilities) (string, error) {
 	}
 
 	return maybeSubCommandWithRuntimeValues, nil
+}
+
+func replaceEnvVarsMagicStrings(runtimeValueStore *runtime_value_store.RuntimeValueStore, serviceConfig *service.ServiceConfig) (
+	*service.ServiceConfig,
+	error) {
+	var envVars map[string]string
+	if serviceConfig.GetEnvVars() != nil {
+		envVars = make(map[string]string, len(serviceConfig.GetEnvVars()))
+		for envVarName, envVarValue := range serviceConfig.GetEnvVars() {
+			envVarValueWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(envVarValue, runtimeValueStore)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%s': '%s'", envVarName, envVarValue)
+			}
+			envVars[envVarName] = envVarValueWithRuntimeValueReplaced
+		}
+	}
+
+	renderedServiceConfig, err := service.CreateServiceConfig(
+		serviceConfig.GetContainerImageName(),
+		serviceConfig.GetImageBuildSpec(),
+		serviceConfig.GetImageRegistrySpec(),
+		serviceConfig.GetNixBuildSpec(),
+		serviceConfig.GetPrivatePorts(),
+		serviceConfig.GetPublicPorts(),
+		serviceConfig.GetEntrypointArgs(),
+		serviceConfig.GetCmdArgs(),
+		envVars,
+		serviceConfig.GetFilesArtifactsExpansion(),
+		serviceConfig.GetPersistentDirectories(),
+		serviceConfig.GetCPUAllocationMillicpus(),
+		serviceConfig.GetMemoryAllocationMegabytes(),
+		serviceConfig.GetPrivateIPAddrPlaceholder(),
+		serviceConfig.GetMinCPUAllocationMillicpus(),
+		serviceConfig.GetMinMemoryAllocationMegabytes(),
+		serviceConfig.GetLabels(),
+		serviceConfig.GetUser(),
+		serviceConfig.GetTolerations(),
+		serviceConfig.GetNodeSelectors(),
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a service config with env var magric strings replaced.")
+	}
+
+	return renderedServiceConfig, nil
 }
