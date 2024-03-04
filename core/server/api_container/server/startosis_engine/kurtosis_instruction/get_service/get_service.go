@@ -18,6 +18,8 @@ import (
 const (
 	GetServiceBuiltinName = "get_service"
 	ServiceNameArgName    = "name"
+
+	descriptionFormatStr = "Fetching service '%v'"
 )
 
 func NewGetService(interpretationTimeStore *interpretation_time_value_store.InterpretationTimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -37,7 +39,11 @@ func NewGetService(interpretationTimeStore *interpretation_time_value_store.Inte
 			Deprecation: nil,
 		},
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
-			return &GetServiceCapabilities{interpretationTimeStore: interpretationTimeStore, serviceName: ""}
+			return &GetServiceCapabilities{
+				interpretationTimeStore: interpretationTimeStore,
+				serviceName:             "",
+				description:             "", // populated at interpretation time
+			}
 		},
 		DefaultDisplayArguments: map[string]bool{
 			ServiceNameArgName: true,
@@ -48,6 +54,7 @@ func NewGetService(interpretationTimeStore *interpretation_time_value_store.Inte
 type GetServiceCapabilities struct {
 	interpretationTimeStore *interpretation_time_value_store.InterpretationTimeValueStore
 	serviceName             service.ServiceName
+	description             string
 }
 
 func (builtin *GetServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -58,6 +65,7 @@ func (builtin *GetServiceCapabilities) Interpret(_ string, arguments *builtin_ar
 	serviceName := service.ServiceName(serviceNameArgumentValue.GoString())
 
 	builtin.serviceName = serviceName
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
 
 	serviceStarlarkValue, err := builtin.interpretationTimeStore.GetService(serviceName)
 	if err != nil {
@@ -95,5 +103,5 @@ func (builtin *GetServiceCapabilities) FillPersistableAttributes(builder *enclav
 }
 
 func (builtin *GetServiceCapabilities) Description() string {
-	return fmt.Sprintf("Fetched service '%v'", builtin.serviceName)
+	return builtin.description
 }

@@ -11,7 +11,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/metrics-library/golang => ../../metrics-library/golang
-	github.com/kurtosis-tech/kurtosis/utils => ../../utils
+	github.com/kurtosis-tech/kurtosis/path_compression => ./../../path-compression
 )
 
 require (
@@ -129,7 +129,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kurtosis-tech/kurtosis-package-indexer/api/golang v0.0.0-20231220155208-4ae5a14a79d0 // indirect
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
-	github.com/kurtosis-tech/kurtosis/utils v0.0.0-20240104153602-385833de9d76 // indirect
+	github.com/kurtosis-tech/kurtosis/path_compression v0.0.0-00010101000000-000000000000 // indirect
 	github.com/kurtosis-tech/starlark-lsp v0.0.0-20231103163737-8f660a80cb17 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

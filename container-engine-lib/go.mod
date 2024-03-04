@@ -2,7 +2,7 @@ module github.com/kurtosis-tech/kurtosis/container-engine-lib
 
 go 1.20
 
-replace github.com/kurtosis-tech/kurtosis/utils => ../utils
+replace github.com/kurtosis-tech/kurtosis/path_compression => ./../path-compression
 
 require (
 	github.com/dmarkham/enumer v1.5.5
@@ -14,7 +14,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20231024185242-de10c7bab36c
-	github.com/kurtosis-tech/kurtosis/utils v0.0.0-00010101000000-000000000000
+	github.com/kurtosis-tech/kurtosis/path_compression v0.0.0-00010101000000-000000000000
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/moby/buildkit v0.12.4
 	github.com/sirupsen/logrus v1.9.3

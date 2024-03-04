@@ -19,7 +19,8 @@ import (
 const (
 	RemoveServiceBuiltinName = "remove_service"
 
-	ServiceNameArgName = "name"
+	ServiceNameArgName   = "name"
+	descriptionFormatStr = "Removing service '%v'"
 )
 
 func NewRemoveService(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -45,6 +46,7 @@ func NewRemoveService(serviceNetwork service_network.ServiceNetwork) *kurtosis_p
 				serviceNetwork: serviceNetwork,
 
 				serviceName: "", // populated at interpretation time
+				description: "", // populated at interpretation time
 			}
 		},
 
@@ -58,6 +60,7 @@ type RemoveServiceCapabilities struct {
 	serviceNetwork service_network.ServiceNetwork
 
 	serviceName service.ServiceName
+	description string
 }
 
 func (builtin *RemoveServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -67,6 +70,7 @@ func (builtin *RemoveServiceCapabilities) Interpret(_ string, arguments *builtin
 	}
 
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
 	return starlark.None, nil
 }
 
@@ -103,5 +107,5 @@ func (builtin *RemoveServiceCapabilities) FillPersistableAttributes(builder *enc
 }
 
 func (builtin *RemoveServiceCapabilities) Description() string {
-	return fmt.Sprintf("Removing service '%v'", builtin.serviceName)
+	return builtin.description
 }

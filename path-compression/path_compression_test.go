@@ -1,4 +1,4 @@
-package utils
+package path_compression
 
 import (
 	"encoding/hex"

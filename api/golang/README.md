@@ -69,4 +69,4 @@ For ephemeral enclaves, such as those used in end-to-end testing, you can destro
 err := kurtosisCtx.DestroyEnclave(ctx, enclaveName)
 ```
 
-These instructions should help you get started with using the Kurtosis Go SDK to create and manage enclaves for your projects. If you need further assistance or ahve questions, please open a [Github Discussion](https://github.com/kurtosis-tech/kurtosis/discussions/categories/q-a) or ping us in [Discord](https://discord.com/invite/HUapYX9RvV).
+These instructions should help you get started with using the Kurtosis Go SDK to create and manage enclaves for your projects. If you need further assistance or have questions, please open a [Github Discussion](https://github.com/kurtosis-tech/kurtosis/discussions/categories/q-a) or ping us in [Discord](https://discord.com/invite/HUapYX9RvV).

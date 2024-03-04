@@ -22,6 +22,10 @@ const (
 	ServiceNameArgName = "name"
 )
 
+const (
+	descriptionFormatStr = "Starting service '%v'"
+)
+
 func NewStartService(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
@@ -45,6 +49,7 @@ func NewStartService(serviceNetwork service_network.ServiceNetwork) *kurtosis_pl
 				serviceNetwork: serviceNetwork,
 
 				serviceName: "", // populated at interpretation time
+				description: "", // populated at interpretation time
 			}
 		},
 
@@ -58,6 +63,8 @@ type StartServiceCapabilities struct {
 	serviceNetwork service_network.ServiceNetwork
 
 	serviceName service.ServiceName
+
+	description string
 }
 
 func (builtin *StartServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -67,6 +74,7 @@ func (builtin *StartServiceCapabilities) Interpret(_ string, arguments *builtin_
 	}
 
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
 	return starlark.None, nil
 }
 
@@ -99,5 +107,5 @@ func (builtin *StartServiceCapabilities) FillPersistableAttributes(builder *encl
 }
 
 func (builtin *StartServiceCapabilities) Description() string {
-	return fmt.Sprintf("Starting service '%v'", builtin.serviceName)
+	return builtin.description
 }

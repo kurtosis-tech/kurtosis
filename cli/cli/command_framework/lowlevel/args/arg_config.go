@@ -10,7 +10,7 @@ type ArgConfig struct {
 
 	// TODO Add & render descriptions!!
 
-	// If set to true, this argument can be ommitted
+	// If set to true, this argument can be omitted
 	IsOptional bool
 
 	// For non-greedy args, this must be a string
