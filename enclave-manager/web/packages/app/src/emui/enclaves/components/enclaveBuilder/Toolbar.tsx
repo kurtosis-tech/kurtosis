@@ -199,6 +199,7 @@ export const Toolbar = () => {
       name: "",
       packageId: "",
       args: {},
+      locator: "",
       isValid: false,
     });
     addNodes({

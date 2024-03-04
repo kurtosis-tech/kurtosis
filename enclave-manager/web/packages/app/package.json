@@ -9,7 +9,7 @@
     "enclave-manager-sdk": "file:../../../api/typescript",
     "html-react-parser": "^4.2.2",
     "js-cookie": "^3.0.5",
-    "kurtosis-cloud-indexer-sdk": "^0.0.2",
+    "kurtosis-cloud-indexer-sdk": "^0.0.31",
     "kurtosis-ui-components": "0.88.0",
     "react-error-boundary": "^4.0.11",
     "react-hook-form": "^7.47.0",

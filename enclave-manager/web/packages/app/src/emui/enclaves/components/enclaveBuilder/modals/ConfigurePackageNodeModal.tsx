@@ -34,6 +34,7 @@ export const ConfigurePackageNodeModal = ({ isOpen, onClose, initialValues }: Co
     if (isDefined(kurtosisPackage)) {
       parentFormMethods.setValue("args", transformFormArgsToKurtosisArgs(data.args, kurtosisPackage));
       parentFormMethods.setValue("packageId", kurtosisPackage.name);
+      parentFormMethods.setValue("locator", kurtosisPackage.locator);
       onClose();
     }
   };

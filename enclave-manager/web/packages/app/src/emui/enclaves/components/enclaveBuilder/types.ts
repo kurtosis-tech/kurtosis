@@ -109,6 +109,7 @@ export type KurtosisPackageNodeData = {
   name: string;
   isFromPackage?: boolean;
   packageId: string;
+  locator: string;
   args: Record<string, any>;
   isValid: boolean;
 };

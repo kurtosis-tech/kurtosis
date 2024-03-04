@@ -367,7 +367,7 @@ export function generateStarlarkFromGraph(
   for (const nodeData of packageNodeData) {
     const module_name = `${normaliseNameToStarlarkVariable(nodeData.name)}_module`;
     // Todo handle other paths
-    starlark += `${module_name} = import_module(${interpolateValue(nodeData.packageId + "/main.star")})\n`;
+    starlark += `${module_name} = import_module(${interpolateValue(nodeData.locator)})\n`;
   }
   if (packageNodeData.length > 0) {
     starlark += "\n";
