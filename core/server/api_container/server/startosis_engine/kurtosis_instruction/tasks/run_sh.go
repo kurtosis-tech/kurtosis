@@ -220,7 +220,10 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 //	Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	// swap env vars with their runtime value
-	serviceConfigWithReplacedEnvVars, err := replaceEnvVarsMagicStrings(builtin.runtimeValueStore, builtin.serviceConfig)
+	serviceConfigWithReplacedEnvVars, err := repacaeMagicStringsInEnvVars(builtin.runtimeValueStore, builtin.serviceConfig)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred replacing magic strings in env vars.")
+	}
 
 	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
 	if err != nil {
@@ -299,7 +302,7 @@ func getCommandToRun(builtin *RunShCapabilities) (string, error) {
 	return maybeSubCommandWithRuntimeValues, nil
 }
 
-func replaceEnvVarsMagicStrings(runtimeValueStore *runtime_value_store.RuntimeValueStore, serviceConfig *service.ServiceConfig) (
+func repacaeMagicStringsInEnvVars(runtimeValueStore *runtime_value_store.RuntimeValueStore, serviceConfig *service.ServiceConfig) (
 	*service.ServiceConfig,
 	error) {
 	var envVars map[string]string
