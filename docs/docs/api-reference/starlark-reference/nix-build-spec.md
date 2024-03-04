@@ -1,6 +1,6 @@
 ---
-title: NixSupport
-sidebar_label: NixSupport
+title: NixBuildSpec
+sidebar_label: NixBuildSpec
 ---
 
 You can provide Kurtosis just with source code and a Nix definition on how to build an image. Kurtosis will take care of building and deploying the image directly into the enclave without the need to upload or register the image beforehand.
