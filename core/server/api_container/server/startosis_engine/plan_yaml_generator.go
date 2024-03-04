@@ -408,7 +408,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunSh(runShInstruction *inst
 	returnValue := runShInstruction.GetReturnedValue()
 	runShStruct, ok := returnValue.(*starlarkstruct.Struct)
 	if !ok {
-		return stacktrace.NewError("Cast to service didn't work")
+		return stacktrace.NewError("Casting run sh return value to struct didn't work")
 	}
 	starlarkCodeVal, err := runShStruct.Attr("code")
 	if err != nil {
@@ -559,7 +559,7 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromRunPython(runPythonInstructi
 	returnValue := runPythonInstruction.GetReturnedValue()
 	runPythonStruct, ok := returnValue.(*starlarkstruct.Struct)
 	if !ok {
-		return stacktrace.NewError("Cast to service didn't work")
+		return stacktrace.NewError("Casting run python return value to a struct didn't work")
 	}
 	starlarkCodeVal, err := runPythonStruct.Attr("code")
 	if err != nil {
@@ -765,22 +765,28 @@ func (pyg *PlanYamlGeneratorImpl) updatePlanYamlFromExec(execInstruction *instru
 
 	// store future references
 	returnValue := execInstruction.GetReturnedValue()
-	execStruct, ok := returnValue.(*starlarkstruct.Struct)
+	execDict, ok := returnValue.(*starlark.Dict)
 	if !ok {
-		return stacktrace.NewError("Cast to service didn't work")
+		return stacktrace.NewError("Casting exec return value to a struct didn't work")
 	}
-	starlarkCodeVal, err := execStruct.Attr("code")
+	starlarkCodeVal, found, err := execDict.Get(starlark.String("code"))
 	if err != nil {
 		return err
+	}
+	if !found {
+		return stacktrace.NewError("No code value found on exec dict")
 	}
 	starlarkCodeFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkCodeVal, "exec code")
 	if interpErr != nil {
 		return interpErr
 	}
 	pyg.futureReferenceIndex[starlarkCodeFutureRefStr] = fmt.Sprintf("{{ kurtosis.%v.code }}", taskUuid)
-	starlarkOutputVal, err := execStruct.Attr("output")
+	starlarkOutputVal, found, err := execDict.Get(starlark.String("output"))
 	if err != nil {
 		return err
+	}
+	if !found {
+		return stacktrace.NewError("No code value found on exec dict")
 	}
 	starlarkOutputFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkOutputVal, "exec output")
 	if interpErr != nil {

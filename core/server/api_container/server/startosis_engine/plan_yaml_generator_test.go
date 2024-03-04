@@ -111,30 +111,8 @@ func (suite *PlanYamlGeneratorTestSuite) TearDownTest() {
 func (suite *PlanYamlGeneratorTestSuite) TestCurrentlyBeingWorkedOn() {
 	dockerfileModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server/Dockerfile"
 	serverModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
-	dockerfileContents := `# Use an existing docker image as a base
-FROM alpine:latest
+	dockerfileContents := ``
 
-# Run commands to install necessary dependencies
-RUN apk add --update nodejs npm
-
-# Set the working directory inside the container
-WORKDIR /app
-
-# Copy the current directory contents into the container at /app
-COPY . /app
-
-# Install app dependencies
-RUN npm install
-
-# Expose a port the app runs on
-EXPOSE 3000
-
-# Define environment variable
-ENV NODE_ENV=production
-
-# Command to run the application
-CMD ["node", "app.js"]
-`
 	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(dockerfileModulePath, dockerfileContents))
 	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(serverModulePath, ""))
 
@@ -143,17 +121,34 @@ CMD ["node", "app.js"]
 	relativePathToMainFile := "main.star"
 
 	serializedScript := `def run(plan, args):
-	result = plan.run_sh(
-		run="echo some stuff",
+	plan.add_service(
+		name="db",
+		config=ServiceConfig(
+			image="postgres:latest",
+			env_vars={
+				"POSTGRES_DB": "tedi",
+				"POSTGRES_USER": "tedi",
+				"POSTGRES_PASSWORD": "tedi",
+			}
+		)
 	)
-
-	database = plan.add_service(name="database", config=ServiceConfig(
-		image="postgres:latest",
-		env_vars={
-			"VAR_1": result.output,
-			"VAR_2": result.code
-		}
-	))
+	result = plan.exec(
+		service_name="db",
+		recipe=ExecRecipe(command=["echo", "Hello, world"]),
+		acceptable_codes=[0],
+	)
+	plan.print(result)
+	plan.add_service(
+		name="db2",
+		config=ServiceConfig(
+			image="postgres:latest",
+			env_vars={
+				"POSTGRES_DB": result["code"],
+				"POSTGRES_USER": result["output"],
+				"POSTGRES_PASSWORD": "tedi",
+			}
+		)
+	)
 `
 	serializedJsonParams := "{}"
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), packageId, mainFunctionName, noPackageReplaceOptions, relativePathToMainFile, serializedScript, serializedJsonParams, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask)

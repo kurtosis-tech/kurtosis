@@ -1,17 +1,33 @@
 packageId: github.com/kurtosis-tech/plan-yaml-prac
 services:
-- uuid: "2"
-  name: database
+- uuid: "1"
+  name: db
   image:
     name: postgres:latest
   envVars:
-  - key: VAR_1
-    value: '{{ kurtosis.1.output }}'
-  - key: VAR_2
-    value: '{{ kurtosis.1.code }}'
+  - key: POSTGRES_PASSWORD
+    value: tedi
+  - key: POSTGRES_DB
+    value: tedi
+  - key: POSTGRES_USER
+    value: tedi
+- uuid: "3"
+  name: db2
+  image:
+    name: postgres:latest
+  envVars:
+  - key: POSTGRES_DB
+    value: '{{ kurtosis.2.code }}'
+  - key: POSTGRES_USER
+    value: '{{ kurtosis.2.output }}'
+  - key: POSTGRES_PASSWORD
+    value: tedi
 tasks:
-- uuid: "1"
-  taskType: sh
+- uuid: "2"
+  taskType: exec
   command:
-  - echo some stuff
-  image: badouralix/curl-jq
+  - echo
+  - Hello, world
+  serviceName: db
+  acceptableCodes:
+  - 0
