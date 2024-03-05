@@ -6,6 +6,7 @@ import { FunctionComponent } from "react";
 import { EditEnclaveButton } from "../components/EditEnclaveButton";
 import { ConnectEnclaveButton } from "../components/widgets/ConnectEnclaveButton";
 import { DeleteEnclavesButton } from "../components/widgets/DeleteEnclavesButton";
+import { AddGithubActionButton } from "../components/widgets/RunViaCIButton";
 import { useFullEnclave } from "../EnclavesContext";
 import { EnclaveFullInfo } from "../types";
 import { EnclaveOverview } from "./overview/EnclaveOverview";
@@ -56,6 +57,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
             <DeleteEnclavesButton enclaves={[enclave]} />
             <EditEnclaveButton enclave={enclave} />
             <ConnectEnclaveButton enclave={enclave} />
+            <AddGithubActionButton enclave={enclave} />
           </Flex>
         </Flex>
         <TabPanels>
