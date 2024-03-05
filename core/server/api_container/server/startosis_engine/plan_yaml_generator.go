@@ -86,16 +86,15 @@ type PlanYamlGeneratorImpl struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 
 	packageReplaceOptions map[string]string
-
+	// consider using EnclaveComponents struct to manage services and files artifacts?
+	// this way we re use a common interface?
+	// but it doesn't have the
 	// technically files artifacts are future references but we store them separately bc they are easily identifiable
 	// and have a distinct structure (FilesArtifact)
 	filesArtifactIndex map[string]*FilesArtifact
 
 	// Store service index needed to see in case a service is referenced by a remove service, or store service later in the plan
 	serviceIndex map[string]*Service
-
-	// TODO: do we need a task index?
-	taskIndex map[string]*Task
 
 	// Representation of plan in yaml the plan is being processed, the yaml gets updated
 	planYaml *PlanYaml
@@ -124,7 +123,6 @@ func NewPlanYamlGenerator(
 		},
 		filesArtifactIndex:   map[string]*FilesArtifact{},
 		serviceIndex:         map[string]*Service{},
-		taskIndex:            map[string]*Task{},
 		uuidGenerator:        0,
 		futureReferenceIndex: map[string]string{},
 	}

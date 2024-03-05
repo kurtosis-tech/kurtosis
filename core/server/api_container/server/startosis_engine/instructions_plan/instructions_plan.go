@@ -3,6 +3,7 @@ package instructions_plan
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -73,6 +74,18 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 		generatedPlan = append(generatedPlan, instruction)
 	}
 	return generatedPlan, nil
+}
+
+func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYaml) (string, error) {
+	for _, instructionUuid := range plan.instructionsSequence {
+		_, found := plan.scheduledInstructionsIndex[instructionUuid]
+		if !found {
+			return "", startosis_errors.NewInterpretationError("Unexpected error generating the Kurtosis Instructions plan. Instruction with UUID '%s' was scheduled but could not be found in Kurtosis instruction index", instructionUuid)
+		}
+		// instruction.UpdatePlanYaml(planYaml)
+	}
+	planYamlBytes := []byte{}
+	return string(planYamlBytes), nil
 }
 
 func (plan *InstructionsPlan) Size() int {

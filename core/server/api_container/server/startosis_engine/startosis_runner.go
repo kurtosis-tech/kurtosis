@@ -164,23 +164,6 @@ func (runner *StartosisRunner) Run(
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
-		if dryRun {
-			pyg := NewPlanYamlGenerator(
-				instructionsPlan,
-				runner.startosisInterpreter.serviceNetwork,
-				packageId,
-				runner.startosisInterpreter.packageContentProvider,
-				packageReplaceOptions,
-			)
-			planYaml, err := pyg.GenerateYaml()
-			if err != nil {
-				starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromWarning(err.Error())
-			}
-			logrus.Infof("PLAN YAML:\n %v", string(planYaml))
-			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg(string(planYaml))
-			return
-		}
-
 		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput)
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")

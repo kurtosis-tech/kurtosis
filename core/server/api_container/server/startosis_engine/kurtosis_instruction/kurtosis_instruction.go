@@ -35,5 +35,6 @@ type KurtosisInstruction interface {
 	// itself. In the current case, this is called in the executor, and it sets the UUID and the returned value.
 	GetPersistableAttributes() *enclave_plan_persistence.EnclavePlanInstructionBuilder
 
+	// GetArguments returns arguments set on an instruction. These arguments are Starlark values that can be extracted.
 	GetArguments() *builtin_argument.ArgumentValuesSet
 }

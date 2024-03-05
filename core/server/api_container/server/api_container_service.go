@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"io"
 	"math"
 	"net/http"
@@ -633,18 +634,12 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		interpretationError = startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 		return nil, interpretationError
 	}
-	pyg := startosis_engine.NewPlanYamlGenerator(
-		instructionsPlan,
-		apicService.serviceNetwork,
-		packageIdFromArgs,
-		apicService.packageContentProvider,
-		detectedPackageReplaceOptions)
-	planYamlBytes, err := pyg.GenerateYaml()
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
 	if err != nil {
 		return nil, err
 	}
 
-	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: string(planYamlBytes)}, nil
+	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: planYaml}, nil
 }
 
 func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
@@ -668,18 +663,12 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 	if apiInterpretationError != nil {
 		return nil, startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 	}
-	pyg := startosis_engine.NewPlanYamlGenerator(
-		instructionsPlan,
-		apicService.serviceNetwork,
-		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		apicService.packageContentProvider,
-		noPackageReplaceOptions)
-	planYamlBytes, err := pyg.GenerateYaml()
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	if err != nil {
 		return nil, err
 	}
 
-	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: string(planYamlBytes)}, nil
+	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: planYaml}, nil
 }
 
 // ====================================================================================================
