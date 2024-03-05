@@ -37,8 +37,7 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string) (resultEn
 
 	}
 	destroyEnclaveFuncWrapped := func() error {
-		var i uint32
-		for i = uint32(0); i < destroyEnclaveRetries; i++ {
+		for i := 0; i < destroyEnclaveRetries; i++ {
 			if err := destroyEnclaveFunc(); err != nil {
 				logrus.Warnf("An error occurred destroying enclave '%v' that we created for this test:\n%v", enclaveName, err)
 				if i == destroyEnclaveRetries-1 {
