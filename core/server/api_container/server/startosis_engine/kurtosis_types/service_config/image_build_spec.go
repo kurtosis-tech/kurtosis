@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
@@ -21,6 +22,7 @@ const (
 	BuildContextAttr   = "build_context_dir"
 	BuildFileAttr      = "build_file"
 	TargetStageAttr    = "target_stage"
+	BuildArgsAttr      = "build_args"
 
 	defaultContainerImageFileName = "Dockerfile"
 )
@@ -61,6 +63,12 @@ func NewImageBuildSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor 
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, TargetStageAttr)
 					},
+				},
+				{
+					Name:              BuildArgsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator:         nil,
 				},
 			},
 		},
@@ -149,6 +157,23 @@ func (imageBuildSpec *ImageBuildSpec) GetTargetStage() (string, *startosis_error
 	return targetStageStr, nil
 }
 
+// Dockerfile build-time variables
+func (imageBuildSpec *ImageBuildSpec) GetBuildArgs() (map[string]string, *startosis_errors.InterpretationError) {
+	buildArgsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](imageBuildSpec.KurtosisValueTypeDefault, BuildArgsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if !found || buildArgsStarlark.Len() == 0 {
+		return nil, nil
+	}
+	var buildArgs map[string]string
+	buildArgs, interpretationErr = kurtosis_types.SafeCastToMapStringString(buildArgsStarlark, BuildArgsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return buildArgs, nil
+}
+
 func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageId string,
@@ -181,7 +206,12 @@ func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
 		return nil, interpretationErr
 	}
 
-	return image_build_spec.NewImageBuildSpec(buildContextDirPathOnDisk, containerImageFilePathOnDisk, targetStageStr), nil
+	buildArgs, interpretationErr := imageBuildSpec.GetBuildArgs()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	return image_build_spec.NewImageBuildSpec(buildContextDirPathOnDisk, containerImageFilePathOnDisk, targetStageStr, buildArgs), nil
 }
 
 // Returns the filepath of the build context directory and container image on APIC based on package info
