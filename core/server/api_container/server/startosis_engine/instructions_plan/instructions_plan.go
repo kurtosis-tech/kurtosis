@@ -76,6 +76,7 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 	return generatedPlan, nil
 }
 
+// GenerateYaml
 func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYaml) (string, error) {
 	for _, instructionUuid := range plan.instructionsSequence {
 		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
