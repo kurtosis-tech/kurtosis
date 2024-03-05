@@ -1,5 +1,9 @@
 package plan_yaml
 
+import (
+	"github.com/go-yaml/yaml"
+)
+
 const (
 	HTTP ApplicationProtocol = "HTTP"
 	UDP  TransportProtocol   = "UDP"
@@ -109,4 +113,12 @@ func CreateEmptyPlan(packageId string) *PlanYaml {
 		FilesArtifacts: nil,
 		Tasks:          nil,
 	}
+}
+
+func (pyg PlanYaml) GenerateYaml() (string, error) {
+	yamlBytes, err := yaml.Marshal(pyg)
+	if err != nil {
+		return "", err
+	}
+	return string(yamlBytes), nil
 }

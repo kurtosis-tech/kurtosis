@@ -78,14 +78,16 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 
 func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYaml) (string, error) {
 	for _, instructionUuid := range plan.instructionsSequence {
-		_, found := plan.scheduledInstructionsIndex[instructionUuid]
+		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
 		if !found {
 			return "", startosis_errors.NewInterpretationError("Unexpected error generating the Kurtosis Instructions plan. Instruction with UUID '%s' was scheduled but could not be found in Kurtosis instruction index", instructionUuid)
 		}
-		// instruction.UpdatePlanYaml(planYaml)
+		err := instruction.kurtosisInstruction.UpdatePlan(planYaml)
+		if err != nil {
+			return "", startosis_errors.NewInterpretationError("An error occurred updating the plan.") // TODO: log information about the instruction?
+		}
 	}
-	planYamlBytes := []byte{}
-	return string(planYamlBytes), nil
+	return planYaml.GenerateYaml()
 }
 
 func (plan *InstructionsPlan) Size() int {
