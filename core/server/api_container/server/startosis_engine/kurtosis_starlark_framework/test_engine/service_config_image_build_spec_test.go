@@ -39,14 +39,16 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSp
 }
 
 func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
-	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
+	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%v)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
 		service_config.BuildContextAttr,
 		testBuildContextDir,
 		service_config.TargetStageAttr,
-		testTargetStage)
+		testTargetStage,
+		service_config.BuildArgsAttr,
+		testBuildArgs)
 	return fmt.Sprintf("%s(%s=%s)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, imageBuildSpec)
