@@ -26,6 +26,12 @@ Kurtosis starts services based on a provided image definition in the `image` arg
         # Stage of image build to target for multi-stage container image
         # OPTIONAL
         target_stage=""
+
+        # Build arguments passed at build-time
+        # OPTIONAL (Default: {})
+        build_args={
+            "BUILD_ARG_1": "VALUE_1",
+        }
     )
 ```
 :::info
