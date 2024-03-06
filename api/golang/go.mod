@@ -4,7 +4,6 @@ go 1.20
 
 replace (
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
-	github.com/kurtosis-tech/kurtosis/path_compression => ./../../path-compression
 )
 
 require (
