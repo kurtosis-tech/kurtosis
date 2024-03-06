@@ -2,10 +2,6 @@ module github.com/kurtosis-tech/kurtosis/api/golang
 
 go 1.20
 
-replace (
-	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
-)
-
 require (
 	connectrpc.com/connect v1.11.1
 	github.com/Masterminds/semver/v3 v3.1.1
