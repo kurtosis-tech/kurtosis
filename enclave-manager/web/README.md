@@ -85,23 +85,23 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 
 ### Key libraries used
 
-* Typescript
-* React
-* react-scripts - these packages were created with Create React App.
-* React router (v6) - we avoid using route actions and loaders as they didn't seem to have good Typescript support, created codepaths that were tricky to follow (by excessively fragmenting code) and generally seemed to increase complexity rather than improve development velocity.
-* Chakra UI
-* TanStack table - used for managing the state of tables throughout the application
-* React hook form - used for forms where any validation is required. Generally the [Smart Form Component pattern](https://react-hook-form.com/advanced-usage#SmartFormComponent) is followed to create form components that can be composed together arbitrarily.
-* Reactflow - used for the graph in the enclave builder.
-* Virtuoso - used for rendering streams of logs without dumping all of the text into the DOM.
-* Monaco - used anywhere we want to display blocks of code, or for editing code in the browser.
-* connect-es - this is used to create the client used for accessing kurtosis enclave manager and package indexer api's.
+- Typescript
+- React
+- react-scripts - these packages were created with Create React App.
+- React router (v6) - we avoid using route actions and loaders as they didn't seem to have good Typescript support, created codepaths that were tricky to follow (by excessively fragmenting code) and generally seemed to increase complexity rather than improve development velocity.
+- Chakra UI
+- TanStack table - used for managing the state of tables throughout the application
+- React hook form - used for forms where any validation is required. Generally the [Smart Form Component pattern](https://react-hook-form.com/advanced-usage#SmartFormComponent) is followed to create form components that can be composed together arbitrarily.
+- Reactflow - used for the graph in the enclave builder.
+- Virtuoso - used for rendering streams of logs without dumping all of the text into the DOM.
+- Monaco - used anywhere we want to display blocks of code, or for editing code in the browser.
+- connect-es - this is used to create the client used for accessing kurtosis enclave manager and package indexer api's.
 
 ### Gotchas
 
-* When you first start building this codebase you need to have a local build of the `enclave-manager-sdk`. This is because the `enclave-manager-sdk` is not a published library. The easiest way to make sure this is in place is to run `scripts/build.sh` from the root of this repository, or `enclave-manager/api/typescript/scripts/build.sh`.
-* When you run cypress tests locally the tests are running against the app served by your local engine, not the one running from your development server. An easy way to temporarily work around this is to modify the port used from `9711` to `4000` in `cypress/supports/commands.ts`
-* The wrapping library we use (`@monaco/react`) is a handy abstraction around Monaco, but using plugins with it seems very challenging without ejecting unfortunately.
-* We use `react-mentions` for mention inputs in the enclave builder. This works fine, but better autocomplete could be built using Monaco.
-* The enclave builder shows a graph of nested forms - because rendering it can be quite expensive, sensible use of `memo` around functional components in this part of the codebase can be particularly important. The enclave builder has two data models - one is the VariableContext which contains all of the form state across the graph, and provides the universe of available variables to mention in inputs; the other is the reactflow internal state which tracks node positions, types and sizes on the graph. The data models are linked by using the same `id` to refer to nodes.
-* There is an issue with stream connections to the backend where they can be unexpectedly disconnected in some browsers, it's unclear what is causing this, but from [this bug](https://github.com/connectrpc/connect-es/issues/907) it seems like it could be in the kurtosis enclave manager server.
+- When you first start building this codebase you need to have a local build of the `enclave-manager-sdk`. This is because the `enclave-manager-sdk` is not a published library. The easiest way to make sure this is in place is to run `scripts/build.sh` from the root of this repository, or `enclave-manager/api/typescript/scripts/build.sh`.
+- When you run cypress tests locally the tests are running against the app served by your local engine, not the one running from your development server. An easy way to temporarily work around this is to modify the port used from `9711` to `4000` in `cypress/supports/commands.ts`
+- The wrapping library we use (`@monaco/react`) is a handy abstraction around Monaco, but using plugins with it seems very challenging without ejecting unfortunately.
+- We use `react-mentions` for mention inputs in the enclave builder. This works fine, but better autocomplete could be built using Monaco.
+- The enclave builder shows a graph of nested forms - because rendering it can be quite expensive, sensible use of `memo` around functional components in this part of the codebase can be particularly important. The enclave builder has two data models - one is the VariableContext which contains all of the form state across the graph, and provides the universe of available variables to mention in inputs; the other is the reactflow internal state which tracks node positions, types and sizes on the graph. The data models are linked by using the same `id` to refer to nodes.
+- There is an issue with stream connections to the backend where they can be unexpectedly disconnected in some browsers, it's unclear what is causing this, but from [this bug](https://github.com/connectrpc/connect-es/issues/907) it seems like it could be in the kurtosis enclave manager server.
