@@ -4,6 +4,10 @@ WORKDIR /app
 
 COPY . .
 
-RUN echo ${BUILD_ARG_1} && echo ${BUILD_ARG_2}
+ARG BUILD_ARG="DEFAULT_VALUE"
+RUN if [ "$BUILD_ARG" != "VALUE" ]; then \
+  echo "Error: the build argument BUILD_ARG has not been provided"; \
+  exit 1; \
+fi
 
 CMD ["echo", "Hello, Kurtosis!"]
