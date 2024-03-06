@@ -1,6 +1,7 @@
 package import_module
 
 import (
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_helper"
@@ -9,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"strings"
 )
 
 const (
@@ -101,13 +103,33 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 		}
 	}()
 
-	// Load it.
-	contents, interpretationError := builtin.packageContentProvider.GetModuleContents(absoluteModuleLocator)
-	if interpretationError != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", absoluteModuleLocator)
+	var globalVariables starlark.StringDict
+	var interpretationErr *startosis_errors.InterpretationError
+	if isDockerComposeLocator(absoluteModuleLocator) {
+		logrus.Debugf("Docker Compose found!")
+		packageRootPathOnDisk, interpErr := builtin.packageContentProvider.ClonePackage(absoluteModuleLocator)
+		if interpErr != nil {
+			return nil, interpErr
+		}
+		logrus.Debugf("package root path on disk to docker compose: %v", packageRootPathOnDisk)
+		contents, transpilationErr := docker_compose_transpiler.TranspileDockerComposePackageToStarlark(strings.Trim(packageRootPathOnDisk, "compose.yml"), "compose.yml")
+		if transpilationErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(transpilationErr, "An error occurred transpiling to Docker Compose")
+		}
+		logrus.Debugf("Transpiled compose: %v", contents)
+
+		absoluteModuleLocator = strings.Replace(absoluteModuleLocator, "compose.yml", "main.star", 1)
+		logrus.Debugf("absolute module locator: %v", absoluteModuleLocator)
+		globalVariables, interpretationErr = builtin.recursiveInterpret(absoluteModuleLocator, contents)
+	} else {
+		// Load it.
+		contents, interpErr := builtin.packageContentProvider.GetModuleContents(absoluteModuleLocator)
+		if interpErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(interpErr, "An error occurred while loading the module '%v'", absoluteModuleLocator)
+		}
+		globalVariables, interpretationErr = builtin.recursiveInterpret(absoluteModuleLocator, contents)
 	}
 
-	globalVariables, interpretationErr := builtin.recursiveInterpret(absoluteModuleLocator, contents)
 	// the above error goes unchecked as it needs to be persisted to the cache and then returned to the parent loader
 
 	// Update the cache.
@@ -135,4 +157,21 @@ func explicitInterpretationError(err error) *startosis_errors.InterpretationErro
 		err,
 		"Unable to parse arguments of command '%s'. It should be a non empty string argument pointing to the fully qualified .star file (i.e. \"github.com/kurtosis/package/helpers.star\")",
 		ImportModuleBuiltinName)
+}
+
+func isDockerComposeLocator(locator string) bool {
+	supportedDockerComposes := []string{
+		"compose.yml",
+		"compose.yaml",
+		"docker-compose.yml",
+		"docker-compose.yaml",
+		"docker_compose.yml",
+		"docker_compose.yaml",
+	}
+	for _, compose := range supportedDockerComposes {
+		if strings.Contains(locator, compose) {
+			return true
+		}
+	}
+	return false
 }
