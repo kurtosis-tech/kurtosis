@@ -34,14 +34,14 @@ func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecWithBuildArgsTe
 }
 
 func (t *imageBuildSpecWithBuildArgsTest) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%v)",
+	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%s)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
 		service_config.BuildContextAttr,
 		testBuildContextDir,
 		service_config.BuildArgsAttr,
-		testBuildArgs)
+		fmt.Sprintf("{%q: %q, %q: %q}", testBuildArgName1, testBuildArgValue1, testBuildArgName2, testBuildArgValue2))
 }
 
 func (t *imageBuildSpecWithBuildArgsTest) Assert(typeValue builtin_argument.KurtosisValueType) {
@@ -56,5 +56,10 @@ func (t *imageBuildSpecWithBuildArgsTest) Assert(typeValue builtin_argument.Kurt
 	require.Nil(t, err)
 	require.Equal(t, testOnDiskContainerImagePath, imageBuildSpec.GetContainerImageFilePath())
 	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
-	require.Equal(t, testBuildArgs, imageBuildSpec.GetBuildArgs())
+
+	expectedBuildArgs := map[string]string{
+		testBuildArgName1: testBuildArgValue1,
+		testBuildArgName2: testBuildArgValue2,
+	}
+	require.Equal(t, expectedBuildArgs, imageBuildSpec.GetBuildArgs())
 }

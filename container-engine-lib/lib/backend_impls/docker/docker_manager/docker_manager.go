@@ -1408,6 +1408,11 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	}()
 	defer buildkitSession.Close() //nolint
 
+	buildArgs := imageBuildSpec.GetBuildArgs()
+	buildArgsMapStringStringPtr := map[string]*string{}
+	for k, v := range buildArgs {
+		buildArgsMapStringStringPtr[k] = &v
+	}
 	imageBuildOpts := types.ImageBuildOptions{
 		Tags:           []string{imageName},
 		SuppressOutput: false,
@@ -1429,7 +1434,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		ShmSize:        0,
 		Dockerfile:     defaultContainerImageFile,
 		Ulimits:        []*units.Ulimit{},
-		BuildArgs:      imageBuildSpec.GetBuildArgs(),
+		BuildArgs:      buildArgsMapStringStringPtr,
 		AuthConfigs:    map[string]registry.AuthConfig{},
 		Context:        buildContextTarReader,
 		// 0.0.0 label is a hack so that images by internal testsuite are cleaned up by kurtosis clean/PruneUnusedImages

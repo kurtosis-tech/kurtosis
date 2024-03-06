@@ -158,7 +158,7 @@ func (imageBuildSpec *ImageBuildSpec) GetTargetStage() (string, *startosis_error
 }
 
 // Dockerfile build-time variables
-func (imageBuildSpec *ImageBuildSpec) GetBuildArgs() (map[string]*string, *startosis_errors.InterpretationError) {
+func (imageBuildSpec *ImageBuildSpec) GetBuildArgs() (map[string]string, *startosis_errors.InterpretationError) {
 	buildArgsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](imageBuildSpec.KurtosisValueTypeDefault, BuildArgsAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -166,8 +166,7 @@ func (imageBuildSpec *ImageBuildSpec) GetBuildArgs() (map[string]*string, *start
 	if !found || buildArgsStarlark.Len() == 0 {
 		return nil, nil
 	}
-	var buildArgs map[string]*string
-	buildArgs, interpretationErr = kurtosis_types.SafeCastToMapStringStringPtr(buildArgsStarlark, BuildArgsAttr)
+	buildArgs, interpretationErr := kurtosis_types.SafeCastToMapStringString(buildArgsStarlark, BuildArgsAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

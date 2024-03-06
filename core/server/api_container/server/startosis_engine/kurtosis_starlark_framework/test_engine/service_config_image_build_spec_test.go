@@ -39,7 +39,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSp
 }
 
 func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
-	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%v)",
+	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%s)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
@@ -48,7 +48,7 @@ func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
 		service_config.TargetStageAttr,
 		testTargetStage,
 		service_config.BuildArgsAttr,
-		testBuildArgs)
+		fmt.Sprintf("{%q: %q, %q: %q}", testBuildArgName1, testBuildArgValue1, testBuildArgName2, testBuildArgValue2))
 	return fmt.Sprintf("%s(%s=%s)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, imageBuildSpec)
@@ -66,11 +66,15 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		testNoPackageReplaceOptions)
 	require.Nil(t, interpretationErr)
 
+	expectedBuildArgs := map[string]string{
+		testBuildArgName1: testBuildArgValue1,
+		testBuildArgName2: testBuildArgValue2,
+	}
 	expectedImageBuildSpec := image_build_spec.NewImageBuildSpec(
 		testOnDiskContextDirPath,
 		testOnDiskContainerImagePath,
 		testTargetStage,
-		testBuildArgs)
+		expectedBuildArgs)
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		expectedImageBuildSpec,
