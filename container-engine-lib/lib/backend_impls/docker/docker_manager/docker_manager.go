@@ -1411,7 +1411,8 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	buildArgs := imageBuildSpec.GetBuildArgs()
 	buildArgsMapStringStringPtr := map[string]*string{}
 	for k, v := range buildArgs {
-		buildArgsMapStringStringPtr[k] = &v
+		value := v // Go uses a single variable for loop iterations which lead to unexpected behaviours.
+		buildArgsMapStringStringPtr[k] = &value
 	}
 	imageBuildOpts := types.ImageBuildOptions{
 		Tags:           []string{imageName},
