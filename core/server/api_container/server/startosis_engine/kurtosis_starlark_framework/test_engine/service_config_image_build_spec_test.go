@@ -67,7 +67,8 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 	expectedImageBuildSpec := image_build_spec.NewImageBuildSpec(
 		testOnDiskContextDirPath,
 		testOnDiskContainerImagePath,
-		testTargetStage)
+		testTargetStage,
+		testBuildArgs)
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		expectedImageBuildSpec,

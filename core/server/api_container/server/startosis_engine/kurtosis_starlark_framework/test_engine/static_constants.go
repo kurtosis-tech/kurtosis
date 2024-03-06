@@ -30,6 +30,8 @@ var (
 	testBuildContextDir                       = "./"
 	testBuildFile                             = "foo.Dockerfile"
 	testTargetStage                           = "builder"
+	testBuildArgValue                         = "foo"
+	testBuildArgs                             = map[string]*string{"NAME": &testBuildArgValue}
 	testBuildContextLocator                   = testModulePackageId
 	testContainerImageLocator                 = "github.com/kurtosistech/test-package/Dockerfile"
 	testContainerImageLocatorWithBuildFile    = "github.com/kurtosistech/test-package/foo.Dockerfile"
