@@ -59,10 +59,11 @@ config = ServiceConfig(
         # OPTIONAL
         target_stage=""
 
-        # Build arguments passed at build-time
+        # Arguments passed at build-time
         # OPTIONAL (Default: {})
         build_args={
             "BUILD_ARG_1": "VALUE_1",
+            "BUILD_ARG_2": "VALUE_2",
         }
     )
 
