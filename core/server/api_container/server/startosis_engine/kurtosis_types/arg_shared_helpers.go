@@ -2,10 +2,11 @@ package kurtosis_types
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"reflect"
 )
 
 func MakeOptional(argName string) string {
@@ -55,6 +56,31 @@ func SafeCastToMapStringString(expectedValue starlark.Value, argNameForLogging s
 			return nil, castErr
 		}
 		castValue[stringKey] = stringValue
+	}
+	return castValue, nil
+}
+
+// TODO: make private once arg_parser don't need it anymore
+func SafeCastToMapStringStringPtr(expectedValue starlark.Value, argNameForLogging string) (map[string]*string, *startosis_errors.InterpretationError) {
+	dictValue, ok := expectedValue.(*starlark.Dict)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError("'%s' argument is expected to be a dict. Got %s", argNameForLogging, reflect.TypeOf(expectedValue))
+	}
+	castValue := make(map[string]*string)
+	for _, key := range dictValue.Keys() {
+		stringKey, castErr := SafeCastToString(key, fmt.Sprintf("%v.key:%v", argNameForLogging, key))
+		if castErr != nil {
+			return nil, castErr
+		}
+		value, found, dictErr := dictValue.Get(key)
+		if !found || dictErr != nil {
+			return nil, startosis_errors.NewInterpretationError("'%s' key in dict '%s' doesn't have a value we could retrieve. This is a Kurtosis bug.", key.String(), argNameForLogging)
+		}
+		stringValue, castErr := SafeCastToString(value, fmt.Sprintf("%v[\"%v\"]", argNameForLogging, stringKey))
+		if castErr != nil {
+			return nil, castErr
+		}
+		castValue[stringKey] = &stringValue
 	}
 	return castValue, nil
 }
