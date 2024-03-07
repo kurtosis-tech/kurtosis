@@ -12,13 +12,13 @@ import TabItem from '@theme/TabItem';
 
 <!---------- END IMPORTS ------------>
 
-The instructions in this guide assume you already have Kurtosis installed, and will walk you through upgrading to the latest version of Kurtosis. 
+The instructions in this guide assume you already have Kurtosis installed, and will walk you through upgrading to the latest version of Kurtosis.
 
 If you're looking to install Kurtosis, [see here][install-guide].
 
 I. Check breaking changes
 ---------------------------------
-You can check the version of the CLI you're running with `kurtosis version`. Before upgrading to the latest version, check [the changelog to see if there are any breaking changes][cli-changelog] before proceeding with the steps below to upgrade. 
+You can check the version of the CLI you're running with `kurtosis version`. Before upgrading to the latest version, check [the changelog to see if there are any breaking changes][cli-changelog] before proceeding with the steps below to upgrade.
 
 II. Upgrade the CLI
 -------------------------
@@ -61,7 +61,7 @@ The Kurtosis CLI cannot be installed directly on Windows. Windows users are enco
 
 III. Restart the engine
 -----------------------
-If you upgraded the CLI through a minor version (the `Y` in a `X.Y.Z` version), you may need to restart your Kurtosis engine after the upgrade. 
+If you upgraded the CLI through a minor version (the `Y` in a `X.Y.Z` version), you may need to restart your Kurtosis engine after the upgrade.
 
 If this is needed, the Kurtosis CLI will prompt you with an error like so:
 
@@ -77,7 +77,7 @@ kurtosis engine restart
 
 :::tip
 In order to upgrade Kurtosis to another version *after you've performed a downgrade (i.e. installed a historical version)*, you must first uninstall the version of Kurtosis you've installed and re-install Kurtosis. When using Homebrew, the workflow will be (replacing `HISTORICAL-VERSION` with the historical version you have installed):
-1. `brew uninstall brew uninstall kurtosis-tech/tap/kurtosis-cli@HISTORICAL-VERSION`
+1. `brew uninstall kurtosis-tech/tap/kurtosis-cli@HISTORICAL-VERSION`
 2. `brew install kurtosis-tech/tap/kurtosis-cli` for upgrading to the latest version or `brew install kurtosis-tech/tap/kurtosis-cli@TARGET-VERSION` for upgrading to a specific version
 3. `kurtosis engine restart`
 :::
