@@ -5,11 +5,11 @@ import { FiGithub } from "react-icons/fi";
 import { EnclaveFullInfo } from "../../types";
 import { AddGithubActionModal } from "../modals/AddGithubActionModal";
 
-type RunViaCIModalButtonProps = ButtonProps & {
+type AddGithubActionButtonProps = ButtonProps & {
   enclave: EnclaveFullInfo;
 };
 
-export const AddGithubActionButton = ({ enclave, ...buttonProps }: RunViaCIModalButtonProps) => {
+export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActionButtonProps) => {
   const [showModal, setShowModal] = useState(false);
 
   if (!isDefined(enclave.starlarkRun)) {
@@ -22,7 +22,7 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: RunViaCIModal
 
   if (enclave.starlarkRun.isErr) {
     return (
-      <Tooltip label={"This enclave didn't really load"}>
+      <Tooltip label={"An error occurred while starting the enclave"}>
         <Button isDisabled={true} colorScheme={"yellow"} leftIcon={<FiGithub />} size={"sm"} {...buttonProps}>
           Add GitHub Action
         </Button>
