@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.88.2](https://github.com/kurtosis-tech/kurtosis/compare/0.88.1...0.88.2) (2024-03-07)
+
+
+### Bug Fixes
+
+* replace env var with runtime values in run_sh ([#2254](https://github.com/kurtosis-tech/kurtosis/issues/2254)) ([4107443](https://github.com/kurtosis-tech/kurtosis/commit/4107443bdbbfb24a68269d32585bf4bc91442ff5))
+* use fixed version of path compression module ([#2264](https://github.com/kurtosis-tech/kurtosis/issues/2264)) ([eef65e1](https://github.com/kurtosis-tech/kurtosis/commit/eef65e1020bbd36aa8a5b4759aeecfb72dfc9fc4))
+
 ## [0.88.1](https://github.com/kurtosis-tech/kurtosis/compare/0.88.0...0.88.1) (2024-03-05)
 
 
