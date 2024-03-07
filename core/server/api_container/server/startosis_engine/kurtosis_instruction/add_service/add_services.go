@@ -3,6 +3,7 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -99,6 +100,8 @@ type AddServicesCapabilities struct {
 
 	resultUuids map[service.ServiceName]string
 	description string
+
+	imageDownloadMode *kurtosis_core_rpc_api_bindings.ImageDownloadMode
 }
 
 func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
