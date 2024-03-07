@@ -36,7 +36,7 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/itchyny/gojq v0.12.13
 	github.com/joho/godotenv v1.5.1
-	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240306193821-28cf087e1f58
+	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/pkg/errors v0.9.1
