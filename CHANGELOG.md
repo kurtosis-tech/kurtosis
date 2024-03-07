@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.88.3](https://github.com/kurtosis-tech/kurtosis/compare/0.88.2...0.88.3) (2024-03-07)
+
+
+### Bug Fixes
+
+* fix pinned version of path compression ([#2265](https://github.com/kurtosis-tech/kurtosis/issues/2265)) ([b02621a](https://github.com/kurtosis-tech/kurtosis/commit/b02621aa808389c4e58300375a796657787d8b8c))
+
 ## [0.88.2](https://github.com/kurtosis-tech/kurtosis/compare/0.88.1...0.88.2) (2024-03-07)
 
 
