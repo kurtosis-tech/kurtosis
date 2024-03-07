@@ -4,7 +4,7 @@ go 1.20
 
 replace (
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
-	github.com/kurtosis-tech/kurtosis/path_compression => ./../../path-compression
+	github.com/kurtosis-tech/kurtosis/path-compression => ../../path-compression
 )
 
 require (
@@ -16,8 +16,8 @@ require (
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230803130419-099ee7a4e3dc
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230818184218-f4e3e773463b
-	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0-20230803130419-099ee7a4e3dc
-	github.com/kurtosis-tech/kurtosis/path_compression v0.0.0-00010101000000-000000000000
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0-20230803130419-099ee7a4e3dc // needs to be pinned as the replace above won't work when importing the api standalone
+	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240306193821-28cf087e1f58 // needs to be pinned as the replace above won't work when importing the api standalone
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/labstack/echo/v4 v4.11.3
 	github.com/oapi-codegen/runtime v1.1.0
