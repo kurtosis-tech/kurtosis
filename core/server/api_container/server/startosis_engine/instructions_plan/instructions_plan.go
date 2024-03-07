@@ -76,7 +76,7 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 	return generatedPlan, nil
 }
 
-// GenerateYaml
+// GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan
 func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYaml) (string, error) {
 	for _, instructionUuid := range plan.instructionsSequence {
 		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]

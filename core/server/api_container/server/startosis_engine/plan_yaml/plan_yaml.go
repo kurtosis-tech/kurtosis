@@ -15,7 +15,13 @@ const (
 )
 
 // TODO: there's really no point in making any of these references, consider just making them copies
+// PlanYaml is a representation of the state of an enclave.
+
 type PlanYaml struct {
+	privatePlanYaml *privatePlanYaml
+}
+
+type privatePlanYaml struct {
 	PackageId      string           `yaml:"packageId,omitempty"`
 	Services       []*Service       `yaml:"services,omitempty"`
 	FilesArtifacts []*FilesArtifact `yaml:"filesArtifacts,omitempty"`
@@ -24,16 +30,14 @@ type PlanYaml struct {
 
 // Service represents a service in the system.
 type Service struct {
-	Uuid       string                 `yaml:"uuid,omitempty"`       // done
-	Name       string                 `yaml:"name,omitempty"`       // done
-	Image      *ImageSpec             `yaml:"image,omitempty"`      // done
-	Cmd        []string               `yaml:"command,omitempty"`    // done
-	Entrypoint []string               `yaml:"entrypoint,omitempty"` // done
-	EnvVars    []*EnvironmentVariable `yaml:"envVars,omitempty"`    // done
-	Ports      []*Port                `yaml:"ports,omitempty"`      // done
-	Files      []*FileMount           `yaml:"files,omitempty"`      // done
-
-	// TODO: support remaining fields in the ServiceConfig
+	Uuid       string                 `yaml:"uuid,omitempty"`
+	Name       string                 `yaml:"name,omitempty"`
+	Image      *ImageSpec             `yaml:"image,omitempty"`
+	Cmd        []string               `yaml:"command,omitempty"`
+	Entrypoint []string               `yaml:"entrypoint,omitempty"`
+	EnvVars    []*EnvironmentVariable `yaml:"envVars,omitempty"`
+	Ports      []*Port                `yaml:"ports,omitempty"`
+	Files      []*FileMount           `yaml:"files,omitempty"`
 }
 
 type ImageSpec struct {
@@ -88,8 +92,8 @@ type Task struct {
 	TaskType TaskType         `yaml:"taskType,omitempty"` // done
 	RunCmd   []string         `yaml:"command,omitempty"`  // done
 	Image    string           `yaml:"image,omitempty"`    // done
-	Files    []*FileMount     `yaml:"files,omitempty"`    // done
-	Store    []*FilesArtifact `yaml:"store,omitempty"`    // done
+	Files    []*FileMount     `yaml:"files,omitempty"`
+	Store    []*FilesArtifact `yaml:"store,omitempty"`
 
 	// only exists on SHELL tasks
 	EnvVars []*EnvironmentVariable `yaml:"envVar,omitempty"` // done
@@ -108,15 +112,17 @@ type TaskType string
 
 func CreateEmptyPlan(packageId string) *PlanYaml {
 	return &PlanYaml{
-		PackageId:      packageId,
-		Services:       nil,
-		FilesArtifacts: nil,
-		Tasks:          nil,
+		privatePlanYaml: &privatePlanYaml{
+			PackageId:      packageId,
+			Services:       []*Service{},
+			Tasks:          []*Task{},
+			FilesArtifacts: []*FilesArtifact{},
+		},
 	}
 }
 
 func (pyg PlanYaml) GenerateYaml() (string, error) {
-	yamlBytes, err := yaml.Marshal(pyg)
+	yamlBytes, err := yaml.Marshal(pyg.privatePlanYaml)
 	if err != nil {
 		return "", err
 	}

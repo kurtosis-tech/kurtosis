@@ -619,7 +619,7 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 	}
 
 	var apiInterpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
-	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret( // tedi: why interpret return an api interpretation error instead of a starlark one?
+	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret(
 		ctx,
 		detectedPackageId,
 		mainFuncName,
@@ -634,12 +634,12 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		interpretationError = startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 		return nil, interpretationError
 	}
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
+	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
 	if err != nil {
 		return nil, err
 	}
 
-	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: planYaml}, nil
+	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: planYamlStr}, nil
 }
 
 func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
@@ -649,7 +649,7 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 	noPackageReplaceOptions := map[string]string{}
 
 	var apiInterpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
-	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret( // tedi: why interpret return an api interpretation error instead of a starlark one?
+	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret(
 		ctx,
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		mainFuncName,
@@ -663,12 +663,12 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 	if apiInterpretationError != nil {
 		return nil, startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 	}
-	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
+	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	if err != nil {
 		return nil, err
 	}
 
-	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: planYaml}, nil
+	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: planYamlStr}, nil
 }
 
 // ====================================================================================================

@@ -39,5 +39,6 @@ type KurtosisInstruction interface {
 	// GetArguments returns arguments set on an instruction. These arguments are Starlark values that can be extracted.
 	GetArguments() *builtin_argument.ArgumentValuesSet
 
+	// UpdatePlan updates the plan with the effects of running this instruction.
 	UpdatePlan(plan *plan_yaml.PlanYaml) error
 }
