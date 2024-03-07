@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AppPageLayout, HoverLineTabList, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { FunctionComponent } from "react";
 import { EditEnclaveButton } from "../components/EditEnclaveButton";
-import { AddGithubActionButton } from "../components/widgets/AddGitHubActionButton";
+import { AddGithubActionButton } from "../components/widgets/AddGithubActionButton";
 import { ConnectEnclaveButton } from "../components/widgets/ConnectEnclaveButton";
 import { DeleteEnclavesButton } from "../components/widgets/DeleteEnclavesButton";
 import { useFullEnclave } from "../EnclavesContext";
