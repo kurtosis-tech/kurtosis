@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -177,6 +178,10 @@ func (builtin *StoreServiceFilesCapabilities) FillPersistableAttributes(builder 
 	).AddFilesArtifact(
 		builtin.artifactName, nil,
 	)
+}
+
+func (builtin *StoreServiceFilesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	return stacktrace.NewError("IMPLEMENT ME")
 }
 
 func (builtin *StoreServiceFilesCapabilities) Description() string {

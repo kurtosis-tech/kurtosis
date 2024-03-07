@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
@@ -95,6 +96,10 @@ func (builtin *kurtosisPlanInstructionInternal) GetPersistableAttributes() *encl
 	enclavePlaneInstructionBuilder := enclave_plan_persistence.NewEnclavePlanInstructionBuilder()
 	builtin.capabilities.FillPersistableAttributes(enclavePlaneInstructionBuilder)
 	return enclavePlaneInstructionBuilder.SetStarlarkCode(builtin.String())
+}
+
+func (builtin *kurtosisPlanInstructionInternal) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	return builtin.capabilities.UpdatePlan(plan)
 }
 
 func (builtin *kurtosisPlanInstructionInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {

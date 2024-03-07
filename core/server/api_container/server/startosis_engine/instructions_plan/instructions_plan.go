@@ -85,7 +85,7 @@ func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYaml) (string
 		}
 		err := instruction.kurtosisInstruction.UpdatePlan(planYaml)
 		if err != nil {
-			return "", startosis_errors.NewInterpretationError("An error occurred updating the plan.") // TODO: log information about the instruction?
+			return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred updating the plan.") // TODO: log information about the instruction?
 		}
 	}
 	return planYaml.GenerateYaml()

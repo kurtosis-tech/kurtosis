@@ -14,13 +14,12 @@ const (
 	EXEC   TaskType = "exec"
 )
 
-// TODO: there's really no point in making any of these references, consider just making them copies
-// PlanYaml is a representation of the state of an enclave.
-
+// PlanYaml is a yaml representation of the effect of an "plan" or sequence of instructions on the state of the Enclave.
 type PlanYaml struct {
 	privatePlanYaml *privatePlanYaml
 }
 
+// TODO: pass by value instead of pass by reference
 type privatePlanYaml struct {
 	PackageId      string           `yaml:"packageId,omitempty"`
 	Services       []*Service       `yaml:"services,omitempty"`
