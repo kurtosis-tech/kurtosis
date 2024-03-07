@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.88.1](https://github.com/kurtosis-tech/kurtosis/compare/0.88.0...0.88.1) (2024-03-05)
+
+
+### Features
+
+* allow users to set descriptions ([#2239](https://github.com/kurtosis-tech/kurtosis/issues/2239)) ([473d0ee](https://github.com/kurtosis-tech/kurtosis/commit/473d0ee07f2b16c39cf9a453c3c28afdb1e2493d))
+
+
+### Bug Fixes
+
+* Add retries around the test enclave destroy logic ([#2255](https://github.com/kurtosis-tech/kurtosis/issues/2255)) ([6245ddf](https://github.com/kurtosis-tech/kurtosis/commit/6245ddf4c0681cfc81021aeda0eb2e245ef5b275))
+* CI failing due deprecated images ([#2253](https://github.com/kurtosis-tech/kurtosis/issues/2253)) ([742e40b](https://github.com/kurtosis-tech/kurtosis/commit/742e40bece06152da5591b15dd75e654a2ed0f10))
+* moving the golangci-lint condition because it has matrix strategy ([#2242](https://github.com/kurtosis-tech/kurtosis/issues/2242)) ([f976daa](https://github.com/kurtosis-tech/kurtosis/commit/f976daa409774014c6d60acb90efbdd593401a80))
+* rename utils to path compression ([#2236](https://github.com/kurtosis-tech/kurtosis/issues/2236)) ([d28fdc9](https://github.com/kurtosis-tech/kurtosis/commit/d28fdc9efb59c61e3419ac322f0fc9b80ef693c8))
+* typos ([#2066](https://github.com/kurtosis-tech/kurtosis/issues/2066)) ([1b6aff7](https://github.com/kurtosis-tech/kurtosis/commit/1b6aff74ffbc30a3b1007c2b7d6422fefd71f7c8))
+
 ## [0.88.0](https://github.com/kurtosis-tech/kurtosis/compare/0.87.3...0.88.0) (2024-02-29)
 
 
