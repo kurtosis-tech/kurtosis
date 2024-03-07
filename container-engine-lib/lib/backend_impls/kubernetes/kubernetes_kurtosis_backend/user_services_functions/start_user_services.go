@@ -688,12 +688,13 @@ func getUserServicePodContainerSpecs(
 			Name:  userServiceContainerName,
 			Image: image,
 			// Yes, even though this is called "command" it actually corresponds to the Docker ENTRYPOINT
-			Command:      entrypointArgs,
-			Args:         cmdArgs,
-			Ports:        kubernetesContainerPorts,
-			Env:          containerEnvVars,
-			VolumeMounts: containerMounts,
-			Resources:    resourceRequirements,
+			Command:         entrypointArgs,
+			Args:            cmdArgs,
+			Ports:           kubernetesContainerPorts,
+			Env:             containerEnvVars,
+			VolumeMounts:    containerMounts,
+			Resources:       resourceRequirements,
+			ImagePullPolicy: "",
 
 			// NOTE: There are a bunch of other interesting Container options that we omitted for now but might
 			// want to specify in the future
