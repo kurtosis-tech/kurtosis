@@ -68,7 +68,7 @@ func KurtosisPlanInstructions(
 ) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
 		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode),
-		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore),
+		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode),
 		get_service.NewGetService(interpretationTimeValueStore),
 		verify.NewVerify(runtimeValueStore),
 		exec.NewExec(serviceNetwork, runtimeValueStore),

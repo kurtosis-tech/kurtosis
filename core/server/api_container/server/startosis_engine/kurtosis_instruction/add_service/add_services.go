@@ -40,7 +40,8 @@ func NewAddServices(
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
-	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
+	imageDownloadMode image_download_mode.ImageDownloadMode) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServicesBuiltinName,
@@ -72,9 +73,10 @@ func NewAddServices(
 				serviceConfigs:               nil, // populated at interpretation time
 				interpretationTimeValueStore: interpretationTimeValueStore,
 
-				resultUuids:     map[service.ServiceName]string{}, // populated at interpretation time
-				readyConditions: nil,                              // populated at interpretation time
-				description:     "",                               // populated at interpretation time
+				resultUuids:       map[service.ServiceName]string{}, // populated at interpretation time
+				readyConditions:   nil,                              // populated at interpretation time
+				description:       "",                               // populated at interpretation time
+				imageDownloadMode: imageDownloadMode,
 			}
 		},
 

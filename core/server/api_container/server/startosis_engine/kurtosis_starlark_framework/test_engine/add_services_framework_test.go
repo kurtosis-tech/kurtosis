@@ -221,7 +221,8 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		testModulePackageId,
 		t.packageContentProvider,
 		testNoPackageReplaceOptions,
-		t.interpretationTimeValueStore)
+		t.interpretationTimeValueStore,
+		image_download_mode.ImageDownloadMode_Missing)
 }
 
 func (t *addServicesTestCase) GetStarlarkCode() string {
