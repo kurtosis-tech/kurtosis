@@ -5,8 +5,6 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
-	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"strconv"
 	"strings"
@@ -170,25 +168,25 @@ func (planYaml *PlanYaml) AddService(
 	image := &ImageSpec{ //nolint:exhaustruct
 		ImageName: serviceConfig.GetContainerImageName(),
 	}
-	imageBuildSpec := serviceConfig.GetImageBuildSpec()
-	if imageBuildSpec != nil {
-		// Need the raw imageValue to get the build context locator
-		switch starlarkImgVal := imageValue.(type) {
-		case *service_config.ImageBuildSpec:
-			contextLocator, err := starlarkImgVal.GetBuildContextLocator()
-			if err != nil {
-				return err
-			}
-			image.BuildContextLocator = contextLocator
-		default:
-			return stacktrace.NewError("An image build spec was detected on the kurtosis type service config but the starlark image value was not an ImageBuildSpec type.")
-		}
-		image.TargetStage = imageBuildSpec.GetTargetStage()
-	}
-	imageSpec := serviceConfig.GetImageRegistrySpec()
-	if imageSpec != nil {
-		image.Registry = imageSpec.GetRegistryAddr()
-	}
+	//imageBuildSpec := serviceConfig.GetImageBuildSpec()
+	//if imageBuildSpec != nil {
+	//	// Need the raw imageValue to get the build context locator
+	//	switch starlarkImgVal := imageValue.(type) {
+	//	case *service_config.ImageBuildSpec: // importing service_config.ImageBuildSpec causes a dependency issue figure that out later
+	//		contextLocator, err := starlarkImgVal.GetBuildContextLocator()
+	//		if err != nil {
+	//			return err
+	//		}
+	//		image.BuildContextLocator = contextLocator
+	//	default:
+	//		return stacktrace.NewError("An image build spec was detected on the kurtosis type service config but the starlark image value was not an ImageBuildSpec type.")
+	//	}
+	//	image.TargetStage = imageBuildSpec.GetTargetStage()
+	//}
+	//imageSpec := serviceConfig.GetImageRegistrySpec()
+	//if imageSpec != nil {
+	//	image.Registry = imageSpec.GetRegistryAddr()
+	//}
 	serviceYaml.Image = image
 
 	cmdArgs := []string{}
@@ -283,7 +281,7 @@ func (planYaml *PlanYaml) addServiceYaml(service *Service) {
 }
 
 func (planYaml *PlanYaml) addFilesArtifactYaml(filesArtifact *FilesArtifact) {
-	planYaml.filesArtifactIndex[] = filesArtifact
+	planYaml.filesArtifactIndex[filesArtifact.Name] = filesArtifact
 	// do we need both map and list structures? what about just map then resolve at the end?
 	planYaml.privatePlanYaml.FilesArtifacts = append(planYaml.privatePlanYaml.FilesArtifacts, filesArtifact)
 }
