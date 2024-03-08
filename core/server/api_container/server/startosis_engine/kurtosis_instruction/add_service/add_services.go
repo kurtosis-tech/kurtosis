@@ -3,7 +3,7 @@ package add_service
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -101,7 +101,7 @@ type AddServicesCapabilities struct {
 	resultUuids map[service.ServiceName]string
 	description string
 
-	imageDownloadMode *kurtosis_core_rpc_api_bindings.ImageDownloadMode
+	imageDownloadMode image_download_mode.ImageDownloadMode
 }
 
 func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -116,6 +116,7 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		builtin.packageId,
 		builtin.packageContentProvider,
 		builtin.packageReplaceOptions,
+		builtin.imageDownloadMode,
 	)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -419,6 +420,7 @@ func validateAndConvertConfigsAndReadyConditions(
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) (
 	map[service.ServiceName]*service.ServiceConfig,
 	map[service.ServiceName]*service_config.ReadyCondition,
@@ -447,7 +449,7 @@ func validateAndConvertConfigsAndReadyConditions(
 		if !isDictValueAServiceConfig {
 			return nil, nil, startosis_errors.NewInterpretationError("One value of the '%s' dictionary is not a ServiceConfig (was '%s'). Values of this argument should correspond to the config of the service to be added", ConfigsArgName, reflect.TypeOf(dictValue))
 		}
-		apiServiceConfig, interpretationErr := serviceConfig.ToKurtosisType(serviceNetwork, locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
+		apiServiceConfig, interpretationErr := serviceConfig.ToKurtosisType(serviceNetwork, locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions, imageDownloadMode)
 		if interpretationErr != nil {
 			return nil, nil, interpretationErr
 		}

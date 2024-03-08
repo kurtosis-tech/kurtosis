@@ -14,7 +14,11 @@ require (
 	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20231024185242-de10c7bab36c
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20231024185242-de10c7bab36c
+<<<<<<< Updated upstream
 	github.com/kurtosis-tech/kurtosis/path_compression v0.0.0-00010101000000-000000000000
+=======
+	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
+>>>>>>> Stashed changes
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/moby/buildkit v0.12.4
 	github.com/sirupsen/logrus v1.9.3

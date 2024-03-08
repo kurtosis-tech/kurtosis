@@ -64,7 +64,7 @@ func KurtosisPlanInstructions(
 	packageReplaceOptions map[string]string,
 	nonBlockingMode bool,
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
-	imageDownloadMode *image_download_mode.ImageDownloadMode,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
 		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode),
