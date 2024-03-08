@@ -7,6 +7,7 @@ jobs:
   release-please:
     name: "Release please"
     runs-on: ubuntu-latest
+    if: github.repository == 'kurtosis-tech/kurtosis'
     steps:
       - uses: google-github-actions/release-please-action@v3
         with:
