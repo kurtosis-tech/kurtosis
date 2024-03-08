@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"testing"
 
@@ -56,6 +57,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 				nil,
 				nil,
 				map[string]string{},
+				image_download_mode.ImageDownloadMode_Missing,
 			)
 			require.NoError(suite.T(), err)
 
@@ -84,7 +86,8 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 		testModulePackageId,
 		t.packageContentProvider,
 		testNoPackageReplaceOptions,
-		t.interpretationTimeValueStore)
+		t.interpretationTimeValueStore,
+		image_download_mode.ImageDownloadMode_Missing)
 }
 
 func (t *addServiceTestCase) GetStarlarkCode() string {

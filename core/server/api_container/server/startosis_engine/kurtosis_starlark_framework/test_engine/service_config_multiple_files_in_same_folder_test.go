@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
@@ -51,7 +52,8 @@ func (t *serviceConfigMultipleFilesInSameFolderTestCase) Assert(typeValue builti
 		testModulePackageId,
 		testModuleMainFileLocator,
 		t.packageContentProvider,
-		testNoPackageReplaceOptions)
+		testNoPackageReplaceOptions,
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(t, err)
 
 	require.Equal(t, testContainerImageName, serviceConfig.GetContainerImageName())

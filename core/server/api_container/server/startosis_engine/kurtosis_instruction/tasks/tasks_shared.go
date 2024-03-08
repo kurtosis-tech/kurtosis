@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"reflect"
 	"strings"
 	"time"
@@ -281,6 +282,7 @@ func getServiceConfig(
 		nil,
 		nil,
 		map[string]string{},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")

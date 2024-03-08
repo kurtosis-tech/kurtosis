@@ -114,7 +114,7 @@ func (runner *StartosisRunner) Run(
 				nonBlockingMode,
 				enclave_structure.NewEnclaveComponents(),
 				resolver.NewInstructionsPlanMask(0),
-				&imageDownloadMode,
+				imageDownloadMode,
 			)
 		} else {
 			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.InterpretAndOptimizePlan(
@@ -127,7 +127,7 @@ func (runner *StartosisRunner) Run(
 				serializedParams,
 				nonBlockingMode,
 				runner.startosisExecutor.enclavePlan,
-				&imageDownloadMode,
+				imageDownloadMode,
 			)
 		}
 

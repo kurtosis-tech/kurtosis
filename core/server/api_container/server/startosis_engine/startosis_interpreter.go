@@ -96,7 +96,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	serializedJsonParams string,
 	nonBlockingMode bool,
 	currentEnclavePlan *enclave_plan_persistence.EnclavePlan,
-	imageDownloadMode *image_download_mode.ImageDownloadMode,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
 	if interpretationErr := interpreter.packageContentProvider.CloneReplacedPackagesIfNeeded(packageReplaceOptions); interpretationErr != nil {
@@ -227,7 +227,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	nonBlockingMode bool,
 	enclaveComponents *enclave_structure.EnclaveComponents,
 	instructionsPlanMask *resolver.InstructionsPlanMask,
-	imageDownloadMode *image_download_mode.ImageDownloadMode,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()

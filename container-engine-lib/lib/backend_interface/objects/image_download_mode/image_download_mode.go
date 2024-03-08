@@ -8,8 +8,8 @@ package image_download_mode
 import "fmt"
 
 const (
-	ImageDownloadMode_Always = iota
-	ImageDownloadMode_Missing
+	ImageDownloadMode_Missing = iota
+	ImageDownloadMode_Always  = iota
 )
 
 type ImageDownloadMode int

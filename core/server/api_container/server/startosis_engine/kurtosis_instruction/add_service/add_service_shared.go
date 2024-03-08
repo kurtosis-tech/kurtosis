@@ -217,6 +217,7 @@ func replaceMagicStrings(
 		serviceConfig.GetUser(),
 		serviceConfig.GetTolerations(),
 		serviceConfig.GetNodeSelectors(),
+		serviceConfig.GetImageDownloadMode(),
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating a service config")

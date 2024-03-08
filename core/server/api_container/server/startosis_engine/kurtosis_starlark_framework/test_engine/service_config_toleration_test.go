@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -57,7 +58,7 @@ func (t *serviceConfigTolerationTest) Assert(typeValue builtin_argument.Kurtosis
 		testModuleMainFileLocator,
 		testModulePackageId,
 		t.packageContentProvider,
-		testNoPackageReplaceOptions)
+		testNoPackageReplaceOptions, image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(t, interpretationErr)
 	expectedTolerations := []v1.Toleration{{Key: testTolerationKey, Operator: v1.TolerationOpEqual, Value: testTolerationValue, Effect: v1.TaintEffectNoSchedule, TolerationSeconds: &testTolerationSeconds}}
 	expectedServiceConfig, err := service.CreateServiceConfig(
@@ -81,6 +82,7 @@ func (t *serviceConfigTolerationTest) Assert(typeValue builtin_argument.Kurtosis
 		nil,
 		expectedTolerations,
 		map[string]string{},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
