@@ -3,6 +3,7 @@ package user_services_functions
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_user"
@@ -311,6 +312,7 @@ func createStartServiceOperation(
 		user := serviceConfig.GetUser()
 		tolerations := serviceConfig.GetTolerations()
 		nodeSelectors := serviceConfig.GetNodeSelectors()
+		imageDownloadMode := serviceConfig.GetImageDownloadMode()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
@@ -401,6 +403,7 @@ func createStartServiceOperation(
 			minCpuAllocationMilliCpus,
 			minMemoryAllocationMegabytes,
 			user,
+			imageDownloadMode,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
@@ -640,6 +643,7 @@ func getUserServicePodContainerSpecs(
 	minCpuAllocationMilliCpus uint64,
 	minMemoryAllocationMegabytes uint64,
 	user *service_user.ServiceUser,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) ([]apiv1.Container, error) {
 
 	var containerEnvVars []apiv1.EnvVar
@@ -682,6 +686,12 @@ func getUserServicePodContainerSpecs(
 		Limits:   resourceLimitsList,
 		Requests: resourceRequestsList,
 	}
+
+	imagePullPolicy := apiv1.PullIfNotPresent
+	if imageDownloadMode == image_download_mode.ImageDownloadMode_Always {
+		imagePullPolicy = apiv1.PullAlways
+	}
+
 	// nolint: exhaustruct
 	containers := []apiv1.Container{
 		{
@@ -694,7 +704,7 @@ func getUserServicePodContainerSpecs(
 			Env:             containerEnvVars,
 			VolumeMounts:    containerMounts,
 			Resources:       resourceRequirements,
-			ImagePullPolicy: "",
+			ImagePullPolicy: imagePullPolicy,
 
 			// NOTE: There are a bunch of other interesting Container options that we omitted for now but might
 			// want to specify in the future
