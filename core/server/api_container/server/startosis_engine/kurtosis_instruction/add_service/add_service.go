@@ -11,6 +11,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -104,10 +106,12 @@ type AddServiceCapabilities struct {
 	packageId              string
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
+	imageType              starlark.Value
 
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 
 	resultUuid  string
+	returnValue *kurtosis_types.Service
 	description string
 }
 
@@ -121,6 +125,11 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
+	rawImageVal, _, err := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](serviceConfig.KurtosisValueTypeDefault, service_config.ImageAttr)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract raw image attribute.")
+	}
+	builtin.imageType = rawImageVal
 	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(
 		builtin.serviceNetwork,
 		serviceConfig,
@@ -143,16 +152,16 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(addServiceDescriptionFormatStr, builtin.serviceName, builtin.serviceConfig.GetContainerImageName()))
 
-	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(serviceName, builtin.serviceConfig, builtin.resultUuid)
+	builtin.returnValue, interpretationErr = makeAddServiceInterpretationReturnValue(serviceName, builtin.serviceConfig, builtin.resultUuid)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	err = builtin.interpretationTimeValueStore.PutService(builtin.serviceName, returnValue)
+	err = builtin.interpretationTimeValueStore.PutService(builtin.serviceName, builtin.returnValue)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting return value for service '%v'", serviceName)
 	}
-	return returnValue, nil
+	return builtin.returnValue, nil
 }
 
 func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
@@ -250,169 +259,11 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 }
 
 func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
-	//kurtosisInstruction := addServiceInstruction.GetInstruction()
-	//arguments := kurtosisInstruction.GetArguments()
-	//
-	//// start building Service Yaml object
-	//service := &Service{} //nolint:exhaustruct
-	//uuid := pyg.generateUuid()
-	//service.Uuid = strconv.Itoa(uuid)
-	//
-	//// store future references of this service
-	//returnValue := addServiceInstruction.GetReturnedValue()
-	//returnedService, ok := returnValue.(*kurtosis_types.Service)
-	//if !ok {
-	//	return stacktrace.NewError("Cast to service didn't work")
-	//}
-	//futureRefIPAddress, err := returnedService.GetIpAddress()
-	//if err != nil {
-	//	return err
-	//}
-	//pyg.futureReferenceIndex[futureRefIPAddress] = fmt.Sprintf("{{ kurtosis.%v.ip_address }}", uuid)
-	//futureRefHostName, err := returnedService.GetHostname()
-	//if err != nil {
-	//	return err
-	//}
-	//pyg.futureReferenceIndex[futureRefHostName] = fmt.Sprintf("{{ kurtosis.%v.hostname }}", uuid)
-	//
-	//var regErr error
-	//serviceName, regErr := builtin_argument.ExtractArgumentValue[starlark.String](arguments, add_service.ServiceNameArgName)
-	//if regErr != nil {
-	//	return startosis_errors.WrapWithInterpretationError(regErr, "Unable to extract value for '%s' argument", add_service.ServiceNameArgName)
-	//}
-	//service.Name = pyg.swapFutureReference(serviceName.GoString()) // swap future references in the strings
-	//
-	//starlarkServiceConfig, regErr := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, add_service.ServiceConfigArgName)
-	//if regErr != nil {
-	//	return startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", add_service.ServiceConfigArgName)
-	//}
-	//serviceConfig, serviceConfigErr := starlarkServiceConfig.ToKurtosisType( // is this an expensive call? // TODO: add this error back in
-	//	pyg.serviceNetwork,
-	//	kurtosisInstruction.GetPositionInOriginalScript().GetFilename(),
-	//	pyg.planYaml.PackageId,
-	//	pyg.packageContentProvider,
-	//	pyg.packageReplaceOptions)
-	//if serviceConfigErr != nil {
-	//	return serviceConfigErr
-	//}
-	//
-	//// get image info
-	//rawImageAttrValue, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](starlarkServiceConfig.KurtosisValueTypeDefault, service_config.ImageAttr)
-	//if interpretationErr != nil {
-	//	return interpretationErr
-	//}
-	//image := &ImageSpec{ //nolint:exhaustruct
-	//	ImageName: serviceConfig.GetContainerImageName(),
-	//}
-	//imageBuildSpec := serviceConfig.GetImageBuildSpec()
-	//if imageBuildSpec != nil {
-	//	switch img := rawImageAttrValue.(type) {
-	//	case *service_config.ImageBuildSpec:
-	//		contextLocator, err := img.GetBuildContextLocator()
-	//		if err != nil {
-	//			return err
-	//		}
-	//		image.BuildContextLocator = contextLocator
-	//	}
-	//	image.TargetStage = imageBuildSpec.GetTargetStage()
-	//}
-	//imageSpec := serviceConfig.GetImageRegistrySpec()
-	//if imageSpec != nil {
-	//	image.Registry = imageSpec.GetRegistryAddr()
-	//}
-	//service.Image = image
-	//
-	//// detect future references
-	//cmdArgs := []string{}
-	//for _, cmdArg := range serviceConfig.GetCmdArgs() {
-	//	realCmdArg := pyg.swapFutureReference(cmdArg)
-	//	cmdArgs = append(cmdArgs, realCmdArg)
-	//}
-	//service.Cmd = cmdArgs
-	//
-	//entryArgs := []string{}
-	//for _, entryArg := range serviceConfig.GetEntrypointArgs() {
-	//	realEntryArg := pyg.swapFutureReference(entryArg)
-	//	entryArgs = append(entryArgs, realEntryArg)
-	//}
-	//service.Entrypoint = entryArgs
-	//
-	//// ports
-	//service.Ports = []*Port{}
-	//for portName, configPort := range serviceConfig.GetPrivatePorts() { // TODO: support public ports
-	//
-	//	port := &Port{ //nolint:exhaustruct
-	//		TransportProtocol: TransportProtocol(configPort.GetTransportProtocol().String()),
-	//		Name:              portName,
-	//		Number:            configPort.GetNumber(),
-	//	}
-	//	if configPort.GetMaybeApplicationProtocol() != nil {
-	//		port.ApplicationProtocol = ApplicationProtocol(*configPort.GetMaybeApplicationProtocol())
-	//	}
-	//
-	//	service.Ports = append(service.Ports, port)
-	//}
-	//
-	//// env vars
-	//service.EnvVars = []*EnvironmentVariable{}
-	//for key, val := range serviceConfig.GetEnvVars() {
-	//	// detect and future references
-	//	value := pyg.swapFutureReference(val)
-	//	envVar := &EnvironmentVariable{
-	//		Key:   key,
-	//		Value: value,
-	//	}
-	//	service.EnvVars = append(service.EnvVars, envVar)
-	//}
-	//
-	//// file mounts have two cases:
-	//// 1. the referenced files artifact already exists in the plan, in which case add the referenced files artifact
-	//// 2. the referenced files artifact does not already exist in the plan, in which case the file MUST have been passed in via a top level arg OR is invalid
-	//// 	  in this case,
-	//// 	  - create new files artifact
-	////	  - add it to the service's file mount accordingly
-	////	  - add the files artifact to the plan
-	//service.Files = []*FileMount{}
-	//serviceFilesArtifactExpansions := serviceConfig.GetFilesArtifactsExpansion()
-	//if serviceFilesArtifactExpansions != nil {
-	//	for mountPath, artifactIdentifiers := range serviceFilesArtifactExpansions.ServiceDirpathsToArtifactIdentifiers {
-	//		fileMount := &FileMount{ //nolint:exhaustruct
-	//			MountPath: mountPath,
-	//		}
-	//
-	//		var serviceFilesArtifacts []*FilesArtifact
-	//		for _, identifier := range artifactIdentifiers {
-	//			var filesArtifact *FilesArtifact
-	//			// if there's already a files artifact that exists with this name from a previous instruction, reference that
-	//			if potentialFilesArtifact, ok := pyg.filesArtifactIndex[identifier]; ok {
-	//				filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-	//					Name: potentialFilesArtifact.Name,
-	//					Uuid: potentialFilesArtifact.Uuid,
-	//				}
-	//			} else {
-	//				// otherwise create a new one
-	//				// the only information we have about a files artifact that didn't already exist is the name
-	//				// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
-	//				filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-	//					Name: identifier,
-	//					Uuid: strconv.Itoa(pyg.generateUuid()),
-	//				}
-	//				pyg.planYaml.FilesArtifacts = append(pyg.planYaml.FilesArtifacts, filesArtifact)
-	//				pyg.filesArtifactIndex[identifier] = filesArtifact
-	//			}
-	//			serviceFilesArtifacts = append(serviceFilesArtifacts, filesArtifact)
-	//		}
-	//
-	//		fileMount.FilesArtifacts = serviceFilesArtifacts
-	//		service.Files = append(service.Files, fileMount)
-	//	}
-	//
-	//}
-	//
-	//pyg.planYaml.Services = append(pyg.planYaml.Services, service)
-	//pyg.serviceIndex[service.Name] = service
-
-	return stacktrace.NewError("IMPLEMENT ME")
+	err := planYaml.AddService(builtin.serviceName, builtin.returnValue, builtin.serviceConfig, builtin.imageType)
+	if err != nil {
+		return stacktrace.NewError("An error occurred updating the plan with service: %v", builtin.serviceName)
+	}
+	return nil
 }
 
 func (builtin *AddServiceCapabilities) Description() string {

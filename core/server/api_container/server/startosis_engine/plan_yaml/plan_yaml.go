@@ -1,7 +1,15 @@
 package plan_yaml
 
 import (
+	"fmt"
 	"github.com/go-yaml/yaml"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/stacktrace"
+	"go.starlark.net/starlark"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -17,6 +25,11 @@ const (
 // PlanYaml is a yaml representation of the effect of an "plan" or sequence of instructions on the state of the Enclave.
 type PlanYaml struct {
 	privatePlanYaml *privatePlanYaml
+
+	futureReferenceIndex map[string]string
+	filesArtifactIndex   map[string]*FilesArtifact
+	serviceIndex         map[string]*Service
+	latestUuid           int
 }
 
 // TODO: pass by value instead of pass by reference
@@ -120,10 +133,177 @@ func CreateEmptyPlan(packageId string) *PlanYaml {
 	}
 }
 
-func (pyg PlanYaml) GenerateYaml() (string, error) {
-	yamlBytes, err := yaml.Marshal(pyg.privatePlanYaml)
+func (planYaml *PlanYaml) GenerateYaml() (string, error) {
+	yamlBytes, err := yaml.Marshal(planYaml.privatePlanYaml)
 	if err != nil {
 		return "", err
 	}
 	return string(yamlBytes), nil
+}
+
+func (planYaml *PlanYaml) AddService(
+	serviceName service.ServiceName,
+	serviceInfo *kurtosis_types.Service,
+	serviceConfig *service.ServiceConfig,
+	imageValue starlark.Value,
+) error {
+	uuid := planYaml.generateUuid()
+
+	// store future references of this service
+	ipAddrFutureRef, err := serviceInfo.GetIpAddress()
+	if err != nil {
+		return err
+	}
+	hostnameFutureRef, err := serviceInfo.GetHostname()
+	if err != nil {
+		return err
+	}
+	planYaml.storeFutureReference(uuid, ipAddrFutureRef, "ip_address")
+	planYaml.storeFutureReference(uuid, hostnameFutureRef, "hostname")
+
+	// construct service yaml object for plan
+	serviceYaml := &Service{}
+	serviceYaml.Uuid = uuid
+
+	serviceYaml.Name = planYaml.swapFutureReference(string(serviceName))
+
+	image := &ImageSpec{ //nolint:exhaustruct
+		ImageName: serviceConfig.GetContainerImageName(),
+	}
+	imageBuildSpec := serviceConfig.GetImageBuildSpec()
+	if imageBuildSpec != nil {
+		// Need the raw imageValue to get the build context locator
+		switch starlarkImgVal := imageValue.(type) {
+		case *service_config.ImageBuildSpec:
+			contextLocator, err := starlarkImgVal.GetBuildContextLocator()
+			if err != nil {
+				return err
+			}
+			image.BuildContextLocator = contextLocator
+		default:
+			return stacktrace.NewError("An image build spec was detected on the kurtosis type service config but the starlark image value was not an ImageBuildSpec type.")
+		}
+		image.TargetStage = imageBuildSpec.GetTargetStage()
+	}
+	imageSpec := serviceConfig.GetImageRegistrySpec()
+	if imageSpec != nil {
+		image.Registry = imageSpec.GetRegistryAddr()
+	}
+	serviceYaml.Image = image
+
+	cmdArgs := []string{}
+	for _, cmdArg := range serviceConfig.GetCmdArgs() {
+		realCmdArg := planYaml.swapFutureReference(cmdArg)
+		cmdArgs = append(cmdArgs, realCmdArg)
+	}
+	serviceYaml.Cmd = cmdArgs
+
+	entryArgs := []string{}
+	for _, entryArg := range serviceConfig.GetEntrypointArgs() {
+		realEntryArg := planYaml.swapFutureReference(entryArg)
+		entryArgs = append(entryArgs, realEntryArg)
+	}
+	serviceYaml.Entrypoint = entryArgs
+
+	serviceYaml.Ports = []*Port{}
+	for portName, configPort := range serviceConfig.GetPrivatePorts() { // TODO: support public ports
+		var applicationProtocolStr string
+		if configPort.GetMaybeApplicationProtocol() != nil {
+			applicationProtocolStr = *configPort.GetMaybeApplicationProtocol()
+		}
+		port := &Port{
+			TransportProtocol:   TransportProtocol(configPort.GetTransportProtocol().String()),
+			ApplicationProtocol: ApplicationProtocol(applicationProtocolStr), // TODO: write a test for this, dereferencing config port is not a good idea
+			Name:                portName,
+			Number:              configPort.GetNumber(),
+		}
+		serviceYaml.Ports = append(serviceYaml.Ports, port)
+	}
+
+	serviceYaml.EnvVars = []*EnvironmentVariable{}
+	for key, val := range serviceConfig.GetEnvVars() {
+		// detect and future references
+		envVar := &EnvironmentVariable{
+			Key:   key,
+			Value: planYaml.swapFutureReference(val),
+		}
+		serviceYaml.EnvVars = append(serviceYaml.EnvVars, envVar)
+	}
+
+	// file mounts have two cases:
+	// 1. the referenced files artifact already exists in the plan, in which case add the referenced files artifact
+	// 2. the referenced files artifact does not already exist in the plan, in which case the file MUST have been passed in via a top level arg OR is invalid
+	// 	  for this case,
+	// 	  - create new files artifact
+	//	  - add it to the service's file mount accordingly
+	//	  - add the files artifact to the plan
+	serviceYaml.Files = []*FileMount{}
+	serviceFilesArtifactExpansions := serviceConfig.GetFilesArtifactsExpansion()
+	if serviceFilesArtifactExpansions != nil {
+		for mountPath, artifactIdentifiers := range serviceFilesArtifactExpansions.ServiceDirpathsToArtifactIdentifiers {
+			var serviceFilesArtifacts []*FilesArtifact
+			for _, identifier := range artifactIdentifiers {
+				var filesArtifact *FilesArtifact
+				// if there's already a files artifact that exists with this name from a previous instruction, reference that
+				if filesArtifactToReference, ok := planYaml.filesArtifactIndex[identifier]; ok {
+					filesArtifact = &FilesArtifact{
+						Name:  filesArtifactToReference.Name,
+						Uuid:  filesArtifactToReference.Uuid,
+						Files: []string{}, // leave empty because this is a copy
+					}
+				} else {
+					// otherwise create a new one
+					// the only information we have about a files artifact that didn't already exist is the name
+					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args of run function
+					filesArtifact = &FilesArtifact{
+						Name:  identifier,
+						Uuid:  planYaml.generateUuid(),
+						Files: []string{}, // don't know what files are on the artifact if passed in via args
+					}
+					planYaml.addFilesArtifactYaml(filesArtifact)
+				}
+				serviceFilesArtifacts = append(serviceFilesArtifacts, filesArtifact)
+			}
+
+			serviceYaml.Files = append(serviceYaml.Files, &FileMount{
+				MountPath:      mountPath,
+				FilesArtifacts: serviceFilesArtifacts,
+			})
+		}
+
+	}
+
+	planYaml.addServiceYaml(serviceYaml)
+	return nil
+}
+
+func (planYaml *PlanYaml) addServiceYaml(service *Service) {
+	planYaml.serviceIndex[service.Name] = service
+	planYaml.privatePlanYaml.Services = append(planYaml.privatePlanYaml.Services, service)
+}
+
+func (planYaml *PlanYaml) addFilesArtifactYaml(filesArtifact *FilesArtifact) {
+	planYaml.filesArtifactIndex[] = filesArtifact
+	// do we need both map and list structures? what about just map then resolve at the end?
+	planYaml.privatePlanYaml.FilesArtifacts = append(planYaml.privatePlanYaml.FilesArtifacts, filesArtifact)
+}
+
+func (planYaml *PlanYaml) storeFutureReference(uuid, futureReference, futureReferenceType string) {
+	planYaml.futureReferenceIndex[futureReference] = fmt.Sprintf("{{ kurtosis.%v.%v }}", uuid, futureReferenceType)
+}
+
+// swapFutureReference replaces all future references in s, if any exist, with the value required for the yaml format
+func (pyg *PlanYaml) swapFutureReference(s string) string {
+	swappedString := s
+	for futureRef, yamlFutureRef := range pyg.futureReferenceIndex {
+		if strings.Contains(s, futureRef) {
+			swappedString = strings.Replace(s, futureRef, yamlFutureRef, -1) // -1 to swap all instances of [futureRef]
+		}
+	}
+	return swappedString
+}
+
+func (planYaml *PlanYaml) generateUuid() string {
+	planYaml.latestUuid++
+	return strconv.Itoa(planYaml.latestUuid)
 }
