@@ -288,24 +288,24 @@ func (planYaml *PlanYaml) AddRunSh(
 	uuid := planYaml.generateUuid()
 
 	// store run sh future references
-	starlarkCodeVal, err := returnValue.Attr("code")
+	codeVal, err := returnValue.Attr("code")
 	if err != nil {
 		return err
 	}
-	starlarkCodeFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkCodeVal, "run sh code")
+	codeFutureRef, interpErr := kurtosis_types.SafeCastToString(codeVal, "run sh code")
 	if interpErr != nil {
 		return interpErr
 	}
-	planYaml.storeFutureReference(uuid, starlarkCodeFutureRefStr, "code")
-	starlarkOutputVal, err := returnValue.Attr("output")
+	planYaml.storeFutureReference(uuid, codeFutureRef, "code")
+	outputVal, err := returnValue.Attr("output")
 	if err != nil {
 		return err
 	}
-	starlarkOutputFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkOutputVal, "run sh code")
+	outputFutureRef, interpErr := kurtosis_types.SafeCastToString(outputVal, "run sh code")
 	if interpErr != nil {
 		return interpErr
 	}
-	planYaml.storeFutureReference(uuid, starlarkOutputFutureRefStr, "output")
+	planYaml.storeFutureReference(uuid, outputFutureRef, "output")
 
 	// create task yaml object
 	taskYaml := &Task{}
@@ -326,29 +326,35 @@ func (planYaml *PlanYaml) AddRunSh(
 	// for files:
 	//	1. either the referenced files artifact already exists in the plan, in which case, look for it and reference it via instruction uuid
 	// 	2. the referenced files artifact is new, in which case we add it to the plan
-	for mountPath, fileArtifactName := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-		var filesArtifact *FilesArtifact
-		// if there's already a files artifact that exists with this name from a previous instruction, reference that
-		if potentialFilesArtifact, ok := planYaml.filesArtifactIndex[fileArtifactName]; ok {
-			filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-				Name: potentialFilesArtifact.Name,
-				Uuid: potentialFilesArtifact.Uuid,
+	for mountPath, fileArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+		var filesArtifacts []*FilesArtifact
+		for _, filesArtifactName := range fileArtifactNames {
+			var filesArtifact *FilesArtifact
+			// if there's already a files artifact that exists with this name from a previous instruction, reference that
+			if filesArtifactToReference, ok := planYaml.filesArtifactIndex[filesArtifactName]; ok {
+				filesArtifact = &FilesArtifact{
+					Name:  filesArtifactToReference.Name,
+					Uuid:  filesArtifactToReference.Uuid,
+					Files: []string{},
+				}
+			} else {
+				// otherwise create a new one
+				// the only information we have about a files artifact that didn't already exist is the name
+				// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
+				filesArtifact = &FilesArtifact{
+					Name:  filesArtifactName,
+					Uuid:  planYaml.generateUuid(),
+					Files: []string{},
+				}
+				// add to the index and append to the plan yaml
+				planYaml.addFilesArtifactYaml(filesArtifact)
 			}
-		} else {
-			// otherwise create a new one
-			// the only information we have about a files artifact that didn't already exist is the name
-			// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
-			filesArtifact = &FilesArtifact{ //nolint:exhaustruct
-				Name: fileArtifactName,
-				Uuid: planYaml.generateUuid(),
-			}
-			// add to the index and append to the plan yaml
-			planYaml.addFilesArtifactYaml(filesArtifact)
+			filesArtifacts = append(filesArtifacts, filesArtifact)
 		}
 
 		taskYaml.Files = append(taskYaml.Files, &FileMount{
 			MountPath:      mountPath,
-			FilesArtifacts: []*FilesArtifact{filesArtifact},
+			FilesArtifacts: filesArtifacts,
 		})
 	}
 
@@ -359,16 +365,15 @@ func (planYaml *PlanYaml) AddRunSh(
 	var store []*FilesArtifact
 	for _, storeSpec := range storeSpecList {
 		// add the FilesArtifact to list of all files artifacts and index
-		uuid := planYaml.generateUuid()
 		var newFilesArtifactFromStoreSpec = &FilesArtifact{
-			Uuid:  uuid,
+			Uuid:  planYaml.generateUuid(),
 			Name:  storeSpec.GetName(),
 			Files: []string{storeSpec.GetSrc()},
 		}
 		planYaml.addFilesArtifactYaml(newFilesArtifactFromStoreSpec)
 		store = append(store, &FilesArtifact{
-			Uuid:  uuid,
-			Name:  storeSpec.GetName(),
+			Uuid:  newFilesArtifactFromStoreSpec.Uuid,
+			Name:  newFilesArtifactFromStoreSpec.Name,
 			Files: []string{}, // don't want to repeat the files on a referenced files artifact
 		})
 	}
