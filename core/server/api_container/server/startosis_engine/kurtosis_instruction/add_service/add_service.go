@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
@@ -125,11 +124,11 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
-	rawImageVal, _, err := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](serviceConfig.KurtosisValueTypeDefault, service_config.ImageAttr)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract raw image attribute.")
-	}
-	builtin.imageType = rawImageVal
+	////rawImageVal, _, err := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](serviceConfig.KurtosisValueTypeDefault, service_config.ImageAttr)
+	////if err != nil {
+	////	return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract raw image attribute.")
+	////}
+	//builtin.imageType = rawImageVal
 	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(
 		builtin.serviceNetwork,
 		serviceConfig,

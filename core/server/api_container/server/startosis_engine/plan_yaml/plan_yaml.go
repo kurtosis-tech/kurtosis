@@ -128,6 +128,9 @@ func CreateEmptyPlan(packageId string) *PlanYaml {
 			Tasks:          []*Task{},
 			FilesArtifacts: []*FilesArtifact{},
 		},
+		serviceIndex:         map[string]*Service{},
+		futureReferenceIndex: map[string]string{},
+		filesArtifactIndex:   map[string]*FilesArtifact{},
 	}
 }
 
@@ -220,7 +223,6 @@ func (planYaml *PlanYaml) AddService(
 
 	serviceYaml.EnvVars = []*EnvironmentVariable{}
 	for key, val := range serviceConfig.GetEnvVars() {
-		// detect and future references
 		envVar := &EnvironmentVariable{
 			Key:   key,
 			Value: planYaml.swapFutureReference(val),
@@ -247,7 +249,7 @@ func (planYaml *PlanYaml) AddService(
 					filesArtifact = &FilesArtifact{
 						Name:  filesArtifactToReference.Name,
 						Uuid:  filesArtifactToReference.Uuid,
-						Files: []string{}, // leave empty because this is a copy
+						Files: []string{}, // leave empty because this is referencing an existing files artifact
 					}
 				} else {
 					// otherwise create a new one
@@ -256,7 +258,7 @@ func (planYaml *PlanYaml) AddService(
 					filesArtifact = &FilesArtifact{
 						Name:  identifier,
 						Uuid:  planYaml.generateUuid(),
-						Files: []string{}, // don't know what files are on the artifact if passed in via args
+						Files: []string{}, // don't know at interpretation what files are on the artifact when passed in via args
 					}
 					planYaml.addFilesArtifactYaml(filesArtifact)
 				}
@@ -291,9 +293,9 @@ func (planYaml *PlanYaml) storeFutureReference(uuid, futureReference, futureRefe
 }
 
 // swapFutureReference replaces all future references in s, if any exist, with the value required for the yaml format
-func (pyg *PlanYaml) swapFutureReference(s string) string {
+func (planYaml *PlanYaml) swapFutureReference(s string) string {
 	swappedString := s
-	for futureRef, yamlFutureRef := range pyg.futureReferenceIndex {
+	for futureRef, yamlFutureRef := range planYaml.futureReferenceIndex {
 		if strings.Contains(s, futureRef) {
 			swappedString = strings.Replace(s, futureRef, yamlFutureRef, -1) // -1 to swap all instances of [futureRef]
 		}
