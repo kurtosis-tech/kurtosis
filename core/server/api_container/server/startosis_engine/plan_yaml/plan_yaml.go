@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	store_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"strconv"
 	"strings"
 )
@@ -277,6 +279,106 @@ func (planYaml *PlanYaml) AddService(
 	return nil
 }
 
+func (planYaml *PlanYaml) AddRunSh(
+	runCommand string,
+	returnValue *starlarkstruct.Struct,
+	serviceConfig *service.ServiceConfig,
+	storeSpecList []*store_spec2.StoreSpec,
+) error {
+	uuid := planYaml.generateUuid()
+
+	// store run sh future references
+	starlarkCodeVal, err := returnValue.Attr("code")
+	if err != nil {
+		return err
+	}
+	starlarkCodeFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkCodeVal, "run sh code")
+	if interpErr != nil {
+		return interpErr
+	}
+	planYaml.storeFutureReference(uuid, starlarkCodeFutureRefStr, "code")
+	starlarkOutputVal, err := returnValue.Attr("output")
+	if err != nil {
+		return err
+	}
+	starlarkOutputFutureRefStr, interpErr := kurtosis_types.SafeCastToString(starlarkOutputVal, "run sh code")
+	if interpErr != nil {
+		return interpErr
+	}
+	planYaml.storeFutureReference(uuid, starlarkOutputFutureRefStr, "output")
+
+	// create task yaml object
+	taskYaml := &Task{}
+	taskYaml.Uuid = uuid
+
+	taskYaml.RunCmd = []string{runCommand}
+	taskYaml.Image = serviceConfig.GetContainerImageName()
+
+	var envVars []*EnvironmentVariable
+	for key, val := range serviceConfig.GetEnvVars() {
+		envVars = append(envVars, &EnvironmentVariable{
+			Key:   key,
+			Value: planYaml.swapFutureReference(val),
+		})
+	}
+	taskYaml.EnvVars = envVars
+
+	// for files:
+	//	1. either the referenced files artifact already exists in the plan, in which case, look for it and reference it via instruction uuid
+	// 	2. the referenced files artifact is new, in which case we add it to the plan
+	for mountPath, fileArtifactName := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+		var filesArtifact *FilesArtifact
+		// if there's already a files artifact that exists with this name from a previous instruction, reference that
+		if potentialFilesArtifact, ok := planYaml.filesArtifactIndex[fileArtifactName]; ok {
+			filesArtifact = &FilesArtifact{ //nolint:exhaustruct
+				Name: potentialFilesArtifact.Name,
+				Uuid: potentialFilesArtifact.Uuid,
+			}
+		} else {
+			// otherwise create a new one
+			// the only information we have about a files artifact that didn't already exist is the name
+			// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
+			filesArtifact = &FilesArtifact{ //nolint:exhaustruct
+				Name: fileArtifactName,
+				Uuid: planYaml.generateUuid(),
+			}
+			// add to the index and append to the plan yaml
+			planYaml.addFilesArtifactYaml(filesArtifact)
+		}
+
+		taskYaml.Files = append(taskYaml.Files, &FileMount{
+			MountPath:      mountPath,
+			FilesArtifacts: []*FilesArtifact{filesArtifact},
+		})
+	}
+
+	// for store
+	// - all files artifacts product from store are new files artifact that are added to the plan
+	//		- add them to files artifacts list
+	// 		- add them to the store section of run sh
+	var store []*FilesArtifact
+	for _, storeSpec := range storeSpecList {
+		// add the FilesArtifact to list of all files artifacts and index
+		uuid := planYaml.generateUuid()
+		var newFilesArtifactFromStoreSpec = &FilesArtifact{
+			Uuid:  uuid,
+			Name:  storeSpec.GetName(),
+			Files: []string{storeSpec.GetSrc()},
+		}
+		planYaml.addFilesArtifactYaml(newFilesArtifactFromStoreSpec)
+		store = append(store, &FilesArtifact{
+			Uuid:  uuid,
+			Name:  storeSpec.GetName(),
+			Files: []string{}, // don't want to repeat the files on a referenced files artifact
+		})
+	}
+	taskYaml.Store = store
+
+	// add task to index, do we even need a tasks index?
+	planYaml.addTaskYaml(taskYaml)
+	return nil
+}
+
 func (planYaml *PlanYaml) addServiceYaml(service *Service) {
 	planYaml.serviceIndex[service.Name] = service
 	planYaml.privatePlanYaml.Services = append(planYaml.privatePlanYaml.Services, service)
@@ -286,6 +388,10 @@ func (planYaml *PlanYaml) addFilesArtifactYaml(filesArtifact *FilesArtifact) {
 	planYaml.filesArtifactIndex[filesArtifact.Name] = filesArtifact
 	// do we need both map and list structures? what about just map then resolve at the end?
 	planYaml.privatePlanYaml.FilesArtifacts = append(planYaml.privatePlanYaml.FilesArtifacts, filesArtifact)
+}
+
+func (planYaml *PlanYaml) addTaskYaml(task *Task) {
+	planYaml.privatePlanYaml.Tasks = append(planYaml.privatePlanYaml.Tasks, task)
 }
 
 func (planYaml *PlanYaml) storeFutureReference(uuid, futureReference, futureReferenceType string) {

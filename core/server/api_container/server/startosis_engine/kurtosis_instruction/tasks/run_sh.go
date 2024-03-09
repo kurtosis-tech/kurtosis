@@ -22,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 )
 
 const (
@@ -117,6 +118,7 @@ type RunShCapabilities struct {
 
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
+	returnValue   *starlarkstruct.Struct
 	wait          string
 	description   string
 }
@@ -202,8 +204,8 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	}
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, defaultDescription)
 
-	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
-	return result, nil
+	builtin.returnValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
+	return builtin.returnValue, nil
 }
 
 func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
@@ -284,7 +286,11 @@ func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_pla
 }
 
 func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	err := plan.AddRunSh(builtin.run, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred adding run sh task to the plan")
+	}
+	return nil
 }
 
 func (builtin *RunShCapabilities) Description() string {
