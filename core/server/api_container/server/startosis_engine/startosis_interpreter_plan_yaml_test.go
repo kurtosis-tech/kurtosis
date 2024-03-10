@@ -182,20 +182,77 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunShWithFilesArtifacts()
 	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	require.NoError(suite.T(), err)
 
-	expectedYaml :=
-		`packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
+	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
+filesArtifacts:
+- uuid: "2"
+  name: hi-file
+- uuid: "3"
+  name: bye-file
+  files:
+  - /bye.txt
 tasks:
 - uuid: "1"
-  run: echo bye > /bye.txt
-  image: bq/jcurl
-  envVars:
-  - key: HELLO
-    value: Hello!
+  taskType: sh
+  command:
+  - echo bye > /bye.txt
+  image: badouralix/curl-jq
   files:
   - mountPath: /hi.txt
     filesArtifacts:
     - uuid: "2"
       name: hi-file
+  store:
+  - uuid: "3"
+    name: bye-file
+  envVar:
+  - key: HELLO
+    value: Hello!
+`
+	require.Equal(suite.T(), expectedYaml, planYaml)
+}
+
+func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunPython() {
+	script := `def run(plan, hi_files_artifact):
+     plan.run_python(
+        run = """
+    import requests
+    response = requests.get("docs.kurtosis.com")
+    print(response.status_code)      
+    """,
+        args = [
+           "something" 
+        ],
+        packages = [
+            "selenium",
+            "requests",
+        ],
+        files = {
+            "/hi.txt": hi_files_artifact,
+        },
+        store = [
+            StoreSpec(src = "bye.txt", name = "bye-file"),
+        ],
+)
+`
+	inputArgs := `{"hi_files_artifact": "hi-file"}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 1, instructionsPlan.Size())
+
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
+	require.NoError(suite.T(), err)
+
+	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
 filesArtifacts:
 - uuid: "2"
   name: hi-file
@@ -203,6 +260,26 @@ filesArtifacts:
   name: bye-file
   files:
   - bye.txt
+tasks:
+- uuid: "1"
+  taskType: python
+  command:
+  - "\n    import requests\n    response = requests.get(\"docs.kurtosis.com\")\n    print(response.status_code)
+    \     \n    "
+  image: python:3.11-alpine
+  files:
+  - mountPath: /hi.txt
+    filesArtifacts:
+    - uuid: "2"
+      name: hi-file
+  store:
+  - uuid: "3"
+    name: bye-file
+  pythonPackages:
+  - selenium
+  - requests
+  pythonArgs:
+  - something
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }

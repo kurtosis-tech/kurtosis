@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"strings"
 )
 
@@ -137,6 +138,7 @@ type RunPythonCapabilities struct {
 	pythonArguments []string
 	packages        []string
 
+	returnValue   *starlarkstruct.Struct
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
 	wait          string
@@ -245,8 +247,8 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, runPythonDefaultDescription)
 
-	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
-	return result, nil
+	builtin.returnValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
+	return builtin.returnValue, nil
 }
 
 func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
@@ -335,7 +337,11 @@ func (builtin *RunPythonCapabilities) FillPersistableAttributes(builder *enclave
 }
 
 func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	err := plan.AddRunPython(builtin.run, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList, builtin.pythonArguments, builtin.packages)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating plan with run python")
+	}
+	return nil
 }
 
 func (builtin *RunPythonCapabilities) Description() string {

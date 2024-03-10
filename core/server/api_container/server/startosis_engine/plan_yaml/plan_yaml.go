@@ -310,6 +310,7 @@ func (planYaml *PlanYaml) AddRunSh(
 	// create task yaml object
 	taskYaml := &Task{}
 	taskYaml.Uuid = uuid
+	taskYaml.TaskType = SHELL
 
 	taskYaml.RunCmd = []string{runCommand}
 	taskYaml.Image = serviceConfig.GetContainerImageName()
@@ -346,7 +347,6 @@ func (planYaml *PlanYaml) AddRunSh(
 					Uuid:  planYaml.generateUuid(),
 					Files: []string{},
 				}
-				// add to the index and append to the plan yaml
 				planYaml.addFilesArtifactYaml(filesArtifact)
 			}
 			filesArtifacts = append(filesArtifacts, filesArtifact)
@@ -364,13 +364,122 @@ func (planYaml *PlanYaml) AddRunSh(
 	// 		- add them to the store section of run sh
 	var store []*FilesArtifact
 	for _, storeSpec := range storeSpecList {
-		// add the FilesArtifact to list of all files artifacts and index
 		var newFilesArtifactFromStoreSpec = &FilesArtifact{
 			Uuid:  planYaml.generateUuid(),
 			Name:  storeSpec.GetName(),
 			Files: []string{storeSpec.GetSrc()},
 		}
 		planYaml.addFilesArtifactYaml(newFilesArtifactFromStoreSpec)
+
+		store = append(store, &FilesArtifact{
+			Uuid:  newFilesArtifactFromStoreSpec.Uuid,
+			Name:  newFilesArtifactFromStoreSpec.Name,
+			Files: []string{}, // don't want to repeat the files on a referenced files artifact
+		})
+	}
+	taskYaml.Store = store
+
+	planYaml.addTaskYaml(taskYaml)
+	return nil
+}
+
+func (planYaml *PlanYaml) AddRunPython(
+	runCommand string,
+	returnValue *starlarkstruct.Struct,
+	serviceConfig *service.ServiceConfig,
+	storeSpecList []*store_spec2.StoreSpec,
+	pythonArgs []string,
+	pythonPackages []string) error {
+	uuid := planYaml.generateUuid()
+
+	// store future references
+	codeVal, err := returnValue.Attr("code")
+	if err != nil {
+		return err
+	}
+	codeFutureRef, interpErr := kurtosis_types.SafeCastToString(codeVal, "run python code")
+	if interpErr != nil {
+		return interpErr
+	}
+	planYaml.storeFutureReference(uuid, codeFutureRef, "code")
+	outputVal, err := returnValue.Attr("output")
+	if err != nil {
+		return err
+	}
+	outputFutureRef, interpErr := kurtosis_types.SafeCastToString(outputVal, "run python output")
+	if interpErr != nil {
+		return interpErr
+	}
+	planYaml.storeFutureReference(uuid, outputFutureRef, "output")
+
+	// create task yaml arg
+	taskYaml := &Task{}
+	taskYaml.Uuid = uuid
+	taskYaml.TaskType = PYTHON
+
+	taskYaml.RunCmd = []string{runCommand}
+	taskYaml.Image = serviceConfig.GetContainerImageName()
+
+	var envVars []*EnvironmentVariable
+	for key, val := range serviceConfig.GetEnvVars() {
+		envVars = append(envVars, &EnvironmentVariable{
+			Key:   key,
+			Value: planYaml.swapFutureReference(val),
+		})
+	}
+	taskYaml.EnvVars = envVars
+
+	// python args and python packages
+	taskYaml.PythonArgs = append(taskYaml.PythonArgs, pythonArgs...)
+	taskYaml.PythonPackages = append(taskYaml.PythonPackages, pythonPackages...)
+
+	// for files:
+	//	1. either the referenced files artifact already exists in the plan, in which case, look for it and reference it via instruction uuid
+	// 	2. the referenced files artifact is new, in which case we add it to the plan
+	for mountPath, fileArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+		var filesArtifacts []*FilesArtifact
+		for _, filesArtifactName := range fileArtifactNames {
+			var filesArtifact *FilesArtifact
+			// if there's already a files artifact that exists with this name from a previous instruction, reference that
+			if filesArtifactToReference, ok := planYaml.filesArtifactIndex[filesArtifactName]; ok {
+				filesArtifact = &FilesArtifact{
+					Name:  filesArtifactToReference.Name,
+					Uuid:  filesArtifactToReference.Uuid,
+					Files: []string{},
+				}
+			} else {
+				// otherwise create a new one
+				// the only information we have about a files artifact that didn't already exist is the name
+				// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
+				filesArtifact = &FilesArtifact{
+					Name:  filesArtifactName,
+					Uuid:  planYaml.generateUuid(),
+					Files: []string{},
+				}
+				planYaml.addFilesArtifactYaml(filesArtifact)
+			}
+			filesArtifacts = append(filesArtifacts, filesArtifact)
+		}
+
+		taskYaml.Files = append(taskYaml.Files, &FileMount{
+			MountPath:      mountPath,
+			FilesArtifacts: filesArtifacts,
+		})
+	}
+
+	// for store
+	// - all files artifacts product from store are new files artifact that are added to the plan
+	//		- add them to files artifacts list
+	// 		- add them to the store section of run sh
+	var store []*FilesArtifact
+	for _, storeSpec := range storeSpecList {
+		var newFilesArtifactFromStoreSpec = &FilesArtifact{
+			Uuid:  planYaml.generateUuid(),
+			Name:  storeSpec.GetName(),
+			Files: []string{storeSpec.GetSrc()},
+		}
+		planYaml.addFilesArtifactYaml(newFilesArtifactFromStoreSpec)
+
 		store = append(store, &FilesArtifact{
 			Uuid:  newFilesArtifactFromStoreSpec.Uuid,
 			Name:  newFilesArtifactFromStoreSpec.Name,
