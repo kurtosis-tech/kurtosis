@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
@@ -84,7 +85,7 @@ func NewAddService(
 				interpretationTimeValueStore: interpretationTimeValueStore,
 				description:                  "",  // populated at interpretation time
 				returnValue:                  nil, // populated at interpretation time
-				imageType:                    nil, // populated at interpretation time
+				imageVal:                     nil, // populated at interpretation time
 			}
 		},
 
@@ -107,7 +108,7 @@ type AddServiceCapabilities struct {
 	packageId              string
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
-	imageType              starlark.Value
+	imageVal               starlark.Value
 
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 
@@ -126,11 +127,14 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
-	////rawImageVal, _, err := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](serviceConfig.KurtosisValueTypeDefault, service_config.ImageAttr)
-	////if err != nil {
-	////	return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract raw image attribute.")
-	////}
-	//builtin.imageType = rawImageVal
+	rawImageVal, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](serviceConfig.KurtosisValueTypeDefault, service_config.ImageAttr)
+	if interpretationErr != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract raw image attribute.")
+	}
+	if !found {
+		return nil, startosis_errors.NewInterpretationError("Unable to extract image attribute off of service config.")
+	}
+	builtin.imageVal = rawImageVal
 	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(
 		builtin.serviceNetwork,
 		serviceConfig,
@@ -260,7 +264,34 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 }
 
 func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
-	err := planYaml.AddService(builtin.serviceName, builtin.returnValue, builtin.serviceConfig, builtin.imageType)
+	var buildContextLocator string
+	var targetStage string
+	var registryAddress string
+	var interpretationErr *startosis_errors.InterpretationError
+
+	// set image values based on type of image
+	if builtin.imageVal != nil {
+		switch starlarkImgVal := builtin.imageVal.(type) {
+		case *service_config.ImageBuildSpec:
+			buildContextLocator, interpretationErr = starlarkImgVal.GetBuildContextLocator()
+			if interpretationErr != nil {
+				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting build context locator")
+			}
+			targetStage, interpretationErr = starlarkImgVal.GetTargetStage()
+			if interpretationErr != nil {
+				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting target stage.")
+			}
+		case *service_config.ImageSpec:
+			registryAddress, interpretationErr = starlarkImgVal.GetRegistryAddrIfSet()
+			if interpretationErr != nil {
+				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting registry address.")
+			}
+		default:
+			// assume NixBuildSpec or regular image
+		}
+	}
+
+	err := planYaml.AddService(builtin.serviceName, builtin.returnValue, builtin.serviceConfig, buildContextLocator, targetStage, registryAddress)
 	if err != nil {
 		return stacktrace.NewError("An error occurred updating the plan with service: %v", builtin.serviceName)
 	}

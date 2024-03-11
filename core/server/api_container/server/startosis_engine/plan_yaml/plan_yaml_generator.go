@@ -48,7 +48,10 @@ func (planYaml *PlanYaml) AddService(
 	serviceName service.ServiceName,
 	serviceInfo *kurtosis_types.Service,
 	serviceConfig *service.ServiceConfig,
-	imageValue starlark.Value,
+	// image values might be empty depending on how the image is buitl
+	imageBuildContextLocator string,
+	imageTargetStage string,
+	imageRegistryAddress string,
 ) error {
 	uuid := planYaml.generateUuid()
 
@@ -70,29 +73,12 @@ func (planYaml *PlanYaml) AddService(
 
 	serviceYaml.Name = planYaml.swapFutureReference(string(serviceName))
 
-	image := &ImageSpec{ //nolint:exhaustruct
-		ImageName: serviceConfig.GetContainerImageName(),
-	}
-	//imageBuildSpec := serviceConfig.GetImageBuildSpec()
-	//if imageBuildSpec != nil {
-	//	// Need the raw imageValue to get the build context locator
-	//	switch starlarkImgVal := imageValue.(type) {
-	//	case *service_config.ImageBuildSpec: // importing service_config.ImageBuildSpec causes a dependency issue figure that out later
-	//		contextLocator, err := starlarkImgVal.GetBuildContextLocator()
-	//		if err != nil {
-	//			return err
-	//		}
-	//		image.BuildContextLocator = contextLocator
-	//	default:
-	//		return stacktrace.NewError("An image build spec was detected on the kurtosis type service config but the starlark image value was not an ImageBuildSpec type.")
-	//	}
-	//	image.TargetStage = imageBuildSpec.GetTargetStage()
-	//}
-	//imageSpec := serviceConfig.GetImageRegistrySpec()
-	//if imageSpec != nil {
-	//	image.Registry = imageSpec.GetRegistryAddr()
-	//}
-	serviceYaml.Image = image
+	imageYaml := &ImageSpec{} //nolint:exhaustruct
+	imageYaml.ImageName = serviceConfig.GetContainerImageName()
+	imageYaml.BuildContextLocator = imageBuildContextLocator
+	imageYaml.TargetStage = imageTargetStage
+	imageYaml.Registry = imageRegistryAddress
+	serviceYaml.Image = imageYaml
 
 	cmdArgs := []string{}
 	for _, cmdArg := range serviceConfig.GetCmdArgs() {
@@ -114,7 +100,7 @@ func (planYaml *PlanYaml) AddService(
 		}
 		port := &Port{
 			TransportProtocol:   TransportProtocol(configPort.GetTransportProtocol().String()),
-			ApplicationProtocol: ApplicationProtocol(applicationProtocolStr), // TODO: write a test for this, dereferencing config port is not a good idea
+			ApplicationProtocol: ApplicationProtocol(applicationProtocolStr),
 			Name:                portName,
 			Number:              configPort.GetNumber(),
 		}

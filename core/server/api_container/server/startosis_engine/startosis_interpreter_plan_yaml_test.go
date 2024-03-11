@@ -421,6 +421,126 @@ tasks:
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
 
+func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithImageBuildSpec() {
+	dockerfileModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server/Dockerfile"
+	serverModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
+	dockerfileContents := `RUN ["something"]`
+	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(dockerfileModulePath, dockerfileContents))
+	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(serverModulePath, ""))
+	packageId := "github.com/kurtosis-tech/plan-yaml-prac"
+
+	script := `def run(plan, hi_files_artifact):
+    plan.add_service(
+		name="db",
+		config=ServiceConfig(
+			image = ImageBuildSpec(
+				image_name="` + testContainerImageName + `",
+				build_context_dir="./server",
+				target_stage="builder",
+			),
+			files = {
+				"/root": hi_files_artifact,
+			}
+		)
+	)
+`
+	inputArgs := `{"hi_files_artifact": "hi-file"}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		packageId,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 1, instructionsPlan.Size())
+
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageId))
+	require.NoError(suite.T(), err)
+
+	expectedYaml := `packageId: ` + packageId + `
+services:
+- uuid: "1"
+  name: db
+  image:
+    name: kurtosistech/example-datastore-server
+    buildContextLocator: ./server
+    targetStage: builder
+  files:
+  - mountPath: /root
+    filesArtifacts:
+    - uuid: "2"
+      name: hi-file
+filesArtifacts:
+- uuid: "2"
+  name: hi-file
+`
+	require.Equal(suite.T(), expectedYaml, planYaml)
+}
+
+func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithImageSpec() {
+	dockerfileModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server/Dockerfile"
+	serverModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
+	dockerfileContents := `RUN ["something"]`
+	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(dockerfileModulePath, dockerfileContents))
+	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(serverModulePath, ""))
+	packageId := "github.com/kurtosis-tech/plan-yaml-prac"
+
+	script := `def run(plan, hi_files_artifact):
+    plan.add_service(
+		name="db",
+		config=ServiceConfig(
+			image = ImageSpec(
+				image="` + testContainerImageName + `",
+				registry = "http://my.registry.io/",
+			),
+			files = {
+				"/root": hi_files_artifact,
+			}
+		)
+	)
+`
+	inputArgs := `{"hi_files_artifact": "hi-file"}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		packageId,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 1, instructionsPlan.Size())
+
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageId))
+	require.NoError(suite.T(), err)
+
+	expectedYaml := `packageId: ` + packageId + `
+services:
+- uuid: "1"
+  name: db
+  image:
+    name: kurtosistech/example-datastore-server
+    registry: http://my.registry.io/
+  files:
+  - mountPath: /root
+    filesArtifacts:
+    - uuid: "2"
+      name: hi-file
+filesArtifacts:
+- uuid: "2"
+  name: hi-file
+`
+	require.Equal(suite.T(), expectedYaml, planYaml)
+}
+
 func (suite *StartosisIntepreterPlanYamlTestSuite) TestUploadFiles() {
 	dockerfileModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server/Dockerfile"
 	serverModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
