@@ -365,7 +365,7 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 }
 
 func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	logrus.Debugf("ADD SERVICES FOR PLAN YAML IMPLEMENTED YET")
+	logrus.Warn("ADD SERVICES NOT IMPLEMENTED YET FOR UPDATING PLAN YAML.")
 	return nil
 }
 

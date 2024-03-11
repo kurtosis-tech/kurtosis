@@ -8,7 +8,6 @@ const (
 	EXEC   TaskType = "exec"
 )
 
-// TODO: pass by value instead of pass by reference
 type privatePlanYaml struct {
 	PackageId      string           `yaml:"packageId,omitempty"`
 	Services       []*Service       `yaml:"services,omitempty"`

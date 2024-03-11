@@ -28,7 +28,7 @@ import (
 const (
 	RunShBuiltinName = "run_sh"
 
-	DefaultRunShImageName  = "badouralix/curl-jq"
+	defaultRunShImageName  = "badouralix/curl-jq"
 	shScriptPrintCharLimit = 80
 	runningShScriptPrefix  = "Running sh script"
 )
@@ -139,7 +139,7 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 		}
 		image = imageStarlark.GoString()
 	} else {
-		image = DefaultRunShImageName
+		image = defaultRunShImageName
 	}
 
 	var filesArtifactExpansion *service_directory.FilesArtifactsExpansion
@@ -176,7 +176,7 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	}
 
 	if arguments.IsSet(StoreFilesArgName) {
-		storeSpecList, interpretationErr := ParseStoreFilesArg(builtin.serviceNetwork, arguments)
+		storeSpecList, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
