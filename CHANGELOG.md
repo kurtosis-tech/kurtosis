@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.88.4](https://github.com/kurtosis-tech/kurtosis/compare/0.88.3...0.88.4) (2024-03-11)
+
+
+### Features
+
+* Add cloud backend API endpoint to update a customer's address ([#2245](https://github.com/kurtosis-tech/kurtosis/issues/2245)) ([417b32d](https://github.com/kurtosis-tech/kurtosis/commit/417b32d2f2d5fd259b3edc246f5eb90e2628ec54))
+* updated Traefik config rule matcher in order to use a HostRegex matcher instead of Host ([#2269](https://github.com/kurtosis-tech/kurtosis/issues/2269)) ([fd49073](https://github.com/kurtosis-tech/kurtosis/commit/fd49073cd80c36168fe5ad9070c290f089d0f453))
+
 ## [0.88.3](https://github.com/kurtosis-tech/kurtosis/compare/0.88.2...0.88.3) (2024-03-07)
 
 

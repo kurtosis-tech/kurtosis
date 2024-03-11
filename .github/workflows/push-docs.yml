@@ -13,18 +13,21 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: github.repository == 'kurtosis-tech/kurtosis'
     permissions:
       contents: read
       deployments: write
     name: Publish to Cloudflare Pages
     if: ${{
+      github.repository == 'kurtosis-tech/kurtosis' &&
+      (
       github.event_name == 'push' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request_target' &&
+      (
+      github.event_name == 'pull_request_target' &&
       github.event.action == 'labeled' &&
       github.event.pull_request.head.repo.fork == true &&
-      contains(github.event.label.name, 'request-cf-deploy'))
+      contains(github.event.label.name, 'request-cf-deploy')
+      ))
       }}
     steps:
       - name: Checkout
@@ -72,8 +75,8 @@ jobs:
     steps:
       - uses: fjogeleit/http-request-action@v1
         with:
-          url: 'https://crawler.algolia.com/api/1/crawlers/${{ secrets.ALGOLIA_CRAWLER_ID }}/reindex'
-          method: 'POST'
+          url: "https://crawler.algolia.com/api/1/crawlers/${{ secrets.ALGOLIA_CRAWLER_ID }}/reindex"
+          method: "POST"
           username: ${{ secrets.ALGOLIA_CRAWLER_USER_ID }}
           password: ${{ secrets.ALGOLIA_CRAWLER_API_KEY }}
           customHeaders: '{"Content-Type": "application/json"}'
