@@ -108,10 +108,7 @@ func (builtin *RemoveServiceCapabilities) FillPersistableAttributes(builder *enc
 }
 
 func (builtin *RemoveServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	err := plan.RemoveService(string(builtin.serviceName))
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred updating plan with remove service.")
-	}
+	plan.RemoveService(string(builtin.serviceName))
 	return nil
 }
 

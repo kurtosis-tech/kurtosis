@@ -465,16 +465,14 @@ func (planYaml *PlanYaml) AddStoreServiceFiles(filesArtifactName, locator string
 	return nil
 }
 
-func (planYaml *PlanYaml) RemoveService(serviceName string) error {
-	// is there a better way to do this?
+func (planYaml *PlanYaml) RemoveService(serviceName string) {
 	for idx, service := range planYaml.privatePlanYaml.Services {
 		if service.Name == serviceName {
 			planYaml.privatePlanYaml.Services[idx] = planYaml.privatePlanYaml.Services[len(planYaml.privatePlanYaml.Services)-1]
 			planYaml.privatePlanYaml.Services = planYaml.privatePlanYaml.Services[:len(planYaml.privatePlanYaml.Services)-1]
-			return nil
+			return
 		}
 	}
-	return nil
 }
 
 func (planYaml *PlanYaml) addServiceYaml(service *Service) {
