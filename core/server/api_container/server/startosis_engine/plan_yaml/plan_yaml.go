@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	store_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"strconv"
@@ -493,6 +494,67 @@ func (planYaml *PlanYaml) AddRunPython(
 	return nil
 }
 
+func (planYaml *PlanYaml) AddExec(
+	serviceName string,
+	returnValue *starlark.Dict,
+	cmdList []string,
+	acceptableCodes []int64) error {
+	uuid := planYaml.generateUuid()
+
+	// store future references
+	codeVal, found, err := returnValue.Get(starlark.String("code"))
+	if err != nil {
+		return err
+	}
+	if !found {
+		return stacktrace.NewError("No code value found on exec dict")
+	}
+	codeFutureRef, interpErr := kurtosis_types.SafeCastToString(codeVal, "exec code")
+	if interpErr != nil {
+		return interpErr
+	}
+	planYaml.storeFutureReference(uuid, codeFutureRef, "code")
+	outputVal, found, err := returnValue.Get(starlark.String("output"))
+	if err != nil {
+		return err
+	}
+	if !found {
+		return stacktrace.NewError("No code value found on exec dict")
+	}
+	outputFutureRef, interpErr := kurtosis_types.SafeCastToString(outputVal, "exec output")
+	if interpErr != nil {
+		return interpErr
+	}
+	planYaml.storeFutureReference(uuid, outputFutureRef, "output")
+
+	// create task yaml
+	taskYaml := &Task{}
+	taskYaml.Uuid = uuid
+	taskYaml.TaskType = EXEC
+	taskYaml.ServiceName = serviceName
+	taskYaml.RunCmd = cmdList
+	taskYaml.AcceptableCodes = acceptableCodes
+
+	planYaml.privatePlanYaml.Tasks = append(planYaml.privatePlanYaml.Tasks, taskYaml)
+	return nil
+}
+
+func (planYaml *PlanYaml) AddRenderTemplates() error {
+	return nil
+}
+
+func (planYaml *PlanYaml) AddUploadFiles() error {
+	return nil
+}
+
+func (planYaml *PlanYaml) AddStoreServiceFiles() error {
+	return nil
+}
+
+func (planYaml *PlanYaml) RemoveService() error {
+	return nil
+}
+
 func (planYaml *PlanYaml) addServiceYaml(service *Service) {
 	planYaml.serviceIndex[service.Name] = service
 	planYaml.privatePlanYaml.Services = append(planYaml.privatePlanYaml.Services, service)
@@ -508,6 +570,7 @@ func (planYaml *PlanYaml) addTaskYaml(task *Task) {
 	planYaml.privatePlanYaml.Tasks = append(planYaml.privatePlanYaml.Tasks, task)
 }
 
+// yaml future reference format: {{ kurtosis.<assigned uuid>.<future reference type }}
 func (planYaml *PlanYaml) storeFutureReference(uuid, futureReference, futureReferenceType string) {
 	planYaml.futureReferenceIndex[futureReference] = fmt.Sprintf("{{ kurtosis.%v.%v }}", uuid, futureReferenceType)
 }

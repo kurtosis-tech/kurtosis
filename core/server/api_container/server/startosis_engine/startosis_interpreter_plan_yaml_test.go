@@ -283,3 +283,235 @@ tasks:
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
+
+func (suite *StartosisIntepreterPlanYamlTestSuite) TestExec() {
+	script := `def run(plan, hi_files_artifact):
+	plan.add_service(
+		name="db",
+		config=ServiceConfig(
+			image="postgres:latest",
+			env_vars={
+				"POSTGRES_DB": "kurtosis",
+				"POSTGRES_USER": "kurtosis",
+				"POSTGRES_PASSWORD": "kurtosis",
+			}, 
+			files = {
+				"/root": hi_files_artifact,
+			}
+		)
+	)
+	result = plan.exec(
+		service_name="db",
+		recipe=ExecRecipe(command=["echo", "Hello, world"]),
+		acceptable_codes=[0],
+	)
+`
+	inputArgs := `{"hi_files_artifact": "hi-file"}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 2, instructionsPlan.Size())
+
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
+	require.NoError(suite.T(), err)
+
+	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
+services:
+- uuid: "1"
+  name: db
+  image:
+    name: postgres:latest
+  envVars:
+  - key: POSTGRES_DB
+    value: kurtosis
+  - key: POSTGRES_USER
+    value: kurtosis
+  - key: POSTGRES_PASSWORD
+    value: kurtosis
+  files:
+  - mountPath: /root
+    filesArtifacts:
+    - uuid: "2"
+      name: hi-file
+filesArtifacts:
+- uuid: "2"
+  name: hi-file
+tasks:
+- uuid: "3"
+  taskType: exec
+  command:
+  - echo
+  - Hello, world
+  serviceName: db
+  acceptableCodes:
+  - 0
+`
+	require.Equal(suite.T(), expectedYaml, planYaml)
+}
+
+func (suite *StartosisIntepreterPlanYamlTestSuite) TestRenderTemplate() {
+	script := `def run(plan, args):
+    bye_files_artifact = plan.render_templates(
+        name="bye-file",
+        config={
+            "bye.txt": struct(
+                template="Bye bye!",
+                data={}
+            )
+        }
+    )
+
+    plan.run_sh(
+        run="cat /root/bye.txt",
+        files = {
+            "/root": bye_files_artifact,
+        },
+    )
+`
+	inputArgs := `{"hi_files_artifact": "hi-file"}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 2, instructionsPlan.Size())
+
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
+	require.NoError(suite.T(), err)
+
+	expectedYaml := ``
+	require.Equal(suite.T(), expectedYaml, planYaml)
+}
+
+func (suite *StartosisIntepreterPlanYamlTestSuite) TestUploadFiles() {
+	dockerfileModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server/Dockerfile"
+	serverModulePath := "github.com/kurtosis-tech/plan-yaml-prac/server"
+	dockerfileContents := `RUN ["something"]`
+	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(dockerfileModulePath, dockerfileContents))
+	require.Nil(suite.T(), suite.packageContentProvider.AddFileContent(serverModulePath, ""))
+
+	packageId := "github.com/kurtosis-tech/plan-yaml-prac"
+
+	script := `def run(plan, args):
+    dockerfile_artifact = plan.upload_files(src="./server/Dockerfile", name="dockerfile")
+
+    plan.run_sh(
+        run="cat /root/Dockerfile",
+        files = {
+            "/root": dockerfile_artifact,
+        },
+    )
+`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		packageId,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		startosis_constants.EmptyInputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 2, instructionsPlan.Size())
+
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
+	require.NoError(suite.T(), err)
+
+	expectedYaml := ``
+	require.Equal(suite.T(), expectedYaml, planYaml)
+}
+
+func (suite *StartosisIntepreterPlanYamlTestSuite) TestStoreServiceFiles() {
+	script := `def run(plan, args):
+    plan.add_service(
+        name="tedi",
+        config=ServiceConfig(
+            image="postgres:alpine",
+            cmd=["touch", "hi.txt"],
+        )
+    )
+
+    hi_files_artifact = plan.store_service_files(
+        name="hi-file",
+        src="hi.txt",
+        service_name="tedi",
+    )
+`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		startosis_constants.EmptyInputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 2, instructionsPlan.Size())
+
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
+	require.NoError(suite.T(), err)
+
+	expectedYaml := ``
+	require.Equal(suite.T(), expectedYaml, planYaml)
+}
+
+func (suite *StartosisIntepreterPlanYamlTestSuite) TestRemoveService() {
+	script := `def run(plan, hi_files_artifact):
+	plan.add_service(
+		name="db",
+		config=ServiceConfig(
+			image="postgres:latest",
+			env_vars={
+				"POSTGRES_DB": "tedi",
+				"POSTGRES_USER": "tedi",
+				"POSTGRES_PASSWORD": "tedi",
+			},
+			files = {
+				"/root": hi_files_artifact,
+			},
+		)
+	)
+    plan.remove_service(name="db")
+`
+	inputArgs := `{"hi_files_artifact": "hi-file"}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 2, instructionsPlan.Size())
+
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
+	require.NoError(suite.T(), err)
+
+	expectedYaml := ``
+	require.Equal(suite.T(), expectedYaml, planYaml)
+}
