@@ -13,6 +13,15 @@ import (
 	"strings"
 )
 
+// PlanYaml is a yaml representation of the effect of an Instructions Plan or sequence of instructions on the state of the Enclave.
+type PlanYaml struct {
+	privatePlanYaml *privatePlanYaml
+
+	futureReferenceIndex map[string]string
+	filesArtifactIndex   map[string]*FilesArtifact
+	latestUuid           int
+}
+
 func CreateEmptyPlan(packageId string) *PlanYaml {
 	return &PlanYaml{
 		privatePlanYaml: &privatePlanYaml{
@@ -23,6 +32,7 @@ func CreateEmptyPlan(packageId string) *PlanYaml {
 		},
 		futureReferenceIndex: map[string]string{},
 		filesArtifactIndex:   map[string]*FilesArtifact{},
+		latestUuid:           0,
 	}
 }
 
