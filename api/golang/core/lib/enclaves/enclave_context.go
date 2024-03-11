@@ -20,7 +20,7 @@ package enclaves
 import (
 	"context"
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/path_compression"
+	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"io"
 	"os"
 	"path"

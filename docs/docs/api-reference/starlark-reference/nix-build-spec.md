@@ -1,13 +1,37 @@
 ---
-title: NixSupport
-sidebar_label: NixSupport
+title: NixBuildSpec
+sidebar_label: NixBuildSpec
 ---
+
+The `NixBuildSpec` object constructor allows for providing detailed information about how to build a container image using Nix Flake in the [`ServiceConfig.image`](./service-config.md) property. 
 
 You can provide Kurtosis just with source code and a Nix definition on how to build an image. Kurtosis will take care of building and deploying the image directly into the enclave without the need to upload or register the image beforehand.
 
 For that, we use Nix flakes, which is a way to package build definitions and dependencies in a reproducible manner. Using Nix flakes, you can define your system configurations and dependencies in a single file (`flake.nix`), making it easier to manage and share.
 
-Here's a basic explanation of how you can generate Docker images from services using Nix flakes:
+Signature
+---------
+
+```
+NixBuildSpec(
+    image_name, 
+    build_context_dir,
+    flake_location_dir, 
+    flake_output = "default", 
+)
+```
+
+| Property | Description |
+| --- | --- |
+| **image_name**<br/>_string_ | The name of the container image that should be used. |
+| **build_context_dir**<br/>_string_ | Locator to the build context within the Kurtosis package. |
+| **flake_location_dir**<br/>_string_ | The relative path (from the `build_context_dir`) to the folder containing the flake.nix file. |
+| **flake_output**<br/>_string_ | The selector for the Flake output with the image derivation. Fallbacks to the default package. |
+
+Examples
+--------
+
+Here's a basic example of how you can generate Docker images from services using Nix flakes:
 
 1. **Install Nix**: Installing Nix isn't strictly necessary with Kurtosis, but it's recommended if you are creating or developing the package. You can install it by following the instructions on the Nix website: [https://nixos.org/download.html](https://nixos.org/download.html)
 
