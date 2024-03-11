@@ -181,7 +181,11 @@ func (builtin *StoreServiceFilesCapabilities) FillPersistableAttributes(builder 
 }
 
 func (builtin *StoreServiceFilesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	err := plan.AddStoreServiceFiles(builtin.artifactName, builtin.src)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating plan with store service files")
+	}
+	return nil
 }
 
 func (builtin *StoreServiceFilesCapabilities) Description() string {

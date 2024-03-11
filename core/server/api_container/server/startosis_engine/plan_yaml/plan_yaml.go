@@ -539,19 +539,45 @@ func (planYaml *PlanYaml) AddExec(
 	return nil
 }
 
-func (planYaml *PlanYaml) AddRenderTemplates() error {
+func (planYaml *PlanYaml) AddRenderTemplates(filesArtifactName string, filepaths []string) error {
+	uuid := planYaml.generateUuid()
+	filesArtifactYaml := &FilesArtifact{}
+	filesArtifactYaml.Uuid = uuid
+	filesArtifactYaml.Name = filesArtifactName
+	filesArtifactYaml.Files = filepaths
+	planYaml.addFilesArtifactYaml(filesArtifactYaml)
 	return nil
 }
 
-func (planYaml *PlanYaml) AddUploadFiles() error {
+func (planYaml *PlanYaml) AddUploadFiles(filesArtifactName, locator string) error {
+	uuid := planYaml.generateUuid()
+	filesArtifactYaml := &FilesArtifact{}
+	filesArtifactYaml.Uuid = uuid
+	filesArtifactYaml.Name = filesArtifactName
+	filesArtifactYaml.Files = []string{locator}
+	planYaml.addFilesArtifactYaml(filesArtifactYaml)
 	return nil
 }
 
-func (planYaml *PlanYaml) AddStoreServiceFiles() error {
+func (planYaml *PlanYaml) AddStoreServiceFiles(filesArtifactName, locator string) error {
+	uuid := planYaml.generateUuid()
+	filesArtifactYaml := &FilesArtifact{}
+	filesArtifactYaml.Uuid = uuid
+	filesArtifactYaml.Name = filesArtifactName
+	filesArtifactYaml.Files = []string{locator}
+	planYaml.addFilesArtifactYaml(filesArtifactYaml)
 	return nil
 }
 
-func (planYaml *PlanYaml) RemoveService() error {
+func (planYaml *PlanYaml) RemoveService(serviceName string) error {
+	delete(planYaml.serviceIndex, serviceName)
+	for idx, service := range planYaml.privatePlanYaml.Services {
+		if service.Name == serviceName {
+			planYaml.privatePlanYaml.Services[idx] = planYaml.privatePlanYaml.Services[len(planYaml.privatePlanYaml.Services)-1]
+			planYaml.privatePlanYaml.Services = planYaml.privatePlanYaml.Services[:len(planYaml.privatePlanYaml.Services)-1]
+			return nil
+		}
+	}
 	return nil
 }
 

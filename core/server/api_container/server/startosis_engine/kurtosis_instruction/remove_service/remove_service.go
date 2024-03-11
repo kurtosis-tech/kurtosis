@@ -107,8 +107,12 @@ func (builtin *RemoveServiceCapabilities) FillPersistableAttributes(builder *enc
 	)
 }
 
-func (builitin *RemoveServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+func (builtin *RemoveServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	err := plan.RemoveService(string(builtin.serviceName))
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating plan with remove service.")
+	}
+	return nil
 }
 
 func (builtin *RemoveServiceCapabilities) Description() string {

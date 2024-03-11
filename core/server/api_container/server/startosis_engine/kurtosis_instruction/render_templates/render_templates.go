@@ -174,8 +174,16 @@ func (builtin *RenderTemplatesCapabilities) FillPersistableAttributes(builder *e
 	)
 }
 
-func (builitin *RenderTemplatesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+func (builtin *RenderTemplatesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	filepaths := []string{}
+	for filepath, _ := range builtin.templatesAndDataByDestRelFilepath {
+		filepaths = append(filepaths, filepath)
+	}
+	err := plan.AddRenderTemplates(builtin.artifactName, filepaths)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating plan with render template instruction.")
+	}
+	return nil
 }
 
 func (builtin *RenderTemplatesCapabilities) Description() string {

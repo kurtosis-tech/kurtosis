@@ -220,7 +220,11 @@ func (builtin *UploadFilesCapabilities) FillPersistableAttributes(builder *encla
 }
 
 func (builtin *UploadFilesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	err := plan.AddUploadFiles(builtin.artifactName, builtin.src)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating plan with upload files.")
+	}
+	return nil
 }
 
 func (builtin *UploadFilesCapabilities) Description() string {
