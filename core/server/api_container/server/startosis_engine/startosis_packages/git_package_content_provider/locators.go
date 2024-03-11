@@ -39,7 +39,10 @@ func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[st
 		if isLocalLocator(replaceWithPackage) {
 			return absoluteLocator
 		}
-		replacedAbsoluteLocator := strings.Replace(absoluteLocator, packageToBeReplaced, replaceWithPackage, onlyOneReplace)
+		replacedAbsoluteLocatorMaybeWitBranchOrCommit := strings.Replace(absoluteLocator, packageToBeReplaced, replaceWithPackage, onlyOneReplace)
+
+		replacedAbsoluteLocator, _ := shared_utils.ParseOutTagBranchOrCommit(replacedAbsoluteLocatorMaybeWitBranchOrCommit)
+
 		logrus.Debugf("absoluteLocator '%s' replaced with '%s'", absoluteLocator, replacedAbsoluteLocator)
 		return replacedAbsoluteLocator
 	}

@@ -344,6 +344,23 @@ func TestGetAbsoluteLocator_RegularReplaceSucceeds(t *testing.T) {
 
 }
 
+func TestGetAbsoluteLocator_AnotherPackageWithCommitReplaceSucceeds(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "", "", nil)
+
+	packageId := "github.com/kurtosis-tech/sample-startosis-load/sample-package"
+	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
+	maybeRelativeLocator := "github.com/kurtosis-tech/sample-dependency-package/main.star"
+	packageReplaceOptions := map[string]string{
+		"github.com/kurtosis-tech/sample-dependency-package": "github.com/kurtosis-tech/another-sample-dependency-package@a8c1945bcf6f3200fb69a0e5afe3057241be5eb0",
+	}
+	absoluteLocator, err := provider.GetAbsoluteLocator(packageId, parentModuleId, maybeRelativeLocator, packageReplaceOptions)
+
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/another-sample-dependency-package/main.star"
+	require.Nil(t, err)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+
+}
+
 func TestGetAbsoluteLocator_RootPackageReplaceSucceeds(t *testing.T) {
 	provider := NewGitPackageContentProvider("", "", "", nil)
 
@@ -407,7 +424,7 @@ func TestGetAbsoluteLocator_NoMainBranchReplaceSucceeds(t *testing.T) {
 	}
 	absoluteLocator, err := provider.GetAbsoluteLocator(packageId, parentModuleId, maybeRelativeLocator, packageReplaceOptions)
 
-	expectedAbsoluteLocator := "github.com/kurtosis-tech/sample-dependency-package@no-main-branch/main.star"
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/sample-dependency-package/main.star"
 	require.Nil(t, err)
 	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
 }
