@@ -13,19 +13,22 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: github.repository == 'kurtosis-tech/kurtosis'
     permissions:
       contents: read
       deployments: write
     name: Publish to Cloudflare Pages
-    if: ${{
-      github.event_name == 'push' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request_target' &&
-      github.event.action == 'labeled' &&
-      github.event.pull_request.head.repo.fork == true &&
-      contains(github.event.label.name, 'request-cf-deploy'))
-      }}
+    if: |
+      github.repository == 'kurtosis-tech/kurtosis' &&
+      (
+        github.event_name == 'push' ||
+        github.event_name == 'merge_group' ||
+        (
+          github.event_name == 'pull_request_target' &&
+          github.event.action == 'labeled' &&
+          github.event.pull_request.head.repo.fork == true &&
+          contains(github.event.label.name, 'request-cf-deploy')
+        )
+      )
     steps:
       - name: Checkout
         uses: actions/checkout@v4
