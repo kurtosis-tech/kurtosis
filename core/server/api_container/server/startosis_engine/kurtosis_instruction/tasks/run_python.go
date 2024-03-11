@@ -110,7 +110,8 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 				resultUuid:        "",  // populated at interpretation time
 				storeSpecList:     nil,
 				wait:              DefaultWaitTimeoutDurationStr,
-				description:       "", // populated at interpretation time
+				description:       "",  // populated at interpretation time
+				returnValue:       nil, // populated at interpretation time
 			}
 		},
 

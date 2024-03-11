@@ -80,12 +80,14 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
-				serviceName:     "",    // will be populated at interpretation time
-				execRecipe:      nil,   // will be populated at interpretation time
-				resultUuid:      "",    // will be populated at interpretation time
-				acceptableCodes: nil,   // will be populated at interpretation time
-				skipCodeCheck:   false, // will be populated at interpretation time
-				description:     "",    // populated at interpretation time
+				serviceName:     "",         // will be populated at interpretation time
+				execRecipe:      nil,        // will be populated at interpretation time
+				resultUuid:      "",         // will be populated at interpretation time
+				acceptableCodes: nil,        // will be populated at interpretation time
+				skipCodeCheck:   false,      // will be populated at interpretation time
+				description:     "",         // populated at interpretation time
+				cmdList:         []string{}, // populated at interpretation time
+				returnValue:     nil,        // populated at interpretation time
 			}
 		},
 

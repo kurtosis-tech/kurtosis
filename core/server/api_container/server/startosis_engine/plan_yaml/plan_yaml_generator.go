@@ -65,7 +65,7 @@ func (planYaml *PlanYaml) AddService(
 	planYaml.storeFutureReference(uuid, hostnameFutureRef, "hostname")
 
 	// construct service yaml object for plan
-	serviceYaml := &Service{}
+	serviceYaml := &Service{} //nolint exhaustruct
 	serviceYaml.Uuid = uuid
 
 	serviceYaml.Name = planYaml.swapFutureReference(string(serviceName))
@@ -206,7 +206,7 @@ func (planYaml *PlanYaml) AddRunSh(
 	planYaml.storeFutureReference(uuid, outputFutureRef, "output")
 
 	// create task yaml object
-	taskYaml := &Task{}
+	taskYaml := &Task{} //nolint exhaustruct
 	taskYaml.Uuid = uuid
 	taskYaml.TaskType = SHELL
 
@@ -311,7 +311,7 @@ func (planYaml *PlanYaml) AddRunPython(
 	planYaml.storeFutureReference(uuid, outputFutureRef, "output")
 
 	// create task yaml object
-	taskYaml := &Task{}
+	taskYaml := &Task{} //nolint exhaustruct
 	taskYaml.Uuid = uuid
 	taskYaml.TaskType = PYTHON
 
@@ -424,7 +424,7 @@ func (planYaml *PlanYaml) AddExec(
 	planYaml.storeFutureReference(uuid, outputFutureRef, "output")
 
 	// create task yaml
-	taskYaml := &Task{}
+	taskYaml := &Task{} //nolint exhaustruct
 	taskYaml.Uuid = uuid
 	taskYaml.TaskType = EXEC
 	taskYaml.ServiceName = serviceName
@@ -437,7 +437,7 @@ func (planYaml *PlanYaml) AddExec(
 
 func (planYaml *PlanYaml) AddRenderTemplates(filesArtifactName string, filepaths []string) error {
 	uuid := planYaml.generateUuid()
-	filesArtifactYaml := &FilesArtifact{}
+	filesArtifactYaml := &FilesArtifact{} //nolint exhaustruct
 	filesArtifactYaml.Uuid = uuid
 	filesArtifactYaml.Name = filesArtifactName
 	filesArtifactYaml.Files = filepaths
@@ -447,7 +447,7 @@ func (planYaml *PlanYaml) AddRenderTemplates(filesArtifactName string, filepaths
 
 func (planYaml *PlanYaml) AddUploadFiles(filesArtifactName, locator string) error {
 	uuid := planYaml.generateUuid()
-	filesArtifactYaml := &FilesArtifact{}
+	filesArtifactYaml := &FilesArtifact{} //nolint exhauststruct
 	filesArtifactYaml.Uuid = uuid
 	filesArtifactYaml.Name = filesArtifactName
 	filesArtifactYaml.Files = []string{locator}
@@ -457,7 +457,7 @@ func (planYaml *PlanYaml) AddUploadFiles(filesArtifactName, locator string) erro
 
 func (planYaml *PlanYaml) AddStoreServiceFiles(filesArtifactName, locator string) error {
 	uuid := planYaml.generateUuid()
-	filesArtifactYaml := &FilesArtifact{}
+	filesArtifactYaml := &FilesArtifact{} //nolint exhaustruct
 	filesArtifactYaml.Uuid = uuid
 	filesArtifactYaml.Name = filesArtifactName
 	filesArtifactYaml.Files = []string{locator}

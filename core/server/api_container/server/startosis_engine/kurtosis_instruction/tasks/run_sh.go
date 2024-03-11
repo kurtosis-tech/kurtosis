@@ -92,7 +92,8 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				resultUuid:        "",  // populated at interpretation time
 				storeSpecList:     nil,
 				wait:              DefaultWaitTimeoutDurationStr,
-				description:       "", // populated at interpretation time
+				description:       "",  // populated at interpretation time
+				returnValue:       nil, // populated at interpretation time
 			}
 		},
 

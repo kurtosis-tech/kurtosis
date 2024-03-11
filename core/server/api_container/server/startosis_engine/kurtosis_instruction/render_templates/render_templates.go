@@ -176,7 +176,7 @@ func (builtin *RenderTemplatesCapabilities) FillPersistableAttributes(builder *e
 
 func (builtin *RenderTemplatesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
 	filepaths := []string{}
-	for filepath, _ := range builtin.templatesAndDataByDestRelFilepath {
+	for filepath := range builtin.templatesAndDataByDestRelFilepath {
 		filepaths = append(filepaths, filepath)
 	}
 	err := plan.AddRenderTemplates(builtin.artifactName, filepaths)
