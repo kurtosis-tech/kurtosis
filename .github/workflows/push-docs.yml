@@ -13,6 +13,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: github.repository == 'kurtosis-tech/kurtosis'
     permissions:
       contents: read
       deployments: write

@@ -45,7 +45,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/kurtosis/path_compression"
+	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 
