@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"net"
+	"testing"
 )
 
 const (
@@ -70,9 +71,9 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) SetupTest() {
 	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore)
 }
 
-//func TestRunStartosisIntepreterPlanYamlTestSuite(t *testing.T) {
-//	suite.Run(t, new(StartosisIntepreterPlanYamlTestSuite))
-//}
+func TestRunStartosisIntepreterPlanYamlTestSuite(t *testing.T) {
+	suite.Run(t, new(StartosisIntepreterPlanYamlTestSuite))
+}
 
 func (suite *StartosisIntepreterPlanYamlTestSuite) TearDownTest() {
 	suite.packageContentProvider.RemoveAll()
@@ -332,9 +333,9 @@ services:
   envVars:
   - key: POSTGRES_DB
     value: kurtosis
-  - key: POSTGRES_USER
-    value: kurtosis
   - key: POSTGRES_PASSWORD
+    value: kurtosis
+  - key: POSTGRES_USER
     value: kurtosis
   files:
   - mountPath: /root

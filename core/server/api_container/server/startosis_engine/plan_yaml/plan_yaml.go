@@ -1,10 +1,8 @@
 package plan_yaml
 
-const (
-	HTTP ApplicationProtocol = "HTTP"
-	UDP  TransportProtocol   = "UDP"
-	TCP  TransportProtocol   = "TCP"
+import "sort"
 
+const (
 	SHELL  TaskType = "sh"
 	PYTHON TaskType = "python"
 	EXEC   TaskType = "exec"
@@ -39,6 +37,13 @@ type Service struct {
 	Files      []*FileMount           `yaml:"files,omitempty"`
 }
 
+func (s *Service) MarshalYAML() (interface{}, error) {
+	sort.Slice(s.EnvVars, func(i, j int) bool {
+		return s.EnvVars[i].Key < s.EnvVars[j].Key
+	})
+	return s, nil
+}
+
 type ImageSpec struct {
 	ImageName string `yaml:"name,omitempty"`
 
@@ -55,6 +60,13 @@ type FilesArtifact struct {
 	Uuid  string   `yaml:"uuid,omitempty"`
 	Name  string   `yaml:"name,omitempty"`
 	Files []string `yaml:"files,omitempty"`
+}
+
+func (f *FilesArtifact) MarshalYAML() (interface{}, error) {
+	sort.Slice(f.Files, func(i, j int) bool {
+		return f.Files[i] < f.Files[j]
+	})
+	return f, nil
 }
 
 // EnvironmentVariable represents an environment variable.
