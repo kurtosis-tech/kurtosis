@@ -17,6 +17,10 @@ zsh)  echo "Setting $SHELL_NAME completion"
     source <(ktdev completion zsh)
     compdef __start_kurtosis ktdev
     ;;
+-zsh)  echo "Setting $SHELL_NAME completion"
+    source <(ktdev completion zsh)
+    compdef __start_kurtosis ktdev
+    ;;
 *) echo "Shell $SHELL_NAME is not supported"
    ;;
 esac
