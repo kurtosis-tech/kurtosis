@@ -107,7 +107,8 @@ func (builtin *PrintCapabilities) FillPersistableAttributes(builder *enclave_pla
 }
 
 func (builitin *PrintCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	// print does not affect the plan
+	return nil
 }
 
 func (builtin *PrintCapabilities) Description() string {

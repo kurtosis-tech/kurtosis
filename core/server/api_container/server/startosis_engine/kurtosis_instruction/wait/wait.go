@@ -295,7 +295,8 @@ func (builtin *WaitCapabilities) FillPersistableAttributes(builder *enclave_plan
 }
 
 func (builtin *WaitCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	// wait does not affect the plan
+	return nil
 }
 
 func (builtin *WaitCapabilities) Description() string {

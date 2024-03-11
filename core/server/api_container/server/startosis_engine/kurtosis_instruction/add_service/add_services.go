@@ -365,7 +365,8 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 }
 
 func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	logrus.Debugf("ADD SERVICES FOR PLAN YAML IMPLEMENTED YET")
+	return nil
 }
 
 func (builtin *AddServicesCapabilities) Description() string {

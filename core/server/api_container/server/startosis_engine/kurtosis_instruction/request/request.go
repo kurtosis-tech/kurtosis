@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"net/http"
 )
@@ -209,7 +210,8 @@ func (builtin *RequestCapabilities) FillPersistableAttributes(builder *enclave_p
 }
 
 func (builtin *RequestCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	logrus.Debug("REQUEST NOT IMPLEMENTED YET FOR UPDATING THE PLAn")
+	return nil
 }
 
 func (builtin *RequestCapabilities) Description() string {

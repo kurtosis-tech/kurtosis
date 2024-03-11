@@ -162,7 +162,8 @@ func (builtin *VerifyCapabilities) FillPersistableAttributes(builder *enclave_pl
 }
 
 func (builtin *VerifyCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	// verify does not affect the plan
+	return nil
 }
 
 func (builtin *VerifyCapabilities) Description() string {

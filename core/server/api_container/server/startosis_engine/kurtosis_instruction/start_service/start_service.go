@@ -108,7 +108,8 @@ func (builtin *StartServiceCapabilities) FillPersistableAttributes(builder *encl
 }
 
 func (builtin *StartServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	// start services doesn't affect the plan
+	return nil
 }
 
 func (builtin *StartServiceCapabilities) Description() string {

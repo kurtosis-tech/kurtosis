@@ -104,6 +104,7 @@ func (builtin *GetServiceCapabilities) FillPersistableAttributes(builder *enclav
 }
 
 func (builtin *GetServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+	// get service does not affect the plan
 	return nil
 }
 

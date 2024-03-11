@@ -108,7 +108,8 @@ func (builtin *StopServiceCapabilities) FillPersistableAttributes(builder *encla
 }
 
 func (builtin *StopServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	return stacktrace.NewError("IMPLEMENT ME")
+	// stop service does not affect the plan
+	return nil
 }
 
 func (builtin *StopServiceCapabilities) Description() string {
