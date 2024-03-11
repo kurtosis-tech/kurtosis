@@ -138,9 +138,8 @@ func (planYaml *PlanYaml) AddService(
 	//	  - add it to the service's file mount accordingly
 	//	  - add the files artifact to the plan
 	serviceYaml.Files = []*FileMount{}
-	serviceFilesArtifactExpansions := serviceConfig.GetFilesArtifactsExpansion()
-	if serviceFilesArtifactExpansions != nil {
-		for mountPath, artifactIdentifiers := range serviceFilesArtifactExpansions.ServiceDirpathsToArtifactIdentifiers {
+	if serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for mountPath, artifactIdentifiers := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
 			var serviceFilesArtifacts []*FilesArtifact
 			for _, identifier := range artifactIdentifiers {
 				var filesArtifact *FilesArtifact
@@ -210,7 +209,7 @@ func (planYaml *PlanYaml) AddRunSh(
 	taskYaml.Uuid = uuid
 	taskYaml.TaskType = SHELL
 
-	taskYaml.RunCmd = []string{runCommand}
+	taskYaml.RunCmd = []string{planYaml.swapFutureReference(runCommand)}
 	taskYaml.Image = serviceConfig.GetContainerImageName()
 
 	var envVars []*EnvironmentVariable
@@ -225,35 +224,37 @@ func (planYaml *PlanYaml) AddRunSh(
 	// for files:
 	//	1. either the referenced files artifact already exists in the plan, in which case, look for it and reference it via instruction uuid
 	// 	2. the referenced files artifact is new, in which case we add it to the plan
-	for mountPath, fileArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-		var filesArtifacts []*FilesArtifact
-		for _, filesArtifactName := range fileArtifactNames {
-			var filesArtifact *FilesArtifact
-			// if there's already a files artifact that exists with this name from a previous instruction, reference that
-			if filesArtifactToReference, ok := planYaml.filesArtifactIndex[filesArtifactName]; ok {
-				filesArtifact = &FilesArtifact{
-					Name:  filesArtifactToReference.Name,
-					Uuid:  filesArtifactToReference.Uuid,
-					Files: []string{},
+	if serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for mountPath, fileArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			var filesArtifacts []*FilesArtifact
+			for _, filesArtifactName := range fileArtifactNames {
+				var filesArtifact *FilesArtifact
+				// if there's already a files artifact that exists with this name from a previous instruction, reference that
+				if filesArtifactToReference, ok := planYaml.filesArtifactIndex[filesArtifactName]; ok {
+					filesArtifact = &FilesArtifact{
+						Name:  filesArtifactToReference.Name,
+						Uuid:  filesArtifactToReference.Uuid,
+						Files: []string{},
+					}
+				} else {
+					// otherwise create a new one
+					// the only information we have about a files artifact that didn't already exist is the name
+					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
+					filesArtifact = &FilesArtifact{
+						Name:  filesArtifactName,
+						Uuid:  planYaml.generateUuid(),
+						Files: []string{},
+					}
+					planYaml.addFilesArtifactYaml(filesArtifact)
 				}
-			} else {
-				// otherwise create a new one
-				// the only information we have about a files artifact that didn't already exist is the name
-				// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
-				filesArtifact = &FilesArtifact{
-					Name:  filesArtifactName,
-					Uuid:  planYaml.generateUuid(),
-					Files: []string{},
-				}
-				planYaml.addFilesArtifactYaml(filesArtifact)
+				filesArtifacts = append(filesArtifacts, filesArtifact)
 			}
-			filesArtifacts = append(filesArtifacts, filesArtifact)
-		}
 
-		taskYaml.Files = append(taskYaml.Files, &FileMount{
-			MountPath:      mountPath,
-			FilesArtifacts: filesArtifacts,
-		})
+			taskYaml.Files = append(taskYaml.Files, &FileMount{
+				MountPath:      mountPath,
+				FilesArtifacts: filesArtifacts,
+			})
+		}
 	}
 
 	// for store
@@ -315,7 +316,7 @@ func (planYaml *PlanYaml) AddRunPython(
 	taskYaml.Uuid = uuid
 	taskYaml.TaskType = PYTHON
 
-	taskYaml.RunCmd = []string{runCommand}
+	taskYaml.RunCmd = []string{planYaml.swapFutureReference(runCommand)}
 	taskYaml.Image = serviceConfig.GetContainerImageName()
 
 	var envVars []*EnvironmentVariable
@@ -334,35 +335,37 @@ func (planYaml *PlanYaml) AddRunPython(
 	// for files:
 	//	1. either the referenced files artifact already exists in the plan, in which case, look for it and reference it via instruction uuid
 	// 	2. the referenced files artifact is new, in which case we add it to the plan
-	for mountPath, fileArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-		var filesArtifacts []*FilesArtifact
-		for _, filesArtifactName := range fileArtifactNames {
-			var filesArtifact *FilesArtifact
-			// if there's already a files artifact that exists with this name from a previous instruction, reference that
-			if filesArtifactToReference, ok := planYaml.filesArtifactIndex[filesArtifactName]; ok {
-				filesArtifact = &FilesArtifact{
-					Name:  filesArtifactToReference.Name,
-					Uuid:  filesArtifactToReference.Uuid,
-					Files: []string{},
+	if serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for mountPath, fileArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			var filesArtifacts []*FilesArtifact
+			for _, filesArtifactName := range fileArtifactNames {
+				var filesArtifact *FilesArtifact
+				// if there's already a files artifact that exists with this name from a previous instruction, reference that
+				if filesArtifactToReference, ok := planYaml.filesArtifactIndex[filesArtifactName]; ok {
+					filesArtifact = &FilesArtifact{
+						Name:  filesArtifactToReference.Name,
+						Uuid:  filesArtifactToReference.Uuid,
+						Files: []string{},
+					}
+				} else {
+					// otherwise create a new one
+					// the only information we have about a files artifact that didn't already exist is the name
+					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
+					filesArtifact = &FilesArtifact{
+						Name:  filesArtifactName,
+						Uuid:  planYaml.generateUuid(),
+						Files: []string{},
+					}
+					planYaml.addFilesArtifactYaml(filesArtifact)
 				}
-			} else {
-				// otherwise create a new one
-				// the only information we have about a files artifact that didn't already exist is the name
-				// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
-				filesArtifact = &FilesArtifact{
-					Name:  filesArtifactName,
-					Uuid:  planYaml.generateUuid(),
-					Files: []string{},
-				}
-				planYaml.addFilesArtifactYaml(filesArtifact)
+				filesArtifacts = append(filesArtifacts, filesArtifact)
 			}
-			filesArtifacts = append(filesArtifacts, filesArtifact)
-		}
 
-		taskYaml.Files = append(taskYaml.Files, &FileMount{
-			MountPath:      mountPath,
-			FilesArtifacts: filesArtifacts,
-		})
+			taskYaml.Files = append(taskYaml.Files, &FileMount{
+				MountPath:      mountPath,
+				FilesArtifacts: filesArtifacts,
+			})
+		}
 	}
 
 	// for store
@@ -428,7 +431,12 @@ func (planYaml *PlanYaml) AddExec(
 	taskYaml.Uuid = uuid
 	taskYaml.TaskType = EXEC
 	taskYaml.ServiceName = serviceName
-	taskYaml.RunCmd = cmdList
+
+	cmdListWithFutureRefsSwapped := []string{}
+	for _, cmd := range cmdList {
+		cmdListWithFutureRefsSwapped = append(cmdListWithFutureRefsSwapped, planYaml.swapFutureReference(cmd))
+	}
+	taskYaml.RunCmd = cmdListWithFutureRefsSwapped
 	taskYaml.AcceptableCodes = acceptableCodes
 
 	planYaml.privatePlanYaml.Tasks = append(planYaml.privatePlanYaml.Tasks, taskYaml)
@@ -497,8 +505,8 @@ func (planYaml *PlanYaml) storeFutureReference(uuid, futureReference, futureRefe
 func (planYaml *PlanYaml) swapFutureReference(s string) string {
 	swappedString := s
 	for futureRef, yamlFutureRef := range planYaml.futureReferenceIndex {
-		if strings.Contains(s, futureRef) {
-			swappedString = strings.Replace(s, futureRef, yamlFutureRef, -1) // -1 to swap all instances of [futureRef]
+		if strings.Contains(swappedString, futureRef) {
+			swappedString = strings.Replace(swappedString, futureRef, yamlFutureRef, -1) // -1 to swap all instances of [futureRef]
 		}
 	}
 	return swappedString

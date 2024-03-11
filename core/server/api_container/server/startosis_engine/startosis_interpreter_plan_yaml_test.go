@@ -157,7 +157,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunShWithFilesArtifacts()
             "HELLO": "Hello!"
         },
         files = {
-            "/hi.txt": hi_files_artifact,
+            "/root": hi_files_artifact,
         },
         store=[
             StoreSpec(src="/bye.txt", name="bye-file")
@@ -197,7 +197,7 @@ tasks:
   - echo bye > /bye.txt
   image: badouralix/curl-jq
   files:
-  - mountPath: /hi.txt
+  - mountPath: /root
     filesArtifacts:
     - uuid: "2"
       name: hi-file
@@ -580,6 +580,98 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRemoveService() {
 filesArtifacts:
 - uuid: "2"
   name: hi-file
+`
+	require.Equal(suite.T(), expectedYaml, planYaml)
+}
+
+func (suite *StartosisIntepreterPlanYamlTestSuite) TestFutureReferencesAreSwapped() {
+	script := `def run(plan, hi_files_artifact):
+	service = plan.add_service(
+		name="db",
+		config=ServiceConfig(
+			image="postgres:latest",
+			env_vars={
+				"POSTGRES_DB": "kurtosis",
+				"POSTGRES_USER": "kurtosis",
+				"POSTGRES_PASSWORD": "kurtosis",
+			},
+			files = {
+				"/root": hi_files_artifact,
+			}
+		)
+	)
+	execResult = plan.exec(
+		service_name="db",
+		recipe=ExecRecipe(
+			command=["echo", service.ip_address + " " + service.hostname]
+		),
+		acceptable_codes=[0],
+	)	
+	runShResult = plan.run_sh(
+		run="echo " + execResult["code"] + " " + execResult["output"],
+	)
+	plan.run_sh(
+		run="echo " + runShResult.code + " " + runShResult.output,
+	)
+`
+	inputArgs := `{"hi_files_artifact": "hi-file"}`
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		inputArgs,
+		defaultNonBlockingMode,
+		emptyEnclaveComponents,
+		emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 4, instructionsPlan.Size())
+
+	planYaml, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
+	require.NoError(suite.T(), err)
+
+	expectedYaml := `packageId: DEFAULT_PACKAGE_ID_FOR_SCRIPT
+services:
+- uuid: "1"
+  name: db
+  image:
+    name: postgres:latest
+  envVars:
+  - key: POSTGRES_DB
+    value: kurtosis
+  - key: POSTGRES_PASSWORD
+    value: kurtosis
+  - key: POSTGRES_USER
+    value: kurtosis
+  files:
+  - mountPath: /root
+    filesArtifacts:
+    - uuid: "2"
+      name: hi-file
+filesArtifacts:
+- uuid: "2"
+  name: hi-file
+tasks:
+- uuid: "3"
+  taskType: exec
+  command:
+  - echo
+  - '{{ kurtosis.1.ip_address }} {{ kurtosis.1.hostname }}'
+  serviceName: db
+  acceptableCodes:
+  - 0
+- uuid: "4"
+  taskType: sh
+  command:
+  - echo {{ kurtosis.3.code }} {{ kurtosis.3.output }}
+  image: badouralix/curl-jq
+- uuid: "5"
+  taskType: sh
+  command:
+  - echo {{ kurtosis.4.code }} {{ kurtosis.4.output }}
+  image: badouralix/curl-jq
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
