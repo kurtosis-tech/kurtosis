@@ -18,6 +18,7 @@ service KurtosisCloudBackendServer {
   rpc GetOrCreatePaymentConfig(GetOrCreatePaymentConfigArgs) returns (GetOrCreatePaymentConfigResponse) {};
   rpc RefreshDefaultPaymentMethod (RefreshDefaultPaymentMethodArgs) returns (google.protobuf.Empty) {};
   rpc CancelPaymentSubscription (CancelPaymentSubscriptionArgs) returns (google.protobuf.Empty) {};
+  rpc UpdateAddress(UpdateAddressArgs) returns (google.protobuf.Empty) {};
 }
 
 message GetOrCreateApiKeyRequest {
@@ -125,4 +126,15 @@ message AwsEnvironment {
   string bucket_region = 3;
   string bucket_name = 4;
   string bucket_user_folder = 5;
+}
+
+message UpdateAddressArgs {
+  string access_token = 1;
+  string name = 2;
+  string line_1 = 3;
+  optional string line_2 = 4;
+  string city = 5;
+  string state = 6;
+  string postal_code = 7;
+  string country = 8;
 }
