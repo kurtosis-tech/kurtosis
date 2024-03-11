@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.88.3](https://github.com/kurtosis-tech/kurtosis/compare/0.88.2...0.88.3) (2024-03-07)
+
+
+### Bug Fixes
+
+* fix pinned version of path compression ([#2265](https://github.com/kurtosis-tech/kurtosis/issues/2265)) ([b02621a](https://github.com/kurtosis-tech/kurtosis/commit/b02621aa808389c4e58300375a796657787d8b8c))
+
+## [0.88.2](https://github.com/kurtosis-tech/kurtosis/compare/0.88.1...0.88.2) (2024-03-07)
+
+
+### Bug Fixes
+
+* replace env var with runtime values in run_sh ([#2254](https://github.com/kurtosis-tech/kurtosis/issues/2254)) ([4107443](https://github.com/kurtosis-tech/kurtosis/commit/4107443bdbbfb24a68269d32585bf4bc91442ff5))
+* use fixed version of path compression module ([#2264](https://github.com/kurtosis-tech/kurtosis/issues/2264)) ([eef65e1](https://github.com/kurtosis-tech/kurtosis/commit/eef65e1020bbd36aa8a5b4759aeecfb72dfc9fc4))
+
+## [0.88.1](https://github.com/kurtosis-tech/kurtosis/compare/0.88.0...0.88.1) (2024-03-05)
+
+
+### Features
+
+* allow users to set descriptions ([#2239](https://github.com/kurtosis-tech/kurtosis/issues/2239)) ([473d0ee](https://github.com/kurtosis-tech/kurtosis/commit/473d0ee07f2b16c39cf9a453c3c28afdb1e2493d))
+
+
+### Bug Fixes
+
+* Add retries around the test enclave destroy logic ([#2255](https://github.com/kurtosis-tech/kurtosis/issues/2255)) ([6245ddf](https://github.com/kurtosis-tech/kurtosis/commit/6245ddf4c0681cfc81021aeda0eb2e245ef5b275))
+* CI failing due deprecated images ([#2253](https://github.com/kurtosis-tech/kurtosis/issues/2253)) ([742e40b](https://github.com/kurtosis-tech/kurtosis/commit/742e40bece06152da5591b15dd75e654a2ed0f10))
+* moving the golangci-lint condition because it has matrix strategy ([#2242](https://github.com/kurtosis-tech/kurtosis/issues/2242)) ([f976daa](https://github.com/kurtosis-tech/kurtosis/commit/f976daa409774014c6d60acb90efbdd593401a80))
+* rename utils to path compression ([#2236](https://github.com/kurtosis-tech/kurtosis/issues/2236)) ([d28fdc9](https://github.com/kurtosis-tech/kurtosis/commit/d28fdc9efb59c61e3419ac322f0fc9b80ef693c8))
+* typos ([#2066](https://github.com/kurtosis-tech/kurtosis/issues/2066)) ([1b6aff7](https://github.com/kurtosis-tech/kurtosis/commit/1b6aff74ffbc30a3b1007c2b7d6422fefd71f7c8))
+
+## [0.88.0](https://github.com/kurtosis-tech/kurtosis/compare/0.87.3...0.88.0) (2024-02-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove the cloud add and CreateCloudInstance endpoint ([#2234](https://github.com/kurtosis-tech/kurtosis/issues/2234))
+
+### Features
+
+* allow to specify dockerfile name in `image_build_spec` ([#2223](https://github.com/kurtosis-tech/kurtosis/issues/2223)) ([d274170](https://github.com/kurtosis-tech/kurtosis/commit/d274170d07a757b5a0880635f1bf4bd35bb1a165))
+
+
+### Miscellaneous Chores
+
+* remove the cloud add and CreateCloudInstance endpoint ([#2234](https://github.com/kurtosis-tech/kurtosis/issues/2234)) ([0f17729](https://github.com/kurtosis-tech/kurtosis/commit/0f1772963b30b004d9fb5ab99a5b576c3ecb36ae))
+
 ## [0.87.3](https://github.com/kurtosis-tech/kurtosis/compare/0.87.2...0.87.3) (2024-02-28)
 
 

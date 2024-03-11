@@ -29,6 +29,8 @@ const (
 	AddServicesBuiltinName = "add_services"
 
 	ConfigsArgName = "configs"
+
+	addServicesDescriptionFormatStr = "Adding '%v' services with names '%v'"
 )
 
 func NewAddServices(
@@ -71,6 +73,7 @@ func NewAddServices(
 
 				resultUuids:     map[service.ServiceName]string{}, // populated at interpretation time
 				readyConditions: nil,                              // populated at interpretation time
+				description:     "",                               // populated at interpretation time
 			}
 		},
 
@@ -95,6 +98,7 @@ type AddServicesCapabilities struct {
 	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
 	resultUuids map[service.ServiceName]string
+	description string
 }
 
 func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -115,6 +119,8 @@ func (builtin *AddServicesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 	}
 	builtin.serviceConfigs = serviceConfigs
 	builtin.readyConditions = readyConditions
+
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(addServicesDescriptionFormatStr, len(builtin.serviceConfigs), getNamesAsCommaSeparatedList(builtin.serviceConfigs)))
 
 	resultUuids, returnValue, interpretationErr := makeAndPersistAddServicesInterpretationReturnValue(builtin.serviceConfigs, builtin.runtimeValueStore, builtin.interpretationTimeValueStore)
 	if interpretationErr != nil {
@@ -358,7 +364,7 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 }
 
 func (builtin *AddServicesCapabilities) Description() string {
-	return fmt.Sprintf("Adding '%v' services with names '%v'", len(builtin.serviceConfigs), getNamesAsCommaSeparatedList(builtin.serviceConfigs))
+	return builtin.description
 }
 
 func getNamesAsCommaSeparatedList(serviceConfigs map[service.ServiceName]*service.ServiceConfig) string {

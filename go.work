@@ -18,6 +18,6 @@ use (
 	./kurtosis_version
 	./metrics-library/golang
 	./name_generator
-	./utils
+	./path-compression
 	connect-server
 )

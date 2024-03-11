@@ -13,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
-	"github.com/kurtosis-tech/kurtosis/utils"
+	"github.com/kurtosis-tech/kurtosis/path-compression"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"os"
@@ -28,6 +28,7 @@ const (
 
 	enforceMaxFileSizeLimit = false
 	readOnlyFilePerm        = 0400
+	descriptionFormatStr    = "Uploading file '%v' to files artifact '%v'"
 )
 
 func NewUploadFiles(
@@ -69,6 +70,7 @@ func NewUploadFiles(
 				filesArtifactMd5:      nil, // populated at interpretation time
 				packageReplaceOptions: packageReplaceOptions,
 				packageId:             packageId,
+				description:           "", // populated at interpretation time
 			}
 		},
 
@@ -89,6 +91,7 @@ type UploadFilesCapabilities struct {
 	filesArtifactMd5      []byte
 	packageReplaceOptions map[string]string
 	packageId             string
+	description           string
 }
 
 func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -121,7 +124,7 @@ func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		return nil, interpretationErr
 	}
 
-	compressedDataPath, _, compressedDataMd5, err := utils.CompressPathToFile(pathOnDisk, enforceMaxFileSizeLimit)
+	compressedDataPath, _, compressedDataMd5, err := path_compression.CompressPathToFile(pathOnDisk, enforceMaxFileSizeLimit)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while compressing the files at '%s'", pathOnDisk)
 	}
@@ -129,6 +132,7 @@ func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 	builtin.src = src.GoString()
 	builtin.archivePathOnDisk = compressedDataPath
 	builtin.filesArtifactMd5 = compressedDataMd5
+	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.src, builtin.artifactName))
 	return starlark.String(builtin.artifactName), nil
 }
 
@@ -215,5 +219,5 @@ func (builtin *UploadFilesCapabilities) FillPersistableAttributes(builder *encla
 }
 
 func (builtin *UploadFilesCapabilities) Description() string {
-	return fmt.Sprintf("Uploading file '%v' to files artifact '%v'", builtin.src, builtin.artifactName)
+	return builtin.description
 }

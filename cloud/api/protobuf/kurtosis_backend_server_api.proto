@@ -10,7 +10,6 @@ service KurtosisCloudBackendServer {
   rpc IsAvailable (google.protobuf.Empty) returns (google.protobuf.Empty) {
     option idempotency_level = NO_SIDE_EFFECTS;
   };
-  rpc CreateCloudInstance(CreateCloudInstanceConfigArgs) returns (CreateCloudInstanceConfigResponse) {};
   rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   };
@@ -35,15 +34,6 @@ message GetOrCreateInstanceRequest {
 }
 
 message GetOrCreateInstanceResponse {
-  string instance_id = 1;
-}
-
-message CreateCloudInstanceConfigArgs {
-  string api_key = 1;
-  string user_id = 2;
-}
-
-message CreateCloudInstanceConfigResponse {
   string instance_id = 1;
 }
 
