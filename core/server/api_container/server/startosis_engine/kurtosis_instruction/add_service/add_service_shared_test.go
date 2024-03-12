@@ -2,6 +2,7 @@ package add_service
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"os"
 	"testing"
 
@@ -58,6 +59,7 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		map[string]string{},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.NoError(t, err)
 
@@ -105,6 +107,7 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		map[string]string{},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.NoError(t, err)
 
@@ -154,6 +157,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		map[string]string{},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.NoError(t, err)
 
@@ -204,6 +208,7 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 		nil,
 		nil,
 		map[string]string{},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.NoError(t, err)
 

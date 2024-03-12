@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
@@ -67,6 +68,8 @@ type privateServiceConfig struct {
 	Tolerations []v1.Toleration
 
 	NodeSelectors map[string]string
+
+	ImageDownloadMode image_download_mode.ImageDownloadMode
 }
 
 func CreateServiceConfig(
@@ -90,6 +93,7 @@ func CreateServiceConfig(
 	user *service_user.ServiceUser,
 	tolerations []v1.Toleration,
 	nodeSelectors map[string]string,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) (*ServiceConfig, error) {
 
 	if err := ValidateServiceConfigLabels(labels); err != nil {
@@ -118,6 +122,7 @@ func CreateServiceConfig(
 		User:                         user,
 		Tolerations:                  tolerations,
 		NodeSelectors:                nodeSelectors,
+		ImageDownloadMode:            imageDownloadMode,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -198,6 +203,10 @@ func (serviceConfig *ServiceConfig) GetLabels() map[string]string {
 
 func (serviceConfig *ServiceConfig) GetTolerations() []v1.Toleration {
 	return serviceConfig.privateServiceConfig.Tolerations
+}
+
+func (serviceConfig *ServiceConfig) GetImageDownloadMode() image_download_mode.ImageDownloadMode {
+	return serviceConfig.privateServiceConfig.ImageDownloadMode
 }
 
 func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {

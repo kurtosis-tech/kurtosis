@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
@@ -63,7 +64,8 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		testModuleMainFileLocator,
 		testModulePackageId,
 		t.packageContentProvider,
-		testNoPackageReplaceOptions)
+		testNoPackageReplaceOptions,
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(t, interpretationErr)
 
 	expectedBuildArgs := map[string]string{
@@ -96,6 +98,7 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		nil,
 		nil,
 		map[string]string{},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
