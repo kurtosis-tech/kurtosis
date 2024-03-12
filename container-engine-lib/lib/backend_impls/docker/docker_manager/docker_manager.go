@@ -1408,6 +1408,12 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	}()
 	defer buildkitSession.Close() //nolint
 
+	buildArgs := imageBuildSpec.GetBuildArgs()
+	buildArgsMapStringStringPtr := map[string]*string{}
+	for k, v := range buildArgs {
+		value := v // Go uses a single variable for loop iterations which lead to unexpected behaviours.
+		buildArgsMapStringStringPtr[k] = &value
+	}
 	imageBuildOpts := types.ImageBuildOptions{
 		Tags:           []string{imageName},
 		SuppressOutput: false,
@@ -1429,7 +1435,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		ShmSize:        0,
 		Dockerfile:     defaultContainerImageFile,
 		Ulimits:        []*units.Ulimit{},
-		BuildArgs:      map[string]*string{},
+		BuildArgs:      buildArgsMapStringStringPtr,
 		AuthConfigs:    map[string]registry.AuthConfig{},
 		Context:        buildContextTarReader,
 		// 0.0.0 label is a hack so that images by internal testsuite are cleaned up by kurtosis clean/PruneUnusedImages
