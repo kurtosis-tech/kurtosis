@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"testing"
 	"time"
@@ -88,6 +89,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *ServiceConfig {
 		testServiceUser(),
 		testToleration(),
 		testNodeSelectors(),
+		testImageDownloadMode(),
 	)
 	require.NoError(t, err)
 	return serviceConfig
@@ -215,4 +217,8 @@ func testNodeSelectors() map[string]string {
 	return map[string]string{
 		"disktype": "ssd",
 	}
+}
+
+func testImageDownloadMode() image_download_mode.ImageDownloadMode {
+	return image_download_mode.ImageDownloadMode_Missing
 }

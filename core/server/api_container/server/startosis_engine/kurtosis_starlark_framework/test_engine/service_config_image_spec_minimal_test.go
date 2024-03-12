@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"testing"
 
@@ -48,7 +49,8 @@ func (t *serviceConfigImageSpecMinimalTest) Assert(typeValue builtin_argument.Ku
 		testModuleMainFileLocator,
 		testModulePackageId,
 		t.packageContentProvider,
-		testNoPackageReplaceOptions)
+		testNoPackageReplaceOptions,
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(t, interpretationErr)
 
 	expectedImageRegistrySpec := image_registry_spec.NewImageRegistrySpec(testContainerImageName, "", "", "")
@@ -73,6 +75,7 @@ func (t *serviceConfigImageSpecMinimalTest) Assert(typeValue builtin_argument.Ku
 		nil,
 		nil,
 		map[string]string{},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)

@@ -3,6 +3,7 @@ package add_service
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
@@ -36,7 +37,8 @@ func NewAddService(
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
-	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore,
+	imageDownloadMode image_download_mode.ImageDownloadMode) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: AddServiceBuiltinName,
@@ -81,6 +83,8 @@ func NewAddService(
 
 				interpretationTimeValueStore: interpretationTimeValueStore,
 				description:                  "", // populated at interpretation time
+
+				imageDownloadMode: imageDownloadMode,
 			}
 		},
 
@@ -108,6 +112,8 @@ type AddServiceCapabilities struct {
 
 	resultUuid  string
 	description string
+
+	imageDownloadMode image_download_mode.ImageDownloadMode
 }
 
 func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -127,6 +133,7 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		builtin.packageId,
 		builtin.packageContentProvider,
 		builtin.packageReplaceOptions,
+		builtin.imageDownloadMode,
 	)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -259,6 +266,7 @@ func validateAndConvertConfigAndReadyCondition(
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) (*service.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
 	config, ok := rawConfig.(*service_config.ServiceConfig)
 	if !ok {
@@ -269,7 +277,7 @@ func validateAndConvertConfigAndReadyCondition(
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageId,
 		packageContentProvider,
-		packageReplaceOptions)
+		packageReplaceOptions, imageDownloadMode)
 	if interpretationErr != nil {
 		return nil, nil, interpretationErr
 	}
