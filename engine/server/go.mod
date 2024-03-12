@@ -75,7 +75,6 @@ require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/containerd/containerd v1.7.2 // indirect
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
-	github.com/creack/pty v1.1.21 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
@@ -83,6 +82,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.1 // indirect
 	github.com/go-openapi/swag v0.22.4 // indirect
+	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -98,7 +98,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // indirect
 	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang v0.0.0-20230828153722-32770ca96513 // indirect
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect
-	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240306193821-28cf087e1f58 // indirect
+	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -114,8 +114,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/oapi-codegen/runtime v1.1.0 // indirect
-	github.com/onsi/ginkgo/v2 v2.11.0 // indirect
-	github.com/onsi/gomega v1.27.10 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/segmentio/backo-go v1.0.0 // indirect
