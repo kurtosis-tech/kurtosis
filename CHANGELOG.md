@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.88.5](https://github.com/kurtosis-tech/kurtosis/compare/0.88.4...0.88.5) (2024-03-12)
+
+
+### Features
+
+* add an add to GitHub button on an encalve ([#2256](https://github.com/kurtosis-tech/kurtosis/issues/2256)) ([96f6771](https://github.com/kurtosis-tech/kurtosis/commit/96f67712d83d9d89b1575b32f256522220a8ed94))
+
+
+### Bug Fixes
+
+* image download mode always applies to k8s as well ([#2271](https://github.com/kurtosis-tech/kurtosis/issues/2271)) ([2e90c67](https://github.com/kurtosis-tech/kurtosis/commit/2e90c672abe576c0ccfa385e95af59980678a395))
+
 ## [0.88.4](https://github.com/kurtosis-tech/kurtosis/compare/0.88.3...0.88.4) (2024-03-11)
 
 
