@@ -88,8 +88,7 @@ func NewAddService(
 				description:                  "",  // populated at interpretation time
 				returnValue:                  nil, // populated at interpretation time
 				imageVal:                     nil, // populated at interpretation time
-				description:                  "", // populated at interpretation time
-				imageDownloadMode: imageDownloadMode,
+				imageDownloadMode:            imageDownloadMode,
 			}
 		},
 
