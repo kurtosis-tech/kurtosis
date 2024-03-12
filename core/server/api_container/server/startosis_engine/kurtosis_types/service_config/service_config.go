@@ -2,6 +2,7 @@ package service_config
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"math"
 	"path"
@@ -249,6 +250,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
 	var ok bool
 
@@ -523,6 +525,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		serviceUser,
 		tolerations,
 		nodeSelectors,
+		imageDownloadMode,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")

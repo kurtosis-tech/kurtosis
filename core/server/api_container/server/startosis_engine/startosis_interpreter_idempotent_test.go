@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -103,7 +104,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		noInputParams,
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
-		resolver.NewInstructionsPlanMask(0))
+		resolver.NewInstructionsPlanMask(0),
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -119,6 +121,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		noInputParams,
 		defaultNonBlockingMode,
 		convertedEnclavePlan,
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -160,7 +163,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		noInputParams,
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
-		resolver.NewInstructionsPlanMask(0))
+		resolver.NewInstructionsPlanMask(0),
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -181,6 +185,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		noInputParams,
 		defaultNonBlockingMode,
 		convertedEnclavePlan,
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -223,7 +228,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		noInputParams,
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
-		resolver.NewInstructionsPlanMask(0))
+		resolver.NewInstructionsPlanMask(0),
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -242,6 +248,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		noInputParams,
 		defaultNonBlockingMode,
 		convertedEnclavePlan,
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -278,7 +285,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		noInputParams,
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
-		resolver.NewInstructionsPlanMask(0))
+		resolver.NewInstructionsPlanMask(0),
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -299,6 +307,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		noInputParams,
 		defaultNonBlockingMode,
 		convertedEnclavePlan,
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -341,7 +350,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		noInputParams,
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
-		resolver.NewInstructionsPlanMask(0))
+		resolver.NewInstructionsPlanMask(0),
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 4, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -363,6 +373,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		noInputParams,
 		defaultNonBlockingMode,
 		convertedEnclavePlan,
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -414,7 +425,8 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		noInputParams,
 		defaultNonBlockingMode,
 		enclave_structure.NewEnclaveComponents(),
-		resolver.NewInstructionsPlanMask(0))
+		resolver.NewInstructionsPlanMask(0),
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 4, currentEnclavePlan.Size())
 	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
@@ -441,6 +453,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		noInputParams,
 		defaultNonBlockingMode,
 		convertedEnclavePlan,
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.Nil(suite.T(), interpretationError)
 

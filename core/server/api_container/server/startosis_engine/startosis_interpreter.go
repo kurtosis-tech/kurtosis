@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
@@ -95,6 +96,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	serializedJsonParams string,
 	nonBlockingMode bool,
 	currentEnclavePlan *enclave_plan_persistence.EnclavePlan,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
 	if interpretationErr := interpreter.packageContentProvider.CloneReplacedPackagesIfNeeded(packageReplaceOptions); interpretationErr != nil {
@@ -104,7 +106,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	// run interpretation with no mask at all to generate the list of instructions as if the enclave was empty
 	enclaveComponents := enclave_structure.NewEnclaveComponents()
 	emptyPlanInstructionsMask := resolver.NewInstructionsPlanMask(0)
-	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, emptyPlanInstructionsMask)
+	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, emptyPlanInstructionsMask, imageDownloadMode)
 	if interpretationErrorApi != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErrorApi
 	}
@@ -174,7 +176,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 		}
 
 		// Now that we have a potential plan mask, try running interpretation again using this plan mask
-		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, potentialMask)
+		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, packageReplaceOptions, relativePathtoMainFile, serializedStarlark, serializedJsonParams, nonBlockingMode, enclaveComponents, potentialMask, imageDownloadMode)
 		if interpretationErrorApi != nil {
 			// Note: there's no real reason why this interpretation would fail with an error, given that the package
 			// has been interpreted once already (right above). But to be on the safe side, check the error
@@ -225,6 +227,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	nonBlockingMode bool,
 	enclaveComponents *enclave_structure.EnclaveComponents,
 	instructionsPlanMask *resolver.InstructionsPlanMask,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
@@ -273,7 +276,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	if mainFuncParamsNum >= minimumParamsRequiredForPlan {
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
-			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.packageContentProvider, packageReplaceOptions, nonBlockingMode, interpreter.interpretationTimeValueStore)
+			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.packageContentProvider, packageReplaceOptions, nonBlockingMode, interpreter.interpretationTimeValueStore, imageDownloadMode)
 			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, interpreter.starlarkValueSerde, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}

@@ -350,6 +350,7 @@ func repacaeMagicStringsInEnvVars(runtimeValueStore *runtime_value_store.Runtime
 		serviceConfig.GetUser(),
 		serviceConfig.GetTolerations(),
 		serviceConfig.GetNodeSelectors(),
+		serviceConfig.GetImageDownloadMode(),
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a service config with env var magric strings replaced.")

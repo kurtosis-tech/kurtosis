@@ -2,6 +2,7 @@ package service_registration
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"math/rand"
 	"net"
 	"os"
@@ -329,6 +330,7 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 		map[string]string{
 			"disktype": "ssd",
 		},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.NoError(t, err)
 	return serviceConfig
