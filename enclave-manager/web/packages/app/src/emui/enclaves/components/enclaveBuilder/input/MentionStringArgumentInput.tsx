@@ -7,7 +7,9 @@ import { KurtosisFormInputProps } from "../../form/types";
 import { useVariableContext } from "../VariableContextProvider";
 import "./MentionStringArgumentInput.css";
 
-type MentionStringArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel>;
+type MentionStringArgumentInputProps<DataModel extends object> = KurtosisFormInputProps<DataModel> & {
+  multiline?: boolean;
+};
 
 export const MentionStringArgumentInput = <DataModel extends object>({
   name,
@@ -17,6 +19,7 @@ export const MentionStringArgumentInput = <DataModel extends object>({
   disabled,
   width,
   tabIndex,
+  multiline,
 }: MentionStringArgumentInputProps<DataModel>) => {
   const { variables, data } = useVariableContext();
   const nodeId = useNodeId();
@@ -59,10 +62,15 @@ export const MentionStringArgumentInput = <DataModel extends object>({
               "&singleLine": {
                 width: width,
               },
+              "&multiLine": {
+                minHeight: "90px",
+                overflow: "scroll",
+              },
+              maxWidth: "600px",
             }}
             aria-invalid={fieldState.invalid}
             tabIndex={tabIndex}
-            singleLine
+            singleLine={!multiline}
             value={field.value}
             disabled={disabled}
             onChange={(e, newValue, newPlainTextValue, mentions) => field.onChange(newValue)}

@@ -22,8 +22,7 @@ export const OptionsArgumentInput = <DataModel extends object>({
           <Radio
             key={option}
             {...register(props.name, {
-              disabled: props.disabled,
-              required: props.isRequired,
+              // required is not passed through to this component as it doesn't work when the group is disabled.
               validate: props.validate,
             })}
             value={option}

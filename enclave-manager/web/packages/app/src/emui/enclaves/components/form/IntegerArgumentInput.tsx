@@ -10,7 +10,6 @@ export const IntegerArgumentInput = <DataModel extends object>(props: KurtosisFo
   return (
     <Input
       {...register(props.name, {
-        disabled: props.disabled,
         required: props.isRequired,
         validate: (value: number) => {
           if (isNaN(value)) {
@@ -23,6 +22,7 @@ export const IntegerArgumentInput = <DataModel extends object>(props: KurtosisFo
           }
         },
       })}
+      isReadOnly={props.disabled}
       placeholder={props.placeholder}
       width={props.width}
       size={props.size || "lg"}

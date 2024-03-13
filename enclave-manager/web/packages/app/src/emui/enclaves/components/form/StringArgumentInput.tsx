@@ -20,7 +20,8 @@ export const StringArgumentInput = <DataModel extends object>({
 
   return (
     <Input
-      {...register(name, { disabled: disabled, required: isRequired, validate: validate })}
+      {...register(name, { required: isRequired, validate: validate })}
+      isReadOnly={disabled}
       placeholder={placeholder}
       width={width}
       size={size || "lg"}

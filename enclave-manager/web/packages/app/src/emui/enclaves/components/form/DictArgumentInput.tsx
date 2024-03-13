@@ -62,6 +62,7 @@ export const DictArgumentInput = <DataModel extends object>({
               isRequired={true}
               size={"sm"}
               width={"222px"}
+              disabled={otherProps.disabled}
             />
           </KurtosisSubtypeFormControl>
           <KurtosisSubtypeFormControl
@@ -73,11 +74,19 @@ export const DictArgumentInput = <DataModel extends object>({
               name={`${otherProps.name}.${i}.value` as any}
               validate={otherProps.validate}
               isRequired={true}
+              disabled={otherProps.disabled}
               size={"sm"}
               width={"222px"}
             />
           </KurtosisSubtypeFormControl>
-          <Button onClick={() => remove(i)} leftIcon={<FiDelete />} size={"sm"} colorScheme={"red"} variant={"outline"}>
+          <Button
+            onClick={() => remove(i)}
+            leftIcon={<FiDelete />}
+            size={"sm"}
+            colorScheme={"red"}
+            variant={"outline"}
+            isDisabled={otherProps.disabled}
+          >
             Delete
           </Button>
         </Flex>
@@ -88,6 +97,7 @@ export const DictArgumentInput = <DataModel extends object>({
           leftIcon={<FiPlus />}
           size={"sm"}
           colorScheme={"kurtosisGreen"}
+          isDisabled={otherProps.disabled}
           variant={"outline"}
         >
           Add
