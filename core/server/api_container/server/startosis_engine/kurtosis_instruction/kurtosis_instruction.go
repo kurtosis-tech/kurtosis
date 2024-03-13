@@ -6,7 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 )
 
@@ -35,5 +35,6 @@ type KurtosisInstruction interface {
 	// itself. In the current case, this is called in the executor, and it sets the UUID and the returned value.
 	GetPersistableAttributes() *enclave_plan_persistence.EnclavePlanInstructionBuilder
 
-	GetArguments() *builtin_argument.ArgumentValuesSet
+	// UpdatePlan updates the plan with the effects of running this instruction.
+	UpdatePlan(plan *plan_yaml.PlanYaml) error
 }

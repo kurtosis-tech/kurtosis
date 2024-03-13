@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"reflect"
 	"strings"
 	"time"
@@ -50,7 +51,7 @@ const (
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
 
-func ParseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
+func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
 	var result []*store_spec.StoreSpec
 
 	storeFilesList, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, StoreFilesArgName)
@@ -281,6 +282,7 @@ func getServiceConfig(
 		nil,
 		nil,
 		map[string]string{},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")

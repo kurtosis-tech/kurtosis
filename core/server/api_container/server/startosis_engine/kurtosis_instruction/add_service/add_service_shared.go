@@ -188,9 +188,6 @@ func replaceMagicStrings(
 	if serviceConfig.GetEnvVars() != nil {
 		envVars = make(map[string]string, len(serviceConfig.GetEnvVars()))
 		for envVarName, envVarValue := range serviceConfig.GetEnvVars() {
-			if err != nil {
-				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", envVarValue)
-			}
 			envVarValueWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(envVarValue, runtimeValueStore)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%s': '%s'", envVarName, envVarValue)
@@ -220,6 +217,7 @@ func replaceMagicStrings(
 		serviceConfig.GetUser(),
 		serviceConfig.GetTolerations(),
 		serviceConfig.GetNodeSelectors(),
+		serviceConfig.GetImageDownloadMode(),
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating a service config")

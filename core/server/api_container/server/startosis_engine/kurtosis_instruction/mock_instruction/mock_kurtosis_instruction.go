@@ -17,6 +17,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	plan_yaml "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
+
 	startosis_validator "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 )
 
@@ -340,6 +342,48 @@ func (_c *MockKurtosisInstruction_TryResolveWith_Call) Return(_a0 enclave_struct
 }
 
 func (_c *MockKurtosisInstruction_TryResolveWith_Call) RunAndReturn(run func(*enclave_plan_persistence.EnclavePlanInstruction, *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus) *MockKurtosisInstruction_TryResolveWith_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdatePlan provides a mock function with given fields: plan
+func (_m *MockKurtosisInstruction) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	ret := _m.Called(plan)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*plan_yaml.PlanYaml) error); ok {
+		r0 = rf(plan)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockKurtosisInstruction_UpdatePlan_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdatePlan'
+type MockKurtosisInstruction_UpdatePlan_Call struct {
+	*mock.Call
+}
+
+// UpdatePlan is a helper method to define mock.On call
+//   - plan *plan_yaml.PlanYaml
+func (_e *MockKurtosisInstruction_Expecter) UpdatePlan(plan interface{}) *MockKurtosisInstruction_UpdatePlan_Call {
+	return &MockKurtosisInstruction_UpdatePlan_Call{Call: _e.mock.On("UpdatePlan", plan)}
+}
+
+func (_c *MockKurtosisInstruction_UpdatePlan_Call) Run(run func(plan *plan_yaml.PlanYaml)) *MockKurtosisInstruction_UpdatePlan_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*plan_yaml.PlanYaml))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisInstruction_UpdatePlan_Call) Return(_a0 error) *MockKurtosisInstruction_UpdatePlan_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisInstruction_UpdatePlan_Call) RunAndReturn(run func(*plan_yaml.PlanYaml) error) *MockKurtosisInstruction_UpdatePlan_Call {
 	_c.Call.Return(run)
 	return _c
 }

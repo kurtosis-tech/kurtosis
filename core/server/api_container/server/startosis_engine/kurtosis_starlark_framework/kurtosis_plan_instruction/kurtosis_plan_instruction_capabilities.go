@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
@@ -25,4 +26,7 @@ type KurtosisPlanInstructionCapabilities interface {
 
 	// Description Brief description of the instruction based on its contents
 	Description() string
+
+	// UpdatePlan applies the effect of this instruction capabilities onto the yaml representation of the instruction plan.
+	UpdatePlan(plan *plan_yaml.PlanYaml) error
 }

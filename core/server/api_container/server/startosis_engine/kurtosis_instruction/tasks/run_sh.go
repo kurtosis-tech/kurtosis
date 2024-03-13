@@ -15,18 +15,20 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 )
 
 const (
 	RunShBuiltinName = "run_sh"
 
-	DefaultRunShImageName  = "badouralix/curl-jq"
+	defaultRunShImageName  = "badouralix/curl-jq"
 	shScriptPrintCharLimit = 80
 	runningShScriptPrefix  = "Running sh script"
 )
@@ -90,7 +92,8 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				resultUuid:        "",  // populated at interpretation time
 				storeSpecList:     nil,
 				wait:              DefaultWaitTimeoutDurationStr,
-				description:       "", // populated at interpretation time
+				description:       "",  // populated at interpretation time
+				returnValue:       nil, // populated at interpretation time
 			}
 		},
 
@@ -116,6 +119,7 @@ type RunShCapabilities struct {
 
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
+	returnValue   *starlarkstruct.Struct
 	wait          string
 	description   string
 }
@@ -135,7 +139,7 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 		}
 		image = imageStarlark.GoString()
 	} else {
-		image = DefaultRunShImageName
+		image = defaultRunShImageName
 	}
 
 	var filesArtifactExpansion *service_directory.FilesArtifactsExpansion
@@ -172,7 +176,7 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	}
 
 	if arguments.IsSet(StoreFilesArgName) {
-		storeSpecList, interpretationErr := ParseStoreFilesArg(builtin.serviceNetwork, arguments)
+		storeSpecList, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -201,8 +205,8 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	}
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, defaultDescription)
 
-	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
-	return result, nil
+	builtin.returnValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
+	return builtin.returnValue, nil
 }
 
 func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
@@ -219,7 +223,13 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 //	TODO Create an mechanism for other services to retrieve files from the task container
 //	Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
+	// swap env vars with their runtime value
+	serviceConfigWithReplacedEnvVars, err := repacaeMagicStringsInEnvVars(builtin.runtimeValueStore, builtin.serviceConfig)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred replacing magic strings in env vars.")
+	}
+
+	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfigWithReplacedEnvVars)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
 	}
@@ -282,6 +292,14 @@ func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_pla
 	builder.SetType(RunShBuiltinName)
 }
 
+func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	err := plan.AddRunSh(builtin.run, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred adding run sh task to the plan")
+	}
+	return nil
+}
+
 func (builtin *RunShCapabilities) Description() string {
 	return builtin.description
 }
@@ -294,4 +312,49 @@ func getCommandToRun(builtin *RunShCapabilities) (string, error) {
 	}
 
 	return maybeSubCommandWithRuntimeValues, nil
+}
+
+func repacaeMagicStringsInEnvVars(runtimeValueStore *runtime_value_store.RuntimeValueStore, serviceConfig *service.ServiceConfig) (
+	*service.ServiceConfig,
+	error) {
+	var envVars map[string]string
+	if serviceConfig.GetEnvVars() != nil {
+		envVars = make(map[string]string, len(serviceConfig.GetEnvVars()))
+		for envVarName, envVarValue := range serviceConfig.GetEnvVars() {
+			envVarValueWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(envVarValue, runtimeValueStore)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%s': '%s'", envVarName, envVarValue)
+			}
+			envVars[envVarName] = envVarValueWithRuntimeValueReplaced
+		}
+	}
+
+	renderedServiceConfig, err := service.CreateServiceConfig(
+		serviceConfig.GetContainerImageName(),
+		serviceConfig.GetImageBuildSpec(),
+		serviceConfig.GetImageRegistrySpec(),
+		serviceConfig.GetNixBuildSpec(),
+		serviceConfig.GetPrivatePorts(),
+		serviceConfig.GetPublicPorts(),
+		serviceConfig.GetEntrypointArgs(),
+		serviceConfig.GetCmdArgs(),
+		envVars,
+		serviceConfig.GetFilesArtifactsExpansion(),
+		serviceConfig.GetPersistentDirectories(),
+		serviceConfig.GetCPUAllocationMillicpus(),
+		serviceConfig.GetMemoryAllocationMegabytes(),
+		serviceConfig.GetPrivateIPAddrPlaceholder(),
+		serviceConfig.GetMinCPUAllocationMillicpus(),
+		serviceConfig.GetMinMemoryAllocationMegabytes(),
+		serviceConfig.GetLabels(),
+		serviceConfig.GetUser(),
+		serviceConfig.GetTolerations(),
+		serviceConfig.GetNodeSelectors(),
+		serviceConfig.GetImageDownloadMode(),
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a service config with env var magric strings replaced.")
+	}
+
+	return renderedServiceConfig, nil
 }

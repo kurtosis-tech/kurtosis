@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"testing"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
@@ -39,14 +40,16 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSp
 }
 
 func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
-	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q)",
+	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%s)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
 		service_config.BuildContextAttr,
 		testBuildContextDir,
 		service_config.TargetStageAttr,
-		testTargetStage)
+		testTargetStage,
+		service_config.BuildArgsAttr,
+		fmt.Sprintf("{%q: %q, %q: %q}", testBuildArgName1, testBuildArgValue1, testBuildArgName2, testBuildArgValue2))
 	return fmt.Sprintf("%s(%s=%s)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, imageBuildSpec)
@@ -61,13 +64,19 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		testModuleMainFileLocator,
 		testModulePackageId,
 		t.packageContentProvider,
-		testNoPackageReplaceOptions)
+		testNoPackageReplaceOptions,
+		image_download_mode.ImageDownloadMode_Missing)
 	require.Nil(t, interpretationErr)
 
+	expectedBuildArgs := map[string]string{
+		testBuildArgName1: testBuildArgValue1,
+		testBuildArgName2: testBuildArgValue2,
+	}
 	expectedImageBuildSpec := image_build_spec.NewImageBuildSpec(
 		testOnDiskContextDirPath,
 		testOnDiskContainerImagePath,
-		testTargetStage)
+		testTargetStage,
+		expectedBuildArgs)
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		expectedImageBuildSpec,
@@ -89,6 +98,7 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		nil,
 		nil,
 		map[string]string{},
+		image_download_mode.ImageDownloadMode_Missing,
 	)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)

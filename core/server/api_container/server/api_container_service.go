@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"io"
 	"math"
 	"net/http"
@@ -614,11 +615,10 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 	scriptWithRunFunction, actualRelativePathToMainFile, detectedPackageId, detectedPackageReplaceOptions, interpretationError =
 		apicService.runStarlarkPackageSetup(packageIdFromArgs, true, nil, requestedRelativePathToMainFile)
 	if interpretationError != nil {
-		return nil, interpretationError
+		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred setting up the package for retrieving plan yaml for package: %v", packageIdFromArgs)
 	}
 
-	var apiInterpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
-	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret( // tedi: why interpret return an api interpretation error instead of a starlark one?
+	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret(
 		ctx,
 		detectedPackageId,
 		mainFuncName,
@@ -628,33 +628,31 @@ func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.C
 		serializedParams,
 		false,
 		enclave_structure.NewEnclaveComponents(),
-		resolver.NewInstructionsPlanMask(0))
+		resolver.NewInstructionsPlanMask(0),
+		image_download_mode.ImageDownloadMode_Always)
 	if apiInterpretationError != nil {
 		interpretationError = startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
-		return nil, interpretationError
+		return nil, stacktrace.Propagate(interpretationError, "An interpretation error occurred interpreting package for retrieving plan yaml for package: %v", packageIdFromArgs)
 	}
-	pyg := startosis_engine.NewPlanYamlGenerator(
-		instructionsPlan,
-		apicService.serviceNetwork,
-		packageIdFromArgs,
-		apicService.packageContentProvider,
-		detectedPackageReplaceOptions)
-	planYamlBytes, err := pyg.GenerateYaml()
+	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(packageIdFromArgs))
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "An error occurred generating plan yaml for package: %v", packageIdFromArgs)
 	}
 
-	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: string(planYamlBytes)}, nil
+	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: planYamlStr}, nil
 }
 
+// NOTE: GetStarlarkScriptPlanYaml endpoint is only meant to be called by the EM UI, Enclave Builder logic.
+// Once the EM UI retrieves the plan yaml, the APIC is removed and not used again.
+// It's not ideal that we have to even start an enclave/APIC to simply get the result of interpretation/plan yaml but that would require a larger refactor
+// of the startosis_engine to enable the infra for interpretation to be executed as a standalone library, that could be setup by the engine, or even on the client.
 func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
 	serializedStarlarkScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	mainFuncName := args.GetMainFunctionName()
 	noPackageReplaceOptions := map[string]string{}
 
-	var apiInterpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
-	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret( // tedi: why interpret return an api interpretation error instead of a starlark one?
+	_, instructionsPlan, apiInterpretationError := apicService.startosisInterpreter.Interpret(
 		ctx,
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		mainFuncName,
@@ -664,22 +662,17 @@ func (apicService *ApiContainerService) GetStarlarkScriptPlanYaml(ctx context.Co
 		serializedParams,
 		false,
 		enclave_structure.NewEnclaveComponents(),
-		resolver.NewInstructionsPlanMask(0))
+		resolver.NewInstructionsPlanMask(0),
+		image_download_mode.ImageDownloadMode_Always)
 	if apiInterpretationError != nil {
 		return nil, startosis_errors.NewInterpretationError(apiInterpretationError.GetErrorMessage())
 	}
-	pyg := startosis_engine.NewPlanYamlGenerator(
-		instructionsPlan,
-		apicService.serviceNetwork,
-		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		apicService.packageContentProvider,
-		noPackageReplaceOptions)
-	planYamlBytes, err := pyg.GenerateYaml()
+	planYamlStr, err := instructionsPlan.GenerateYaml(plan_yaml.CreateEmptyPlan(startosis_constants.PackageIdPlaceholderForStandaloneScript))
 	if err != nil {
 		return nil, err
 	}
 
-	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: string(planYamlBytes)}, nil
+	return &kurtosis_core_rpc_api_bindings.PlanYaml{PlanYaml: planYamlStr}, nil
 }
 
 // ====================================================================================================

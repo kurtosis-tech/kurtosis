@@ -114,6 +114,7 @@ func (runner *StartosisRunner) Run(
 				nonBlockingMode,
 				enclave_structure.NewEnclaveComponents(),
 				resolver.NewInstructionsPlanMask(0),
+				imageDownloadMode,
 			)
 		} else {
 			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.InterpretAndOptimizePlan(
@@ -126,6 +127,7 @@ func (runner *StartosisRunner) Run(
 				serializedParams,
 				nonBlockingMode,
 				runner.startosisExecutor.enclavePlan,
+				imageDownloadMode,
 			)
 		}
 
@@ -163,23 +165,6 @@ func (runner *StartosisRunner) Run(
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
-
-		if dryRun {
-			pyg := NewPlanYamlGenerator(
-				instructionsPlan,
-				runner.startosisInterpreter.serviceNetwork,
-				packageId,
-				runner.startosisInterpreter.packageContentProvider,
-				packageReplaceOptions,
-			)
-			planYaml, err := pyg.GenerateYaml()
-			if err != nil {
-				starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromWarning(err.Error())
-			}
-			logrus.Infof("PLAN YAML:\n %v", string(planYaml))
-			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg(string(planYaml))
-			return
-		}
 
 		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsPlan.GetIndexOfFirstInstruction(), instructionsSequence, serializedScriptOutput)
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {

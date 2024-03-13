@@ -2,10 +2,11 @@ package kurtosis_types
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"reflect"
 )
 
 func MakeOptional(argName string) string {

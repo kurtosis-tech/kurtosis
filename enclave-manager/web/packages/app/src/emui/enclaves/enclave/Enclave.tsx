@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AppPageLayout, HoverLineTabList, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { FunctionComponent } from "react";
 import { EditEnclaveButton } from "../components/EditEnclaveButton";
+import { AddGithubActionButton } from "../components/widgets/AddGithubActionButton";
 import { ConnectEnclaveButton } from "../components/widgets/ConnectEnclaveButton";
 import { DeleteEnclavesButton } from "../components/widgets/DeleteEnclavesButton";
 import { useFullEnclave } from "../EnclavesContext";
@@ -56,6 +57,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
             <DeleteEnclavesButton enclaves={[enclave]} />
             <EditEnclaveButton enclave={enclave} />
             <ConnectEnclaveButton enclave={enclave} />
+            <AddGithubActionButton enclave={enclave} />
           </Flex>
         </Flex>
         <TabPanels>

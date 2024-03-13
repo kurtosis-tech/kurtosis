@@ -5,6 +5,9 @@ def run(plan, args):
             image=ImageBuildSpec(
                 image_name="kurtosistech/service",
                 build_context_dir="./",
+                build_args={
+                    "BUILD_ARG": "VALUE",
+                }
             ),
         )
     )

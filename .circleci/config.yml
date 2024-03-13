@@ -43,13 +43,13 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         # First load the image into Docker and then import the images into K3S by taking the image from Docker
         command: |
           kurtosis_version="$(./scripts/get-docker-tag.sh)"
-          
+
           docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
-          
+
           docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
-          
+
           docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-          
+
           k3d image import "kurtosistech/core:$kurtosis_version" "kurtosistech/engine:$kurtosis_version" "kurtosistech/files-artifacts-expander:$kurtosis_version"
     # Edit the Kurtosis config file in order to have K3S cluster configuration
     - run:
@@ -126,12 +126,12 @@ abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
   run: |
     if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
       circleci-agent step halt
-    fi 
+    fi
 
 abort_job_if_kubernetes_backend: &abort_job_if_kubernetes_backend
   when:
     condition:
-      equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+      equal: ["kubernetes", << parameters.cli-cluster-backend >>]
     steps:
       - run: circleci-agent step halt
 
@@ -145,7 +145,7 @@ version: 2.1
 
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
-  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.6
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.7
   slack: circleci/slack@4.10.1
 
 executors:
@@ -161,11 +161,11 @@ parameters:
     default: "1.20.11"
   container-engine-lib-build-cache-key-prefix:
     type: string
-    default: "go-mod-v1"   # Can bump this version to bust the cache
-  # To upgrade the Docker Engine version, see which versions are supported at: https://circleci.com/docs/2.0/building-docker-images/#docker-version
+    default: "go-mod-v1" # Can bump this version to bust the cache
+  # To upgrade the Docker Engine version, see which versions are supported at: https://circleci.com/docs/remote-docker-images-support-policy/
   docker-engine-version:
     type: string
-    default: 20.10.7
+    default: default
   api-go-version:
     type: string
     default: "1.20.11"
@@ -182,10 +182,10 @@ parameters:
     default: 18.19.0
   core-server-build-cache-key-prefix:
     type: string
-    default: "core-server-go-mod-v1"   # Can bump this version to bust the cache
+    default: "core-server-go-mod-v1" # Can bump this version to bust the cache
   engine-server-build-cache-key-prefix:
     type: string
-    default: "engine-server-go-mod-v1"   # Can bump this version to bust the cache
+    default: "engine-server-go-mod-v1" # Can bump this version to bust the cache
   workspace-with-cli-binary-and-images-mountpoint:
     type: string
     default: "/tmp/workspace"
@@ -254,9 +254,6 @@ parameters:
     type: string
     default: "31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
 
-
-
-
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
 #  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
 #  jobs. Both are annoying (saving/loading workspaces require re-downloading the workspace over the network, and there doesn't seem to be a good way to do Docker
@@ -286,8 +283,8 @@ jobs:
       - save_cache:
           key: << pipeline.parameters.container-engine-lib-build-cache-key-prefix >>-{{ checksum "container-engine-lib/go.sum" }}
           paths:
-            - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
-            - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
+            - "/home/circleci/go/pkg/mod" # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
+            - "/home/circleci/.cache/go-build" # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
   build_contexts_config_store:
     docker:
@@ -312,7 +309,6 @@ jobs:
       - checkout
       - <<: *abort_job_if_only_docs_changes
       - run: metrics-library/scripts/build.sh
-
 
   build_name_generator:
     docker:
@@ -354,7 +350,6 @@ jobs:
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
-
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
 
@@ -364,7 +359,7 @@ jobs:
           version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
-          docker save -o << pipeline.parameters.file-artifacts-expander-image-filename >> "${image_name_with_version}"          
+          docker save -o << pipeline.parameters.file-artifacts-expander-image-filename >> "${image_name_with_version}"
 
       - persist_to_workspace:
           root: .
@@ -418,13 +413,13 @@ jobs:
           version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
-          docker save -o << pipeline.parameters.core-server-image-filename >> "${image_name_with_version}"          
+          docker save -o << pipeline.parameters.core-server-image-filename >> "${image_name_with_version}"
 
       - save_cache:
           key: << pipeline.parameters.core-server-build-cache-key-prefix>>-{{ checksum "core/server/go.sum" }}
           paths:
-            - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
-            - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
+            - "/home/circleci/go/pkg/mod" # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
+            - "/home/circleci/.cache/go-build" # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
       - persist_to_workspace:
           root: .
@@ -507,14 +502,13 @@ jobs:
           version_to_publish="$(./scripts/get-docker-tag.sh)"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
-          docker save -o << pipeline.parameters.engine-server-image-filename >> "${image_name_with_version}"          
-
+          docker save -o << pipeline.parameters.engine-server-image-filename >> "${image_name_with_version}"
 
       - save_cache:
           key: << pipeline.parameters.engine-server-build-cache-key-prefix>>-{{ checksum "engine/server/go.sum" }}
           paths:
-            - "/home/circleci/go/pkg/mod"  # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
-            - "/home/circleci/.cache/go-build"  # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
+            - "/home/circleci/go/pkg/mod" # Go module cache on the cimg/go image, as reported by "go env GOMODCACHE"
+            - "/home/circleci/.cache/go-build" # Go build cache on the cimg/go image, as reported by "go env GOCACHE"
 
       - persist_to_workspace:
           root: .
@@ -559,17 +553,16 @@ jobs:
       - run: |
           cli/cli/scripts/build.sh << parameters.all_architectures >>
 
-
       # only save cache and persist to workspace the CLI built for just the CircleCI architecture
       - when:
           condition:
-            equal: [ false, << parameters.all_architectures >> ]
+            equal: [false, << parameters.all_architectures >>]
           steps:
             - save_cache:
                 key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
                 paths:
-                  - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
-                  - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
+                  - "/go/pkg/mod" # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
+                  - "/root/.cache/go-build" # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
 
             - persist_to_workspace:
                 root: .
@@ -602,29 +595,27 @@ jobs:
 
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: ["kubernetes", << parameters.cli-cluster-backend >>]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           <<: *steps_prepare_testing_docker
 
       # Run the testsuite for kubernetes and docker, but don't fail the job immediately so that we can upload the enclave dump
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: ["kubernetes", << parameters.cli-cluster-backend >>]
           steps:
             - run: |
                 if ! ./internal_testsuites/golang/scripts/test.sh kubernetes true; then
                   touch /tmp/testsuite-failed
                 fi
 
-
-
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           steps:
             - run: |
                 if ! ./internal_testsuites/golang/scripts/test.sh docker true; then
@@ -675,18 +666,18 @@ jobs:
       - run: "${KURTOSIS_BINPATH} analytics disable"
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: ["kubernetes", << parameters.cli-cluster-backend >>]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           <<: *steps_prepare_testing_docker
 
       # Run the testsuite for either docker or kubernetes, but don't fail the job immediately so that we can upload the enclave dump
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: ["kubernetes", << parameters.cli-cluster-backend >>]
           steps:
             - run: |
                 if ! ./internal_testsuites/typescript/scripts/test.sh kubernetes; then
@@ -694,7 +685,7 @@ jobs:
                 fi
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           steps:
             - run: |
                 if ! ./internal_testsuites/typescript/scripts/test.sh; then
@@ -706,7 +697,7 @@ jobs:
       # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           steps:
             <<: *run_dump_kurtosis_enclaves
 
@@ -756,7 +747,7 @@ jobs:
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
           docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
           docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
-          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"          
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
 
       # Make sure we can still interact with the old enclaves
       - run: "${KURTOSIS_BINPATH} enclave ls"
@@ -816,7 +807,6 @@ jobs:
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: "${KURTOSIS_BINPATH} analytics disable"
-
       - <<: *run_prepare_testing_docker
 
       - run: npm install -g yarn
@@ -830,7 +820,6 @@ jobs:
       - run:
           command: yarn cypress:ete
           working_directory: enclave-manager/web
-
 
   test_basic_cli_functionality:
     executor: ubuntu_vm
@@ -855,16 +844,15 @@ jobs:
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: "${KURTOSIS_BINPATH} analytics disable"
-
       # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: ["kubernetes", << parameters.cli-cluster-backend >>]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           <<: *steps_prepare_testing_docker
 
       # Basic service add & rm
@@ -911,7 +899,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} run --enclave args-file-from-url-test << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-args-file-test-main-star-relative-path >> --args-file << pipeline.parameters.starlark-test-args-file-url >>"
 
       # Execute github starlark module
-      - run: "${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
+      - run: '${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package ''{"num_datastores": 2}'''
 
       # Execute port print
       - run: "${KURTOSIS_BINPATH} port print test-datastore datastore-0 grpc"
@@ -947,7 +935,7 @@ jobs:
       # Test APIC restart
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           steps:
             - run:
                 name: Test APIC restart
@@ -964,7 +952,7 @@ jobs:
       # Test APIC idempotent runs restart
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           steps:
             - run:
                 name: Test APIC idempotent restart
@@ -978,7 +966,7 @@ jobs:
                   docker container restart $(echo $apic_container_id)
                   ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package --enclave test-apic-idempotent-restart > /tmp/output_idempotent_runs.txt
                   number_skipped_instructions=$(grep -o -i SKIPPED /tmp/output_idempotent_runs.txt | wc -l )
-                  if [ $number_skipped_instructions -ne 7 ]; then exit 1; fi 
+                  if [ $number_skipped_instructions -ne 7 ]; then exit 1; fi
 
       # Clean all at the end
       - run: "${KURTOSIS_BINPATH} clean -a"
@@ -986,7 +974,7 @@ jobs:
       # Ensure Kubernetes resources clean up successfully
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: ["kubernetes", << parameters.cli-cluster-backend >>]
           steps:
             - run:
                 name: "Install kubectl"
@@ -1007,7 +995,7 @@ jobs:
       # Ensure Docker resources cleaned up successfully
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           steps:
             - run:
                 name: "Verify only the engine, logs aggregator and reverse proxy remain after the clean"
@@ -1059,15 +1047,14 @@ jobs:
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: "${KURTOSIS_BINPATH} analytics disable"
-
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: ["kubernetes", << parameters.cli-cluster-backend >>]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           <<: *steps_prepare_testing_docker
 
       # Start a service and send an http request to it via the reverse proxy
@@ -1086,7 +1073,7 @@ jobs:
 
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           steps:
             # Restart the engine and make sure Traefik restarted and reconfigured properly
             - run: |
@@ -1120,16 +1107,15 @@ jobs:
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: "${KURTOSIS_BINPATH} analytics disable"
-
       # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            equal: ["kubernetes", << parameters.cli-cluster-backend >>]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+            equal: ["docker", << parameters.cli-cluster-backend >>]
           <<: *steps_prepare_testing_docker
 
       # adding same enclave fails
@@ -1338,7 +1324,6 @@ jobs:
           apt update
           apt install -y goreleaser
       - checkout
-
       # Generate Kurtosis Version
       - run: |
           version="$(cat version.txt)"
@@ -1355,8 +1340,8 @@ jobs:
       - save_cache:
           key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
           paths:
-            - "/go/pkg/mod"   # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
-            - "/root/.cache/go-build"    # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
+            - "/go/pkg/mod" # Go module cache for the Goreleaser image, as reported by "go env GOMODCACHE"
+            - "/root/.cache/go-build" # Go build cache for the Goreleaser image, as reported by "go env GOCACHE"
 
   # -- End publishing jobs -------------------------------------
 
@@ -1365,7 +1350,7 @@ workflows:
     jobs:
       # -- build jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
-          dir-to-exclude: '^(./docs/*|./CHANGELOG.md)'
+          dir-to-exclude: "^(./docs/*|./CHANGELOG.md)"
           should-check-changelog: false
           markdown-link-check-config-json: |
             {
