@@ -15,12 +15,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 )
 
 const (
@@ -90,7 +92,8 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				resultUuid:        "",  // populated at interpretation time
 				storeSpecList:     nil,
 				wait:              DefaultWaitTimeoutDurationStr,
-				description:       "", // populated at interpretation time
+				description:       "",  // populated at interpretation time
+				returnValue:       nil, // populated at interpretation time
 			}
 		},
 
@@ -116,6 +119,7 @@ type RunShCapabilities struct {
 
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
+	returnValue   *starlarkstruct.Struct
 	wait          string
 	description   string
 }
@@ -201,8 +205,8 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	}
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, defaultDescription)
 
-	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
-	return result, nil
+	builtin.returnValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
+	return builtin.returnValue, nil
 }
 
 func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
@@ -286,6 +290,14 @@ func (builtin *RunShCapabilities) TryResolveWith(instructionsAreEqual bool, _ *e
 
 func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	builder.SetType(RunShBuiltinName)
+}
+
+func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	err := plan.AddRunSh(builtin.run, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred adding run sh task to the plan")
+	}
+	return nil
 }
 
 func (builtin *RunShCapabilities) Description() string {

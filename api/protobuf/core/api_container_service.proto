@@ -53,6 +53,12 @@ service ApiContainerService {
   
   // Get last Starlark run
   rpc GetStarlarkRun(google.protobuf.Empty) returns (GetStarlarkRunResponse) {};
+
+  // Gets yaml representing the plan the script will execute in an enclave
+  rpc GetStarlarkScriptPlanYaml(StarlarkScriptPlanYamlArgs) returns (PlanYaml) {};
+
+  // Gets yaml representing the plan the package will execute in an enclave
+  rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (PlanYaml) {};
 }
 
 // ==============================================================================================
@@ -563,4 +569,35 @@ message GetStarlarkRunResponse {
   repeated KurtosisFeatureFlag experimental_features = 7;
 
   RestartPolicy restart_policy = 8;
+}
+
+// ==============================================================================================
+//                               Get Starlark Plan Yaml
+// ==============================================================================================
+
+message PlanYaml {
+  string plan_yaml = 1;
+}
+
+message StarlarkScriptPlanYamlArgs {
+  string serialized_script = 1;
+
+  optional string serialized_params = 2;
+
+  // The name of the main function, the default value is "run"
+  optional string main_function_name = 5;
+}
+
+message StarlarkPackagePlanYamlArgs {
+  string package_id = 1;
+
+  // Serialized parameters data for the Starlark package main function
+  // This should be a valid JSON string
+  optional string serialized_params = 2;
+
+  // The relative main file filepath, the default value is the "main.star" file in the root of a package
+  optional string relative_path_to_main_file = 3;
+
+  // The name of the main function, the default value is "run"
+  optional string main_function_name = 4;
 }

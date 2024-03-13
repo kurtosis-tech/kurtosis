@@ -1809,3 +1809,109 @@ export declare class GetStarlarkRunResponse extends Message<GetStarlarkRunRespon
   static equals(a: GetStarlarkRunResponse | PlainMessage<GetStarlarkRunResponse> | undefined, b: GetStarlarkRunResponse | PlainMessage<GetStarlarkRunResponse> | undefined): boolean;
 }
 
+/**
+ * @generated from message api_container_api.PlanYaml
+ */
+export declare class PlanYaml extends Message<PlanYaml> {
+  /**
+   * @generated from field: string plan_yaml = 1;
+   */
+  planYaml: string;
+
+  constructor(data?: PartialMessage<PlanYaml>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.PlanYaml";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PlanYaml;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PlanYaml;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PlanYaml;
+
+  static equals(a: PlanYaml | PlainMessage<PlanYaml> | undefined, b: PlanYaml | PlainMessage<PlanYaml> | undefined): boolean;
+}
+
+/**
+ * @generated from message api_container_api.StarlarkScriptPlanYamlArgs
+ */
+export declare class StarlarkScriptPlanYamlArgs extends Message<StarlarkScriptPlanYamlArgs> {
+  /**
+   * @generated from field: string serialized_script = 1;
+   */
+  serializedScript: string;
+
+  /**
+   * @generated from field: optional string serialized_params = 2;
+   */
+  serializedParams?: string;
+
+  /**
+   * The name of the main function, the default value is "run"
+   *
+   * @generated from field: optional string main_function_name = 5;
+   */
+  mainFunctionName?: string;
+
+  constructor(data?: PartialMessage<StarlarkScriptPlanYamlArgs>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.StarlarkScriptPlanYamlArgs";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StarlarkScriptPlanYamlArgs;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StarlarkScriptPlanYamlArgs;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StarlarkScriptPlanYamlArgs;
+
+  static equals(a: StarlarkScriptPlanYamlArgs | PlainMessage<StarlarkScriptPlanYamlArgs> | undefined, b: StarlarkScriptPlanYamlArgs | PlainMessage<StarlarkScriptPlanYamlArgs> | undefined): boolean;
+}
+
+/**
+ * @generated from message api_container_api.StarlarkPackagePlanYamlArgs
+ */
+export declare class StarlarkPackagePlanYamlArgs extends Message<StarlarkPackagePlanYamlArgs> {
+  /**
+   * @generated from field: string package_id = 1;
+   */
+  packageId: string;
+
+  /**
+   * Serialized parameters data for the Starlark package main function
+   * This should be a valid JSON string
+   *
+   * @generated from field: optional string serialized_params = 2;
+   */
+  serializedParams?: string;
+
+  /**
+   * The relative main file filepath, the default value is the "main.star" file in the root of a package
+   *
+   * @generated from field: optional string relative_path_to_main_file = 3;
+   */
+  relativePathToMainFile?: string;
+
+  /**
+   * The name of the main function, the default value is "run"
+   *
+   * @generated from field: optional string main_function_name = 4;
+   */
+  mainFunctionName?: string;
+
+  constructor(data?: PartialMessage<StarlarkPackagePlanYamlArgs>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.StarlarkPackagePlanYamlArgs";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StarlarkPackagePlanYamlArgs;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StarlarkPackagePlanYamlArgs;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StarlarkPackagePlanYamlArgs;
+
+  static equals(a: StarlarkPackagePlanYamlArgs | PlainMessage<StarlarkPackagePlanYamlArgs> | undefined, b: StarlarkPackagePlanYamlArgs | PlainMessage<StarlarkPackagePlanYamlArgs> | undefined): boolean;
+}
+
