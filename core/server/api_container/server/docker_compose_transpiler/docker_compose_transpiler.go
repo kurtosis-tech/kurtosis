@@ -64,7 +64,7 @@ const (
 	httpProtocol = "http"
 )
 
-var possibleHttpPorts = []uint32{8080, 8000, 80, 443, 591}
+var possibleHttpPorts = []uint32{8080, 8000, 80, 443}
 
 type ComposeService types.ServiceConfig
 
