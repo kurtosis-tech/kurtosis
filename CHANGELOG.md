@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.88.6](https://github.com/kurtosis-tech/kurtosis/compare/0.88.5...0.88.6) (2024-03-13)
+
+
+### Features
+
+* define `build_args` in `ImageBuildSpec` ([#2257](https://github.com/kurtosis-tech/kurtosis/issues/2257)) ([9812375](https://github.com/kurtosis-tech/kurtosis/commit/9812375f1258a2b15394b98a116741e3bfd366bd))
+* generate plan yamls  ([#2177](https://github.com/kurtosis-tech/kurtosis/issues/2177)) ([2292010](https://github.com/kurtosis-tech/kurtosis/commit/2292010f6a62cfd9aa1b9f0e6616ac02a315e941))
+* port guessing based on port number for docker transpiler ([#2281](https://github.com/kurtosis-tech/kurtosis/issues/2281)) ([5c98ce2](https://github.com/kurtosis-tech/kurtosis/commit/5c98ce26778d07ea5194bb186b032955599e48f8))
+* support package nodes in enclave builder ui ([#2283](https://github.com/kurtosis-tech/kurtosis/issues/2283)) ([7fa27ed](https://github.com/kurtosis-tech/kurtosis/commit/7fa27ed1b1ea56deff945a58f63ada5c5c1fe4e6))
+
 ## [0.88.5](https://github.com/kurtosis-tech/kurtosis/compare/0.88.4...0.88.5) (2024-03-12)
 
 
