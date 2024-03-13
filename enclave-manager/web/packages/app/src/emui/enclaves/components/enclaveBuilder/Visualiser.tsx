@@ -46,7 +46,7 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
     const { data } = useVariableContext();
     const insertOffset = useRef(0);
     const { fitView } = useReactFlow();
-    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes || []);
+    const [nodes, , onNodesChange] = useNodesState(initialNodes || []);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
 
     const handleNodeDoubleClick = useCallback(
