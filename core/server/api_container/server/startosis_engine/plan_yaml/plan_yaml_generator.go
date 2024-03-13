@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	store_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/stacktrace"
@@ -124,47 +125,7 @@ func (planYaml *PlanYaml) AddService(
 		serviceYaml.EnvVars = append(serviceYaml.EnvVars, envVar)
 	}
 
-	// file mounts have two cases:
-	// 1. the referenced files artifact already exists in the plan, in which case add the referenced files artifact
-	// 2. the referenced files artifact does not already exist in the plan, in which case the file MUST have been passed in via a top level arg OR is invalid
-	// 	  for this case,
-	// 	  - create new files artifact
-	//	  - add it to the service's file mount accordingly
-	//	  - add the files artifact to the plan
-	serviceYaml.Files = []*FileMount{}
-	if serviceConfig.GetFilesArtifactsExpansion() != nil {
-		for mountPath, artifactIdentifiers := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-			var serviceFilesArtifacts []*FilesArtifact
-			for _, identifier := range artifactIdentifiers {
-				var filesArtifact *FilesArtifact
-				// if there's already a files artifact that exists with this name from a previous instruction, reference that
-				if filesArtifactToReference, ok := planYaml.filesArtifactIndex[identifier]; ok {
-					filesArtifact = &FilesArtifact{
-						Name:  filesArtifactToReference.Name,
-						Uuid:  filesArtifactToReference.Uuid,
-						Files: []string{}, // leave empty because this is referencing an existing files artifact
-					}
-				} else {
-					// otherwise create a new one
-					// the only information we have about a files artifact that didn't already exist is the name
-					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args of run function
-					filesArtifact = &FilesArtifact{
-						Name:  identifier,
-						Uuid:  planYaml.generateUuid(),
-						Files: []string{}, // don't know at interpretation what files are on the artifact when passed in via args
-					}
-					planYaml.addFilesArtifactYaml(filesArtifact)
-				}
-				serviceFilesArtifacts = append(serviceFilesArtifacts, filesArtifact)
-			}
-
-			serviceYaml.Files = append(serviceYaml.Files, &FileMount{
-				MountPath:      mountPath,
-				FilesArtifacts: serviceFilesArtifacts,
-			})
-		}
-
-	}
+	serviceYaml.Files = planYaml.getFileMountsFromFilesArtifacts(serviceConfig.GetFilesArtifactsExpansion())
 
 	planYaml.addServiceYaml(serviceYaml)
 	return nil
@@ -215,41 +176,7 @@ func (planYaml *PlanYaml) AddRunSh(
 	}
 	taskYaml.EnvVars = envVars
 
-	// for files:
-	//	1. either the referenced files artifact already exists in the plan, in which case, look for it and reference it via instruction uuid
-	// 	2. the referenced files artifact is new, in which case we add it to the plan
-	if serviceConfig.GetFilesArtifactsExpansion() != nil {
-		for mountPath, fileArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-			var filesArtifacts []*FilesArtifact
-			for _, filesArtifactName := range fileArtifactNames {
-				var filesArtifact *FilesArtifact
-				// if there's already a files artifact that exists with this name from a previous instruction, reference that
-				if filesArtifactToReference, ok := planYaml.filesArtifactIndex[filesArtifactName]; ok {
-					filesArtifact = &FilesArtifact{
-						Name:  filesArtifactToReference.Name,
-						Uuid:  filesArtifactToReference.Uuid,
-						Files: []string{},
-					}
-				} else {
-					// otherwise create a new one
-					// the only information we have about a files artifact that didn't already exist is the name
-					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
-					filesArtifact = &FilesArtifact{
-						Name:  filesArtifactName,
-						Uuid:  planYaml.generateUuid(),
-						Files: []string{},
-					}
-					planYaml.addFilesArtifactYaml(filesArtifact)
-				}
-				filesArtifacts = append(filesArtifacts, filesArtifact)
-			}
-
-			taskYaml.Files = append(taskYaml.Files, &FileMount{
-				MountPath:      mountPath,
-				FilesArtifacts: filesArtifacts,
-			})
-		}
-	}
+	taskYaml.Files = planYaml.getFileMountsFromFilesArtifacts(serviceConfig.GetFilesArtifactsExpansion())
 
 	// for store
 	// - all files artifacts product from store are new files artifact that are added to the plan
@@ -326,41 +253,7 @@ func (planYaml *PlanYaml) AddRunPython(
 	taskYaml.PythonArgs = append(taskYaml.PythonArgs, pythonArgs...)
 	taskYaml.PythonPackages = append(taskYaml.PythonPackages, pythonPackages...)
 
-	// for files:
-	//	1. either the referenced files artifact already exists in the plan, in which case, look for it and reference it via instruction uuid
-	// 	2. the referenced files artifact is new, in which case we add it to the plan
-	if serviceConfig.GetFilesArtifactsExpansion() != nil {
-		for mountPath, fileArtifactNames := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-			var filesArtifacts []*FilesArtifact
-			for _, filesArtifactName := range fileArtifactNames {
-				var filesArtifact *FilesArtifact
-				// if there's already a files artifact that exists with this name from a previous instruction, reference that
-				if filesArtifactToReference, ok := planYaml.filesArtifactIndex[filesArtifactName]; ok {
-					filesArtifact = &FilesArtifact{
-						Name:  filesArtifactToReference.Name,
-						Uuid:  filesArtifactToReference.Uuid,
-						Files: []string{},
-					}
-				} else {
-					// otherwise create a new one
-					// the only information we have about a files artifact that didn't already exist is the name
-					// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args
-					filesArtifact = &FilesArtifact{
-						Name:  filesArtifactName,
-						Uuid:  planYaml.generateUuid(),
-						Files: []string{},
-					}
-					planYaml.addFilesArtifactYaml(filesArtifact)
-				}
-				filesArtifacts = append(filesArtifacts, filesArtifact)
-			}
-
-			taskYaml.Files = append(taskYaml.Files, &FileMount{
-				MountPath:      mountPath,
-				FilesArtifacts: filesArtifacts,
-			})
-		}
-	}
+	taskYaml.Files = planYaml.getFileMountsFromFilesArtifacts(serviceConfig.GetFilesArtifactsExpansion())
 
 	// for store
 	// - all files artifacts product from store are new files artifact that are added to the plan
@@ -474,6 +367,51 @@ func (planYaml *PlanYaml) RemoveService(serviceName string) {
 			return
 		}
 	}
+}
+
+// getFileMountsFromFilesArtifacts turns filesArtifactExpansions into FileMount's
+// file mounts have two cases:
+//  1. the referenced files artifact already exists in the planYaml, in which case add the referenced files artifact to the proper filepath as a file mount
+//  2. the referenced files artifact does not already exist in the plan, in which case the file MUST have been passed in via a top level arg
+//     for this case,
+//     - create new files artifact
+//     - add the files artifact to the plan
+//     - add it to as a file mount accordingly
+func (planYaml *PlanYaml) getFileMountsFromFilesArtifacts(filesArtifactExpansion *service_directory.FilesArtifactsExpansion) []*FileMount {
+	var fileMounts []*FileMount
+	if filesArtifactExpansion == nil {
+		return fileMounts
+	}
+	for mountPath, artifactIdentifiers := range filesArtifactExpansion.ServiceDirpathsToArtifactIdentifiers {
+		var filesArtifacts []*FilesArtifact
+		for _, identifier := range artifactIdentifiers {
+			var filesArtifact *FilesArtifact
+			// if there's already a files artifact that exists with this name from a previous instruction, reference that
+			if filesArtifactToReference, ok := planYaml.filesArtifactIndex[identifier]; ok {
+				filesArtifact = &FilesArtifact{
+					Name:  filesArtifactToReference.Name,
+					Uuid:  filesArtifactToReference.Uuid,
+					Files: []string{}, // leave empty because this is referencing an existing files artifact
+				}
+			} else {
+				// otherwise create a new one
+				// the only information we have about a files artifact that didn't already exist is the name
+				// if it didn't already exist AND interpretation was successful, it MUST HAVE been passed in via args of run function
+				filesArtifact = &FilesArtifact{
+					Name:  identifier,
+					Uuid:  planYaml.generateUuid(),
+					Files: []string{}, // don't know at interpretation what files are on the artifact when passed in via args
+				}
+				planYaml.addFilesArtifactYaml(filesArtifact)
+			}
+			filesArtifacts = append(filesArtifacts, filesArtifact)
+		}
+		fileMounts = append(fileMounts, &FileMount{
+			MountPath:      mountPath,
+			FilesArtifacts: filesArtifacts,
+		})
+	}
+	return fileMounts
 }
 
 func (planYaml *PlanYaml) addServiceYaml(service *Service) {
