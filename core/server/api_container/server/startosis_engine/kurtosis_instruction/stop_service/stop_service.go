@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -104,6 +105,11 @@ func (builtin *StopServiceCapabilities) FillPersistableAttributes(builder *encla
 	).AddServiceName(
 		builtin.serviceName,
 	)
+}
+
+func (builtin *StopServiceCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	// stop service does not affect the plan
+	return nil
 }
 
 func (builtin *StopServiceCapabilities) Description() string {

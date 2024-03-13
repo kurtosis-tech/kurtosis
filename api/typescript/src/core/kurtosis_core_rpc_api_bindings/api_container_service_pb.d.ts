@@ -1435,6 +1435,115 @@ export namespace GetStarlarkRunResponse {
   }
 }
 
+export class PlanYaml extends jspb.Message {
+  getPlanYaml(): string;
+  setPlanYaml(value: string): PlanYaml;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PlanYaml.AsObject;
+  static toObject(includeInstance: boolean, msg: PlanYaml): PlanYaml.AsObject;
+  static serializeBinaryToWriter(message: PlanYaml, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PlanYaml;
+  static deserializeBinaryFromReader(message: PlanYaml, reader: jspb.BinaryReader): PlanYaml;
+}
+
+export namespace PlanYaml {
+  export type AsObject = {
+    planYaml: string,
+  }
+}
+
+export class StarlarkScriptPlanYamlArgs extends jspb.Message {
+  getSerializedScript(): string;
+  setSerializedScript(value: string): StarlarkScriptPlanYamlArgs;
+
+  getSerializedParams(): string;
+  setSerializedParams(value: string): StarlarkScriptPlanYamlArgs;
+  hasSerializedParams(): boolean;
+  clearSerializedParams(): StarlarkScriptPlanYamlArgs;
+
+  getMainFunctionName(): string;
+  setMainFunctionName(value: string): StarlarkScriptPlanYamlArgs;
+  hasMainFunctionName(): boolean;
+  clearMainFunctionName(): StarlarkScriptPlanYamlArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StarlarkScriptPlanYamlArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkScriptPlanYamlArgs): StarlarkScriptPlanYamlArgs.AsObject;
+  static serializeBinaryToWriter(message: StarlarkScriptPlanYamlArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkScriptPlanYamlArgs;
+  static deserializeBinaryFromReader(message: StarlarkScriptPlanYamlArgs, reader: jspb.BinaryReader): StarlarkScriptPlanYamlArgs;
+}
+
+export namespace StarlarkScriptPlanYamlArgs {
+  export type AsObject = {
+    serializedScript: string,
+    serializedParams?: string,
+    mainFunctionName?: string,
+  }
+
+  export enum SerializedParamsCase { 
+    _SERIALIZED_PARAMS_NOT_SET = 0,
+    SERIALIZED_PARAMS = 2,
+  }
+
+  export enum MainFunctionNameCase { 
+    _MAIN_FUNCTION_NAME_NOT_SET = 0,
+    MAIN_FUNCTION_NAME = 5,
+  }
+}
+
+export class StarlarkPackagePlanYamlArgs extends jspb.Message {
+  getPackageId(): string;
+  setPackageId(value: string): StarlarkPackagePlanYamlArgs;
+
+  getSerializedParams(): string;
+  setSerializedParams(value: string): StarlarkPackagePlanYamlArgs;
+  hasSerializedParams(): boolean;
+  clearSerializedParams(): StarlarkPackagePlanYamlArgs;
+
+  getRelativePathToMainFile(): string;
+  setRelativePathToMainFile(value: string): StarlarkPackagePlanYamlArgs;
+  hasRelativePathToMainFile(): boolean;
+  clearRelativePathToMainFile(): StarlarkPackagePlanYamlArgs;
+
+  getMainFunctionName(): string;
+  setMainFunctionName(value: string): StarlarkPackagePlanYamlArgs;
+  hasMainFunctionName(): boolean;
+  clearMainFunctionName(): StarlarkPackagePlanYamlArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StarlarkPackagePlanYamlArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkPackagePlanYamlArgs): StarlarkPackagePlanYamlArgs.AsObject;
+  static serializeBinaryToWriter(message: StarlarkPackagePlanYamlArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkPackagePlanYamlArgs;
+  static deserializeBinaryFromReader(message: StarlarkPackagePlanYamlArgs, reader: jspb.BinaryReader): StarlarkPackagePlanYamlArgs;
+}
+
+export namespace StarlarkPackagePlanYamlArgs {
+  export type AsObject = {
+    packageId: string,
+    serializedParams?: string,
+    relativePathToMainFile?: string,
+    mainFunctionName?: string,
+  }
+
+  export enum SerializedParamsCase { 
+    _SERIALIZED_PARAMS_NOT_SET = 0,
+    SERIALIZED_PARAMS = 2,
+  }
+
+  export enum RelativePathToMainFileCase { 
+    _RELATIVE_PATH_TO_MAIN_FILE_NOT_SET = 0,
+    RELATIVE_PATH_TO_MAIN_FILE = 3,
+  }
+
+  export enum MainFunctionNameCase { 
+    _MAIN_FUNCTION_NAME_NOT_SET = 0,
+    MAIN_FUNCTION_NAME = 4,
+  }
+}
+
 export enum ServiceStatus { 
   STOPPED = 0,
   RUNNING = 1,

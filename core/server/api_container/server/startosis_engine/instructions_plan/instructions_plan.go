@@ -3,6 +3,7 @@ package instructions_plan
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -73,6 +74,21 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 		generatedPlan = append(generatedPlan, instruction)
 	}
 	return generatedPlan, nil
+}
+
+// GenerateYaml takes in an existing planYaml (usually empty) and returns a yaml string containing the effects of the plan
+func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYaml) (string, error) {
+	for _, instructionUuid := range plan.instructionsSequence {
+		instruction, found := plan.scheduledInstructionsIndex[instructionUuid]
+		if !found {
+			return "", startosis_errors.NewInterpretationError("Unexpected error generating the Kurtosis Instructions plan. Instruction with UUID '%s' was scheduled but could not be found in Kurtosis instruction index", instructionUuid)
+		}
+		err := instruction.kurtosisInstruction.UpdatePlan(planYaml)
+		if err != nil {
+			return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred updating the plan with instruction: %v.", instructionUuid)
+		}
+	}
+	return planYaml.GenerateYaml()
 }
 
 func (plan *InstructionsPlan) Size() int {

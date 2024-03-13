@@ -16,12 +16,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"strings"
 )
 
@@ -108,7 +110,8 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 				resultUuid:        "",  // populated at interpretation time
 				storeSpecList:     nil,
 				wait:              DefaultWaitTimeoutDurationStr,
-				description:       "", // populated at interpretation time
+				description:       "",  // populated at interpretation time
+				returnValue:       nil, // populated at interpretation time
 			}
 		},
 
@@ -136,6 +139,7 @@ type RunPythonCapabilities struct {
 	pythonArguments []string
 	packages        []string
 
+	returnValue   *starlarkstruct.Struct
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
 	wait          string
@@ -244,8 +248,8 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, runPythonDefaultDescription)
 
-	result := createInterpretationResult(resultUuid, builtin.storeSpecList)
-	return result, nil
+	builtin.returnValue = createInterpretationResult(resultUuid, builtin.storeSpecList)
+	return builtin.returnValue, nil
 }
 
 func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
@@ -331,6 +335,14 @@ func (builtin *RunPythonCapabilities) TryResolveWith(instructionsAreEqual bool, 
 
 func (builtin *RunPythonCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	builder.SetType(RunPythonBuiltinName)
+}
+
+func (builtin *RunPythonCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	err := plan.AddRunPython(builtin.run, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList, builtin.pythonArguments, builtin.packages)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating plan with run python")
+	}
+	return nil
 }
 
 func (builtin *RunPythonCapabilities) Description() string {
