@@ -7,10 +7,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -77,12 +80,14 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 				serviceNetwork:    serviceNetwork,
 				runtimeValueStore: runtimeValueStore,
 
-				serviceName:     "",    // will be populated at interpretation time
-				execRecipe:      nil,   // will be populated at interpretation time
-				resultUuid:      "",    // will be populated at interpretation time
-				acceptableCodes: nil,   // will be populated at interpretation time
-				skipCodeCheck:   false, // will be populated at interpretation time
-				description:     "",    // populated at interpretation time
+				serviceName:     "",         // will be populated at interpretation time
+				execRecipe:      nil,        // will be populated at interpretation time
+				resultUuid:      "",         // will be populated at interpretation time
+				acceptableCodes: nil,        // will be populated at interpretation time
+				skipCodeCheck:   false,      // will be populated at interpretation time
+				description:     "",         // populated at interpretation time
+				cmdList:         []string{}, // populated at interpretation time
+				returnValue:     nil,        // populated at interpretation time
 			}
 		},
 
@@ -99,10 +104,13 @@ type ExecCapabilities struct {
 
 	serviceName     service.ServiceName
 	execRecipe      *recipe.ExecRecipe
+	cmdList         []string
 	resultUuid      string
 	acceptableCodes []int64
 	skipCodeCheck   bool
 	description     string
+
+	returnValue *starlark.Dict
 }
 
 func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -116,6 +124,17 @@ func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument
 	execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, RecipeArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RecipeArgName)
+	}
+	starlarkCmdList, ok, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](execRecipe.KurtosisValueTypeDefault, recipe.CommandAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError("Unable to extract attribute %v off of exec recipe.", recipe.CommandAttr)
+	}
+	cmdList, interpretationErr := kurtosis_types.SafeCastToStringSlice(starlarkCmdList, tasks.PythonArgumentsArgName)
+	if interpretationErr != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred converting Starlark list of passed arguments to Go string slice")
 	}
 
 	acceptableCodes := defaultAcceptableCodes
@@ -146,17 +165,18 @@ func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument
 
 	builtin.serviceName = serviceName
 	builtin.execRecipe = execRecipe
+	builtin.cmdList = cmdList
 	builtin.resultUuid = resultUuid
 	builtin.acceptableCodes = acceptableCodes
 	builtin.skipCodeCheck = skipCodeCheck
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
 
-	returnValue, interpretationErr := builtin.execRecipe.CreateStarlarkReturnValue(builtin.resultUuid)
+	builtin.returnValue, interpretationErr = builtin.execRecipe.CreateStarlarkReturnValue(builtin.resultUuid)
 	if interpretationErr != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while generating return value for %v instruction", ExecBuiltinName)
 	}
-	return returnValue, nil
+	return builtin.returnValue, nil
 }
 
 func (builtin *ExecCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, _ *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
@@ -192,6 +212,14 @@ func (builtin *ExecCapabilities) TryResolveWith(instructionsAreEqual bool, _ *en
 
 func (builtin *ExecCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	builder.SetType(ExecBuiltinName)
+}
+
+func (builtin *ExecCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+	err := planYaml.AddExec(string(builtin.serviceName), builtin.returnValue, builtin.cmdList, builtin.acceptableCodes)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating plan with exec.")
+	}
+	return nil
 }
 
 func (builtin *ExecCapabilities) Description() string {

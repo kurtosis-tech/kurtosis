@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -367,6 +368,12 @@ func (builtin *AddServicesCapabilities) allServicesReadinessCheck(
 	logrus.Debug("All services are ready")
 
 	return failedServiceChecksRegularMap
+}
+
+func (builtin *AddServicesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	// TOOD: Implement
+	logrus.Warn("ADD SERVICES NOT IMPLEMENTED YET FOR UPDATING PLAN YAML.")
+	return nil
 }
 
 func (builtin *AddServicesCapabilities) Description() string {

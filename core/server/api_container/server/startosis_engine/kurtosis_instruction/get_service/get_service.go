@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
@@ -100,6 +101,11 @@ func (builtin *GetServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 
 func (builtin *GetServiceCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	builder.SetType(GetServiceBuiltinName).AddServiceName(builtin.serviceName)
+}
+
+func (builtin *GetServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+	// get service does not affect the plan
+	return nil
 }
 
 func (builtin *GetServiceCapabilities) Description() string {

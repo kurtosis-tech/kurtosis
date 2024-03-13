@@ -12,7 +12,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
@@ -82,9 +85,10 @@ func NewAddService(
 				readyCondition: nil, // populated at interpretation time
 
 				interpretationTimeValueStore: interpretationTimeValueStore,
-				description:                  "", // populated at interpretation time
-
-				imageDownloadMode: imageDownloadMode,
+				description:                  "",  // populated at interpretation time
+				returnValue:                  nil, // populated at interpretation time
+				imageVal:                     nil, // populated at interpretation time
+				imageDownloadMode:            imageDownloadMode,
 			}
 		},
 
@@ -107,10 +111,12 @@ type AddServiceCapabilities struct {
 	packageId              string
 	packageContentProvider startosis_packages.PackageContentProvider
 	packageReplaceOptions  map[string]string
+	imageVal               starlark.Value
 
 	interpretationTimeValueStore *interpretation_time_value_store.InterpretationTimeValueStore
 
 	resultUuid  string
+	returnValue *kurtosis_types.Service
 	description string
 
 	imageDownloadMode image_download_mode.ImageDownloadMode
@@ -126,6 +132,14 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
+	rawImageVal, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](serviceConfig.KurtosisValueTypeDefault, service_config.ImageAttr)
+	if interpretationErr != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract raw image attribute.")
+	}
+	if !found {
+		return nil, startosis_errors.NewInterpretationError("Unable to extract image attribute off of service config.")
+	}
+	builtin.imageVal = rawImageVal
 	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(
 		builtin.serviceNetwork,
 		serviceConfig,
@@ -149,16 +163,16 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(addServiceDescriptionFormatStr, builtin.serviceName, builtin.serviceConfig.GetContainerImageName()))
 
-	returnValue, interpretationErr := makeAddServiceInterpretationReturnValue(serviceName, builtin.serviceConfig, builtin.resultUuid)
+	builtin.returnValue, interpretationErr = makeAddServiceInterpretationReturnValue(serviceName, builtin.serviceConfig, builtin.resultUuid)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	err = builtin.interpretationTimeValueStore.PutService(builtin.serviceName, returnValue)
+	err = builtin.interpretationTimeValueStore.PutService(builtin.serviceName, builtin.returnValue)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting return value for service '%v'", serviceName)
 	}
-	return returnValue, nil
+	return builtin.returnValue, nil
 }
 
 func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
@@ -253,6 +267,41 @@ func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclav
 	).AddServiceName(
 		builtin.serviceName,
 	)
+}
+
+func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+	var buildContextLocator string
+	var targetStage string
+	var registryAddress string
+	var interpretationErr *startosis_errors.InterpretationError
+
+	// set image values based on type of image
+	if builtin.imageVal != nil {
+		switch starlarkImgVal := builtin.imageVal.(type) {
+		case *service_config.ImageBuildSpec:
+			buildContextLocator, interpretationErr = starlarkImgVal.GetBuildContextLocator()
+			if interpretationErr != nil {
+				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting build context locator")
+			}
+			targetStage, interpretationErr = starlarkImgVal.GetTargetStage()
+			if interpretationErr != nil {
+				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting target stage.")
+			}
+		case *service_config.ImageSpec:
+			registryAddress, interpretationErr = starlarkImgVal.GetRegistryAddrIfSet()
+			if interpretationErr != nil {
+				return startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred getting registry address.")
+			}
+		default:
+			// assume NixBuildSpec or regular image
+		}
+	}
+
+	err := planYaml.AddService(builtin.serviceName, builtin.returnValue, builtin.serviceConfig, buildContextLocator, targetStage, registryAddress)
+	if err != nil {
+		return stacktrace.NewError("An error occurred updating the plan with service: %v", builtin.serviceName)
+	}
+	return nil
 }
 
 func (builtin *AddServiceCapabilities) Description() string {

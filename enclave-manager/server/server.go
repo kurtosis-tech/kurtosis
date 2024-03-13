@@ -426,6 +426,77 @@ func (c *WebServer) GetStarlarkRun(
 	return resp, nil
 }
 
+func (c *WebServer) GetStarlarkScriptPlanYaml(
+	ctx context.Context,
+	req *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs],
+) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error) {
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
+	}
+
+	request := &connect.Request[kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs]{
+		Msg: &kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs{
+			SerializedScript: req.Msg.StarlarkScriptPlanYamlArgs.SerializedScript,
+			SerializedParams: req.Msg.StarlarkScriptPlanYamlArgs.SerializedParams,
+			MainFunctionName: req.Msg.StarlarkScriptPlanYamlArgs.MainFunctionName,
+		},
+	}
+	result, err := (*apiContainerServiceClient).GetStarlarkScriptPlanYaml(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	resp := &connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml]{
+		Msg: &kurtosis_core_rpc_api_bindings.PlanYaml{
+			PlanYaml: result.Msg.PlanYaml,
+		},
+	}
+	return resp, nil
+}
+
+func (c *WebServer) GetStarlarkPackagePlanYaml(
+	ctx context.Context,
+	req *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs],
+) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error) {
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
+	}
+
+	request := &connect.Request[kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs]{
+		Msg: &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
+			PackageId:              req.Msg.StarlarkPackagePlanYamlArgs.PackageId,
+			SerializedParams:       req.Msg.StarlarkPackagePlanYamlArgs.SerializedParams,
+			RelativePathToMainFile: req.Msg.StarlarkPackagePlanYamlArgs.RelativePathToMainFile,
+			MainFunctionName:       req.Msg.StarlarkPackagePlanYamlArgs.MainFunctionName,
+		},
+	}
+	result, err := (*apiContainerServiceClient).GetStarlarkPackagePlanYaml(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	resp := &connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml]{
+		Msg: &kurtosis_core_rpc_api_bindings.PlanYaml{
+			PlanYaml: result.Msg.PlanYaml,
+		},
+	}
+	return resp, nil
+}
+
 func (c *WebServer) createAPICClient(
 	ip string,
 	port int32,

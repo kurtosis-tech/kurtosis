@@ -636,3 +636,38 @@ export const GetStarlarkRunResponse = proto3.makeMessageType(
   ],
 );
 
+/**
+ * @generated from message api_container_api.PlanYaml
+ */
+export const PlanYaml = proto3.makeMessageType(
+  "api_container_api.PlanYaml",
+  () => [
+    { no: 1, name: "plan_yaml", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ],
+);
+
+/**
+ * @generated from message api_container_api.StarlarkScriptPlanYamlArgs
+ */
+export const StarlarkScriptPlanYamlArgs = proto3.makeMessageType(
+  "api_container_api.StarlarkScriptPlanYamlArgs",
+  () => [
+    { no: 1, name: "serialized_script", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ],
+);
+
+/**
+ * @generated from message api_container_api.StarlarkPackagePlanYamlArgs
+ */
+export const StarlarkPackagePlanYamlArgs = proto3.makeMessageType(
+  "api_container_api.StarlarkPackagePlanYamlArgs",
+  () => [
+    { no: 1, name: "package_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 3, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 4, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ],
+);
+
