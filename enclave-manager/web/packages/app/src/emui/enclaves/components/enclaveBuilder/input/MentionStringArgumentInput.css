@@ -3,7 +3,7 @@
   height: var(--input-height);
   font-size: var(--input-font-size);
   border: 1px solid;
-  border-color: inherit;
+  border-color: var(--chakra-colors-chakra-border-color);
   border-radius: var(--input-border-radius);
   outline: 2px solid transparent;
   outline-offset: 2px;
@@ -14,8 +14,9 @@
   --input-border-radius: var(--chakra-radii-sm);
   --input-height: var(--chakra-sizes-8);
   padding-top: 4px;
+  background-color: var(--chakra-colors-gray-850);
 
-  &[aria-invalid="true"] {
+  &:has(input[aria-invalid="true"]) {
     border-color: var(--chakra-colors-red-300);
     box-shadow: 0 0 0 1px var(--chakra-colors-red-300);
   }
@@ -39,6 +40,10 @@
 
   &:focus-visible {
     outline: none;
+  }
+
+  &[disabled=""] {
+    color: var(--chakra-colors-gray-200);
   }
 }
 
