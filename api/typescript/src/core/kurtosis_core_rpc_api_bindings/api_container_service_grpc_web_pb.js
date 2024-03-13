@@ -915,5 +915,127 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.getStarlarkRu
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.StarlarkScriptPlanYamlArgs,
+ *   !proto.api_container_api.PlanYaml>}
+ */
+const methodDescriptor_ApiContainerService_GetStarlarkScriptPlanYaml = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/GetStarlarkScriptPlanYaml',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.StarlarkScriptPlanYamlArgs,
+  proto.api_container_api.PlanYaml,
+  /**
+   * @param {!proto.api_container_api.StarlarkScriptPlanYamlArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.PlanYaml.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.StarlarkScriptPlanYamlArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.PlanYaml)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.PlanYaml>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.getStarlarkScriptPlanYaml =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/GetStarlarkScriptPlanYaml',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_GetStarlarkScriptPlanYaml,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.StarlarkScriptPlanYamlArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.PlanYaml>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.getStarlarkScriptPlanYaml =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/GetStarlarkScriptPlanYaml',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_GetStarlarkScriptPlanYaml);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.StarlarkPackagePlanYamlArgs,
+ *   !proto.api_container_api.PlanYaml>}
+ */
+const methodDescriptor_ApiContainerService_GetStarlarkPackagePlanYaml = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/GetStarlarkPackagePlanYaml',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.StarlarkPackagePlanYamlArgs,
+  proto.api_container_api.PlanYaml,
+  /**
+   * @param {!proto.api_container_api.StarlarkPackagePlanYamlArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.PlanYaml.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.StarlarkPackagePlanYamlArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.PlanYaml)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.PlanYaml>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.getStarlarkPackagePlanYaml =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/GetStarlarkPackagePlanYaml',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_GetStarlarkPackagePlanYaml,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.StarlarkPackagePlanYamlArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.PlanYaml>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.getStarlarkPackagePlanYaml =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/GetStarlarkPackagePlanYaml',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_GetStarlarkPackagePlanYaml);
+};
+
+
 module.exports = proto.api_container_api;
 

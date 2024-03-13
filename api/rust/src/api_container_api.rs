@@ -679,6 +679,41 @@ pub struct GetStarlarkRunResponse {
     #[prost(enumeration = "RestartPolicy", tag = "8")]
     pub restart_policy: i32,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PlanYaml {
+    #[prost(string, tag = "1")]
+    pub plan_yaml: ::prost::alloc::string::String,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StarlarkScriptPlanYamlArgs {
+    #[prost(string, tag = "1")]
+    pub serialized_script: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
+    /// The name of the main function, the default value is "run"
+    #[prost(string, optional, tag = "5")]
+    pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StarlarkPackagePlanYamlArgs {
+    #[prost(string, tag = "1")]
+    pub package_id: ::prost::alloc::string::String,
+    /// Serialized parameters data for the Starlark package main function
+    /// This should be a valid JSON string
+    #[prost(string, optional, tag = "2")]
+    pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
+    /// The relative main file filepath, the default value is the "main.star" file in the root of a package
+    #[prost(string, optional, tag = "3")]
+    pub relative_path_to_main_file: ::core::option::Option<
+        ::prost::alloc::string::String,
+    >,
+    /// The name of the main function, the default value is "run"
+    #[prost(string, optional, tag = "4")]
+    pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ServiceStatus {
@@ -1389,6 +1424,62 @@ pub mod api_container_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        /// Gets yaml representing the plan the script will execute in an enclave
+        pub async fn get_starlark_script_plan_yaml(
+            &mut self,
+            request: impl tonic::IntoRequest<super::StarlarkScriptPlanYamlArgs>,
+        ) -> std::result::Result<tonic::Response<super::PlanYaml>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/api_container_api.ApiContainerService/GetStarlarkScriptPlanYaml",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "api_container_api.ApiContainerService",
+                        "GetStarlarkScriptPlanYaml",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
+        /// Gets yaml representing the plan the package will execute in an enclave
+        pub async fn get_starlark_package_plan_yaml(
+            &mut self,
+            request: impl tonic::IntoRequest<super::StarlarkPackagePlanYamlArgs>,
+        ) -> std::result::Result<tonic::Response<super::PlanYaml>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/api_container_api.ApiContainerService/GetStarlarkPackagePlanYaml",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "api_container_api.ApiContainerService",
+                        "GetStarlarkPackagePlanYaml",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -1533,6 +1624,16 @@ pub mod api_container_service_server {
             tonic::Response<super::GetStarlarkRunResponse>,
             tonic::Status,
         >;
+        /// Gets yaml representing the plan the script will execute in an enclave
+        async fn get_starlark_script_plan_yaml(
+            &self,
+            request: tonic::Request<super::StarlarkScriptPlanYamlArgs>,
+        ) -> std::result::Result<tonic::Response<super::PlanYaml>, tonic::Status>;
+        /// Gets yaml representing the plan the package will execute in an enclave
+        async fn get_starlark_package_plan_yaml(
+            &self,
+            request: tonic::Request<super::StarlarkPackagePlanYamlArgs>,
+        ) -> std::result::Result<tonic::Response<super::PlanYaml>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct ApiContainerServiceServer<T: ApiContainerService> {
@@ -2364,6 +2465,102 @@ pub mod api_container_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = GetStarlarkRunSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/api_container_api.ApiContainerService/GetStarlarkScriptPlanYaml" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetStarlarkScriptPlanYamlSvc<T: ApiContainerService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: ApiContainerService,
+                    > tonic::server::UnaryService<super::StarlarkScriptPlanYamlArgs>
+                    for GetStarlarkScriptPlanYamlSvc<T> {
+                        type Response = super::PlanYaml;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::StarlarkScriptPlanYamlArgs>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).get_starlark_script_plan_yaml(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetStarlarkScriptPlanYamlSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/api_container_api.ApiContainerService/GetStarlarkPackagePlanYaml" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetStarlarkPackagePlanYamlSvc<T: ApiContainerService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: ApiContainerService,
+                    > tonic::server::UnaryService<super::StarlarkPackagePlanYamlArgs>
+                    for GetStarlarkPackagePlanYamlSvc<T> {
+                        type Response = super::PlanYaml;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::StarlarkPackagePlanYamlArgs>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).get_starlark_package_plan_yaml(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetStarlarkPackagePlanYamlSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

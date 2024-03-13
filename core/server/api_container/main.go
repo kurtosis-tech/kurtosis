@@ -216,8 +216,9 @@ func runMain() error {
 	}
 
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
+	startosisInterpreter := startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, starlarkValueSerde, serverArgs.EnclaveEnvVars, interpretationTimeValueStore)
 	startosisRunner := startosis_engine.NewStartosisRunner(
-		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, starlarkValueSerde, serverArgs.EnclaveEnvVars, interpretationTimeValueStore),
+		startosisInterpreter,
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
 		startosis_engine.NewStartosisExecutor(starlarkValueSerde, runtimeValueStore, enclavePlan, enclaveDb))
 
@@ -230,6 +231,7 @@ func runMain() error {
 		filesArtifactStore,
 		serviceNetwork,
 		startosisRunner,
+		startosisInterpreter,
 		gitPackageContentProvider,
 		restartPolicy,
 		metricsClient,

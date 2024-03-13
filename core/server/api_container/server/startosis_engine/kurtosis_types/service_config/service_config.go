@@ -265,6 +265,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'", ImageAttr, ServiceConfigTypeName)
 	}
+	// TODO: refactor image build spec into a common interface
 	imageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, interpretationErr = convertImage(
 		rawImageAttrValue,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
@@ -681,32 +682,30 @@ func convertImage(
 	packageId string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string) (string, *image_build_spec.ImageBuildSpec, *image_registry_spec.ImageRegistrySpec, *nix_build_spec.NixBuildSpec, *startosis_errors.InterpretationError) {
-	imageBuildSpecStarlarkType, isImageBuildSpecStarlarkType := image.(*ImageBuildSpec)
-	imageSpecStarlarkType, isImageRegistrySpecStarlarkType := image.(*ImageSpec)
-	nixBuildSpecStarlarkType, isNixBuildSpecStarlarkType := image.(*NixBuildSpec)
-	if isImageBuildSpecStarlarkType {
-		imageBuildSpec, interpretationErr := imageBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
+	switch image := image.(type) {
+	case *ImageBuildSpec:
+		imageBuildSpec, interpretationErr := image.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {
 			return "", nil, nil, nil, interpretationErr
 		}
-		imageName, interpretationErr := imageBuildSpecStarlarkType.GetImageName()
+		imageName, interpretationErr := image.GetImageName()
 		if interpretationErr != nil {
 			return "", nil, nil, nil, interpretationErr
 		}
 		return imageName, imageBuildSpec, nil, nil, nil
-	} else if isImageRegistrySpecStarlarkType {
-		imageRegistrySpec, interpretationErr := imageSpecStarlarkType.ToKurtosisType()
+	case *ImageSpec:
+		imageRegistrySpec, interpretationErr := image.ToKurtosisType()
 		if interpretationErr != nil {
 			return "", nil, nil, nil, interpretationErr
 		}
 		return imageRegistrySpec.GetImageName(), nil, imageRegistrySpec, nil, nil
-	} else if isNixBuildSpecStarlarkType {
-		nixBuildSpec, interpretationErr := nixBuildSpecStarlarkType.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
+	case *NixBuildSpec:
+		nixBuildSpec, interpretationErr := image.ToKurtosisType(locatorOfModuleInWhichThisBuiltInIsBeingCalled, packageId, packageContentProvider, packageReplaceOptions)
 		if interpretationErr != nil {
 			return "", nil, nil, nil, interpretationErr
 		}
 		return nixBuildSpec.GetImageName(), nil, nil, nixBuildSpec, nil
-	} else {
+	default:
 		imageName, interpretationErr := kurtosis_types.SafeCastToString(image, ImageAttr)
 		if interpretationErr != nil {
 			return "", nil, nil, nil, interpretationErr

@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -171,6 +172,18 @@ func (builtin *RenderTemplatesCapabilities) FillPersistableAttributes(builder *e
 	).AddFilesArtifact(
 		builtin.artifactName, nil,
 	)
+}
+
+func (builtin *RenderTemplatesCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	filepaths := []string{}
+	for filepath := range builtin.templatesAndDataByDestRelFilepath {
+		filepaths = append(filepaths, filepath)
+	}
+	err := plan.AddRenderTemplates(builtin.artifactName, filepaths)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating plan with render template instruction.")
+	}
+	return nil
 }
 
 func (builtin *RenderTemplatesCapabilities) Description() string {

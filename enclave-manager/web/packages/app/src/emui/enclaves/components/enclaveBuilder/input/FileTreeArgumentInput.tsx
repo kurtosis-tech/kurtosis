@@ -22,7 +22,7 @@ export const FileTreeArgumentInput = <DataModel extends object>({
       defaultValue={"" as any}
       rules={{ required: isRequired, validate: validate }}
       render={({ field, fieldState }) => {
-        return <FileTreeInput files={field.value} onUpdateFiles={field.onChange} />;
+        return <FileTreeInput files={field.value} onUpdateFiles={field.onChange} isDisabled={field.disabled} />;
       }}
     />
   );
@@ -30,10 +30,11 @@ export const FileTreeArgumentInput = <DataModel extends object>({
 
 type FileTreeInputProps = {
   files: Record<string, string>;
+  isDisabled?: boolean;
   onUpdateFiles: (newFiles: Record<string, string>) => void;
 };
 
-const FileTreeInput = ({ files, onUpdateFiles }: FileTreeInputProps) => {
+const FileTreeInput = ({ files, isDisabled, onUpdateFiles }: FileTreeInputProps) => {
   const [selectedPath, setSelectedPath] = useState<string[]>();
   const [showNewFileInputDialog, setShowNewFileInputDialog] = useState(false);
   const [editingFilePath, setEditingFilePath] = useState<string[]>();
@@ -94,7 +95,7 @@ const FileTreeInput = ({ files, onUpdateFiles }: FileTreeInputProps) => {
 
   return (
     <Flex flexDirection={"column"} gap={"8px"}>
-      <ButtonGroup size={"xs"} variant={"outline"}>
+      <ButtonGroup size={"xs"} variant={"outline"} isDisabled={isDisabled}>
         <Button leftIcon={<FiPlus />} onClick={() => setShowNewFileInputDialog(true)} colorScheme={"kurtosisGreen"}>
           New File
         </Button>
@@ -119,7 +120,7 @@ const FileTreeInput = ({ files, onUpdateFiles }: FileTreeInputProps) => {
         onClose={() => setEditingFilePath(undefined)}
         filePath={editingFilePath || []}
         file={files["/" + editingFilePath?.join("/")]}
-        onSave={handleSaveEditedFile}
+        onSave={isDisabled ? undefined : handleSaveEditedFile}
       />
     </Flex>
   );

@@ -66,12 +66,14 @@ type KurtosisSubtypeFormControlProps<DataModel extends object> = PropsWithChildr
   name: FieldPath<DataModel>;
   disabled?: boolean;
   isRequired?: boolean;
-}>;
+}> &
+  FormControlProps;
 export const KurtosisSubtypeFormControl = <DataModel extends object>({
   name,
   disabled,
   isRequired,
   children,
+  ...formControlProps
 }: KurtosisSubtypeFormControlProps<DataModel>) => {
   const {
     formState: { errors },
@@ -82,7 +84,13 @@ export const KurtosisSubtypeFormControl = <DataModel extends object>({
     .reduce((e, part) => (isDefined(e) ? e[part] : undefined), errors as Record<string, any>) as FieldError | undefined;
 
   return (
-    <FormControl width={"unset"} isInvalid={isDefined(error)} isDisabled={disabled} isRequired={isRequired}>
+    <FormControl
+      {...formControlProps}
+      width={"unset"}
+      isInvalid={isDefined(error)}
+      isDisabled={disabled}
+      isRequired={isRequired}
+    >
       {children}
     </FormControl>
   );

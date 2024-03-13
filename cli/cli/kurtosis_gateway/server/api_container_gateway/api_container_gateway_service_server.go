@@ -230,6 +230,22 @@ func (service *ApiContainerGatewayServiceServer) GetStarlarkRun(ctx context.Cont
 	return remoteApiContainerResponse, nil
 }
 
+func (service *ApiContainerGatewayServiceServer) GetStarlarkScriptPlanYaml(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetStarlarkScriptPlanYaml(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+	return remoteApiContainerResponse, nil
+}
+
+func (service *ApiContainerGatewayServiceServer) GetStarlarkPackagePlanYaml(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetStarlarkPackagePlanYaml(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+	return remoteApiContainerResponse, nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods
