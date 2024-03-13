@@ -18,7 +18,7 @@ services:
 `)
 
 	expectedResult := `def run(plan):
-    plan.add_service(name = "web", config = ServiceConfig(image="app/server", ports={"port0": PortSpec(number=80, transport_protocol="TCP")}, env_vars={}))
+    plan.add_service(name = "web", config = ServiceConfig(image="app/server", ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, env_vars={}))
 `
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
