@@ -11,6 +11,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { isDefined } from "kurtosis-ui-components";
+import { Fragment } from "react";
 import { FiChevronDown } from "react-icons/fi";
 import { PortsTableRow } from "../tables/PortsTable";
 import { PortMaybeLink } from "./PortMaybeLink";
@@ -54,10 +55,10 @@ export const PortsSummary = ({ ports }: PortsSummaryProps) => {
   return (
     <Flex gap={"4px"} fontWeight={"semibold"} fontSize={"xs"} color={"gray.200"} justifyContent={"center"}>
       {priorityPorts.map((port, i) => (
-        <>
-          <PortMaybeLink port={port} key={i} />
+        <Fragment key={i}>
+          <PortMaybeLink port={port} />
           {i < priorityPorts.length - 1 && ", "}
-        </>
+        </Fragment>
       ))}
       {otherPorts.length > 0 && (
         <Popover>

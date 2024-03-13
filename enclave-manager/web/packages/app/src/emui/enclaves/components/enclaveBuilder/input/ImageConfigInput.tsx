@@ -34,7 +34,10 @@ const tabs: { display: string; value: KurtosisImageType }[] = [
   { display: "Nix", value: "nix" },
 ];
 
-export const ImageConfigInput = () => {
+type ImageConfigInputProps = {
+  disabled?: boolean;
+};
+export const ImageConfigInput = ({ disabled }: ImageConfigInputProps) => {
   const { setValue, watch } = useFormContext<{ image: KurtosisImageConfig }>();
   const imageName = watch("image.image");
   const imageType = watch("image.type");
@@ -42,17 +45,20 @@ export const ImageConfigInput = () => {
 
   const handleTabsChange = (newTabIndex: number) => {
     setActiveTabIndex(newTabIndex);
-    setValue("image.type", tabs[activeTabIndex].value);
+    if (!disabled) {
+      setValue("image.type", tabs[activeTabIndex].value);
+    }
   };
 
   return (
     <InputGroup size={"sm"}>
-      <InputLeftAddon>{tabs[activeTabIndex].display}</InputLeftAddon>
+      <InputLeftAddon>{tabs.find((t) => t.value === imageType)?.display || "Unknown"}</InputLeftAddon>
       <StringArgumentInput
         name={"image.image"}
         validate={validateDockerLocator}
         placeholder={"Default: python:3.11-alpine"}
         paddingInlineEnd={8}
+        disabled={disabled}
       />
       <InputRightElement>
         <Popover placement={"right-end"} isLazy>
@@ -87,28 +93,37 @@ export const ImageConfigInput = () => {
                           size={"xs"}
                           name={"image.username"}
                           label={"Username"}
+                          isDisabled={disabled}
                           helperText={"The username that will be used to pull the image from the given registry"}
                         >
-                          <StringArgumentInput size={"xs"} name={"imageConfig.username"} />
+                          <StringArgumentInput size={"xs"} name={"imageConfig.username"} disabled={disabled} />
                         </KurtosisFormControl>
                         <KurtosisFormControl
                           name={"image.password"}
                           label={"Username"}
                           size={"xs"}
+                          isDisabled={disabled}
                           helperText={"The pasword that will be used to pull the image from the given registry"}
                         >
-                          <StringArgumentInput name={"imageConfig.password"} size={"xs"} type={"password"} />
+                          <StringArgumentInput
+                            name={"imageConfig.password"}
+                            size={"xs"}
+                            type={"password"}
+                            disabled={disabled}
+                          />
                         </KurtosisFormControl>
                         <KurtosisFormControl
                           size={"xs"}
                           name={"image.registry"}
                           label={"Registry"}
+                          isDisabled={disabled}
                           helperText={"The URL of the registry"}
                         >
                           <StringArgumentInput
                             name={"image.username"}
                             size={"xs"}
                             placeholder={"http://my.registry.io"}
+                            disabled={disabled}
                           />
                         </KurtosisFormControl>
                       </TabPanel>
@@ -120,21 +135,24 @@ export const ImageConfigInput = () => {
                           helperText={
                             "Locator to build context within the Kurtosis package. As of now, Kurtosis expects a Dockerfile at the root of the build context"
                           }
+                          isDisabled={disabled}
                           isRequired={activeTabIndex === 1}
                         >
                           <StringArgumentInput
                             size={"xs"}
                             name={"imageConfig.buildContextDir"}
                             isRequired={activeTabIndex === 1}
+                            disabled={disabled}
                           />
                         </KurtosisFormControl>
                         <KurtosisFormControl
                           name={"imageConfig.targetStage"}
                           label={"Target Stage"}
                           size={"xs"}
+                          isDisabled={disabled}
                           helperText={"Stage of image build to target for multi-stage container image"}
                         >
-                          <StringArgumentInput name={"imageConfig.targetStage"} size={"xs"} />
+                          <StringArgumentInput name={"imageConfig.targetStage"} size={"xs"} disabled={disabled} />
                         </KurtosisFormControl>
                       </TabPanel>
                       <TabPanel>
@@ -143,12 +161,14 @@ export const ImageConfigInput = () => {
                           name={"image.buildContextDir"}
                           label={"Build Context Dir"}
                           helperText={"Locator to build context within the Kurtosis package."}
+                          isDisabled={disabled}
                           isRequired={activeTabIndex === 2}
                         >
                           <StringArgumentInput
                             size={"xs"}
                             name={"image.buildContextDir"}
                             isRequired={activeTabIndex === 2}
+                            disabled={disabled}
                             placeholder={"./"}
                           />
                         </KurtosisFormControl>
@@ -159,12 +179,14 @@ export const ImageConfigInput = () => {
                           helperText={
                             "The relative path (from the `build_context_dir`) to the folder containing the flake.nix file"
                           }
+                          isDisabled={disabled}
                           isRequired={activeTabIndex === 2}
                         >
                           <StringArgumentInput
                             name={"image.flakeLocationDir"}
                             size={"xs"}
                             placeholder={"./hello-go"}
+                            disabled={disabled}
                             isRequired={activeTabIndex === 2}
                           />
                         </KurtosisFormControl>
@@ -172,11 +194,12 @@ export const ImageConfigInput = () => {
                           name={"image.flakeOutput"}
                           label={"Flake Output"}
                           size={"xs"}
+                          isDisabled={disabled}
                           helperText={
                             "The selector for the Flake output with the image derivation. Fallbacks to the default package."
                           }
                         >
-                          <StringArgumentInput name={"image.flakeOutput"} size={"xs"} />
+                          <StringArgumentInput name={"image.flakeOutput"} size={"xs"} disabled={disabled} />
                         </KurtosisFormControl>
                       </TabPanel>
                     </TabPanels>

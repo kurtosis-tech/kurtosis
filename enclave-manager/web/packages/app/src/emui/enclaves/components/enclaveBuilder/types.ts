@@ -5,7 +5,7 @@ export type Variable = {
 };
 
 export type KurtosisPort = {
-  portName: string;
+  name: string;
   port: number;
   transportProtocol: "TCP" | "UDP";
   applicationProtocol: string;
@@ -15,7 +15,7 @@ export type KurtosisEnvironmentVar = { key: string; value: string };
 
 export type KurtosisFileMount = {
   mountPoint: string;
-  artifactName: string;
+  name: string;
 };
 
 export type KurtosisAcceptableCode = {
@@ -38,31 +38,49 @@ export type KurtosisImageConfig = {
 
 export type KurtosisServiceNodeData = {
   type: "service";
-  serviceName: string;
+  name: string;
+  isFromPackage?: boolean;
   image: KurtosisImageConfig;
   env: KurtosisEnvironmentVar[];
   ports: KurtosisPort[];
   files: KurtosisFileMount[];
-  execStepEnabled: "true" | "false";
-  execStepCommand: string;
-  execStepAcceptableCodes: KurtosisAcceptableCode[];
+  entrypoint: string;
+  cmd: string;
   isValid: boolean;
 };
+
+export type KurtosisExecNodeData = {
+  type: "exec";
+  name: string;
+  isFromPackage?: boolean;
+  isValid: boolean;
+  service: string;
+  command: string;
+  acceptableCodes: KurtosisAcceptableCode[];
+};
+
 export type KurtosisArtifactNodeData = {
   type: "artifact";
-  artifactName: string;
+  name: string;
+  isFromPackage?: boolean;
   files: Record<string, string>;
   isValid: boolean;
 };
 
+export type KurtosisStore = {
+  name: string;
+  path: string;
+};
+
 export type KurtosisShellNodeData = {
   type: "shell";
-  shellName: string;
+  name: string;
+  isFromPackage?: boolean;
   command: string;
   image: KurtosisImageConfig;
   env: KurtosisEnvironmentVar[];
   files: KurtosisFileMount[];
-  store: string;
+  store: KurtosisStore[];
   wait_enabled: "true" | "false";
   wait: string;
   isValid: boolean;
@@ -73,20 +91,103 @@ export type KurtosisPythonArg = { arg: string };
 
 export type KurtosisPythonNodeData = {
   type: "python";
-  pythonName: string;
+  name: string;
+  isFromPackage?: boolean;
   command: string;
   image: KurtosisImageConfig;
   packages: KurtosisPythonPackage[];
   args: KurtosisPythonArg[];
   files: KurtosisFileMount[];
-  store: string;
+  store: KurtosisStore[];
   wait_enabled: "true" | "false";
   wait: string;
+  isValid: boolean;
+};
+
+export type KurtosisPackageNodeData = {
+  type: "package";
+  name: string;
+  isFromPackage?: boolean;
+  packageId: string;
+  locator: string;
+  args: Record<string, any>;
   isValid: boolean;
 };
 
 export type KurtosisNodeData =
   | KurtosisArtifactNodeData
   | KurtosisServiceNodeData
+  | KurtosisExecNodeData
   | KurtosisShellNodeData
-  | KurtosisPythonNodeData;
+  | KurtosisPythonNodeData
+  | KurtosisPackageNodeData;
+
+export type PlanPort = {
+  name: string;
+  number: number;
+  transportProtocol: "TCP" | "UDP";
+  applicationProtocol?: string;
+};
+
+type PlanArtifactReference = {
+  name: string;
+  uuid: string;
+};
+
+type PlanFile = {
+  mountPath: string;
+  filesArtifacts: PlanArtifactReference[];
+};
+
+export type PlanService = {
+  name: string;
+  uuid: string;
+  image: { name: string };
+  envVars?: KurtosisEnvironmentVar[];
+  ports?: PlanPort[];
+  command?: string[];
+  entrypoint?: string[];
+  files: PlanFile[];
+};
+
+type PlanExecTask = {
+  taskType: "exec";
+  uuid: string;
+  command: string[];
+  serviceName: string;
+  acceptableCodes?: number[];
+};
+
+type PlanPythonTask = {
+  taskType: "python";
+  uuid: string;
+  command?: string[];
+  image: string;
+  files?: PlanFile[];
+  store?: PlanArtifactReference[];
+  pythonArgs: string[];
+};
+
+type PlanShTask = {
+  taskType: "sh";
+  uuid: string;
+  command?: string[];
+  image: string;
+  files?: PlanFile[];
+  store?: PlanArtifactReference[];
+};
+
+export type PlanTask = PlanExecTask | PlanPythonTask | PlanShTask;
+
+export type PlanFileArtifact = {
+  name: string;
+  uuid: string;
+  files: string[];
+};
+
+export type PlanYaml = {
+  packageId: string;
+  services?: PlanService[];
+  tasks?: PlanTask[];
+  filesArtifacts?: PlanFileArtifact[];
+};
