@@ -3,6 +3,7 @@ package docker_compose_transpiler
 import (
 	"errors"
 	"fmt"
+	"golang.org/x/exp/slices"
 	"os"
 	"path"
 	"sort"
@@ -59,7 +60,11 @@ const (
 
 	unixHomePathSymbol         = "~"
 	upstreamRelativePathSymbol = ".."
+
+	httpProtocol = "http"
 )
+
+var possibleHttpPorts = []uint32{8080, 8000, 80, 443, 591}
 
 type ComposeService types.ServiceConfig
 
@@ -379,13 +384,18 @@ func getStarlarkPortSpecs(serviceName string, composePorts []types.ServicePortCo
 			return nil, stacktrace.NewError("Port #%d has unsupported protocol '%v'", portIdx, dockerProto)
 		}
 
+		var applicationProtocol string
+		if slices.Contains(possibleHttpPorts, dockerPort.Target) {
+			applicationProtocol = httpProtocol
+		}
+
 		portSpec, interpretationErr := port_spec_starlark.CreatePortSpecUsingGoValues(
 			serviceName,
 			uint16(dockerPort.Target),
 			kurtosisProto,
-			nil, // Application protocol (which Compose doesn't have)
-			"",  // Wait timeout (which Compose doesn't have a way to override)
-			nil, // No way to change the URL for the port
+			&applicationProtocol, // Application protocol (which Compose doesn't have)
+			"",                   // Wait timeout (which Compose doesn't have a way to override)
+			nil,                  // No way to change the URL for the port
 		)
 		if interpretationErr != nil {
 			return nil, stacktrace.Propagate(interpretationErr, "An error occurred creating a %s object from port #%d", port_spec_starlark.PortSpecTypeName, portIdx)
