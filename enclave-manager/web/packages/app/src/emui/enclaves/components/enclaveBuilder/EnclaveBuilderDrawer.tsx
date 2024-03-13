@@ -23,7 +23,7 @@ import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 import { ViewStarlarkModal } from "./modals/ViewStarlarkModal";
 import { KurtosisNodeData } from "./types";
-import { getInitialGraphStateFromEnclave, getNodeName } from "./utils";
+import { getInitialGraphStateFromEnclave } from "./utils";
 import { useVariableContext, VariableContextProvider } from "./VariableContextProvider";
 import { Visualiser, VisualiserImperativeAttributes } from "./Visualiser";
 
@@ -106,7 +106,7 @@ const EnclaveBuilderDrawerImpl = ({
     () =>
       Object.values(data)
         .filter((nodeData) => !nodeData.isValid)
-        .map((nodeData) => `${nodeData.type} ${getNodeName(nodeData)} has invalid data`),
+        .map((nodeData) => `${nodeData.type} ${nodeData.name} has invalid data`),
     [data],
   );
   const [isLoading, setIsLoading] = useState(false);
