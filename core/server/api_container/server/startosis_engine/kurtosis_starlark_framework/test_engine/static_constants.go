@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 )
 
@@ -25,6 +26,10 @@ var (
 	testModuleMainFileLocator = "github.com/kurtosistech/test-package/main.star"
 	testModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
 	testModuleRelativeLocator = "./helpers.star"
+
+	testModuleAbsoluteLocator = startosis_packages.NewPackageAbsoluteLocator(testModuleFileName, "")
+
+	emptyAbsoluteLocator = startosis_packages.NewPackageAbsoluteLocator("", "")
 
 	testContainerImageName                    = "kurtosistech/example-datastore-server"
 	testBuildContextDir                       = "./"
