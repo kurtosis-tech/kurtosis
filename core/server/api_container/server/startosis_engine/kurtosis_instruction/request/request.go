@@ -210,6 +210,7 @@ func (builtin *RequestCapabilities) FillPersistableAttributes(builder *enclave_p
 }
 
 func (builtin *RequestCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
+	// TODO: Implement
 	logrus.Warn("REQUEST NOT IMPLEMENTED YET FOR UPDATING PLAN")
 	return nil
 }

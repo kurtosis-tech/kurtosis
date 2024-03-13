@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
@@ -109,7 +110,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithFilesArtifa
 		inputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
@@ -175,7 +177,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunShWithFilesArtifacts()
 		inputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
@@ -245,7 +248,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunPython() {
 		inputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
@@ -317,7 +321,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestExec() {
 		inputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
@@ -392,7 +397,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRenderTemplate() {
 		inputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
@@ -455,7 +461,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithImageBuildS
 		inputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
@@ -515,7 +522,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestAddServiceWithImageSpec()
 		inputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 1, instructionsPlan.Size())
 
@@ -570,7 +578,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestUploadFiles() {
 		startosis_constants.EmptyInputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
@@ -628,7 +637,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestStoreServiceFiles() {
 		inputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
@@ -689,7 +699,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRemoveService() {
 		inputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 2, instructionsPlan.Size())
 
@@ -745,7 +756,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestFutureReferencesAreSwappe
 		inputArgs,
 		defaultNonBlockingMode,
 		emptyEnclaveComponents,
-		emptyInstructionsPlanMask)
+		emptyInstructionsPlanMask,
+		image_download_mode.ImageDownloadMode_Always)
 	require.Nil(suite.T(), interpretationError)
 	require.Equal(suite.T(), 4, instructionsPlan.Size())
 

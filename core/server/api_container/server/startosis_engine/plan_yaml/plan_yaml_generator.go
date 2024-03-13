@@ -9,8 +9,16 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"golang.org/x/exp/slices"
 	"strconv"
 	"strings"
+)
+
+const (
+	ipAddressFutureRefType = "ip_address"
+	codeFutureRefType      = "code"
+	hostnameFutureRefType  = "hostname"
+	outputFutureRefType    = "output"
 )
 
 // PlanYaml is a yaml representation of the effect of an Instructions Plan or sequence of instructions on the state of the Enclave.
@@ -39,7 +47,7 @@ func CreateEmptyPlan(packageId string) *PlanYaml {
 func (planYaml *PlanYaml) GenerateYaml() (string, error) {
 	yamlBytes, err := yaml.Marshal(planYaml.privatePlanYaml)
 	if err != nil {
-		return "", err
+		return "", stacktrace.Propagate(err, "An error occurred generating plan yaml.")
 	}
 	return string(yamlBytes), nil
 }
@@ -64,8 +72,8 @@ func (planYaml *PlanYaml) AddService(
 	if err != nil {
 		return err
 	}
-	planYaml.storeFutureReference(uuid, ipAddrFutureRef, "ip_address")
-	planYaml.storeFutureReference(uuid, hostnameFutureRef, "hostname")
+	planYaml.storeFutureReference(uuid, ipAddrFutureRef, ipAddressFutureRefType)
+	planYaml.storeFutureReference(uuid, hostnameFutureRef, hostnameFutureRefType)
 
 	// construct service yaml object for plan
 	serviceYaml := &Service{} //nolint exhaustruct
@@ -171,29 +179,29 @@ func (planYaml *PlanYaml) AddRunSh(
 	uuid := planYaml.generateUuid()
 
 	// store run sh future references
-	codeVal, err := returnValue.Attr("code")
+	codeVal, err := returnValue.Attr(codeFutureRefType)
 	if err != nil {
 		return err
 	}
-	codeFutureRef, interpErr := kurtosis_types.SafeCastToString(codeVal, "run sh code")
+	codeFutureRef, interpErr := kurtosis_types.SafeCastToString(codeVal, "run sh "+codeFutureRefType)
 	if interpErr != nil {
 		return interpErr
 	}
-	planYaml.storeFutureReference(uuid, codeFutureRef, "code")
-	outputVal, err := returnValue.Attr("output")
+	planYaml.storeFutureReference(uuid, codeFutureRef, codeFutureRefType)
+	outputVal, err := returnValue.Attr(outputFutureRefType)
 	if err != nil {
 		return err
 	}
-	outputFutureRef, interpErr := kurtosis_types.SafeCastToString(outputVal, "run sh code")
+	outputFutureRef, interpErr := kurtosis_types.SafeCastToString(outputVal, "run sh "+outputFutureRefType)
 	if interpErr != nil {
 		return interpErr
 	}
-	planYaml.storeFutureReference(uuid, outputFutureRef, "output")
+	planYaml.storeFutureReference(uuid, outputFutureRef, outputFutureRefType)
 
 	// create task yaml object
 	taskYaml := &Task{} //nolint exhaustruct
 	taskYaml.Uuid = uuid
-	taskYaml.TaskType = SHELL
+	taskYaml.TaskType = shell
 
 	taskYaml.RunCmd = []string{planYaml.swapFutureReference(runCommand)}
 	taskYaml.Image = serviceConfig.GetContainerImageName()
@@ -278,29 +286,29 @@ func (planYaml *PlanYaml) AddRunPython(
 	uuid := planYaml.generateUuid()
 
 	// store future references
-	codeVal, err := returnValue.Attr("code")
+	codeVal, err := returnValue.Attr(codeFutureRefType)
 	if err != nil {
 		return err
 	}
-	codeFutureRef, interpErr := kurtosis_types.SafeCastToString(codeVal, "run python code")
+	codeFutureRef, interpErr := kurtosis_types.SafeCastToString(codeVal, "run python "+codeFutureRefType)
 	if interpErr != nil {
 		return interpErr
 	}
-	planYaml.storeFutureReference(uuid, codeFutureRef, "code")
-	outputVal, err := returnValue.Attr("output")
+	planYaml.storeFutureReference(uuid, codeFutureRef, codeFutureRefType)
+	outputVal, err := returnValue.Attr(outputFutureRefType)
 	if err != nil {
 		return err
 	}
-	outputFutureRef, interpErr := kurtosis_types.SafeCastToString(outputVal, "run python output")
+	outputFutureRef, interpErr := kurtosis_types.SafeCastToString(outputVal, "run python "+outputFutureRefType)
 	if interpErr != nil {
 		return interpErr
 	}
-	planYaml.storeFutureReference(uuid, outputFutureRef, "output")
+	planYaml.storeFutureReference(uuid, outputFutureRef, outputFutureRefType)
 
 	// create task yaml object
 	taskYaml := &Task{} //nolint exhaustruct
 	taskYaml.Uuid = uuid
-	taskYaml.TaskType = PYTHON
+	taskYaml.TaskType = python
 
 	taskYaml.RunCmd = []string{planYaml.swapFutureReference(runCommand)}
 	taskYaml.Image = serviceConfig.GetContainerImageName()
@@ -387,35 +395,35 @@ func (planYaml *PlanYaml) AddExec(
 	uuid := planYaml.generateUuid()
 
 	// store future references
-	codeVal, found, err := returnValue.Get(starlark.String("code"))
+	codeVal, found, err := returnValue.Get(starlark.String(codeFutureRefType))
 	if err != nil {
 		return err
 	}
 	if !found {
 		return stacktrace.NewError("No code value found on exec dict")
 	}
-	codeFutureRef, interpErr := kurtosis_types.SafeCastToString(codeVal, "exec code")
+	codeFutureRef, interpErr := kurtosis_types.SafeCastToString(codeVal, "exec "+codeFutureRefType)
 	if interpErr != nil {
 		return interpErr
 	}
-	planYaml.storeFutureReference(uuid, codeFutureRef, "code")
-	outputVal, found, err := returnValue.Get(starlark.String("output"))
+	planYaml.storeFutureReference(uuid, codeFutureRef, codeFutureRefType)
+	outputVal, found, err := returnValue.Get(starlark.String(outputFutureRefType))
 	if err != nil {
 		return err
 	}
 	if !found {
 		return stacktrace.NewError("No code value found on exec dict")
 	}
-	outputFutureRef, interpErr := kurtosis_types.SafeCastToString(outputVal, "exec output")
+	outputFutureRef, interpErr := kurtosis_types.SafeCastToString(outputVal, "exec "+outputFutureRefType)
 	if interpErr != nil {
 		return interpErr
 	}
-	planYaml.storeFutureReference(uuid, outputFutureRef, "output")
+	planYaml.storeFutureReference(uuid, outputFutureRef, outputFutureRefType)
 
 	// create task yaml
 	taskYaml := &Task{} //nolint exhaustruct
 	taskYaml.Uuid = uuid
-	taskYaml.TaskType = EXEC
+	taskYaml.TaskType = exec
 	taskYaml.ServiceName = serviceName
 
 	cmdListWithFutureRefsSwapped := []string{}
@@ -462,8 +470,7 @@ func (planYaml *PlanYaml) AddStoreServiceFiles(filesArtifactName, locator string
 func (planYaml *PlanYaml) RemoveService(serviceName string) {
 	for idx, service := range planYaml.privatePlanYaml.Services {
 		if service.Name == serviceName {
-			planYaml.privatePlanYaml.Services[idx] = planYaml.privatePlanYaml.Services[len(planYaml.privatePlanYaml.Services)-1]
-			planYaml.privatePlanYaml.Services = planYaml.privatePlanYaml.Services[:len(planYaml.privatePlanYaml.Services)-1]
+			planYaml.privatePlanYaml.Services = slices.Delete(planYaml.privatePlanYaml.Services, idx, idx+1)
 			return
 		}
 	}

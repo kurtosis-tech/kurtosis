@@ -3,9 +3,9 @@ package plan_yaml
 import "sort"
 
 const (
-	SHELL  TaskType = "sh"
-	PYTHON TaskType = "python"
-	EXEC   TaskType = "exec"
+	shell  TaskType = "sh"
+	python TaskType = "python"
+	exec   TaskType = "exec"
 )
 
 type privatePlanYaml struct {
@@ -96,10 +96,10 @@ type Task struct {
 	Files    []*FileMount     `yaml:"files,omitempty"`
 	Store    []*FilesArtifact `yaml:"store,omitempty"`
 
-	// only exists on SHELL tasks
+	// only exists on shell tasks
 	EnvVars []*EnvironmentVariable `yaml:"envVar,omitempty"` // done
 
-	// only exists on PYTHON tasks
+	// only exists on python tasks
 	PythonPackages []string `yaml:"pythonPackages,omitempty"`
 	PythonArgs     []string `yaml:"pythonArgs,omitempty"`
 
@@ -108,5 +108,5 @@ type Task struct {
 	AcceptableCodes []int64 `yaml:"acceptableCodes,omitempty"`
 }
 
-// TaskType represents the type of task (either PYTHON or SHELL)
+// TaskType represents the type of task (either python or shell)
 type TaskType string
