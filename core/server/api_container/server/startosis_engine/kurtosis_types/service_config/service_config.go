@@ -548,11 +548,10 @@ func (config *ServiceConfig) ToKurtosisType(
 		nodeSelectors,
 		imageDownloadMode,
 	)
-	serviceConfig.SetFilesToBeMoved(filesToBeMoved)
-
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
 	}
+	serviceConfig.SetFilesToBeMoved(filesToBeMoved)
 	return serviceConfig, nil
 }
 
