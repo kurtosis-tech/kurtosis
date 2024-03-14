@@ -3,10 +3,10 @@ set -euo pipefail   # Bash "strict mode"
 
 # VERSION NUMBERS
 # FOR GO WE EXPECT _AT LEAST_ THIS VERSION, BUT WE ARE OK WITH SUPERIOR VERSIONS
-GO_VERSION=1.20
+REQUIRED_GO_VERSION=1.20
 
 # FOR NODE, WE PIN THE EXACT VERSION NUMBER
-NODE_VERSION=20.11
+REQUIRED_NODE_VERSION=20.11
 
 
 RED_BG=$(tput setab 1)
@@ -16,32 +16,22 @@ NORMAL_BG=$(tput sgr0;)
 BOLD=$(tput bold)
 error=false;
 
-echo "${BLUE_BG}${WHITE_FG}${BOLD}Starting Kurtosis Build...              ${NORMAL_BG}"
+echo "${BLUE_BG}${WHITE_FG}${BOLD}Starting Kurtosis Build...${NORMAL_BG}"
 
 check_node_version() {
-  if [ -f ~/.nvm/nvm.sh ]; then
-    source ~/.nvm/nvm.sh
-  elif command -v brew; then
-    # https://docs.brew.sh/Manpage#--prefix-formula
-    BREW_PREFIX=$(brew --prefix nvm)
-    if [ -f "${BREW_PREFIX}/nvm.sh" ]; then
-      source "${BREW_PREFIX}"/nvm.sh
-    fi
-  fi
-
-  if ! command -v nvm &> /dev/null ; then
-    echo "ERROR: unable to configure nvm"
+  if ! command -v node &> /dev/null ; then
+    echo "ERROR: node is not installed or not found in PATH"
     exit 1
   fi
 
-
-  if ! nvm list "${NODE_VERSION}" &> /dev/null; then
-    echo "${RED_BG}${WHITE_FG}${BOLD}node "${NODE_VERSION}" not installed. Please install it with ${NORMAL_BG}"
-    echo "${RED_BG}${WHITE_FG}nvm install "${NODE_VERSION}"                                ${NORMAL_BG}"
-    echo  ""
-    error=true
+  local local_node_version=$(node --version)
+  # stripped_local_node_version should only contain node's {major.minor} versions to compare it with REQUIRED_NODE_VERSION.
+  local stripped_local_node_version=$(echo "$local_node_version" | cut -d 'v' -f 2 | awk -F '.' '{print $1"."$2}')
+  if [ "$stripped_local_node_version" != "$REQUIRED_NODE_VERSION" ]; then
+    echo "${RED_BG}${WHITE_FG}${BOLD}node "${REQUIRED_NODE_VERSION}" not installed. Found ${stripped_local_node_version}${NORMAL_BG}"
+    exit 1
   else
-    echo "${BLUE_BG}${WHITE_FG}${BOLD}Node version "${NODE_VERSION}" found. ok    ${NORMAL_BG}"
+    echo "${BLUE_BG}${WHITE_FG}${BOLD}Minimum node version "${REQUIRED_NODE_VERSION}" expected. Found ${stripped_local_node_version} ... ok${NORMAL_BG}"
   fi
 }
 
@@ -56,12 +46,12 @@ version_lte() {
 }
 
 check_go_version() {
-  local version=$(go version | { read -r _ _ v _; echo "${v#go}"; })
-  if  [ "$(version_lte "${GO_VERSION}" "${version}")" !=  1 ]; then
-    echo "${RED_BG}${WHITE_FG}${BOLD}GO "${GO_VERSION}" not installed. Found ${version}    ${NORMAL_BG}"
+  local local_go_version=$(go version | { read -r _ _ v _; echo "${v#go}"; })
+  if  [ "$(version_lte "${REQUIRED_GO_VERSION}" "${local_go_version}")" !=  1 ]; then
+    echo "${RED_BG}${WHITE_FG}${BOLD}GO "${REQUIRED_GO_VERSION}" not installed. Found ${local_go_version}${NORMAL_BG}"
     error=true
   else
-    echo "${BLUE_BG}${WHITE_FG}${BOLD}Minimum GO version "${GO_VERSION}" expected. Found ${version} ... ok    ${NORMAL_BG}"
+    echo "${BLUE_BG}${WHITE_FG}${BOLD}Minimum GO version "${REQUIRED_GO_VERSION}" expected. Found ${local_go_version} ... ok${NORMAL_BG}"
 
   fi
 }
@@ -76,8 +66,3 @@ if "$error"; then
   echo exiting...
   exit 1
 fi
-
-nvm use $NODE_VERSION &> /dev/null
-
-
-
