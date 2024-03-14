@@ -222,7 +222,7 @@ func (serviceConfig *ServiceConfig) GetNodeSelectors() map[string]string {
 }
 
 func (serviceConfig *ServiceConfig) SetFilesToBeMoved(filesToBeMoved map[string]string) {
-	logrus.Info("This is run??????")
+	logrus.Infof("This is run?????? '%v'", filesToBeMoved)
 	serviceConfig.privateServiceConfig.FilesToBeMoved = filesToBeMoved
 }
 
