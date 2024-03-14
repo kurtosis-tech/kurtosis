@@ -205,7 +205,7 @@ func getOnDiskImageBuildSpecPaths(
 	// get on disk directory path of Dockerfile
 	containerImageAbsoluteLocatorStr := path.Join(contextDirAbsoluteLocator.GetLocator(), defaultContainerImageFileName)
 	if buildFile != "" {
-		containerImageAbsoluteLocatorStr = path.Join(containerImageAbsoluteLocatorStr, buildFile)
+		containerImageAbsoluteLocatorStr = path.Join(contextDirAbsoluteLocator.GetLocator(), buildFile)
 	}
 
 	containerImageAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(containerImageAbsoluteLocatorStr, contextDirAbsoluteLocator.GetTagBranchOrCommit())

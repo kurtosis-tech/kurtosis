@@ -22,25 +22,26 @@ var (
 
 	testSrcPath = "/path/to/file.txt"
 
-	testModulePackageId       = "github.com/kurtosistech/test-package"
-	testModuleMainFileLocator = "github.com/kurtosistech/test-package/main.star"
-	testModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
-	testModuleRelativeLocator = "./helpers.star"
+	testModulePackageId              = "github.com/kurtosistech/test-package"
+	testModulePackageAbsoluteLocator = startosis_packages.NewPackageAbsoluteLocator(testModulePackageId, "")
+	testModuleMainFileLocator        = "github.com/kurtosistech/test-package/main.star"
+	testModuleFileName               = "github.com/kurtosistech/test-package/helpers.star"
+	testModuleRelativeLocator        = "./helpers.star"
 
 	testModuleAbsoluteLocator = startosis_packages.NewPackageAbsoluteLocator(testModuleFileName, "")
 
 	emptyAbsoluteLocator = startosis_packages.NewPackageAbsoluteLocator("", "")
 
-	testContainerImageName                    = "kurtosistech/example-datastore-server"
-	testBuildContextDir                       = "./"
-	testBuildFile                             = "foo.Dockerfile"
-	testTargetStage                           = "builder"
-	testBuildContextLocator                   = testModulePackageId
-	testContainerImageLocator                 = "github.com/kurtosistech/test-package/Dockerfile"
-	testContainerImageLocatorWithBuildFile    = "github.com/kurtosistech/test-package/foo.Dockerfile"
-	testOnDiskContextDirPath                  = "kurtosis-data/test-package"
-	testOnDiskContainerImagePath              = "kurtosis-data/test-package/Dockerfile"
-	testOnDiskContainerImagePathWithBuildFile = "kurtosis-data/test-package/foo.Dockerfile"
+	testContainerImageName                         = "kurtosistech/example-datastore-server"
+	testBuildContextDir                            = "./"
+	testBuildFile                                  = "foo.Dockerfile"
+	testTargetStage                                = "builder"
+	testBuildContextAbsoluteLocator                = startosis_packages.NewPackageAbsoluteLocator(testModulePackageId, "")
+	testContainerImageAbsoluteLocator              = startosis_packages.NewPackageAbsoluteLocator("github.com/kurtosistech/test-package/Dockerfile", "")
+	testContainerImageAbsoluteLocatorWithBuildFile = startosis_packages.NewPackageAbsoluteLocator("github.com/kurtosistech/test-package/foo.Dockerfile", "")
+	testOnDiskContextDirPath                       = "kurtosis-data/test-package"
+	testOnDiskContainerImagePath                   = "kurtosis-data/test-package/Dockerfile"
+	testOnDiskContainerImagePathWithBuildFile      = "kurtosis-data/test-package/foo.Dockerfile"
 
 	testNixContextDir           = "./"
 	testNixImageName            = "test-image"
@@ -49,7 +50,7 @@ var (
 	testOnDiskNixContextDirPath = "kurtosis-data/test-package"
 	testOnDiskNixFlakePath      = "kurtosis-data/test-package/server/app/flake.nix"
 	testOnDiskNixFlakeDir       = "kurtosis-data/test-package/server/app"
-	testNixFlakeLocator         = "github.com/kurtosistech/test-package/server/app/flake.nix"
+	testNixFlakeAbsoluteLocator = startosis_packages.NewPackageAbsoluteLocator("github.com/kurtosistech/test-package/server/app/flake.nix", "")
 
 	testRegistryAddr     = "http://registry.test.io"
 	testRegistryUsername = "kurtosis"
