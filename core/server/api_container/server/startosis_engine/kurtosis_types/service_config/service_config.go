@@ -514,7 +514,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	}
 
 	filesToBeMoved := map[string]string{}
-	filesToBeMovedStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, FilesToBeMovedAttr)
+	filesToBeMovedStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, FilesToBeMovedAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
