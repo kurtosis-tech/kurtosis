@@ -398,10 +398,13 @@ services:
    volumes:
      - "~/minecraft_data:/data"
 `)
+	expectedResult := `def run(plan):
+    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": Directory(persistent_key="minecraftdata")}, env_vars={"EULA": "TRUE"}, min_cpu=0, min_memory=0))
+`
 
-	// Returns error because '~' indicates the user is trying to reference their home path which is outside the package
-	_, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
-	require.Error(t, err)
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
 }
 
 // https://github.com/docker/awesome-compose/tree/master/angular

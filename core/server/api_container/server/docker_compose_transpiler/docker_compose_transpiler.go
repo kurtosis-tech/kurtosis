@@ -457,6 +457,7 @@ func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.D
 func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, error) {
 	filesArgSLDict := starlark.NewDict(len(composeVolumes))
 	filesArtifactsToUpload := map[string]string{}
+	var persistenceKey string
 
 	for volumeIdx, volume := range composeVolumes {
 		volumeType := volume.Type
@@ -464,31 +465,44 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 		var shouldPersist bool
 		switch volumeType {
 		case types.VolumeTypeBind:
-			// Handle case where home path is reference
-			if strings.Contains(volume.Source, unixHomePathSymbol) {
-				return nil, map[string]string{}, stacktrace.NewError(
-					"Volume path '%v' uses '%v', likely referencing home path on a unix filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
-						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path",
-					volume.Source, unixHomePathSymbol, volume.Source)
-			}
-			// Handle case where upstream relative path is reference
-			if strings.Contains(volume.Source, upstreamRelativePathSymbol) {
-				return nil, map[string]string{}, stacktrace.NewError(
-					"Volume path '%v' uses '%v', likely referencing an upstream path on a filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
-						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path within the package.",
-					volume.Source, upstreamRelativePathSymbol, volume.Source)
-			}
+			//Handle case where home path is reference
+			//if strings.Contains(volume.Source, unixHomePathSymbol) {
+			//	return nil, map[string]string{}, stacktrace.NewError(
+			//		"Volume path '%v' uses '%v', likely referencing home path on a unix filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
+			//			"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path",
+			//		volume.Source, unixHomePathSymbol, volume.Source)
+			//}
+			//// Handle case where upstream relative path is reference
+			//if strings.Contains(volume.Source, upstreamRelativePathSymbol) {
+			//	return nil, map[string]string{}, stacktrace.NewError(
+			//		"Volume path '%v' uses '%v', likely referencing an upstream path on a filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
+			//			"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path within the package.",
+			//		volume.Source, upstreamRelativePathSymbol, volume.Source)
+			//}
 
-			// Assume that if an absolute path is specified, user wants to use volume as a persistence layer
-			// Additionally, assume relative paths are read-only
-			shouldPersist = path.IsAbs(volume.Source)
+			// Handle case where upstream relative path is referenced or home path
+			if strings.Contains(volume.Source, unixHomePathSymbol) || strings.Contains(volume.Source, upstreamRelativePathSymbol) {
+				// the logic that's actually needed here is normalizing the home path to something that fits the RFC standard
+				persistenceKey = strings.Replace(volume.Source, unixHomePathSymbol, "", -1)
+				persistenceKey = strings.Replace(persistenceKey, upstreamRelativePathSymbol, "", -1)
+				persistenceKey = strings.Replace(persistenceKey, "_", "", -1)
+				persistenceKey = strings.Replace(persistenceKey, "/", "", -1)
+				shouldPersist = true
+			} else {
+				// Assume that if an absolute path is specified, user wants to use volume as a persistence layer
+				// Additionally, assume relative paths are read-only
+				shouldPersist = path.IsAbs(volume.Source)
+				persistenceKey = fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
+			}
 		case types.VolumeTypeVolume:
+			persistenceKey = fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			shouldPersist = true
+		default:
+			shouldPersist = false
 		}
 
 		var filesDictValue starlark.Value
 		if shouldPersist {
-			persistenceKey := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			persistentDirectory, err := getStarlarkPersistentDirectory(persistenceKey)
 			if err != nil {
 				return nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
