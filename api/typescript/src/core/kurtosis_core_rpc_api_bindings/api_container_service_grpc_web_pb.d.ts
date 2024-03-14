@@ -101,6 +101,20 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.GetStarlarkRunResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.GetStarlarkRunResponse>;
 
+  getStarlarkScriptPlanYaml(
+    request: api_container_service_pb.StarlarkScriptPlanYamlArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.PlanYaml) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.PlanYaml>;
+
+  getStarlarkPackagePlanYaml(
+    request: api_container_service_pb.StarlarkPackagePlanYamlArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.PlanYaml) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.PlanYaml>;
+
 }
 
 export class ApiContainerServicePromiseClient {
@@ -177,6 +191,16 @@ export class ApiContainerServicePromiseClient {
     request: google_protobuf_empty_pb.Empty,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.GetStarlarkRunResponse>;
+
+  getStarlarkScriptPlanYaml(
+    request: api_container_service_pb.StarlarkScriptPlanYamlArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.PlanYaml>;
+
+  getStarlarkPackagePlanYaml(
+    request: api_container_service_pb.StarlarkPackagePlanYamlArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.PlanYaml>;
 
 }
 

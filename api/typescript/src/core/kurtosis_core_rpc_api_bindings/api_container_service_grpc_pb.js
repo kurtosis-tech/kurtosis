@@ -137,6 +137,17 @@ function deserialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse(bu
   return api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_PlanYaml(arg) {
+  if (!(arg instanceof api_container_service_pb.PlanYaml)) {
+    throw new Error('Expected argument of type api_container_api.PlanYaml');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_PlanYaml(buffer_arg) {
+  return api_container_service_pb.PlanYaml.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_RunStarlarkPackageArgs(arg) {
   if (!(arg instanceof api_container_service_pb.RunStarlarkPackageArgs)) {
     throw new Error('Expected argument of type api_container_api.RunStarlarkPackageArgs');
@@ -159,6 +170,17 @@ function deserialize_api_container_api_RunStarlarkScriptArgs(buffer_arg) {
   return api_container_service_pb.RunStarlarkScriptArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_StarlarkPackagePlanYamlArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.StarlarkPackagePlanYamlArgs)) {
+    throw new Error('Expected argument of type api_container_api.StarlarkPackagePlanYamlArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StarlarkPackagePlanYamlArgs(buffer_arg) {
+  return api_container_service_pb.StarlarkPackagePlanYamlArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_StarlarkRunResponseLine(arg) {
   if (!(arg instanceof api_container_service_pb.StarlarkRunResponseLine)) {
     throw new Error('Expected argument of type api_container_api.StarlarkRunResponseLine');
@@ -168,6 +190,17 @@ function serialize_api_container_api_StarlarkRunResponseLine(arg) {
 
 function deserialize_api_container_api_StarlarkRunResponseLine(buffer_arg) {
   return api_container_service_pb.StarlarkRunResponseLine.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_StarlarkScriptPlanYamlArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.StarlarkScriptPlanYamlArgs)) {
+    throw new Error('Expected argument of type api_container_api.StarlarkScriptPlanYamlArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StarlarkScriptPlanYamlArgs(buffer_arg) {
+  return api_container_service_pb.StarlarkScriptPlanYamlArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_StoreFilesArtifactFromServiceArgs(arg) {
@@ -460,6 +493,30 @@ getStarlarkRun: {
     requestDeserialize: deserialize_google_protobuf_Empty,
     responseSerialize: serialize_api_container_api_GetStarlarkRunResponse,
     responseDeserialize: deserialize_api_container_api_GetStarlarkRunResponse,
+  },
+  // Gets yaml representing the plan the script will execute in an enclave
+getStarlarkScriptPlanYaml: {
+    path: '/api_container_api.ApiContainerService/GetStarlarkScriptPlanYaml',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.StarlarkScriptPlanYamlArgs,
+    responseType: api_container_service_pb.PlanYaml,
+    requestSerialize: serialize_api_container_api_StarlarkScriptPlanYamlArgs,
+    requestDeserialize: deserialize_api_container_api_StarlarkScriptPlanYamlArgs,
+    responseSerialize: serialize_api_container_api_PlanYaml,
+    responseDeserialize: deserialize_api_container_api_PlanYaml,
+  },
+  // Gets yaml representing the plan the package will execute in an enclave
+getStarlarkPackagePlanYaml: {
+    path: '/api_container_api.ApiContainerService/GetStarlarkPackagePlanYaml',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.StarlarkPackagePlanYamlArgs,
+    responseType: api_container_service_pb.PlanYaml,
+    requestSerialize: serialize_api_container_api_StarlarkPackagePlanYamlArgs,
+    requestDeserialize: deserialize_api_container_api_StarlarkPackagePlanYamlArgs,
+    responseSerialize: serialize_api_container_api_PlanYaml,
+    responseDeserialize: deserialize_api_container_api_PlanYaml,
   },
 };
 

@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.88.6](https://github.com/kurtosis-tech/kurtosis/compare/0.88.5...0.88.6) (2024-03-13)
+
+
+### Features
+
+* define `build_args` in `ImageBuildSpec` ([#2257](https://github.com/kurtosis-tech/kurtosis/issues/2257)) ([9812375](https://github.com/kurtosis-tech/kurtosis/commit/9812375f1258a2b15394b98a116741e3bfd366bd))
+* generate plan yamls  ([#2177](https://github.com/kurtosis-tech/kurtosis/issues/2177)) ([2292010](https://github.com/kurtosis-tech/kurtosis/commit/2292010f6a62cfd9aa1b9f0e6616ac02a315e941))
+* port guessing based on port number for docker transpiler ([#2281](https://github.com/kurtosis-tech/kurtosis/issues/2281)) ([5c98ce2](https://github.com/kurtosis-tech/kurtosis/commit/5c98ce26778d07ea5194bb186b032955599e48f8))
+* support package nodes in enclave builder ui ([#2283](https://github.com/kurtosis-tech/kurtosis/issues/2283)) ([7fa27ed](https://github.com/kurtosis-tech/kurtosis/commit/7fa27ed1b1ea56deff945a58f63ada5c5c1fe4e6))
+
+## [0.88.5](https://github.com/kurtosis-tech/kurtosis/compare/0.88.4...0.88.5) (2024-03-12)
+
+
+### Features
+
+* add an add to GitHub button on an encalve ([#2256](https://github.com/kurtosis-tech/kurtosis/issues/2256)) ([96f6771](https://github.com/kurtosis-tech/kurtosis/commit/96f67712d83d9d89b1575b32f256522220a8ed94))
+
+
+### Bug Fixes
+
+* image download mode always applies to k8s as well ([#2271](https://github.com/kurtosis-tech/kurtosis/issues/2271)) ([2e90c67](https://github.com/kurtosis-tech/kurtosis/commit/2e90c672abe576c0ccfa385e95af59980678a395))
+
 ## [0.88.4](https://github.com/kurtosis-tech/kurtosis/compare/0.88.3...0.88.4) (2024-03-11)
 
 

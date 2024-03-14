@@ -58,6 +58,13 @@ config = ServiceConfig(
         # Stage of image build to target for multi-stage container image
         # OPTIONAL
         target_stage=""
+
+        # Arguments passed at build-time
+        # OPTIONAL (Default: {})
+        build_args={
+            "BUILD_ARG_1": "VALUE_1",
+            "BUILD_ARG_2": "VALUE_2",
+        }
     )
 
     OR

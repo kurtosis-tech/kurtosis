@@ -5,6 +5,7 @@ import {
   RunStarlarkPackageArgs,
   RunStarlarkScriptArgs,
   ServiceInfo,
+  StarlarkPackagePlanYamlArgs,
 } from "enclave-manager-sdk/build/api_container_service_pb";
 import {
   CreateEnclaveArgs,
@@ -24,6 +25,7 @@ import {
   InspectFilesArtifactContentsRequest,
   RunStarlarkPackageRequest,
   RunStarlarkScriptRequest,
+  StarlarkPackagePlanYamlArgs as StarlarkPackagePlanYamlArgsRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import { assertDefined, asyncResult, isDefined, RemoveFunctions } from "kurtosis-ui-components";
 import { EnclaveFullInfo } from "../../emui/enclaves/types";
@@ -184,15 +186,15 @@ export abstract class KurtosisClient {
   }
 
   async createEnclave(
-    enclaveName: string,
-    apiContainerLogLevel: string,
+    enclaveName?: string,
+    apiContainerLogLevel?: string,
     productionMode?: boolean,
     apiContainerVersionTag?: string,
   ) {
     return asyncResult(() => {
       const request = new CreateEnclaveArgs({
-        enclaveName,
-        apiContainerLogLevel,
+        enclaveName: enclaveName || "",
+        apiContainerLogLevel: apiContainerLogLevel || "info",
         mode: productionMode ? EnclaveMode.PRODUCTION : EnclaveMode.TEST,
         apiContainerVersionTag: apiContainerVersionTag || "",
       });
@@ -236,5 +238,23 @@ export abstract class KurtosisClient {
       }),
     });
     return this.client.runStarlarkScript(request, this.getHeaderOptions());
+  }
+
+  async getStarlarkPackagePlanYaml(
+    apicInfo: RemoveFunctions<EnclaveAPIContainerInfo>,
+    packageId: string,
+    args: Record<string, any>,
+  ) {
+    return asyncResult(() => {
+      const request = new StarlarkPackagePlanYamlArgsRequest({
+        apicIpAddress: apicInfo.bridgeIpAddress,
+        apicPort: apicInfo.grpcPortInsideEnclave,
+        starlarkPackagePlanYamlArgs: new StarlarkPackagePlanYamlArgs({
+          packageId: packageId,
+          serializedParams: JSON.stringify(args),
+        }),
+      });
+      return this.client.getStarlarkPackagePlanYaml(request, this.getHeaderOptions());
+    });
   }
 }

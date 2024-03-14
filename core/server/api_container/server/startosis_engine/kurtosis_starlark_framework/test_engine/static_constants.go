@@ -36,6 +36,10 @@ var (
 	testBuildContextDir                            = "./"
 	testBuildFile                                  = "foo.Dockerfile"
 	testTargetStage                                = "builder"
+	testBuildArgName1                              = "BUILD_ARG_1"
+	testBuildArgValue1                             = "VALUE_1"
+	testBuildArgName2                              = "BUILD_ARG_2"
+	testBuildArgValue2                             = "VALUE_2"
 	testBuildContextAbsoluteLocator                = startosis_packages.NewPackageAbsoluteLocator(testModulePackageId, "")
 	testContainerImageAbsoluteLocator              = startosis_packages.NewPackageAbsoluteLocator("github.com/kurtosistech/test-package/Dockerfile", "")
 	testContainerImageAbsoluteLocatorWithBuildFile = startosis_packages.NewPackageAbsoluteLocator("github.com/kurtosistech/test-package/foo.Dockerfile", "")

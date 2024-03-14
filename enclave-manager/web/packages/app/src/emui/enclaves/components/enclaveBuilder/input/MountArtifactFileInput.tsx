@@ -10,7 +10,7 @@ export const MountArtifactFileInput = (props: KurtosisFormInputProps<KurtosisSer
   const { variables } = useVariableContext();
   const artifactVariableOptions = useMemo((): SelectOption[] => {
     return variables
-      .filter((variable) => variable.id.match(/^(?:artifact|shell|python)\.[^.]+$/))
+      .filter((variable) => variable.id.match(/^(?:artifact|shell|python)\.[^.]+.store/))
       .map((variable) => ({ display: variable.displayName, value: `{{${variable.id}}}` }));
   }, [variables]);
 
@@ -30,7 +30,7 @@ export const MountArtifactFileInput = (props: KurtosisFormInputProps<KurtosisSer
           {...props}
           size={"sm"}
           placeholder={"Select an Artifact"}
-          name={`${props.name as `files.${number}`}.artifactName`}
+          name={`${props.name as `files.${number}`}.name`}
         />
       </GridItem>
     </Grid>

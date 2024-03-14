@@ -2,19 +2,20 @@ import { Flex, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react"
 import { isDefined } from "kurtosis-ui-components";
 import { memo } from "react";
 import { NodeProps } from "reactflow";
-import { BooleanArgumentInput } from "../form/BooleanArgumentInput";
-import { CodeEditorInput } from "../form/CodeEditorInput";
-import { DictArgumentInput } from "../form/DictArgumentInput";
-import { KurtosisFormControl } from "../form/KurtosisFormControl";
-import { ListArgumentInput } from "../form/ListArgumentInput";
-import { StringArgumentInput } from "../form/StringArgumentInput";
-import { ImageConfigInput } from "./input/ImageConfigInput";
-import { MentionStringArgumentInput } from "./input/MentionStringArgumentInput";
-import { MountArtifactFileInput } from "./input/MountArtifactFileInput";
-import { validateDurationString, validateName } from "./input/validators";
+import { BooleanArgumentInput } from "../../form/BooleanArgumentInput";
+import { CodeEditorInput } from "../../form/CodeEditorInput";
+import { DictArgumentInput } from "../../form/DictArgumentInput";
+import { KurtosisFormControl } from "../../form/KurtosisFormControl";
+import { ListArgumentInput } from "../../form/ListArgumentInput";
+import { StringArgumentInput } from "../../form/StringArgumentInput";
+import { ImageConfigInput } from "../input/ImageConfigInput";
+import { MentionStringArgumentInput } from "../input/MentionStringArgumentInput";
+import { MountArtifactFileInput } from "../input/MountArtifactFileInput";
+import { StoreConfigurationInput } from "../input/StoreConfigurationInput";
+import { validateDurationString, validateName } from "../input/validators";
+import { KurtosisFileMount, KurtosisShellNodeData } from "../types";
+import { useVariableContext } from "../VariableContextProvider";
 import { KurtosisNode } from "./KurtosisNode";
-import { KurtosisFileMount, KurtosisShellNodeData } from "./types";
-import { useVariableContext } from "./VariableContextProvider";
 
 export const KurtosisShellNode = memo(
   ({ id, selected }: NodeProps) => {
@@ -28,33 +29,57 @@ export const KurtosisShellNode = memo(
     return (
       <KurtosisNode id={id} selected={selected} minWidth={650} maxWidth={800}>
         <Flex gap={"16px"}>
-          <KurtosisFormControl<KurtosisShellNodeData> name={"shellName"} label={"Shell Name"} isRequired>
-            <StringArgumentInput name={"shellName"} size={"sm"} isRequired validate={validateName} />
+          <KurtosisFormControl<KurtosisShellNodeData>
+            name={"name"}
+            label={"Shell Name"}
+            isRequired
+            isDisabled={nodeData.isFromPackage}
+          >
+            <StringArgumentInput
+              name={"name"}
+              size={"sm"}
+              isRequired
+              validate={validateName}
+              disabled={nodeData.isFromPackage}
+            />
           </KurtosisFormControl>
-          <KurtosisFormControl<KurtosisShellNodeData> name={"image.image"} label={"Container Image"}>
-            <ImageConfigInput />
+          <KurtosisFormControl<KurtosisShellNodeData>
+            name={"image.image"}
+            label={"Container Image"}
+            isDisabled={nodeData.isFromPackage}
+          >
+            <ImageConfigInput disabled={nodeData.isFromPackage} />
           </KurtosisFormControl>
         </Flex>
-        <Tabs>
+        <Tabs isLazy>
           <TabList>
             <Tab>Script</Tab>
             <Tab>Environment</Tab>
             <Tab>Files</Tab>
             <Tab>Advanced</Tab>
           </TabList>
-
           <TabPanels>
             <TabPanel>
-              <KurtosisFormControl<KurtosisShellNodeData> name={"command"} label={"Script to run"} isRequired>
-                <CodeEditorInput name={"command"} fileName={`${id}.sh`} isRequired />
+              <KurtosisFormControl<KurtosisShellNodeData>
+                name={"command"}
+                label={"Script to run"}
+                isRequired
+                isDisabled={nodeData.isFromPackage}
+              >
+                <CodeEditorInput name={"command"} fileName={`${id}.sh`} isRequired disabled={nodeData.isFromPackage} />
               </KurtosisFormControl>
             </TabPanel>
             <TabPanel>
-              <KurtosisFormControl<KurtosisShellNodeData> name={"env"} label={"Environment Variables"}>
+              <KurtosisFormControl<KurtosisShellNodeData>
+                name={"env"}
+                label={"Environment Variables"}
+                isDisabled={nodeData.isFromPackage}
+              >
                 <DictArgumentInput<KurtosisShellNodeData>
                   name={"env"}
                   KeyFieldComponent={StringArgumentInput}
                   ValueFieldComponent={MentionStringArgumentInput}
+                  disabled={nodeData.isFromPackage}
                 />
               </KurtosisFormControl>
             </TabPanel>
@@ -63,14 +88,16 @@ export const KurtosisShellNode = memo(
                 name={"files"}
                 label={"Input Files"}
                 helperText={"Choose where to mount artifacts on this execution tasks filesystem"}
+                isDisabled={nodeData.isFromPackage}
               >
                 <ListArgumentInput
                   name={"files"}
                   FieldComponent={MountArtifactFileInput}
                   createNewValue={(): KurtosisFileMount => ({
                     mountPoint: "",
-                    artifactName: "",
+                    name: "",
                   })}
+                  disabled={nodeData.isFromPackage}
                 />
               </KurtosisFormControl>
               <KurtosisFormControl<KurtosisShellNodeData>
@@ -80,11 +107,13 @@ export const KurtosisShellNode = memo(
                   "Choose which files to expose from this execution task. You can use either an absolute path, a directory, or a glob."
                 }
                 isRequired
+                isDisabled={nodeData.isFromPackage}
               >
-                <MentionStringArgumentInput<KurtosisShellNodeData>
+                <ListArgumentInput
                   name={"store"}
-                  placeholder={"/some/output/location"}
-                  isRequired
+                  FieldComponent={StoreConfigurationInput}
+                  createNewValue={() => ({ name: "", path: "" })}
+                  minLength={1}
                 />
               </KurtosisFormControl>
             </TabPanel>
@@ -94,19 +123,23 @@ export const KurtosisShellNode = memo(
                   name={"wait_enabled"}
                   label={"Wait enabled"}
                   isRequired
+                  isDisabled={nodeData.isFromPackage}
                   helperText={"Whether kurtosis should wait a preset time for this step to complete."}
                 >
-                  <BooleanArgumentInput<KurtosisShellNodeData> name={"wait_enabled"} />
+                  <BooleanArgumentInput<KurtosisShellNodeData>
+                    name={"wait_enabled"}
+                    disabled={nodeData.isFromPackage}
+                  />
                 </KurtosisFormControl>
                 <KurtosisFormControl<KurtosisShellNodeData>
                   name={"wait"}
                   label={"Wait"}
-                  isDisabled={nodeData.wait_enabled === "false"}
+                  isDisabled={nodeData.wait_enabled === "false" || nodeData.isFromPackage}
                   helperText={"Whether kurtosis should wait a preset time for this step to complete."}
                 >
                   <StringArgumentInput<KurtosisShellNodeData>
                     name={"wait"}
-                    isDisabled={nodeData.wait_enabled === "false"}
+                    disabled={nodeData.wait_enabled === "false" || nodeData.isFromPackage}
                     size={"sm"}
                     placeholder={"180s"}
                     validate={nodeData.wait_enabled === "false" ? undefined : validateDurationString}

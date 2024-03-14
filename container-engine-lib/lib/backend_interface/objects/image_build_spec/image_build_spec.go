@@ -2,6 +2,7 @@ package image_build_spec
 
 import (
 	"encoding/json"
+
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -37,13 +38,17 @@ type privateImageBuildSpec struct {
 	// Default value is the empty string if the image build is not multi-stage.
 	//
 	TargetStage string
+
+	// Dockerfile build args
+	BuildArgs map[string]string
 }
 
-func NewImageBuildSpec(contextDirPath string, containerImageFilePath string, targetStage string) *ImageBuildSpec {
+func NewImageBuildSpec(contextDirPath string, containerImageFilePath string, targetStage string, buildArgs map[string]string) *ImageBuildSpec {
 	internalImageBuildSpec := &privateImageBuildSpec{
 		ContainerImageFilePath: containerImageFilePath,
 		ContextDirPath:         contextDirPath,
 		TargetStage:            targetStage,
+		BuildArgs:              buildArgs,
 	}
 	return &ImageBuildSpec{internalImageBuildSpec}
 }
@@ -58,6 +63,10 @@ func (imageBuildSpec *ImageBuildSpec) GetBuildContextDir() string {
 
 func (imageBuildSpec *ImageBuildSpec) GetTargetStage() string {
 	return imageBuildSpec.privateImageBuildSpec.TargetStage
+}
+
+func (imageBuildSpec *ImageBuildSpec) GetBuildArgs() map[string]string {
+	return imageBuildSpec.privateImageBuildSpec.BuildArgs
 }
 
 func (imageBuildSpec *ImageBuildSpec) MarshalJSON() ([]byte, error) {
