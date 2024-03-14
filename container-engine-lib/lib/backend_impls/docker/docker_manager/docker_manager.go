@@ -1666,8 +1666,7 @@ func (manager *DockerManager) GetOriginalEntryPointAndCommand(ctx context.Contex
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "an error occurred while running image inspect on image '%v'", imageName)
 	}
-
-	return imageInspect.ContainerConfig.Entrypoint, imageInspect.ContainerConfig.Cmd, nil
+	return imageInspect.Config.Entrypoint, imageInspect.Config.Cmd, nil
 }
 
 /*
