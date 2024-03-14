@@ -51,6 +51,7 @@ const (
 	UserAttr                        = "user"
 	TolerationsAttr                 = "tolerations"
 	NodeSelectorsAttr               = "node_selectors"
+	FilesToBeMovedAttr              = "files_to_be_moved"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -210,6 +211,14 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.StringMappingToString(value, NodeSelectorsAttr)
+					},
+				},
+				{
+					Name:              FilesToBeMovedAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringListWithNotEmptyValues(value, FilesToBeMovedAttr)
 					},
 				},
 			},
@@ -504,6 +513,18 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	filesToBeMoved := map[string]string{}
+	filesToBeMovedStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, FilesToBeMovedAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && filesToBeMovedStarlark.Len() > 0 {
+		filesToBeMoved, interpretationErr = kurtosis_types.SafeCastToMapStringString(filesToBeMovedStarlark, FilesToBeMovedAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -527,6 +548,8 @@ func (config *ServiceConfig) ToKurtosisType(
 		nodeSelectors,
 		imageDownloadMode,
 	)
+	serviceConfig.SetFilesToBeMoved(filesToBeMoved)
+
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
 	}
@@ -561,9 +584,6 @@ func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string][]str
 				DirPathToExpandTo: dirpathToExpandTo,
 			}
 			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
-		}
-		if mountpointOnUserService == "/etc/nginx/conf.d/default.conf" {
-			dirpathToExpandTo = path.Join(dirpathToExpandTo, "nginx.conf")
 		}
 		expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
 		serviceDirpathsToArtifactIdentifiers[mountpointOnUserService] = filesArtifactIdentifiers
