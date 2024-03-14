@@ -561,7 +561,8 @@ func createStartServiceOperation(
 			logrus.Warnf("ROGER: okay this is getting logged '%v'", filesToBeMoved)
 			concatenatedFilesToBeMoved := []string{}
 			for source, destination := range filesToBeMoved {
-				concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("mv '%v' '%v'", source, destination))
+				//  HANDLE paths with space in them?
+				concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("mv %v %v", source, destination))
 			}
 			concatenatedFilesToBeMovedAsStr := strings.Join(concatenatedFilesToBeMoved, " && ")
 			originalEntrypointArgs, originalCmdArgs, err := dockerManager.GetOriginalEntryPointAndCommand(ctx, containerImageName)
