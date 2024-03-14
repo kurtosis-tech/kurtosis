@@ -53,7 +53,7 @@ func NewImageSpec() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, ImageRegistryUsernameAttr)
+						return builtin_argument.NonEmptyString(value, ImageRegistryPasswordAttr)
 					},
 				},
 			},
