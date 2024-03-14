@@ -285,7 +285,9 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 				service_config.FilesAttr,
 				filesDict,
 			)
-			serviceConfigKwargs = appendKwarg(serviceConfigKwargs, service_config.FilesToBeMovedAttr, filesToBeMoved)
+			if filesToBeMoved.Len() > 0 {
+				serviceConfigKwargs = appendKwarg(serviceConfigKwargs, service_config.FilesToBeMovedAttr, filesToBeMoved)
+			}
 			servicesToFilesArtifactsToUpload[serviceName] = artifactsToUpload
 		}
 
@@ -455,7 +457,7 @@ func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.D
 // <abs path on host> := create a persistent directory on container at <abs path on host>
 // <rel path on host> := create a persistent directory on container at <rel path on host>
 // Named volumes are treated https://docs.docker.com/storage/volumes/ as absolute paths persistence layers, and thus a persistent directory is created
-func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, starlark.Value, error) {
+func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, *starlark.Dict, error) {
 	filesArgSLDict := starlark.NewDict(len(composeVolumes))
 	filesArtifactsToUpload := map[string]string{}
 
@@ -491,7 +493,7 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 		}
 
 		var filesDictValue starlark.Value
-		target := volume.Target
+		targetDirectoryForFilesArtifact := volume.Target
 		if shouldPersist {
 			persistenceKey := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			persistentDirectory, err := getStarlarkPersistentDirectory(persistenceKey)
@@ -504,13 +506,15 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 			filesArtifactName := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			filesArtifactsToUpload[volume.Source] = filesArtifactName
 			filesDictValue = starlark.String(filesArtifactName)
-			target = path.Join("/tmp", filesArtifactName)
-			if err := filesToBeMoved.SetKey(starlark.String(target), starlark.String(volume.Target)); err != nil {
-				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting files to be moved for target '%v'", volume.Target)
+			sourcePathNameEnd := path.Base(volume.Source)
+			targetDirectoryForFilesArtifact = path.Join("/tmp", filesArtifactName)
+			targetToMovePath := path.Join(targetDirectoryForFilesArtifact, sourcePathNameEnd)
+			if err := filesToBeMoved.SetKey(starlark.String(targetToMovePath), starlark.String(volume.Target)); err != nil {
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting files to be moved for targetDirectoryForFilesArtifact '%v'", volume.Target)
 			}
 		}
 
-		if err := filesArgSLDict.SetKey(starlark.String(target), filesDictValue); err != nil {
+		if err := filesArgSLDict.SetKey(starlark.String(targetDirectoryForFilesArtifact), filesDictValue); err != nil {
 			return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
 		}
 	}

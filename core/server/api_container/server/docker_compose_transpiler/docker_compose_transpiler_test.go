@@ -76,7 +76,7 @@ services:
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.upload_files(src = "./data", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, files={"/data": "web--volume0"}, env_vars={}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, files={"/tmp/web--volume0": "web--volume0"}, env_vars={}, files_to_be_moved={"/tmp/web--volume0/data": "/data"}))
 `, builtImageSuffix)
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
@@ -179,7 +179,7 @@ services:
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.upload_files(src = "./data", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, files={"/data": "web--volume0", "/node_modules": Directory(persistent_key="web--volume1")}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], cmd=["echo", "Hello,", "World!"], env_vars={"NODE_ENV": "development"}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, files={"/node_modules": Directory(persistent_key="web--volume1"), "/tmp/web--volume0": "web--volume0"}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], cmd=["echo", "Hello,", "World!"], env_vars={"NODE_ENV": "development"}, files_to_be_moved={"/tmp/web--volume0/data": "/data"}))
 `, builtImageSuffix)
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
@@ -420,7 +420,7 @@ services:
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.upload_files(src = "./angular", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="angular", target_stage="builder"), ports={"port0": PortSpec(number=4200, transport_protocol="TCP")}, files={"/project": "web--volume0", "/project/node_modules": Directory(persistent_key="web--volume1")}, env_vars={}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="angular", target_stage="builder"), ports={"port0": PortSpec(number=4200, transport_protocol="TCP")}, files={"/project/node_modules": Directory(persistent_key="web--volume1"), "/tmp/web--volume0": "web--volume0"}, env_vars={}, files_to_be_moved={"/tmp/web--volume0/angular": "/project"}))
 `, builtImageSuffix)
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
@@ -485,7 +485,7 @@ networks:
     plan.add_service(name = "kibana", config = ServiceConfig(image="kibana:7.16.1", ports={"port0": PortSpec(number=5601, transport_protocol="TCP")}, env_vars={}))
     plan.upload_files(src = "./logstash/nginx.log", name = "logstash--volume1")
     plan.upload_files(src = "./logstash/pipeline/logstash-nginx.config", name = "logstash--volume0")
-    plan.add_service(name = "logstash", config = ServiceConfig(image="logstash:7.16.1", ports={"port0": PortSpec(number=5000, transport_protocol="TCP"), "port1": PortSpec(number=5000, transport_protocol="UDP"), "port2": PortSpec(number=5044, transport_protocol="TCP"), "port3": PortSpec(number=9600, transport_protocol="TCP")}, files={"/home/nginx.log": "logstash--volume1", "/usr/share/logstash/pipeline/logstash-nginx.config": "logstash--volume0"}, cmd=["logstash", "-f", "/usr/share/logstash/pipeline/logstash-nginx.config"], env_vars={"LS_JAVA_OPTS": "-Xms512m -Xmx512m", "discovery.seed_hosts": "logstash"}))
+    plan.add_service(name = "logstash", config = ServiceConfig(image="logstash:7.16.1", ports={"port0": PortSpec(number=5000, transport_protocol="TCP"), "port1": PortSpec(number=5000, transport_protocol="UDP"), "port2": PortSpec(number=5044, transport_protocol="TCP"), "port3": PortSpec(number=9600, transport_protocol="TCP")}, files={"/tmp/logstash--volume0": "logstash--volume0", "/tmp/logstash--volume1": "logstash--volume1"}, cmd=["logstash", "-f", "/usr/share/logstash/pipeline/logstash-nginx.config"], env_vars={"LS_JAVA_OPTS": "-Xms512m -Xmx512m", "discovery.seed_hosts": "logstash"}, files_to_be_moved={"/tmp/logstash--volume0/logstash-nginx.config": "/usr/share/logstash/pipeline/logstash-nginx.config", "/tmp/logstash--volume1/nginx.log": "/home/nginx.log"}))
 `
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
@@ -542,7 +542,7 @@ services:
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.add_service(name = "redis", config = ServiceConfig(image="redislabs/redismod", ports={"port0": PortSpec(number=6379, transport_protocol="TCP")}, env_vars={}))
     plan.upload_files(src = "./code", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%v", build_context_dir=".", target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP", application_protocol="http", url="http://web:8000")}, files={"/code": "web--volume0"}, env_vars={}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%v", build_context_dir=".", target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP", application_protocol="http", url="http://web:8000")}, files={"/tmp/web--volume0": "web--volume0"}, env_vars={}, files_to_be_moved={"/tmp/web--volume0/code": "/code"}))
 `, builtImageSuffix)
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
