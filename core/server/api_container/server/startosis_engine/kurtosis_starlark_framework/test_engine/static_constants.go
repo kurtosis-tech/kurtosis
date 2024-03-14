@@ -28,10 +28,8 @@ var (
 	testModuleFileName               = "github.com/kurtosistech/test-package/helpers.star"
 	testModuleRelativeLocator        = "./helpers.star"
 
-	testModuleAbsoluteLocator = startosis_packages.NewPackageAbsoluteLocator(testModuleFileName, "")
-
-	emptyAbsoluteLocator = startosis_packages.NewPackageAbsoluteLocator("", "")
-
+	testModuleAbsoluteLocator                      = startosis_packages.NewPackageAbsoluteLocator(testModuleFileName, "")
+	emptyAbsoluteLocator                           = startosis_packages.NewPackageAbsoluteLocator("", "")
 	testContainerImageName                         = "kurtosistech/example-datastore-server"
 	testBuildContextDir                            = "./"
 	testBuildFile                                  = "foo.Dockerfile"
