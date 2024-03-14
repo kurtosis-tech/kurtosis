@@ -2,6 +2,7 @@ package user_service_functions
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -539,6 +540,7 @@ func createStartServiceOperation(
 		memoryAllocationMegabytes := serviceConfig.GetMemoryAllocationMegabytes()
 		privateIPAddrPlaceholder := serviceConfig.GetPrivateIPAddrPlaceholder()
 		user := serviceConfig.GetUser()
+		filesToBeMoved := serviceConfig.GetFilesToBeMoved()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -550,6 +552,31 @@ func createStartServiceOperation(
 		}
 		for key := range envVars {
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
+		}
+
+		if filesToBeMoved != nil && len(filesToBeMoved) > 0 {
+			concatenatedFilesToBeMoved := []string{}
+			for source, destination := range filesToBeMoved {
+				concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("mv '%v' '%v'", source, destination))
+			}
+			concatenatedFilesToBeMovedAsStr := strings.Join(concatenatedFilesToBeMoved, " && ")
+			originalEntrypointArgs, originalCmdArgs, err := dockerManager.GetOriginalEntryPointAndCommand(ctx, containerImageName)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "an error occurred fetching data about image '%v'", containerImageName)
+			}
+			if len(entrypointArgs) > 0 {
+				entryPointArgsAsStr := strings.Join(entrypointArgs, " ")
+				entrypointArgs = append([]string{"/bin/sh", "-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr})
+			} else if len(originalEntrypointArgs) > 0 {
+				originalEntrypointArgsStr := strings.Join(originalEntrypointArgs, " ")
+				entrypointArgs = append([]string{"/bin/sh", "-c", concatenatedFilesToBeMovedAsStr + " && " + originalEntrypointArgsStr})
+			} else if len(cmdArgs) > 0 {
+				cmdArgsAsStr := strings.Join(cmdArgs, " ")
+				cmdArgs = append([]string{"/bin/sh", "-c", concatenatedFilesToBeMovedAsStr + " && " + cmdArgsAsStr})
+			} else if len(originalCmdArgs) > 0 {
+				originalCmdArgsStr := strings.Join(originalCmdArgs, " ")
+				cmdArgs = append([]string{"/bin/sh", "-c", concatenatedFilesToBeMovedAsStr + " && " + originalCmdArgsStr})
+			}
 		}
 
 		volumeMounts := map[string]string{}

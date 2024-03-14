@@ -70,6 +70,8 @@ type privateServiceConfig struct {
 	NodeSelectors map[string]string
 
 	ImageDownloadMode image_download_mode.ImageDownloadMode
+
+	FilesToBeMoved map[string]string
 }
 
 func CreateServiceConfig(
@@ -123,6 +125,7 @@ func CreateServiceConfig(
 		Tolerations:                  tolerations,
 		NodeSelectors:                nodeSelectors,
 		ImageDownloadMode:            imageDownloadMode,
+		FilesToBeMoved:               map[string]string{},
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -215,6 +218,14 @@ func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {
 
 func (serviceConfig *ServiceConfig) GetNodeSelectors() map[string]string {
 	return serviceConfig.privateServiceConfig.NodeSelectors
+}
+
+func (serviceConfig *ServiceConfig) SetFilesToBeMoved(filesToBeMoved map[string]string) {
+	serviceConfig.privateServiceConfig.FilesToBeMoved = filesToBeMoved
+}
+
+func (serviceConfig *ServiceConfig) GetFilesToBeMoved() map[string]string {
+	return serviceConfig.privateServiceConfig.FilesToBeMoved
 }
 
 func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {

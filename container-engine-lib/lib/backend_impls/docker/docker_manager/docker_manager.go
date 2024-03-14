@@ -1661,6 +1661,15 @@ func (manager *DockerManager) getImagePlatform(ctx context.Context, imageName st
 	return imageInspect.Architecture, nil
 }
 
+func (manager *DockerManager) GetOriginalEntryPointAndCommand(ctx context.Context, imageName string) ([]string, []string, error) {
+	imageInspect, _, err := manager.dockerClient.ImageInspectWithRaw(ctx, imageName)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "an error occurred while running image inspect on image '%v'", imageName)
+	}
+
+	return imageInspect.ContainerConfig.Entrypoint, imageInspect.ContainerConfig.Cmd, nil
+}
+
 /*
 Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
 mapped to the host ports.
