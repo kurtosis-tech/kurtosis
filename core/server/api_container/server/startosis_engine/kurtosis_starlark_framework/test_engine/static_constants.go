@@ -28,6 +28,7 @@ var (
 
 	testContainerImageName                    = "kurtosistech/example-datastore-server"
 	testBuildContextDir                       = "./"
+	defaultBuildFile                          = "Dockerfile"
 	testBuildFile                             = "foo.Dockerfile"
 	testTargetStage                           = "builder"
 	testBuildArgName1                         = "BUILD_ARG_1"

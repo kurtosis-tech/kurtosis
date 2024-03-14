@@ -210,7 +210,7 @@ func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
 		return nil, interpretationErr
 	}
 
-	return image_build_spec.NewImageBuildSpec(buildContextDirPathOnDisk, containerImageFilePathOnDisk, targetStageStr, buildArgs), nil
+	return image_build_spec.NewImageBuildSpec(buildContextDirPathOnDisk, containerImageFilePathOnDisk, targetStageStr, buildFile, buildArgs), nil
 }
 
 // Returns the filepath of the build context directory and container image on APIC based on package info

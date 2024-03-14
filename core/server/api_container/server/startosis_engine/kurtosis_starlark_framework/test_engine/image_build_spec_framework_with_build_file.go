@@ -56,5 +56,4 @@ func (t *imageBuildSpecWithBuildFileTest) Assert(typeValue builtin_argument.Kurt
 	require.Nil(t, err)
 	require.Equal(t, testOnDiskContainerImagePathWithBuildFile, imageBuildSpec.GetContainerImageFilePath())
 	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
-	//require.Equal(t, "", imageBuildSpec.GetTargetStage())
 }
