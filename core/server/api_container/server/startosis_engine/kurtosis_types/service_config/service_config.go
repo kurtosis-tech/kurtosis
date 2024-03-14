@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/sirupsen/logrus"
 	"math"
 	"path"
 
@@ -519,11 +520,13 @@ func (config *ServiceConfig) ToKurtosisType(
 		return nil, interpretationErr
 	}
 	if found && filesToBeMovedStarlark.Len() > 0 {
+		logrus.Info("this is confusing")
 		filesToBeMoved, interpretationErr = kurtosis_types.SafeCastToMapStringString(filesToBeMovedStarlark, FilesToBeMovedAttr)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
 	}
+	logrus.Infof("the attribute is '%v'", filesToBeMoved)
 
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
