@@ -39,7 +39,7 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 	fileArtifact1 := fmt.Sprintf("%s(%s=[%q])", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName1)
 	fileArtifact2 := fmt.Sprintf("%s(%s=[%q])", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName2)
 	persistentDirectory := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.PersistentKeyAttr, testPersistentDirectoryKey)
-	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s, %s=%v, %s=%v)",
+	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s, %s=%v, %s=%v, files_to_be_moved={\"/foo/bar\": \"/doo/dar\"})",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, testContainerImageName,
 		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", testPrivatePortId, testPrivatePortNumber, testPrivatePortProtocolStr, testPrivateApplicationProtocol, testWaitConfiguration),
@@ -111,6 +111,8 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 
 	require.Equal(t, testEntryPointSlice, serviceConfig.GetEntrypointArgs())
 	require.Equal(t, testCmdSlice, serviceConfig.GetCmdArgs())
+
+	require.NotEmpty(t, serviceConfig.GetFilesToBeMoved())
 
 	expectedEnvVars := map[string]string{
 		testEnvVarName1: testEnvVarValue1,
