@@ -218,7 +218,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.StringListWithNotEmptyValues(value, FilesToBeMovedAttr)
+						return builtin_argument.StringMappingToString(value, FilesToBeMovedAttr)
 					},
 				},
 			},
