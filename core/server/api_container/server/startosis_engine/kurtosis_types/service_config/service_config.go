@@ -555,15 +555,15 @@ func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string][]str
 			return nil, startosis_errors.NewInterpretationError("An error occurred generating an UUID string for the file artifacts destination folder")
 		}
 		dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactFolderUUIDStr)
-		if mountpointOnUserService == "/etc/nginx/conf.d/default.conf" {
-			dirpathToExpandTo = path.Join(dirpathToExpandTo, "nginx.conf")
-		}
 		for _, filesArtifactIdentifier := range filesArtifactIdentifiers {
 			expansion := args.FilesArtifactExpansion{
 				FilesIdentifier:   filesArtifactIdentifier,
 				DirPathToExpandTo: dirpathToExpandTo,
 			}
 			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
+		}
+		if mountpointOnUserService == "/etc/nginx/conf.d/default.conf" {
+			dirpathToExpandTo = path.Join(dirpathToExpandTo, "nginx.conf")
 		}
 		expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
 		serviceDirpathsToArtifactIdentifiers[mountpointOnUserService] = filesArtifactIdentifiers
