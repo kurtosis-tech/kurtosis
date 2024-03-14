@@ -276,7 +276,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 
 		// VOLUMES -> FILES ARTIFACTS
 		if composeService.Volumes != nil {
-			filesDict, artifactsToUpload, err := getStarlarkFilesArtifacts(composeService.Volumes, serviceName)
+			filesDict, artifactsToUpload, filesToBeMoved, err := getStarlarkFilesArtifacts(composeService.Volumes, serviceName)
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the files dict for service '%s'", serviceName)
 			}
@@ -285,6 +285,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 				service_config.FilesAttr,
 				filesDict,
 			)
+			serviceConfigKwargs = appendKwarg(serviceConfigKwargs, service_config.FilesToBeMovedAttr, filesToBeMoved)
 			servicesToFilesArtifactsToUpload[serviceName] = artifactsToUpload
 		}
 
@@ -454,9 +455,11 @@ func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.D
 // <abs path on host> := create a persistent directory on container at <abs path on host>
 // <rel path on host> := create a persistent directory on container at <rel path on host>
 // Named volumes are treated https://docs.docker.com/storage/volumes/ as absolute paths persistence layers, and thus a persistent directory is created
-func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, error) {
+func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, starlark.Value, error) {
 	filesArgSLDict := starlark.NewDict(len(composeVolumes))
 	filesArtifactsToUpload := map[string]string{}
+
+	filesToBeMoved := starlark.NewDict(len(composeVolumes))
 
 	for volumeIdx, volume := range composeVolumes {
 		volumeType := volume.Type
@@ -466,14 +469,14 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 		case types.VolumeTypeBind:
 			// Handle case where home path is reference
 			if strings.Contains(volume.Source, unixHomePathSymbol) {
-				return nil, map[string]string{}, stacktrace.NewError(
+				return nil, map[string]string{}, nil, stacktrace.NewError(
 					"Volume path '%v' uses '%v', likely referencing home path on a unix filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
 						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path",
 					volume.Source, unixHomePathSymbol, volume.Source)
 			}
 			// Handle case where upstream relative path is reference
 			if strings.Contains(volume.Source, upstreamRelativePathSymbol) {
-				return nil, map[string]string{}, stacktrace.NewError(
+				return nil, map[string]string{}, nil, stacktrace.NewError(
 					"Volume path '%v' uses '%v', likely referencing an upstream path on a filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
 						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path within the package.",
 					volume.Source, upstreamRelativePathSymbol, volume.Source)
@@ -481,17 +484,19 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 
 			// Assume that if an absolute path is specified, user wants to use volume as a persistence layer
 			// Additionally, assume relative paths are read-only
+			// GM - this should fail too as this could be outside the repository
 			shouldPersist = path.IsAbs(volume.Source)
 		case types.VolumeTypeVolume:
 			shouldPersist = true
 		}
 
 		var filesDictValue starlark.Value
+		target := volume.Target
 		if shouldPersist {
 			persistenceKey := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			persistentDirectory, err := getStarlarkPersistentDirectory(persistenceKey)
 			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
 			}
 			filesDictValue = persistentDirectory
 		} else {
@@ -499,14 +504,18 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 			filesArtifactName := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			filesArtifactsToUpload[volume.Source] = filesArtifactName
 			filesDictValue = starlark.String(filesArtifactName)
+			target = path.Join("/tmp", filesArtifactName)
+			if err := filesToBeMoved.SetKey(starlark.String(target), starlark.String(volume.Target)); err != nil {
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting files to be moved for target '%v'", volume.Target)
+			}
 		}
 
-		if err := filesArgSLDict.SetKey(starlark.String(volume.Target), filesDictValue); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
+		if err := filesArgSLDict.SetKey(starlark.String(target), filesDictValue); err != nil {
+			return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
 		}
 	}
 
-	return filesArgSLDict, filesArtifactsToUpload, nil
+	return filesArgSLDict, filesArtifactsToUpload, filesToBeMoved, nil
 }
 
 func getStarlarkPersistentDirectory(persistenceKey string) (starlark.Value, error) {
