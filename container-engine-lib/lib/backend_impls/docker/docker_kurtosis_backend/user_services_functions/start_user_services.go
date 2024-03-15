@@ -571,31 +571,35 @@ func createStartServiceOperation(
 				return nil, stacktrace.Propagate(err, "an error occurred fetching data about image '%v'", containerImageName)
 			}
 
-			if len(entrypointArgs) > 0 {
-				logrus.Info("1")
-				entryPointArgsAsStr := strings.Join(entrypointArgs, " ")
-				entrypointArgs = []string{"/bin/sh", "-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr}
-				// overriding entrypoint without overriding command removes the original command
-				if len(cmdArgs) == 0 {
-					cmdArgs = originalCmdArgs
-				}
-			} else if len(originalEntrypointArgs) > 0 {
-				logrus.Info("2")
-				originalEntrypointArgsStr := strings.Join(originalEntrypointArgs, " ")
-				entrypointArgs = []string{"/bin/sh", "-c", concatenatedFilesToBeMovedAsStr + " && " + originalEntrypointArgsStr}
-				// overriding entrypoint without overriding command removes the original command
-				if len(cmdArgs) == 0 {
-					cmdArgs = originalCmdArgs
-				}
-			} else if len(cmdArgs) > 0 {
-				logrus.Info("3")
-				cmdArgsAsStr := strings.Join(cmdArgs, " ")
-				cmdArgs = []string{"/bin/sh", "-c", concatenatedFilesToBeMovedAsStr + " && " + cmdArgsAsStr}
-			} else if len(originalCmdArgs) > 0 {
-				logrus.Info("4")
-				originalCmdArgsStr := strings.Join(originalCmdArgs, " ")
-				cmdArgs = []string{"/bin/sh", "-c", concatenatedFilesToBeMovedAsStr + " && " + originalCmdArgsStr}
+			// we do this replacement as we want to keep the original command args as they are not overwritten
+			// it might be that none of the two are set
+			if len(cmdArgs) == 0 && len(originalCmdArgs) > 0 {
+				cmdArgs = originalCmdArgs
 			}
+			if len(entrypointArgs) == 0 && len(originalEntrypointArgs) > 0 {
+				entrypointArgs = originalEntrypointArgs
+			}
+
+			entryPointArgsAsStr := strings.Join(entrypointArgs, " ")
+			cmdArgsAsStr := strings.Join(cmdArgs, " ")
+
+			if len(cmdArgs) > 0 {
+				if len(entrypointArgs) > 0 {
+					cmdArgs = []string{concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
+				} else {
+					cmdArgs = []string{concatenatedFilesToBeMovedAsStr + " && " + cmdArgsAsStr}
+				}
+			} else {
+				if len(entrypointArgs) > 0 {
+					cmdArgs = []string{concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
+				} else {
+					// no entrypoint and no command; this shouldn't really happen
+					logrus.Warnf("'%v' seems to have no overrides for entrypoint, command no original entrypoint or commands. This shouldn't really happen.", serviceUUID)
+					cmdArgs = []string{concatenatedFilesToBeMovedAsStr}
+				}
+			}
+
+			entrypointArgs = []string{"/bin/sh"}
 		}
 
 		volumeMounts := map[string]string{}
