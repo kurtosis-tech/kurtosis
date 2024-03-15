@@ -243,9 +243,9 @@ func TestGitPackageProvider_FailsForNonExistentPackage(t *testing.T) {
 }
 
 func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommit(t *testing.T) {
-	oackageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
-	defer os.RemoveAll(oackageDir)
+	defer os.RemoveAll(packageDir)
 	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
@@ -255,7 +255,7 @@ func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommit(t *testing.T
 	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(oackageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	absoluteLocatorStr := "github.com/kurtosis-tech/ethereum-package/src/package_io/input_parser.star"
 	commitHash := "da55be84861e93ce777076e545abee35ff2d51ce"
