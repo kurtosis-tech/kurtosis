@@ -570,14 +570,23 @@ func createStartServiceOperation(
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "an error occurred fetching data about image '%v'", containerImageName)
 			}
+
 			if len(entrypointArgs) > 0 {
 				logrus.Info("1")
 				entryPointArgsAsStr := strings.Join(entrypointArgs, " ")
 				entrypointArgs = []string{"/bin/sh", "-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr}
+				// overriding entrypoint without overriding command removes the original command
+				if len(cmdArgs) == 0 {
+					cmdArgs = originalCmdArgs
+				}
 			} else if len(originalEntrypointArgs) > 0 {
 				logrus.Info("2")
 				originalEntrypointArgsStr := strings.Join(originalEntrypointArgs, " ")
 				entrypointArgs = []string{"/bin/sh", "-c", concatenatedFilesToBeMovedAsStr + " && " + originalEntrypointArgsStr}
+				// overriding entrypoint without overriding command removes the original command
+				if len(cmdArgs) == 0 {
+					cmdArgs = originalCmdArgs
+				}
 			} else if len(cmdArgs) > 0 {
 				logrus.Info("3")
 				cmdArgsAsStr := strings.Join(cmdArgs, " ")
