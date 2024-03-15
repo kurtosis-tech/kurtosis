@@ -20,10 +20,10 @@ func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTestWithBuildFi
 	suite.packageContentProvider.EXPECT().
 		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
 		Times(1).
-		Return(testBuildContextLocator, nil)
+		Return(testModulePackageAbsoluteLocator, nil)
 
 	suite.packageContentProvider.EXPECT().
-		GetOnDiskAbsolutePackageFilePath(testContainerImageLocatorWithBuildFile).
+		GetOnDiskAbsolutePackageFilePath(testContainerImageAbsoluteLocatorWithBuildFile).
 		Times(1).
 		Return(testOnDiskContainerImagePathWithBuildFile, nil)
 
@@ -56,5 +56,4 @@ func (t *imageBuildSpecWithBuildFileTest) Assert(typeValue builtin_argument.Kurt
 	require.Nil(t, err)
 	require.Equal(t, testOnDiskContainerImagePathWithBuildFile, imageBuildSpec.GetContainerImageFilePath())
 	require.Equal(t, testOnDiskContextDirPath, imageBuildSpec.GetBuildContextDir())
-	//require.Equal(t, "", imageBuildSpec.GetTargetStage())
 }
