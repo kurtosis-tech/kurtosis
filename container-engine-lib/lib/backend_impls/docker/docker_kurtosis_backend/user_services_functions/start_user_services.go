@@ -3,6 +3,7 @@ package user_service_functions
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -580,8 +581,8 @@ func createStartServiceOperation(
 				entrypointArgs = originalEntrypointArgs
 			}
 
-			entryPointArgsAsStr := strings.Join(entrypointArgs, " ")
-			cmdArgsAsStr := strings.Join(cmdArgs, " ")
+			entryPointArgsAsStr := quoteAndJoinArgs(entrypointArgs)
+			cmdArgsAsStr := quoteAndJoinArgs(cmdArgs)
 
 			if len(cmdArgs) > 0 {
 				if len(entrypointArgs) > 0 {
@@ -894,4 +895,12 @@ func registerUserServices(
 	}
 
 	return successfulRegistrations, failedRegistrations, nil
+}
+
+func quoteAndJoinArgs(args []string) string {
+	var quotedArgs []string
+	for _, arg := range args {
+		quotedArgs = append(quotedArgs, strconv.Quote(arg))
+	}
+	return strings.Join(quotedArgs, " ")
 }
