@@ -103,6 +103,7 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, relativeP
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting Compose file '%v' to a Starlark script.", composeFilename)
 	}
+	logrus.Info(starlarkScript)
 	return starlarkScript, nil
 }
 
@@ -132,11 +133,10 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 		ConfigFiles: []types.ConfigFile{{
 			Content: composeBytes,
 		}},
-		// TODO: To leverage this env file at the base of the project: need to parse referenced environment variables
-		// https://docs.docker.com/compose/environment-variables/set-environment-variables/#substitute-with-an-env-file
 		Environment: envVars,
 	}
 	setOptionsFunc := func(options *loader.Options) {
+		loader.WithDiscardEnvFiles(options)
 		options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
 		options.ResolvePaths = shouldResolvePaths
 		options.ConvertWindowsPaths = shouldConvertWindowsPathsToLinux
