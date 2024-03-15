@@ -267,6 +267,56 @@ func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommit(t *testing.T
 	require.NotEmpty(t, contents)
 }
 
+func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommitComparedWithMainBranch(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
+	require.Nil(t, err)
+	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
+	require.Nil(t, err)
+	defer os.RemoveAll(githubAuthDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+
+	absoluteLocatorStr := "github.com/kurtosis-tech/another-sample-dependency-package/directory/internal-module.star"
+	commitHashInMainBranch := ""
+
+	absoluteLocatorWithCommitInMainBranch := startosis_packages.NewPackageAbsoluteLocator(absoluteLocatorStr, commitHashInMainBranch)
+
+	contentFromMainBranch, err := provider.GetModuleContents(absoluteLocatorWithCommitInMainBranch)
+	require.Nil(t, err)
+	require.NotEmpty(t, contentFromMainBranch)
+
+	packageDir, err = os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err = os.MkdirTemp("", repositoriesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+	githubAuthDir, err = os.MkdirTemp("", githubAuthDirRelPath)
+	require.Nil(t, err)
+	githubAuthTokenFilePath, err = os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
+	require.Nil(t, err)
+	defer os.RemoveAll(githubAuthDir)
+
+	provider2 := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+
+	commitHashInAnotherBranch := "f610049f1f9174bce871431af7d5d35cb6bfd76d"
+
+	absoluteLocatorWithCommitInAnotherBranch := startosis_packages.NewPackageAbsoluteLocator(absoluteLocatorStr, commitHashInAnotherBranch)
+
+	contentFromAnotherBranch, err := provider2.GetModuleContents(absoluteLocatorWithCommitInAnotherBranch)
+	require.Nil(t, err)
+	require.NotEmpty(t, contentFromAnotherBranch)
+
+	require.NotEqual(t, contentFromMainBranch, contentFromAnotherBranch)
+
+}
+
 func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
