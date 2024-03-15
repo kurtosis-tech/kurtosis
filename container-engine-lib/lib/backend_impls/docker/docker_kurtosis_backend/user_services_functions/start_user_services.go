@@ -585,17 +585,17 @@ func createStartServiceOperation(
 
 			if len(cmdArgs) > 0 {
 				if len(entrypointArgs) > 0 {
-					cmdArgs = []string{concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
+					cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
 				} else {
-					cmdArgs = []string{concatenatedFilesToBeMovedAsStr + " && " + cmdArgsAsStr}
+					cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + cmdArgsAsStr}
 				}
 			} else {
 				if len(entrypointArgs) > 0 {
-					cmdArgs = []string{concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
+					cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
 				} else {
 					// no entrypoint and no command; this shouldn't really happen
 					logrus.Warnf("'%v' seems to have no overrides for entrypoint, command no original entrypoint or commands. This shouldn't really happen.", serviceUUID)
-					cmdArgs = []string{concatenatedFilesToBeMovedAsStr}
+					cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr}
 				}
 			}
 
