@@ -3,6 +3,7 @@ package mock_package_content_provider
 import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
@@ -32,24 +33,24 @@ func NewMockPackageContentProvider() *MockPackageContentProvider {
 	}
 }
 
-func (provider *MockPackageContentProvider) GetOnDiskAbsolutePackageFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
-	absFilePath, found := provider.starlarkPackages[fileInsidePackageUrl]
+func (provider *MockPackageContentProvider) GetOnDiskAbsolutePackageFilePath(absoluteModuleLocator *startosis_packages.PackageAbsoluteLocator) (string, *startosis_errors.InterpretationError) {
+	absFilePath, found := provider.starlarkPackages[absoluteModuleLocator.GetLocator()]
 	if !found {
-		return "", startosis_errors.NewInterpretationError("Module '%v' not found", fileInsidePackageUrl)
+		return "", startosis_errors.NewInterpretationError("Module '%v' not found", absoluteModuleLocator.GetLocator())
 	}
 	if _, err := os.Stat(absFilePath); err != nil {
-		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", fileInsidePackageUrl)
+		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", absoluteModuleLocator.GetLocator())
 	}
 	return absFilePath, nil
 }
 
-func (provider *MockPackageContentProvider) GetOnDiskAbsolutePath(repositoryPathURL string) (string, *startosis_errors.InterpretationError) {
-	absFilePath, found := provider.starlarkPackages[repositoryPathURL]
+func (provider *MockPackageContentProvider) GetOnDiskAbsolutePath(absoluteModuleLocator *startosis_packages.PackageAbsoluteLocator) (string, *startosis_errors.InterpretationError) {
+	absFilePath, found := provider.starlarkPackages[absoluteModuleLocator.GetLocator()]
 	if !found {
-		return "", startosis_errors.NewInterpretationError("Module '%v' not found", repositoryPathURL)
+		return "", startosis_errors.NewInterpretationError("Module '%v' not found", absoluteModuleLocator.GetLocator())
 	}
 	if _, err := os.Stat(absFilePath); err != nil {
-		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", repositoryPathURL)
+		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", absoluteModuleLocator.GetLocator())
 	}
 	return absFilePath, nil
 }
@@ -75,27 +76,33 @@ func (provider *MockPackageContentProvider) CloneReplacedPackagesIfNeeded(curren
 	return nil
 }
 
-func (provider *MockPackageContentProvider) GetModuleContents(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
-	absFilePath, found := provider.starlarkPackages[fileInsidePackageUrl]
+func (provider *MockPackageContentProvider) GetModuleContents(absoluteModuleLocator *startosis_packages.PackageAbsoluteLocator) (string, *startosis_errors.InterpretationError) {
+	absFilePath, found := provider.starlarkPackages[absoluteModuleLocator.GetLocator()]
 	if !found {
-		return "", startosis_errors.NewInterpretationError("Package '%v' not found", fileInsidePackageUrl)
+		return "", startosis_errors.NewInterpretationError("Package '%v' not found", absoluteModuleLocator.GetLocator())
 	}
 	fileContent, err := os.ReadFile(absFilePath)
 	if err != nil {
-		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", fileInsidePackageUrl)
+		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", absoluteModuleLocator.GetLocator())
 	}
 	return string(fileContent), nil
 }
 
-func (provider *MockPackageContentProvider) GetAbsoluteLocator(packageId string, parentModuleId string, relativeOrAbsoluteModulePath string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) GetAbsoluteLocator(packageId string, parentModuleId string, relativeOrAbsoluteModulePath string, packageReplaceOptions map[string]string) (*startosis_packages.PackageAbsoluteLocator, *startosis_errors.InterpretationError) {
 	if strings.HasPrefix(relativeOrAbsoluteModulePath, parentModuleId) {
-		return "", startosis_errors.NewInterpretationError("Cannot use local absolute locators")
+		return nil, startosis_errors.NewInterpretationError("Cannot use local absolute locators")
 	}
 
+	useMainBranch := ""
 	if strings.HasPrefix(relativeOrAbsoluteModulePath, shared_utils.GithubDomainPrefix) {
-		return relativeOrAbsoluteModulePath, nil
+
+		absoluteLocator := startosis_packages.NewPackageAbsoluteLocator(relativeOrAbsoluteModulePath, useMainBranch)
+		return absoluteLocator, nil
 	}
-	return provider.packageId, nil
+
+	absoluteLocator := startosis_packages.NewPackageAbsoluteLocator(provider.packageId, useMainBranch)
+
+	return absoluteLocator, nil
 }
 
 func (provider *MockPackageContentProvider) AddFileContent(packageId string, contents string) error {
