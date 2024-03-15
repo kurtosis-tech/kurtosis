@@ -20,15 +20,15 @@ func (suite *KurtosisTypeConstructorTestSuite) TestNixBuildSpecTest() {
 	suite.packageContentProvider.EXPECT().
 		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
 		Times(1).
-		Return(testBuildContextLocator, nil)
+		Return(testModulePackageAbsoluteLocator, nil)
 
 	suite.packageContentProvider.EXPECT().
-		GetOnDiskAbsolutePackageFilePath(testNixFlakeLocator).
+		GetOnDiskAbsolutePackageFilePath(testNixFlakeAbsoluteLocator).
 		Times(1).
 		Return(testOnDiskNixFlakePath, nil)
 
 	suite.packageContentProvider.EXPECT().
-		GetOnDiskAbsolutePath(testBuildContextLocator).
+		GetOnDiskAbsolutePath(testBuildContextAbsoluteLocator).
 		Times(1).
 		Return(testOnDiskContextDirPath, nil)
 

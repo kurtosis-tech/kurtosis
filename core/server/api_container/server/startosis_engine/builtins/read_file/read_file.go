@@ -55,11 +55,11 @@ func (builtin *readFileCapabilities) Interpret(locatorOfModuleInWhichThisBuiltIn
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for arg '%s'", srcValue)
 	}
 	fileToReadStr := srcValue.GoString()
-	fileToReadStr, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocator(builtin.packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, fileToReadStr, builtin.packageReplaceOptions)
+	absoluteLocator, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocator(builtin.packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, fileToReadStr, builtin.packageReplaceOptions)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}
-	packageContent, interpretationErr := builtin.packageContentProvider.GetModuleContents(fileToReadStr)
+	packageContent, interpretationErr := builtin.packageContentProvider.GetModuleContents(absoluteLocator)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
