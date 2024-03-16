@@ -1,13 +1,13 @@
 package resolved_config
 
 import (
-	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	v3 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
-	kurtosisClusterConfigOverrides := v2.KurtosisClusterConfigV2{
+	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
 		Type:   nil,
 		Config: nil,
 	}
@@ -17,7 +17,7 @@ func TestNewKurtosisClusterConfigEmptyOverrides(t *testing.T) {
 
 func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 	dockerType := KurtosisClusterType_Docker.String()
-	kurtosisClusterConfigOverrides := v2.KurtosisClusterConfigV2{
+	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
 		Type:   &dockerType,
 		Config: nil,
 	}
@@ -27,7 +27,7 @@ func TestNewKurtosisClusterConfigDockerType(t *testing.T) {
 
 func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 	kubernetesType := KurtosisClusterType_Kubernetes.String()
-	kurtosisClusterConfigOverrides := v2.KurtosisClusterConfigV2{
+	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
 		Type:   &kubernetesType,
 		Config: nil,
 	}
@@ -37,7 +37,7 @@ func TestNewKurtosisClusterConfigKubernetesNoConfig(t *testing.T) {
 
 func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 	clusterType := "gdsfgsdfvsf"
-	kurtosisClusterConfigOverrides := v2.KurtosisClusterConfigV2{
+	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
 		Type:   &clusterType,
 		Config: nil,
 	}
@@ -48,12 +48,12 @@ func TestNewKurtosisClusterConfigNonsenseType(t *testing.T) {
 func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 	kubernetesType := KurtosisClusterType_Kubernetes.String()
 	kubernetesClusterName := "some-name"
-	kubernetesPartialConfig := v2.KubernetesClusterConfigV2{
+	kubernetesPartialConfig := v3.KubernetesClusterConfigV3{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           nil,
 		EnclaveSizeInMegabytes: nil,
 	}
-	kurtosisClusterConfigOverrides := v2.KurtosisClusterConfigV2{
+	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
 		Type:   &kubernetesType,
 		Config: &kubernetesPartialConfig,
 	}
@@ -66,12 +66,12 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 	kubernetesClusterName := "some-name"
 	kubernetesStorageClass := "some-storage-class"
 	kubernetesEnclaveSizeInMB := uint(5)
-	kubernetesFullConfig := v2.KubernetesClusterConfigV2{
+	kubernetesFullConfig := v3.KubernetesClusterConfigV3{
 		KubernetesClusterName:  &kubernetesClusterName,
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 	}
-	kurtosisClusterConfigOverrides := v2.KurtosisClusterConfigV2{
+	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
 		Type:   &kubernetesType,
 		Config: &kubernetesFullConfig,
 	}
