@@ -3,6 +3,7 @@ package user_service_functions
 import (
 	"context"
 	"fmt"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -563,7 +564,9 @@ func createStartServiceOperation(
 			concatenatedFilesToBeMoved := []string{}
 			for source, destination := range filesToBeMoved {
 				//  HANDLE paths with space in them?
-				concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("mv %v %v", source, destination))
+				sourceBase := path.Dir(source)
+				// TODO improve this; the first condition handles files the other folders
+				concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("mv %v %v || mv %v/* %v", source, destination, sourceBase, destination))
 			}
 			concatenatedFilesToBeMovedAsStr := strings.Join(concatenatedFilesToBeMoved, " && ")
 			originalEntrypointArgs, originalCmdArgs, err := dockerManager.GetOriginalEntryPointAndCommand(ctx, containerImageName)
