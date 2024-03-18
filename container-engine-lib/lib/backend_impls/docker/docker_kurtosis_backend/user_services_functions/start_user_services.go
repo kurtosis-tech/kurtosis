@@ -798,13 +798,13 @@ func handleFilesToBeMovedForDockerCompose(ctx context.Context, dockerManager *do
 
 	if len(cmdArgs) > 0 {
 		if len(entrypointArgs) > 0 {
-			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
+			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " " + cmdArgsAsStr}
 		} else {
 			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + cmdArgsAsStr}
 		}
 	} else {
 		if len(entrypointArgs) > 0 {
-			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
+			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr}
 		} else {
 			// no entrypoint and no command; this shouldn't really happen
 			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr}
