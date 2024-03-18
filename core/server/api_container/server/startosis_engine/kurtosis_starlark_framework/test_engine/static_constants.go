@@ -32,6 +32,7 @@ var (
 	emptyAbsoluteLocator                           = startosis_packages.NewPackageAbsoluteLocator("", "")
 	testContainerImageName                         = "kurtosistech/example-datastore-server"
 	testBuildContextDir                            = "./"
+	defaultBuildFile                               = "Dockerfile"
 	testBuildFile                                  = "foo.Dockerfile"
 	testTargetStage                                = "builder"
 	testBuildArgName1                              = "BUILD_ARG_1"
