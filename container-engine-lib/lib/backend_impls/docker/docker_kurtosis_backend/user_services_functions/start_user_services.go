@@ -773,10 +773,9 @@ func createStartServiceOperation(
 func handleFilesToBeMovedForDockerCompose(ctx context.Context, dockerManager *docker_manager.DockerManager, containerImageName string, cmdArgs []string, entrypointArgs []string, filesToBeMoved map[string]string) ([]string, []string, error) {
 	concatenatedFilesToBeMoved := []string{}
 	for source, destination := range filesToBeMoved {
-		//  HANDLE paths with space in them?
-		sourceBase := path.Dir(source)
+		sourceDir := path.Dir(source)
 		// TODO improve this; the first condition handles files the other folders
-		concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("(mv %v %v || mv %v/* %v)", source, destination, sourceBase, destination))
+		concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("(mv %v %v || mv %v/* %v)", strconv.Quote(source), strconv.Quote(destination), strconv.Quote(sourceDir), strconv.Quote(destination)))
 	}
 
 	concatenatedFilesToBeMovedAsStr := strings.Join(concatenatedFilesToBeMoved, " && ")
