@@ -3,6 +3,7 @@ package docker_compose_transpiler
 import (
 	"errors"
 	"fmt"
+	"github.com/hashicorp/go-envparse"
 	"golang.org/x/exp/slices"
 	"os"
 	"path"
@@ -62,6 +63,12 @@ const (
 	upstreamRelativePathSymbol = ".."
 
 	httpProtocol = "http"
+
+	// TODO: get the kurtosis-data/repositories part from enclave data directory
+	// TODO: get the NOTIONAL USER part from apic service
+	serviceLevelEnvFileDirPath = "/kurtosis-data/repositories/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE"
+
+	envFileErrBypassStr = "Failed to load"
 )
 
 var possibleHttpPorts = []uint32{8080, 8000, 80, 443}
@@ -136,13 +143,13 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 		Environment: envVars,
 	}
 	setOptionsFunc := func(options *loader.Options) {
-		loader.WithDiscardEnvFiles(options)
 		options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
 		options.ResolvePaths = shouldResolvePaths
 		options.ConvertWindowsPaths = shouldConvertWindowsPathsToLinux
+		loader.WithDiscardEnvFiles(options)
 	}
 	compose, err := loader.Load(composeParseConfig, setOptionsFunc)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), envFileErrBypassStr) {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing compose based on provided parsing config and set options function.")
 	}
 	return compose, nil
@@ -263,7 +270,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 
 		// ENV VARS
 		if composeService.Environment != nil {
-			envVarsDict, err := getStarlarkEnvVars(composeService.Environment)
+			envVarsDict, err := getStarlarkEnvVars(composeService.Environment, composeService.EnvFile)
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the env vars dict for service '%s'", serviceName)
 			}
@@ -424,27 +431,49 @@ func getStarlarkCommand(composeCommand types.ShellCommand) *starlark.List {
 	return starlark.NewList(commandSLStrs)
 }
 
-func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.Dict, error) {
+func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals, envFiles types.StringList) (*starlark.Dict, error) {
 	// make iteration order of [composeEnvironment] deterministic by getting the keys and sorting them
 	envVarKeys := []string{}
 	for key := range composeEnvironment {
 		envVarKeys = append(envVarKeys, key)
 	}
 	sort.Strings(envVarKeys)
-	enVarsSLDict := starlark.NewDict(len(composeEnvironment))
+	envVarsSLDict := starlark.NewDict(len(composeEnvironment))
 	for _, key := range envVarKeys {
 		value := composeEnvironment[key]
 		if value == nil {
 			continue
 		}
-		if err := enVarsSLDict.SetKey(
+		if err := envVarsSLDict.SetKey(
 			starlark.String(key),
 			starlark.String(*value),
 		); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred setting key '%s' in environment variables Starlark dict.", key)
 		}
 	}
-	return enVarsSLDict, nil
+
+	// if env file is specified, manually parse the env file at the location it is inside the package on the APIC
+	for _, envFilePath := range envFiles {
+		serviceEnvFilePathOnAPIC := path.Join(serviceLevelEnvFileDirPath, envFilePath)
+		envFileReader, err := os.Open(serviceEnvFilePathOnAPIC)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred opening env file at path: %v", serviceEnvFilePathOnAPIC)
+		}
+		envVars, err := envparse.Parse(envFileReader)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred parsing env file.")
+		}
+		for key, value := range envVars {
+			if err := envVarsSLDict.SetKey(
+				starlark.String(key),
+				starlark.String(value),
+			); err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred setting key '%s' in environment variables Starlark dict.", key)
+			}
+		}
+	}
+
+	return envVarsSLDict, nil
 }
 
 // The 'volumes:' compose key supports named volumes and bind mounts https://docs.docker.com/storage/volumes/

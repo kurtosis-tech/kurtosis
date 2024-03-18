@@ -339,6 +339,43 @@ services:
 	require.Equal(t, expectedResult, result)
 }
 
+//
+//func TestServiceLevelEnvFile(t *testing.T) {
+//	envFileData := "DB=kurtosis\nUSER=kurtosian"
+//	envFilePath := "./web.env"
+//
+//	err := os.Mkdir("/kurtosis-data", 0644)
+//	require.Nil(t, err)
+//	defer os.RemoveAll("/kurtosis-data")
+//	err = os.Mkdir("/repositories", 0644)
+//	require.Nil(t, err)
+//	err = os.Mkdir("/NOTIONAL_USER", 0644)
+//	require.Nil(t, err)
+//	err = os.Mkdir("/USER_UPLOADED_COMPOSE_PACKAGE", 0644)
+//	require.Nil(t, err)
+//
+//	tmpEnvFilePath := path.Join(serviceLevelEnvFileDirPath, envFilePath)
+//	_, err = os.Create(tmpEnvFilePath)
+//	require.NoError(t, err)
+//	err = os.WriteFile(tmpEnvFilePath, []byte(envFileData), 0666)
+//	require.NoError(t, err)
+//
+//	composeBytes := []byte(`
+//services:
+//  web:
+//    image: app/server
+//    env_file:
+//     - ./ ` + envFilePath + `
+//`)
+//
+//	expectedResult := `def run(plan):
+//    plan.add_service(name = "web", config = ServiceConfig(image="app/server", env_vars={"DB": "kurtosis", "USER": "kurtosian"}))
+//`
+//	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+//	require.NoError(t, err)
+//	require.Equal(t, expectedResult, result)
+//}
+
 // Test depends on with circular dependency returns error
 func TestMultiServiceComposeWithCycleInDependsOn(t *testing.T) {
 	composeBytes := []byte(`
