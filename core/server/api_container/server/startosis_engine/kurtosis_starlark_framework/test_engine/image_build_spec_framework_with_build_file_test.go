@@ -20,10 +20,10 @@ func (suite *KurtosisTypeConstructorTestSuite) TestImageBuildSpecTestWithBuildFi
 	suite.packageContentProvider.EXPECT().
 		GetAbsoluteLocator(testModulePackageId, testModuleMainFileLocator, testBuildContextDir, testNoPackageReplaceOptions).
 		Times(1).
-		Return(testBuildContextLocator, nil)
+		Return(testModulePackageAbsoluteLocator, nil)
 
 	suite.packageContentProvider.EXPECT().
-		GetOnDiskAbsolutePackageFilePath(testContainerImageLocatorWithBuildFile).
+		GetOnDiskAbsolutePackageFilePath(testContainerImageAbsoluteLocatorWithBuildFile).
 		Times(1).
 		Return(testOnDiskContainerImagePathWithBuildFile, nil)
 

@@ -78,11 +78,12 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 		return nil, explicitInterpretationError(err)
 	}
 	relativeOrAbsoluteModuleLocator := moduleLocatorArgValue.GoString()
-	absoluteModuleLocator, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocator(builtin.packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteModuleLocator, builtin.packageReplaceOptions)
+	absoluteModuleLocatorObj, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocator(builtin.packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteModuleLocator, builtin.packageReplaceOptions)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}
-	logrus.Debugf("importing module from absolute locator '%s'", absoluteModuleLocator)
+	absoluteModuleLocator := absoluteModuleLocatorObj.GetLocator()
+	logrus.Debugf("importing module from absolute locator '%s' with tag, branch or commit %s", absoluteModuleLocator, absoluteModuleLocatorObj.GetTagBranchOrCommit())
 
 	var loadInProgress *startosis_packages.ModuleCacheEntry
 	cacheEntry, found := builtin.moduleGlobalCache[absoluteModuleLocator]
@@ -102,7 +103,7 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 	}()
 
 	// Load it.
-	contents, interpretationError := builtin.packageContentProvider.GetModuleContents(absoluteModuleLocator)
+	contents, interpretationError := builtin.packageContentProvider.GetModuleContents(absoluteModuleLocatorObj)
 	if interpretationError != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", absoluteModuleLocator)
 	}

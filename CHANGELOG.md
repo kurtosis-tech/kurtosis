@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.88.7](https://github.com/kurtosis-tech/kurtosis/compare/0.88.6...0.88.7) (2024-03-14)
+
+
+### Bug Fixes
+
+* remove env vars with password ([#2300](https://github.com/kurtosis-tech/kurtosis/issues/2300)) ([6646c20](https://github.com/kurtosis-tech/kurtosis/commit/6646c205c5dcdb8bfdd9aabd3552c1ef0bfa731a))
+
 ## [0.88.6](https://github.com/kurtosis-tech/kurtosis/compare/0.88.5...0.88.6) (2024-03-13)
 
 
