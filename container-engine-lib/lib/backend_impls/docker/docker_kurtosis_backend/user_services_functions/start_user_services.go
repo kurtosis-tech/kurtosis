@@ -566,7 +566,7 @@ func createStartServiceOperation(
 				//  HANDLE paths with space in them?
 				sourceBase := path.Dir(source)
 				// TODO improve this; the first condition handles files the other folders
-				concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("mv %v %v || mv %v/* %v", source, destination, sourceBase, destination))
+				concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("(mv %v %v || mv %v/* %v)", source, destination, sourceBase, destination))
 			}
 			concatenatedFilesToBeMovedAsStr := strings.Join(concatenatedFilesToBeMoved, " && ")
 			originalEntrypointArgs, originalCmdArgs, err := dockerManager.GetOriginalEntryPointAndCommand(ctx, containerImageName)
