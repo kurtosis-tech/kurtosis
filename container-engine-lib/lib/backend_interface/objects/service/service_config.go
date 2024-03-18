@@ -2,10 +2,8 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
-	"github.com/sirupsen/logrus"
-
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -222,12 +220,10 @@ func (serviceConfig *ServiceConfig) GetNodeSelectors() map[string]string {
 }
 
 func (serviceConfig *ServiceConfig) SetFilesToBeMoved(filesToBeMoved map[string]string) {
-	logrus.Infof("This is run?????? '%v'", filesToBeMoved)
 	serviceConfig.privateServiceConfig.FilesToBeMoved = filesToBeMoved
 }
 
 func (serviceConfig *ServiceConfig) GetFilesToBeMoved() map[string]string {
-	logrus.Info("This is also run!")
 	return serviceConfig.privateServiceConfig.FilesToBeMoved
 }
 
