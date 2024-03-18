@@ -336,9 +336,9 @@ services:
     name: postgres:latest
   envVars:
   - key: POSTGRES_DB
-    ***REMOVED***
+    value: kurtosis
   - key: POSTGRES_USER
-    ***REMOVED***
+    value: kurtosis
   files:
   - mountPath: /root
     filesArtifacts:
@@ -767,9 +767,9 @@ services:
     name: postgres:latest
   envVars:
   - key: POSTGRES_DB
-    ***REMOVED***
+    value: kurtosis
   - key: POSTGRES_USER
-    ***REMOVED***
+    value: kurtosis
   files:
   - mountPath: /root
     filesArtifacts:
