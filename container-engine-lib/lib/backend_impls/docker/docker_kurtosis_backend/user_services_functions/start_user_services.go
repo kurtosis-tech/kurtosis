@@ -562,7 +562,7 @@ func createStartServiceOperation(
 		// used by compose transpilation
 		if len(filesToBeMoved) > 0 {
 			var err error
-			cmdArgs, entrypointArgs, err = handleFilesToBeMovedForDockerCompose(filesToBeMoved, dockerManager, ctx, containerImageName, cmdArgs, entrypointArgs)
+			cmdArgs, entrypointArgs, err = handleFilesToBeMovedForDockerCompose(ctx, dockerManager, containerImageName, cmdArgs, entrypointArgs, filesToBeMoved)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "an error occurred while handling files for compose")
 			}
@@ -770,7 +770,7 @@ func createStartServiceOperation(
 }
 
 // TODO - clean this up this is super janky, a way to handle compose  & volume
-func handleFilesToBeMovedForDockerCompose(filesToBeMoved map[string]string, dockerManager *docker_manager.DockerManager, ctx context.Context, containerImageName string, cmdArgs []string, entrypointArgs []string) ([]string, []string, error) {
+func handleFilesToBeMovedForDockerCompose(ctx context.Context, dockerManager *docker_manager.DockerManager, containerImageName string, cmdArgs []string, entrypointArgs []string, filesToBeMoved map[string]string) ([]string, []string, error) {
 	concatenatedFilesToBeMoved := []string{}
 	for source, destination := range filesToBeMoved {
 		//  HANDLE paths with space in them?
@@ -811,6 +811,7 @@ func handleFilesToBeMovedForDockerCompose(filesToBeMoved map[string]string, dock
 			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr}
 		}
 	}
+	entrypointArgs = []string{"/bin/sh"}
 	return cmdArgs, entrypointArgs, nil
 }
 
