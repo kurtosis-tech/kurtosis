@@ -556,55 +556,16 @@ func createStartServiceOperation(
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
 		}
 
-		logrus.Warn("ROGER: okay this is getting logged")
-		logrus.Warnf("Files to be moved '%v'", filesToBeMoved)
-
-		if filesToBeMoved != nil && len(filesToBeMoved) > 0 {
-			logrus.Warnf("ROGER: okay this is getting logged '%v'", filesToBeMoved)
-			concatenatedFilesToBeMoved := []string{}
-			for source, destination := range filesToBeMoved {
-				//  HANDLE paths with space in them?
-				sourceBase := path.Dir(source)
-				// TODO improve this; the first condition handles files the other folders
-				concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("(mv %v %v || mv %v/* %v)", source, destination, sourceBase, destination))
-			}
-
-			concatenatedFilesToBeMovedAsStr := strings.Join(concatenatedFilesToBeMoved, " && ")
-			originalEntrypointArgs, originalCmdArgs, err := dockerManager.GetOriginalEntryPointAndCommand(ctx, containerImageName)
-			logrus.Warnf("Original entrypoint '%v' cmdArg '%v' concatenatedFiles'%v'", originalEntrypointArgs, originalCmdArgs, concatenatedFilesToBeMovedAsStr)
+		// THIS IS A HACK
+		// TODO clean this up
+		// this path will only be hit if `files_to_be_moved` is set in Starlark; which is a hidden property
+		// used by compose transpilation
+		if len(filesToBeMoved) > 0 {
+			var err error
+			cmdArgs, entrypointArgs, err = handleFilesToBeMovedForDockerCompose(filesToBeMoved, dockerManager, ctx, containerImageName, cmdArgs, entrypointArgs)
 			if err != nil {
-				return nil, stacktrace.Propagate(err, "an error occurred fetching data about image '%v'", containerImageName)
+				return nil, stacktrace.Propagate(err, "an error occurred while handling files for compose")
 			}
-
-			// we do this replacement as we want to keep the original command args as they are not overwritten
-			// it might be that none of the two are set
-			if len(cmdArgs) == 0 && len(originalCmdArgs) > 0 {
-				cmdArgs = originalCmdArgs
-			}
-			if len(entrypointArgs) == 0 && len(originalEntrypointArgs) > 0 {
-				entrypointArgs = originalEntrypointArgs
-			}
-
-			entryPointArgsAsStr := quoteAndJoinArgs(entrypointArgs)
-			cmdArgsAsStr := quoteAndJoinArgs(cmdArgs)
-
-			if len(cmdArgs) > 0 {
-				if len(entrypointArgs) > 0 {
-					cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
-				} else {
-					cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + cmdArgsAsStr}
-				}
-			} else {
-				if len(entrypointArgs) > 0 {
-					cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
-				} else {
-					// no entrypoint and no command; this shouldn't really happen
-					logrus.Warnf("'%v' seems to have no overrides for entrypoint, command no original entrypoint or commands. This shouldn't really happen.", serviceUUID)
-					cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr}
-				}
-			}
-
-			entrypointArgs = []string{"/bin/sh"}
 		}
 
 		volumeMounts := map[string]string{}
@@ -806,6 +767,51 @@ func createStartServiceOperation(
 		shouldKillContainer = false
 		return serviceObjectPtr, nil
 	}
+}
+
+// TODO - clean this up this is super janky, a way to handle compose  & volume
+func handleFilesToBeMovedForDockerCompose(filesToBeMoved map[string]string, dockerManager *docker_manager.DockerManager, ctx context.Context, containerImageName string, cmdArgs []string, entrypointArgs []string) ([]string, []string, error) {
+	concatenatedFilesToBeMoved := []string{}
+	for source, destination := range filesToBeMoved {
+		//  HANDLE paths with space in them?
+		sourceBase := path.Dir(source)
+		// TODO improve this; the first condition handles files the other folders
+		concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("(mv %v %v || mv %v/* %v)", source, destination, sourceBase, destination))
+	}
+
+	concatenatedFilesToBeMovedAsStr := strings.Join(concatenatedFilesToBeMoved, " && ")
+	originalEntrypointArgs, originalCmdArgs, err := dockerManager.GetOriginalEntryPointAndCommand(ctx, containerImageName)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "an error occurred fetching data about image '%v'", containerImageName)
+	}
+
+	// we do this replacement as we want to keep the original command args as they are not overwritten
+	// it might be that none of the two are set
+	if len(cmdArgs) == 0 && len(originalCmdArgs) > 0 {
+		cmdArgs = originalCmdArgs
+	}
+	if len(entrypointArgs) == 0 && len(originalEntrypointArgs) > 0 {
+		entrypointArgs = originalEntrypointArgs
+	}
+
+	entryPointArgsAsStr := quoteAndJoinArgs(entrypointArgs)
+	cmdArgsAsStr := quoteAndJoinArgs(cmdArgs)
+
+	if len(cmdArgs) > 0 {
+		if len(entrypointArgs) > 0 {
+			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
+		} else {
+			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + cmdArgsAsStr}
+		}
+	} else {
+		if len(entrypointArgs) > 0 {
+			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " && " + cmdArgsAsStr}
+		} else {
+			// no entrypoint and no command; this shouldn't really happen
+			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr}
+		}
+	}
+	return cmdArgs, entrypointArgs, nil
 }
 
 // Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:

@@ -397,7 +397,7 @@ func getStarlarkPortSpecs(serviceName string, composePorts []types.ServicePortCo
 			uint16(dockerPort.Target),
 			kurtosisProto,
 			&applicationProtocol, // Application protocol (which Compose doesn't have)
-			"10m",                // Wait timeout (which Compose doesn't have a way to override)
+			"",                   // Wait timeout (which Compose doesn't have a way to override)
 			nil,                  // No way to change the URL for the port
 		)
 		if interpretationErr != nil {
