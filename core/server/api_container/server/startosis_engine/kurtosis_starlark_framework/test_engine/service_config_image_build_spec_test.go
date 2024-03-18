@@ -2,8 +2,9 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -40,12 +41,14 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigWithImageBuildSp
 }
 
 func (t *serviceConfigImageBuildSpecTestCase) GetStarlarkCode() string {
-	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%s)",
+	imageBuildSpec := fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q, %s=%s)",
 		service_config.ImageBuildSpecTypeName,
 		service_config.BuiltImageNameAttr,
 		testContainerImageName,
 		service_config.BuildContextAttr,
 		testBuildContextDir,
+		service_config.BuildFileAttr,
+		defaultBuildFile,
 		service_config.TargetStageAttr,
 		testTargetStage,
 		service_config.BuildArgsAttr,
@@ -76,6 +79,7 @@ func (t *serviceConfigImageBuildSpecTestCase) Assert(typeValue builtin_argument.
 		testOnDiskContextDirPath,
 		testOnDiskContainerImagePath,
 		testTargetStage,
+		defaultBuildFile,
 		expectedBuildArgs)
 	expectedServiceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
