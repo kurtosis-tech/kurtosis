@@ -211,7 +211,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 		serviceConfigKwargs := []starlark.Tuple{}
 
 		// NAME
-		serviceName := composeService.Name
+		serviceName := strings.Replace(composeService.Name, "_", "-", -1)
 
 		// IMAGE
 		if composeService.Image != "" {
@@ -314,6 +314,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 		// DEPENDS ON
 		dependencyServiceNames := map[string]bool{}
 		for dependencyName := range composeService.DependsOn {
+			dependencyName = strings.Replace(dependencyName, "_", "-", -1)
 			dependencyServiceNames[dependencyName] = true
 		}
 		perServiceDependencies[serviceName] = dependencyServiceNames
