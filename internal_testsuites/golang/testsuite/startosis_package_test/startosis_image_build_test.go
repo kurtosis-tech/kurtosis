@@ -7,6 +7,7 @@ package startosis_package_test
 
 import (
 	"context"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -28,10 +29,9 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_ImageBuildSpec() {
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
 
-	expectedScriptOutputSubstring := `Service 'service' added with service UUID`
-
-	require.Contains(t, string(runResult.RunOutput), expectedScriptOutputSubstring)
-	require.Len(t, runResult.Instructions, 1)
+	require.Contains(t, string(runResult.RunOutput), `Service 'service-1' added with service UUID`)
+	require.Contains(t, string(runResult.RunOutput), `Service 'service-2' added with service UUID`)
+	require.Len(t, runResult.Instructions, 2)
 
 	// TODO: Figure out a way to clean image
 	logrus.Warnf("THIS TEST GENERATES A SMALL DOCKER IMAGE. IF YOU ARE RUNNING TESTSUITE LOCALLY(NOT IN CI), YOU MUST MANUALLY REMOVE IT!")
