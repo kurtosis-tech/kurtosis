@@ -283,7 +283,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 
 		// VOLUMES -> FILES ARTIFACTS
 		if composeService.Volumes != nil {
-			filesDict, artifactsToUpload, err := getStarlarkFilesArtifacts(composeService.Volumes, serviceName)
+			filesDict, artifactsToUpload, filesToBeMoved, err := getStarlarkFilesArtifacts(composeService.Volumes, serviceName)
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the files dict for service '%s'", serviceName)
 			}
@@ -292,6 +292,9 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 				service_config.FilesAttr,
 				filesDict,
 			)
+			if filesToBeMoved.Len() > 0 {
+				serviceConfigKwargs = appendKwarg(serviceConfigKwargs, service_config.FilesToBeMovedAttr, filesToBeMoved)
+			}
 			servicesToFilesArtifactsToUpload[serviceName] = artifactsToUpload
 		}
 
@@ -484,10 +487,12 @@ func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals, envFiles typ
 // <abs path on host> := create a persistent directory on container at <abs path on host>
 // <rel path on host> := create a persistent directory on container at <rel path on host>
 // Named volumes are treated https://docs.docker.com/storage/volumes/ as absolute paths persistence layers, and thus a persistent directory is created
-func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, error) {
+func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, *starlark.Dict, error) {
 	filesArgSLDict := starlark.NewDict(len(composeVolumes))
 	filesArtifactsToUpload := map[string]string{}
 	var persistenceKey string
+
+	filesToBeMoved := starlark.NewDict(len(composeVolumes))
 
 	for volumeIdx, volume := range composeVolumes {
 		volumeType := volume.Type
@@ -532,10 +537,11 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 		}
 
 		var filesDictValue starlark.Value
+		targetDirectoryForFilesArtifact := volume.Target
 		if shouldPersist {
 			persistentDirectory, err := getStarlarkPersistentDirectory(persistenceKey)
 			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
 			}
 			filesDictValue = persistentDirectory
 		} else {
@@ -543,14 +549,20 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 			filesArtifactName := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			filesArtifactsToUpload[volume.Source] = filesArtifactName
 			filesDictValue = starlark.String(filesArtifactName)
+			sourcePathNameEnd := path.Base(volume.Source)
+			targetDirectoryForFilesArtifact = path.Join("/tmp", filesArtifactName)
+			targetToMovePath := path.Join(targetDirectoryForFilesArtifact, sourcePathNameEnd)
+			if err := filesToBeMoved.SetKey(starlark.String(targetToMovePath), starlark.String(volume.Target)); err != nil {
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting files to be moved for targetDirectoryForFilesArtifact '%v'", volume.Target)
+			}
 		}
 
-		if err := filesArgSLDict.SetKey(starlark.String(volume.Target), filesDictValue); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
+		if err := filesArgSLDict.SetKey(starlark.String(targetDirectoryForFilesArtifact), filesDictValue); err != nil {
+			return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
 		}
 	}
 
-	return filesArgSLDict, filesArtifactsToUpload, nil
+	return filesArgSLDict, filesArtifactsToUpload, filesToBeMoved, nil
 }
 
 func getStarlarkPersistentDirectory(persistenceKey string) (starlark.Value, error) {
