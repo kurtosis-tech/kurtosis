@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.88.8](https://github.com/kurtosis-tech/kurtosis/compare/0.88.7...0.88.8) (2024-03-15)
+
+
+### Features
+
+* Add active cancel at period end payment subscription status ([#2307](https://github.com/kurtosis-tech/kurtosis/issues/2307)) ([eea4e9b](https://github.com/kurtosis-tech/kurtosis/commit/eea4e9b2cfc23e8d91f5a3509de92eb56c6bd8f8))
+
+
+### Bug Fixes
+
+* the package replace logic when using tag, branch or commit ([#2299](https://github.com/kurtosis-tech/kurtosis/issues/2299)) ([72da1cb](https://github.com/kurtosis-tech/kurtosis/commit/72da1cba3c398d75bb2ddb63b292b8ec2db26abc)), closes [#2279](https://github.com/kurtosis-tech/kurtosis/issues/2279)
+
 ## [0.88.7](https://github.com/kurtosis-tech/kurtosis/compare/0.88.6...0.88.7) (2024-03-14)
 
 
