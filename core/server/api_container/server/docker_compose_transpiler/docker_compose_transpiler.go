@@ -486,7 +486,6 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 
 			// Assume that if an absolute path is specified, user wants to use volume as a persistence layer
 			// Additionally, assume relative paths are read-only
-			// GM - this should fail too as this could be outside the repository
 			shouldPersist = path.IsAbs(volume.Source)
 		case types.VolumeTypeVolume:
 			shouldPersist = true
