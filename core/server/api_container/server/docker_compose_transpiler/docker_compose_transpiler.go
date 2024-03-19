@@ -214,15 +214,9 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 		serviceName := strings.Replace(composeService.Name, "_", "-", -1)
 
 		// IMAGE
-		if composeService.Image != "" {
-			serviceConfigKwargs = appendKwarg(
-				serviceConfigKwargs,
-				service_config.ImageAttr,
-				starlark.String(composeService.Image),
-			)
-		}
-
-		// IMAGE BUILD SPEC
+		imageName := composeService.Image
+		// if build directive used, create an image build spec
+		// otherwise, use image name
 		if composeService.Build != nil {
 			imageBuildSpec, err := getStarlarkImageBuildSpec(composeService.Build, serviceName)
 			if err != nil {
@@ -232,6 +226,12 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 				serviceConfigKwargs,
 				service_config.ImageAttr,
 				imageBuildSpec,
+			)
+		} else {
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.ImageAttr,
+				starlark.String(imageName),
 			)
 		}
 
