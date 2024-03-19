@@ -562,14 +562,20 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 			filesArtifactName := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			filesArtifactsToUpload[volume.Source] = filesArtifactName
 			filesDictValue = starlark.String(filesArtifactName)
-			sourcePathNameEnd := path.Base(volume.Source)
-			targetDirectoryForFilesArtifact = path.Join("/tmp", filesArtifactName)
-			targetToMovePath := path.Join(targetDirectoryForFilesArtifact, sourcePathNameEnd)
-			if err := filesToBeMoved.SetKey(starlark.String(targetToMovePath), starlark.String(volume.Target)); err != nil {
-				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting files to be moved for targetDirectoryForFilesArtifact '%v'", volume.Target)
+
+			file, err := os.Stat(path.Join(serviceLevelEnvFileDirPath, volume.Source))
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			if !file.IsDir() {
+				sourcePathNameEnd := path.Base(volume.Source)
+				targetDirectoryForFilesArtifact = path.Join("/tmp", filesArtifactName)
+				targetToMovePath := path.Join(targetDirectoryForFilesArtifact, sourcePathNameEnd)
+				if err := filesToBeMoved.SetKey(starlark.String(targetToMovePath), starlark.String(volume.Target)); err != nil {
+					return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting files to be moved for targetDirectoryForFilesArtifact '%v'", volume.Target)
+				}
 			}
 		}
-
 		if err := filesArgSLDict.SetKey(starlark.String(targetDirectoryForFilesArtifact), filesDictValue); err != nil {
 			return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
 		}

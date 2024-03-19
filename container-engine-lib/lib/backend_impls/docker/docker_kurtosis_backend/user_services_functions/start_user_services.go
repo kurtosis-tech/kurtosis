@@ -3,7 +3,6 @@ package user_service_functions
 import (
 	"context"
 	"fmt"
-	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -773,12 +772,8 @@ func createStartServiceOperation(
 func handleFilesToBeMovedForDockerCompose(ctx context.Context, dockerManager *docker_manager.DockerManager, containerImageName string, cmdArgs []string, entrypointArgs []string, filesToBeMoved map[string]string) ([]string, []string, error) {
 	concatenatedFilesToBeMoved := []string{}
 	for source, destination := range filesToBeMoved {
-		sourceDir := path.Dir(source) + "/*"
-		if path.Dir(source) == "/tmp" {
-			sourceDir = source + "/*"
-		}
 		// TODO improve this; the first condition handles files the other folders
-		concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("(mv %v %v || mv -rf %v %v)", source, destination, sourceDir, destination))
+		concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("mv %v %v", source, destination))
 	}
 
 	concatenatedFilesToBeMovedAsStr := strings.Join(concatenatedFilesToBeMoved, " && ")
