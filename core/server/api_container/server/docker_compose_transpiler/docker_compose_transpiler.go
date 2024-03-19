@@ -69,6 +69,8 @@ const (
 	serviceLevelEnvFileDirPath = "/kurtosis-data/repositories/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE"
 
 	envFileErrBypassStr = "Failed to load"
+
+	rootUserId = "0"
 )
 
 var possibleHttpPorts = []uint32{8080, 8000, 80, 443}
@@ -312,6 +314,17 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 				serviceConfigKwargs,
 				service_config.MinCpuMilliCoresAttr,
 				cpuMinLimit)
+		}
+
+		// CAPS ADD
+		// If caps add is specified, compose wants to give this container specific linux capabilities
+		// Because Kurtosis doesn't enable this yet, give the container userid=0, or root
+		// Unfortunately, this could give container more privileges than desired
+		if composeService.CapAdd != nil {
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.UserAttr,
+				starlark.String(rootUserId))
 		}
 
 		// DEPENDS ON
