@@ -774,6 +774,9 @@ func handleFilesToBeMovedForDockerCompose(ctx context.Context, dockerManager *do
 	concatenatedFilesToBeMoved := []string{}
 	for source, destination := range filesToBeMoved {
 		sourceDir := path.Dir(source) + "/*"
+		if path.Dir(source) == "/tmp" {
+			sourceDir = source + "/*"
+		}
 		// TODO improve this; the first condition handles files the other folders
 		concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("(mv %v %v || mv %v %v)", source, destination, sourceDir, destination))
 	}
