@@ -47,7 +47,7 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
           variant={"solid"}
           {...buttonProps}
         >
-          ${tooltip}
+          {tooltip}
         </Button>
       </Tooltip>
       <AddGithubActionModal
