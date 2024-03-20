@@ -22,22 +22,18 @@ export type AddGithubActionModalProps = {
 export const AddGithubActionModal = ({ isOpen, onClose, packageId }: AddGithubActionModalProps) => {
   const { createWebhook } = useEnclavesContext();
   const [showModal, setShowModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   // TODO handle failure
   // TODO create own modal+button and put that behind condition
   if (isPrevEnv) {
     const handleEnable = async () => {
-      setIsLoading(true);
       await createWebhook(packageId);
-      setIsLoading(false);
       setShowModal(false);
     };
 
     return (
       <KurtosisAlertModal
         isOpen={showModal}
-        isLoading={isLoading}
         title={"Enable preview environments"}
         content={"This will enable preview environments on your repository per PR"}
         confirmText={"Enable"}
