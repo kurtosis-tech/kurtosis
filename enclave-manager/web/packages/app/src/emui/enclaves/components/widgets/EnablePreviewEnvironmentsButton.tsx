@@ -27,7 +27,7 @@ export const EnablePreviewEnvironmentsButton = ({
         openDelay={1000}
       >
         <Button
-          colorScheme={"green"}
+          colorScheme={"yellow"}
           leftIcon={<FiGithub />}
           onClick={() => setShowModal(true)}
           size={"sm"}
