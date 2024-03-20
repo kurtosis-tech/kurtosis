@@ -108,7 +108,7 @@ func ParseGitURL(packageURL string) (*ParsedGitURL, error) {
 		return nil, stacktrace.NewError("Error parsing the URL of module. We only support modules on Github for now but got '%v'", packageURL)
 	}
 
-	pathWithoutVersion, maybeTagBranchOrCommit := parseOutTagBranchOrCommit(parsedURL.Path)
+	pathWithoutVersion, maybeTagBranchOrCommit := ParseOutTagBranchOrCommit(parsedURL.Path)
 
 	splitURLPath := cleanPathAndSplit(pathWithoutVersion)
 
@@ -151,8 +151,8 @@ func cleanPathAndSplit(urlPath string) []string {
 	return sliceWithoutEmptyStrings
 }
 
-// parseOutTagBranchOrCommit splits the string around "@" and then split the after string around "/"
-func parseOutTagBranchOrCommit(input string) (string, string) {
+// ParseOutTagBranchOrCommit splits the string around "@" and then split the after string around "/"
+func ParseOutTagBranchOrCommit(input string) (string, string) {
 	cleanInput := path.Clean(input)
 	pathWithoutVersion, maybeTagBranchOrCommitWithFile, _ := strings.Cut(cleanInput, tagBranchOrCommitDelimiter)
 

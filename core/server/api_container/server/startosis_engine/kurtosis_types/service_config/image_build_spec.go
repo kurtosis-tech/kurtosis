@@ -210,7 +210,7 @@ func (imageBuildSpec *ImageBuildSpec) ToKurtosisType(
 		return nil, interpretationErr
 	}
 
-	return image_build_spec.NewImageBuildSpec(buildContextDirPathOnDisk, containerImageFilePathOnDisk, targetStageStr, buildArgs), nil
+	return image_build_spec.NewImageBuildSpec(buildContextDirPathOnDisk, containerImageFilePathOnDisk, targetStageStr, buildFile, buildArgs), nil
 }
 
 // Returns the filepath of the build context directory and container image on APIC based on package info
@@ -232,10 +232,12 @@ func getOnDiskImageBuildSpecPaths(
 	}
 
 	// get on disk directory path of Dockerfile
-	containerImageAbsoluteLocator := path.Join(contextDirAbsoluteLocator, defaultContainerImageFileName)
+	containerImageAbsoluteLocatorStr := path.Join(contextDirAbsoluteLocator.GetLocator(), defaultContainerImageFileName)
 	if buildFile != "" {
-		containerImageAbsoluteLocator = path.Join(contextDirAbsoluteLocator, buildFile)
+		containerImageAbsoluteLocatorStr = path.Join(contextDirAbsoluteLocator.GetLocator(), buildFile)
 	}
+
+	containerImageAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(containerImageAbsoluteLocatorStr, contextDirAbsoluteLocator.GetTagBranchOrCommit())
 
 	containerImagePathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsolutePackageFilePath(containerImageAbsoluteLocator)
 	if interpretationErr != nil {

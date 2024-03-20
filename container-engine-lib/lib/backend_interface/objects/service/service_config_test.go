@@ -186,6 +186,7 @@ func testImageBuildSpec() *image_build_spec.ImageBuildSpec {
 		"test-image",
 		"path",
 		"",
+		"",
 		nil)
 }
 
