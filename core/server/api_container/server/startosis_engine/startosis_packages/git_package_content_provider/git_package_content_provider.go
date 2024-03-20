@@ -111,11 +111,15 @@ func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(repositoryPathU
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred parsing Git URL for absolute file locator '%s'", repositoryPathURL)
 	}
-	if shouldOnlyAcceptsPackageFilePath && parsedURL.GetRelativeFilePath() == "" {
-		return "", startosis_errors.NewInterpretationError("The path '%v' needs to point to a specific file but it didn't. Users can only read or import specific files and not entire packages.", repositoryPathURL)
-	}
 	pathToFileOnDisk := path.Join(provider.repositoriesDir, parsedURL.GetRelativeFilePath())
-	packagePath := path.Join(provider.repositoriesDir, parsedURL.GetRelativeRepoPath())
+	pathToPackageOnDisk := path.Join(provider.repositoriesDir, parsedURL.GetRelativeRepoPath())
+
+	// TODO(tedi): see if its safe to adjust ParsedGitURL api instead to prevent having to make this check
+	// parsedURL.GetRelativeFilePath() is empty when repositoryPathURL does not refer to a specific file
+	// In this case, assume caller wants to get on base of repository and adjust the pathToFileOnDisk to point to base of repository on disk
+	if parsedURL.GetRelativeFilePath() == "" {
+		pathToFileOnDisk = pathToPackageOnDisk
+	}
 
 	// Return the file path straight if it exists
 	if _, err := os.Stat(pathToFileOnDisk); err == nil {
@@ -124,7 +128,7 @@ func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(repositoryPathU
 
 	// Check if the repo exists
 	// If the repo exists but the `pathToFileOnDisk` doesn't that means there's a mistake in the locator
-	if _, err := os.Stat(packagePath); err == nil {
+	if _, err := os.Stat(pathToPackageOnDisk); err == nil {
 		relativeFilePathWithoutPackageName := strings.Replace(parsedURL.GetRelativeFilePath(), parsedURL.GetRelativeRepoPath(), replacedWithEmptyString, onlyOneReplacement)
 		return "", startosis_errors.NewInterpretationError("'%v' doesn't exist in the package '%v'", relativeFilePathWithoutPackageName, parsedURL.GetRelativeRepoPath())
 	}
