@@ -1,12 +1,14 @@
 import { Flex, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { AppPageLayout, HoverLineTabList, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
+import { AppPageLayout, HoverLineTabList, isDefined, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { FunctionComponent } from "react";
+import { isPrevEnv } from "../../../cookies";
 import { EditEnclaveButton } from "../components/EditEnclaveButton";
 import { AddGithubActionButton } from "../components/widgets/AddGithubActionButton";
 import { ConnectEnclaveButton } from "../components/widgets/ConnectEnclaveButton";
 import { DeleteEnclavesButton } from "../components/widgets/DeleteEnclavesButton";
+import { EnablePreviewEnvironmentsButton } from "../components/widgets/EnablePreviewEnvironmentsButton";
 import { useFullEnclave } from "../EnclavesContext";
 import { EnclaveFullInfo } from "../types";
 import { EnclaveOverview } from "./overview/EnclaveOverview";
@@ -45,6 +47,11 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
     navigator(`/enclave/${enclave.shortenedUuid}/${tab.path}`);
   };
 
+  let packageId = "";
+  if (isDefined(enclave.starlarkRun) && !enclave.starlarkRun.isErr) {
+    packageId = enclave.starlarkRun.value.packageId;
+  }
+
   return (
     <Tabs isManual isLazy index={activeIndex} onChange={handleTabChange} variant={"kurtosisHeaderLine"}>
       <AppPageLayout preventPageScroll={activeTab === "logs"}>
@@ -57,7 +64,8 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
             <DeleteEnclavesButton enclaves={[enclave]} />
             <EditEnclaveButton enclave={enclave} />
             <ConnectEnclaveButton enclave={enclave} />
-            <AddGithubActionButton enclave={enclave} />
+            {!isPrevEnv && <AddGithubActionButton enclave={enclave} />}
+            {isPrevEnv && packageId != "" && <EnablePreviewEnvironmentsButton packageId={packageId} />}
           </Flex>
         </Flex>
         <TabPanels>

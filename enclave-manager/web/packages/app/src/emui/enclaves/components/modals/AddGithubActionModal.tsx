@@ -1,4 +1,5 @@
 import {
+  ButtonProps,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -7,43 +8,16 @@ import {
   ModalHeader,
   ModalOverlay,
 } from "@chakra-ui/react";
-import { FileDisplay, KurtosisAlertModal } from "kurtosis-ui-components";
-import { useState } from "react";
-import { FiGithub } from "react-icons/fi";
-import { apiKey, instanceUUID, isPrevEnv } from "../../../../cookies";
-import { useEnclavesContext } from "../../EnclavesContext";
+import { FileDisplay } from "kurtosis-ui-components";
+import { apiKey, instanceUUID } from "../../../../cookies";
 
-export type AddGithubActionModalProps = {
+export type AddGithubActionModalProps = ButtonProps & {
   packageId: string;
   isOpen: boolean;
   onClose: () => void;
 };
 
-export const AddGithubActionModal = ({ isOpen, onClose, packageId }: AddGithubActionModalProps) => {
-  const { createWebhook } = useEnclavesContext();
-  const [showModal, setShowModal] = useState(false);
-
-  // TODO handle failure
-  // TODO create own modal+button and put that behind condition
-  if (isPrevEnv) {
-    const handleEnable = async () => {
-      await createWebhook(packageId);
-      setShowModal(false);
-    };
-
-    return (
-      <KurtosisAlertModal
-        isOpen={showModal}
-        title={"Enable preview environments"}
-        content={"This will enable preview environments on your repository per PR"}
-        confirmText={"Enable"}
-        confirmButtonProps={{ leftIcon: <FiGithub />, colorScheme: "green" }}
-        onClose={() => setShowModal(false)}
-        onConfirm={handleEnable}
-      />
-    );
-  }
-
+export const AddGithubActionModal = ({ isOpen, onClose, packageId, ...buttonProps }: AddGithubActionModalProps) => {
   const commands = `
 name: CI
 on:
