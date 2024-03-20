@@ -1,4 +1,4 @@
-import { Button, ButtonProps, Tooltip } from "@chakra-ui/react";
+import { Button, ButtonProps, Tooltip, useToast } from "@chakra-ui/react";
 import { KurtosisAlertModal } from "kurtosis-ui-components";
 import { useState } from "react";
 import { FiGithub } from "react-icons/fi";
@@ -14,9 +14,23 @@ export const EnablePreviewEnvironmentsButton = ({
 }: EnablePreviewEnvironmentsButtonProps) => {
   const { createWebhook } = useEnclavesContext();
   const [showModal, setShowModal] = useState(false);
+  const toast = useToast();
 
   const handleEnable = async () => {
-    await createWebhook(packageId);
+    const createWebhookResponse = await createWebhook(packageId);
+    if (createWebhookResponse.isOk) {
+      toast({
+        position: "bottom",
+        title: "Enabled preview environments",
+        colorScheme: "green",
+      });
+    } else {
+      toast({
+        position: "bottom",
+        title: `Couldn't create preview envirionments and got error: ${createWebhookResponse.error}`,
+        colorScheme: "red",
+      });
+    }
     setShowModal(false);
   };
 
