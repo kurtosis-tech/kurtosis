@@ -1,5 +1,4 @@
 import {
-  ButtonProps,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -11,13 +10,13 @@ import {
 import { FileDisplay } from "kurtosis-ui-components";
 import { apiKey, instanceUUID } from "../../../../cookies";
 
-export type AddGithubActionModalProps = ButtonProps & {
+export type AddGithubActionModalProps = {
   packageId: string;
   isOpen: boolean;
   onClose: () => void;
 };
 
-export const AddGithubActionModal = ({ isOpen, onClose, packageId, ...buttonProps }: AddGithubActionModalProps) => {
+export const AddGithubActionModal = ({ isOpen, onClose, packageId }: AddGithubActionModalProps) => {
   const commands = `
 name: CI
 on:

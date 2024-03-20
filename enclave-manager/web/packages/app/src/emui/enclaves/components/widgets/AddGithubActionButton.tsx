@@ -12,12 +12,10 @@ type AddGithubActionButtonProps = ButtonProps & {
 export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActionButtonProps) => {
   const [showModal, setShowModal] = useState(false);
 
-  let tooltip = "Add GitHub Action";
-
   if (!isDefined(enclave.starlarkRun)) {
     return (
       <Button isLoading={true} colorScheme={"yellow"} leftIcon={<FiGithub />} size={"sm"} {...buttonProps}>
-        {tooltip}
+        Add GitHub Action
       </Button>
     );
   }
@@ -26,7 +24,7 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
     return (
       <Tooltip label={"An error occurred while starting the enclave"}>
         <Button isDisabled={true} colorScheme={"yellow"} leftIcon={<FiGithub />} size={"sm"} {...buttonProps}>
-          {tooltip}
+          Add GitHub Action
         </Button>
       </Tooltip>
     );
@@ -34,7 +32,7 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
 
   return (
     <>
-      <Tooltip label={tooltip} openDelay={1000}>
+      <Tooltip label={`Steps to run this package from CI`} openDelay={1000}>
         <Button
           colorScheme={"yellow"}
           leftIcon={<FiGithub />}
@@ -43,7 +41,7 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
           variant={"solid"}
           {...buttonProps}
         >
-          {tooltip}
+          Add GitHub Action
         </Button>
       </Tooltip>
       <AddGithubActionModal
