@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-github/v60/github"
 	"net/http"
 	"net/url"
 	"strings"
@@ -33,6 +34,7 @@ const (
 	kurtosisCloudApiPort       = 8080
 	numberOfElementsAuthHeader = 2
 	numberOfElementsHostString = 2
+	slashSeparator             = "/"
 )
 
 type Authentication struct {
@@ -48,9 +50,10 @@ type WebServer struct {
 	instanceConfig      *kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
 	instanceConfigMap   map[string]*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
 	apiKeyMap           map[string]*string
+	githubAccessToken   string
 }
 
-func NewWebserver(enforceAuth bool) (*WebServer, error) {
+func NewWebserver(enforceAuth bool, githubAccessToken string) (*WebServer, error) {
 	engineServiceClient := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceClient(
 		http.DefaultClient,
 		engineHostUrl,
@@ -63,6 +66,7 @@ func NewWebserver(enforceAuth bool) (*WebServer, error) {
 		apiKeyMap:           map[string]*string{},
 		instanceConfigMap:   map[string]*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse{},
 		instanceConfig:      nil,
+		githubAccessToken:   githubAccessToken,
 	}, nil
 }
 
@@ -73,6 +77,30 @@ func (c *WebServer) Check(context.Context, *connect.Request[kurtosis_enclave_man
 		},
 	}
 	return response, nil
+}
+
+func (c *WebServer) CreateRepositoryWebhook(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error) {
+	packageId := req.Msg.PackageId
+	packageIdSplit := strings.Split(packageId, slashSeparator)
+	owner := packageIdSplit[len(packageIdSplit)-2]
+	repo := packageIdSplit[len(packageIdSplit)-1]
+	client := github.NewClient(nil).WithAuthToken(c.githubAccessToken)
+	webhookUrl := "https://preview.imagenix.org/webhook"
+	contentTypeJson := "json"
+	hook := &github.Hook{
+		Name: github.String("web"),
+		Config: &github.HookConfig{
+			URL:         &webhookUrl,
+			ContentType: &contentTypeJson,
+		},
+		Events: []string{"push", "pull_request"},
+		Active: github.Bool(true),
+	}
+	_, _, err := client.Repositories.CreateHook(ctx, owner, repo, hook)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while creating the webhook")
+	}
+	return &connect.Response[emptypb.Empty]{}, nil
 }
 
 func (c *WebServer) ValidateRequestAuthorization(
@@ -625,8 +653,8 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 	return nil, stacktrace.NewError("an empty API key was returned from Kurtosis Cloud Backend")
 }
 
-func RunEnclaveManagerApiServer(enforceAuth bool) error {
-	srv, err := NewWebserver(enforceAuth)
+func RunEnclaveManagerApiServer(enforceAuth bool, githubAuthToken string) error {
+	srv, err := NewWebserver(enforceAuth, githubAuthToken)
 	if err != nil {
 		logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
 		return err
