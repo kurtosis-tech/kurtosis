@@ -2,9 +2,9 @@ import { Button, ButtonProps, Tooltip } from "@chakra-ui/react";
 import { isDefined } from "kurtosis-ui-components";
 import { useState } from "react";
 import { FiGithub } from "react-icons/fi";
+import { isPrevEnv } from "../../../../cookies";
 import { EnclaveFullInfo } from "../../types";
 import { AddGithubActionModal } from "../modals/AddGithubActionModal";
-import { isPrevEnv } from "../../../../cookies";
 
 type AddGithubActionButtonProps = ButtonProps & {
   enclave: EnclaveFullInfo;
@@ -13,9 +13,9 @@ type AddGithubActionButtonProps = ButtonProps & {
 export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActionButtonProps) => {
   const [showModal, setShowModal] = useState(false);
 
-  let tooltip = "Add GitHub Action"
+  let tooltip = "Add GitHub Action";
   if (isPrevEnv) {
-    tooltip = "Enable Preview Envirionments"
+    tooltip = "Enable Preview Envirionments";
   }
 
   if (!isDefined(enclave.starlarkRun)) {
@@ -35,7 +35,6 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
       </Tooltip>
     );
   }
-
 
   return (
     <>

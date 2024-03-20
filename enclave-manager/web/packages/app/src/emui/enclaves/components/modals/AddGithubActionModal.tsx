@@ -23,13 +23,17 @@ export const AddGithubActionModal = ({ isOpen, onClose, packageId }: AddGithubAc
   const { createWebhook } = useEnclavesContext();
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string>();
 
   // TODO handle failure
   // TODO create own modal+button and put that behind condition
   if (isPrevEnv) {
     const handleEnable = async () => {
       setIsLoading(true);
-      await createWebhook(packageId);
+      const webhookResponse = await createWebhook(packageId);
+      if (webhookResponse.isErr) {
+        setLoadError("An error occurred while creating webhook");
+      }
       setIsLoading(false);
       setShowModal(false);
     };
