@@ -7,8 +7,11 @@ import {
   ModalHeader,
   ModalOverlay,
 } from "@chakra-ui/react";
-import { FileDisplay } from "kurtosis-ui-components";
-import { apiKey, instanceUUID } from "../../../../cookies";
+import { FileDisplay, KurtosisAlertModal } from "kurtosis-ui-components";
+import { useState } from "react";
+import { FiGithub } from "react-icons/fi";
+import { apiKey, instanceUUID, isPrevEnv } from "../../../../cookies";
+import { useEnclavesContext } from "../../EnclavesContext";
 
 export type AddGithubActionModalProps = {
   packageId: string;
@@ -17,6 +20,32 @@ export type AddGithubActionModalProps = {
 };
 
 export const AddGithubActionModal = ({ isOpen, onClose, packageId }: AddGithubActionModalProps) => {
+  const {createWebhook} = useEnclavesContext()
+
+  if (isPrevEnv) {
+    const [showModal, setShowModal] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const handleEnable = async () => {
+      setIsLoading(true);
+      await createWebhook(packageId);
+      setIsLoading(false);
+      setShowModal(false);
+    };
+
+    return (
+      <KurtosisAlertModal
+        isOpen={showModal}
+        isLoading={isLoading}
+        title={"Enable preview environments"}
+        content={"This will enable preview environments on your repository per PR"}
+        confirmText={"Enable"}
+        confirmButtonProps={{ leftIcon: <FiGithub />, colorScheme: "green" }}
+        onClose={() => setShowModal(false)}
+        onConfirm={handleEnable}
+      />
+    );
+  }
+
   const commands = `
 name: CI
 on:

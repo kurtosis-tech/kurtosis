@@ -56,6 +56,7 @@ export type EnclavesState = {
     dryRun?: boolean,
   ) => Promise<AsyncIterable<StarlarkRunResponseLine>>;
   updateStarlarkFinishedInEnclave: (enclave: RemoveFunctions<EnclaveInfo>) => void;
+  createWebhook: (packageId: string) => Promise<Result<Empty, string>>;
 };
 
 const EnclavesContext = createContext<EnclavesState>(null as any);
@@ -174,6 +175,14 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
     [kurtosisClient],
   );
 
+  const createWebhook = useCallback(
+      async (packageId: string) => {
+        const resp = await kurtosisClient.createRepositoryWebhook(packageId);
+        return resp
+      },
+      [kurtosisClient],
+  );
+
   const runStarlarkPackage = useCallback(
     async (
       enclave: RemoveFunctions<EnclaveInfo>,
@@ -246,6 +255,7 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
         runStarlarkPackage,
         runStarlarkScript,
         updateStarlarkFinishedInEnclave,
+        createWebhook,
       }}
     >
       {children}

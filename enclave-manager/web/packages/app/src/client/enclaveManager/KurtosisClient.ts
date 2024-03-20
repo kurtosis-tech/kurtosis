@@ -18,6 +18,7 @@ import {
 } from "enclave-manager-sdk/build/engine_service_pb";
 import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {
+  CreateRepositoryWebhookRequest,
   DownloadFilesArtifactRequest,
   GetListFilesArtifactNamesAndUuidsRequest,
   GetServicesRequest,
@@ -88,6 +89,13 @@ export abstract class KurtosisClient {
     return asyncResult(
       this.client.destroyEnclave(new DestroyEnclaveArgs({ enclaveIdentifier: enclaveUUID }), this.getHeaderOptions()),
       `KurtosisClient could not destroy enclave ${enclaveUUID}`,
+    );
+  }
+
+  async createRepositoryWebhook(packageID: string) {
+    return asyncResult(
+      this.client.createRepositoryWebhook(new CreateRepositoryWebhookRequest({packageId: packageID}), this.getHeaderOptions()),
+      `KurtosisClient couldn't create repository webhook for package ${packageID}`
     );
   }
 

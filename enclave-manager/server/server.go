@@ -82,6 +82,14 @@ func (c *WebServer) Check(context.Context, *connect.Request[kurtosis_enclave_man
 }
 
 func (c *WebServer) CreateRepositoryWebhook(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error) {
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+
 	if c.githubAccessToken == "" {
 		return nil, stacktrace.NewError("GitHub AuthToken is empty for this enclave manager. This method shouldn't be called")
 	}
@@ -101,7 +109,7 @@ func (c *WebServer) CreateRepositoryWebhook(ctx context.Context, req *connect.Re
 		Events: []string{"push", "pull_request"},
 		Active: github.Bool(true),
 	}
-	_, _, err := client.Repositories.CreateHook(ctx, owner, repo, hook)
+	_, _, err = client.Repositories.CreateHook(ctx, owner, repo, hook)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while creating the webhook")
 	}
