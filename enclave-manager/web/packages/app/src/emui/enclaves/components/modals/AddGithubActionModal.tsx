@@ -21,10 +21,12 @@ export type AddGithubActionModalProps = {
 
 export const AddGithubActionModal = ({ isOpen, onClose, packageId }: AddGithubActionModalProps) => {
   const { createWebhook } = useEnclavesContext();
+  const [showModal, setShowModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // TODO handle failure
+  // TODO create own modal+button and put that behind condition
   if (isPrevEnv) {
-    const [showModal, setShowModal] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const handleEnable = async () => {
       setIsLoading(true);
       await createWebhook(packageId);
