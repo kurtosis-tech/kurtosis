@@ -65,7 +65,7 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
             <EditEnclaveButton enclave={enclave} />
             <ConnectEnclaveButton enclave={enclave} />
             {!isPrevEnv && <AddGithubActionButton enclave={enclave} />}
-            {isPrevEnv && packageId != "" && <EnablePreviewEnvironmentsButton packageId={packageId} />}
+            {isPrevEnv && packageId !== "" && <EnablePreviewEnvironmentsButton packageId={packageId} />}
           </Flex>
         </Flex>
         <TabPanels>
