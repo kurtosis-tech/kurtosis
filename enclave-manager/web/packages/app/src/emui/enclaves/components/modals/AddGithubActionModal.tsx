@@ -20,7 +20,7 @@ export type AddGithubActionModalProps = {
 };
 
 export const AddGithubActionModal = ({ isOpen, onClose, packageId }: AddGithubActionModalProps) => {
-  const {createWebhook} = useEnclavesContext()
+  const { createWebhook } = useEnclavesContext();
 
   if (isPrevEnv) {
     const [showModal, setShowModal] = useState(false);

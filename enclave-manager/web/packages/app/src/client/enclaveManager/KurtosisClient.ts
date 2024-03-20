@@ -94,8 +94,11 @@ export abstract class KurtosisClient {
 
   async createRepositoryWebhook(packageID: string) {
     return asyncResult(
-      this.client.createRepositoryWebhook(new CreateRepositoryWebhookRequest({packageId: packageID}), this.getHeaderOptions()),
-      `KurtosisClient couldn't create repository webhook for package ${packageID}`
+      this.client.createRepositoryWebhook(
+        new CreateRepositoryWebhookRequest({ packageId: packageID }),
+        this.getHeaderOptions(),
+      ),
+      `KurtosisClient couldn't create repository webhook for package ${packageID}`,
     );
   }
 

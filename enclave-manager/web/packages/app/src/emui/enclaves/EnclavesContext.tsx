@@ -176,11 +176,11 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
   );
 
   const createWebhook = useCallback(
-      async (packageId: string) => {
-        const resp = await kurtosisClient.createRepositoryWebhook(packageId);
-        return resp
-      },
-      [kurtosisClient],
+    async (packageId: string) => {
+      const resp = await kurtosisClient.createRepositoryWebhook(packageId);
+      return resp;
+    },
+    [kurtosisClient],
   );
 
   const runStarlarkPackage = useCallback(
