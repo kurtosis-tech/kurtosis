@@ -45,7 +45,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/image_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/kurtosis/path-compression"
+	path_compression "github.com/kurtosis-tech/kurtosis/path-compression"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 
@@ -152,8 +152,6 @@ const (
 	dontStreamStats        = false
 
 	kurtosisTagPrefix = "kurtosistech/"
-
-	defaultContainerImageFile = "Dockerfile"
 
 	// Per https://github.com/hashicorp/waypoint/pull/1937/files
 	buildkitSessionSharedKey = ""
@@ -1408,6 +1406,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 	}()
 	defer buildkitSession.Close() //nolint
 
+	buildFile := imageBuildSpec.GetBuildFile()
 	buildArgs := imageBuildSpec.GetBuildArgs()
 	buildArgsMapStringStringPtr := map[string]*string{}
 	for k, v := range buildArgs {
@@ -1433,7 +1432,7 @@ func (manager *DockerManager) BuildImage(ctx context.Context, imageName string, 
 		CgroupParent:   "",
 		NetworkMode:    "",
 		ShmSize:        0,
-		Dockerfile:     defaultContainerImageFile,
+		Dockerfile:     buildFile,
 		Ulimits:        []*units.Ulimit{},
 		BuildArgs:      buildArgsMapStringStringPtr,
 		AuthConfigs:    map[string]registry.AuthConfig{},

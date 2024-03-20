@@ -92,6 +92,7 @@ message PaymentSubscription {
     ACTIVE = 0;
     CANCELLED = 1;
     UNKNOWN = 2;
+    ACTIVE_CANCEL_AT_PERIOD_END = 3;
   }
   Status status = 2;
 }

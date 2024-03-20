@@ -297,7 +297,6 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestExec() {
 			env_vars={
 				"POSTGRES_DB": "kurtosis",
 				"POSTGRES_USER": "kurtosis",
-				"POSTGRES_PASSWORD": "kurtosis",
 			}, 
 			files = {
 				"/root": hi_files_artifact,
@@ -337,8 +336,6 @@ services:
     name: postgres:latest
   envVars:
   - key: POSTGRES_DB
-    value: kurtosis
-  - key: POSTGRES_PASSWORD
     value: kurtosis
   - key: POSTGRES_USER
     value: kurtosis
@@ -679,7 +676,6 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRemoveService() {
 			env_vars={
 				"POSTGRES_DB": "tedi",
 				"POSTGRES_USER": "tedi",
-				"POSTGRES_PASSWORD": "tedi",
 			},
 			files = {
 				"/root": hi_files_artifact,
@@ -724,7 +720,6 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestFutureReferencesAreSwappe
 			env_vars={
 				"POSTGRES_DB": "kurtosis",
 				"POSTGRES_USER": "kurtosis",
-				"POSTGRES_PASSWORD": "kurtosis",
 			},
 			files = {
 				"/root": hi_files_artifact,
@@ -772,8 +767,6 @@ services:
     name: postgres:latest
   envVars:
   - key: POSTGRES_DB
-    value: kurtosis
-  - key: POSTGRES_PASSWORD
     value: kurtosis
   - key: POSTGRES_USER
     value: kurtosis

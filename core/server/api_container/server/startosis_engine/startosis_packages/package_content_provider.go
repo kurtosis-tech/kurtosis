@@ -14,14 +14,14 @@ import (
 type PackageContentProvider interface {
 	// GetOnDiskAbsolutePackageFilePath returns the absolute file path of a file inside a module.
 	// The corresponding GitHub repo will be cloned if necessary
-	GetOnDiskAbsolutePackageFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError)
+	GetOnDiskAbsolutePackageFilePath(absoluteModuleLocator *PackageAbsoluteLocator) (string, *startosis_errors.InterpretationError)
 
 	// GetOnDiskAbsolutePath returns the absolute path (it can be a filer or a folder and, it can be from a package or not) on APIC's disk.
 	// The corresponding GitHub repo will be cloned if necessary
-	GetOnDiskAbsolutePath(repositoryPathURL string) (string, *startosis_errors.InterpretationError)
+	GetOnDiskAbsolutePath(absoluteModuleLocator *PackageAbsoluteLocator) (string, *startosis_errors.InterpretationError)
 
 	// GetModuleContents returns the stringifies content of a file inside a module
-	GetModuleContents(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError)
+	GetModuleContents(absoluteModuleLocator *PackageAbsoluteLocator) (string, *startosis_errors.InterpretationError)
 
 	// GetOnDiskAbsolutePackagePath returns the absolute folder path containing this package
 	// It throws an error if the package does not exist on disk
@@ -36,7 +36,7 @@ type PackageContentProvider interface {
 	// GetAbsoluteLocator does:
 	// 1. if the given locator is relative, translates it to absolute locator using sourceModuleLocator (if it's already absolute, does nothing)
 	// 2. applies any replace rules, if they match the now-absolute locator
-	GetAbsoluteLocator(packageId string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError)
+	GetAbsoluteLocator(packageId string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string) (*PackageAbsoluteLocator, *startosis_errors.InterpretationError)
 
 	// GetKurtosisYaml returns the package kurtosis.yml file content
 	GetKurtosisYaml(packageAbsolutePathOnDisk string) (*yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError)
