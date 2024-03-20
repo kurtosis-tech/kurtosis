@@ -148,7 +148,6 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 		options.SetProjectName(composeProjectName, shouldOverrideComposeYamlKeyProjectName)
 		options.ResolvePaths = shouldResolvePaths
 		options.ConvertWindowsPaths = shouldConvertWindowsPathsToLinux
-		loader.WithDiscardEnvFiles(options)
 	}
 	compose, err := loader.Load(composeParseConfig, setOptionsFunc)
 	if err != nil && !strings.Contains(err.Error(), envFileErrBypassStr) {
@@ -208,12 +207,22 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 	perServiceDependencies := map[string]map[string]bool{}
 	servicesToFilesArtifactsToUpload := map[string]map[string]string{}
 
+	serviceNameToContainerNameMap := map[string]string{}
+	for _, s := range composeServices {
+		if s.ContainerName != "" {
+			serviceNameToContainerNameMap[s.Name] = s.ContainerName
+		}
+	}
+
 	for _, service := range composeServices {
 		composeService := ComposeService(service)
 		serviceConfigKwargs := []starlark.Tuple{}
 
-		// NAME
-		serviceName := strings.Replace(composeService.Name, "_", "-", -1)
+		serviceName := composeService.Name
+		if containerName, ok := serviceNameToContainerNameMap[serviceName]; ok {
+			serviceName = containerName
+		}
+		serviceName = strings.Replace(serviceName, "_", "-", -1)
 
 		// IMAGE
 		imageName := composeService.Image
@@ -330,6 +339,9 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 		// DEPENDS ON
 		dependencyServiceNames := map[string]bool{}
 		for dependencyName := range composeService.DependsOn {
+			if containerName, ok := serviceNameToContainerNameMap[dependencyName]; ok {
+				dependencyName = containerName
+			}
 			dependencyName = strings.Replace(dependencyName, "_", "-", -1)
 			dependencyServiceNames[dependencyName] = true
 		}
