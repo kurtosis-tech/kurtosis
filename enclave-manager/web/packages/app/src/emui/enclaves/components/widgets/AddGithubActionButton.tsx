@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FiGithub } from "react-icons/fi";
 import { EnclaveFullInfo } from "../../types";
 import { AddGithubActionModal } from "../modals/AddGithubActionModal";
+import { isPrevEnv } from "../../../../cookies";
 
 type AddGithubActionButtonProps = ButtonProps & {
   enclave: EnclaveFullInfo;
@@ -12,10 +13,15 @@ type AddGithubActionButtonProps = ButtonProps & {
 export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActionButtonProps) => {
   const [showModal, setShowModal] = useState(false);
 
+  let tooltip = "Add GitHub Action"
+  if (isPrevEnv) {
+    tooltip = "Enable Preview Envirionments"
+  }
+
   if (!isDefined(enclave.starlarkRun)) {
     return (
       <Button isLoading={true} colorScheme={"yellow"} leftIcon={<FiGithub />} size={"sm"} {...buttonProps}>
-        Add GitHub Action
+        tooltip
       </Button>
     );
   }
@@ -24,11 +30,12 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
     return (
       <Tooltip label={"An error occurred while starting the enclave"}>
         <Button isDisabled={true} colorScheme={"yellow"} leftIcon={<FiGithub />} size={"sm"} {...buttonProps}>
-          Add GitHub Action
+          tooltip
         </Button>
       </Tooltip>
     );
   }
+
 
   return (
     <>
@@ -41,7 +48,7 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
           variant={"solid"}
           {...buttonProps}
         >
-          Add GitHub Action
+          tooltip
         </Button>
       </Tooltip>
       <AddGithubActionModal
