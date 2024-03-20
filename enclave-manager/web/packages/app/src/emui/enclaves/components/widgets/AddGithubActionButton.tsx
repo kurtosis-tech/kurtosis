@@ -21,7 +21,7 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
   if (!isDefined(enclave.starlarkRun)) {
     return (
       <Button isLoading={true} colorScheme={"yellow"} leftIcon={<FiGithub />} size={"sm"} {...buttonProps}>
-        tooltip
+        {tooltip}
       </Button>
     );
   }
@@ -30,7 +30,7 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
     return (
       <Tooltip label={"An error occurred while starting the enclave"}>
         <Button isDisabled={true} colorScheme={"yellow"} leftIcon={<FiGithub />} size={"sm"} {...buttonProps}>
-          tooltip
+          {tooltip}
         </Button>
       </Tooltip>
     );
@@ -38,7 +38,7 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
 
   return (
     <>
-      <Tooltip label={`Steps to run this package from CI`} openDelay={1000}>
+      <Tooltip label={tooltip} openDelay={1000}>
         <Button
           colorScheme={"yellow"}
           leftIcon={<FiGithub />}
@@ -47,7 +47,7 @@ export const AddGithubActionButton = ({ enclave, ...buttonProps }: AddGithubActi
           variant={"solid"}
           {...buttonProps}
         >
-          tooltip
+          ${tooltip}
         </Button>
       </Tooltip>
       <AddGithubActionModal
