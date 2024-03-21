@@ -90,7 +90,7 @@ const KurtosisRouter = () => {
           },
         ],
         {
-          basename: kurtosisClient.getBaseApplicationUrl().pathname,
+          basename: "/enclave-manager",
         },
       ),
     [kurtosisClient],
