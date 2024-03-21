@@ -20,7 +20,6 @@ const (
 	repositoriesTmpDirRelPath         = "tmp-repositories"
 	githubAuthDirRelPath              = "github-auth"
 	githubAuthTokenFilename           = "token.txt"
-	genericRepositoriesDirRelPath     = "generic-repositories"
 	packageDescriptionForTest         = "package description test"
 	localAbsoluteLocatorNotAllowedMsg = "is referencing a file within the same package using absolute import syntax"
 )
