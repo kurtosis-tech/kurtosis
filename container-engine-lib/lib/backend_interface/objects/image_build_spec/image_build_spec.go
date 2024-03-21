@@ -39,15 +39,19 @@ type privateImageBuildSpec struct {
 	//
 	TargetStage string
 
+	// Name of the build file
+	BuildFile string
+
 	// Dockerfile build args
 	BuildArgs map[string]string
 }
 
-func NewImageBuildSpec(contextDirPath string, containerImageFilePath string, targetStage string, buildArgs map[string]string) *ImageBuildSpec {
+func NewImageBuildSpec(contextDirPath string, containerImageFilePath string, targetStage string, buildFile string, buildArgs map[string]string) *ImageBuildSpec {
 	internalImageBuildSpec := &privateImageBuildSpec{
 		ContainerImageFilePath: containerImageFilePath,
 		ContextDirPath:         contextDirPath,
 		TargetStage:            targetStage,
+		BuildFile:              buildFile,
 		BuildArgs:              buildArgs,
 	}
 	return &ImageBuildSpec{internalImageBuildSpec}
@@ -63,6 +67,10 @@ func (imageBuildSpec *ImageBuildSpec) GetBuildContextDir() string {
 
 func (imageBuildSpec *ImageBuildSpec) GetTargetStage() string {
 	return imageBuildSpec.privateImageBuildSpec.TargetStage
+}
+
+func (imageBuildSpec *ImageBuildSpec) GetBuildFile() string {
+	return imageBuildSpec.privateImageBuildSpec.BuildFile
 }
 
 func (imageBuildSpec *ImageBuildSpec) GetBuildArgs() map[string]string {

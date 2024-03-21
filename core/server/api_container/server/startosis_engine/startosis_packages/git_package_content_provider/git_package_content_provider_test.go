@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
@@ -42,7 +43,10 @@ func TestGitPackageProvider_SucceedsForValidPackage(t *testing.T) {
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star"
-	contents, err := provider.GetModuleContents(sampleStartosisModule)
+
+	sampleStartosisModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(sampleStartosisModule, defaultMainBranch)
+
+	contents, err := provider.GetModuleContents(sampleStartosisModuleAbsoluteLocator)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"World!\"\n", contents)
 }
@@ -63,7 +67,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithExplicitMasterSet(t *test
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@main"
-	contents, err := provider.GetModuleContents(sampleStartosisModule)
+
+	sampleStartosisModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(sampleStartosisModule, defaultMainBranch)
+
+	contents, err := provider.GetModuleContents(sampleStartosisModuleAbsoluteLocator)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"World!\"\n", contents)
 }
@@ -84,7 +91,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithBranch(t *testing.T) {
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@test-branch"
-	contents, err := provider.GetModuleContents(sampleStartosisModule)
+
+	sampleStartosisModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(sampleStartosisModule, defaultMainBranch)
+
+	contents, err := provider.GetModuleContents(sampleStartosisModuleAbsoluteLocator)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"Maybe!\"\n", contents)
 }
@@ -105,7 +115,10 @@ func TestGitPackageProvider_FailsForInvalidBranch(t *testing.T) {
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@non-existent-branch"
-	_, err = provider.GetModuleContents(sampleStartosisModule)
+
+	sampleStartosisModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(sampleStartosisModule, defaultMainBranch)
+
+	_, err = provider.GetModuleContents(sampleStartosisModuleAbsoluteLocator)
 	require.NotNil(t, err)
 }
 
@@ -125,7 +138,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithTag(t *testing.T) {
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@0.1.1"
-	contents, err := provider.GetModuleContents(sampleStartosisModule)
+
+	sampleStartosisModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(sampleStartosisModule, defaultMainBranch)
+
+	contents, err := provider.GetModuleContents(sampleStartosisModuleAbsoluteLocator)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"World!\"\n", contents)
 }
@@ -146,7 +162,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithCommit(t *testing.T) {
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@ec9062828e1a687a5db7dfa750f754f88119e4c0"
-	contents, err := provider.GetModuleContents(sampleStartosisModule)
+
+	sampleStartosisModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(sampleStartosisModule, defaultMainBranch)
+
+	contents, err := provider.GetModuleContents(sampleStartosisModuleAbsoluteLocator)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"World!\"\n", contents)
 }
@@ -167,7 +186,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithCommitOnABranch(t *testin
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@df88baf51caffbe7e8f66c0e54715f680f4482b2"
-	contents, err := provider.GetModuleContents(sampleStartosisModule)
+
+	sampleStartosisModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(sampleStartosisModule, defaultMainBranch)
+
+	contents, err := provider.GetModuleContents(sampleStartosisModuleAbsoluteLocator)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"Maybe!\"\n", contents)
 }
@@ -189,7 +211,10 @@ func TestGitPackageProvider_SucceedsForNonStarlarkFile(t *testing.T) {
 
 	// TODO replace this with something local or static
 	sampleStarlarkPackage := "github.com/kurtosis-tech/prometheus-package/static-files/prometheus.yml.tmpl"
-	contents, err := provider.GetModuleContents(sampleStarlarkPackage)
+
+	sampleStarlarkPackageAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(sampleStarlarkPackage, defaultMainBranch)
+
+	contents, err := provider.GetModuleContents(sampleStarlarkPackageAbsoluteLocator)
 	require.Nil(t, err)
 	require.NotEmpty(t, contents)
 }
@@ -210,8 +235,85 @@ func TestGitPackageProvider_FailsForNonExistentPackage(t *testing.T) {
 	provider := NewGitPackageContentProvider(oackageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 	nonExistentModulePath := "github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
 
-	_, err = provider.GetModuleContents(nonExistentModulePath)
+	nonExistentModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(nonExistentModulePath, defaultMainBranch)
+
+	_, err = provider.GetModuleContents(nonExistentModuleAbsoluteLocator)
 	require.NotNil(t, err)
+}
+
+func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommit(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
+	require.Nil(t, err)
+	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
+	require.Nil(t, err)
+	defer os.RemoveAll(githubAuthDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+
+	absoluteLocatorStr := "github.com/kurtosis-tech/ethereum-package/src/package_io/input_parser.star"
+	commitHash := "da55be84861e93ce777076e545abee35ff2d51ce"
+
+	absoluteLocatorWithCommit := startosis_packages.NewPackageAbsoluteLocator(absoluteLocatorStr, commitHash)
+
+	contents, err := provider.GetModuleContents(absoluteLocatorWithCommit)
+	require.Nil(t, err)
+	require.NotEmpty(t, contents)
+}
+
+func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommitComparedWithMainBranch(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
+	require.Nil(t, err)
+	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
+	require.Nil(t, err)
+	defer os.RemoveAll(githubAuthDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+
+	absoluteLocatorStr := "github.com/kurtosis-tech/another-sample-dependency-package/directory/internal-module.star"
+	commitHashInMainBranch := ""
+
+	absoluteLocatorWithCommitInMainBranch := startosis_packages.NewPackageAbsoluteLocator(absoluteLocatorStr, commitHashInMainBranch)
+
+	contentFromMainBranch, err := provider.GetModuleContents(absoluteLocatorWithCommitInMainBranch)
+	require.Nil(t, err)
+	require.NotEmpty(t, contentFromMainBranch)
+
+	packageDir, err = os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err = os.MkdirTemp("", repositoriesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+	githubAuthDir, err = os.MkdirTemp("", githubAuthDirRelPath)
+	require.Nil(t, err)
+	githubAuthTokenFilePath, err = os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
+	require.Nil(t, err)
+	defer os.RemoveAll(githubAuthDir)
+
+	provider2 := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+
+	commitHashInAnotherBranch := "f610049f1f9174bce871431af7d5d35cb6bfd76d"
+
+	absoluteLocatorWithCommitInAnotherBranch := startosis_packages.NewPackageAbsoluteLocator(absoluteLocatorStr, commitHashInAnotherBranch)
+
+	contentFromAnotherBranch, err := provider2.GetModuleContents(absoluteLocatorWithCommitInAnotherBranch)
+	require.Nil(t, err)
+	require.NotEmpty(t, contentFromAnotherBranch)
+
+	require.NotEqual(t, contentFromMainBranch, contentFromAnotherBranch)
+
 }
 
 func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
@@ -230,7 +332,10 @@ func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	packagePath := "github.com/kurtosis-tech/datastore-army-package/src/helpers.star"
-	pathOnDisk, err := provider.getOnDiskAbsolutePath(packagePath, true)
+
+	absoluteLocator := startosis_packages.NewPackageAbsoluteLocator(packagePath, defaultMainBranch)
+
+	pathOnDisk, err := provider.getOnDiskAbsolutePath(absoluteLocator, true)
 
 	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/datastore-army-package existing")
 	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "datastore-army-package", "src/helpers.star"), pathOnDisk)
@@ -252,7 +357,10 @@ func TestGetAbsolutePathOnDisk_WorksForNonInMainBranchLocators(t *testing.T) {
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	absoluteFileLocator := "github.com/kurtosis-tech/sample-dependency-package@test-branch/main.star"
-	pathOnDisk, err := provider.getOnDiskAbsolutePath(absoluteFileLocator, true)
+
+	absoluteLocator := startosis_packages.NewPackageAbsoluteLocator(absoluteFileLocator, defaultMainBranch)
+
+	pathOnDisk, err := provider.getOnDiskAbsolutePath(absoluteLocator, true)
 
 	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/datastore-army-package existing")
 	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "sample-dependency-package", "main.star"), pathOnDisk)
@@ -275,7 +383,10 @@ func TestGetAbsolutePathOnDisk_GenericRepositoryDir(t *testing.T) {
 	provider := NewGitPackageContentProvider(repositoriesDir, repositoriesTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	repositoryPathURL := "github.com/kurtosis-tech/minimal-grpc-server/golang/scripts"
-	pathOnDisk, err := provider.GetOnDiskAbsolutePath(repositoryPathURL)
+
+	absoluteLocator := startosis_packages.NewPackageAbsoluteLocator(repositoryPathURL, defaultMainBranch)
+
+	pathOnDisk, err := provider.GetOnDiskAbsolutePath(absoluteLocator)
 
 	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/minimal-grpc-server existing")
 	require.Equal(t, path.Join(repositoriesDir, "kurtosis-tech", "minimal-grpc-server", "golang", "scripts"), pathOnDisk)
@@ -299,7 +410,10 @@ func TestGetAbsolutePathOnDisk_GenericRepositoryFile(t *testing.T) {
 	provider := NewGitPackageContentProvider(repositoriesDir, repositoriesTmpDir, githubAuthTokenFilePath.Name(), nil)
 
 	repositoryPathURL := "github.com/kurtosis-tech/minimal-grpc-server/golang/scripts/build.sh"
-	pathOnDisk, err := provider.GetOnDiskAbsolutePath(repositoryPathURL)
+
+	absoluteLocator := startosis_packages.NewPackageAbsoluteLocator(repositoryPathURL, defaultMainBranch)
+
+	pathOnDisk, err := provider.GetOnDiskAbsolutePath(absoluteLocator)
 
 	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/minimal-grpc-server existing")
 	require.Equal(t, path.Join(repositoriesDir, "kurtosis-tech", "minimal-grpc-server", "golang", "scripts", "build.sh"), pathOnDisk)
@@ -315,7 +429,7 @@ func TestGetAbsoluteLocator_SucceedsForRelativeFile(t *testing.T) {
 	require.Nil(t, err)
 
 	expectedAbsoluteLocator := "github.com/kurtosis-tech/avalanche-package/static_files/config.json.tmpl"
-	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator.GetLocator())
 
 	parentModuleId2 := "github.com/kurtosis-tech/avalanche-package/src/builder.star"
 	maybeRelativeLocator2 := "/static_files/genesis.json"
@@ -323,7 +437,7 @@ func TestGetAbsoluteLocator_SucceedsForRelativeFile(t *testing.T) {
 
 	expectedAbsoluteLocator2 := "github.com/kurtosis-tech/avalanche-package/static_files/genesis.json"
 	require.Nil(t, err2)
-	require.Equal(t, expectedAbsoluteLocator2, absoluteLocator2)
+	require.Equal(t, expectedAbsoluteLocator2, absoluteLocator2.GetLocator())
 }
 
 func TestGetAbsoluteLocator_RegularReplaceSucceeds(t *testing.T) {
@@ -339,8 +453,24 @@ func TestGetAbsoluteLocator_RegularReplaceSucceeds(t *testing.T) {
 
 	expectedAbsoluteLocator := "github.com/kurtosis-tech/another-sample-dependency-package/main.star"
 	require.Nil(t, err)
-	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator.GetLocator())
 
+}
+
+func TestGetAbsoluteLocator_AnotherPackageWithCommitReplaceSucceeds(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "", "", nil)
+
+	packageId := "github.com/kurtosis-tech/sample-startosis-load/sample-package"
+	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
+	maybeRelativeLocator := "github.com/kurtosis-tech/ethereum-package/src/package_io/input_parser.star"
+	packageReplaceOptions := map[string]string{
+		"github.com/kurtosis-tech/ethereum-package": "github.com/kurtosis-tech/ethereum-package@da55be84861e93ce777076e545abee35ff2d51ce",
+	}
+	absoluteLocator, err := provider.GetAbsoluteLocator(packageId, parentModuleId, maybeRelativeLocator, packageReplaceOptions)
+
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/ethereum-package/src/package_io/input_parser.star"
+	require.Nil(t, err)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator.GetLocator())
 }
 
 func TestGetAbsoluteLocator_RootPackageReplaceSucceeds(t *testing.T) {
@@ -357,7 +487,7 @@ func TestGetAbsoluteLocator_RootPackageReplaceSucceeds(t *testing.T) {
 
 	expectedAbsoluteLocator := "github.com/kurtosis-tech/root-package-replaced/main.star"
 	require.Nil(t, err)
-	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator.GetLocator())
 
 }
 
@@ -375,7 +505,7 @@ func TestGetAbsoluteLocator_SubPackageReplaceSucceeds(t *testing.T) {
 
 	expectedAbsoluteLocator := "github.com/kurtosis-tech/sub-package-replaced/main.star"
 	require.Nil(t, err)
-	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator.GetLocator())
 
 }
 
@@ -392,7 +522,7 @@ func TestGetAbsoluteLocator_ReplacePackageInternalModuleSucceeds(t *testing.T) {
 
 	expectedAbsoluteLocator := "github.com/kurtosis-tech/root-package-replaced/folder/module.star"
 	require.Nil(t, err)
-	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator.GetLocator())
 }
 
 func TestGetAbsoluteLocator_NoMainBranchReplaceSucceeds(t *testing.T) {
@@ -406,9 +536,9 @@ func TestGetAbsoluteLocator_NoMainBranchReplaceSucceeds(t *testing.T) {
 	}
 	absoluteLocator, err := provider.GetAbsoluteLocator(packageId, parentModuleId, maybeRelativeLocator, packageReplaceOptions)
 
-	expectedAbsoluteLocator := "github.com/kurtosis-tech/sample-dependency-package@no-main-branch/main.star"
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/sample-dependency-package/main.star"
 	require.Nil(t, err)
-	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator.GetLocator())
 }
 
 func TestGetAbsoluteLocator_ShouldBlockSamePackageAbsoluteLocator(t *testing.T) {

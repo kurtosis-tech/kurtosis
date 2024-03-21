@@ -214,7 +214,9 @@ func getOnDiskNixBuildSpecPaths(
 	}
 
 	// get on disk directory path of Dockerfile
-	flakeNixAbsoluteLocator := path.Join(contextDirAbsoluteLocator, flakeLocationDir, defaultNixFlakeFile)
+	flakeNixAbsoluteLocatorStr := path.Join(contextDirAbsoluteLocator.GetLocator(), flakeLocationDir, defaultNixFlakeFile)
+
+	flakeNixAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(flakeNixAbsoluteLocatorStr, contextDirAbsoluteLocator.GetTagBranchOrCommit())
 
 	flakeNixPathOnDisk, interpretationErr := packageContentProvider.GetOnDiskAbsolutePackageFilePath(flakeNixAbsoluteLocator)
 	if interpretationErr != nil {

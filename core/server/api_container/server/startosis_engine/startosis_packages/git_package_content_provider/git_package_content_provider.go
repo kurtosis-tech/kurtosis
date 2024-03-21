@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver"
@@ -45,6 +46,8 @@ const (
 	osPathSeparatorString = string(os.PathSeparator)
 
 	onlyOneReplace = 1
+
+	defaultMainBranch = ""
 )
 
 type GitPackageContentProvider struct {
@@ -96,17 +99,18 @@ func (provider *GitPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOn
 	return kurtosisYaml, nil
 }
 
-func (provider *GitPackageContentProvider) GetOnDiskAbsolutePath(repositoryPathURL string) (string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) GetOnDiskAbsolutePath(absoluteModuleLocator *startosis_packages.PackageAbsoluteLocator) (string, *startosis_errors.InterpretationError) {
 	shouldOnlyAcceptsPackagePath := false
-	return provider.getOnDiskAbsolutePath(repositoryPathURL, shouldOnlyAcceptsPackagePath)
+	return provider.getOnDiskAbsolutePath(absoluteModuleLocator, shouldOnlyAcceptsPackagePath)
 }
 
-func (provider *GitPackageContentProvider) GetOnDiskAbsolutePackageFilePath(repositoryPathURL string) (string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) GetOnDiskAbsolutePackageFilePath(absoluteLocator *startosis_packages.PackageAbsoluteLocator) (string, *startosis_errors.InterpretationError) {
 	shouldOnlyAcceptsPackagePath := true
-	return provider.getOnDiskAbsolutePath(repositoryPathURL, shouldOnlyAcceptsPackagePath)
+	return provider.getOnDiskAbsolutePath(absoluteLocator, shouldOnlyAcceptsPackagePath)
 }
 
-func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(repositoryPathURL string, shouldOnlyAcceptsPackageFilePath bool) (string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(absoluteLocator *startosis_packages.PackageAbsoluteLocator, shouldOnlyAcceptsPackageFilePath bool) (string, *startosis_errors.InterpretationError) {
+	repositoryPathURL := absoluteLocator.GetGitURL()
 	parsedURL, err := shared_utils.ParseGitURL(repositoryPathURL)
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred parsing Git URL for absolute file locator '%s'", repositoryPathURL)
@@ -159,8 +163,8 @@ func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(repositoryPathU
 	return pathToFileOnDisk, nil
 }
 
-func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl string) (string, *startosis_errors.InterpretationError) {
-	pathToFile, interpretationError := provider.GetOnDiskAbsolutePackageFilePath(fileInsideModuleUrl)
+func (provider *GitPackageContentProvider) GetModuleContents(absoluteLocator *startosis_packages.PackageAbsoluteLocator) (string, *startosis_errors.InterpretationError) {
+	pathToFile, interpretationError := provider.GetOnDiskAbsolutePackageFilePath(absoluteLocator)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
@@ -168,7 +172,7 @@ func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl
 	// Load the file content from its absolute path
 	contents, err := os.ReadFile(pathToFile)
 	if err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "Loading module content for module '%s' failed. An error occurred in reading contents of the file '%v'", fileInsideModuleUrl, pathToFile)
+		return "", startosis_errors.WrapWithInterpretationError(err, "Loading module content for module '%s' failed. An error occurred in reading contents of the file '%v'", absoluteLocator.GetLocator(), pathToFile)
 	}
 
 	return string(contents), nil
@@ -234,27 +238,29 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocator(
 	sourceModuleLocator string,
 	relativeOrAbsoluteLocator string,
 	packageReplaceOptions map[string]string,
-) (string, *startosis_errors.InterpretationError) {
-	var absoluteLocator string
+) (*startosis_packages.PackageAbsoluteLocator, *startosis_errors.InterpretationError) {
+	var absoluteLocatorStr string
 
 	if shouldBlockAbsoluteLocatorBecauseIsInTheSameSourceModuleLocatorPackage(relativeOrAbsoluteLocator, sourceModuleLocator, packageId) {
-		return "", startosis_errors.NewInterpretationError("Locator '%s' is referencing a file within the same package using absolute import syntax, but only relative import syntax (path starting with '/' or '.') is allowed for within-package imports", relativeOrAbsoluteLocator)
+		return nil, startosis_errors.NewInterpretationError("Locator '%s' is referencing a file within the same package using absolute import syntax, but only relative import syntax (path starting with '/' or '.') is allowed for within-package imports", relativeOrAbsoluteLocator)
 	}
 
 	// maybe it's not a relative url in which case we return the url
 	_, errorParsingUrl := shared_utils.ParseGitURL(relativeOrAbsoluteLocator)
 	if errorParsingUrl == nil {
 		// Parsing succeeded, meaning this is already an absolute locator and no relative -> absolute translation is needed
-		absoluteLocator = relativeOrAbsoluteLocator
+		absoluteLocatorStr = relativeOrAbsoluteLocator
 	} else {
 		// Parsing did not succeed, meaning this is a relative locator
 		sourceModuleParsedGitUrl, errorParsingPackageId := shared_utils.ParseGitURL(sourceModuleLocator)
 		if errorParsingPackageId != nil {
-			return "", startosis_errors.NewInterpretationError("Source module locator '%v' isn't a valid locator; relative URLs don't work with standalone scripts", sourceModuleLocator)
+			return nil, startosis_errors.NewInterpretationError("Source module locator '%v' isn't a valid locator; relative URLs don't work with standalone scripts", sourceModuleLocator)
 		}
 
-		absoluteLocator = sourceModuleParsedGitUrl.GetAbsoluteLocatorRelativeToThisURL(relativeOrAbsoluteLocator)
+		absoluteLocatorStr = sourceModuleParsedGitUrl.GetAbsoluteLocatorRelativeToThisURL(relativeOrAbsoluteLocator)
 	}
+
+	absoluteLocator := startosis_packages.NewPackageAbsoluteLocator(absoluteLocatorStr, defaultMainBranch)
 
 	replacedAbsoluteLocator := replaceAbsoluteLocator(absoluteLocator, packageReplaceOptions)
 
