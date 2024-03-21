@@ -1660,7 +1660,7 @@ func (manager *DockerManager) getImagePlatform(ctx context.Context, imageName st
 	return imageInspect.Architecture, nil
 }
 
-func (manager *DockerManager) GetOriginalEntryPointAndCommand(ctx context.Context, imageName string) ([]string, []string, error) {
+func (manager *DockerManager) GetEntryPointAndCommand(ctx context.Context, imageName string) ([]string, []string, error) {
 	imageInspect, _, err := manager.dockerClient.ImageInspectWithRaw(ctx, imageName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "an error occurred while running image inspect on image '%v'", imageName)

@@ -555,13 +555,12 @@ func createStartServiceOperation(
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
 		}
 
-		// THIS IS A HACK
-		// TODO clean this up
+		// TODO clean this hack up
 		// this path will only be hit if `files_to_be_moved` is set in Starlark; which is a hidden property
 		// used by compose transpilation
 		if len(filesToBeMoved) > 0 {
 			var err error
-			cmdArgs, entrypointArgs, err = handleFilesToBeMovedForDockerCompose(ctx, dockerManager, containerImageName, cmdArgs, entrypointArgs, filesToBeMoved)
+			cmdArgs, entrypointArgs, err = getUpdatedEntrypointAndCmdFromFilesToBeMoved(ctx, dockerManager, containerImageName, cmdArgs, entrypointArgs, filesToBeMoved)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "an error occurred while handling files for compose")
 			}
@@ -769,7 +768,7 @@ func createStartServiceOperation(
 }
 
 // TODO - clean this up this is super janky, a way to handle compose  & volume
-func handleFilesToBeMovedForDockerCompose(ctx context.Context, dockerManager *docker_manager.DockerManager, containerImageName string, cmdArgs []string, entrypointArgs []string, filesToBeMoved map[string]string) ([]string, []string, error) {
+func getUpdatedEntrypointAndCmdFromFilesToBeMoved(ctx context.Context, dockerManager *docker_manager.DockerManager, containerImageName string, cmdArgs []string, entrypointArgs []string, filesToBeMoved map[string]string) ([]string, []string, error) {
 	concatenatedFilesToBeMoved := []string{}
 	for source, destination := range filesToBeMoved {
 		// TODO improve this; the first condition handles files the other folders
@@ -777,7 +776,7 @@ func handleFilesToBeMovedForDockerCompose(ctx context.Context, dockerManager *do
 	}
 
 	concatenatedFilesToBeMovedAsStr := strings.Join(concatenatedFilesToBeMoved, " && ")
-	originalEntrypointArgs, originalCmdArgs, err := dockerManager.GetOriginalEntryPointAndCommand(ctx, containerImageName)
+	originalEntrypointArgs, originalCmdArgs, err := dockerManager.GetEntryPointAndCommand(ctx, containerImageName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "an error occurred fetching data about image '%v'", containerImageName)
 	}

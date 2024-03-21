@@ -39,7 +39,7 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 	fileArtifact1 := fmt.Sprintf("%s(%s=[%q])", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName1)
 	fileArtifact2 := fmt.Sprintf("%s(%s=[%q])", directory.DirectoryTypeName, directory.ArtifactNamesAttr, testFilesArtifactName2)
 	persistentDirectory := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.PersistentKeyAttr, testPersistentDirectoryKey)
-	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s, %s=%v, %s=%v, files_to_be_moved={\"/foo/bar\": \"/doo/dar\"})",
+	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s, %s=%v, %s=%v, %s=%v)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, testContainerImageName,
 		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", testPrivatePortId, testPrivatePortNumber, testPrivatePortProtocolStr, testPrivateApplicationProtocol, testWaitConfiguration),
@@ -56,7 +56,8 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 		service_config.ReadyConditionsAttr,
 		getDefaultReadyConditionsScriptPart(),
 		service_config.LabelsAttr, fmt.Sprintf("{%q: %q, %q: %q}", testServiceConfigLabelsKey1, testServiceConfigLabelsValue1, testServiceConfigLabelsKey2, testServiceConfigLabelsValue2),
-		service_config.NodeSelectorsAttr, fmt.Sprintf("{%q: %q}", testNodeSelectorKey1, testNodeSelectorValue1))
+		service_config.NodeSelectorsAttr, fmt.Sprintf("{%q: %q}", testNodeSelectorKey1, testNodeSelectorValue1),
+		service_config.FilesToBeMovedAttr, fmt.Sprintf("{%q: %q}", testFilesToBeMoved, testFilesToBeMoved))
 	return starlarkCode
 }
 
