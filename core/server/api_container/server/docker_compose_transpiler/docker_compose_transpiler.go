@@ -7,6 +7,7 @@ import (
 	"golang.org/x/exp/slices"
 	"os"
 	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -66,14 +67,20 @@ const (
 
 	// TODO: get the kurtosis-data/repositories part from enclave data directory
 	// TODO: get the NOTIONAL USER part from apic service
-	serviceLevelEnvFileDirPath = "/kurtosis-data/repositories/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE"
+	packagePathOnDisk = "/kurtosis-data/repositories/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE"
 
+	// TODO: make this more robust
 	envFileErrBypassStr = "Failed to load"
 
-	rootUserId = "0"
+	alphanumericCharWithDashesRegexStr = `[^a-z0-9-]`
+	consecutiveDashesRegexStr          = `+-`
 )
 
-var possibleHttpPorts = []uint32{8080, 8000, 80, 443}
+var (
+	alphanumericCharWithDashesRegex = regexp.MustCompile(alphanumericCharWithDashesRegexStr)
+	consecutiveDashesRegex          = regexp.MustCompile(consecutiveDashesRegexStr)
+	possibleHttpPorts               = []uint32{8080, 8000, 80, 443}
+)
 
 type ComposeService types.ServiceConfig
 
@@ -112,7 +119,6 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, relativeP
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting Compose file '%v' to a Starlark script.", composeFilename)
 	}
-	logrus.Info(starlarkScript)
 	return starlarkScript, nil
 }
 
@@ -219,10 +225,12 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 		serviceConfigKwargs := []starlark.Tuple{}
 
 		serviceName := composeService.Name
+		// hostname becomes container name if it's set in compose
+		// in kurtosis service name becomes hostname, so set service name as container name (thus hostname) so other services can comm with it
 		if containerName, ok := serviceNameToContainerNameMap[serviceName]; ok {
 			serviceName = containerName
 		}
-		serviceName = strings.Replace(serviceName, "_", "-", -1)
+		serviceName = convertToRFC1035(serviceName)
 
 		// IMAGE
 		imageName := composeService.Image
@@ -325,25 +333,14 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 				cpuMinLimit)
 		}
 
-		// CAPS ADD
-		// If caps add is specified, compose wants to give this container specific linux capabilities
-		// Because Kurtosis doesn't enable this yet, give the container userid=0, or root
-		// Unfortunately, this could give container more privileges than desired
-		if composeService.CapAdd != nil {
-			serviceConfigKwargs = appendKwarg(
-				serviceConfigKwargs,
-				service_config.UserAttr,
-				starlark.String(rootUserId))
-		}
-
 		// DEPENDS ON
 		dependencyServiceNames := map[string]bool{}
 		for dependencyName := range composeService.DependsOn {
+			// do container name switch if it exists
 			if containerName, ok := serviceNameToContainerNameMap[dependencyName]; ok {
 				dependencyName = containerName
 			}
-			dependencyName = strings.Replace(dependencyName, "_", "-", -1)
-			dependencyServiceNames[dependencyName] = true
+			dependencyServiceNames[convertToRFC1035(dependencyName)] = true
 		}
 		perServiceDependencies[serviceName] = dependencyServiceNames
 
@@ -483,7 +480,7 @@ func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals, envFiles typ
 
 	// if env file is specified, manually parse the env file at the location it is inside the package on the APIC
 	for _, envFilePath := range envFiles {
-		serviceEnvFilePathOnAPIC := path.Join(serviceLevelEnvFileDirPath, envFilePath)
+		serviceEnvFilePathOnAPIC := path.Join(packagePathOnDisk, envFilePath)
 		envFileReader, err := os.Open(serviceEnvFilePathOnAPIC)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred opening env file at path: %v", serviceEnvFilePathOnAPIC)
@@ -525,35 +522,11 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 		var shouldPersist bool
 		switch volumeType {
 		case types.VolumeTypeBind:
-			//Handle case where home path is reference
-			//if strings.Contains(volume.Source, unixHomePathSymbol) {
-			//	return nil, map[string]string{}, stacktrace.NewError(
-			//		"Volume path '%v' uses '%v', likely referencing home path on a unix filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
-			//			"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path",
-			//		volume.Source, unixHomePathSymbol, volume.Source)
-			//}
-			//// Handle case where upstream relative path is reference
-			//if strings.Contains(volume.Source, upstreamRelativePathSymbol) {
-			//	return nil, map[string]string{}, stacktrace.NewError(
-			//		"Volume path '%v' uses '%v', likely referencing an upstream path on a filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
-			//			"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path within the package.",
-			//		volume.Source, upstreamRelativePathSymbol, volume.Source)
-			//}
-
-			// Handle case where upstream relative path is referenced or home path
-			if strings.Contains(volume.Source, unixHomePathSymbol) || strings.Contains(volume.Source, upstreamRelativePathSymbol) {
-				// the logic that's actually needed here is normalizing the home path to something that fits the RFC standard
-				persistenceKey = strings.Replace(volume.Source, unixHomePathSymbol, "", -1)
-				persistenceKey = strings.Replace(persistenceKey, upstreamRelativePathSymbol, "", -1)
-				persistenceKey = strings.Replace(persistenceKey, "_", "", -1)
-				persistenceKey = strings.Replace(persistenceKey, "/", "", -1)
-				shouldPersist = true
-			} else {
-				// Assume that if an absolute path is specified, user wants to use volume as a persistence layer
-				// Additionally, assume relative paths are read-only
-				shouldPersist = path.IsAbs(volume.Source)
-				persistenceKey = fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
-			}
+			volumePath := cleanFilePath(volume.Source)
+			// if an absolute path is specified, assume user wants to use volume as a persistence layer and create a Persistent Directory
+			// if path is relative, assume it's read only and do an upload files
+			shouldPersist = path.IsAbs(volumePath)
+			persistenceKey = fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 		case types.VolumeTypeVolume:
 			persistenceKey = fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			shouldPersist = true
@@ -575,11 +548,13 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 			filesArtifactsToUpload[volume.Source] = filesArtifactName
 			filesDictValue = starlark.String(filesArtifactName)
 
-			file, err := os.Stat(path.Join(serviceLevelEnvFileDirPath, volume.Source))
+			// TODO: update files artifact expansion to handle mounting files, not only directories so files_to_be_moved hack can be removed
+			// if the volume is referencing a file, do files to be moved hack
+			maybeFileOrDirVolume, err := os.Stat(path.Join(packagePathOnDisk, volume.Source))
 			if err != nil {
-				return nil, nil, nil, err
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred checking is the volume path existed in the package on disc.", volume.Source)
 			}
-			if !file.IsDir() {
+			if !maybeFileOrDirVolume.IsDir() {
 				sourcePathNameEnd := path.Base(volume.Source)
 				targetDirectoryForFilesArtifact = path.Join("/tmp", filesArtifactName)
 				targetToMovePath := path.Join(targetDirectoryForFilesArtifact, sourcePathNameEnd)
@@ -698,4 +673,28 @@ func sortServicesBasedOnDependencies(serviceDependencyGraph map[string]map[strin
 	}
 
 	return sortedServices, nil
+}
+
+// Converts a string to a RFC 1035 compliant format
+func convertToRFC1035(input string) string {
+	// Remove leading and trailing spaces
+	input = strings.TrimSpace(input)
+	// Convert to lowercase
+	input = strings.ToLower(input)
+	// Replace non-alphanumeric characters with dashes
+	input = alphanumericCharWithDashesRegex.ReplaceAllString(input, "-")
+	// Remove consecutive dashes
+	input = consecutiveDashesRegex.ReplaceAllString(input, "-")
+	// Remove dashes at the beginning or end
+	input = strings.Trim(input, "-")
+	return input
+}
+
+// CleanFilePath cleans up a file path by removing '~', '..', and '_' characters
+// while retaining absolute paths as absolute and relative paths as relative.
+func cleanFilePath(filePath string) string {
+	filePath = strings.ReplaceAll(filePath, upstreamRelativePathSymbol, "")
+	filePath = strings.ReplaceAll(filePath, unixHomePathSymbol, "")
+	filePath = strings.ReplaceAll(filePath, "_", "")
+	return filePath
 }

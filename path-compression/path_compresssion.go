@@ -127,9 +127,6 @@ func listFilesInPathInternal(filesInPath *[]string, path string, recursiveMode b
 		if err != nil {
 			return stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", trimmedPath)
 		}
-		//if topLevel && len(filesInDirectory) == 0 {
-		//	return stacktrace.NewError("The directory '%s' you are trying to compress is empty", path)
-		//}
 		for _, fileInDirectory := range filesInDirectory {
 			fileInDirectoryPath := filepath.Join(trimmedPath, fileInDirectory.Name())
 			*filesInPath = append(*filesInPath, fileInDirectoryPath)
