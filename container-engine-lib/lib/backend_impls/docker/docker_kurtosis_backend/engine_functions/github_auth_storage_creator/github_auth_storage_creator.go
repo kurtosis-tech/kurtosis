@@ -96,8 +96,8 @@ func (creator *GitHubAuthStorageCreator) CreateGitHubAuthStorage(
 	return nil
 }
 
-// GetBestEffortGitHubAuthToken Returns empty string if no token found in [githubAuthTokenFile] or [githubAuthTokenFile] doesn't exist
-func GetBestEffortGitHubAuthToken() string {
+// GetGitHubAuthToken Returns empty string if no token found in [githubAuthTokenFile] or [githubAuthTokenFile] doesn't exist
+func GetGitHubAuthToken() string {
 	tokenBytes, err := os.ReadFile(path.Join(consts.GitHubAuthStorageDirPath, consts.GithubAuthStorageToken))
 	if err != nil {
 		return ""

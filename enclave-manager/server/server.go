@@ -59,7 +59,7 @@ func NewWebserver(enforceAuth bool) (*WebServer, error) {
 		http.DefaultClient,
 		engineHostUrl,
 	)
-	githubAuthToken := github_auth_storage_creator.GetBestEffortGitHubAuthToken()
+	githubAuthToken := github_auth_storage_creator.GetGitHubAuthToken()
 	return &WebServer{
 		engineServiceClient: &engineServiceClient,
 		enforceAuth:         enforceAuth,
