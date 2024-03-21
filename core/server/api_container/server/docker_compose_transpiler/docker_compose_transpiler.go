@@ -104,8 +104,7 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, relativeP
 		}
 		envVarsInFile = map[string]string{}
 	}
-	// check that package abs dir path is /kurtosis-data/repositories/NOTIONAL_USER/USER_UPLOADED_COMPOSE_PACKAGE
-	logrus.Infof("Package Abs DirPath: %v", packageAbsDirpath)
+
 	starlarkScript, err := convertComposeToStarlarkScript(composeBytes, envVarsInFile, packageAbsDirpath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting Compose file '%v' to a Starlark script.", composeFilename)
@@ -280,7 +279,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services, packag
 		}
 
 		// ENV VARS
-		if composeService.Environment != nil {
+		if composeService.Environment != nil || composeService.EnvFile != nil {
 			envVarsDict, err := getStarlarkEnvVars(composeService.Environment, composeService.EnvFile, packageAbsDirPath)
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the env vars dict for service '%s'", serviceName)
@@ -540,7 +539,7 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 			filesDictValue = starlark.String(filesArtifactName)
 
 			// TODO: update files artifact expansion to handle mounting files, not only directories so files_to_be_moved hack can be removed
-			// if the volume is referencing a file, do files_to_be_moved hack
+			// if the volume is referencing a file, use files_to_be_moved
 			maybeFileOrDirVolume, err := os.Stat(path.Join(packageAbsDirPath, volume.Source))
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred checking is the volume path existed in the package on disc: %v.", volume.Source)

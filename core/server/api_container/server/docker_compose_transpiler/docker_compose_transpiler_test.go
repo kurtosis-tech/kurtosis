@@ -81,6 +81,31 @@ services:
 	require.Equal(t, expectedResult, result)
 }
 
+func TestMinimalComposeWithImageBuildSpecAndTargetAndName(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
+	// ignore the image name, and have kurtosis set it
+	composeBytes := []byte(`
+services:
+  web:
+    image: web
+    build:
+      context: app
+      target: builder
+    ports: 
+      - 80:80
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, env_vars={}))
+`, builtImageSuffix)
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
 func TestMinimalComposeWithVolume(t *testing.T) {
 	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
 	defer os.RemoveAll(testPackageAbsDirPath)
@@ -188,6 +213,57 @@ services:
     plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web2:80")}, files={"/node_modules": Directory(persistent_key="web2--volume0")}, env_vars={}))
     plan.add_service(name = "web3", config = ServiceConfig(image=ImageBuildSpec(image_name="web3%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web3:80")}, files={"/node_modules": Directory(persistent_key="web3--volume0")}, env_vars={}))
 `, builtImageSuffix, builtImageSuffix)
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
+func TestMinimalComposeWithEnvFile(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+	relEnvFilePath := "./web.env"
+	err = os.WriteFile(path.Join(testPackageAbsDirPath, relEnvFilePath), []byte("USERNAME=kurtosis"), testFilePerms)
+	require.Nil(t, err)
+
+	composeBytes := []byte(`
+services:
+  web: 
+    build:
+      context: app
+      target: builder
+    env_file:
+      - ./web.env
+    ports: 
+      - 80:80
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, env_vars={"USERNAME": "kurtosis"}))
+`, builtImageSuffix)
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
+func TestMinimalComposeWithNonRFC1035ServiceName(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
+	composeBytes := []byte(`
+services:
+  Web_Service: 
+    build:
+      context: app
+      target: builder
+    ports: 
+      - 80:80
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "web-service", config = ServiceConfig(image=ImageBuildSpec(image_name="web-service%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web-service:80")}, env_vars={}))
+`, builtImageSuffix)
 
 	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
@@ -564,6 +640,9 @@ networks:
   elastic:
     driver: bridge
 `)
+
+	// service names are equal to container names
+	// files_be_moved added to service config to handle mounting files specifically
 	expectedResult := `def run(plan):
     plan.add_service(name = "es", config = ServiceConfig(image="elasticsearch:7.16.1", ports={"port0": PortSpec(number=9200, transport_protocol="TCP"), "port1": PortSpec(number=9300, transport_protocol="TCP")}, env_vars={"ES_JAVA_OPTS": "-Xms512m -Xmx512m", "discovery.type": "single-node"}))
     plan.add_service(name = "kib", config = ServiceConfig(image="kibana:7.16.1", ports={"port0": PortSpec(number=5601, transport_protocol="TCP")}, env_vars={}))
@@ -720,5 +799,3 @@ networks:
 //	Tests from other docker composes in the wild
 //
 // ====================================================================================================
-
-// TODO: Test this docker compose when named volumes are supported https://github.com/OffchainLabs/nitro-testnode/blob/release/docker-compose.yaml
