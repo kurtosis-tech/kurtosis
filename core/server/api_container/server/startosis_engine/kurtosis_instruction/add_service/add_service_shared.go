@@ -219,9 +219,11 @@ func replaceMagicStrings(
 		serviceConfig.GetNodeSelectors(),
 		serviceConfig.GetImageDownloadMode(),
 	)
+
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating a service config")
 	}
+	renderedServiceConfig.SetFilesToBeMoved(serviceConfig.GetFilesToBeMoved())
 
 	return service.ServiceName(serviceNameStr), renderedServiceConfig, nil
 }

@@ -238,14 +238,10 @@ func TestCompressPath_CheckFileContentsAreTakenIntoAccountForHash(t *testing.T) 
 	require.Equal(t, expectedHashHex, hex.EncodeToString(md5))
 }
 
-func TestCompressPath_EmptyDirError(t *testing.T) {
+func TestCompressPath_EmptyDirDoesNotError(t *testing.T) {
 	dirPath, err := os.MkdirTemp("", "test-dir-*")
 	require.NoError(t, err)
 
-	compressedData, size, md5, err := CompressPath(dirPath, false)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "you are trying to compress is empty")
-	require.Nil(t, compressedData)
-	require.Equal(t, size, uint64(0))
-	require.Nil(t, md5)
+	_, _, _, err = CompressPath(dirPath, false)
+	require.NoError(t, err)
 }

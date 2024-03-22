@@ -2,6 +2,8 @@ package user_service_functions
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -539,6 +541,7 @@ func createStartServiceOperation(
 		memoryAllocationMegabytes := serviceConfig.GetMemoryAllocationMegabytes()
 		privateIPAddrPlaceholder := serviceConfig.GetPrivateIPAddrPlaceholder()
 		user := serviceConfig.GetUser()
+		filesToBeMoved := serviceConfig.GetFilesToBeMoved()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -550,6 +553,17 @@ func createStartServiceOperation(
 		}
 		for key := range envVars {
 			envVars[key] = strings.Replace(envVars[key], privateIPAddrPlaceholder, privateIPAddrStr, unlimitedReplacements)
+		}
+
+		// TODO clean this hack up
+		// this path will only be hit if `files_to_be_moved` is set in Starlark; which is a hidden property
+		// used by compose transpilation
+		if len(filesToBeMoved) > 0 {
+			var err error
+			cmdArgs, entrypointArgs, err = getUpdatedEntrypointAndCmdFromFilesToBeMoved(ctx, dockerManager, containerImageName, cmdArgs, entrypointArgs, filesToBeMoved)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "an error occurred while handling files for compose")
+			}
 		}
 
 		volumeMounts := map[string]string{}
@@ -753,6 +767,50 @@ func createStartServiceOperation(
 	}
 }
 
+// TODO - clean this up this is super janky, a way to handle compose  & volume
+func getUpdatedEntrypointAndCmdFromFilesToBeMoved(ctx context.Context, dockerManager *docker_manager.DockerManager, containerImageName string, cmdArgs []string, entrypointArgs []string, filesToBeMoved map[string]string) ([]string, []string, error) {
+	concatenatedFilesToBeMoved := []string{}
+	for source, destination := range filesToBeMoved {
+		// TODO improve this; the first condition handles files the other folders
+		concatenatedFilesToBeMoved = append(concatenatedFilesToBeMoved, fmt.Sprintf("mv %v %v", source, destination))
+	}
+
+	concatenatedFilesToBeMovedAsStr := strings.Join(concatenatedFilesToBeMoved, " && ")
+	originalEntrypointArgs, originalCmdArgs, err := dockerManager.GetEntryPointAndCommand(ctx, containerImageName)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "an error occurred fetching data about image '%v'", containerImageName)
+	}
+
+	// we do this replacement as we want to keep the original command args as they are not overwritten
+	// it might be that none of the two are set
+	if len(cmdArgs) == 0 && len(originalCmdArgs) > 0 {
+		cmdArgs = originalCmdArgs
+	}
+	if len(entrypointArgs) == 0 && len(originalEntrypointArgs) > 0 {
+		entrypointArgs = originalEntrypointArgs
+	}
+
+	entryPointArgsAsStr := quoteAndJoinArgs(entrypointArgs)
+	cmdArgsAsStr := quoteAndJoinArgs(cmdArgs)
+
+	if len(cmdArgs) > 0 {
+		if len(entrypointArgs) > 0 {
+			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr + " " + cmdArgsAsStr}
+		} else {
+			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + cmdArgsAsStr}
+		}
+	} else {
+		if len(entrypointArgs) > 0 {
+			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr + " && " + entryPointArgsAsStr}
+		} else {
+			// no entrypoint and no command; this shouldn't really happen
+			cmdArgs = []string{"-c", concatenatedFilesToBeMovedAsStr}
+		}
+	}
+	entrypointArgs = []string{"/bin/sh"}
+	return cmdArgs, entrypointArgs, nil
+}
+
 // Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
 // - There is a matching publicPort for every portID in privatePorts
 // - There are the same amount of private and public ports
@@ -844,4 +902,12 @@ func registerUserServices(
 	}
 
 	return successfulRegistrations, failedRegistrations, nil
+}
+
+func quoteAndJoinArgs(args []string) string {
+	var quotedArgs []string
+	for _, arg := range args {
+		quotedArgs = append(quotedArgs, strconv.Quote(arg))
+	}
+	return strings.Join(quotedArgs, " ")
 }

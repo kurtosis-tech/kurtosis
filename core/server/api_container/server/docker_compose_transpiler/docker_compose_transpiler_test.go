@@ -3,12 +3,23 @@ package docker_compose_transpiler
 import (
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"os"
+	"path"
 	"testing"
 )
 
-// TODO: Create a test framework like starlark test framework
+const (
+	testPackageAbsDirPathPattern = "package"
+	testFilePerms                = 0644
+)
+
+// TODO: Create a test framework like starlark test framework so we updating tests manually with starlark or compose is less annoying
 
 func TestMinimalCompose(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   web:
@@ -21,12 +32,16 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image="app/server", ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, env_vars={}))
 `
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 func TestMinimalComposeWithImageBuildSpec(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   web:
@@ -38,12 +53,16 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app/server"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 func TestMinimalComposeWithImageBuildSpecAndTarget(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   web: 
@@ -57,12 +76,44 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
+func TestMinimalComposeWithImageBuildSpecAndTargetAndName(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
+	// ignore the image name, and have kurtosis set it
+	composeBytes := []byte(`
+services:
+  web:
+    image: web
+    build:
+      context: app
+      target: builder
+    ports: 
+      - 80:80
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, env_vars={}))
+`, builtImageSuffix)
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 func TestMinimalComposeWithVolume(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+	relVolumePath := "./data"
+	err = os.Mkdir(path.Join(testPackageAbsDirPath, relVolumePath), testFilePerms)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   web: 
@@ -76,15 +127,19 @@ services:
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.upload_files(src = "./data", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, files={"/data": "web--volume0"}, env_vars={}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%v", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, files={"/data": "web--volume0"}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 func TestMinimalComposeWithPersistentVolume(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   web: 
@@ -100,12 +155,16 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, files={"/project/node_modules": Directory(persistent_key="web--volume0")}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 func TestMinimalComposeWithPersistentVolumeAtProvidedPath(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   web: 
@@ -121,12 +180,16 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, files={"/node_modules": Directory(persistent_key="web--volume0")}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 func TestMinimalComposeWithPersistentVolumeAtProvidedPathAreUnique(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   web2: 
@@ -151,13 +214,71 @@ services:
     plan.add_service(name = "web3", config = ServiceConfig(image=ImageBuildSpec(image_name="web3%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web3:80")}, files={"/node_modules": Directory(persistent_key="web3--volume0")}, env_vars={}))
 `, builtImageSuffix, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
+func TestMinimalComposeWithEnvFile(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+	relEnvFilePath := "./web.env"
+	err = os.WriteFile(path.Join(testPackageAbsDirPath, relEnvFilePath), []byte("USERNAME=kurtosis"), testFilePerms)
+	require.Nil(t, err)
+
+	composeBytes := []byte(`
+services:
+  web: 
+    build:
+      context: app
+      target: builder
+    env_file:
+      - ./web.env
+    ports: 
+      - 80:80
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, env_vars={"USERNAME": "kurtosis"}))
+`, builtImageSuffix)
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
+}
+
+func TestMinimalComposeWithNonRFC1035ServiceName(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
+	composeBytes := []byte(`
+services:
+  Web_Service: 
+    build:
+      context: app
+      target: builder
+    ports: 
+      - 80:80
+`)
+	expectedResult := fmt.Sprintf(`def run(plan):
+    plan.add_service(name = "web-service", config = ServiceConfig(image=ImageBuildSpec(image_name="web-service%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web-service:80")}, env_vars={}))
+`, builtImageSuffix)
+
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 // Tests all supported compose functionalities for a single service
 func TestFullCompose(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+	relVolumePath := "./data"
+	err = os.Mkdir(path.Join(testPackageAbsDirPath, relVolumePath), testFilePerms)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   web: 
@@ -179,15 +300,19 @@ services:
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.upload_files(src = "./data", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, files={"/data": "web--volume0", "/node_modules": Directory(persistent_key="web--volume1")}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], cmd=["echo", "Hello,", "World!"], env_vars={"NODE_ENV": "development"}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%v", build_context_dir="app", target_stage="builder"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://web:80")}, files={"/data": "web--volume0", "/node_modules": Directory(persistent_key="web--volume1")}, entrypoint=["/bin/echo", "-c", "echo \"Hello\""], cmd=["echo", "Hello,", "World!"], env_vars={"NODE_ENV": "development"}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 func TestMultiServiceCompose(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
  redis:
@@ -220,7 +345,7 @@ services:
     plan.add_service(name = "web2", config = ServiceConfig(image=ImageBuildSpec(image_name="web2%s", build_context_dir="./web"), ports={"port0": PortSpec(number=5000, transport_protocol="TCP")}, env_vars={}))
 `, builtImageSuffix, builtImageSuffix, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -297,6 +422,10 @@ func TestSortServiceBasedOnDependenciesWithLinearDependencies(t *testing.T) {
 }
 
 func TestMultiServiceComposeWithDependsOn(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
  redis:
@@ -334,13 +463,17 @@ services:
     plan.add_service(name = "nginx", config = ServiceConfig(image=ImageBuildSpec(image_name="nginx%s", build_context_dir="./nginx"), ports={"port0": PortSpec(number=80, transport_protocol="TCP", application_protocol="http", url="http://nginx:80")}, env_vars={}))
 `, builtImageSuffix, builtImageSuffix, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 // Test depends on with circular dependency returns error
 func TestMultiServiceComposeWithCycleInDependsOn(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
  redis:
@@ -371,7 +504,7 @@ services:
   - web1
   - web2
 `)
-	_, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	_, err = convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.Error(t, err)
 	require.ErrorIs(t, CyclicalDependencyError, err)
 }
@@ -383,6 +516,10 @@ services:
 // ====================================================================================================
 // https://github.com/docker/awesome-compose/tree/master/minecraft
 func TestMinecraftCompose(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
  minecraft:
@@ -398,14 +535,24 @@ services:
    volumes:
      - "~/minecraft_data:/data"
 `)
+	expectedResult := `def run(plan):
+    plan.add_service(name = "minecraft", config = ServiceConfig(image="itzg/minecraft-server", ports={"port0": PortSpec(number=25565, transport_protocol="TCP")}, files={"/data": Directory(persistent_key="minecraft--volume0")}, env_vars={"EULA": "TRUE"}, min_cpu=0, min_memory=0))
+`
 
-	// Returns error because '~' indicates the user is trying to reference their home path which is outside the package
-	_, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
-	require.Error(t, err)
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
+	require.NoError(t, err)
+	require.Equal(t, expectedResult, result)
 }
 
 // https://github.com/docker/awesome-compose/tree/master/angular
 func TestAngularCompose(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+	relVolumePath := "./angular"
+	err = os.Mkdir(path.Join(testPackageAbsDirPath, relVolumePath), testFilePerms)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   web:
@@ -420,16 +567,29 @@ services:
 `)
 	expectedResult := fmt.Sprintf(`def run(plan):
     plan.upload_files(src = "./angular", name = "web--volume0")
-    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%s", build_context_dir="angular", target_stage="builder"), ports={"port0": PortSpec(number=4200, transport_protocol="TCP")}, files={"/project": "web--volume0", "/project/node_modules": Directory(persistent_key="web--volume1")}, env_vars={}))
+    plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%v", build_context_dir="angular", target_stage="builder"), ports={"port0": PortSpec(number=4200, transport_protocol="TCP")}, files={"/project": "web--volume0", "/project/node_modules": Directory(persistent_key="web--volume1")}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 // From https://github.com/docker/awesome-compose/blob/master/elasticsearch-logstash-kibana
 func TestElasticSearchLogStashAndKibanaCompose(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+	logstashDirPath := "./logstash/pipeline"
+	err = os.MkdirAll(path.Join(testPackageAbsDirPath, logstashDirPath), 0750)
+	require.Nil(t, err)
+	nginxConfigRelFilePath := "./logstash/pipeline/logstash-nginx.config"
+	_, err = os.Create(path.Join(testPackageAbsDirPath, nginxConfigRelFilePath))
+	require.Nil(t, err)
+	nginxLogRelFilePath := "./logstash/nginx.log"
+	_, err = os.Create(path.Join(testPackageAbsDirPath, nginxLogRelFilePath))
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   elasticsearch:
@@ -480,28 +640,33 @@ networks:
   elastic:
     driver: bridge
 `)
-	expectedResult := `def run(plan):
-    plan.add_service(name = "elasticsearch", config = ServiceConfig(image="elasticsearch:7.16.1", ports={"port0": PortSpec(number=9200, transport_protocol="TCP"), "port1": PortSpec(number=9300, transport_protocol="TCP")}, env_vars={"ES_JAVA_OPTS": "-Xms512m -Xmx512m", "discovery.type": "single-node"}))
-    plan.add_service(name = "kibana", config = ServiceConfig(image="kibana:7.16.1", ports={"port0": PortSpec(number=5601, transport_protocol="TCP")}, env_vars={}))
-    plan.upload_files(src = "./logstash/nginx.log", name = "logstash--volume1")
-    plan.upload_files(src = "./logstash/pipeline/logstash-nginx.config", name = "logstash--volume0")
-    plan.add_service(name = "logstash", config = ServiceConfig(image="logstash:7.16.1", ports={"port0": PortSpec(number=5000, transport_protocol="TCP"), "port1": PortSpec(number=5000, transport_protocol="UDP"), "port2": PortSpec(number=5044, transport_protocol="TCP"), "port3": PortSpec(number=9600, transport_protocol="TCP")}, files={"/home/nginx.log": "logstash--volume1", "/usr/share/logstash/pipeline/logstash-nginx.config": "logstash--volume0"}, cmd=["logstash", "-f", "/usr/share/logstash/pipeline/logstash-nginx.config"], env_vars={"LS_JAVA_OPTS": "-Xms512m -Xmx512m", "discovery.seed_hosts": "logstash"}))
-`
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	// service names are equal to container names
+	// files_be_moved added to service config to handle mounting files specifically
+	expectedResult := `def run(plan):
+    plan.add_service(name = "es", config = ServiceConfig(image="elasticsearch:7.16.1", ports={"port0": PortSpec(number=9200, transport_protocol="TCP"), "port1": PortSpec(number=9300, transport_protocol="TCP")}, env_vars={"ES_JAVA_OPTS": "-Xms512m -Xmx512m", "discovery.type": "single-node"}))
+    plan.add_service(name = "kib", config = ServiceConfig(image="kibana:7.16.1", ports={"port0": PortSpec(number=5601, transport_protocol="TCP")}, env_vars={}))
+    plan.upload_files(src = "./logstash/nginx.log", name = "log--volume1")
+    plan.upload_files(src = "./logstash/pipeline/logstash-nginx.config", name = "log--volume0")
+    plan.add_service(name = "log", config = ServiceConfig(image="logstash:7.16.1", ports={"port0": PortSpec(number=5000, transport_protocol="TCP"), "port1": PortSpec(number=5000, transport_protocol="UDP"), "port2": PortSpec(number=5044, transport_protocol="TCP"), "port3": PortSpec(number=9600, transport_protocol="TCP")}, files={"/tmp/log--volume0": "log--volume0", "/tmp/log--volume1": "log--volume1"}, cmd=["logstash", "-f", "/usr/share/logstash/pipeline/logstash-nginx.config"], env_vars={"LS_JAVA_OPTS": "-Xms512m -Xmx512m", "discovery.seed_hosts": "logstash"}, files_to_be_moved={"/tmp/log--volume0/logstash-nginx.config": "/usr/share/logstash/pipeline/logstash-nginx.config", "/tmp/log--volume1/nginx.log": "/home/nginx.log"}))
+`
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 // From https://github.com/docker/awesome-compose/blob/master/fastapi/compose.yaml
 func TestFastApiCompose(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   api:
     build:
       context: .
       target: builder
-    container_name: fastapi-application
     environment:
       PORT: 8000
     ports:
@@ -512,13 +677,20 @@ services:
     plan.add_service(name = "api", config = ServiceConfig(image=ImageBuildSpec(image_name="api%v", build_context_dir=".", target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP", application_protocol="http", url="http://api:8000")}, env_vars={"PORT": "8000"}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 // From https://github.com/docker/awesome-compose/blob/master/flask-redis/compose.yaml
 func TestFlaskRedisCompose(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+	relVolumePath := "./code"
+	err = os.Mkdir(path.Join(testPackageAbsDirPath, relVolumePath), testFilePerms)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   redis:
@@ -545,13 +717,17 @@ services:
     plan.add_service(name = "web", config = ServiceConfig(image=ImageBuildSpec(image_name="web%v", build_context_dir=".", target_stage="builder"), ports={"port0": PortSpec(number=8000, transport_protocol="TCP", application_protocol="http", url="http://web:8000")}, files={"/code": "web--volume0"}, env_vars={}))
 `, builtImageSuffix)
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
 
 // From https://github.com/docker/awesome-compose/blob/master/nextcloud-redis-mariadb/compose.yaml
 func TestNextCloudRedisMariaDBCompose(t *testing.T) {
+	testPackageAbsDirPath, err := os.MkdirTemp("", testPackageAbsDirPathPattern)
+	defer os.RemoveAll(testPackageAbsDirPath)
+	require.Nil(t, err)
+
 	composeBytes := []byte(`
 services:
   nc:
@@ -605,7 +781,7 @@ networks:
     plan.add_service(name = "redis", config = ServiceConfig(image="redis:alpine", env_vars={}))
 `
 
-	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{})
+	result, err := convertComposeToStarlarkScript(composeBytes, map[string]string{}, testPackageAbsDirPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedResult, result)
 }
@@ -623,5 +799,3 @@ networks:
 //	Tests from other docker composes in the wild
 //
 // ====================================================================================================
-
-// TODO: Test this docker compose when named volumes are supported https://github.com/OffchainLabs/nitro-testnode/blob/release/docker-compose.yaml

@@ -51,6 +51,7 @@ const (
 	UserAttr                        = "user"
 	TolerationsAttr                 = "tolerations"
 	NodeSelectorsAttr               = "node_selectors"
+	FilesToBeMovedAttr              = "files_to_be_moved"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -210,6 +211,14 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.StringMappingToString(value, NodeSelectorsAttr)
+					},
+				},
+				{
+					Name:              FilesToBeMovedAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.StringMappingToString(value, FilesToBeMovedAttr)
 					},
 				},
 			},
@@ -504,6 +513,18 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	filesToBeMoved := map[string]string{}
+	filesToBeMovedStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, FilesToBeMovedAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && filesToBeMovedStarlark.Len() > 0 {
+		filesToBeMoved, interpretationErr = kurtosis_types.SafeCastToMapStringString(filesToBeMovedStarlark, FilesToBeMovedAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -530,6 +551,7 @@ func (config *ServiceConfig) ToKurtosisType(
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
 	}
+	serviceConfig.SetFilesToBeMoved(filesToBeMoved)
 	return serviceConfig, nil
 }
 

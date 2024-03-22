@@ -2,9 +2,8 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
-
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -70,6 +69,8 @@ type privateServiceConfig struct {
 	NodeSelectors map[string]string
 
 	ImageDownloadMode image_download_mode.ImageDownloadMode
+
+	FilesToBeMoved map[string]string
 }
 
 func CreateServiceConfig(
@@ -123,6 +124,7 @@ func CreateServiceConfig(
 		Tolerations:                  tolerations,
 		NodeSelectors:                nodeSelectors,
 		ImageDownloadMode:            imageDownloadMode,
+		FilesToBeMoved:               map[string]string{},
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -215,6 +217,14 @@ func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {
 
 func (serviceConfig *ServiceConfig) GetNodeSelectors() map[string]string {
 	return serviceConfig.privateServiceConfig.NodeSelectors
+}
+
+func (serviceConfig *ServiceConfig) SetFilesToBeMoved(filesToBeMoved map[string]string) {
+	serviceConfig.privateServiceConfig.FilesToBeMoved = filesToBeMoved
+}
+
+func (serviceConfig *ServiceConfig) GetFilesToBeMoved() map[string]string {
+	return serviceConfig.privateServiceConfig.FilesToBeMoved
 }
 
 func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {

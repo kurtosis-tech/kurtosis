@@ -3,9 +3,11 @@ package docker_compose_transpiler
 import (
 	"errors"
 	"fmt"
+	"github.com/hashicorp/go-envparse"
 	"golang.org/x/exp/slices"
 	"os"
 	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -58,13 +60,17 @@ const (
 
 	newStarlarkLineFmtStr = "    %s\n"
 
-	unixHomePathSymbol         = "~"
-	upstreamRelativePathSymbol = ".."
-
 	httpProtocol = "http"
+
+	alphanumericCharWithDashesRegexStr = `[^a-z0-9-]`
+	consecutiveDashesRegexStr          = `-+`
 )
 
-var possibleHttpPorts = []uint32{8080, 8000, 80, 443}
+var (
+	alphanumericCharWithDashesRegex = regexp.MustCompile(alphanumericCharWithDashesRegexStr)
+	consecutiveDashesRegex          = regexp.MustCompile(consecutiveDashesRegexStr)
+	possibleHttpPorts               = []uint32{8080, 8000, 80, 443}
+)
 
 type ComposeService types.ServiceConfig
 
@@ -99,7 +105,7 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, relativeP
 		envVarsInFile = map[string]string{}
 	}
 
-	starlarkScript, err := convertComposeToStarlarkScript(composeBytes, envVarsInFile)
+	starlarkScript, err := convertComposeToStarlarkScript(composeBytes, envVarsInFile, packageAbsDirpath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting Compose file '%v' to a Starlark script.", composeFilename)
 	}
@@ -111,13 +117,13 @@ func TranspileDockerComposePackageToStarlark(packageAbsDirpath string, relativeP
 //	Private Helper Functions
 //
 // ====================================================================================================
-func convertComposeToStarlarkScript(composeBytes []byte, envVars map[string]string) (string, error) {
+func convertComposeToStarlarkScript(composeBytes []byte, envVars map[string]string, packageAbsDirPath string) (string, error) {
 	composeStruct, err := convertComposeBytesToComposeStruct(composeBytes, envVars)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting compose bytes into a struct.")
 	}
 
-	serviceNameToStarlarkServiceConfig, serviceDependencyGraph, perServiceFilesArtifactsToUpload, err := convertComposeServicesToStarlarkInfo(composeStruct.Services)
+	serviceNameToStarlarkServiceConfig, serviceDependencyGraph, perServiceFilesArtifactsToUpload, err := convertComposeServicesToStarlarkInfo(composeStruct.Services, packageAbsDirPath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred converting compose services to starlark service configs.")
 	}
@@ -132,8 +138,6 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 		ConfigFiles: []types.ConfigFile{{
 			Content: composeBytes,
 		}},
-		// TODO: To leverage this env file at the base of the project: need to parse referenced environment variables
-		// https://docs.docker.com/compose/environment-variables/set-environment-variables/#substitute-with-an-env-file
 		Environment: envVars,
 	}
 	setOptionsFunc := func(options *loader.Options) {
@@ -142,7 +146,9 @@ func convertComposeBytesToComposeStruct(composeBytes []byte, envVars map[string]
 		options.ConvertWindowsPaths = shouldConvertWindowsPathsToLinux
 	}
 	compose, err := loader.Load(composeParseConfig, setOptionsFunc)
-	if err != nil {
+	// don't err if env file not found, transpiler will handle finding it
+	// TODO: fork compose loader package and change the env file logic so we don't have to catch this err
+	if err != nil && !isEnvFileNotFoundErr(err) {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing compose based on provided parsing config and set options function.")
 	}
 	return compose, nil
@@ -188,9 +194,8 @@ func createStarlarkScript(
 	return script, nil
 }
 
-// TODO add support for User here
 // Turns DockerCompose Service into Kurtosis ServiceConfigs and returns info needed for creating a valid starlark script
-func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
+func convertComposeServicesToStarlarkInfo(composeServices types.Services, packageAbsDirPath string) (
 	map[string]StarlarkServiceConfig, // Map of service names to Kurtosis ServiceConfig's
 	map[string]map[string]bool, // Graph of service dependencies based on depends_on key (determines order in which to add services)
 	map[string]map[string]string, // Map of service names to map of relative paths to files artifacts names that need to get uploaded for the service (determines files artifacts that need to be uploaded)
@@ -199,23 +204,29 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 	perServiceDependencies := map[string]map[string]bool{}
 	servicesToFilesArtifactsToUpload := map[string]map[string]string{}
 
+	serviceNameToContainerNameMap := map[string]string{}
+	for _, s := range composeServices {
+		if s.ContainerName != "" {
+			serviceNameToContainerNameMap[s.Name] = s.ContainerName
+		}
+	}
+
 	for _, service := range composeServices {
 		composeService := ComposeService(service)
 		serviceConfigKwargs := []starlark.Tuple{}
 
-		// NAME
 		serviceName := composeService.Name
+		// hostname becomes container name if it's set in compose
+		// in kurtosis service name becomes hostname, so set service name as container name (thus hostname) so other services can comm with it
+		if containerName, ok := serviceNameToContainerNameMap[serviceName]; ok {
+			serviceName = containerName
+		}
+		serviceName = convertToRFC1035(serviceName)
 
 		// IMAGE
-		if composeService.Image != "" {
-			serviceConfigKwargs = appendKwarg(
-				serviceConfigKwargs,
-				service_config.ImageAttr,
-				starlark.String(composeService.Image),
-			)
-		}
-
-		// IMAGE BUILD SPEC
+		imageName := composeService.Image
+		// if build directive used, create an image build spec
+		// otherwise, use image name
 		if composeService.Build != nil {
 			imageBuildSpec, err := getStarlarkImageBuildSpec(composeService.Build, serviceName)
 			if err != nil {
@@ -225,6 +236,12 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 				serviceConfigKwargs,
 				service_config.ImageAttr,
 				imageBuildSpec,
+			)
+		} else {
+			serviceConfigKwargs = appendKwarg(
+				serviceConfigKwargs,
+				service_config.ImageAttr,
+				starlark.String(imageName),
 			)
 		}
 
@@ -262,8 +279,8 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 		}
 
 		// ENV VARS
-		if composeService.Environment != nil {
-			envVarsDict, err := getStarlarkEnvVars(composeService.Environment)
+		if composeService.Environment != nil || composeService.EnvFile != nil {
+			envVarsDict, err := getStarlarkEnvVars(composeService.Environment, composeService.EnvFile, packageAbsDirPath)
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the env vars dict for service '%s'", serviceName)
 			}
@@ -276,7 +293,7 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 
 		// VOLUMES -> FILES ARTIFACTS
 		if composeService.Volumes != nil {
-			filesDict, artifactsToUpload, err := getStarlarkFilesArtifacts(composeService.Volumes, serviceName)
+			filesDict, artifactsToUpload, filesToBeMoved, err := getStarlarkFilesArtifacts(composeService.Volumes, serviceName, packageAbsDirPath)
 			if err != nil {
 				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the files dict for service '%s'", serviceName)
 			}
@@ -285,6 +302,9 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 				service_config.FilesAttr,
 				filesDict,
 			)
+			if filesToBeMoved.Len() > 0 {
+				serviceConfigKwargs = appendKwarg(serviceConfigKwargs, service_config.FilesToBeMovedAttr, filesToBeMoved)
+			}
 			servicesToFilesArtifactsToUpload[serviceName] = artifactsToUpload
 		}
 
@@ -307,7 +327,11 @@ func convertComposeServicesToStarlarkInfo(composeServices types.Services) (
 		// DEPENDS ON
 		dependencyServiceNames := map[string]bool{}
 		for dependencyName := range composeService.DependsOn {
-			dependencyServiceNames[dependencyName] = true
+			// do container name switch if it exists
+			if containerName, ok := serviceNameToContainerNameMap[dependencyName]; ok {
+				dependencyName = containerName
+			}
+			dependencyServiceNames[convertToRFC1035(dependencyName)] = true
 		}
 		perServiceDependencies[serviceName] = dependencyServiceNames
 
@@ -424,27 +448,49 @@ func getStarlarkCommand(composeCommand types.ShellCommand) *starlark.List {
 	return starlark.NewList(commandSLStrs)
 }
 
-func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.Dict, error) {
+func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals, envFiles types.StringList, packageAbsDirPath string) (*starlark.Dict, error) {
 	// make iteration order of [composeEnvironment] deterministic by getting the keys and sorting them
 	envVarKeys := []string{}
 	for key := range composeEnvironment {
 		envVarKeys = append(envVarKeys, key)
 	}
 	sort.Strings(envVarKeys)
-	enVarsSLDict := starlark.NewDict(len(composeEnvironment))
+	envVarsSLDict := starlark.NewDict(len(composeEnvironment))
 	for _, key := range envVarKeys {
 		value := composeEnvironment[key]
 		if value == nil {
 			continue
 		}
-		if err := enVarsSLDict.SetKey(
+		if err := envVarsSLDict.SetKey(
 			starlark.String(key),
 			starlark.String(*value),
 		); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred setting key '%s' in environment variables Starlark dict.", key)
 		}
 	}
-	return enVarsSLDict, nil
+
+	// if env file is specified, manually parse the env file at the location it is inside the package on the APIC
+	for _, envFilePath := range envFiles {
+		serviceEnvFilePath := path.Join(packageAbsDirPath, envFilePath)
+		envFileReader, err := os.Open(serviceEnvFilePath)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred opening env file at path: %v", serviceEnvFilePath)
+		}
+		envVars, err := envparse.Parse(envFileReader)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred parsing env file.")
+		}
+		for key, value := range envVars {
+			if err := envVarsSLDict.SetKey(
+				starlark.String(key),
+				starlark.String(value),
+			); err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred setting key '%s' in environment variables Starlark dict.", key)
+			}
+		}
+	}
+
+	return envVarsSLDict, nil
 }
 
 // The 'volumes:' compose key supports named volumes and bind mounts https://docs.docker.com/storage/volumes/
@@ -454,44 +500,36 @@ func getStarlarkEnvVars(composeEnvironment types.MappingWithEquals) (*starlark.D
 // <abs path on host> := create a persistent directory on container at <abs path on host>
 // <rel path on host> := create a persistent directory on container at <rel path on host>
 // Named volumes are treated https://docs.docker.com/storage/volumes/ as absolute paths persistence layers, and thus a persistent directory is created
-func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string) (starlark.Value, map[string]string, error) {
+func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, serviceName string, packageAbsDirPath string) (starlark.Value, map[string]string, *starlark.Dict, error) {
 	filesArgSLDict := starlark.NewDict(len(composeVolumes))
 	filesArtifactsToUpload := map[string]string{}
+
+	filesToBeMoved := starlark.NewDict(len(composeVolumes))
 
 	for volumeIdx, volume := range composeVolumes {
 		volumeType := volume.Type
 
 		var shouldPersist bool
 		switch volumeType {
+		// if an absolute path is specified, assume user wants to use volume as a persistence layer and create a Persistent Directory
+		// if path is relative, assume it's read only and do an upload files
 		case types.VolumeTypeBind:
-			// Handle case where home path is reference
-			if strings.Contains(volume.Source, unixHomePathSymbol) {
-				return nil, map[string]string{}, stacktrace.NewError(
-					"Volume path '%v' uses '%v', likely referencing home path on a unix filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
-						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path",
-					volume.Source, unixHomePathSymbol, volume.Source)
-			}
-			// Handle case where upstream relative path is reference
-			if strings.Contains(volume.Source, upstreamRelativePathSymbol) {
-				return nil, map[string]string{}, stacktrace.NewError(
-					"Volume path '%v' uses '%v', likely referencing an upstream path on a filesystem. Currently, Kurtosis does not support uploading from host filesystem. "+
-						"Place the contents of '%v' directory inside the package where the compose yaml exists and update the volume filepath to be a relative path within the package.",
-					volume.Source, upstreamRelativePathSymbol, volume.Source)
-			}
-
-			// Assume that if an absolute path is specified, user wants to use volume as a persistence layer
-			// Additionally, assume relative paths are read-only
-			shouldPersist = path.IsAbs(volume.Source)
+			volumePath := cleanFilePath(volume.Source)
+			shouldPersist = path.IsAbs(volumePath)
+		// if named volume is provided, assume user wants to use volume as a persistence layer and create a Persistent Directory
 		case types.VolumeTypeVolume:
 			shouldPersist = true
+		default:
+			shouldPersist = false
 		}
 
 		var filesDictValue starlark.Value
+		targetDirectoryForFilesArtifact := volume.Target
 		if shouldPersist {
 			persistenceKey := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			persistentDirectory, err := getStarlarkPersistentDirectory(persistenceKey)
 			if err != nil {
-				return nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating persistent directory with key '%s' for volume #%d.", persistenceKey, volumeIdx)
 			}
 			filesDictValue = persistentDirectory
 		} else {
@@ -499,14 +537,28 @@ func getStarlarkFilesArtifacts(composeVolumes []types.ServiceVolumeConfig, servi
 			filesArtifactName := fmt.Sprintf("%s--volume%d", serviceName, volumeIdx)
 			filesArtifactsToUpload[volume.Source] = filesArtifactName
 			filesDictValue = starlark.String(filesArtifactName)
-		}
 
-		if err := filesArgSLDict.SetKey(starlark.String(volume.Target), filesDictValue); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
+			// TODO: update files artifact expansion to handle mounting files, not only directories so files_to_be_moved hack can be removed
+			// if the volume is referencing a file, use files_to_be_moved
+			maybeFileOrDirVolume, err := os.Stat(path.Join(packageAbsDirPath, volume.Source))
+			if err != nil {
+				return nil, nil, nil, stacktrace.Propagate(err, "An error occurred checking is the volume path existed in the package on disc: %v.", volume.Source)
+			}
+			if !maybeFileOrDirVolume.IsDir() {
+				sourcePathNameEnd := path.Base(volume.Source)
+				targetDirectoryForFilesArtifact = path.Join("/tmp", filesArtifactName)
+				targetToMovePath := path.Join(targetDirectoryForFilesArtifact, sourcePathNameEnd)
+				if err := filesToBeMoved.SetKey(starlark.String(targetToMovePath), starlark.String(volume.Target)); err != nil {
+					return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting files to be moved for targetDirectoryForFilesArtifact '%v'", volume.Target)
+				}
+			}
+		}
+		if err := filesArgSLDict.SetKey(starlark.String(targetDirectoryForFilesArtifact), filesDictValue); err != nil {
+			return nil, nil, nil, stacktrace.Propagate(err, "An error occurred setting volume mountpoint '%s' in the files Starlark dict.", volume.Target)
 		}
 	}
 
-	return filesArgSLDict, filesArtifactsToUpload, nil
+	return filesArgSLDict, filesArtifactsToUpload, filesToBeMoved, nil
 }
 
 func getStarlarkPersistentDirectory(persistenceKey string) (starlark.Value, error) {
@@ -611,4 +663,33 @@ func sortServicesBasedOnDependencies(serviceDependencyGraph map[string]map[strin
 	}
 
 	return sortedServices, nil
+}
+
+// Converts a string to a RFC 1035 compliant format
+func convertToRFC1035(input string) string {
+	// Remove leading and trailing spaces
+	input = strings.TrimSpace(input)
+	// Convert to lowercase
+	input = strings.ToLower(input)
+	// Replace non-alphanumeric characters with dashes
+	input = alphanumericCharWithDashesRegex.ReplaceAllString(input, "-")
+	// Remove consecutive dashes
+	input = consecutiveDashesRegex.ReplaceAllString(input, "-")
+	// Remove dashes at the beginning or end
+	input = strings.Trim(input, "-")
+	return input
+}
+
+// CleanFilePath cleans up a file path by removing '~', '..', and '_' characters
+// while retaining absolute paths as absolute and relative paths as relative.
+func cleanFilePath(filePath string) string {
+	filePath = strings.ReplaceAll(filePath, "~", "")
+	filePath = strings.ReplaceAll(filePath, "..", "")
+	filePath = strings.ReplaceAll(filePath, "_", "")
+	return filePath
+}
+
+func isEnvFileNotFoundErr(err error) bool {
+	// Prob not the best way to check for this error but right now the only time anything's loaded by compose is for env_file
+	return strings.Contains(err.Error(), "Failed to load")
 }

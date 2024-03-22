@@ -148,4 +148,6 @@ var (
 	testTolerationKey     = "test-key"
 	testTolerationValue   = "test-value"
 	testTolerationSeconds = int64(64)
+
+	testFilesToBeMoved = "test.txt"
 )
