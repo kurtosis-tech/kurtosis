@@ -1665,6 +1665,9 @@ func (manager *DockerManager) GetEntryPointAndCommand(ctx context.Context, image
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "an error occurred while running image inspect on image '%v'", imageName)
 	}
+	if imageInspect.Config == nil {
+		return nil, nil, stacktrace.NewError("image inspect config was empty, can't geet entrypoint or cmd: %v", imageInspect)
+	}
 	return imageInspect.Config.Entrypoint, imageInspect.Config.Cmd, nil
 }
 
