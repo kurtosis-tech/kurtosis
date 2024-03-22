@@ -79,6 +79,9 @@ const (
 	// KurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlProcedure is the fully-qualified name of
 	// the KurtosisEnclaveManagerServer's GetStarlarkPackagePlanYaml RPC.
 	KurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetStarlarkPackagePlanYaml"
+	// KurtosisEnclaveManagerServerCreateRepositoryWebhookProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's CreateRepositoryWebhook RPC.
+	KurtosisEnclaveManagerServerCreateRepositoryWebhookProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/CreateRepositoryWebhook"
 )
 
 // KurtosisEnclaveManagerServerClient is a client for the
@@ -98,6 +101,7 @@ type KurtosisEnclaveManagerServerClient interface {
 	GetStarlarkRun(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error)
 	GetStarlarkScriptPlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
 	GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
+	CreateRepositoryWebhook(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerClient constructs a client for the
@@ -181,6 +185,11 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlProcedure,
 			opts...,
 		),
+		createRepositoryWebhook: connect.NewClient[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerCreateRepositoryWebhookProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -200,6 +209,7 @@ type kurtosisEnclaveManagerServerClient struct {
 	getStarlarkRun                 *connect.Client[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest, kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse]
 	getStarlarkScriptPlanYaml      *connect.Client[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs, kurtosis_core_rpc_api_bindings.PlanYaml]
 	getStarlarkPackagePlanYaml     *connect.Client[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs, kurtosis_core_rpc_api_bindings.PlanYaml]
+	createRepositoryWebhook        *connect.Client[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest, emptypb.Empty]
 }
 
 // Check calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check.
@@ -278,6 +288,12 @@ func (c *kurtosisEnclaveManagerServerClient) GetStarlarkPackagePlanYaml(ctx cont
 	return c.getStarlarkPackagePlanYaml.CallUnary(ctx, req)
 }
 
+// CreateRepositoryWebhook calls
+// kurtosis_enclave_manager.KurtosisEnclaveManagerServer.CreateRepositoryWebhook.
+func (c *kurtosisEnclaveManagerServerClient) CreateRepositoryWebhook(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.createRepositoryWebhook.CallUnary(ctx, req)
+}
+
 // KurtosisEnclaveManagerServerHandler is an implementation of the
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer service.
 type KurtosisEnclaveManagerServerHandler interface {
@@ -295,6 +311,7 @@ type KurtosisEnclaveManagerServerHandler interface {
 	GetStarlarkRun(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error)
 	GetStarlarkScriptPlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
 	GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
+	CreateRepositoryWebhook(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerHandler builds an HTTP handler from the service implementation. It
@@ -373,6 +390,11 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		svc.GetStarlarkPackagePlanYaml,
 		opts...,
 	)
+	kurtosisEnclaveManagerServerCreateRepositoryWebhookHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerCreateRepositoryWebhookProcedure,
+		svc.CreateRepositoryWebhook,
+		opts...,
+	)
 	return "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisEnclaveManagerServerCheckProcedure:
@@ -403,6 +425,8 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 			kurtosisEnclaveManagerServerGetStarlarkScriptPlanYamlHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlProcedure:
 			kurtosisEnclaveManagerServerGetStarlarkPackagePlanYamlHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerCreateRepositoryWebhookProcedure:
+			kurtosisEnclaveManagerServerCreateRepositoryWebhookHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -466,4 +490,8 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) GetStarlarkScriptPlanYam
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetStarlarkPackagePlanYaml is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) CreateRepositoryWebhook(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.CreateRepositoryWebhook is not implemented"))
 }

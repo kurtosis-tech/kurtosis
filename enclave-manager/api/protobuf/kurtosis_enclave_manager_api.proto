@@ -23,6 +23,7 @@ service KurtosisEnclaveManagerServer {
   rpc GetStarlarkRun(GetStarlarkRunRequest) returns (api_container_api.GetStarlarkRunResponse) {};
   rpc GetStarlarkScriptPlanYaml(StarlarkScriptPlanYamlArgs) returns (api_container_api.PlanYaml) {};
   rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (api_container_api.PlanYaml) {};
+  rpc CreateRepositoryWebhook(CreateRepositoryWebhookRequest) returns (google.protobuf.Empty) {}
 }
 
 message HealthCheckRequest {
@@ -76,6 +77,10 @@ message DownloadFilesArtifactRequest {
 message GetStarlarkRunRequest{
   string apic_ip_address = 1;
   int32 apic_port = 2;
+}
+
+message CreateRepositoryWebhookRequest {
+  string package_id = 1;
 }
 
 

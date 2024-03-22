@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"os"
+	"path"
 	"time"
 )
 
@@ -24,8 +27,6 @@ const (
 
 	authStorageCreationCmdMaxRetries     = 2
 	authStorageCreationCmdDelayInRetries = 200 * time.Millisecond
-
-	authTokenFilename = "token.txt"
 
 	sleepSeconds = 1800
 )
@@ -95,6 +96,15 @@ func (creator *GitHubAuthStorageCreator) CreateGitHubAuthStorage(
 	return nil
 }
 
+// GetGitHubAuthToken Returns empty string if no token found in [githubAuthTokenFile] or [githubAuthTokenFile] doesn't exist
+func GetGitHubAuthToken() string {
+	tokenBytes, err := os.ReadFile(path.Join(consts.GitHubAuthStorageDirPath, consts.GithubAuthStorageToken))
+	if err != nil {
+		return ""
+	}
+	return string(tokenBytes)
+}
+
 func (creator *GitHubAuthStorageCreator) storeTokenInVolume(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
@@ -107,7 +117,7 @@ func (creator *GitHubAuthStorageCreator) storeTokenInVolume(
 		"%v '%v' > %v",
 		printfCmdName,
 		creator.token,
-		fmt.Sprintf("%s/%s", githubAuthStorageDirPath, authTokenFilename),
+		fmt.Sprintf("%s/%s", githubAuthStorageDirPath, consts.GithubAuthStorageToken),
 	)
 
 	execCmd := []string{
