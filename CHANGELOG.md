@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.88.10](https://github.com/kurtosis-tech/kurtosis/compare/0.88.9...0.88.10) (2024-03-25)
+
+
+### Features
+
+* enable importing docker compose module ([#2327](https://github.com/kurtosis-tech/kurtosis/issues/2327)) ([1ca7661](https://github.com/kurtosis-tech/kurtosis/commit/1ca7661a8512189e091d87d78d0755cc6159dd7d))
+
 ## [0.88.9](https://github.com/kurtosis-tech/kurtosis/compare/0.88.8...0.88.9) (2024-03-25)
 
 
