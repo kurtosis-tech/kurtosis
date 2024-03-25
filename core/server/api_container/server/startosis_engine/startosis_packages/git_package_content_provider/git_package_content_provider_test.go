@@ -27,7 +27,7 @@ const (
 
 var noPackageReplaceOptions = map[string]string{}
 
-func TestGitPackageProvider_SucceedsForValidPackage(t *testing.T) {
+func TestGitPackageProvider_SucceedsForValidKurtosisPackage(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
@@ -49,6 +49,29 @@ func TestGitPackageProvider_SucceedsForValidPackage(t *testing.T) {
 	contents, err := provider.GetModuleContents(sampleStartosisModuleAbsoluteLocator)
 	require.Nil(t, err)
 	require.Equal(t, "a = \"World!\"\n", contents)
+}
+
+func TestGitPackageProvider_SucceedsForValidDockerComposePackage(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
+	require.Nil(t, err)
+	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
+	require.Nil(t, err)
+	defer os.RemoveAll(githubAuthDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+
+	sampleComposeModule := "github.com/tedim52/django-pg-compose/compose.yml"
+
+	sampleComposeModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(sampleComposeModule, defaultMainBranch)
+
+	_, err = provider.GetModuleContents(sampleComposeModuleAbsoluteLocator)
+	require.Nil(t, err)
 }
 
 func TestGitPackageProvider_SucceedsForValidPackageWithExplicitMasterSet(t *testing.T) {
@@ -622,10 +645,15 @@ func Test_getPathToPackageRoot(t *testing.T) {
 
 func Test_checkIfFileIsInAValidPackageInternal_somewhereInTheMiddle(t *testing.T) {
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
-		filePathAndMockReturnMap := map[string]error{
-			"/data/packages/root/kurtosis.yml":                os.ErrNotExist,
-			"/data/packages/root/subdir/kurtosis.yml":         os.ErrNotExist,
-			"/data/packages/root/subdir/subdir1/kurtosis.yml": nil,
+		var validYamlFilenames []string
+		validYamlFilenames = append(validYamlFilenames, startosis_constants.KurtosisYamlName)
+		validYamlFilenames = append(validYamlFilenames, possibleDockerComposeYamls...)
+
+		filePathAndMockReturnMap := map[string]error{}
+		for _, validFilename := range validYamlFilenames {
+			filePathAndMockReturnMap[path.Join("/data/packages/root/", validFilename)] = os.ErrNotExist
+			filePathAndMockReturnMap[path.Join("/data/packages/root/subdir", validFilename)] = os.ErrNotExist
+			filePathAndMockReturnMap[path.Join("/data/packages/root/subdir/subdir1", validFilename)] = nil
 		}
 
 		maybeError, found := filePathAndMockReturnMap[filePath]
@@ -637,17 +665,22 @@ func Test_checkIfFileIsInAValidPackageInternal_somewhereInTheMiddle(t *testing.T
 	}
 
 	filePath := "/data/packages/root/subdir/subdir1/folder/some_file.txt"
-	actual, err := getKurtosisYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
+	actual, err := getKurtosisOrComposeYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
 	require.Nil(t, err)
 	require.Equal(t, "/data/packages/root/subdir/subdir1/kurtosis.yml", actual)
 }
 
 func Test_checkIfFileIsInAValidPackageInternal_packageIsSameAsWhereTheFileIs(t *testing.T) {
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
-		filePathAndMockReturnMap := map[string]error{
-			"/data/packages/root/kurtosis.yml":                os.ErrNotExist,
-			"/data/packages/root/subdir/kurtosis.yml":         nil,
-			"/data/packages/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
+		var validYamlFilenames []string
+		validYamlFilenames = append(validYamlFilenames, startosis_constants.KurtosisYamlName)
+		validYamlFilenames = append(validYamlFilenames, possibleDockerComposeYamls...)
+
+		filePathAndMockReturnMap := map[string]error{}
+		for _, validFilename := range validYamlFilenames {
+			filePathAndMockReturnMap[path.Join("/data/packages/root/", validFilename)] = os.ErrNotExist
+			filePathAndMockReturnMap[path.Join("/data/packages/root/subdir", validFilename)] = nil
+			filePathAndMockReturnMap[path.Join("/data/packages/root/subdir/subdir1", validFilename)] = os.ErrNotExist
 		}
 
 		maybeError, found := filePathAndMockReturnMap[filePath]
@@ -659,39 +692,48 @@ func Test_checkIfFileIsInAValidPackageInternal_packageIsSameAsWhereTheFileIs(t *
 	}
 
 	filePath := "/data/packages/root/subdir/some_file.txt"
-	actual, err := getKurtosisYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
+	actual, err := getKurtosisOrComposeYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
 	require.Nil(t, err)
 	require.Equal(t, "/data/packages/root/subdir/kurtosis.yml", actual)
 }
 
 func Test_checkIfFileIsInAValidPackageInternal_fileNotFound(t *testing.T) {
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
-		filePathAndMockReturnMap := map[string]error{
-			"/data/packages/root/kurtosis.yml":                os.ErrNotExist,
-			"/data/packages/root/subdir/kurtosis.yml":         os.ErrNotExist,
-			"/data/packages/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
+		var validYamlFilenames []string
+		validYamlFilenames = append(validYamlFilenames, startosis_constants.KurtosisYamlName)
+		validYamlFilenames = append(validYamlFilenames, possibleDockerComposeYamls...)
+
+		filePathAndMockReturnMap := map[string]error{}
+		for _, validFilename := range validYamlFilenames {
+			filePathAndMockReturnMap[path.Join("/data/packages/root/", validFilename)] = os.ErrNotExist
+			filePathAndMockReturnMap[path.Join("/data/packages/root/subdir", validFilename)] = os.ErrNotExist
+			filePathAndMockReturnMap[path.Join("/data/packages/root/subdir/subdir1", validFilename)] = os.ErrNotExist
 		}
 
 		maybeError, found := filePathAndMockReturnMap[filePath]
 		if !found {
 			return nil, stacktrace.NewError("tried a path that was not accounted for %v", filePath)
 		}
-
 		return nil, maybeError
 	}
 
 	filePath := "/data/packages/root/subdir/some_file.txt"
-	actual, err := getKurtosisYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
+	actual, err := getKurtosisOrComposeYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
 	require.Nil(t, err)
-	require.Equal(t, filePathToKurtosisYamlNotFound, actual)
+	require.Equal(t, filePathToKurtosisOrComposeYamlNotFound, actual)
 }
 
 func Test_checkIfFileIsInAValidPackageInternal_unknownErrorOccurred(t *testing.T) {
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
-		filePathAndMockReturnMap := map[string]error{
-			"/data/packages/root/kurtosis.yml":                os.ErrNotExist,
-			"/data/packages/root/subdir/kurtosis.yml":         os.ErrClosed,
-			"/data/packages/root/subdir/subdir1/kurtosis.yml": os.ErrNotExist,
+		var validYamlFilenames []string
+		validYamlFilenames = append(validYamlFilenames, startosis_constants.KurtosisYamlName)
+		validYamlFilenames = append(validYamlFilenames, possibleDockerComposeYamls...)
+
+		filePathAndMockReturnMap := map[string]error{}
+		for _, validFilename := range validYamlFilenames {
+			filePathAndMockReturnMap[path.Join("/data/packages/root/", validFilename)] = os.ErrNotExist
+			filePathAndMockReturnMap[path.Join("/data/packages/root/subdir", validFilename)] = os.ErrClosed
+			filePathAndMockReturnMap[path.Join("/data/packages/root/subdir/subdir1", validFilename)] = os.ErrNotExist
 		}
 
 		maybeError, found := filePathAndMockReturnMap[filePath]
@@ -702,7 +744,7 @@ func Test_checkIfFileIsInAValidPackageInternal_unknownErrorOccurred(t *testing.T
 	}
 
 	filePath := "/data/packages/root/subdir/some_file.txt"
-	_, err := getKurtosisYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
+	_, err := getKurtosisOrComposeYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
 	require.NotNil(t, err)
 	require.ErrorContains(t, err, fmt.Sprintf("An error occurred while locating %v in the path of '%v'", startosis_constants.KurtosisYamlName, filePath))
 }
@@ -713,7 +755,7 @@ func Test_checkIfFileIsInAValidPackageInternal_prefixMismatchError(t *testing.T)
 	}
 
 	filePath := "/packages/root/subdir/some_file.txt"
-	_, err := getKurtosisYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
+	_, err := getKurtosisOrComposeYamlPathForFileUrlInternal(filePath, "/data/packages", mockStatMethod)
 	require.NotNil(t, err)
 	require.EqualError(t, err, fmt.Sprintf("Absolute path to file: %v must start with following prefix %v", filePath, "/data/packages"))
 }
