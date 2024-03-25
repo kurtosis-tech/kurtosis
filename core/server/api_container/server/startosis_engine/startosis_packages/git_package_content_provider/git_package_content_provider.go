@@ -149,7 +149,6 @@ func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(absoluteLocator
 	}
 
 	// check whether kurtosis yaml exists in the path
-	// TODO: adjust this to also return composes
 	maybeKurtosisOrComposeYamlPath, interpretationError := getKurtosisOrComposeYamlPathForFile(pathToFileOnDisk, provider.repositoriesDir)
 	if interpretationError != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while verifying whether '%v' belongs to a Kurtosis package.", repositoryPathURL)
