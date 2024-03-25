@@ -107,6 +107,7 @@ func (c *WebServer) CreateRepositoryWebhook(ctx context.Context, req *connect.Re
 			URL:         &webhookUrl,
 			ContentType: &contentTypeJson,
 			InsecureSSL: nil,
+			Secret:      nil,
 		},
 		Events:       []string{"push", "pull_request"},
 		Active:       github.Bool(true),

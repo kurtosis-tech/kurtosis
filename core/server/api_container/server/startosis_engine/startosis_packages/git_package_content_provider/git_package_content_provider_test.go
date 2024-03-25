@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
@@ -648,7 +649,7 @@ func Test_checkIfFileIsInAValidPackageInternal_somewhereInTheMiddle(t *testing.T
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
 		var validYamlFilenames []string
 		validYamlFilenames = append(validYamlFilenames, startosis_constants.KurtosisYamlName)
-		validYamlFilenames = append(validYamlFilenames, possibleDockerComposeYamls...)
+		validYamlFilenames = append(validYamlFilenames, docker_compose_transpiler.DefaultComposeFilenames...)
 
 		filePathAndMockReturnMap := map[string]error{}
 		for _, validFilename := range validYamlFilenames {
@@ -675,7 +676,7 @@ func Test_checkIfFileIsInAValidPackageInternal_packageIsSameAsWhereTheFileIs(t *
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
 		var validYamlFilenames []string
 		validYamlFilenames = append(validYamlFilenames, startosis_constants.KurtosisYamlName)
-		validYamlFilenames = append(validYamlFilenames, possibleDockerComposeYamls...)
+		validYamlFilenames = append(validYamlFilenames, docker_compose_transpiler.DefaultComposeFilenames...)
 
 		filePathAndMockReturnMap := map[string]error{}
 		for _, validFilename := range validYamlFilenames {
@@ -702,7 +703,7 @@ func Test_checkIfFileIsInAValidPackageInternal_fileNotFound(t *testing.T) {
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
 		var validYamlFilenames []string
 		validYamlFilenames = append(validYamlFilenames, startosis_constants.KurtosisYamlName)
-		validYamlFilenames = append(validYamlFilenames, possibleDockerComposeYamls...)
+		validYamlFilenames = append(validYamlFilenames, docker_compose_transpiler.DefaultComposeFilenames...)
 
 		filePathAndMockReturnMap := map[string]error{}
 		for _, validFilename := range validYamlFilenames {
@@ -728,7 +729,7 @@ func Test_checkIfFileIsInAValidPackageInternal_unknownErrorOccurred(t *testing.T
 	mockStatMethod := func(filePath string) (os.FileInfo, error) {
 		var validYamlFilenames []string
 		validYamlFilenames = append(validYamlFilenames, startosis_constants.KurtosisYamlName)
-		validYamlFilenames = append(validYamlFilenames, possibleDockerComposeYamls...)
+		validYamlFilenames = append(validYamlFilenames, docker_compose_transpiler.DefaultComposeFilenames...)
 
 		filePathAndMockReturnMap := map[string]error{}
 		for _, validFilename := range validYamlFilenames {
