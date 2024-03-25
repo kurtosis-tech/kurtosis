@@ -1553,6 +1553,8 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 		}
 	}
 
+	logrus.Info("TEST " + srcPath)
+
 	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(
 		ctx,
 		containerId,
