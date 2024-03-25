@@ -66,12 +66,13 @@ func TestGitPackageProvider_SucceedsForValidDockerComposePackage(t *testing.T) {
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
 
-	sampleComposeModule := "github.com/tedim52/django-pg-compose/compose.yml"
+	sampleComposeModule := "github.com/kurtosis-tech/django-compose/docker-compose.yml"
 
 	sampleComposeModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(sampleComposeModule, defaultMainBranch)
 
-	_, err = provider.GetModuleContents(sampleComposeModuleAbsoluteLocator)
+	contents, err := provider.GetModuleContents(sampleComposeModuleAbsoluteLocator)
 	require.Nil(t, err)
+	require.NotEmpty(t, contents)
 }
 
 func TestGitPackageProvider_SucceedsForValidPackageWithExplicitMasterSet(t *testing.T) {

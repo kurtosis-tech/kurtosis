@@ -167,7 +167,7 @@ func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(absoluteLocator
 	}
 
 	if maybeKurtosisOrComposeYamlPath == filePathToKurtosisOrComposeYamlNotFound {
-		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, repositoryPathURL, user_support_constants.HowImportWorksLink)
+		return "", startosis_errors.NewInterpretationError("%v or valid Docker Compose yaml not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, repositoryPathURL, user_support_constants.HowImportWorksLink)
 	}
 
 	if containsKurtosisYaml(maybeKurtosisOrComposeYamlPath) {
