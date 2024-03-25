@@ -1544,9 +1544,7 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 		return nil, stacktrace.Propagate(err, "an error occurred while verifying whether the file was a folder")
 	}
 
-	logrus.Info("PRE " + srcPath)
-
-	// if its a directory we copy contents of the directory
+	// if it's a directory we copy contents of the directory
 	if stat.Mode.IsDir() && !strings.HasSuffix(srcPath, "/.") {
 		if strings.HasSuffix(srcPath, "/") {
 			srcPath = srcPath + "."
@@ -1554,8 +1552,6 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 			srcPath = srcPath + "/."
 		}
 	}
-
-	logrus.Info("TEST " + srcPath)
 
 	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(
 		ctx,
