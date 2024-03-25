@@ -1547,11 +1547,11 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 	logrus.Info("PRE " + srcPath)
 
 	// if its a directory we copy contents of the directory
-	if stat.Mode.IsDir() && !strings.HasSuffix(srcPath, "/*") {
+	if stat.Mode.IsDir() && !strings.HasSuffix(srcPath, "/.") {
 		if strings.HasSuffix(srcPath, "/") {
-			srcPath = srcPath + "*"
+			srcPath = srcPath + "."
 		} else {
-			srcPath = srcPath + "/*"
+			srcPath = srcPath + "/."
 		}
 	}
 
