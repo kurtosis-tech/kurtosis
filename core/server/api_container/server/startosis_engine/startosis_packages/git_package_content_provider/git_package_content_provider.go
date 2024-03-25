@@ -45,8 +45,6 @@ const (
 	filePathToKurtosisOrComposeYamlNotFound  = ""
 	replaceCountPackageDirWithGithubConstant = 1
 
-	dotStarSubstr = ".star"
-
 	osPathSeparatorString = string(os.PathSeparator)
 
 	onlyOneReplace = 1
