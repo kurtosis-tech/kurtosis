@@ -106,9 +106,19 @@ func (c *WebServer) CreateRepositoryWebhook(ctx context.Context, req *connect.Re
 		Config: &github.HookConfig{
 			URL:         &webhookUrl,
 			ContentType: &contentTypeJson,
+			InsecureSSL: nil,
+			Secret:      nil,
 		},
-		Events: []string{"push", "pull_request"},
-		Active: github.Bool(true),
+		Events:       []string{"push", "pull_request"},
+		Active:       github.Bool(true),
+		CreatedAt:    nil,
+		UpdatedAt:    nil,
+		URL:          nil,
+		ID:           nil,
+		Type:         nil,
+		TestURL:      nil,
+		PingURL:      nil,
+		LastResponse: nil,
 	}
 	_, _, err = client.Repositories.CreateHook(ctx, owner, repo, hook)
 	if err != nil {

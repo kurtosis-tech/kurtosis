@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
@@ -221,10 +220,6 @@ func getOnDiskImageBuildSpecPaths(
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageContentProvider startosis_packages.PackageContentProvider,
 	packageReplaceOptions map[string]string) (string, string, *startosis_errors.InterpretationError) {
-	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
-		return "", "", startosis_errors.NewInterpretationError("Cannot use ImageBuildSpec in a standalone script; create a package and rerun to use ImageBuildSpec.")
-	}
-
 	// get absolute locator of context directory
 	contextDirAbsoluteLocator, interpretationErr := packageContentProvider.GetAbsoluteLocator(packageId, locatorOfModuleInWhichThisBuiltInIsBeingCalled, buildContextLocator, packageReplaceOptions)
 	if interpretationErr != nil {

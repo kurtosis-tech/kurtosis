@@ -34,6 +34,7 @@ require (
 	github.com/compose-spec/compose-go v1.17.0
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/go-yaml/yaml v2.1.0+incompatible
+	github.com/hashicorp/go-envparse v0.1.0
 	github.com/itchyny/gojq v0.12.13
 	github.com/joho/godotenv v1.5.1
 	github.com/kurtosis-tech/kurtosis/path-compression v0.0.0-20240307154559-64d2929cd265
@@ -93,7 +94,6 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
-	github.com/hashicorp/go-envparse v0.1.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/itchyny/timefmt-go v0.1.5 // indirect

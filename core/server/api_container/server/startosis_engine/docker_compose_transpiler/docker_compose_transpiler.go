@@ -72,6 +72,15 @@ var (
 	possibleHttpPorts               = []uint32{8080, 8000, 80, 443}
 )
 
+var DefaultComposeFilenames = []string{
+	"compose.yml",
+	"compose.yaml",
+	"docker-compose.yml",
+	"docker-compose.yaml",
+	"docker_compose.yml",
+	"docker_compose.yaml",
+}
+
 type ComposeService types.ServiceConfig
 
 type StarlarkServiceConfig *kurtosis_type_constructor.KurtosisValueTypeDefault
