@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.88.9](https://github.com/kurtosis-tech/kurtosis/compare/0.88.8...0.88.9) (2024-03-25)
+
+
+### Features
+
+* enclave manager has an endpoint to create a webhook ([#2316](https://github.com/kurtosis-tech/kurtosis/issues/2316)) ([0cc1eef](https://github.com/kurtosis-tech/kurtosis/commit/0cc1eefbae43a53476076d1bcdd0cc5ee7c633e3))
+* improve docker compose coverage ([#2320](https://github.com/kurtosis-tech/kurtosis/issues/2320)) ([45bd59e](https://github.com/kurtosis-tech/kurtosis/commit/45bd59e47e5b42a4812d15cdd3572f0d8004db91))
+
+
+### Bug Fixes
+
+* `ImageBuildSpec` `build_file` feature ([#2313](https://github.com/kurtosis-tech/kurtosis/issues/2313)) ([c8e73da](https://github.com/kurtosis-tech/kurtosis/commit/c8e73dac58c4db42271028cfa26aec5785c254cb))
+
 ## [0.88.8](https://github.com/kurtosis-tech/kurtosis/compare/0.88.7...0.88.8) (2024-03-15)
 
 
