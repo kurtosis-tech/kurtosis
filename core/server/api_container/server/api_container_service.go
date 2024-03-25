@@ -12,8 +12,8 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
@@ -75,15 +75,6 @@ const (
 	isNotRemote              = false
 	defaultParallelism       = 4
 )
-
-var defaultComposeFilenames = []string{
-	"compose.yml",
-	"compose.yaml",
-	"docker-compose.yml",
-	"docker-compose.yaml",
-	"docker_compose.yml",
-	"docker_compose.yaml",
-}
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
 var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_TransportProtocol]port_spec.TransportProtocol{
@@ -887,7 +878,7 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 
 	// If kurtosis.yml doesn't exist, assume a Compose package and transpile compose into starlark
 	if relativePathToMainFile == "" {
-		for _, defaultComposeFilename := range defaultComposeFilenames {
+		for _, defaultComposeFilename := range docker_compose_transpiler.DefaultComposeFilenames {
 			candidateComposeAbsFilepath := path.Join(packageRootPathOnDisk, defaultComposeFilename)
 			if _, err := os.Stat(candidateComposeAbsFilepath); err == nil {
 				relativePathToMainFile = defaultComposeFilename
@@ -900,7 +891,7 @@ func (apicService *ApiContainerService) runStarlarkPackageSetup(
 					"default Compose files (%s) were found. Either add a '%s' file to the package root or add one of the "+
 					"default Compose files.",
 				startosis_constants.KurtosisYamlName,
-				strings.Join(defaultComposeFilenames, ", "),
+				strings.Join(docker_compose_transpiler.DefaultComposeFilenames, ", "),
 				startosis_constants.KurtosisYamlName,
 			)
 		}

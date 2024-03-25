@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/docker_compose_transpiler"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
@@ -51,15 +51,6 @@ const (
 
 	defaultMainBranch = ""
 )
-
-var possibleDockerComposeYamls = []string{
-	"compose.yml",
-	"compose.yaml",
-	"docker-compose.yml",
-	"docker-compose.yaml",
-	"docker_compose.yml",
-	"docker_compose.yaml",
-}
 
 type GitPackageContentProvider struct {
 	// Where to temporarily store repositories while
@@ -584,7 +575,7 @@ func getKurtosisOrComposeYamlPathForFileUrlInternal(absPathToFile string, packag
 
 	var validYamlFilenames []string
 	validYamlFilenames = append(validYamlFilenames, startosis_constants.KurtosisYamlName)
-	validYamlFilenames = append(validYamlFilenames, possibleDockerComposeYamls...)
+	validYamlFilenames = append(validYamlFilenames, docker_compose_transpiler.DefaultComposeFilenames...)
 
 	maybePackageRootPath := packagesDir
 	for _, dir := range dirs[:len(dirs)-1] {
@@ -617,7 +608,7 @@ func containsKurtosisYaml(kurtosisOrComposeYamlPath string) bool {
 }
 
 func containsComposeYaml(filepath string) bool {
-	for _, composeYaml := range possibleDockerComposeYamls {
+	for _, composeYaml := range docker_compose_transpiler.DefaultComposeFilenames {
 		if strings.Contains(filepath, composeYaml) {
 			return true
 		}
