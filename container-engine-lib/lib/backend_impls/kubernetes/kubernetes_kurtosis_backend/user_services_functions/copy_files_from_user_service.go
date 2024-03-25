@@ -77,6 +77,7 @@ func CopyFilesFromUserService(
 		commandString,
 		srcPathDir,
 		srcPathBase,
+		srcPathBase,
 		srcPath,
 	)
 
