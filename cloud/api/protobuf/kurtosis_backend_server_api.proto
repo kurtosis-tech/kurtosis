@@ -20,8 +20,8 @@ service KurtosisCloudBackendServer {
   rpc CancelPaymentSubscription (CancelPaymentSubscriptionArgs) returns (google.protobuf.Empty) {};
   rpc UpdateAddress(UpdateAddressArgs) returns (google.protobuf.Empty) {};
   rpc CheckPortAuthorization(CheckIsPortAuthorizedArgs) returns(google.protobuf.Empty){};
-  rpc AddWhitelistedPort(AddWhitelistedPortArgs) returns(google.protobuf.Empty){};
-  rpc GetWhitelistedPort(GetWhiteListedPortArgs) returns(google.protobuf.Empty){}
+  rpc AddUnauthenticatedPort(AddUnauthenticatedPortArgs) returns(google.protobuf.Empty){};
+  rpc GetUnauthenticatedPort(GetUnauthenticatedPortArgs) returns(GetUnauthenticatedPortResponse){}
 }
 
 message GetOrCreateApiKeyRequest {
@@ -143,13 +143,13 @@ message UpdateAddressArgs {
   string country = 8;
 }
 
-message AddWhitelistedPortArgs {
+message AddUnauthenticatedPortArgs {
   int32 port_number=1;
   string service_short_uuid=2;
   string enclave_short_uuid=3;
 }
 
-message GetWhiteListedPortArgs {
+message GetUnauthenticatedPortArgs {
   string enclave_short_uuid=1;
 }
 
@@ -158,7 +158,7 @@ message PortAndService {
   string service_short_uuid = 2;
 }
 
-message GetWhiteListedPortResponse {
+message GetUnauthenticatedPortResponse {
   repeated PortAndService ports_and_service = 1;
 }
 
