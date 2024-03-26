@@ -29,8 +29,8 @@ const (
 	KurtosisCloudBackendServer_CancelPaymentSubscription_FullMethodName   = "/kurtosis_cloud.KurtosisCloudBackendServer/CancelPaymentSubscription"
 	KurtosisCloudBackendServer_UpdateAddress_FullMethodName               = "/kurtosis_cloud.KurtosisCloudBackendServer/UpdateAddress"
 	KurtosisCloudBackendServer_CheckPortAuthorization_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/CheckPortAuthorization"
-	KurtosisCloudBackendServer_AddWhitelistedPort_FullMethodName          = "/kurtosis_cloud.KurtosisCloudBackendServer/AddWhitelistedPort"
-	KurtosisCloudBackendServer_GetWhitelistedPort_FullMethodName          = "/kurtosis_cloud.KurtosisCloudBackendServer/GetWhitelistedPort"
+	KurtosisCloudBackendServer_AddUnauthenticatedPort_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/AddUnauthenticatedPort"
+	KurtosisCloudBackendServer_GetUnauthenticatedPort_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnauthenticatedPort"
 )
 
 // KurtosisCloudBackendServerClient is the client API for KurtosisCloudBackendServer service.
@@ -46,8 +46,8 @@ type KurtosisCloudBackendServerClient interface {
 	CancelPaymentSubscription(ctx context.Context, in *CancelPaymentSubscriptionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateAddress(ctx context.Context, in *UpdateAddressArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CheckPortAuthorization(ctx context.Context, in *CheckIsPortAuthorizedArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	AddWhitelistedPort(ctx context.Context, in *AddWhitelistedPortArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetWhitelistedPort(ctx context.Context, in *GetWhiteListedPortArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AddUnauthenticatedPort(ctx context.Context, in *AddUnauthenticatedPortArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetUnauthenticatedPort(ctx context.Context, in *GetUnauthenticatedPortArgs, opts ...grpc.CallOption) (*GetUnauthenticatedPortResponse, error)
 }
 
 type kurtosisCloudBackendServerClient struct {
@@ -139,18 +139,18 @@ func (c *kurtosisCloudBackendServerClient) CheckPortAuthorization(ctx context.Co
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) AddWhitelistedPort(ctx context.Context, in *AddWhitelistedPortArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *kurtosisCloudBackendServerClient) AddUnauthenticatedPort(ctx context.Context, in *AddUnauthenticatedPortArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_AddWhitelistedPort_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_AddUnauthenticatedPort_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) GetWhitelistedPort(ctx context.Context, in *GetWhiteListedPortArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetWhitelistedPort_FullMethodName, in, out, opts...)
+func (c *kurtosisCloudBackendServerClient) GetUnauthenticatedPort(ctx context.Context, in *GetUnauthenticatedPortArgs, opts ...grpc.CallOption) (*GetUnauthenticatedPortResponse, error) {
+	out := new(GetUnauthenticatedPortResponse)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetUnauthenticatedPort_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -170,8 +170,8 @@ type KurtosisCloudBackendServerServer interface {
 	CancelPaymentSubscription(context.Context, *CancelPaymentSubscriptionArgs) (*emptypb.Empty, error)
 	UpdateAddress(context.Context, *UpdateAddressArgs) (*emptypb.Empty, error)
 	CheckPortAuthorization(context.Context, *CheckIsPortAuthorizedArgs) (*emptypb.Empty, error)
-	AddWhitelistedPort(context.Context, *AddWhitelistedPortArgs) (*emptypb.Empty, error)
-	GetWhitelistedPort(context.Context, *GetWhiteListedPortArgs) (*emptypb.Empty, error)
+	AddUnauthenticatedPort(context.Context, *AddUnauthenticatedPortArgs) (*emptypb.Empty, error)
+	GetUnauthenticatedPort(context.Context, *GetUnauthenticatedPortArgs) (*GetUnauthenticatedPortResponse, error)
 }
 
 // UnimplementedKurtosisCloudBackendServerServer should be embedded to have forward compatible implementations.
@@ -205,11 +205,11 @@ func (UnimplementedKurtosisCloudBackendServerServer) UpdateAddress(context.Conte
 func (UnimplementedKurtosisCloudBackendServerServer) CheckPortAuthorization(context.Context, *CheckIsPortAuthorizedArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPortAuthorization not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) AddWhitelistedPort(context.Context, *AddWhitelistedPortArgs) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddWhitelistedPort not implemented")
+func (UnimplementedKurtosisCloudBackendServerServer) AddUnauthenticatedPort(context.Context, *AddUnauthenticatedPortArgs) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddUnauthenticatedPort not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) GetWhitelistedPort(context.Context, *GetWhiteListedPortArgs) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetWhitelistedPort not implemented")
+func (UnimplementedKurtosisCloudBackendServerServer) GetUnauthenticatedPort(context.Context, *GetUnauthenticatedPortArgs) (*GetUnauthenticatedPortResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUnauthenticatedPort not implemented")
 }
 
 // UnsafeKurtosisCloudBackendServerServer may be embedded to opt out of forward compatibility for this service.
@@ -385,38 +385,38 @@ func _KurtosisCloudBackendServer_CheckPortAuthorization_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KurtosisCloudBackendServer_AddWhitelistedPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddWhitelistedPortArgs)
+func _KurtosisCloudBackendServer_AddUnauthenticatedPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddUnauthenticatedPortArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KurtosisCloudBackendServerServer).AddWhitelistedPort(ctx, in)
+		return srv.(KurtosisCloudBackendServerServer).AddUnauthenticatedPort(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: KurtosisCloudBackendServer_AddWhitelistedPort_FullMethodName,
+		FullMethod: KurtosisCloudBackendServer_AddUnauthenticatedPort_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).AddWhitelistedPort(ctx, req.(*AddWhitelistedPortArgs))
+		return srv.(KurtosisCloudBackendServerServer).AddUnauthenticatedPort(ctx, req.(*AddUnauthenticatedPortArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KurtosisCloudBackendServer_GetWhitelistedPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetWhiteListedPortArgs)
+func _KurtosisCloudBackendServer_GetUnauthenticatedPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUnauthenticatedPortArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KurtosisCloudBackendServerServer).GetWhitelistedPort(ctx, in)
+		return srv.(KurtosisCloudBackendServerServer).GetUnauthenticatedPort(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: KurtosisCloudBackendServer_GetWhitelistedPort_FullMethodName,
+		FullMethod: KurtosisCloudBackendServer_GetUnauthenticatedPort_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).GetWhitelistedPort(ctx, req.(*GetWhiteListedPortArgs))
+		return srv.(KurtosisCloudBackendServerServer).GetUnauthenticatedPort(ctx, req.(*GetUnauthenticatedPortArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -465,12 +465,12 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _KurtosisCloudBackendServer_CheckPortAuthorization_Handler,
 		},
 		{
-			MethodName: "AddWhitelistedPort",
-			Handler:    _KurtosisCloudBackendServer_AddWhitelistedPort_Handler,
+			MethodName: "AddUnauthenticatedPort",
+			Handler:    _KurtosisCloudBackendServer_AddUnauthenticatedPort_Handler,
 		},
 		{
-			MethodName: "GetWhitelistedPort",
-			Handler:    _KurtosisCloudBackendServer_GetWhitelistedPort_Handler,
+			MethodName: "GetUnauthenticatedPort",
+			Handler:    _KurtosisCloudBackendServer_GetUnauthenticatedPort_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
