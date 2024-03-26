@@ -21,7 +21,7 @@ service KurtosisCloudBackendServer {
   rpc UpdateAddress(UpdateAddressArgs) returns (google.protobuf.Empty) {};
   rpc CheckPortAuthorization(CheckIsPortAuthorizedArgs) returns(google.protobuf.Empty){};
   rpc AddWhitelistedPort(AddWhitelistedPortArgs) returns(google.protobuf.Empty){};
-  rpc GetWhitelistedPort(GetWhiteListedPortArgs) returns(google.protobuf.Empty){};
+  rpc GetWhitelistedPort(GetWhiteListedPortArgs) returns(google.protobuf.Empty){}
 }
 
 message GetOrCreateApiKeyRequest {
