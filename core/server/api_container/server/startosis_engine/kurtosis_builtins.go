@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/get_files_artifact"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/get_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
@@ -70,6 +71,7 @@ func KurtosisPlanInstructions(
 		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode),
 		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode),
 		get_service.NewGetService(interpretationTimeValueStore),
+		get_files_artifact.NewGetFilesArtifact(),
 		verify.NewVerify(runtimeValueStore),
 		exec.NewExec(serviceNetwork, runtimeValueStore),
 		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),
