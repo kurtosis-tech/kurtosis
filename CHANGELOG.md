@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.88.11](https://github.com/kurtosis-tech/kurtosis/compare/0.88.10...0.88.11) (2024-03-27)
+
+
+### Features
+
+* starlark -&gt; plan ([#2338](https://github.com/kurtosis-tech/kurtosis/issues/2338)) ([5fab14a](https://github.com/kurtosis-tech/kurtosis/commit/5fab14a6ac021f713449160e652b58839b11e1a1))
+* using preview.kurtosis.com ([#2337](https://github.com/kurtosis-tech/kurtosis/issues/2337)) ([c7f6e66](https://github.com/kurtosis-tech/kurtosis/commit/c7f6e660b3e8f29ade0b1695ef171930df0ec183))
+
+
+### Bug Fixes
+
+* in the image-spec validations and docs ([#2302](https://github.com/kurtosis-tech/kurtosis/issues/2302)) ([5eb72f2](https://github.com/kurtosis-tech/kurtosis/commit/5eb72f25671f7df0618b3de6d33e009fc7e218cd))
+
+## [0.88.10](https://github.com/kurtosis-tech/kurtosis/compare/0.88.9...0.88.10) (2024-03-25)
+
+
+### Features
+
+* enable importing docker compose module ([#2327](https://github.com/kurtosis-tech/kurtosis/issues/2327)) ([1ca7661](https://github.com/kurtosis-tech/kurtosis/commit/1ca7661a8512189e091d87d78d0755cc6159dd7d))
+
 ## [0.88.9](https://github.com/kurtosis-tech/kurtosis/compare/0.88.8...0.88.9) (2024-03-25)
 
 

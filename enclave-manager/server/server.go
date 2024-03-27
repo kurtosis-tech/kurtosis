@@ -98,8 +98,7 @@ func (c *WebServer) CreateRepositoryWebhook(ctx context.Context, req *connect.Re
 	owner := packageIdSplit[len(packageIdSplit)-2]
 	repo := packageIdSplit[len(packageIdSplit)-1]
 	client := github.NewClient(nil).WithAuthToken(c.githubAccessToken)
-	// TODO change this to Kurtosis when required
-	webhookUrl := "https://preview.imagenix.org/webhook"
+	webhookUrl := "https://preview.kurtosis.com/webhook"
 	contentTypeJson := "json"
 	hook := &github.Hook{
 		Name: github.String("web"),
