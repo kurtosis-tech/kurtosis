@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.88.12](https://github.com/kurtosis-tech/kurtosis/compare/0.88.11...0.88.12) (2024-03-27)
+
+
+### Bug Fixes
+
+* enclave manager passing in deprecated args object ([#2342](https://github.com/kurtosis-tech/kurtosis/issues/2342)) ([2bba1bc](https://github.com/kurtosis-tech/kurtosis/commit/2bba1bc70abe166917b0743e817b7346da199e28))
+* starlark -&gt; plan for validator ([#2343](https://github.com/kurtosis-tech/kurtosis/issues/2343)) ([0dca278](https://github.com/kurtosis-tech/kurtosis/commit/0dca278c276a3060de792d4e87d6eee4e0499f09))
+
 ## [0.88.11](https://github.com/kurtosis-tech/kurtosis/compare/0.88.10...0.88.11) (2024-03-27)
 
 
