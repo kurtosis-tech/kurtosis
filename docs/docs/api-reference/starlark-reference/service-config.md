@@ -23,7 +23,7 @@ config = ServiceConfig(
     image = ImageSpec(
         #  The name of the image that needs to be pulled qualified with the registry
         # MANDATORY
-        name = "my.registry.io/my-user/my-image",
+        image = "my.registry.io/my-user/my-image",
 
         # The username that will be used to pull the image from the given registry
         # OPTIONAL
