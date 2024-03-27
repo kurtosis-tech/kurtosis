@@ -160,6 +160,20 @@ def my_func(my_arg1, my_arg2, args):
 	require.Equal(suite.T(), expectedResult, result)
 }
 
+func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_RandomMainFunctionAndParamsErrDueToDeprecatedArgsObject() {
+	script := `
+def run(plan, args):
+	all_arg_values = args["arg1"] + ":" + args["arg2"]
+	return all_arg_values
+`
+	mainFunctionName := "run"
+	inputArgs := `{"args": {"arg1": "arg1-value", "arg2": "arg2-value"}}`
+
+	_, _, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, inputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
+	require.NotNil(suite.T(), interpretationError)
+	require.Equal(suite.T(), "Evaluation error: key \"arg1\" not in dict\n\tat [3:23]: run", interpretationError.GetErrorMessage())
+}
+
 func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_Test() {
 	script := `
 def run(plan):
