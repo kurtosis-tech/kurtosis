@@ -145,11 +145,13 @@ message UpdateAddressArgs {
 
 message AddUnauthenticatedPortArgs {
   int32 port_number=1;
-  string service_short_uuid=2;
-  string enclave_short_uuid=3;
+  string instance_short_uuid=2;
+  string service_short_uuid=3;
+  string enclave_short_uuid=4;
 }
 
 message GetUnauthenticatedPortArgs {
+  string instance_short_uuid=2;
   string enclave_short_uuid=1;
 }
 
