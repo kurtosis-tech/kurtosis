@@ -20,7 +20,8 @@ const (
 	ignoreParentDirInArchiveSymbol       = "."
 )
 
-var commandString = `if command -v 'tar' > /dev/null; then cd '%v' && tar cf - '%v'; else echo "Cannot copy files from path '%v' because the tar binary doesn't exist on the machine" >&2; exit 1; fi`
+// tries to copy contents of dir and if not dir reverts to default copy
+var commandString = `if command -v 'tar' > /dev/null; then cd '%v' && (tar cf - -C '%v' . || tar cf - '%v'); else echo "Cannot copy files from path '%v' because the tar binary doesn't exist on the machine" >&2; exit 1; fi`
 
 func CopyFilesFromUserService(
 	ctx context.Context,
@@ -75,6 +76,7 @@ func CopyFilesFromUserService(
 	commandToRun = fmt.Sprintf(
 		commandString,
 		srcPathDir,
+		srcPathBase,
 		srcPathBase,
 		srcPath,
 	)

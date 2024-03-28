@@ -1539,6 +1539,20 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 // The caller must close the result
 func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId string, srcPath string) (io.ReadCloser, error) {
 
+	stat, err := manager.dockerClient.ContainerStatPath(ctx, containerId, srcPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while verifying whether the file was a folder")
+	}
+
+	// if it's a directory we copy contents of the directory
+	if stat.Mode.IsDir() && !strings.HasSuffix(srcPath, "/.") {
+		if strings.HasSuffix(srcPath, "/") {
+			srcPath = srcPath + "."
+		} else {
+			srcPath = srcPath + "/."
+		}
+	}
+
 	tarStreamReadCloser, _, err := manager.dockerClient.CopyFromContainer(
 		ctx,
 		containerId,
