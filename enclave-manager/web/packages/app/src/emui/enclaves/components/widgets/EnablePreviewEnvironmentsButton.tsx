@@ -40,16 +40,22 @@ export const EnablePreviewEnvironmentsButton = ({
         label={`This will create a webhook in your repository that enables per PR preview environments`}
         openDelay={1000}
       >
-        <Button
-          colorScheme={"yellow"}
-          leftIcon={<FiGithub />}
-          onClick={() => setShowModal(true)}
-          size={"sm"}
-          variant={"solid"}
-          {...buttonProps}
+        <a
+          href="https://github.com/apps/kurtosis-preview-environments/installations/select_target"
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          Enable Preview Environments
-        </Button>
+          <Button
+            colorScheme={"yellow"}
+            leftIcon={<FiGithub />}
+            // onClick={() => setShowModal(true)}
+            size={"sm"}
+            variant={"solid"}
+            {...buttonProps}
+          >
+            Enable Preview Environments
+          </Button>
+        </a>
       </Tooltip>
       <KurtosisAlertModal
         isOpen={showModal}

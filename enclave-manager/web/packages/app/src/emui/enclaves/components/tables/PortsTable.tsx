@@ -36,9 +36,13 @@ export const getPortTableRows = (
         `${port.number}-${shortUUID(serviceUUID)}-${shortUUID(enclaveUUID)}-${shortUUID(instanceUUID)}` +
         `.${KURTOSIS_CLOUD_HOST}`;
     } else {
-      link = `${port.maybeApplicationProtocol ? port.maybeApplicationProtocol + "://" : ""}${publicIp}:${
-        publicPorts[name].number
-      }`;
+      link =
+        `${KURTOSIS_CLOUD_PROTOCOL}://` +
+        `${port.number}-${shortUUID(serviceUUID)}-${shortUUID(enclaveUUID)}` +
+        `.${KURTOSIS_CLOUD_HOST}`;
+      // link = `${port.maybeApplicationProtocol ? port.maybeApplicationProtocol + "://" : ""}${publicIp}:${
+      //   publicPorts[name].number
+      // }`;
     }
     return {
       port: {
