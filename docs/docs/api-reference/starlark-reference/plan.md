@@ -139,7 +139,7 @@ artifact = plan.get_files_artifact(
   name = "config-artifact"
 
   # A human friendly description for the end user of the package
-  # OPTIONAL (Default: Fetching service 'ARTIFACT_NAME')
+  # OPTIONAL (Default: Fetching files artifact 'ARTIFACT_NAME')
   description = "gets you an artifact"
 )
 ```
