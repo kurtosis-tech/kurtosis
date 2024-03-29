@@ -59,6 +59,18 @@ const (
 	// KurtosisCloudBackendServerUpdateAddressProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's UpdateAddress RPC.
 	KurtosisCloudBackendServerUpdateAddressProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/UpdateAddress"
+	// KurtosisCloudBackendServerGetInstancesProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's GetInstances RPC.
+	KurtosisCloudBackendServerGetInstancesProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetInstances"
+	// KurtosisCloudBackendServerDeleteInstanceProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's DeleteInstance RPC.
+	KurtosisCloudBackendServerDeleteInstanceProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/DeleteInstance"
+	// KurtosisCloudBackendServerChangeActiveStatusProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's ChangeActiveStatus RPC.
+	KurtosisCloudBackendServerChangeActiveStatusProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/ChangeActiveStatus"
+	// KurtosisCloudBackendServerGetUserProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's GetUser RPC.
+	KurtosisCloudBackendServerGetUserProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUser"
 )
 
 // KurtosisCloudBackendServerClient is a client for the kurtosis_cloud.KurtosisCloudBackendServer
@@ -72,6 +84,10 @@ type KurtosisCloudBackendServerClient interface {
 	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
 	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
 	UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error)
+	GetInstances(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse], error)
+	DeleteInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse], error)
+	ChangeActiveStatus(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest]) (*connect.Response[emptypb.Empty], error)
+	GetUser(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUserRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUserResponse], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -126,6 +142,26 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerUpdateAddressProcedure,
 			opts...,
 		),
+		getInstances: connect.NewClient[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerGetInstancesProcedure,
+			opts...,
+		),
+		deleteInstance: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest, kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerDeleteInstanceProcedure,
+			opts...,
+		),
+		changeActiveStatus: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerChangeActiveStatusProcedure,
+			opts...,
+		),
+		getUser: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetUserRequest, kurtosis_backend_server_rpc_api_bindings.GetUserResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerGetUserProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -139,6 +175,10 @@ type kurtosisCloudBackendServerClient struct {
 	refreshDefaultPaymentMethod *connect.Client[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs, emptypb.Empty]
 	cancelPaymentSubscription   *connect.Client[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs, emptypb.Empty]
 	updateAddress               *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs, emptypb.Empty]
+	getInstances                *connect.Client[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse]
+	deleteInstance              *connect.Client[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest, kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse]
+	changeActiveStatus          *connect.Client[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest, emptypb.Empty]
+	getUser                     *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUserRequest, kurtosis_backend_server_rpc_api_bindings.GetUserResponse]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -184,6 +224,26 @@ func (c *kurtosisCloudBackendServerClient) UpdateAddress(ctx context.Context, re
 	return c.updateAddress.CallUnary(ctx, req)
 }
 
+// GetInstances calls kurtosis_cloud.KurtosisCloudBackendServer.GetInstances.
+func (c *kurtosisCloudBackendServerClient) GetInstances(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse], error) {
+	return c.getInstances.CallUnary(ctx, req)
+}
+
+// DeleteInstance calls kurtosis_cloud.KurtosisCloudBackendServer.DeleteInstance.
+func (c *kurtosisCloudBackendServerClient) DeleteInstance(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse], error) {
+	return c.deleteInstance.CallUnary(ctx, req)
+}
+
+// ChangeActiveStatus calls kurtosis_cloud.KurtosisCloudBackendServer.ChangeActiveStatus.
+func (c *kurtosisCloudBackendServerClient) ChangeActiveStatus(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.changeActiveStatus.CallUnary(ctx, req)
+}
+
+// GetUser calls kurtosis_cloud.KurtosisCloudBackendServer.GetUser.
+func (c *kurtosisCloudBackendServerClient) GetUser(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUserRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUserResponse], error) {
+	return c.getUser.CallUnary(ctx, req)
+}
+
 // KurtosisCloudBackendServerHandler is an implementation of the
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
@@ -195,6 +255,10 @@ type KurtosisCloudBackendServerHandler interface {
 	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
 	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
 	UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error)
+	GetInstances(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse], error)
+	DeleteInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse], error)
+	ChangeActiveStatus(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest]) (*connect.Response[emptypb.Empty], error)
+	GetUser(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUserRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUserResponse], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -245,6 +309,26 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.UpdateAddress,
 		opts...,
 	)
+	kurtosisCloudBackendServerGetInstancesHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerGetInstancesProcedure,
+		svc.GetInstances,
+		opts...,
+	)
+	kurtosisCloudBackendServerDeleteInstanceHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerDeleteInstanceProcedure,
+		svc.DeleteInstance,
+		opts...,
+	)
+	kurtosisCloudBackendServerChangeActiveStatusHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerChangeActiveStatusProcedure,
+		svc.ChangeActiveStatus,
+		opts...,
+	)
+	kurtosisCloudBackendServerGetUserHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerGetUserProcedure,
+		svc.GetUser,
+		opts...,
+	)
 	return "/kurtosis_cloud.KurtosisCloudBackendServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
@@ -263,6 +347,14 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerCancelPaymentSubscriptionHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerUpdateAddressProcedure:
 			kurtosisCloudBackendServerUpdateAddressHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerGetInstancesProcedure:
+			kurtosisCloudBackendServerGetInstancesHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerDeleteInstanceProcedure:
+			kurtosisCloudBackendServerDeleteInstanceHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerChangeActiveStatusProcedure:
+			kurtosisCloudBackendServerChangeActiveStatusHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerGetUserProcedure:
+			kurtosisCloudBackendServerGetUserHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -302,4 +394,20 @@ func (UnimplementedKurtosisCloudBackendServerHandler) CancelPaymentSubscription(
 
 func (UnimplementedKurtosisCloudBackendServerHandler) UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.UpdateAddress is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) GetInstances(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetInstances is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) DeleteInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.DeleteInstance is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) ChangeActiveStatus(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.ChangeActiveStatus is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) GetUser(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUserRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetUser is not implemented"))
 }
