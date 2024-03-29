@@ -139,7 +139,7 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
         meta: { centerAligned: true },
       }),
       columnHelper.accessor("ports", {
-        header: "Ports",
+        header: "Endpoints",
         cell: (portsCell) => <PortsSummary ports={portsCell.getValue()} />,
         meta: { centerAligned: true },
       }),
