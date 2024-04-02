@@ -82,8 +82,8 @@ type KurtosisCloudBackendServerClient interface {
 	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
 	UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error)
 	CheckPortAuthorization(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckIsPortAuthorizedArgs]) (*connect.Response[emptypb.Empty], error)
-	AddUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddUnauthenticatedPortArgs]) (*connect.Response[emptypb.Empty], error)
-	GetUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortResponse], error)
+	AddUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPort]) (*connect.Response[emptypb.Empty], error)
+	GetUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -143,12 +143,12 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerCheckPortAuthorizationProcedure,
 			opts...,
 		),
-		addUnauthenticatedPort: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.AddUnauthenticatedPortArgs, emptypb.Empty](
+		addUnauthenticatedPort: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.UnlockPort, emptypb.Empty](
 			httpClient,
 			baseURL+KurtosisCloudBackendServerAddUnauthenticatedPortProcedure,
 			opts...,
 		),
-		getUnauthenticatedPort: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortArgs, kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortResponse](
+		getUnauthenticatedPort: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse](
 			httpClient,
 			baseURL+KurtosisCloudBackendServerGetUnauthenticatedPortProcedure,
 			opts...,
@@ -167,8 +167,8 @@ type kurtosisCloudBackendServerClient struct {
 	cancelPaymentSubscription   *connect.Client[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs, emptypb.Empty]
 	updateAddress               *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs, emptypb.Empty]
 	checkPortAuthorization      *connect.Client[kurtosis_backend_server_rpc_api_bindings.CheckIsPortAuthorizedArgs, emptypb.Empty]
-	addUnauthenticatedPort      *connect.Client[kurtosis_backend_server_rpc_api_bindings.AddUnauthenticatedPortArgs, emptypb.Empty]
-	getUnauthenticatedPort      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortArgs, kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortResponse]
+	addUnauthenticatedPort      *connect.Client[kurtosis_backend_server_rpc_api_bindings.UnlockPort, emptypb.Empty]
+	getUnauthenticatedPort      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -220,12 +220,12 @@ func (c *kurtosisCloudBackendServerClient) CheckPortAuthorization(ctx context.Co
 }
 
 // AddUnauthenticatedPort calls kurtosis_cloud.KurtosisCloudBackendServer.AddUnauthenticatedPort.
-func (c *kurtosisCloudBackendServerClient) AddUnauthenticatedPort(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddUnauthenticatedPortArgs]) (*connect.Response[emptypb.Empty], error) {
+func (c *kurtosisCloudBackendServerClient) AddUnauthenticatedPort(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPort]) (*connect.Response[emptypb.Empty], error) {
 	return c.addUnauthenticatedPort.CallUnary(ctx, req)
 }
 
 // GetUnauthenticatedPort calls kurtosis_cloud.KurtosisCloudBackendServer.GetUnauthenticatedPort.
-func (c *kurtosisCloudBackendServerClient) GetUnauthenticatedPort(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortResponse], error) {
+func (c *kurtosisCloudBackendServerClient) GetUnauthenticatedPort(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error) {
 	return c.getUnauthenticatedPort.CallUnary(ctx, req)
 }
 
@@ -241,8 +241,8 @@ type KurtosisCloudBackendServerHandler interface {
 	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
 	UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error)
 	CheckPortAuthorization(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckIsPortAuthorizedArgs]) (*connect.Response[emptypb.Empty], error)
-	AddUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddUnauthenticatedPortArgs]) (*connect.Response[emptypb.Empty], error)
-	GetUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortResponse], error)
+	AddUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPort]) (*connect.Response[emptypb.Empty], error)
+	GetUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -377,10 +377,10 @@ func (UnimplementedKurtosisCloudBackendServerHandler) CheckPortAuthorization(con
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.CheckPortAuthorization is not implemented"))
 }
 
-func (UnimplementedKurtosisCloudBackendServerHandler) AddUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddUnauthenticatedPortArgs]) (*connect.Response[emptypb.Empty], error) {
+func (UnimplementedKurtosisCloudBackendServerHandler) AddUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPort]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.AddUnauthenticatedPort is not implemented"))
 }
 
-func (UnimplementedKurtosisCloudBackendServerHandler) GetUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortResponse], error) {
+func (UnimplementedKurtosisCloudBackendServerHandler) GetUnauthenticatedPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetUnauthenticatedPort is not implemented"))
 }

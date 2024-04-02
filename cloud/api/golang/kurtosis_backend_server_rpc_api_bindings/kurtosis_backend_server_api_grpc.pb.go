@@ -46,8 +46,8 @@ type KurtosisCloudBackendServerClient interface {
 	CancelPaymentSubscription(ctx context.Context, in *CancelPaymentSubscriptionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateAddress(ctx context.Context, in *UpdateAddressArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CheckPortAuthorization(ctx context.Context, in *CheckIsPortAuthorizedArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	AddUnauthenticatedPort(ctx context.Context, in *AddUnauthenticatedPortArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetUnauthenticatedPort(ctx context.Context, in *GetUnauthenticatedPortArgs, opts ...grpc.CallOption) (*GetUnauthenticatedPortResponse, error)
+	AddUnauthenticatedPort(ctx context.Context, in *UnlockPort, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetUnauthenticatedPort(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error)
 }
 
 type kurtosisCloudBackendServerClient struct {
@@ -139,7 +139,7 @@ func (c *kurtosisCloudBackendServerClient) CheckPortAuthorization(ctx context.Co
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) AddUnauthenticatedPort(ctx context.Context, in *AddUnauthenticatedPortArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *kurtosisCloudBackendServerClient) AddUnauthenticatedPort(ctx context.Context, in *UnlockPort, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_AddUnauthenticatedPort_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -148,8 +148,8 @@ func (c *kurtosisCloudBackendServerClient) AddUnauthenticatedPort(ctx context.Co
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) GetUnauthenticatedPort(ctx context.Context, in *GetUnauthenticatedPortArgs, opts ...grpc.CallOption) (*GetUnauthenticatedPortResponse, error) {
-	out := new(GetUnauthenticatedPortResponse)
+func (c *kurtosisCloudBackendServerClient) GetUnauthenticatedPort(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error) {
+	out := new(GetUnlockedPortsResponse)
 	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetUnauthenticatedPort_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -170,8 +170,8 @@ type KurtosisCloudBackendServerServer interface {
 	CancelPaymentSubscription(context.Context, *CancelPaymentSubscriptionArgs) (*emptypb.Empty, error)
 	UpdateAddress(context.Context, *UpdateAddressArgs) (*emptypb.Empty, error)
 	CheckPortAuthorization(context.Context, *CheckIsPortAuthorizedArgs) (*emptypb.Empty, error)
-	AddUnauthenticatedPort(context.Context, *AddUnauthenticatedPortArgs) (*emptypb.Empty, error)
-	GetUnauthenticatedPort(context.Context, *GetUnauthenticatedPortArgs) (*GetUnauthenticatedPortResponse, error)
+	AddUnauthenticatedPort(context.Context, *UnlockPort) (*emptypb.Empty, error)
+	GetUnauthenticatedPort(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error)
 }
 
 // UnimplementedKurtosisCloudBackendServerServer should be embedded to have forward compatible implementations.
@@ -205,10 +205,10 @@ func (UnimplementedKurtosisCloudBackendServerServer) UpdateAddress(context.Conte
 func (UnimplementedKurtosisCloudBackendServerServer) CheckPortAuthorization(context.Context, *CheckIsPortAuthorizedArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPortAuthorization not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) AddUnauthenticatedPort(context.Context, *AddUnauthenticatedPortArgs) (*emptypb.Empty, error) {
+func (UnimplementedKurtosisCloudBackendServerServer) AddUnauthenticatedPort(context.Context, *UnlockPort) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddUnauthenticatedPort not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) GetUnauthenticatedPort(context.Context, *GetUnauthenticatedPortArgs) (*GetUnauthenticatedPortResponse, error) {
+func (UnimplementedKurtosisCloudBackendServerServer) GetUnauthenticatedPort(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUnauthenticatedPort not implemented")
 }
 
@@ -386,7 +386,7 @@ func _KurtosisCloudBackendServer_CheckPortAuthorization_Handler(srv interface{},
 }
 
 func _KurtosisCloudBackendServer_AddUnauthenticatedPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddUnauthenticatedPortArgs)
+	in := new(UnlockPort)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -398,13 +398,13 @@ func _KurtosisCloudBackendServer_AddUnauthenticatedPort_Handler(srv interface{},
 		FullMethod: KurtosisCloudBackendServer_AddUnauthenticatedPort_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).AddUnauthenticatedPort(ctx, req.(*AddUnauthenticatedPortArgs))
+		return srv.(KurtosisCloudBackendServerServer).AddUnauthenticatedPort(ctx, req.(*UnlockPort))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _KurtosisCloudBackendServer_GetUnauthenticatedPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetUnauthenticatedPortArgs)
+	in := new(GetUnlockedPortsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -416,7 +416,7 @@ func _KurtosisCloudBackendServer_GetUnauthenticatedPort_Handler(srv interface{},
 		FullMethod: KurtosisCloudBackendServer_GetUnauthenticatedPort_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).GetUnauthenticatedPort(ctx, req.(*GetUnauthenticatedPortArgs))
+		return srv.(KurtosisCloudBackendServerServer).GetUnauthenticatedPort(ctx, req.(*GetUnlockedPortsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
