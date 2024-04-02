@@ -72,7 +72,7 @@ export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse 
         meta: { centerAligned: true },
       }),
       columnHelper.accessor("status", {
-        header: "Terminal Access",
+        header: "SSH Access",
         cell: (status) => <TerminalAccessModal />,
         meta: { centerAligned: true },
       }),

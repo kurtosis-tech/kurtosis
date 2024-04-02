@@ -41,7 +41,7 @@ const TerminalAccessModal: React.FC = () => {
     <>
       <Button size={"xs"} variant={"ghost"}
         onClick={onOpen}>
-        Terminal
+        SSH
       </Button>
 
       <Modal isOpen={isOpen} onClose={onClose} size="xl" isCentered>
