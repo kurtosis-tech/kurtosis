@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.88.13](https://github.com/kurtosis-tech/kurtosis/compare/0.88.12...0.88.13) (2024-04-02)
+
+
+### Features
+
+* change cloud protobuf to allow for whitelisting ports as public ([#2336](https://github.com/kurtosis-tech/kurtosis/issues/2336)) ([e1f1800](https://github.com/kurtosis-tech/kurtosis/commit/e1f180080675f215e1c035ebdd6fc19303c00d93))
+* impl `get_files_artifact` ([#2345](https://github.com/kurtosis-tech/kurtosis/issues/2345)) ([a1cc2e8](https://github.com/kurtosis-tech/kurtosis/commit/a1cc2e86dd8a626c60bd05c851c5c0724aeff84e))
+
 ## [0.88.12](https://github.com/kurtosis-tech/kurtosis/compare/0.88.11...0.88.12) (2024-03-27)
 
 

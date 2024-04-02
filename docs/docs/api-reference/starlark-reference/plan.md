@@ -125,6 +125,25 @@ service = plan.get_service(
 )
 ```
 
+get_files_artifact
+-----------
+
+The `get_files_artifact` instruction allows you to get a [Files Artifact][files-artifacts-reference] object from a files artifact name. This is
+useful in situations if you don't have access to the instruction that produced the files artifact; perhaps you are in a different function or have imported and run another Kurtosis package.
+
+```python
+# Returns a Files Artifact object 
+artifact = plan.get_files_artifact(
+  # The name of the files artifact to get
+  # MANDATORY
+  name = "config-artifact"
+
+  # A human friendly description for the end user of the package
+  # OPTIONAL (Default: Fetching files artifact 'ARTIFACT_NAME')
+  description = "gets you an artifact"
+)
+```
+
 verify
 ------
 

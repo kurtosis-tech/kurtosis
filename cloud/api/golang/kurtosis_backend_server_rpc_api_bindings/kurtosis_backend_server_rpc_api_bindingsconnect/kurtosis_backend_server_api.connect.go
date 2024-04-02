@@ -59,6 +59,18 @@ const (
 	// KurtosisCloudBackendServerUpdateAddressProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's UpdateAddress RPC.
 	KurtosisCloudBackendServerUpdateAddressProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/UpdateAddress"
+	// KurtosisCloudBackendServerCheckPortAuthorizationProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's CheckPortAuthorization RPC.
+	KurtosisCloudBackendServerCheckPortAuthorizationProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/CheckPortAuthorization"
+	// KurtosisCloudBackendServerUnlockPortProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's UnlockPort RPC.
+	KurtosisCloudBackendServerUnlockPortProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/UnlockPort"
+	// KurtosisCloudBackendServerLockPortProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's LockPort RPC.
+	KurtosisCloudBackendServerLockPortProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/LockPort"
+	// KurtosisCloudBackendServerGetUnlockedPortsProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's GetUnlockedPorts RPC.
+	KurtosisCloudBackendServerGetUnlockedPortsProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnlockedPorts"
 )
 
 // KurtosisCloudBackendServerClient is a client for the kurtosis_cloud.KurtosisCloudBackendServer
@@ -72,6 +84,10 @@ type KurtosisCloudBackendServerClient interface {
 	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
 	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
 	UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error)
+	CheckPortAuthorization(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest]) (*connect.Response[emptypb.Empty], error)
+	UnlockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
+	LockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.LockPortRequest]) (*connect.Response[emptypb.Empty], error)
+	GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -126,6 +142,26 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerUpdateAddressProcedure,
 			opts...,
 		),
+		checkPortAuthorization: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerCheckPortAuthorizationProcedure,
+			opts...,
+		),
+		unlockPort: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerUnlockPortProcedure,
+			opts...,
+		),
+		lockPort: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.LockPortRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerLockPortProcedure,
+			opts...,
+		),
+		getUnlockedPorts: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerGetUnlockedPortsProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -139,6 +175,10 @@ type kurtosisCloudBackendServerClient struct {
 	refreshDefaultPaymentMethod *connect.Client[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs, emptypb.Empty]
 	cancelPaymentSubscription   *connect.Client[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs, emptypb.Empty]
 	updateAddress               *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs, emptypb.Empty]
+	checkPortAuthorization      *connect.Client[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest, emptypb.Empty]
+	unlockPort                  *connect.Client[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest, emptypb.Empty]
+	lockPort                    *connect.Client[kurtosis_backend_server_rpc_api_bindings.LockPortRequest, emptypb.Empty]
+	getUnlockedPorts            *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -184,6 +224,26 @@ func (c *kurtosisCloudBackendServerClient) UpdateAddress(ctx context.Context, re
 	return c.updateAddress.CallUnary(ctx, req)
 }
 
+// CheckPortAuthorization calls kurtosis_cloud.KurtosisCloudBackendServer.CheckPortAuthorization.
+func (c *kurtosisCloudBackendServerClient) CheckPortAuthorization(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.checkPortAuthorization.CallUnary(ctx, req)
+}
+
+// UnlockPort calls kurtosis_cloud.KurtosisCloudBackendServer.UnlockPort.
+func (c *kurtosisCloudBackendServerClient) UnlockPort(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.unlockPort.CallUnary(ctx, req)
+}
+
+// LockPort calls kurtosis_cloud.KurtosisCloudBackendServer.LockPort.
+func (c *kurtosisCloudBackendServerClient) LockPort(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.LockPortRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.lockPort.CallUnary(ctx, req)
+}
+
+// GetUnlockedPorts calls kurtosis_cloud.KurtosisCloudBackendServer.GetUnlockedPorts.
+func (c *kurtosisCloudBackendServerClient) GetUnlockedPorts(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error) {
+	return c.getUnlockedPorts.CallUnary(ctx, req)
+}
+
 // KurtosisCloudBackendServerHandler is an implementation of the
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
@@ -195,6 +255,10 @@ type KurtosisCloudBackendServerHandler interface {
 	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
 	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
 	UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error)
+	CheckPortAuthorization(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest]) (*connect.Response[emptypb.Empty], error)
+	UnlockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
+	LockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.LockPortRequest]) (*connect.Response[emptypb.Empty], error)
+	GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -245,6 +309,26 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.UpdateAddress,
 		opts...,
 	)
+	kurtosisCloudBackendServerCheckPortAuthorizationHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerCheckPortAuthorizationProcedure,
+		svc.CheckPortAuthorization,
+		opts...,
+	)
+	kurtosisCloudBackendServerUnlockPortHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerUnlockPortProcedure,
+		svc.UnlockPort,
+		opts...,
+	)
+	kurtosisCloudBackendServerLockPortHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerLockPortProcedure,
+		svc.LockPort,
+		opts...,
+	)
+	kurtosisCloudBackendServerGetUnlockedPortsHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerGetUnlockedPortsProcedure,
+		svc.GetUnlockedPorts,
+		opts...,
+	)
 	return "/kurtosis_cloud.KurtosisCloudBackendServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
@@ -263,6 +347,14 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerCancelPaymentSubscriptionHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerUpdateAddressProcedure:
 			kurtosisCloudBackendServerUpdateAddressHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerCheckPortAuthorizationProcedure:
+			kurtosisCloudBackendServerCheckPortAuthorizationHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerUnlockPortProcedure:
+			kurtosisCloudBackendServerUnlockPortHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerLockPortProcedure:
+			kurtosisCloudBackendServerLockPortHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerGetUnlockedPortsProcedure:
+			kurtosisCloudBackendServerGetUnlockedPortsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -302,4 +394,20 @@ func (UnimplementedKurtosisCloudBackendServerHandler) CancelPaymentSubscription(
 
 func (UnimplementedKurtosisCloudBackendServerHandler) UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.UpdateAddress is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) CheckPortAuthorization(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.CheckPortAuthorization is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) UnlockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.UnlockPort is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) LockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.LockPortRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.LockPort is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetUnlockedPorts is not implemented"))
 }
