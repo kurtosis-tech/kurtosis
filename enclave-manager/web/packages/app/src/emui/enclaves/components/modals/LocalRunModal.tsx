@@ -39,7 +39,7 @@ const LocalRunModal: React.FC = () => {
 
   return (
     <>
-      <Button size={"xs"} variant={"ghost"}
+      <Button size={"xs"} colorScheme='green' variant={"outline"}
         onClick={onOpen}>
         Run locally
       </Button>
@@ -52,7 +52,7 @@ const LocalRunModal: React.FC = () => {
           <ModalBody>
             <Text>Follow the steps below deploy a local copy:</Text>
             {codeSnippets.map((snippet, index) => (
-              <Box key={index} as="pre" p="4" background="gray.500" my="2" position="relative" overflowY="auto">
+              <Box fontSize='sm' key={index} as="pre" p="4" background="gray.500" my="2" position="relative" overflowY="auto">
                 {snippet}
                 <IconButton
                   aria-label="Copy code"

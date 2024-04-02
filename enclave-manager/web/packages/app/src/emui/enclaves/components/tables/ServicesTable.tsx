@@ -1,4 +1,4 @@
-import { Button } from "@chakra-ui/react";
+import { Button, Stack } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { GetServicesResponse, ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DataTable, RemoveFunctions } from "kurtosis-ui-components";
@@ -74,14 +74,14 @@ export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse 
       columnHelper.accessor("serviceUUID", {
         header: "Actions",
         cell: (portsCell) => (
-          <>
+          <Stack direction="row" spacing={4}>
             <TerminalAccessModal />
             <Link to={`/enclave/${enclaveShortUUID}/service/${portsCell.getValue()}/logs`}>
-              <Button size={"xs"} variant={"ghost"}>
+              <Button size={"xs"} colorScheme='green' variant={"outline"}>
                 View Logs
               </Button>
             </Link>
-          </>
+          </Stack>
         ),
         enableSorting: false,
       }),
