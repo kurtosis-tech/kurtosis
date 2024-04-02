@@ -29,8 +29,9 @@ const (
 	KurtosisCloudBackendServer_CancelPaymentSubscription_FullMethodName   = "/kurtosis_cloud.KurtosisCloudBackendServer/CancelPaymentSubscription"
 	KurtosisCloudBackendServer_UpdateAddress_FullMethodName               = "/kurtosis_cloud.KurtosisCloudBackendServer/UpdateAddress"
 	KurtosisCloudBackendServer_CheckPortAuthorization_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/CheckPortAuthorization"
-	KurtosisCloudBackendServer_AddUnauthenticatedPort_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/AddUnauthenticatedPort"
-	KurtosisCloudBackendServer_GetUnauthenticatedPort_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnauthenticatedPort"
+	KurtosisCloudBackendServer_UnlockPort_FullMethodName                  = "/kurtosis_cloud.KurtosisCloudBackendServer/UnlockPort"
+	KurtosisCloudBackendServer_LockPort_FullMethodName                    = "/kurtosis_cloud.KurtosisCloudBackendServer/LockPort"
+	KurtosisCloudBackendServer_GetUnlockedPorts_FullMethodName            = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnlockedPorts"
 )
 
 // KurtosisCloudBackendServerClient is the client API for KurtosisCloudBackendServer service.
@@ -46,8 +47,9 @@ type KurtosisCloudBackendServerClient interface {
 	CancelPaymentSubscription(ctx context.Context, in *CancelPaymentSubscriptionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateAddress(ctx context.Context, in *UpdateAddressArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CheckPortAuthorization(ctx context.Context, in *CheckIsPortAuthorizedArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	AddUnauthenticatedPort(ctx context.Context, in *UnlockPort, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetUnauthenticatedPort(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error)
+	UnlockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	LockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetUnlockedPorts(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error)
 }
 
 type kurtosisCloudBackendServerClient struct {
@@ -139,18 +141,27 @@ func (c *kurtosisCloudBackendServerClient) CheckPortAuthorization(ctx context.Co
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) AddUnauthenticatedPort(ctx context.Context, in *UnlockPort, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *kurtosisCloudBackendServerClient) UnlockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_AddUnauthenticatedPort_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_UnlockPort_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) GetUnauthenticatedPort(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error) {
+func (c *kurtosisCloudBackendServerClient) LockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_LockPort_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisCloudBackendServerClient) GetUnlockedPorts(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error) {
 	out := new(GetUnlockedPortsResponse)
-	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetUnauthenticatedPort_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetUnlockedPorts_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -170,8 +181,9 @@ type KurtosisCloudBackendServerServer interface {
 	CancelPaymentSubscription(context.Context, *CancelPaymentSubscriptionArgs) (*emptypb.Empty, error)
 	UpdateAddress(context.Context, *UpdateAddressArgs) (*emptypb.Empty, error)
 	CheckPortAuthorization(context.Context, *CheckIsPortAuthorizedArgs) (*emptypb.Empty, error)
-	AddUnauthenticatedPort(context.Context, *UnlockPort) (*emptypb.Empty, error)
-	GetUnauthenticatedPort(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error)
+	UnlockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error)
+	LockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error)
+	GetUnlockedPorts(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error)
 }
 
 // UnimplementedKurtosisCloudBackendServerServer should be embedded to have forward compatible implementations.
@@ -205,11 +217,14 @@ func (UnimplementedKurtosisCloudBackendServerServer) UpdateAddress(context.Conte
 func (UnimplementedKurtosisCloudBackendServerServer) CheckPortAuthorization(context.Context, *CheckIsPortAuthorizedArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPortAuthorization not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) AddUnauthenticatedPort(context.Context, *UnlockPort) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddUnauthenticatedPort not implemented")
+func (UnimplementedKurtosisCloudBackendServerServer) UnlockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnlockPort not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) GetUnauthenticatedPort(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUnauthenticatedPort not implemented")
+func (UnimplementedKurtosisCloudBackendServerServer) LockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LockPort not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) GetUnlockedPorts(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUnlockedPorts not implemented")
 }
 
 // UnsafeKurtosisCloudBackendServerServer may be embedded to opt out of forward compatibility for this service.
@@ -385,38 +400,56 @@ func _KurtosisCloudBackendServer_CheckPortAuthorization_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KurtosisCloudBackendServer_AddUnauthenticatedPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UnlockPort)
+func _KurtosisCloudBackendServer_UnlockPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LockUnlockPortRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KurtosisCloudBackendServerServer).AddUnauthenticatedPort(ctx, in)
+		return srv.(KurtosisCloudBackendServerServer).UnlockPort(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: KurtosisCloudBackendServer_AddUnauthenticatedPort_FullMethodName,
+		FullMethod: KurtosisCloudBackendServer_UnlockPort_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).AddUnauthenticatedPort(ctx, req.(*UnlockPort))
+		return srv.(KurtosisCloudBackendServerServer).UnlockPort(ctx, req.(*LockUnlockPortRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KurtosisCloudBackendServer_GetUnauthenticatedPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _KurtosisCloudBackendServer_LockPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LockUnlockPortRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).LockPort(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_LockPort_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).LockPort(ctx, req.(*LockUnlockPortRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisCloudBackendServer_GetUnlockedPorts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetUnlockedPortsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KurtosisCloudBackendServerServer).GetUnauthenticatedPort(ctx, in)
+		return srv.(KurtosisCloudBackendServerServer).GetUnlockedPorts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: KurtosisCloudBackendServer_GetUnauthenticatedPort_FullMethodName,
+		FullMethod: KurtosisCloudBackendServer_GetUnlockedPorts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).GetUnauthenticatedPort(ctx, req.(*GetUnlockedPortsRequest))
+		return srv.(KurtosisCloudBackendServerServer).GetUnlockedPorts(ctx, req.(*GetUnlockedPortsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -465,12 +498,16 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _KurtosisCloudBackendServer_CheckPortAuthorization_Handler,
 		},
 		{
-			MethodName: "AddUnauthenticatedPort",
-			Handler:    _KurtosisCloudBackendServer_AddUnauthenticatedPort_Handler,
+			MethodName: "UnlockPort",
+			Handler:    _KurtosisCloudBackendServer_UnlockPort_Handler,
 		},
 		{
-			MethodName: "GetUnauthenticatedPort",
-			Handler:    _KurtosisCloudBackendServer_GetUnauthenticatedPort_Handler,
+			MethodName: "LockPort",
+			Handler:    _KurtosisCloudBackendServer_LockPort_Handler,
+		},
+		{
+			MethodName: "GetUnlockedPorts",
+			Handler:    _KurtosisCloudBackendServer_GetUnlockedPorts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

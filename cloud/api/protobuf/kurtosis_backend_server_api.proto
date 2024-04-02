@@ -20,8 +20,9 @@ service KurtosisCloudBackendServer {
   rpc CancelPaymentSubscription (CancelPaymentSubscriptionArgs) returns (google.protobuf.Empty) {};
   rpc UpdateAddress(UpdateAddressArgs) returns (google.protobuf.Empty) {};
   rpc CheckPortAuthorization(CheckIsPortAuthorizedArgs) returns(google.protobuf.Empty){};
-  rpc AddUnauthenticatedPort(UnlockPort) returns(google.protobuf.Empty){};
-  rpc GetUnauthenticatedPort(GetUnlockedPortsRequest) returns(GetUnlockedPortsResponse){}
+  rpc UnlockPort(LockUnlockPortRequest) returns(google.protobuf.Empty){};
+  rpc LockPort(LockUnlockPortRequest) returns(google.protobuf.Empty){};
+  rpc GetUnlockedPorts(GetUnlockedPortsRequest) returns(GetUnlockedPortsResponse){}
 }
 
 message GetOrCreateApiKeyRequest {
@@ -143,7 +144,7 @@ message UpdateAddressArgs {
   string country = 8;
 }
 
-message UnlockPort {
+message LockUnlockPortRequest {
   int32 port_number=1;
   string instance_short_uuid=2;
   string service_short_uuid=3;
