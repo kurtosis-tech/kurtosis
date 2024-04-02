@@ -43,6 +43,7 @@ message HealthCheckResponse {
 message GetServicesRequest{
   string apic_ip_address = 1;
   int32 apic_port = 2;
+  string enclave_shortened_uuid = 3;
 }
 
 message GetListFilesArtifactNamesAndUuidsRequest{

@@ -231,19 +231,19 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 		return resp, nil
 	}
 
-	getUnauthenticatedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortArgs]{
-		Msg: &kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortArgs{
+	getUnlockedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest{
 			InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
-			EnclaveShortUuid:  "",
+			EnclaveShortUuid:  req.Msg.EnclaveShortenedUuid,
 		},
 	}
 
 	var unlockedPortsAndServices []*kurtosis_backend_server_rpc_api_bindings.PortAndService
-	getUnauthenticatedPortsResponse, err := (*cloudClient).GetUnauthenticatedPort(ctx, getUnauthenticatedPortsRequest)
+	getUnauthenticatedPortsResponse, err := (*cloudClient).GetUnlockedPorts(ctx, getUnlockedPortsRequest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while pulling unauthenticated ports from the cloud backend")
 	}
-	unlockedPortsAndServices = getUnauthenticatedPortsResponse.Msg.PortsAndService
+	unlockedPortsAndServices = getUnauthenticatedPortsResponse.Msg.PortsAndServices
 
 	for _, service := range serviceInfoMapFromApicObj {
 		serviceShortUuid := service.ServiceUuid[:shortUuidLength]

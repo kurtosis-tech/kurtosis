@@ -109,6 +109,7 @@ export abstract class KurtosisClient {
       const request = new GetServicesRequest({
         apicIpAddress: apicInfo.bridgeIpAddress,
         apicPort: apicInfo.grpcPortInsideEnclave,
+        enclaveShortenedUuid : enclave.shortenedUuid,
       });
       return this.client.getServices(request, this.getHeaderOptions());
     }, `KurtosisClient could not getServices for ${enclave.name}`);

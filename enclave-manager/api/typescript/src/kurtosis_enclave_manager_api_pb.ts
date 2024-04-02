@@ -129,6 +129,11 @@ export class GetServicesRequest extends Message<GetServicesRequest> {
    */
   apicPort = 0;
 
+  /**
+   * @generated from field: string enclave_shortened_uuid = 3;
+   */
+  enclaveShortenedUuid = "";
+
   constructor(data?: PartialMessage<GetServicesRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -139,6 +144,7 @@ export class GetServicesRequest extends Message<GetServicesRequest> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "apic_ip_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "apic_port", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 3, name: "enclave_shortened_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetServicesRequest {
