@@ -26,7 +26,7 @@ export const KurtosisPackageNode = memo(
 
     useEffect(() => {
       const packageId = nodeData?.packageId;
-      const args = nodeData?.args;
+      let args = nodeData?.args;
       if (isDefined(packageId) && isDefined(args) && packageId !== "") {
         let cancelled = false;
         (async () => {
@@ -40,6 +40,14 @@ export const KurtosisPackageNode = memo(
             setMode({ type: "error", error: "APIC info missing from temporary enclave" });
             return;
           }
+
+          // If args only has one record, and its value is args, ASSUME user is passing args via a JSON or YAML into the args object of def run(plan, args)
+          // via Json or Yaml editor
+          // If only an `args` object is provided, kurtosis will not interpret the value in the args object as passing args via the args dictionary is (technically) deprecated even though it's still allowed
+          if (Object.keys(args).length === 1 && args.hasOwnProperty("args")) {
+            args = args["args"] as Record<string, string>; // TODO(tedi): ideally we'd validate and handle this in transform args utils
+          }
+
           const plan = await kurtosisClient.getStarlarkPackagePlanYaml(
             enclave.value.enclaveInfo.apiContainerInfo,
             packageId,
