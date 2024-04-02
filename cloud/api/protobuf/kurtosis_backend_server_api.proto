@@ -145,7 +145,7 @@ message UpdateAddressArgs {
 }
 
 message LockUnlockPortRequest {
-  int32 port_number=1;
+  uint32 port_number=1;
   string instance_short_uuid=2;
   string service_short_uuid=3;
   string enclave_short_uuid=4;
@@ -162,11 +162,11 @@ message PortAndService {
 }
 
 message GetUnlockedPortsResponse {
-  repeated PortAndService ports_and_service = 1;
+  repeated PortAndService ports_and_services = 1;
 }
 
 message CheckIsPortAuthorizedArgs {
-  int32 port_number=1;
+  uint32 port_number=1;
   string service_short_uuid=2;
   string enclave_short_uuid=3;
   string instance_short_uuid=4;
