@@ -8,6 +8,7 @@ import { ImageButton } from "../widgets/ImageButton";
 import { PortsSummary } from "../widgets/PortsSummary";
 import { ServiceStatusTag } from "../widgets/ServiceStatus";
 import { getPortTableRows, PortsTableRow } from "./PortsTable";
+import TerminalAccessModal from "../modals/TerminalAccessModal"
 
 type ServicesTableRow = {
   serviceUUID: string;
@@ -68,6 +69,11 @@ export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse 
       columnHelper.accessor("ports", {
         header: "Endpoints",
         cell: (portsCell) => <PortsSummary ports={portsCell.getValue()} />,
+        meta: { centerAligned: true },
+      }),
+      columnHelper.accessor("status", {
+        header: "Terminal Access",
+        cell: (status) => <TerminalAccessModal />,
         meta: { centerAligned: true },
       }),
       columnHelper.accessor("serviceUUID", {
