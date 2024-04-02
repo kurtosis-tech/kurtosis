@@ -152,6 +152,7 @@ message UnlockPort {
 
 message GetUnlockedPortsRequest {
   string instance_short_uuid=1;
+  string enclave_short_uuid=2;
 }
 
 message PortAndService {
