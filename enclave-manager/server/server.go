@@ -201,14 +201,6 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
 
-	cloudClient, err := c.createKurtosisCloudBackendClient(
-		kurtosisCloudApiHost,
-		kurtosisCloudApiPort,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
-	}
-
 	serviceRequest := &connect.Request[kurtosis_core_rpc_api_bindings.GetServicesArgs]{
 		Msg: &kurtosis_core_rpc_api_bindings.GetServicesArgs{
 			ServiceIdentifiers: map[string]bool{},
@@ -229,6 +221,14 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 			},
 		}
 		return resp, nil
+	}
+
+	cloudClient, err := c.createKurtosisCloudBackendClient(
+		kurtosisCloudApiHost,
+		kurtosisCloudApiPort,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
 
 	getUnlockedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]{
@@ -268,6 +268,74 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 	}
 
 	return resp, nil
+}
+
+func (c *WebServer) LockPort(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
+	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, true, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+
+	cloudClient, err := c.createKurtosisCloudBackendClient(
+		kurtosisCloudApiHost,
+		kurtosisCloudApiPort,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
+	}
+
+	lockPortRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.LockUnlockPortRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.LockUnlockPortRequest{
+			InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
+			PortNumber:        req.Msg.PortNumber,
+			EnclaveShortUuid:  req.Msg.EnclaveShortUuid,
+			ServiceShortUuid:  req.Msg.ServiceShortUuid,
+		},
+	}
+
+	_, err = (*cloudClient).LockPort(ctx, lockPortRequest)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while sending lock port request to the cloud backend")
+	}
+
+	return &connect.Response[emptypb.Empty]{}, nil
+}
+
+func (c *WebServer) UnlockPort(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
+	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, true, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+
+	cloudClient, err := c.createKurtosisCloudBackendClient(
+		kurtosisCloudApiHost,
+		kurtosisCloudApiPort,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
+	}
+
+	lockPortRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.LockUnlockPortRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.LockUnlockPortRequest{
+			InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
+			PortNumber:        req.Msg.PortNumber,
+			EnclaveShortUuid:  req.Msg.EnclaveShortUuid,
+			ServiceShortUuid:  req.Msg.ServiceShortUuid,
+		},
+	}
+
+	_, err = (*cloudClient).UnlockPort(ctx, lockPortRequest)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while sending unlock port request to the cloud backend")
+	}
+
+	return &connect.Response[emptypb.Empty]{}, nil
 }
 
 func (c *WebServer) GetServiceLogs(

@@ -24,6 +24,8 @@ service KurtosisEnclaveManagerServer {
   rpc GetStarlarkScriptPlanYaml(StarlarkScriptPlanYamlArgs) returns (api_container_api.PlanYaml) {};
   rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (api_container_api.PlanYaml) {};
   rpc CreateRepositoryWebhook(CreateRepositoryWebhookRequest) returns (google.protobuf.Empty) {}
+  rpc LockPort(LockUnlockPortRequest) returns (google.protobuf.Empty) {}
+  rpc UnlockPort(LockUnlockPortRequest) returns(google.protobuf.Empty) {}
 }
 
 message HealthCheckRequest {
@@ -82,6 +84,12 @@ message GetStarlarkRunRequest{
 
 message CreateRepositoryWebhookRequest {
   string package_id = 1;
+}
+
+message LockUnlockPortRequest {
+  uint32 port_number=1;
+  string service_short_uuid=3;
+  string enclave_short_uuid=4;
 }
 
 
