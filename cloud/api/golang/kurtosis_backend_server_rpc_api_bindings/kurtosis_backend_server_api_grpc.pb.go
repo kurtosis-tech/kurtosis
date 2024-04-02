@@ -46,9 +46,9 @@ type KurtosisCloudBackendServerClient interface {
 	RefreshDefaultPaymentMethod(ctx context.Context, in *RefreshDefaultPaymentMethodArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CancelPaymentSubscription(ctx context.Context, in *CancelPaymentSubscriptionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateAddress(ctx context.Context, in *UpdateAddressArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CheckPortAuthorization(ctx context.Context, in *CheckIsPortAuthorizedArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	UnlockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	LockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CheckPortAuthorization(ctx context.Context, in *CheckPortAuthorizationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UnlockPort(ctx context.Context, in *UnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	LockPort(ctx context.Context, in *LockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetUnlockedPorts(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error)
 }
 
@@ -132,7 +132,7 @@ func (c *kurtosisCloudBackendServerClient) UpdateAddress(ctx context.Context, in
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) CheckPortAuthorization(ctx context.Context, in *CheckIsPortAuthorizedArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *kurtosisCloudBackendServerClient) CheckPortAuthorization(ctx context.Context, in *CheckPortAuthorizationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_CheckPortAuthorization_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -141,7 +141,7 @@ func (c *kurtosisCloudBackendServerClient) CheckPortAuthorization(ctx context.Co
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) UnlockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *kurtosisCloudBackendServerClient) UnlockPort(ctx context.Context, in *UnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_UnlockPort_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -150,7 +150,7 @@ func (c *kurtosisCloudBackendServerClient) UnlockPort(ctx context.Context, in *L
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) LockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *kurtosisCloudBackendServerClient) LockPort(ctx context.Context, in *LockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_LockPort_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -180,9 +180,9 @@ type KurtosisCloudBackendServerServer interface {
 	RefreshDefaultPaymentMethod(context.Context, *RefreshDefaultPaymentMethodArgs) (*emptypb.Empty, error)
 	CancelPaymentSubscription(context.Context, *CancelPaymentSubscriptionArgs) (*emptypb.Empty, error)
 	UpdateAddress(context.Context, *UpdateAddressArgs) (*emptypb.Empty, error)
-	CheckPortAuthorization(context.Context, *CheckIsPortAuthorizedArgs) (*emptypb.Empty, error)
-	UnlockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error)
-	LockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error)
+	CheckPortAuthorization(context.Context, *CheckPortAuthorizationRequest) (*emptypb.Empty, error)
+	UnlockPort(context.Context, *UnlockPortRequest) (*emptypb.Empty, error)
+	LockPort(context.Context, *LockPortRequest) (*emptypb.Empty, error)
 	GetUnlockedPorts(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error)
 }
 
@@ -214,13 +214,13 @@ func (UnimplementedKurtosisCloudBackendServerServer) CancelPaymentSubscription(c
 func (UnimplementedKurtosisCloudBackendServerServer) UpdateAddress(context.Context, *UpdateAddressArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAddress not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) CheckPortAuthorization(context.Context, *CheckIsPortAuthorizedArgs) (*emptypb.Empty, error) {
+func (UnimplementedKurtosisCloudBackendServerServer) CheckPortAuthorization(context.Context, *CheckPortAuthorizationRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPortAuthorization not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) UnlockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error) {
+func (UnimplementedKurtosisCloudBackendServerServer) UnlockPort(context.Context, *UnlockPortRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnlockPort not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) LockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error) {
+func (UnimplementedKurtosisCloudBackendServerServer) LockPort(context.Context, *LockPortRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LockPort not implemented")
 }
 func (UnimplementedKurtosisCloudBackendServerServer) GetUnlockedPorts(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error) {
@@ -383,7 +383,7 @@ func _KurtosisCloudBackendServer_UpdateAddress_Handler(srv interface{}, ctx cont
 }
 
 func _KurtosisCloudBackendServer_CheckPortAuthorization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CheckIsPortAuthorizedArgs)
+	in := new(CheckPortAuthorizationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -395,13 +395,13 @@ func _KurtosisCloudBackendServer_CheckPortAuthorization_Handler(srv interface{},
 		FullMethod: KurtosisCloudBackendServer_CheckPortAuthorization_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).CheckPortAuthorization(ctx, req.(*CheckIsPortAuthorizedArgs))
+		return srv.(KurtosisCloudBackendServerServer).CheckPortAuthorization(ctx, req.(*CheckPortAuthorizationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _KurtosisCloudBackendServer_UnlockPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LockUnlockPortRequest)
+	in := new(UnlockPortRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -413,13 +413,13 @@ func _KurtosisCloudBackendServer_UnlockPort_Handler(srv interface{}, ctx context
 		FullMethod: KurtosisCloudBackendServer_UnlockPort_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).UnlockPort(ctx, req.(*LockUnlockPortRequest))
+		return srv.(KurtosisCloudBackendServerServer).UnlockPort(ctx, req.(*UnlockPortRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _KurtosisCloudBackendServer_LockPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LockUnlockPortRequest)
+	in := new(LockPortRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -431,7 +431,7 @@ func _KurtosisCloudBackendServer_LockPort_Handler(srv interface{}, ctx context.C
 		FullMethod: KurtosisCloudBackendServer_LockPort_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).LockPort(ctx, req.(*LockUnlockPortRequest))
+		return srv.(KurtosisCloudBackendServerServer).LockPort(ctx, req.(*LockPortRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
