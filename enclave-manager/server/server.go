@@ -36,6 +36,7 @@ const (
 	numberOfElementsAuthHeader = 2
 	numberOfElementsHostString = 2
 	slashSeparator             = "/"
+	shortUuidLength            = 12
 )
 
 type Authentication struct {
@@ -82,7 +83,7 @@ func (c *WebServer) Check(context.Context, *connect.Request[kurtosis_enclave_man
 }
 
 func (c *WebServer) CreateRepositoryWebhook(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -130,46 +131,46 @@ func (c *WebServer) ValidateRequestAuthorization(
 	ctx context.Context,
 	enforceAuth bool,
 	header http.Header,
-) (bool, error) {
+) (bool, *kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
 	if !enforceAuth {
-		return true, nil
+		return true, nil, nil
 	}
 
 	reqToken := header.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer")
 	if len(splitToken) != numberOfElementsAuthHeader {
-		return false, stacktrace.NewError("Authorization token malformed. Bearer token format required")
+		return false, nil, stacktrace.NewError("Authorization token malformed. Bearer token format required")
 	}
 	reqToken = strings.TrimSpace(splitToken[1])
 	auth, err := c.ConvertJwtTokenToApiKey(ctx, reqToken)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Failed to convert jwt token to API key")
+		return false, nil, stacktrace.Propagate(err, "Failed to convert jwt token to API key")
 	}
 	if auth == nil || len(auth.ApiKey) == 0 {
-		return false, stacktrace.NewError("An internal error has occurred. An empty API key was found")
+		return false, nil, stacktrace.NewError("An internal error has occurred. An empty API key was found")
 	}
 
 	instanceConfig, err := c.GetCloudInstanceConfig(ctx, reqToken, auth.ApiKey)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Failed to retrieve the instance config")
+		return false, nil, stacktrace.Propagate(err, "Failed to retrieve the instance config")
 	}
 	reqHost := header.Get("Host")
 	splitHost := strings.Split(reqHost, ":")
 	if len(splitHost) != numberOfElementsHostString {
-		return false, stacktrace.NewError("Host header malformed. host:port format required")
+		return false, nil, stacktrace.NewError("Host header malformed. host:port format required")
 	}
 	reqHost = splitHost[0]
 	if instanceConfig.LaunchResult.PublicDns != reqHost {
 		delete(c.apiKeyMap, reqToken)
 		delete(c.instanceConfigMap, reqToken)
-		return false, stacktrace.NewError("either the requested instance does not exist or the user is not authorized to access the resource")
+		return false, nil, stacktrace.NewError("either the requested instance does not exist or the user is not authorized to access the resource")
 	}
 
-	return true, nil
+	return true, instanceConfig, nil
 }
 
 func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -188,7 +189,7 @@ func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptyp
 	return resp, nil
 }
 func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -198,6 +199,14 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
+	}
+
+	cloudClient, err := c.createKurtosisCloudBackendClient(
+		kurtosisCloudApiHost,
+		kurtosisCloudApiPort,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
 
 	serviceRequest := &connect.Request[kurtosis_core_rpc_api_bindings.GetServicesArgs]{
@@ -210,11 +219,54 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 		return nil, err
 	}
 
-	resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse]{
-		Msg: &kurtosis_core_rpc_api_bindings.GetServicesResponse{
-			ServiceInfo: serviceInfoMapFromAPIC.Msg.GetServiceInfo(),
+	serviceInfoMapFromApicObj := serviceInfoMapFromAPIC.Msg.GetServiceInfo()
+
+	// we aren't in a cloud context, so we exit early
+	if !c.enforceAuth {
+		resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse]{
+			Msg: &kurtosis_core_rpc_api_bindings.GetServicesResponse{
+				ServiceInfo: serviceInfoMapFromApicObj,
+			},
+		}
+		return resp, nil
+	}
+
+	getUnauthenticatedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortArgs]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.GetUnauthenticatedPortArgs{
+			InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
+			EnclaveShortUuid:  "",
 		},
 	}
+
+	var unlockedPortsAndServices []*kurtosis_backend_server_rpc_api_bindings.PortAndService
+	getUnauthenticatedPortsResponse, err := (*cloudClient).GetUnauthenticatedPort(ctx, getUnauthenticatedPortsRequest)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while pulling unauthenticated ports from the cloud backend")
+	}
+	unlockedPortsAndServices = getUnauthenticatedPortsResponse.Msg.PortsAndService
+
+	for _, service := range serviceInfoMapFromApicObj {
+		serviceShortUuid := service.ServiceUuid[:shortUuidLength]
+		for _, privatePort := range service.PrivatePorts {
+			locked := true
+			for _, unlockedPortsAndService := range unlockedPortsAndServices {
+				if unlockedPortsAndService.ServiceShortUuid == serviceShortUuid {
+					if privatePort.Number == unlockedPortsAndService.PortNumber {
+						locked = false
+						break
+					}
+				}
+			}
+			privatePort.Locked = &locked
+		}
+	}
+
+	resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse]{
+		Msg: &kurtosis_core_rpc_api_bindings.GetServicesResponse{
+			ServiceInfo: serviceInfoMapFromApicObj,
+		},
+	}
+
 	return resp, nil
 }
 
@@ -243,7 +295,7 @@ func (c *WebServer) GetServiceLogs(
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -332,7 +384,7 @@ func (c *WebServer) RunStarlarkScript(ctx context.Context, req *connect.Request[
 }
 
 func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -349,7 +401,7 @@ func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kur
 }
 
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -369,7 +421,7 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 }
 
 func (c *WebServer) InspectFilesArtifactContents(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -403,7 +455,7 @@ func (c *WebServer) DownloadFilesArtifact(
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest],
 	str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk],
 ) error {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -443,7 +495,7 @@ func (c *WebServer) GetStarlarkRun(
 	ctx context.Context,
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -481,7 +533,7 @@ func (c *WebServer) GetStarlarkScriptPlanYaml(
 	ctx context.Context,
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -516,7 +568,7 @@ func (c *WebServer) GetStarlarkPackagePlanYaml(
 	ctx context.Context,
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}

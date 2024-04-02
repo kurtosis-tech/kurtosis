@@ -78,6 +78,9 @@ message Port {
   string maybe_application_protocol = 3;
   // The wait timeout duration in string
   string maybe_wait_timeout = 4;
+
+  // this is useful in the cloud context; ignore in local
+  optional bool locked = 5;
 }
 
 message Container {
