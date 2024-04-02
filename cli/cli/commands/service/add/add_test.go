@@ -23,28 +23,28 @@ func TestParsePortSpecstr_SuccessCases(t *testing.T) {
 			args: args{
 				specStr: "http:3333",
 			},
-			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP, MaybeApplicationProtocol: "http", MaybeWaitTimeout: defaultPortWaitTimeoutStr},
+			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP, MaybeApplicationProtocol: "http", MaybeWaitTimeout: defaultPortWaitTimeoutStr, Locked: nil},
 		},
 		{
 			name: "Successfully parse str with application protocol and with transport protocol",
 			args: args{
 				specStr: "http:3333/udp",
 			},
-			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_UDP, MaybeApplicationProtocol: "http", MaybeWaitTimeout: defaultPortWaitTimeoutStr},
+			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_UDP, MaybeApplicationProtocol: "http", MaybeWaitTimeout: defaultPortWaitTimeoutStr, Locked: nil},
 		},
 		{
 			name: "Successfully parse str without application protocol and with transport protocol",
 			args: args{
 				specStr: "3333/udp",
 			},
-			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_UDP, MaybeApplicationProtocol: "", MaybeWaitTimeout: defaultPortWaitTimeoutStr},
+			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_UDP, MaybeApplicationProtocol: "", MaybeWaitTimeout: defaultPortWaitTimeoutStr, Locked: nil},
 		},
 		{
 			name: "Successfully parse str without application protocol and without transport protocol",
 			args: args{
 				specStr: "3333",
 			},
-			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP, MaybeApplicationProtocol: "", MaybeWaitTimeout: defaultPortWaitTimeoutStr},
+			want: &kurtosis_core_rpc_api_bindings.Port{Number: uint32(3333), TransportProtocol: kurtosis_core_rpc_api_bindings.Port_TCP, MaybeApplicationProtocol: "", MaybeWaitTimeout: defaultPortWaitTimeoutStr, Locked: nil},
 		},
 	}
 	for _, parsePortSpecTest := range parsePortSpecSuccessTests {
