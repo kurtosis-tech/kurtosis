@@ -71,19 +71,17 @@ export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse 
         cell: (portsCell) => <PortsSummary ports={portsCell.getValue()} />,
         meta: { centerAligned: true },
       }),
-      columnHelper.accessor("status", {
-        header: "SSH Access",
-        cell: (status) => <TerminalAccessModal />,
-        meta: { centerAligned: true },
-      }),
       columnHelper.accessor("serviceUUID", {
-        header: "Logs",
+        header: "Actions",
         cell: (portsCell) => (
-          <Link to={`/enclave/${enclaveShortUUID}/service/${portsCell.getValue()}/logs`}>
-            <Button size={"xs"} variant={"ghost"}>
-              View
-            </Button>
-          </Link>
+          <>
+            <TerminalAccessModal />
+            <Link to={`/enclave/${enclaveShortUUID}/service/${portsCell.getValue()}/logs`}>
+              <Button size={"xs"} variant={"ghost"}>
+                View Logs
+              </Button>
+            </Link>
+          </>
         ),
         enableSorting: false,
       }),

@@ -139,14 +139,14 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
         cell: (servicesCell) => <EnclaveServicesSummary services={servicesCell.getValue()} />,
         meta: { centerAligned: true },
       }),
-      columnHelper.accessor("status", {
-        header: "Run Locally",
-        cell: (statusCell) => <LocalRunModal />,
-      }),
       columnHelper.accessor("ports", {
         header: "Endpoints",
         cell: (portsCell) => <PortsSummary ports={portsCell.getValue()} />,
         meta: { centerAligned: true },
+      }),
+      columnHelper.accessor("status", {
+        header: "Actions",
+        cell: (statusCell) => <LocalRunModal />,
       }),
     ],
     [],
