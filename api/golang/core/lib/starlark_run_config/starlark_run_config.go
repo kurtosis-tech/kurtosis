@@ -1,6 +1,8 @@
 package starlark_run_config
 
-import "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+import (
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+)
 
 const (
 	defaultRelativePathToMainFile = ""
@@ -12,6 +14,7 @@ const (
 	defaultCloudUserId            = ""
 	defaultImageDownload          = kurtosis_core_rpc_api_bindings.ImageDownloadMode_missing
 	defaultNonBlockingMode        = false
+	defaultGitHubAuthToken        = ""
 )
 
 var defaultExperimentalFeatureFlags = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag(nil)
@@ -27,6 +30,7 @@ type StarlarkRunConfig struct {
 	CloudUserId              string
 	ImageDownload            kurtosis_core_rpc_api_bindings.ImageDownloadMode
 	NonBlockingMode          bool
+	GitHubAuthToken          string
 }
 
 type starlarkRunConfigOption func(*StarlarkRunConfig)
@@ -43,6 +47,7 @@ func NewRunStarlarkConfig(opts ...starlarkRunConfigOption) *StarlarkRunConfig {
 		CloudUserId:              defaultCloudUserId,
 		ImageDownload:            defaultImageDownload,
 		NonBlockingMode:          defaultNonBlockingMode,
+		GitHubAuthToken:          defaultGitHubAuthToken,
 	}
 
 	for _, opt := range opts {
@@ -111,5 +116,11 @@ func WithImageDownloadMode(imageDownloadMode kurtosis_core_rpc_api_bindings.Imag
 func WithNonBlockingMode(nonBlockingMode bool) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.NonBlockingMode = nonBlockingMode
+	}
+}
+
+func WithGitHubAuthToken(githubAuthToken string) starlarkRunConfigOption {
+	return func(config *StarlarkRunConfig) {
+		config.GitHubAuthToken = githubAuthToken
 	}
 }
