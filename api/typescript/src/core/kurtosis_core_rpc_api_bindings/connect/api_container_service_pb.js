@@ -174,6 +174,7 @@ export const RunStarlarkPackageArgs = proto3.makeMessageType(
     { no: 13, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 14, name: "image_download_mode", kind: "enum", T: proto3.getEnumType(ImageDownloadMode), opt: true },
     { no: 15, name: "non_blocking_mode", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 16, name: "github_auth_token", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 

@@ -33,7 +33,6 @@ const (
 	HttpApplicationProtocol                             = "http"
 
 	GitHubAuthStorageDirPath = "/kurtosis-data/github-auth/"
-	GithubAuthStorageToken   = "token.txt"
 
 	EmptyApplicationURL = ""
 )

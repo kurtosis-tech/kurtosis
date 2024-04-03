@@ -21,7 +21,6 @@ const (
 	packagesDirRelPath                = "startosis-packages"
 	repositoriesTmpDirRelPath         = "tmp-repositories"
 	githubAuthDirRelPath              = "github-auth"
-	githubAuthTokenFilename           = "token.txt"
 	packageDescriptionForTest         = "package description test"
 	localAbsoluteLocatorNotAllowedMsg = "is referencing a file within the same package using absolute import syntax"
 )
@@ -37,11 +36,10 @@ func TestGitPackageProvider_SucceedsForValidKurtosisPackage(t *testing.T) {
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star"
 
@@ -61,11 +59,10 @@ func TestGitPackageProvider_SucceedsForValidDockerComposePackage(t *testing.T) {
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	sampleComposeModule := "github.com/kurtosis-tech/django-compose/docker-compose.yml"
 
@@ -85,11 +82,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithExplicitMasterSet(t *test
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@main"
 
@@ -109,11 +105,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithBranch(t *testing.T) {
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@test-branch"
 
@@ -133,11 +128,10 @@ func TestGitPackageProvider_FailsForInvalidBranch(t *testing.T) {
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@non-existent-branch"
 
@@ -156,11 +150,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithTag(t *testing.T) {
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@0.1.1"
 
@@ -180,11 +173,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithCommit(t *testing.T) {
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@ec9062828e1a687a5db7dfa750f754f88119e4c0"
 
@@ -204,11 +196,10 @@ func TestGitPackageProvider_SucceedsForValidPackageWithCommitOnABranch(t *testin
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	sampleStartosisModule := "github.com/kurtosis-tech/sample-startosis-load/sample.star@df88baf51caffbe7e8f66c0e54715f680f4482b2"
 
@@ -228,11 +219,10 @@ func TestGitPackageProvider_SucceedsForNonStarlarkFile(t *testing.T) {
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	// TODO replace this with something local or static
 	sampleStarlarkPackage := "github.com/kurtosis-tech/prometheus-package/static-files/prometheus.yml.tmpl"
@@ -245,19 +235,18 @@ func TestGitPackageProvider_SucceedsForNonStarlarkFile(t *testing.T) {
 }
 
 func TestGitPackageProvider_FailsForNonExistentPackage(t *testing.T) {
-	oackageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
-	defer os.RemoveAll(oackageDir)
+	defer os.RemoveAll(packageDir)
 	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(oackageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 	nonExistentModulePath := "github.com/kurtosis-tech/non-existent-startosis-load/sample.star"
 
 	nonExistentModuleAbsoluteLocator := startosis_packages.NewPackageAbsoluteLocator(nonExistentModulePath, defaultMainBranch)
@@ -275,11 +264,10 @@ func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommit(t *testing.T
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	absoluteLocatorStr := "github.com/kurtosis-tech/ethereum-package/src/package_io/input_parser.star"
 	commitHash := "da55be84861e93ce777076e545abee35ff2d51ce"
@@ -300,11 +288,10 @@ func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommitComparedWithM
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	absoluteLocatorStr := "github.com/kurtosis-tech/another-sample-dependency-package/directory/internal-module.star"
 	commitHashInMainBranch := ""
@@ -323,11 +310,9 @@ func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommitComparedWithM
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err = os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err = os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider2 := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	provider2 := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	commitHashInAnotherBranch := "f610049f1f9174bce871431af7d5d35cb6bfd76d"
 
@@ -350,11 +335,10 @@ func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	packagePath := "github.com/kurtosis-tech/datastore-army-package/src/helpers.star"
 
@@ -375,11 +359,10 @@ func TestGetAbsolutePathOnDisk_WorksForNonInMainBranchLocators(t *testing.T) {
 	defer os.RemoveAll(packageTmpDir)
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	absoluteFileLocator := "github.com/kurtosis-tech/sample-dependency-package@test-branch/main.star"
 
@@ -398,15 +381,12 @@ func TestGetAbsolutePathOnDisk_GenericRepositoryDir(t *testing.T) {
 	repositoriesTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(repositoriesTmpDir)
-
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
-	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
 	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(repositoriesDir, repositoriesTmpDir, githubAuthTokenFilePath.Name(), nil)
-
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(repositoriesDir, repositoriesTmpDir, githubAuthProvider, nil)
 	repositoryPathURL := "github.com/kurtosis-tech/minimal-grpc-server/golang/scripts"
 
 	absoluteLocator := startosis_packages.NewPackageAbsoluteLocator(repositoryPathURL, defaultMainBranch)
@@ -428,11 +408,10 @@ func TestGetAbsolutePathOnDisk_GenericRepositoryFile(t *testing.T) {
 
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
 	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
-	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
-	provider := NewGitPackageContentProvider(repositoriesDir, repositoriesTmpDir, githubAuthTokenFilePath.Name(), nil)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(repositoriesDir, repositoriesTmpDir, githubAuthProvider, nil)
 
 	repositoryPathURL := "github.com/kurtosis-tech/minimal-grpc-server/golang/scripts/build.sh"
 
@@ -445,7 +424,7 @@ func TestGetAbsolutePathOnDisk_GenericRepositoryFile(t *testing.T) {
 }
 
 func TestGetAbsoluteLocator_SucceedsForRelativeFile(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/kurtosis-tech/avalanche-package"
 	parentModuleId := "github.com/kurtosis-tech/avalanche-package/src/builder.star"
@@ -466,7 +445,7 @@ func TestGetAbsoluteLocator_SucceedsForRelativeFile(t *testing.T) {
 }
 
 func TestGetAbsoluteLocator_RegularReplaceSucceeds(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/kurtosis-tech/sample-startosis-load/sample-package"
 	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
@@ -483,7 +462,7 @@ func TestGetAbsoluteLocator_RegularReplaceSucceeds(t *testing.T) {
 }
 
 func TestGetAbsoluteLocator_AnotherPackageWithCommitReplaceSucceeds(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/kurtosis-tech/sample-startosis-load/sample-package"
 	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
@@ -499,7 +478,7 @@ func TestGetAbsoluteLocator_AnotherPackageWithCommitReplaceSucceeds(t *testing.T
 }
 
 func TestGetAbsoluteLocator_RootPackageReplaceSucceeds(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/kurtosis-tech/sample-startosis-load/sample-package"
 	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
@@ -517,7 +496,7 @@ func TestGetAbsoluteLocator_RootPackageReplaceSucceeds(t *testing.T) {
 }
 
 func TestGetAbsoluteLocator_SubPackageReplaceSucceeds(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/kurtosis-tech/sample-startosis-load/sample-package"
 	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
@@ -535,7 +514,7 @@ func TestGetAbsoluteLocator_SubPackageReplaceSucceeds(t *testing.T) {
 }
 
 func TestGetAbsoluteLocator_ReplacePackageInternalModuleSucceeds(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/kurtosis-tech/sample-startosis-load/sample-package"
 	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
@@ -551,7 +530,7 @@ func TestGetAbsoluteLocator_ReplacePackageInternalModuleSucceeds(t *testing.T) {
 }
 
 func TestGetAbsoluteLocator_NoMainBranchReplaceSucceeds(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/kurtosis-tech/sample-startosis-load/sample-package"
 	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
@@ -567,7 +546,7 @@ func TestGetAbsoluteLocator_NoMainBranchReplaceSucceeds(t *testing.T) {
 }
 
 func TestGetAbsoluteLocator_ShouldBlockSamePackageAbsoluteLocator(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/main-package"
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled := "github.com/main-package/main.star"
@@ -578,7 +557,7 @@ func TestGetAbsoluteLocator_ShouldBlockSamePackageAbsoluteLocator(t *testing.T) 
 }
 
 func TestGetAbsoluteLocator_ShouldBlockSamePackageAbsoluteLocatorInSubfolder(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/main-package"
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled := "github.com/main-package/main.star"
@@ -589,7 +568,7 @@ func TestGetAbsoluteLocator_ShouldBlockSamePackageAbsoluteLocatorInSubfolder(t *
 }
 
 func TestGetAbsoluteLocator_SameRepositorySubpackagesShouldNotBeBlocked(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/main-project/package1-in-subfolder"
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled := "github.com/main-project/package1-in-subfolder/main.star"
@@ -600,7 +579,7 @@ func TestGetAbsoluteLocator_SameRepositorySubpackagesShouldNotBeBlocked(t *testi
 }
 
 func TestGetAbsoluteLocator_RelativeLocatorShouldNotBeBlocked(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/main-package"
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled := "github.com/main-package/main.star"
@@ -611,7 +590,7 @@ func TestGetAbsoluteLocator_RelativeLocatorShouldNotBeBlocked(t *testing.T) {
 }
 
 func TestGetAbsoluteLocator_AbsoluteLocatorIsInRootPackageButSourceIsNotShouldNotBeBlocked(t *testing.T) {
-	provider := NewGitPackageContentProvider("", "", "", nil)
+	provider := NewGitPackageContentProvider("", "", NewGitHubPackageAuthProvider(""), nil)
 
 	packageId := "github.com/main-package"
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled := "github.com/child-package/main.star"
@@ -838,16 +817,14 @@ func TestCloneReplacedPackagesIfNeeded_Succeeds(t *testing.T) {
 	packageTmpDir, err := os.MkdirTemp("", repositoriesTmpDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageTmpDir)
-
 	githubAuthDir, err := os.MkdirTemp("", githubAuthDirRelPath)
-	require.Nil(t, err)
-	githubAuthTokenFilePath, err := os.CreateTemp(githubAuthDir, githubAuthTokenFilename)
 	require.Nil(t, err)
 	defer os.RemoveAll(githubAuthDir)
 
 	enclaveDb := getEnclaveDbForTest(t)
 
-	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthTokenFilePath.Name(), enclaveDb)
+	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, enclaveDb)
 
 	firstRunReplacePackageOptions := map[string]string{
 		"github.com/kurtosis-tech/sample-dependency-package": "../from-local-folder",

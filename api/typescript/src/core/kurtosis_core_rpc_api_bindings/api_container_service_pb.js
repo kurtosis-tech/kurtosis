@@ -2606,7 +2606,8 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 12, ""),
     cloudUserId: jspb.Message.getFieldWithDefault(msg, 13, ""),
     imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 14, 0),
-    nonBlockingMode: jspb.Message.getBooleanFieldWithDefault(msg, 15, false)
+    nonBlockingMode: jspb.Message.getBooleanFieldWithDefault(msg, 15, false),
+    githubAuthToken: jspb.Message.getFieldWithDefault(msg, 16, "")
   };
 
   if (includeInstance) {
@@ -2700,6 +2701,10 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
     case 15:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setNonBlockingMode(value);
+      break;
+    case 16:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setGithubAuthToken(value);
       break;
     default:
       reader.skipField();
@@ -2825,6 +2830,13 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
   if (f != null) {
     writer.writeBool(
       15,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 16));
+  if (f != null) {
+    writer.writeString(
+      16,
       f
     );
   }
@@ -3339,6 +3351,42 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.clearNonBlockingMode = 
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.hasNonBlockingMode = function() {
   return jspb.Message.getField(this, 15) != null;
+};
+
+
+/**
+ * optional string github_auth_token = 16;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getGithubAuthToken = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 16, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setGithubAuthToken = function(value) {
+  return jspb.Message.setField(this, 16, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearGithubAuthToken = function() {
+  return jspb.Message.setField(this, 16, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.hasGithubAuthToken = function() {
+  return jspb.Message.getField(this, 16) != null;
 };
 
 

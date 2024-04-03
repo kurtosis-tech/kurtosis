@@ -505,6 +505,13 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    */
   nonBlockingMode?: boolean;
 
+  /**
+   * token that will be used to authenticate requests for this package
+   *
+   * @generated from field: optional string github_auth_token = 16;
+   */
+  githubAuthToken?: string;
+
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
   static readonly runtime: typeof proto3;
