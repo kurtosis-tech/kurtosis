@@ -19,7 +19,9 @@ service KurtosisCloudBackendServer {
   rpc RefreshDefaultPaymentMethod (RefreshDefaultPaymentMethodArgs) returns (google.protobuf.Empty) {};
   rpc CancelPaymentSubscription (CancelPaymentSubscriptionArgs) returns (google.protobuf.Empty) {};
   rpc UpdateAddress(UpdateAddressArgs) returns (google.protobuf.Empty) {};
-  rpc CheckPortAuthorization(CheckPortAuthorizationRequest) returns(google.protobuf.Empty){};
+  rpc CheckPortAuthorization(CheckPortAuthorizationRequest) returns(google.protobuf.Empty){
+    option idempotency_level = NO_SIDE_EFFECTS;
+  };
   rpc UnlockPort(UnlockPortRequest) returns(google.protobuf.Empty){};
   rpc LockPort(LockPortRequest) returns(google.protobuf.Empty){};
   rpc GetUnlockedPorts(GetUnlockedPortsRequest) returns(GetUnlockedPortsResponse){}
