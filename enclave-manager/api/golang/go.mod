@@ -5,6 +5,7 @@ go 1.20
 require (
 	connectrpc.com/connect v1.11.1
 	github.com/kurtosis-tech/kurtosis/api/golang v0.81.9
+	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.88.12
 	google.golang.org/grpc v1.57.1
 	google.golang.org/protobuf v1.33.0
 )
