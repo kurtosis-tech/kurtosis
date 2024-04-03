@@ -49,6 +49,7 @@ fi
 # Dependencies from other modules
 api_golang_engine="${repo_root_dirpath}/api/protobuf/engine"
 api_golang_core="${repo_root_dirpath}/api/protobuf/core"
+cloud_api_golang="${repo_root_dirpath}/cloud/api/protobuf"
 
 api_typescript_abs_dir="${root_dirpath}/${api_typescript_rel_dir}"
 api_proto_abs_dir="${root_dirpath}/${api_proto_rel_dir}"
@@ -61,6 +62,7 @@ protoc \
   -I="${api_proto_abs_dir}" \
   -I="${api_golang_engine}" \
   -I="${api_golang_core}" \
+  -I="${cloud_api_golang}" \
   --go_out="${api_golang_proto_generated_abs_dir}" \
   --go-grpc_out="${api_golang_proto_generated_abs_dir}" \
   --go_opt=module="${api_golang_module}" \

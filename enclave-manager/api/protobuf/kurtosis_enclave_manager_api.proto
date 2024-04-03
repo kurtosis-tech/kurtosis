@@ -7,6 +7,7 @@ option go_package = "github.com/kurtosis-tech/kurtosis/enclave-manager/api/golan
 import "google/protobuf/empty.proto";
 import "engine_service.proto";
 import "api_container_service.proto";
+import "kurtosis_backend_server_api.proto";
 
 service KurtosisEnclaveManagerServer {
   rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
@@ -23,7 +24,8 @@ service KurtosisEnclaveManagerServer {
   rpc GetStarlarkRun(GetStarlarkRunRequest) returns (api_container_api.GetStarlarkRunResponse) {};
   rpc GetStarlarkScriptPlanYaml(StarlarkScriptPlanYamlArgs) returns (api_container_api.PlanYaml) {};
   rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (api_container_api.PlanYaml) {};
-  rpc CreateRepositoryWebhook(CreateRepositoryWebhookRequest) returns (google.protobuf.Empty) {}
+  rpc CreateRepositoryWebhook(CreateRepositoryWebhookRequest) returns (google.protobuf.Empty) {};
+  rpc GetCloudInstanceConfig(google.protobuf.Empty) returns (kurtosis_cloud.GetCloudInstanceConfigResponse) {};
 }
 
 message HealthCheckRequest {
