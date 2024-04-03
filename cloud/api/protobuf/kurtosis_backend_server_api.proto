@@ -151,8 +151,7 @@ message GetUnlockedPortsRequest {
 }
 
 message CheckPortAuthorizationRequest {
-  string access_token = 1;
-  Port port = 2;
+  Port port = 1;
 }
 
 message UnlockPortRequest {
