@@ -66,7 +66,7 @@ jobs:
       # Generate versions
       - run: scripts/generate-kurtosis-version.sh
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
-      - name: lint-container-engine-lib
+      - name: lint ${{ matrix.directory }}
         if: ${{ needs.check-if-code-change.outputs.change == 'true' }}
         uses: golangci/golangci-lint-action@v4
         with:
