@@ -7,9 +7,7 @@ import {
 } from "../../../client/constants";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
 
-type InstanceTermination = {};
-
-export const InstanceTerminationWarning = ({}: InstanceTermination) => {
+export const InstanceTerminationWarning = () => {
   const [cloudInstanceRemainingHours, setCloudInstanceRemainingHours] = useState(0);
   const kurtosisClient = useKurtosisClient();
 
