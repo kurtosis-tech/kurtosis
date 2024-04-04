@@ -1,7 +1,10 @@
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 import { Box, Link, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { KURTOSIS_CLOUD_INSTANCE_MAX_UPTIME_IN_HOURS, KURTOSIS_CLOUD_SUBSCRIPTION_URL } from "../../../client/constants";
+import {
+  KURTOSIS_CLOUD_INSTANCE_MAX_UPTIME_IN_HOURS,
+  KURTOSIS_CLOUD_SUBSCRIPTION_URL,
+} from "../../../client/constants";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
 
 type InstanceTermination = {};
@@ -35,7 +38,7 @@ export const InstanceTerminationWarning = ({}: InstanceTermination) => {
       <Text fontSize="xs">
         Your cloud instance will terminate in {cloudInstanceRemainingHours} hours if you do not have a{" "}
         <Link href={`${KURTOSIS_CLOUD_SUBSCRIPTION_URL}`} isExternal>
-          subscription <ExternalLinkIcon mx='1px' />
+          subscription <ExternalLinkIcon mx="1px" />
         </Link>
       </Text>
     </Box>
