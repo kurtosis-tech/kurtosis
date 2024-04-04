@@ -36,7 +36,7 @@ export const InstanceTerminationWarning = ({}: InstanceTermination) => {
   return (
     <Box borderWidth="1px" borderRadius="lg" borderColor="red" p={1}>
       <Text fontSize="xs">
-        Your cloud instance will terminate in {cloudInstanceRemainingHours} hours if you do not have a{" "}
+        Your cloud instance will terminate in {cloudInstanceRemainingHours} hour(s) if you do not have a{" "}
         <Link href={`${KURTOSIS_CLOUD_SUBSCRIPTION_URL}`} isExternal>
           subscription <ExternalLinkIcon mx="1px" />
         </Link>
