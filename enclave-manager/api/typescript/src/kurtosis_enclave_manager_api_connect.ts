@@ -7,6 +7,7 @@ import { CreateRepositoryWebhookRequest, DownloadFilesArtifactRequest, GetListFi
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 import { CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
 import { GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, PlanYaml, StarlarkRunResponseLine, StreamedDataChunk } from "./api_container_service_pb.js";
+import { GetCloudInstanceConfigResponse } from "./kurtosis_backend_server_api_pb.js";
 
 /**
  * @generated from service kurtosis_enclave_manager.KurtosisEnclaveManagerServer
@@ -147,6 +148,15 @@ export const KurtosisEnclaveManagerServer = {
       name: "CreateRepositoryWebhook",
       I: CreateRepositoryWebhookRequest,
       O: Empty,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetCloudInstanceConfig
+     */
+    getCloudInstanceConfig: {
+      name: "GetCloudInstanceConfig",
+      I: Empty,
+      O: GetCloudInstanceConfigResponse,
       kind: MethodKind.Unary,
     },
     /**

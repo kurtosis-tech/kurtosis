@@ -6,9 +6,9 @@
     "types": "./build/index",
     "scripts": {
         "clean": "rm -rf build src/api_container* src/engine_service*",
-        "prebuild": "cp -R ../../../api/typescript/src/core/kurtosis_core_rpc_api_bindings/connect/* ../../../api/typescript/src/engine/kurtosis_engine_rpc_api_bindings/connect/* ./src",
+        "prebuild": "cp -R ../../../api/typescript/src/core/kurtosis_core_rpc_api_bindings/connect/* ../../../api/typescript/src/engine/kurtosis_engine_rpc_api_bindings/connect/* ../../../cloud/api/typescript/src/* ./src",
         "build": "tsc",
-        "postbuild": "cp -R ../../../api/typescript/src/core/kurtosis_core_rpc_api_bindings/connect/* ../../../api/typescript/src/engine/kurtosis_engine_rpc_api_bindings/connect/* ./build/ && rm src/api_container* src/engine_service*",
+        "postbuild": "cp -R ../../../api/typescript/src/core/kurtosis_core_rpc_api_bindings/connect/* ../../../api/typescript/src/engine/kurtosis_engine_rpc_api_bindings/connect/* ../../../cloud/api/typescript/src/* ./build/ && rm src/api_container* src/engine_service* src/kurtosis_backend_server_*",
         "test": "jest"
     },
     "files": [

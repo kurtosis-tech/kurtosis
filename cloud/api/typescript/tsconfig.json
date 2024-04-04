@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "outDir": "build",
+        "downlevelIteration": true,
+        "declaration": true,
+        "strict": true,
+        "target": "es2018"
+    },
+    "include": [
+        "src/**/*"
+    ]
+}

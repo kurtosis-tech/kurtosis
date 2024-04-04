@@ -145,7 +145,8 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 		checkPortAuthorization: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest, emptypb.Empty](
 			httpClient,
 			baseURL+KurtosisCloudBackendServerCheckPortAuthorizationProcedure,
-			opts...,
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
 		unlockPort: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest, emptypb.Empty](
 			httpClient,
@@ -312,7 +313,8 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 	kurtosisCloudBackendServerCheckPortAuthorizationHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerCheckPortAuthorizationProcedure,
 		svc.CheckPortAuthorization,
-		opts...,
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
 	kurtosisCloudBackendServerUnlockPortHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerUnlockPortProcedure,

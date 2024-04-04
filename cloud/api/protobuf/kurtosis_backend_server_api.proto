@@ -19,7 +19,9 @@ service KurtosisCloudBackendServer {
   rpc RefreshDefaultPaymentMethod (RefreshDefaultPaymentMethodArgs) returns (google.protobuf.Empty) {};
   rpc CancelPaymentSubscription (CancelPaymentSubscriptionArgs) returns (google.protobuf.Empty) {};
   rpc UpdateAddress(UpdateAddressArgs) returns (google.protobuf.Empty) {};
-  rpc CheckPortAuthorization(CheckPortAuthorizationRequest) returns(google.protobuf.Empty){};
+  rpc CheckPortAuthorization(CheckPortAuthorizationRequest) returns(google.protobuf.Empty){
+    option idempotency_level = NO_SIDE_EFFECTS;
+  };
   rpc UnlockPort(UnlockPortRequest) returns(google.protobuf.Empty){};
   rpc LockPort(LockPortRequest) returns(google.protobuf.Empty){};
   rpc GetUnlockedPorts(GetUnlockedPortsRequest) returns(GetUnlockedPortsResponse){}
@@ -145,8 +147,9 @@ message UpdateAddressArgs {
 }
 
 message GetUnlockedPortsRequest {
-  string instance_short_uuid=1;
-  string enclave_short_uuid=2;
+  string access_token = 1;
+  string instance_short_uuid=2;
+  string enclave_short_uuid=3;
 }
 
 message CheckPortAuthorizationRequest {
@@ -154,12 +157,14 @@ message CheckPortAuthorizationRequest {
 }
 
 message UnlockPortRequest {
-  Port port = 1;
+  string access_token = 1;
+  Port port = 2;
 }
 
 message LockPortRequest {
-  Port port = 1;
+  Port port = 2;
 }
+
 
 message Port {
   uint32 port_number=1;
