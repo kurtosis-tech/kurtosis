@@ -24,7 +24,7 @@ service KurtosisEnclaveManagerServer {
   rpc GetStarlarkRun(GetStarlarkRunRequest) returns (api_container_api.GetStarlarkRunResponse) {};
   rpc GetStarlarkScriptPlanYaml(StarlarkScriptPlanYamlArgs) returns (api_container_api.PlanYaml) {};
   rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (api_container_api.PlanYaml) {};
-  rpc CreateRepositoryWebhook(CreateRepositoryWebhookRequest) returns (google.protobuf.Empty) {}
+  rpc CreateRepositoryWebhook(CreateRepositoryWebhookRequest) returns (google.protobuf.Empty) {};
   rpc GetCloudInstanceConfig(google.protobuf.Empty) returns (kurtosis_cloud.GetCloudInstanceConfigResponse) {};
   rpc LockPort(LockUnlockPortRequest) returns (google.protobuf.Empty) {}
   rpc UnlockPort(LockUnlockPortRequest) returns(google.protobuf.Empty) {}
