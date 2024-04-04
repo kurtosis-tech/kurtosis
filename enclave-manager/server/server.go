@@ -169,6 +169,10 @@ func (c *WebServer) ValidateRequestAuthorization(
 }
 
 func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
+	if !c.enforceAuth {
+		return nil, stacktrace.NewError("This method is only available in the cloud")
+	}
+
 	reqToken := req.Header().Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer")
 	if len(splitToken) != numberOfElementsAuthHeader {
