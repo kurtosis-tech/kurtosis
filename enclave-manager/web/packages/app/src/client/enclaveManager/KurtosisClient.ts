@@ -268,4 +268,8 @@ export abstract class KurtosisClient {
       return this.client.getStarlarkPackagePlanYaml(request, this.getHeaderOptions());
     });
   }
+
+  async getCloudInstanceConfig() {
+    return this.client.getCloudInstanceConfig({}, this.getHeaderOptions());
+  }
 }

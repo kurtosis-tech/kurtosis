@@ -5,6 +5,7 @@ import { FiPlus } from "react-icons/fi";
 import { Outlet, Params } from "react-router-dom";
 import { KurtosisEnclavesRouteObject } from "../types";
 import { GoToEnclaveOverviewButton } from "./components/GotToEncalaveOverviewButton";
+import { InstanceTerminationWarning } from "./components/InstanceTermination";
 import { KurtosisEnclavesBreadcrumbs } from "./components/KurtosisEnclaveBreadcrumbs";
 import { Artifact } from "./enclave/artifact/Artifact";
 import { Enclave } from "./enclave/Enclave";
@@ -19,7 +20,11 @@ registerBreadcrumbHandler("enclavesHandle", KurtosisEnclavesBreadcrumbs);
 export const enclaveRoutes = (): KurtosisEnclavesRouteObject[] => [
   {
     path: "/enclaves?",
-    handle: { type: "enclavesHandle" as "enclavesHandle", crumb: () => ({ name: "Enclaves", destination: "/" }) },
+    handle: {
+      type: "enclavesHandle" as "enclavesHandle",
+      crumb: () => ({ name: "Enclaves", destination: "/" }),
+      extraControls: (state: RemoveFunctions<EnclavesState>, params: Params<string>) => <InstanceTerminationWarning />,
+    },
     id: "enclaves",
     element: <EnclaveList />,
   },
