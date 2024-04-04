@@ -16,7 +16,7 @@ const (
 )
 
 type GitHubPackageAuthProvider struct {
-	// Location inside APIC where github auth infor exists
+	// Location inside APIC where GitHub auth info exists
 	githubAuthStorageDirPath string
 }
 
