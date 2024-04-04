@@ -1034,6 +1034,11 @@ export class UnlockPortRequest extends Message<UnlockPortRequest> {
  */
 export class LockPortRequest extends Message<LockPortRequest> {
   /**
+   * @generated from field: string access_token = 1;
+   */
+  accessToken = "";
+
+  /**
    * @generated from field: kurtosis_cloud.Port port = 2;
    */
   port?: Port;
@@ -1046,6 +1051,7 @@ export class LockPortRequest extends Message<LockPortRequest> {
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "kurtosis_cloud.LockPortRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "port", kind: "message", T: Port },
   ]);
 

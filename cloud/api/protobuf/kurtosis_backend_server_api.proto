@@ -162,9 +162,9 @@ message UnlockPortRequest {
 }
 
 message LockPortRequest {
+  string access_token = 1;
   Port port = 2;
 }
-
 
 message Port {
   uint32 port_number=1;
