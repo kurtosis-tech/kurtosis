@@ -2,7 +2,8 @@ import { isDefined } from "kurtosis-ui-components";
 
 // Configurable:
 export const KURTOSIS_CLOUD_PROTOCOL = "https";
-export const KURTOSIS_CLOUD_HOST = "cloud.kurtosis.com";
+// export const KURTOSIS_CLOUD_HOST = "cloud.kurtosis.com";
+export const KURTOSIS_CLOUD_HOST = "preview.kurtosis.com";
 export const KURTOSIS_CLOUD_CONNECT_PAGE = "connect";
 export const KURTOSIS_CLOUD_EM_PAGE = "enclave-manager";
 

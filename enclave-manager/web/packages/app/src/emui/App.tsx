@@ -51,6 +51,9 @@ export const EmuiApp = () => {
 
 const KurtosisRouter = () => {
   const kurtosisClient = useKurtosisClient();
+  console.dir(kurtosisClient);
+  console.log("KurtosisRouter");
+  console.log(kurtosisClient.getBaseApplicationUrl().pathname);
 
   const router = useMemo(
     () =>
@@ -87,7 +90,7 @@ const KurtosisRouter = () => {
           },
         ],
         {
-          basename: kurtosisClient.getBaseApplicationUrl().pathname,
+          basename: "/enclave-manager",
         },
       ),
     [kurtosisClient],

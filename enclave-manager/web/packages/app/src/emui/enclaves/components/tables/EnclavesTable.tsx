@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { Result } from "true-myth";
 import { useKurtosisPackageIndexerClient } from "../../../../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { EnclaveFullInfo } from "../../types";
+import LocalRunModal from "../modals/LocalRunModal";
 import { EnclaveServicesSummary } from "../widgets/EnclaveServicesSummary";
 import { EnclaveStatus } from "../widgets/EnclaveStatus";
 import { PackageLinkButton } from "../widgets/PackageLinkButton";
@@ -37,17 +38,17 @@ const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResp
       !isDefined(starlarkRun) || !isDefined(catalog)
         ? "loading"
         : starlarkRun.isOk && catalog.isOk
-        ? catalog.value.packages.find((kurtosisPackage) => kurtosisPackage.name === starlarkRun.value.packageId) || null
-        : null,
+          ? catalog.value.packages.find((kurtosisPackage) => kurtosisPackage.name === starlarkRun.value.packageId) || null
+          : null,
     services: !isDefined(enclave.services)
       ? "loading"
       : enclave.services.isOk
-      ? Object.values(enclave.services.value.serviceInfo)
-      : null,
+        ? Object.values(enclave.services.value.serviceInfo)
+        : null,
     ports: !isDefined(enclave.services)
       ? "loading"
       : enclave.services.isOk
-      ? Object.values(enclave.services.value.serviceInfo).flatMap((service) =>
+        ? Object.values(enclave.services.value.serviceInfo).flatMap((service) =>
           getPortTableRows(
             enclave.enclaveUuid,
             service.serviceUuid,
@@ -57,7 +58,7 @@ const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResp
             service.name,
           ),
         )
-      : null,
+        : null,
   };
 };
 
@@ -139,9 +140,13 @@ export const EnclavesTable = ({ enclavesData, selection, onSelectionChange }: En
         meta: { centerAligned: true },
       }),
       columnHelper.accessor("ports", {
-        header: "Ports",
+        header: "Endpoints",
         cell: (portsCell) => <PortsSummary ports={portsCell.getValue()} />,
         meta: { centerAligned: true },
+      }),
+      columnHelper.accessor("status", {
+        header: "Actions",
+        cell: (statusCell) => <LocalRunModal />,
       }),
     ],
     [],

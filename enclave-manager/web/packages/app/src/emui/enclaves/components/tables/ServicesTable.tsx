@@ -1,4 +1,4 @@
-import { Button } from "@chakra-ui/react";
+import { Button, Stack } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { GetServicesResponse, ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DataTable, RemoveFunctions } from "kurtosis-ui-components";
@@ -8,6 +8,7 @@ import { ImageButton } from "../widgets/ImageButton";
 import { PortsSummary } from "../widgets/PortsSummary";
 import { ServiceStatusTag } from "../widgets/ServiceStatus";
 import { getPortTableRows, PortsTableRow } from "./PortsTable";
+import TerminalAccessModal from "../modals/TerminalAccessModal"
 
 type ServicesTableRow = {
   serviceUUID: string;
@@ -66,18 +67,21 @@ export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse 
         cell: (imageCell) => <ImageButton image={imageCell.getValue()} />,
       }),
       columnHelper.accessor("ports", {
-        header: "Ports",
+        header: "Endpoints",
         cell: (portsCell) => <PortsSummary ports={portsCell.getValue()} />,
         meta: { centerAligned: true },
       }),
       columnHelper.accessor("serviceUUID", {
-        header: "Logs",
+        header: "Actions",
         cell: (portsCell) => (
-          <Link to={`/enclave/${enclaveShortUUID}/service/${portsCell.getValue()}/logs`}>
-            <Button size={"xs"} variant={"ghost"}>
-              View
-            </Button>
-          </Link>
+          <Stack direction="row" spacing={4}>
+            <TerminalAccessModal />
+            <Link to={`/enclave/${enclaveShortUUID}/service/${portsCell.getValue()}/logs`}>
+              <Button size={"xs"} colorScheme='green' variant={"outline"}>
+                View Logs
+              </Button>
+            </Link>
+          </Stack>
         ),
         enableSorting: false,
       }),

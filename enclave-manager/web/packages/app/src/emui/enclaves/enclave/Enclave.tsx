@@ -8,7 +8,6 @@ import { EditEnclaveButton } from "../components/EditEnclaveButton";
 import { AddGithubActionButton } from "../components/widgets/AddGithubActionButton";
 import { ConnectEnclaveButton } from "../components/widgets/ConnectEnclaveButton";
 import { DeleteEnclavesButton } from "../components/widgets/DeleteEnclavesButton";
-import { EnablePreviewEnvironmentsButton } from "../components/widgets/EnablePreviewEnvironmentsButton";
 import { useFullEnclave } from "../EnclavesContext";
 import { EnclaveFullInfo } from "../types";
 import { EnclaveOverview } from "./overview/EnclaveOverview";
@@ -65,7 +64,6 @@ const EnclaveImpl = ({ enclave }: EnclaveImplProps) => {
             <EditEnclaveButton enclave={enclave} />
             <ConnectEnclaveButton enclave={enclave} />
             {!isPrevEnv && <AddGithubActionButton enclave={enclave} />}
-            {isPrevEnv && packageId !== "" && <EnablePreviewEnvironmentsButton packageId={packageId} />}
           </Flex>
         </Flex>
         <TabPanels>
