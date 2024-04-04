@@ -181,11 +181,6 @@ const config = {
 				searchPagePath: 'search',
 			},
 		}),
-	scripts: [
-		{
-			src: '/js/load-fullstory.js',
-			async: false,
-		}
 	]
 };
 
