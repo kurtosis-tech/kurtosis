@@ -135,13 +135,10 @@ func (c *WebServer) ValidateRequestAuthorization(
 	if !enforceAuth {
 		return true, nil, nil
 	}
-
-	reqToken := header.Get("Authorization")
-	splitToken := strings.Split(reqToken, "Bearer")
-	if len(splitToken) != numberOfElementsAuthHeader {
-		return false, nil, stacktrace.NewError("Authorization token malformed. Bearer token format required")
+	reqToken, err := extractJwtToken(header)
+	if err != nil {
+		return false, nil, err
 	}
-	reqToken = strings.TrimSpace(splitToken[1])
 	auth, err := c.ConvertJwtTokenToApiKey(ctx, reqToken)
 	if err != nil {
 		return false, nil, stacktrace.Propagate(err, "Failed to convert jwt token to API key")
@@ -170,12 +167,10 @@ func (c *WebServer) ValidateRequestAuthorization(
 }
 
 func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
-	reqToken := req.Header().Get("Authorization")
-	splitToken := strings.Split(reqToken, "Bearer")
-	if len(splitToken) != numberOfElementsAuthHeader {
-		return nil, stacktrace.NewError("Authorization token malformed. Bearer token format required")
+	reqToken, err := extractJwtToken(req.Header())
+	if err != nil {
+		return nil, err
 	}
-	reqToken = strings.TrimSpace(splitToken[1])
 	auth, err := c.ConvertJwtTokenToApiKey(ctx, reqToken)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert jwt token to API key")
@@ -258,19 +253,24 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
 
+	jwtToken, err := extractJwtToken(req.Header())
+	if err != nil {
+		return nil, err
+	}
 	getUnlockedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest{
+			AccessToken:       jwtToken,
 			InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
 			EnclaveShortUuid:  req.Msg.EnclaveShortenedUuid,
 		},
 	}
 
-	var unlockedPortsAndServices []*kurtosis_backend_server_rpc_api_bindings.PortAndService
+	var unlockedPortsAndServices []*kurtosis_backend_server_rpc_api_bindings.Port
 	getUnauthenticatedPortsResponse, err := (*cloudClient).GetUnlockedPorts(ctx, getUnlockedPortsRequest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while pulling unauthenticated ports from the cloud backend")
 	}
-	unlockedPortsAndServices = getUnauthenticatedPortsResponse.Msg.PortsAndServices
+	unlockedPortsAndServices = getUnauthenticatedPortsResponse.Msg.Port
 
 	for _, service := range serviceInfoMapFromApicObj {
 		serviceShortUuid := service.ServiceUuid[:shortUuidLength]
@@ -314,12 +314,19 @@ func (c *WebServer) LockPort(ctx context.Context, req *connect.Request[kurtosis_
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
 
-	lockPortRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.LockUnlockPortRequest]{
-		Msg: &kurtosis_backend_server_rpc_api_bindings.LockUnlockPortRequest{
-			InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
-			PortNumber:        req.Msg.PortNumber,
-			EnclaveShortUuid:  req.Msg.EnclaveShortUuid,
-			ServiceShortUuid:  req.Msg.ServiceShortUuid,
+	jwtToken, err := extractJwtToken(req.Header())
+	if err != nil {
+		return nil, err
+	}
+	lockPortRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.LockPortRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.LockPortRequest{
+			AccessToken: jwtToken,
+			Port: &kurtosis_backend_server_rpc_api_bindings.Port{
+				InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
+				PortNumber:        req.Msg.PortNumber,
+				EnclaveShortUuid:  req.Msg.EnclaveShortUuid,
+				ServiceShortUuid:  req.Msg.ServiceShortUuid,
+			},
 		},
 	}
 
@@ -348,12 +355,19 @@ func (c *WebServer) UnlockPort(ctx context.Context, req *connect.Request[kurtosi
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
 
-	lockPortRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.LockUnlockPortRequest]{
-		Msg: &kurtosis_backend_server_rpc_api_bindings.LockUnlockPortRequest{
-			InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
-			PortNumber:        req.Msg.PortNumber,
-			EnclaveShortUuid:  req.Msg.EnclaveShortUuid,
-			ServiceShortUuid:  req.Msg.ServiceShortUuid,
+	jwtToken, err := extractJwtToken(req.Header())
+	if err != nil {
+		return nil, err
+	}
+	lockPortRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest{
+			AccessToken: jwtToken,
+			Port: &kurtosis_backend_server_rpc_api_bindings.Port{
+				InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
+				PortNumber:        req.Msg.PortNumber,
+				EnclaveShortUuid:  req.Msg.EnclaveShortUuid,
+				ServiceShortUuid:  req.Msg.ServiceShortUuid,
+			},
 		},
 	}
 
@@ -821,6 +835,16 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 	}
 
 	return nil, stacktrace.NewError("an empty API key was returned from Kurtosis Cloud Backend")
+}
+
+func extractJwtToken(header http.Header) (string, error) {
+	reqToken := header.Get("Authorization")
+	splitToken := strings.Split(reqToken, "Bearer")
+	if len(splitToken) != numberOfElementsAuthHeader {
+		return "", stacktrace.NewError("Authorization token malformed. Bearer token format required")
+	}
+	reqToken = strings.TrimSpace(splitToken[1])
+	return reqToken, nil
 }
 
 func RunEnclaveManagerApiServer(enforceAuth bool) error {
