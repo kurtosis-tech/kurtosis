@@ -18,9 +18,10 @@ import { PortMaybeLink } from "./PortMaybeLink";
 
 type PortsSummaryProps = {
   ports: "loading" | PortsTableRow[] | null;
+  disablePortLocking?: boolean;
 };
 
-export const PortsSummary = ({ ports }: PortsSummaryProps) => {
+export const PortsSummary = ({ ports, disablePortLocking = false }: PortsSummaryProps) => {
   if (!isDefined(ports)) {
     return <Tag>Unknown</Tag>;
   }
@@ -56,7 +57,7 @@ export const PortsSummary = ({ ports }: PortsSummaryProps) => {
     <Flex fontWeight={"semibold"} fontSize={"xs"} color={"gray.200"} justifyContent={"center"}>
       {priorityPorts.map((port, i) => (
         <Fragment key={i}>
-          <PortMaybeLink port={port} />
+          <PortMaybeLink disablePortLocking={disablePortLocking} port={port} />
           {i < priorityPorts.length - 1 && ", "}
         </Fragment>
       ))}
@@ -69,7 +70,7 @@ export const PortsSummary = ({ ports }: PortsSummaryProps) => {
             <PopoverArrow />
             <PopoverBody display={"flex"} flexDirection={"column"}>
               {otherPorts.map((port, i) => (
-                <PortMaybeLink port={port} key={i} />
+                <PortMaybeLink disablePortLocking={disablePortLocking} port={port} key={i} />
               ))}
             </PopoverBody>
           </PopoverContent>

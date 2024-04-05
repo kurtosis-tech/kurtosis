@@ -5,9 +5,10 @@ import { PortsTableRow } from "../tables/PortsTable";
 
 type PortMaybeLinkProps = {
   port: PortsTableRow;
+  disablePortLocking?: boolean;
 };
 
-export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
+export const PortMaybeLink = ({ port, disablePortLocking }: PortMaybeLinkProps) => {
   const { lockUnlockPort } = useEnclavesContext();
   const toast = useToast();
   const { onCopy } = useClipboard(port.link);
@@ -20,14 +21,15 @@ export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
     await lockUnlockPort(port.port.privatePort, port.port.serviceShortUuid, port.port.enclaveShortUuid, lock);
     onCopy();
     toast({
-      status: "success",
+      status: lock ? "success" : "warning",
       duration: 3000,
       isClosable: true,
+      position: "bottom-right",
       render: () => (
         <Flex
           color='white'
           p={3}
-          bg='green.500'
+          bg={lock ? "green.500" : "yellow.500"}
           borderRadius={6}
           gap={4}
         >
@@ -51,7 +53,7 @@ export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
   return (
     <>
       {isHttpLink ? (
-        <Link href={port.link} isExternal display="flex" alignItems="center">
+        <Flex alignItems="center">
           {port.port.locked === undefined && (
             <Tooltip
               label={port.port.locked ? "Publish port" : "Make port private"}
@@ -62,14 +64,18 @@ export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
                 variant={"ghost"}
                 size={"xs"}
                 cursor="pointer"
-                onClick={() => handleLockUnlockClick}
+                onClick={() =>  handleLockUnlockClick}
+                pointerEvents={disablePortLocking ? "none" : "auto"}
+                color={disablePortLocking ? "gray.200" : "white"}
                 aria-label={port.port.locked ? "Publish port" : "Make port private"}
               />
             </Tooltip>
           )}
-          <Text>{port.port.name}&nbsp;</Text>
-          <ExternalLinkIcon ml="2px" />
-        </Link>
+          <Link href={port.link} isExternal display="flex" alignItems="center">
+            <Text>{port.port.name}&nbsp;</Text>
+            <ExternalLinkIcon ml="2px" />
+          </Link>
+        </Flex>
       ) : (
         port.port.name
       )}
