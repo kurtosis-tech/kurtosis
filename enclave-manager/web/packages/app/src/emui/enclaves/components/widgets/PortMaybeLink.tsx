@@ -36,11 +36,8 @@ export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
           {port.port.name}&nbsp;
           <ExternalLinkIcon mx="2px" />
           {port.port.locked !== undefined && (
-            <Tooltip
-              label={`Click to ${
-                port.port.locked ? "unlock" : "lock"
-              } the link. Unlocking will make it available to the public.`}
-            >
+              // add a Tooltip here that tells you what is going to happen
+              // adding it with GPT made it stuck on the top left of the screen
               <Icon
                 as={port.port.locked ? FaLock : FaUnlock}
                 ml={2}
@@ -49,7 +46,6 @@ export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
                 size="sm"
                 onClick={handleLockUnlockClick}
               />
-            </Tooltip>
           )}
         </Link>
       ) : (
