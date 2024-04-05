@@ -24,6 +24,7 @@ import {
   GetServicesRequest,
   GetStarlarkRunRequest,
   InspectFilesArtifactContentsRequest,
+  LockUnlockPortRequest,
   RunStarlarkPackageRequest,
   RunStarlarkScriptRequest,
   StarlarkPackagePlanYamlArgs as StarlarkPackagePlanYamlArgsRequest,
@@ -89,6 +90,34 @@ export abstract class KurtosisClient {
     return asyncResult(
       this.client.destroyEnclave(new DestroyEnclaveArgs({ enclaveIdentifier: enclaveUUID }), this.getHeaderOptions()),
       `KurtosisClient could not destroy enclave ${enclaveUUID}`,
+    );
+  }
+
+  async lockPort(portNumber: number, serviceShortUUID: string, enclaveShortUUID: string) {
+    return asyncResult(
+      this.client.lockPort(
+        new LockUnlockPortRequest({
+          portNumber: portNumber,
+          serviceShortUuid: serviceShortUUID,
+          enclaveShortUuid: enclaveShortUUID,
+        }),
+        this.getHeaderOptions(),
+      ),
+      `KurtosisClient could not lock port ${portNumber} for service ${serviceShortUUID} in enclave ${enclaveShortUUID}`,
+    );
+  }
+
+  async unlockPort(portNumber: number, serviceShortUUID: string, enclaveShortUUID: string) {
+    return asyncResult(
+      this.client.unlockPort(
+        new LockUnlockPortRequest({
+          portNumber: portNumber,
+          serviceShortUuid: serviceShortUUID,
+          enclaveShortUuid: enclaveShortUUID,
+        }),
+        this.getHeaderOptions(),
+      ),
+      `KurtosisClient could not unlock port ${portNumber} for service ${serviceShortUUID} in enclave ${enclaveShortUUID}`,
     );
   }
 

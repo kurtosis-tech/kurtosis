@@ -57,6 +57,12 @@ export type EnclavesState = {
   ) => Promise<AsyncIterable<StarlarkRunResponseLine>>;
   updateStarlarkFinishedInEnclave: (enclave: RemoveFunctions<EnclaveInfo>) => void;
   createWebhook: (packageId: string) => Promise<Result<Empty, string>>;
+  lockUnlockPort: (
+    portNumber: number,
+    serviceShortUUID: string,
+    enclaveShortUUID: string,
+    lock: boolean,
+  ) => Promise<Result<Empty, string>>;
 };
 
 const EnclavesContext = createContext<EnclavesState>(null as any);
@@ -149,6 +155,27 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
       return resp;
     },
     [kurtosisClient],
+  );
+
+  const lockUnlockPort = useCallback(
+    async (portNumber: number, serviceShortUUID: string, enclaveShortUUID: string, lock: boolean) => {
+      const resp = lock
+        ? await kurtosisClient.lockPort(portNumber, serviceShortUUID, enclaveShortUUID)
+        : await kurtosisClient.unlockPort(portNumber, serviceShortUUID, enclaveShortUUID);
+
+      if (resp.isOk) {
+        const enclave = state.enclaves.isOk
+          ? state.enclaves.value.find((e) => e.shortenedUuid === enclaveShortUUID)
+          : undefined;
+
+        if (enclave) {
+          await refreshServices(enclave);
+        }
+      }
+
+      return resp;
+    },
+    [kurtosisClient, refreshServices, state.enclaves],
   );
 
   const destroyEnclaves = useCallback(
@@ -256,6 +283,7 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
         runStarlarkScript,
         updateStarlarkFinishedInEnclave,
         createWebhook,
+        lockUnlockPort,
       }}
     >
       {children}

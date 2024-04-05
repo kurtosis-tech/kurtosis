@@ -1,6 +1,7 @@
 import { ExternalLinkIcon } from "@chakra-ui/icons";
-import { Icon, Link, Text } from "@chakra-ui/react";
+import { Icon, IconButton, Link } from "@chakra-ui/react";
 import { FaLock, FaUnlock } from "react-icons/fa";
+import { useEnclavesContext } from "../../EnclavesContext";
 import { PortsTableRow } from "../tables/PortsTable";
 
 type PortMaybeLinkProps = {
@@ -8,21 +9,35 @@ type PortMaybeLinkProps = {
 };
 
 export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
+  const { lockUnlockPort } = useEnclavesContext();
+
   const isHttpLink = port.port.applicationProtocol?.startsWith("http");
 
+  const handleLockUnlockClick = async () => {
+    const lock = !port.port.locked;
+    await lockUnlockPort(port.port.privatePort, port.serviceUuid, port.enclaveUuid, lock);
+  };
+
   return (
-    <Text>
+    <>
       {isHttpLink ? (
         <Link href={port.link} isExternal>
           {port.port.name}&nbsp;
           <ExternalLinkIcon mx="2px" />
-          {port.port.locked !== undefined && (
-            <Icon as={port.port.locked ? FaLock : FaUnlock} ml={2} color={port.port.locked ? "red.500" : "green.500"} />
-          )}
         </Link>
       ) : (
         port.port.name
       )}
-    </Text>
+      {port.port.locked !== undefined && (
+        <IconButton
+          aria-label={port.port.locked ? "Unlock port" : "Lock port"}
+          icon={<Icon as={port.port.locked ? FaUnlock : FaLock} />}
+          onClick={handleLockUnlockClick}
+          ml={2}
+          size="sm"
+          colorScheme={port.port.locked ? "red" : "green"}
+        />
+      )}
+    </>
   );
 };
