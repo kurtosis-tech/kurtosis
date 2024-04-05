@@ -1,6 +1,5 @@
-import { ExternalLinkIcon } from "@chakra-ui/icons";
-import { Icon, Link, Text, useClipboard, useToast } from "@chakra-ui/react";
-import { FaLock, FaUnlock } from "react-icons/fa";
+import { ExternalLinkIcon, LockIcon, UnlockIcon } from "@chakra-ui/icons";
+import { IconButton, Link, Text, Tooltip, useClipboard, useToast } from "@chakra-ui/react";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { PortsTableRow } from "../tables/PortsTable";
 
@@ -30,27 +29,30 @@ export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
   };
 
   return (
-    <Text>
+    <>
       {isHttpLink ? (
-        <Link href={port.link} isExternal>
-          {port.port.name}&nbsp;
-          <ExternalLinkIcon mx="2px" />
+        <Link href={port.link} isExternal display="flex" alignItems="center">
           {port.port.locked !== undefined && (
-            // add a Tooltip here that tells you what is going to happen
-            // adding it with GPT made it stuck on the top left of the screen
-            <Icon
-              as={port.port.locked ? FaLock : FaUnlock}
-              ml={2}
-              color={port.port.locked ? "red.500" : "green.500"}
-              cursor="pointer"
-              size="sm"
-              onClick={handleLockUnlockClick}
-            />
+            <Tooltip
+              label={port.port.locked ? "Publish port" : "Make port private"}
+              fontSize="small"
+            >
+              <IconButton
+                icon={port.port.locked ? <LockIcon /> : <UnlockIcon />}
+                variant={"ghost"}
+                size={"xs"}
+                cursor="pointer"
+                onClick={() => handleLockUnlockClick}
+                aria-label={port.port.locked ? "Publish port" : "Make port private"}
+              />
+            </Tooltip>
           )}
+          <Text>{port.port.name}&nbsp;</Text>
+          <ExternalLinkIcon ml="2px" />
         </Link>
       ) : (
         port.port.name
       )}
-    </Text>
+    </>
   );
 };
