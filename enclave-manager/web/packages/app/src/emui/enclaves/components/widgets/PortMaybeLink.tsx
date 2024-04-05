@@ -1,5 +1,5 @@
-import { ExternalLinkIcon, LockIcon, UnlockIcon } from "@chakra-ui/icons";
-import { IconButton, Link, Text, Tooltip, useClipboard, useToast } from "@chakra-ui/react";
+import { CheckCircleIcon, ExternalLinkIcon, LockIcon, UnlockIcon } from "@chakra-ui/icons";
+import { Box, Flex, IconButton, Link, Heading, Text, Tooltip, useClipboard, useToast, Icon } from "@chakra-ui/react";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { PortsTableRow } from "../tables/PortsTable";
 
@@ -20,11 +20,31 @@ export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
     await lockUnlockPort(port.port.privatePort, port.port.serviceShortUuid, port.port.enclaveShortUuid, lock);
     onCopy();
     toast({
-      title: `Link ${lock ? "locked" : "unlocked"}`,
-      description: `The link has been ${lock ? "locked" : "unlocked"} and copied to the clipboard.`,
-      status: lock ? "success" : "warning",
+      status: "success",
       duration: 3000,
       isClosable: true,
+      render: () => (
+        <Flex
+          color='white'
+          p={3}
+          bg='green.500'
+          borderRadius={6}
+          gap={4}
+        >
+          <Icon as={CheckCircleIcon} w={6} h={6} />
+          <Box>
+            <Heading
+              as="h4"
+              fontSize="md"
+              fontWeight="500"
+              color="white"
+            >
+              Link {lock ? "locked" : "unlocked"}
+            </Heading>
+            <Text marginTop={1} color="white">The link has been {lock ? "locked" : "unlocked"} and copied to the clipboard.</Text>
+          </Box>
+        </Flex>
+      )
     });
   };
 
@@ -32,7 +52,7 @@ export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
     <>
       {isHttpLink ? (
         <Link href={port.link} isExternal display="flex" alignItems="center">
-          {port.port.locked !== undefined && (
+          {port.port.locked === undefined && (
             <Tooltip
               label={port.port.locked ? "Publish port" : "Make port private"}
               fontSize="small"
