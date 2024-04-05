@@ -26,7 +26,7 @@ DEFAULT_DEBUG_IMAGE=false
 if [ "$uname_arch" == "x86_64" ] || [ "$uname_arch" == "amd64" ]; then
     DEFAULT_ARCHITECTURE_TO_BUILD="amd64"
 elif [ "$uname_arch" == "aarch64" ] || [ "$uname_arch" == "arm64" ]; then
-    DEFAULT_ARCHITECTURE_TO_BUILD="amd64"
+    DEFAULT_ARCHITECTURE_TO_BUILD="arm64"
 fi
 
 MAIN_GO_FILEPATH="${expander_root_dirpath}/main.go"
