@@ -1,5 +1,5 @@
 import { ExternalLinkIcon } from "@chakra-ui/icons";
-import { Icon, IconButton, Link } from "@chakra-ui/react";
+import { Icon, Link, Text } from "@chakra-ui/react";
 import { FaLock, FaUnlock } from "react-icons/fa";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { PortsTableRow } from "../tables/PortsTable";
@@ -19,25 +19,25 @@ export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
   };
 
   return (
-    <>
+    <Text>
       {isHttpLink ? (
         <Link href={port.link} isExternal>
           {port.port.name}&nbsp;
           <ExternalLinkIcon mx="2px" />
+          {port.port.locked !== undefined && (
+            <Icon
+              as={port.port.locked ? FaLock : FaUnlock}
+              ml={2}
+              color={port.port.locked ? "red.500" : "green.500"}
+              cursor="pointer"
+              size="sm"
+              onClick={handleLockUnlockClick}
+            />
+          )}
         </Link>
       ) : (
         port.port.name
       )}
-      {port.port.locked !== undefined && (
-        <IconButton
-          aria-label={port.port.locked ? "Unlock port" : "Lock port"}
-          icon={<Icon as={port.port.locked ? FaUnlock : FaLock} />}
-          onClick={handleLockUnlockClick}
-          ml={2}
-          size="sm"
-          colorScheme={port.port.locked ? "red" : "green"}
-        />
-      )}
-    </>
+    </Text>
   );
 };
