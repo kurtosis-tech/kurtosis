@@ -167,11 +167,15 @@ func (c *WebServer) ValidateRequestAuthorization(
 }
 
 func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
-	reqToken, err := extractJwtToken(req.Header())
+	if !c.enforceAuth {
+		return nil, stacktrace.NewError("This method is only available in the cloud")
+	}
+
+	jwtToken, err := extractJwtToken(req.Header())
 	if err != nil {
 		return nil, err
 	}
-	auth, err := c.ConvertJwtTokenToApiKey(ctx, reqToken)
+	auth, err := c.ConvertJwtTokenToApiKey(ctx, jwtToken)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert jwt token to API key")
 	}
@@ -179,7 +183,7 @@ func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Req
 		return nil, stacktrace.NewError("An internal error has occurred. An empty API key was found")
 	}
 
-	instanceConfig, err := c.getCloudInstanceConfig(ctx, reqToken, auth.ApiKey)
+	instanceConfig, err := c.getCloudInstanceConfig(ctx, jwtToken, auth.ApiKey)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to retrieve the instance config")
 	}

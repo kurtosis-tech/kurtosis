@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.88.14](https://github.com/kurtosis-tech/kurtosis/compare/0.88.13...0.88.14) (2024-04-04)
+
+
+### Features
+
+* Add instance termination warning to the enclave manager UI ([#2356](https://github.com/kurtosis-tech/kurtosis/issues/2356)) ([bb39d2c](https://github.com/kurtosis-tech/kurtosis/commit/bb39d2c89d20d41dd8928dddd7983e802443bc50))
+* Make the cloud instance config available to the EM UI ([#2350](https://github.com/kurtosis-tech/kurtosis/issues/2350)) ([8b9b5ce](https://github.com/kurtosis-tech/kurtosis/commit/8b9b5ce6564a1939897acfc91d25ed6ae56c046e))
+* take access token in body for consistency in port endpoints ([#2351](https://github.com/kurtosis-tech/kurtosis/issues/2351)) ([7f6f30a](https://github.com/kurtosis-tech/kurtosis/commit/7f6f30aa515a940e04a3b5fe89e018395e7130be))
+
+
+### Bug Fixes
+
+* get for port auth instead of post ([#2353](https://github.com/kurtosis-tech/kurtosis/issues/2353)) ([1ed7978](https://github.com/kurtosis-tech/kurtosis/commit/1ed79783671ad8a6e4a33122e9bbb35fb95e1c03))
+
 ## [0.88.13](https://github.com/kurtosis-tech/kurtosis/compare/0.88.12...0.88.13) (2024-04-02)
 
 
