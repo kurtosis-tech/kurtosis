@@ -53,7 +53,7 @@ export const PortsSummary = ({ ports }: PortsSummaryProps) => {
   const otherPorts = sortedPorts.slice(3);
 
   return (
-    <Flex gap={"4px"} fontWeight={"semibold"} fontSize={"xs"} color={"gray.200"} justifyContent={"center"}>
+    <Flex fontWeight={"semibold"} fontSize={"xs"} color={"gray.200"} justifyContent={"center"}>
       {priorityPorts.map((port, i) => (
         <Fragment key={i}>
           <PortMaybeLink port={port} />
