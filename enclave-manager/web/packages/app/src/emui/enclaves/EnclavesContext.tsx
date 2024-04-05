@@ -169,6 +169,8 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
           : undefined;
 
         if (enclave) {
+          // perhaps there is some way to just change the port property isntead of refreshing it
+          // also this doesn't update in the enclaves table
           await refreshServices(enclave);
         }
       }

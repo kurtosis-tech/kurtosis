@@ -302,7 +302,10 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 }
 
 func (c *WebServer) LockPort(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
-	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, true, req.Header())
+	if !c.enforceAuth {
+		return nil, stacktrace.NewError("This method is only available in the cloud")
+	}
+	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -343,10 +346,10 @@ func (c *WebServer) LockPort(ctx context.Context, req *connect.Request[kurtosis_
 }
 
 func (c *WebServer) UnlockPort(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
-	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, true, req.Header())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	if !c.enforceAuth {
+		return nil, stacktrace.NewError("This method is only available in the cloud")
 	}
+	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if !auth {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
