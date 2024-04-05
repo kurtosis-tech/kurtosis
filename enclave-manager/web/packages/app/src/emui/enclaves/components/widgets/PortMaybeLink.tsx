@@ -15,7 +15,7 @@ export const PortMaybeLink = ({ port }: PortMaybeLinkProps) => {
 
   const handleLockUnlockClick = async () => {
     const lock = !port.port.locked;
-    await lockUnlockPort(port.port.privatePort, port.serviceUuid, port.enclaveUuid, lock);
+    await lockUnlockPort(port.port.privatePort, port.port.serviceShortUuid, port.port.enclaveShortUuid, lock);
   };
 
   return (
