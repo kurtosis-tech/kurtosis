@@ -23,6 +23,12 @@ service KurtosisCloudBackendServer {
   rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse) {};
   rpc ChangeActiveStatus(ChangeUserActiveRequest) returns (google.protobuf.Empty) {};
   rpc GetUser(GetUserRequest) returns (GetUserResponse) {};
+  rpc CheckPortAuthorization(CheckPortAuthorizationRequest) returns(google.protobuf.Empty){
+    option idempotency_level = NO_SIDE_EFFECTS;
+  };
+  rpc UnlockPort(UnlockPortRequest) returns(google.protobuf.Empty){};
+  rpc LockPort(LockPortRequest) returns(google.protobuf.Empty){};
+  rpc GetUnlockedPorts(GetUnlockedPortsRequest) returns(GetUnlockedPortsResponse){}
 }
 
 message GetOrCreateApiKeyRequest {
@@ -214,4 +220,35 @@ message User {
   string ExternalUserID = 2;
   bool Active = 3;
   string Updated = 4;
+}
+
+message GetUnlockedPortsRequest {
+  string access_token = 1;
+  string instance_short_uuid=2;
+  string enclave_short_uuid=3;
+}
+
+message CheckPortAuthorizationRequest {
+  Port port = 1;
+}
+
+message UnlockPortRequest {
+  string access_token = 1;
+  Port port = 2;
+}
+
+message LockPortRequest {
+  string access_token = 1;
+  Port port = 2;
+}
+
+message Port {
+  uint32 port_number=1;
+  string instance_short_uuid=2;
+  string service_short_uuid=3;
+  string enclave_short_uuid=4;
+}
+
+message GetUnlockedPortsResponse {
+  repeated Port port = 1;
 }

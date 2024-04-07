@@ -149,7 +149,7 @@ func (c *WebServer) ValidateRequestAuthorization(
 		return false, stacktrace.NewError("An internal error has occurred. An empty API key was found")
 	}
 
-	instanceConfig, err := c.GetCloudInstanceConfig(ctx, reqToken, auth.ApiKey)
+	instanceConfig, err := c.getCloudInstanceConfig(ctx, reqToken, auth.ApiKey)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to retrieve the instance config")
 	}
@@ -166,6 +166,37 @@ func (c *WebServer) ValidateRequestAuthorization(
 	}
 
 	return true, nil
+}
+
+func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
+	if !c.enforceAuth {
+		return nil, stacktrace.NewError("This method is only available in the cloud")
+	}
+
+	reqToken := req.Header().Get("Authorization")
+	splitToken := strings.Split(reqToken, "Bearer")
+	if len(splitToken) != numberOfElementsAuthHeader {
+		return nil, stacktrace.NewError("Authorization token malformed. Bearer token format required")
+	}
+	reqToken = strings.TrimSpace(splitToken[1])
+	auth, err := c.ConvertJwtTokenToApiKey(ctx, reqToken)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to convert jwt token to API key")
+	}
+	if auth == nil || len(auth.ApiKey) == 0 {
+		return nil, stacktrace.NewError("An internal error has occurred. An empty API key was found")
+	}
+
+	instanceConfig, err := c.getCloudInstanceConfig(ctx, reqToken, auth.ApiKey)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to retrieve the instance config")
+	}
+
+	resp := &connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]{
+		Msg: instanceConfig,
+	}
+
+	return resp, nil
 }
 
 func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
@@ -580,7 +611,7 @@ func (c *WebServer) createKurtosisCloudBackendClient(
 	return &client, nil
 }
 
-func (c *WebServer) GetCloudInstanceConfig(
+func (c *WebServer) getCloudInstanceConfig(
 	ctx context.Context,
 	jwtToken string,
 	apiKey string,
