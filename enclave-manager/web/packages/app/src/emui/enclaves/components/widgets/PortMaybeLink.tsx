@@ -15,7 +15,7 @@ export const PortMaybeLink = ({ port, disablePortLocking }: PortMaybeLinkProps) 
 
   const isHttpLink = port.port.applicationProtocol?.startsWith("http");
 
-  const handleLockUnlockClick = async (e: React.MouseEvent<SVGElement>) => {
+  const handleLockUnlockClick = async (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     const lock = !port.port.locked;
     await lockUnlockPort(port.port.privatePort, port.port.serviceShortUuid, port.port.enclaveShortUuid, lock);
@@ -52,7 +52,7 @@ export const PortMaybeLink = ({ port, disablePortLocking }: PortMaybeLinkProps) 
                 variant={"ghost"}
                 size={"xs"}
                 cursor="pointer"
-                onClick={() => handleLockUnlockClick}
+                onClick={handleLockUnlockClick}
                 pointerEvents={disablePortLocking ? "none" : "auto"}
                 color={disablePortLocking ? "gray.200" : "white"}
                 aria-label={port.port.locked ? "Publish port" : "Make port private"}
