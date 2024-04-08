@@ -541,6 +541,7 @@ func parsePortSpecStr(specStr string) (*kurtosis_core_rpc_api_bindings.Port, err
 		TransportProtocol:        transportProtocolFromEnum,
 		MaybeApplicationProtocol: maybeApplicationProtocol,
 		MaybeWaitTimeout:         defaultPortWaitTimeoutStr, //TODO we should add this to the port's arguments instead of using only a default value
+		Locked:                   nil,
 	}, nil
 }
 

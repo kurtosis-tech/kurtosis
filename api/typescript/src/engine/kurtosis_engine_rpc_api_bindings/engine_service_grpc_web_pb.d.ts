@@ -1,7 +1,7 @@
 import * as grpcWeb from 'grpc-web';
 
-import * as engine_service_pb from './engine_service_pb';
-import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+import * as engine_service_pb from './engine_service_pb'; // proto import: "engine_service.proto"
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
 
 
 export class EngineServiceClient {

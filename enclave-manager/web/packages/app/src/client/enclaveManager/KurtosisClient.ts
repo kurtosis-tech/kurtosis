@@ -24,6 +24,7 @@ import {
   GetServicesRequest,
   GetStarlarkRunRequest,
   InspectFilesArtifactContentsRequest,
+  LockUnlockPortRequest,
   RunStarlarkPackageRequest,
   RunStarlarkScriptRequest,
   StarlarkPackagePlanYamlArgs as StarlarkPackagePlanYamlArgsRequest,
@@ -92,6 +93,34 @@ export abstract class KurtosisClient {
     );
   }
 
+  async lockPort(portNumber: number, serviceShortUUID: string, enclaveShortUUID: string) {
+    return asyncResult(
+      this.client.lockPort(
+        new LockUnlockPortRequest({
+          portNumber: portNumber,
+          serviceShortUuid: serviceShortUUID,
+          enclaveShortUuid: enclaveShortUUID,
+        }),
+        this.getHeaderOptions(),
+      ),
+      `KurtosisClient could not lock port ${portNumber} for service ${serviceShortUUID} in enclave ${enclaveShortUUID}`,
+    );
+  }
+
+  async unlockPort(portNumber: number, serviceShortUUID: string, enclaveShortUUID: string) {
+    return asyncResult(
+      this.client.unlockPort(
+        new LockUnlockPortRequest({
+          portNumber: portNumber,
+          serviceShortUuid: serviceShortUUID,
+          enclaveShortUuid: enclaveShortUUID,
+        }),
+        this.getHeaderOptions(),
+      ),
+      `KurtosisClient could not unlock port ${portNumber} for service ${serviceShortUUID} in enclave ${enclaveShortUUID}`,
+    );
+  }
+
   async createRepositoryWebhook(packageID: string) {
     return asyncResult(
       this.client.createRepositoryWebhook(
@@ -109,6 +138,7 @@ export abstract class KurtosisClient {
       const request = new GetServicesRequest({
         apicIpAddress: apicInfo.bridgeIpAddress,
         apicPort: apicInfo.grpcPortInsideEnclave,
+        enclaveShortenedUuid: enclave.shortenedUuid,
       });
       return this.client.getServices(request, this.getHeaderOptions());
     }, `KurtosisClient could not getServices for ${enclave.name}`);

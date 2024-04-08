@@ -86,6 +86,12 @@ const (
 	// KurtosisEnclaveManagerServerGetCloudInstanceConfigProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's GetCloudInstanceConfig RPC.
 	KurtosisEnclaveManagerServerGetCloudInstanceConfigProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetCloudInstanceConfig"
+	// KurtosisEnclaveManagerServerLockPortProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's LockPort RPC.
+	KurtosisEnclaveManagerServerLockPortProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/LockPort"
+	// KurtosisEnclaveManagerServerUnlockPortProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's UnlockPort RPC.
+	KurtosisEnclaveManagerServerUnlockPortProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/UnlockPort"
 )
 
 // KurtosisEnclaveManagerServerClient is a client for the
@@ -107,6 +113,8 @@ type KurtosisEnclaveManagerServerClient interface {
 	GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
 	CreateRepositoryWebhook(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error)
 	GetCloudInstanceConfig(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
+	LockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
+	UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerClient constructs a client for the
@@ -200,6 +208,16 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerGetCloudInstanceConfigProcedure,
 			opts...,
 		),
+		lockPort: connect.NewClient[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerLockPortProcedure,
+			opts...,
+		),
+		unlockPort: connect.NewClient[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerUnlockPortProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -221,6 +239,8 @@ type kurtosisEnclaveManagerServerClient struct {
 	getStarlarkPackagePlanYaml     *connect.Client[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs, kurtosis_core_rpc_api_bindings.PlanYaml]
 	createRepositoryWebhook        *connect.Client[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest, emptypb.Empty]
 	getCloudInstanceConfig         *connect.Client[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
+	lockPort                       *connect.Client[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty]
+	unlockPort                     *connect.Client[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty]
 }
 
 // Check calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check.
@@ -311,6 +331,16 @@ func (c *kurtosisEnclaveManagerServerClient) GetCloudInstanceConfig(ctx context.
 	return c.getCloudInstanceConfig.CallUnary(ctx, req)
 }
 
+// LockPort calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.LockPort.
+func (c *kurtosisEnclaveManagerServerClient) LockPort(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.lockPort.CallUnary(ctx, req)
+}
+
+// UnlockPort calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.UnlockPort.
+func (c *kurtosisEnclaveManagerServerClient) UnlockPort(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.unlockPort.CallUnary(ctx, req)
+}
+
 // KurtosisEnclaveManagerServerHandler is an implementation of the
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer service.
 type KurtosisEnclaveManagerServerHandler interface {
@@ -330,6 +360,8 @@ type KurtosisEnclaveManagerServerHandler interface {
 	GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
 	CreateRepositoryWebhook(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error)
 	GetCloudInstanceConfig(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
+	LockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
+	UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerHandler builds an HTTP handler from the service implementation. It
@@ -418,6 +450,16 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		svc.GetCloudInstanceConfig,
 		opts...,
 	)
+	kurtosisEnclaveManagerServerLockPortHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerLockPortProcedure,
+		svc.LockPort,
+		opts...,
+	)
+	kurtosisEnclaveManagerServerUnlockPortHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerUnlockPortProcedure,
+		svc.UnlockPort,
+		opts...,
+	)
 	return "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisEnclaveManagerServerCheckProcedure:
@@ -452,6 +494,10 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 			kurtosisEnclaveManagerServerCreateRepositoryWebhookHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetCloudInstanceConfigProcedure:
 			kurtosisEnclaveManagerServerGetCloudInstanceConfigHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerLockPortProcedure:
+			kurtosisEnclaveManagerServerLockPortHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerUnlockPortProcedure:
+			kurtosisEnclaveManagerServerUnlockPortHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -523,4 +569,12 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) CreateRepositoryWebhook(
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) GetCloudInstanceConfig(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetCloudInstanceConfig is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) LockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.LockPort is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.UnlockPort is not implemented"))
 }

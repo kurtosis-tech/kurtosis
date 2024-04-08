@@ -26,6 +26,8 @@ service KurtosisEnclaveManagerServer {
   rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (api_container_api.PlanYaml) {};
   rpc CreateRepositoryWebhook(CreateRepositoryWebhookRequest) returns (google.protobuf.Empty) {};
   rpc GetCloudInstanceConfig(google.protobuf.Empty) returns (kurtosis_cloud.GetCloudInstanceConfigResponse) {};
+  rpc LockPort(LockUnlockPortRequest) returns (google.protobuf.Empty) {}
+  rpc UnlockPort(LockUnlockPortRequest) returns(google.protobuf.Empty) {}
 }
 
 message HealthCheckRequest {
@@ -45,6 +47,7 @@ message HealthCheckResponse {
 message GetServicesRequest{
   string apic_ip_address = 1;
   int32 apic_port = 2;
+  string enclave_shortened_uuid = 3;
 }
 
 message GetListFilesArtifactNamesAndUuidsRequest{
@@ -83,6 +86,12 @@ message GetStarlarkRunRequest{
 
 message CreateRepositoryWebhookRequest {
   string package_id = 1;
+}
+
+message LockUnlockPortRequest {
+  uint32 port_number=1;
+  string service_short_uuid=3;
+  string enclave_short_uuid=4;
 }
 
 

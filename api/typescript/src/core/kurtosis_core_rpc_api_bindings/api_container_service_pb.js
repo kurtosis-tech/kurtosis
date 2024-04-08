@@ -1058,7 +1058,8 @@ proto.api_container_api.Port.toObject = function(includeInstance, msg) {
     number: jspb.Message.getFieldWithDefault(msg, 1, 0),
     transportProtocol: jspb.Message.getFieldWithDefault(msg, 2, 0),
     maybeApplicationProtocol: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    maybeWaitTimeout: jspb.Message.getFieldWithDefault(msg, 4, "")
+    maybeWaitTimeout: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    locked: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
   };
 
   if (includeInstance) {
@@ -1110,6 +1111,10 @@ proto.api_container_api.Port.deserializeBinaryFromReader = function(msg, reader)
     case 4:
       var value = /** @type {string} */ (reader.readString());
       msg.setMaybeWaitTimeout(value);
+      break;
+    case 5:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setLocked(value);
       break;
     default:
       reader.skipField();
@@ -1165,6 +1170,13 @@ proto.api_container_api.Port.serializeBinaryToWriter = function(message, writer)
   if (f.length > 0) {
     writer.writeString(
       4,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 5));
+  if (f != null) {
+    writer.writeBool(
+      5,
       f
     );
   }
@@ -1249,6 +1261,42 @@ proto.api_container_api.Port.prototype.getMaybeWaitTimeout = function() {
  */
 proto.api_container_api.Port.prototype.setMaybeWaitTimeout = function(value) {
   return jspb.Message.setProto3StringField(this, 4, value);
+};
+
+
+/**
+ * optional bool locked = 5;
+ * @return {boolean}
+ */
+proto.api_container_api.Port.prototype.getLocked = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 5, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.Port} returns this
+ */
+proto.api_container_api.Port.prototype.setLocked = function(value) {
+  return jspb.Message.setField(this, 5, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.Port} returns this
+ */
+proto.api_container_api.Port.prototype.clearLocked = function() {
+  return jspb.Message.setField(this, 5, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.Port.prototype.hasLocked = function() {
+  return jspb.Message.getField(this, 5) != null;
 };
 
 
