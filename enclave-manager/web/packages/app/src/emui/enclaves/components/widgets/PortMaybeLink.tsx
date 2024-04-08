@@ -45,7 +45,7 @@ export const PortMaybeLink = ({ port, disablePortLocking }: PortMaybeLinkProps) 
     <>
       {isHttpLink ? (
         <Flex alignItems="center">
-          {port.port.locked === undefined && (
+          {port.port.locked !== undefined && (
             <Tooltip label={port.port.locked ? "Publish port" : "Make port private"} fontSize="small">
               <IconButton
                 icon={port.port.locked ? <LockIcon /> : <UnlockIcon />}
