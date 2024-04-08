@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.88.15](https://github.com/kurtosis-tech/kurtosis/compare/0.88.14...0.88.15) (2024-04-08)
+
+
+### Features
+
+* enclave manager exposes api's to lock, unlock ports and view their current state ([#2348](https://github.com/kurtosis-tech/kurtosis/issues/2348)) ([23ef09c](https://github.com/kurtosis-tech/kurtosis/commit/23ef09c8492101cfb9c048d5911d8580a8b6bd89))
+
 ## [0.88.14](https://github.com/kurtosis-tech/kurtosis/compare/0.88.13...0.88.14) (2024-04-04)
 
 
