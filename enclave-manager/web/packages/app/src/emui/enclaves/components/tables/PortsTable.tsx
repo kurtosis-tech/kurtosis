@@ -15,6 +15,9 @@ export type PortsTableRow = {
     publicPort: number;
     name: string;
     applicationProtocol: string;
+    locked: boolean | undefined;
+    enclaveShortUuid: string;
+    serviceShortUuid: string;
   };
   link: string;
 };
@@ -47,6 +50,9 @@ export const getPortTableRows = (
         privatePort: port.number,
         publicPort: publicPorts[name].number,
         name: isDefined(serviceName) ? `${serviceName}:${name}` : name,
+        locked: privatePorts[name].locked,
+        enclaveShortUuid: shortUUID(enclaveUUID),
+        serviceShortUuid: shortUUID(serviceUUID),
       },
       link: link,
     };

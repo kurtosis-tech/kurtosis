@@ -1,5 +1,69 @@
 # Changelog
 
+## [0.88.16](https://github.com/kurtosis-tech/kurtosis/compare/0.88.15...0.88.16) (2024-04-08)
+
+
+### Bug Fixes
+
+* locked is red unlocked is green ([#2363](https://github.com/kurtosis-tech/kurtosis/issues/2363)) ([851876d](https://github.com/kurtosis-tech/kurtosis/commit/851876df5e26d2fe466534e546eb7543d1603d80))
+
+## [0.88.15](https://github.com/kurtosis-tech/kurtosis/compare/0.88.14...0.88.15) (2024-04-08)
+
+
+### Features
+
+* enclave manager exposes api's to lock, unlock ports and view their current state ([#2348](https://github.com/kurtosis-tech/kurtosis/issues/2348)) ([23ef09c](https://github.com/kurtosis-tech/kurtosis/commit/23ef09c8492101cfb9c048d5911d8580a8b6bd89))
+
+## [0.88.14](https://github.com/kurtosis-tech/kurtosis/compare/0.88.13...0.88.14) (2024-04-04)
+
+
+### Features
+
+* Add instance termination warning to the enclave manager UI ([#2356](https://github.com/kurtosis-tech/kurtosis/issues/2356)) ([bb39d2c](https://github.com/kurtosis-tech/kurtosis/commit/bb39d2c89d20d41dd8928dddd7983e802443bc50))
+* Make the cloud instance config available to the EM UI ([#2350](https://github.com/kurtosis-tech/kurtosis/issues/2350)) ([8b9b5ce](https://github.com/kurtosis-tech/kurtosis/commit/8b9b5ce6564a1939897acfc91d25ed6ae56c046e))
+* take access token in body for consistency in port endpoints ([#2351](https://github.com/kurtosis-tech/kurtosis/issues/2351)) ([7f6f30a](https://github.com/kurtosis-tech/kurtosis/commit/7f6f30aa515a940e04a3b5fe89e018395e7130be))
+
+
+### Bug Fixes
+
+* get for port auth instead of post ([#2353](https://github.com/kurtosis-tech/kurtosis/issues/2353)) ([1ed7978](https://github.com/kurtosis-tech/kurtosis/commit/1ed79783671ad8a6e4a33122e9bbb35fb95e1c03))
+
+## [0.88.13](https://github.com/kurtosis-tech/kurtosis/compare/0.88.12...0.88.13) (2024-04-02)
+
+
+### Features
+
+* change cloud protobuf to allow for whitelisting ports as public ([#2336](https://github.com/kurtosis-tech/kurtosis/issues/2336)) ([e1f1800](https://github.com/kurtosis-tech/kurtosis/commit/e1f180080675f215e1c035ebdd6fc19303c00d93))
+* impl `get_files_artifact` ([#2345](https://github.com/kurtosis-tech/kurtosis/issues/2345)) ([a1cc2e8](https://github.com/kurtosis-tech/kurtosis/commit/a1cc2e86dd8a626c60bd05c851c5c0724aeff84e))
+
+## [0.88.12](https://github.com/kurtosis-tech/kurtosis/compare/0.88.11...0.88.12) (2024-03-27)
+
+
+### Bug Fixes
+
+* enclave manager passing in deprecated args object ([#2342](https://github.com/kurtosis-tech/kurtosis/issues/2342)) ([2bba1bc](https://github.com/kurtosis-tech/kurtosis/commit/2bba1bc70abe166917b0743e817b7346da199e28))
+* starlark -&gt; plan for validator ([#2343](https://github.com/kurtosis-tech/kurtosis/issues/2343)) ([0dca278](https://github.com/kurtosis-tech/kurtosis/commit/0dca278c276a3060de792d4e87d6eee4e0499f09))
+
+## [0.88.11](https://github.com/kurtosis-tech/kurtosis/compare/0.88.10...0.88.11) (2024-03-27)
+
+
+### Features
+
+* starlark -&gt; plan ([#2338](https://github.com/kurtosis-tech/kurtosis/issues/2338)) ([5fab14a](https://github.com/kurtosis-tech/kurtosis/commit/5fab14a6ac021f713449160e652b58839b11e1a1))
+* using preview.kurtosis.com ([#2337](https://github.com/kurtosis-tech/kurtosis/issues/2337)) ([c7f6e66](https://github.com/kurtosis-tech/kurtosis/commit/c7f6e660b3e8f29ade0b1695ef171930df0ec183))
+
+
+### Bug Fixes
+
+* in the image-spec validations and docs ([#2302](https://github.com/kurtosis-tech/kurtosis/issues/2302)) ([5eb72f2](https://github.com/kurtosis-tech/kurtosis/commit/5eb72f25671f7df0618b3de6d33e009fc7e218cd))
+
+## [0.88.10](https://github.com/kurtosis-tech/kurtosis/compare/0.88.9...0.88.10) (2024-03-25)
+
+
+### Features
+
+* enable importing docker compose module ([#2327](https://github.com/kurtosis-tech/kurtosis/issues/2327)) ([1ca7661](https://github.com/kurtosis-tech/kurtosis/commit/1ca7661a8512189e091d87d78d0755cc6159dd7d))
+
 ## [0.88.9](https://github.com/kurtosis-tech/kurtosis/compare/0.88.8...0.88.9) (2024-03-25)
 
 

@@ -21,7 +21,7 @@ export const ViewStarlarkModal = ({ isOpen, onClose, starlark }: ViewStarlarkMod
     <Modal closeOnOverlayClick={true} isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
       <ModalContent minW={"800px"} maxH={"90vh"}>
-        <ModalHeader>Previewing Starlark</ModalHeader>
+        <ModalHeader>Previewing Plan</ModalHeader>
         <ModalCloseButton />
         <ModalBody minH={"70vh"} flex={"1 1 auto"} overflowY={"auto"}>
           {isDefined(starlark) && <FileDisplay value={starlark} title={"main.star"} filename={`main.star`} />}

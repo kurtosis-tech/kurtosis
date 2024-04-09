@@ -14,6 +14,9 @@ pub struct Port {
     /// The wait timeout duration in string
     #[prost(string, tag = "4")]
     pub maybe_wait_timeout: ::prost::alloc::string::String,
+    /// this is useful in the cloud context; ignore in local
+    #[prost(bool, optional, tag = "5")]
+    pub locked: ::core::option::Option<bool>,
 }
 /// Nested message and enum types in `Port`.
 pub mod port {

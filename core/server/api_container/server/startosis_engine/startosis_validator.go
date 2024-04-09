@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	validationInProgressMsg = "Validating Starlark code and preparing container images - execution will begin shortly"
+	validationInProgressMsg = "Validating plan and preparing container images - execution will begin shortly"
 
 	containerImageValidationMsgHeader     = "Container images used in this run:"
 	containerImageValidationMsgFromLocal  = "locally cached"
