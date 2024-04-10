@@ -105,7 +105,35 @@ func (repository *serviceInterpretationValueRepository) GetService(name service.
 	}
 	logrus.Debugf("Successfully got value for '%v'", name)
 	return value, nil
+}
 
+func (repository *serviceInterpretationValueRepository) GetServices() ([]*kurtosis_types.Service, error) {
+	logrus.Debug("Getting all known interpretation time service values.")
+	var services []*kurtosis_types.Service
+
+	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(serviceInterpretationValueBucketName)
+
+		bucket.ForEach(func(serviceName, serializedValue []byte) error {
+			deserializedValue, interpretationErr := repository.starlarkValueSerde.Deserialize(string(serializedValue))
+			if interpretationErr != nil {
+				return stacktrace.Propagate(interpretationErr, "an error occurred while deserializing object associated with service '%v' in repository", serviceName)
+			}
+
+			kurtosisServiceValue, ok := deserializedValue.(*kurtosis_types.Service)
+			if !ok {
+				return stacktrace.NewError("an error occurred casting repository service value to kurtosis service value for service: %v", serviceName)
+			}
+
+			services = append(services, kurtosisServiceValue)
+			return nil
+		})
+		return nil
+	}); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting services values from repository.")
+	}
+	logrus.Debugf("Successfully retrieved interpretation time service values.")
+	return services, nil
 }
 
 func getKey(name service.ServiceName) []byte {

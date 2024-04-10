@@ -34,3 +34,11 @@ func (itvs *InterpretationTimeValueStore) GetService(name service.ServiceName) (
 	}
 	return serviceStarlark, nil
 }
+
+func (itvs *InterpretationTimeValueStore) GetServices() ([]*kurtosis_types.Service, error) {
+	servicesStarlark, err := itvs.serviceValues.GetServices()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred fetching interpretation time service objects from db")
+	}
+	return servicesStarlark, nil
+}
