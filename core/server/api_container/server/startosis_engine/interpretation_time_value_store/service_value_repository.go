@@ -114,7 +114,7 @@ func (repository *serviceInterpretationValueRepository) GetServices() ([]*kurtos
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(serviceInterpretationValueBucketName)
 
-		bucket.ForEach(func(serviceName, serializedValue []byte) error {
+		return bucket.ForEach(func(serviceName, serializedValue []byte) error {
 			deserializedValue, interpretationErr := repository.starlarkValueSerde.Deserialize(string(serializedValue))
 			if interpretationErr != nil {
 				return stacktrace.Propagate(interpretationErr, "an error occurred while deserializing object associated with service '%v' in repository", serviceName)
@@ -128,7 +128,6 @@ func (repository *serviceInterpretationValueRepository) GetServices() ([]*kurtos
 			services = append(services, kurtosisServiceValue)
 			return nil
 		})
-		return nil
 	}); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting services values from repository.")
 	}
