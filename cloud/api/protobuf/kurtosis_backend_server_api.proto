@@ -26,7 +26,7 @@ service KurtosisCloudBackendServer {
   rpc LockPort(LockPortRequest) returns(google.protobuf.Empty){};
   rpc GetUnlockedPorts(GetUnlockedPortsRequest) returns(GetUnlockedPortsResponse){}
   rpc CheckAliasAuth(CheckAliasAuthRequest) returns(google.protobuf.Empty) {};
-  rpc AddAlias(AddAliasRequest) returns(google.protofbuf.Empty){};
+  rpc AddAlias(AddAliasRequest) returns(google.protobuf.Empty){};
 }
 
 message GetOrCreateApiKeyRequest {
