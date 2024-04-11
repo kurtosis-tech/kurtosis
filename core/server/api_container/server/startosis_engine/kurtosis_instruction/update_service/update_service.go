@@ -73,6 +73,7 @@ func NewUpdateService(
 				serviceNetwork:          serviceNetwork,
 				serviceName:             "",  // populated at interpretation time
 				serviceConfig:           nil, // populated at interpretation time
+				imageVal:                nil, // populated at interpretation time
 				packageId:               packageId,
 				packageContentProvider:  packageContentProvider,
 				packageReplaceOptions:   packageReplaceOptions,
