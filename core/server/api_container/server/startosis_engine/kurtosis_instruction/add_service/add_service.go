@@ -326,7 +326,8 @@ func validateAndConvertConfigAndReadyCondition(
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageId,
 		packageContentProvider,
-		packageReplaceOptions, imageDownloadMode)
+		packageReplaceOptions,
+		imageDownloadMode)
 	if interpretationErr != nil {
 		return nil, nil, interpretationErr
 	}

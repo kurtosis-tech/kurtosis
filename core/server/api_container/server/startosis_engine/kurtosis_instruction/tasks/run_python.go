@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
@@ -219,7 +222,10 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion, envVars)
+	var emptyImageBuildSpec *image_build_spec.ImageBuildSpec
+	var emptyImageRegistrySpec *image_registry_spec.ImageRegistrySpec
+	var emptyNixBuildSpec *nix_build_spec.NixBuildSpec
+	builtin.serviceConfig, err = getServiceConfig(image, emptyImageBuildSpec, emptyImageRegistrySpec, emptyNixBuildSpec, filesArtifactExpansion, envVars)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
 	}
@@ -258,7 +264,7 @@ func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValue
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		serviceDirpathsToArtifactIdentifiers = builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers
 	}
-	return validateTasksCommon(validatorEnvironment, builtin.storeSpecList, serviceDirpathsToArtifactIdentifiers, builtin.serviceConfig.GetContainerImageName())
+	return validateTasksCommon(validatorEnvironment, builtin.storeSpecList, serviceDirpathsToArtifactIdentifiers, builtin.serviceConfig)
 }
 
 // Execute This is just v0 for run_python task - we can later improve on it.

@@ -80,7 +80,7 @@ func KurtosisPlanInstructions(
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		start_service.NewStartService(serviceNetwork),
 		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore, nonBlockingMode),
-		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode),
+		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode, packageId, packageContentProvider, packageReplaceOptions),
 		stop_service.NewStopService(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
 		upload_files.NewUploadFiles(packageId, serviceNetwork, packageContentProvider, packageReplaceOptions),
