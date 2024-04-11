@@ -54,14 +54,12 @@ func NewRunShService(
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 				},
-				//{
-				//	Name:              ImageNameArgName,
-				//	IsOptional:        true,
-				//	ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-				//	Validator: func(argumentValue starlark.Value) *startosis_errors.InterpretationError {
-				//		return builtin_argument.NonEmptyString(argumentValue, ImageNameArgName)
-				//	},
-				//},
+				{
+					Name:              ImageNameArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
+					Validator:         nil,
+				},
 				{
 					Name:              FilesArgName,
 					IsOptional:        true,
