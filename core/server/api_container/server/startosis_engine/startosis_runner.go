@@ -76,7 +76,7 @@ func (runner *StartosisRunner) Run(
 				}
 			}
 
-			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg("Made with Kurtosis - https://kurtosis.com")
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg("⭐ us on GitHub - https://github.com/kurtosis-tech/kurtosis")
 			close(starlarkRunResponseLines)
 		}()
 
