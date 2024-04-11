@@ -207,7 +207,7 @@ message PaymentUser {
 message Instance {
   string Uuid = 1;
   string UserId = 2;
-  optional Auth0User Auth0user = 3;
+  optional Auth0User Auth0User = 3;
   optional Ec2Connection Ec2Connection = 4;
   string Status = 5;
   string Updated = 6;

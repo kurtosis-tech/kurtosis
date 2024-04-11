@@ -1356,9 +1356,9 @@ export class Instance extends Message<Instance> {
   UserId = "";
 
   /**
-   * @generated from field: optional kurtosis_cloud.Auth0User Auth0user = 3;
+   * @generated from field: optional kurtosis_cloud.Auth0User Auth0User = 3;
    */
-  Auth0user?: Auth0User;
+  Auth0User?: Auth0User;
 
   /**
    * @generated from field: optional kurtosis_cloud.Ec2Connection Ec2Connection = 4;
@@ -1395,7 +1395,7 @@ export class Instance extends Message<Instance> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "Uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "UserId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "Auth0user", kind: "message", T: Auth0User, opt: true },
+    { no: 3, name: "Auth0User", kind: "message", T: Auth0User, opt: true },
     { no: 4, name: "Ec2Connection", kind: "message", T: Ec2Connection, opt: true },
     { no: 5, name: "Status", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 6, name: "Updated", kind: "scalar", T: 9 /* ScalarType.STRING */ },
