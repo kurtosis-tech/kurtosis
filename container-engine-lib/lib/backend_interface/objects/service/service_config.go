@@ -133,8 +133,16 @@ func (serviceConfig *ServiceConfig) GetContainerImageName() string {
 	return serviceConfig.privateServiceConfig.ContainerImageName
 }
 
+func (serviceConfig *ServiceConfig) SetContainerImageName(containerImage string) {
+	serviceConfig.privateServiceConfig.ContainerImageName = containerImage
+}
+
 func (serviceConfig *ServiceConfig) GetImageBuildSpec() *image_build_spec.ImageBuildSpec {
 	return serviceConfig.privateServiceConfig.ImageBuildSpec
+}
+
+func (serviceConfig *ServiceConfig) SetImageBuildSpec(imageBuildSpec *image_build_spec.ImageBuildSpec) {
+	serviceConfig.privateServiceConfig.ImageBuildSpec = imageBuildSpec
 }
 
 func (serviceConfig *ServiceConfig) GetImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {

@@ -140,7 +140,7 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, startosis_errors.NewInterpretationError("Unable to extract image attribute off of service config.")
 	}
 	builtin.imageVal = rawImageVal
-	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(
+	apiServiceConfig, readyCondition, interpretationErr := ValidateAndConvertConfigAndReadyCondition(
 		builtin.serviceNetwork,
 		serviceConfig,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
@@ -154,7 +154,7 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	}
 
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
-	builtin.serviceConfig = apiServiceConfig
+	builtin.serviceConfig = apiServiceConfig // store this in the interpretation time value store
 	builtin.readyCondition = readyCondition
 	builtin.resultUuid, err = builtin.runtimeValueStore.GetOrCreateValueAssociatedWithService(builtin.serviceName)
 	if err != nil {
@@ -172,6 +172,11 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting return value for service '%v'", serviceName)
 	}
+	err = builtin.interpretationTimeValueStore.PutServiceConfig(builtin.serviceName, builtin.serviceConfig)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting return value for service '%v'", serviceName)
+	}
+
 	return builtin.returnValue, nil
 }
 
@@ -183,7 +188,12 @@ func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValu
 }
 
 func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(builtin.runtimeValueStore, builtin.serviceName, builtin.serviceConfig)
+	// pull service config from interpretation time value store
+	serviceConfig, err := builtin.interpretationTimeValueStore.GetServiceConfig(builtin.serviceName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting service config value from interpretation time value store for service '%v'", builtin.serviceName)
+	}
+	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(builtin.runtimeValueStore, builtin.serviceName, serviceConfig)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred replace a magic string in '%s' instruction arguments for service '%s'. Execution cannot proceed", AddServiceBuiltinName, builtin.serviceName)
 	}
@@ -308,7 +318,7 @@ func (builtin *AddServiceCapabilities) Description() string {
 	return builtin.description
 }
 
-func validateAndConvertConfigAndReadyCondition(
+func ValidateAndConvertConfigAndReadyCondition(
 	serviceNetwork service_network.ServiceNetwork,
 	rawConfig starlark.Value,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,

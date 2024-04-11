@@ -5,11 +5,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 type InterpretationTimeValueStore struct {
-	serviceValues *serviceInterpretationValueRepository
-	serde         *kurtosis_types.StarlarkValueSerde
+	serviceConfigValues map[service.ServiceName]*service.ServiceConfig
+	serviceValues       *serviceInterpretationValueRepository
+	serde               *kurtosis_types.StarlarkValueSerde
 }
 
 func CreateInterpretationTimeValueStore(enclaveDb *enclave_db.EnclaveDB, serde *kurtosis_types.StarlarkValueSerde) (*InterpretationTimeValueStore, error) {
@@ -17,7 +19,10 @@ func CreateInterpretationTimeValueStore(enclaveDb *enclave_db.EnclaveDB, serde *
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating interpretation time value store")
 	}
-	return &InterpretationTimeValueStore{serviceValues: serviceValuesRepository, serde: serde}, nil
+	return &InterpretationTimeValueStore{
+		serviceConfigValues: map[service.ServiceName]*service.ServiceConfig{},
+		serviceValues:       serviceValuesRepository,
+		serde:               serde}, nil
 }
 
 func (itvs *InterpretationTimeValueStore) PutService(name service.ServiceName, service *kurtosis_types.Service) error {
@@ -33,4 +38,29 @@ func (itvs *InterpretationTimeValueStore) GetService(name service.ServiceName) (
 		return nil, stacktrace.Propagate(err, "An error occurred fetching interpretation time value for '%v' from db", name)
 	}
 	return serviceStarlark, nil
+}
+
+func (itvs *InterpretationTimeValueStore) PutServiceConfig(name service.ServiceName, serviceConfig *service.ServiceConfig) error {
+	if currServiceConfig, ok := itvs.serviceConfigValues[name]; !ok {
+		itvs.serviceConfigValues[name] = serviceConfig
+	} else {
+		if serviceConfig.GetImageBuildSpec() != nil {
+			currServiceConfig.SetImageBuildSpec(serviceConfig.GetImageBuildSpec())
+			logrus.Infof("Updating image build spec of service config for '%v'", name)
+		}
+		if serviceConfig.GetContainerImageName() != "" {
+			currServiceConfig.SetContainerImageName(serviceConfig.GetContainerImageName())
+			logrus.Infof("Updating container image to use for service config for '%v'", name)
+		}
+		itvs.serviceConfigValues[name] = currServiceConfig
+	}
+	return nil
+}
+
+func (itvs *InterpretationTimeValueStore) GetServiceConfig(name service.ServiceName) (*service.ServiceConfig, error) {
+	serviceConfig, ok := itvs.serviceConfigValues[name]
+	if !ok {
+		return nil, stacktrace.NewError("Did not find service config for '%v' in interpretation time value store.", name)
+	}
+	return serviceConfig, nil
 }
