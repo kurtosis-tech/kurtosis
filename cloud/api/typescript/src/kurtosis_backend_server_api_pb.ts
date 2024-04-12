@@ -1476,9 +1476,9 @@ export class User extends Message<User> {
 }
 
 /**
- * @generated from message kurtosis_cloud.GetUnlockedPortsRequest
+ * @generated from message kurtosis_cloud.GetPortsMetadataRequest
  */
-export class GetUnlockedPortsRequest extends Message<GetUnlockedPortsRequest> {
+export class GetPortsMetadataRequest extends Message<GetPortsMetadataRequest> {
   /**
    * @generated from field: string access_token = 1;
    */
@@ -1494,33 +1494,33 @@ export class GetUnlockedPortsRequest extends Message<GetUnlockedPortsRequest> {
    */
   enclaveShortUuid = "";
 
-  constructor(data?: PartialMessage<GetUnlockedPortsRequest>) {
+  constructor(data?: PartialMessage<GetPortsMetadataRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "kurtosis_cloud.GetUnlockedPortsRequest";
+  static readonly typeName = "kurtosis_cloud.GetPortsMetadataRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "instance_short_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "enclave_short_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetUnlockedPortsRequest {
-    return new GetUnlockedPortsRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPortsMetadataRequest {
+    return new GetPortsMetadataRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetUnlockedPortsRequest {
-    return new GetUnlockedPortsRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetPortsMetadataRequest {
+    return new GetPortsMetadataRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetUnlockedPortsRequest {
-    return new GetUnlockedPortsRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetPortsMetadataRequest {
+    return new GetPortsMetadataRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: GetUnlockedPortsRequest | PlainMessage<GetUnlockedPortsRequest> | undefined, b: GetUnlockedPortsRequest | PlainMessage<GetUnlockedPortsRequest> | undefined): boolean {
-    return proto3.util.equals(GetUnlockedPortsRequest, a, b);
+  static equals(a: GetPortsMetadataRequest | PlainMessage<GetPortsMetadataRequest> | undefined, b: GetPortsMetadataRequest | PlainMessage<GetPortsMetadataRequest> | undefined): boolean {
+    return proto3.util.equals(GetPortsMetadataRequest, a, b);
   }
 }
 
@@ -1529,9 +1529,21 @@ export class GetUnlockedPortsRequest extends Message<GetUnlockedPortsRequest> {
  */
 export class CheckPortAuthorizationRequest extends Message<CheckPortAuthorizationRequest> {
   /**
-   * @generated from field: kurtosis_cloud.Port port = 1;
+   * @generated from oneof kurtosis_cloud.CheckPortAuthorizationRequest.port_identifier
    */
-  port?: Port;
+  portIdentifier: {
+    /**
+     * @generated from field: kurtosis_cloud.Port port = 1;
+     */
+    value: Port;
+    case: "port";
+  } | {
+    /**
+     * @generated from field: string alias = 2;
+     */
+    value: string;
+    case: "alias";
+  } | { case: undefined; value?: undefined } = { case: undefined };
 
   constructor(data?: PartialMessage<CheckPortAuthorizationRequest>) {
     super();
@@ -1541,7 +1553,8 @@ export class CheckPortAuthorizationRequest extends Message<CheckPortAuthorizatio
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "kurtosis_cloud.CheckPortAuthorizationRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "port", kind: "message", T: Port },
+    { no: 1, name: "port", kind: "message", T: Port, oneof: "port_identifier" },
+    { no: 2, name: "alias", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "port_identifier" },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CheckPortAuthorizationRequest {
@@ -1703,76 +1716,82 @@ export class Port extends Message<Port> {
 }
 
 /**
- * @generated from message kurtosis_cloud.GetUnlockedPortsResponse
+ * @generated from message kurtosis_cloud.PortMetadata
  */
-export class GetUnlockedPortsResponse extends Message<GetUnlockedPortsResponse> {
+export class PortMetadata extends Message<PortMetadata> {
   /**
-   * @generated from field: repeated kurtosis_cloud.Port port = 1;
+   * @generated from field: kurtosis_cloud.Port port = 1;
    */
-  port: Port[] = [];
+  port?: Port;
 
-  constructor(data?: PartialMessage<GetUnlockedPortsResponse>) {
+  /**
+   * @generated from field: string alias = 2;
+   */
+  alias = "";
+
+  constructor(data?: PartialMessage<PortMetadata>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "kurtosis_cloud.GetUnlockedPortsResponse";
+  static readonly typeName = "kurtosis_cloud.PortMetadata";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "port", kind: "message", T: Port, repeated: true },
+    { no: 1, name: "port", kind: "message", T: Port },
+    { no: 2, name: "alias", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetUnlockedPortsResponse {
-    return new GetUnlockedPortsResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PortMetadata {
+    return new PortMetadata().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetUnlockedPortsResponse {
-    return new GetUnlockedPortsResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PortMetadata {
+    return new PortMetadata().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetUnlockedPortsResponse {
-    return new GetUnlockedPortsResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PortMetadata {
+    return new PortMetadata().fromJsonString(jsonString, options);
   }
 
-  static equals(a: GetUnlockedPortsResponse | PlainMessage<GetUnlockedPortsResponse> | undefined, b: GetUnlockedPortsResponse | PlainMessage<GetUnlockedPortsResponse> | undefined): boolean {
-    return proto3.util.equals(GetUnlockedPortsResponse, a, b);
+  static equals(a: PortMetadata | PlainMessage<PortMetadata> | undefined, b: PortMetadata | PlainMessage<PortMetadata> | undefined): boolean {
+    return proto3.util.equals(PortMetadata, a, b);
   }
 }
 
 /**
- * @generated from message kurtosis_cloud.CheckAliasAuthRequest
+ * @generated from message kurtosis_cloud.GetPortsMetadataResponse
  */
-export class CheckAliasAuthRequest extends Message<CheckAliasAuthRequest> {
+export class GetPortsMetadataResponse extends Message<GetPortsMetadataResponse> {
   /**
-   * @generated from field: string alias = 1;
+   * @generated from field: repeated kurtosis_cloud.PortMetadata port = 1;
    */
-  alias = "";
+  port: PortMetadata[] = [];
 
-  constructor(data?: PartialMessage<CheckAliasAuthRequest>) {
+  constructor(data?: PartialMessage<GetPortsMetadataResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "kurtosis_cloud.CheckAliasAuthRequest";
+  static readonly typeName = "kurtosis_cloud.GetPortsMetadataResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "alias", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: "port", kind: "message", T: PortMetadata, repeated: true },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CheckAliasAuthRequest {
-    return new CheckAliasAuthRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPortsMetadataResponse {
+    return new GetPortsMetadataResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): CheckAliasAuthRequest {
-    return new CheckAliasAuthRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetPortsMetadataResponse {
+    return new GetPortsMetadataResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): CheckAliasAuthRequest {
-    return new CheckAliasAuthRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetPortsMetadataResponse {
+    return new GetPortsMetadataResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: CheckAliasAuthRequest | PlainMessage<CheckAliasAuthRequest> | undefined, b: CheckAliasAuthRequest | PlainMessage<CheckAliasAuthRequest> | undefined): boolean {
-    return proto3.util.equals(CheckAliasAuthRequest, a, b);
+  static equals(a: GetPortsMetadataResponse | PlainMessage<GetPortsMetadataResponse> | undefined, b: GetPortsMetadataResponse | PlainMessage<GetPortsMetadataResponse> | undefined): boolean {
+    return proto3.util.equals(GetPortsMetadataResponse, a, b);
   }
 }
 
