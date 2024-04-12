@@ -1769,9 +1769,9 @@ export class PortMetadata extends Message<PortMetadata> {
  */
 export class GetPortsMetadataResponse extends Message<GetPortsMetadataResponse> {
   /**
-   * @generated from field: repeated kurtosis_cloud.PortMetadata port = 1;
+   * @generated from field: repeated kurtosis_cloud.PortMetadata portsAndMetadata = 1;
    */
-  port: PortMetadata[] = [];
+  portsAndMetadata: PortMetadata[] = [];
 
   constructor(data?: PartialMessage<GetPortsMetadataResponse>) {
     super();
@@ -1781,7 +1781,7 @@ export class GetPortsMetadataResponse extends Message<GetPortsMetadataResponse> 
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "kurtosis_cloud.GetPortsMetadataResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "port", kind: "message", T: PortMetadata, repeated: true },
+    { no: 1, name: "portsAndMetadata", kind: "message", T: PortMetadata, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPortsMetadataResponse {

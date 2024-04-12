@@ -260,7 +260,7 @@ message PortMetadata {
 }
 
 message GetPortsMetadataResponse {
-  repeated PortMetadata port = 1;
+  repeated PortMetadata portsAndMetadata = 1;
 }
 
 message  AddAliasRequest {

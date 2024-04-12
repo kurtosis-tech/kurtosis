@@ -274,7 +274,7 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while pulling unauthenticated ports from the cloud backend")
 	}
-	portMetadata = getUnauthenticatedPortsResponse.Msg.Port
+	portMetadata = getUnauthenticatedPortsResponse.Msg.PortsAndMetadata
 
 	for _, service := range serviceInfoMapFromApicObj {
 		serviceShortUuid := service.ServiceUuid[:shortUuidLength]
