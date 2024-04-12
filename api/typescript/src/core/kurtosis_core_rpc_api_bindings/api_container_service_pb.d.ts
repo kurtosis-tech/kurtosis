@@ -21,6 +21,11 @@ export class Port extends jspb.Message {
   hasLocked(): boolean;
   clearLocked(): Port;
 
+  getAlias(): string;
+  setAlias(value: string): Port;
+  hasAlias(): boolean;
+  clearAlias(): Port;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Port.AsObject;
   static toObject(includeInstance: boolean, msg: Port): Port.AsObject;
@@ -36,6 +41,7 @@ export namespace Port {
     maybeApplicationProtocol: string,
     maybeWaitTimeout: string,
     locked?: boolean,
+    alias?: string,
   }
 
   export enum TransportProtocol { 
@@ -47,6 +53,11 @@ export namespace Port {
   export enum LockedCase { 
     _LOCKED_NOT_SET = 0,
     LOCKED = 5,
+  }
+
+  export enum AliasCase { 
+    _ALIAS_NOT_SET = 0,
+    ALIAS = 6,
   }
 }
 

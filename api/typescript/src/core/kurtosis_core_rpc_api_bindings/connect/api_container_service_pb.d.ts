@@ -129,6 +129,13 @@ export declare class Port extends Message<Port> {
    */
   locked?: boolean;
 
+  /**
+   * this is useful in the cloud context; ignore in local
+   *
+   * @generated from field: optional string alias = 6;
+   */
+  alias?: string;
+
   constructor(data?: PartialMessage<Port>);
 
   static readonly runtime: typeof proto3;
