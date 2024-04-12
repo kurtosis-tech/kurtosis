@@ -1806,12 +1806,17 @@ export class GetPortsMetadataResponse extends Message<GetPortsMetadataResponse> 
  */
 export class AddAliasRequest extends Message<AddAliasRequest> {
   /**
-   * @generated from field: kurtosis_cloud.Port port = 1;
+   * @generated from field: string access_token = 1;
+   */
+  accessToken = "";
+
+  /**
+   * @generated from field: kurtosis_cloud.Port port = 2;
    */
   port?: Port;
 
   /**
-   * @generated from field: string alias = 2;
+   * @generated from field: string alias = 3;
    */
   alias = "";
 
@@ -1823,8 +1828,9 @@ export class AddAliasRequest extends Message<AddAliasRequest> {
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "kurtosis_cloud.AddAliasRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "port", kind: "message", T: Port },
-    { no: 2, name: "alias", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "port", kind: "message", T: Port },
+    { no: 3, name: "alias", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AddAliasRequest {
