@@ -264,6 +264,7 @@ message GetPortsMetadataResponse {
 }
 
 message  AddAliasRequest {
-  Port port=1;
-  string alias=2;
+  string access_token=1;
+  Port port=2;
+  string alias=3;
 }
