@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.88.16](https://github.com/kurtosis-tech/kurtosis/compare/0.88.15...0.88.16) (2024-04-08)
+
+
+### Bug Fixes
+
+* locked is red unlocked is green ([#2363](https://github.com/kurtosis-tech/kurtosis/issues/2363)) ([851876d](https://github.com/kurtosis-tech/kurtosis/commit/851876df5e26d2fe466534e546eb7543d1603d80))
+
 ## [0.88.15](https://github.com/kurtosis-tech/kurtosis/compare/0.88.14...0.88.15) (2024-04-08)
 
 

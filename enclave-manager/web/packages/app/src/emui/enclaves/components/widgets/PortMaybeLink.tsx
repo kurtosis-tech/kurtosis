@@ -54,7 +54,7 @@ export const PortMaybeLink = ({ port, disablePortLocking }: PortMaybeLinkProps) 
                 cursor="pointer"
                 onClick={handleLockUnlockClick}
                 pointerEvents={disablePortLocking ? "none" : "auto"}
-                color={disablePortLocking ? "gray.200" : "white"}
+                color={disablePortLocking ? "gray.200" : port.port.locked ? "red.500" : "green.500"}
                 aria-label={port.port.locked ? "Publish port" : "Make port private"}
               />
             </Tooltip>
