@@ -28,8 +28,7 @@ service KurtosisCloudBackendServer {
   };
   rpc UnlockPort(UnlockPortRequest) returns(google.protobuf.Empty){};
   rpc LockPort(LockPortRequest) returns(google.protobuf.Empty){};
-  rpc GetUnlockedPorts(GetUnlockedPortsRequest) returns(GetUnlockedPortsResponse){}
-  rpc CheckAliasAuth(CheckAliasAuthRequest) returns(google.protobuf.Empty) {};
+  rpc GetPortsMetadata(GetPortsMetadataRequest) returns(GetPortsMetadataResponse){}
   rpc AddAlias(AddAliasRequest) returns(google.protobuf.Empty){};
 }
 
@@ -224,14 +223,17 @@ message User {
   string Updated = 4;
 }
 
-message GetUnlockedPortsRequest {
+message GetPortsMetadataRequest {
   string access_token = 1;
   string instance_short_uuid=2;
   string enclave_short_uuid=3;
 }
 
 message CheckPortAuthorizationRequest {
-  Port port = 1;
+  oneof port_identifier {
+    Port port = 1;
+    string alias=2;
+  }
 }
 
 message UnlockPortRequest {
@@ -251,12 +253,13 @@ message Port {
   string enclave_short_uuid=4;
 }
 
-message GetUnlockedPortsResponse {
-  repeated Port port = 1;
+message PortMetadata {
+  Port port = 1;
+  string alias = 2;
 }
 
-message CheckAliasAuthRequest {
-  string alias = 1;
+message GetPortsMetadataResponse {
+  repeated PortMetadata port = 1;
 }
 
 message  AddAliasRequest {
