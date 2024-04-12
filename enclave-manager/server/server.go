@@ -284,7 +284,7 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 			for _, unlockedPortsAndService := range portMetadata {
 				if unlockedPortsAndService.Port.ServiceShortUuid == serviceShortUuid {
 					if privatePort.Number == unlockedPortsAndService.Port.PortNumber {
-						locked = false
+						locked = unlockedPortsAndService.Locked
 						alias = unlockedPortsAndService.Alias
 						break
 					}
