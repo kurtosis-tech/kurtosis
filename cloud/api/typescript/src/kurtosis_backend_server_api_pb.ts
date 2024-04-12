@@ -1729,6 +1729,11 @@ export class PortMetadata extends Message<PortMetadata> {
    */
   alias = "";
 
+  /**
+   * @generated from field: bool locked = 3;
+   */
+  locked = false;
+
   constructor(data?: PartialMessage<PortMetadata>) {
     super();
     proto3.util.initPartial(data, this);
@@ -1739,6 +1744,7 @@ export class PortMetadata extends Message<PortMetadata> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "port", kind: "message", T: Port },
     { no: 2, name: "alias", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "locked", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PortMetadata {

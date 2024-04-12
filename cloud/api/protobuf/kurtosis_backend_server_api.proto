@@ -256,6 +256,7 @@ message Port {
 message PortMetadata {
   Port port = 1;
   string alias = 2;
+  bool locked = 3;
 }
 
 message GetPortsMetadataResponse {
