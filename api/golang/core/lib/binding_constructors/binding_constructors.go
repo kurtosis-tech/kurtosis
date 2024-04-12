@@ -25,6 +25,7 @@ func NewPort(
 		MaybeApplicationProtocol: maybeApplicationProtocol,
 		MaybeWaitTimeout:         maybeWaitTimeout,
 		Locked:                   nil,
+		Alias:                    nil,
 	}
 }
 
