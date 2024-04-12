@@ -19,6 +19,10 @@ service KurtosisCloudBackendServer {
   rpc RefreshDefaultPaymentMethod (RefreshDefaultPaymentMethodArgs) returns (google.protobuf.Empty) {};
   rpc CancelPaymentSubscription (CancelPaymentSubscriptionArgs) returns (google.protobuf.Empty) {};
   rpc UpdateAddress(UpdateAddressArgs) returns (google.protobuf.Empty) {};
+  rpc GetInstances(google.protobuf.Empty) returns (GetInstancesResponse) {};
+  rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse) {};
+  rpc ChangeActiveStatus(ChangeUserActiveRequest) returns (google.protobuf.Empty) {};
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {};
   rpc CheckPortAuthorization(CheckPortAuthorizationRequest) returns(google.protobuf.Empty){
     option idempotency_level = NO_SIDE_EFFECTS;
   };
@@ -146,6 +150,78 @@ message UpdateAddressArgs {
   string state = 6;
   string postal_code = 7;
   string country = 8;
+}
+
+message DeleteInstanceRequest {
+  string instance_id = 1;
+  string ec2_id = 2;
+}
+
+message DeleteInstanceResponse {
+  string status = 1;
+}
+
+message GetInstancesResponse {
+  map<string, Instance> instances = 1;
+}
+
+message ChangeUserActiveRequest {
+  string user_id = 1;
+  bool active = 2;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message Auth0User {
+  string Auth0UserId = 1;
+  optional string Auth0Name = 2;
+  optional string Auth0GivenName = 3;
+  optional string Auth0FamilyName = 4;
+  optional string Auth0Email = 5;
+  optional bool Auth0EmailVerified = 6;
+  optional string Auth0Provider = 7;
+  optional string Auth0Created = 8;
+  optional string Auth0LastLogin = 9;
+  optional string Auth0LastIp = 10;
+  optional int64 Auth0LoginsCount = 11;
+  optional string Auth0Picture = 12;
+  optional string Auth0Location = 13;
+}
+
+message Ec2Connection {
+  string InstanceName = 1;
+  string PublicDns = 2;
+  string IpAddress = 3;
+  string InstanceId = 4;
+}
+
+message PaymentUser {
+  string UserId = 1;
+  string Subscription = 2;
+}
+
+message Instance {
+  string Uuid = 1;
+  string UserId = 2;
+  optional Auth0User Auth0User = 3;
+  optional Ec2Connection Ec2Connection = 4;
+  string Status = 5;
+  string Updated = 6;
+  string Created = 7;
+  optional PaymentUser PaymentUser = 8;
+}
+
+message User {
+  string UserID = 1;
+  string ExternalUserID = 2;
+  bool Active = 3;
+  string Updated = 4;
 }
 
 message GetUnlockedPortsRequest {
