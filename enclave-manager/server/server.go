@@ -261,37 +261,34 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 	if err != nil {
 		return nil, err
 	}
-	getUnlockedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudPortsRequest]{
-		Msg: &kurtosis_backend_server_rpc_api_bindings.GetCloudPortsRequest{
+	getUnlockedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest{
 			AccessToken:       jwtToken,
 			InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
 			EnclaveShortUuid:  req.Msg.EnclaveShortenedUuid,
 		},
 	}
 
-	var portMetadata []*kurtosis_backend_server_rpc_api_bindings.CloudPort
-	cloudPortsResponse, err := (*cloudClient).GetCloudPorts(ctx, getUnlockedPortsRequest)
+	var unlockedPortsAndServices []*kurtosis_backend_server_rpc_api_bindings.Port
+	getUnauthenticatedPortsResponse, err := (*cloudClient).GetUnlockedPorts(ctx, getUnlockedPortsRequest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while pulling unauthenticated ports from the cloud backend")
 	}
-	portMetadata = cloudPortsResponse.Msg.CloudPorts
+	unlockedPortsAndServices = getUnauthenticatedPortsResponse.Msg.Port
 
 	for _, service := range serviceInfoMapFromApicObj {
 		serviceShortUuid := service.ServiceUuid[:shortUuidLength]
 		for _, privatePort := range service.PrivatePorts {
 			locked := true
-			alias := ""
-			for _, unlockedPortsAndService := range portMetadata {
-				if unlockedPortsAndService.Port.ServiceShortUuid == serviceShortUuid {
-					if privatePort.Number == unlockedPortsAndService.Port.PortNumber {
-						locked = unlockedPortsAndService.Locked
-						alias = unlockedPortsAndService.Alias
+			for _, unlockedPortsAndService := range unlockedPortsAndServices {
+				if unlockedPortsAndService.ServiceShortUuid == serviceShortUuid {
+					if privatePort.Number == unlockedPortsAndService.PortNumber {
+						locked = false
 						break
 					}
 				}
 			}
 			privatePort.Locked = &locked
-			privatePort.Alias = &alias
 		}
 	}
 
