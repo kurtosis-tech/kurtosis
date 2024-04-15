@@ -125,6 +125,7 @@ message RefreshDefaultPaymentMethodArgs {
 
 message CancelPaymentSubscriptionArgs {
   string access_token = 1;
+  string reason = 2;
 }
 
 message AwsKey {
