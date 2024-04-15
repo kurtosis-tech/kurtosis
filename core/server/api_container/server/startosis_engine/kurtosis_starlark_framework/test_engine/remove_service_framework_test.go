@@ -3,6 +3,7 @@ package test_engine
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/stretchr/testify/mock"
@@ -13,7 +14,8 @@ import (
 
 type removeServiceTestCase struct {
 	*testing.T
-	serviceNetwork *service_network.MockServiceNetwork
+	serviceNetwork          *service_network.MockServiceNetwork
+	interpretationTimeStore *interpretation_time_value_store.InterpretationTimeValueStore
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestRemoveService() {
@@ -26,13 +28,14 @@ func (suite *KurtosisPlanInstructionTestSuite) TestRemoveService() {
 	)
 
 	suite.run(&removeServiceTestCase{
-		T:              suite.T(),
-		serviceNetwork: suite.serviceNetwork,
+		T:                       suite.T(),
+		serviceNetwork:          suite.serviceNetwork,
+		interpretationTimeStore: suite.interpretationTimeValueStore,
 	})
 }
 
 func (t *removeServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return remove_service.NewRemoveService(t.serviceNetwork)
+	return remove_service.NewRemoveService(t.serviceNetwork, t.interpretationTimeStore)
 }
 
 func (t *removeServiceTestCase) GetStarlarkCode() string {

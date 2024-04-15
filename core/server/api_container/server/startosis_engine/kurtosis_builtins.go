@@ -77,7 +77,7 @@ func KurtosisPlanInstructions(
 		verify.NewVerify(runtimeValueStore),
 		exec.NewExec(serviceNetwork, runtimeValueStore),
 		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),
-		remove_service.NewRemoveService(serviceNetwork),
+		remove_service.NewRemoveService(serviceNetwork, interpretationTimeValueStore),
 		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore),
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		start_service.NewStartService(serviceNetwork),

@@ -45,7 +45,8 @@ func NewRemoveService(serviceNetwork service_network.ServiceNetwork, interpretat
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &RemoveServiceCapabilities{
-				serviceNetwork: serviceNetwork,
+				serviceNetwork:          serviceNetwork,
+				interpretationTimeStore: interpretationTimeStore,
 
 				serviceName: "", // populated at interpretation time
 				description: "", // populated at interpretation time
