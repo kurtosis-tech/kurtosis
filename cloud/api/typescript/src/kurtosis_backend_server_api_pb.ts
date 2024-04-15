@@ -1476,6 +1476,57 @@ export class User extends Message<User> {
 }
 
 /**
+ * TODO deprecate this when all engines are upgraded
+ *
+ * @generated from message kurtosis_cloud.GetUnlockedPortsRequest
+ */
+export class GetUnlockedPortsRequest extends Message<GetUnlockedPortsRequest> {
+  /**
+   * @generated from field: string access_token = 1;
+   */
+  accessToken = "";
+
+  /**
+   * @generated from field: string instance_short_uuid = 2;
+   */
+  instanceShortUuid = "";
+
+  /**
+   * @generated from field: string enclave_short_uuid = 3;
+   */
+  enclaveShortUuid = "";
+
+  constructor(data?: PartialMessage<GetUnlockedPortsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_cloud.GetUnlockedPortsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "instance_short_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "enclave_short_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetUnlockedPortsRequest {
+    return new GetUnlockedPortsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetUnlockedPortsRequest {
+    return new GetUnlockedPortsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetUnlockedPortsRequest {
+    return new GetUnlockedPortsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetUnlockedPortsRequest | PlainMessage<GetUnlockedPortsRequest> | undefined, b: GetUnlockedPortsRequest | PlainMessage<GetUnlockedPortsRequest> | undefined): boolean {
+    return proto3.util.equals(GetUnlockedPortsRequest, a, b);
+  }
+}
+
+/**
  * @generated from message kurtosis_cloud.GetPortsMetadataRequest
  */
 export class GetPortsMetadataRequest extends Message<GetPortsMetadataRequest> {
@@ -1712,6 +1763,45 @@ export class Port extends Message<Port> {
 
   static equals(a: Port | PlainMessage<Port> | undefined, b: Port | PlainMessage<Port> | undefined): boolean {
     return proto3.util.equals(Port, a, b);
+  }
+}
+
+/**
+ * TODO deprecate this when all clients are upgraded
+ *
+ * @generated from message kurtosis_cloud.GetUnlockedPortsResponse
+ */
+export class GetUnlockedPortsResponse extends Message<GetUnlockedPortsResponse> {
+  /**
+   * @generated from field: repeated kurtosis_cloud.Port port = 1;
+   */
+  port: Port[] = [];
+
+  constructor(data?: PartialMessage<GetUnlockedPortsResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_cloud.GetUnlockedPortsResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "port", kind: "message", T: Port, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetUnlockedPortsResponse {
+    return new GetUnlockedPortsResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetUnlockedPortsResponse {
+    return new GetUnlockedPortsResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetUnlockedPortsResponse {
+    return new GetUnlockedPortsResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetUnlockedPortsResponse | PlainMessage<GetUnlockedPortsResponse> | undefined, b: GetUnlockedPortsResponse | PlainMessage<GetUnlockedPortsResponse> | undefined): boolean {
+    return proto3.util.equals(GetUnlockedPortsResponse, a, b);
   }
 }
 

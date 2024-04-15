@@ -4,7 +4,7 @@
 // @ts-nocheck
 
 import { Empty, MethodIdempotency, MethodKind } from "@bufbuild/protobuf";
-import { AddAliasRequest, CancelPaymentSubscriptionArgs, ChangeUserActiveRequest, CheckPortAuthorizationRequest, DeleteInstanceRequest, DeleteInstanceResponse, GetCloudInstanceConfigArgs, GetCloudInstanceConfigResponse, GetInstancesResponse, GetOrCreateApiKeyRequest, GetOrCreateApiKeyResponse, GetOrCreateInstanceRequest, GetOrCreateInstanceResponse, GetOrCreatePaymentConfigArgs, GetOrCreatePaymentConfigResponse, GetPortsMetadataRequest, GetPortsMetadataResponse, GetUserRequest, GetUserResponse, LockPortRequest, RefreshDefaultPaymentMethodArgs, UnlockPortRequest, UpdateAddressArgs } from "./kurtosis_backend_server_api_pb.js";
+import { AddAliasRequest, CancelPaymentSubscriptionArgs, ChangeUserActiveRequest, CheckPortAuthorizationRequest, DeleteInstanceRequest, DeleteInstanceResponse, GetCloudInstanceConfigArgs, GetCloudInstanceConfigResponse, GetInstancesResponse, GetOrCreateApiKeyRequest, GetOrCreateApiKeyResponse, GetOrCreateInstanceRequest, GetOrCreateInstanceResponse, GetOrCreatePaymentConfigArgs, GetOrCreatePaymentConfigResponse, GetPortsMetadataRequest, GetPortsMetadataResponse, GetUnlockedPortsRequest, GetUnlockedPortsResponse, GetUserRequest, GetUserResponse, LockPortRequest, RefreshDefaultPaymentMethodArgs, UnlockPortRequest, UpdateAddressArgs } from "./kurtosis_backend_server_api_pb.js";
 
 /**
  * @generated from service kurtosis_cloud.KurtosisCloudBackendServer
@@ -148,6 +148,15 @@ export const KurtosisCloudBackendServer = {
       name: "LockPort",
       I: LockPortRequest,
       O: Empty,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_cloud.KurtosisCloudBackendServer.GetUnlockedPorts
+     */
+    getUnlockedPorts: {
+      name: "GetUnlockedPorts",
+      I: GetUnlockedPortsRequest,
+      O: GetUnlockedPortsResponse,
       kind: MethodKind.Unary,
     },
     /**

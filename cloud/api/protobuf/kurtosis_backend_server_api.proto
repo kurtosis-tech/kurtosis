@@ -28,7 +28,8 @@ service KurtosisCloudBackendServer {
   };
   rpc UnlockPort(UnlockPortRequest) returns(google.protobuf.Empty){};
   rpc LockPort(LockPortRequest) returns(google.protobuf.Empty){};
-  rpc GetPortsMetadata(GetPortsMetadataRequest) returns(GetPortsMetadataResponse){}
+  rpc GetUnlockedPorts(GetUnlockedPortsRequest) returns(GetUnlockedPortsResponse){};
+  rpc GetPortsMetadata(GetPortsMetadataRequest) returns(GetPortsMetadataResponse){};
   rpc AddAlias(AddAliasRequest) returns(google.protobuf.Empty){};
 }
 
@@ -223,6 +224,13 @@ message User {
   string Updated = 4;
 }
 
+// TODO deprecate this when all engines are upgraded
+message GetUnlockedPortsRequest {
+  string access_token = 1;
+  string instance_short_uuid=2;
+  string enclave_short_uuid=3;
+}
+
 message GetPortsMetadataRequest {
   string access_token = 1;
   string instance_short_uuid=2;
@@ -251,6 +259,11 @@ message Port {
   string instance_short_uuid=2;
   string service_short_uuid=3;
   string enclave_short_uuid=4;
+}
+
+// TODO deprecate this when all clients are upgraded
+message GetUnlockedPortsResponse {
+  repeated Port port = 1;
 }
 
 message PortMetadata {

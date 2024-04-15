@@ -80,6 +80,9 @@ const (
 	// KurtosisCloudBackendServerLockPortProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's LockPort RPC.
 	KurtosisCloudBackendServerLockPortProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/LockPort"
+	// KurtosisCloudBackendServerGetUnlockedPortsProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's GetUnlockedPorts RPC.
+	KurtosisCloudBackendServerGetUnlockedPortsProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnlockedPorts"
 	// KurtosisCloudBackendServerGetPortsMetadataProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's GetPortsMetadata RPC.
 	KurtosisCloudBackendServerGetPortsMetadataProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetPortsMetadata"
@@ -106,6 +109,7 @@ type KurtosisCloudBackendServerClient interface {
 	CheckPortAuthorization(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest]) (*connect.Response[emptypb.Empty], error)
 	UnlockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	LockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.LockPortRequest]) (*connect.Response[emptypb.Empty], error)
+	GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error)
 	GetPortsMetadata(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataResponse], error)
 	AddAlias(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
 }
@@ -198,6 +202,11 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerLockPortProcedure,
 			opts...,
 		),
+		getUnlockedPorts: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerGetUnlockedPortsProcedure,
+			opts...,
+		),
 		getPortsMetadata: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataRequest, kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataResponse](
 			httpClient,
 			baseURL+KurtosisCloudBackendServerGetPortsMetadataProcedure,
@@ -228,6 +237,7 @@ type kurtosisCloudBackendServerClient struct {
 	checkPortAuthorization      *connect.Client[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest, emptypb.Empty]
 	unlockPort                  *connect.Client[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest, emptypb.Empty]
 	lockPort                    *connect.Client[kurtosis_backend_server_rpc_api_bindings.LockPortRequest, emptypb.Empty]
+	getUnlockedPorts            *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse]
 	getPortsMetadata            *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataRequest, kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataResponse]
 	addAlias                    *connect.Client[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest, emptypb.Empty]
 }
@@ -310,6 +320,11 @@ func (c *kurtosisCloudBackendServerClient) LockPort(ctx context.Context, req *co
 	return c.lockPort.CallUnary(ctx, req)
 }
 
+// GetUnlockedPorts calls kurtosis_cloud.KurtosisCloudBackendServer.GetUnlockedPorts.
+func (c *kurtosisCloudBackendServerClient) GetUnlockedPorts(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error) {
+	return c.getUnlockedPorts.CallUnary(ctx, req)
+}
+
 // GetPortsMetadata calls kurtosis_cloud.KurtosisCloudBackendServer.GetPortsMetadata.
 func (c *kurtosisCloudBackendServerClient) GetPortsMetadata(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataResponse], error) {
 	return c.getPortsMetadata.CallUnary(ctx, req)
@@ -338,6 +353,7 @@ type KurtosisCloudBackendServerHandler interface {
 	CheckPortAuthorization(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest]) (*connect.Response[emptypb.Empty], error)
 	UnlockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	LockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.LockPortRequest]) (*connect.Response[emptypb.Empty], error)
+	GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error)
 	GetPortsMetadata(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataResponse], error)
 	AddAlias(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
 }
@@ -426,6 +442,11 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.LockPort,
 		opts...,
 	)
+	kurtosisCloudBackendServerGetUnlockedPortsHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerGetUnlockedPortsProcedure,
+		svc.GetUnlockedPorts,
+		opts...,
+	)
 	kurtosisCloudBackendServerGetPortsMetadataHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerGetPortsMetadataProcedure,
 		svc.GetPortsMetadata,
@@ -468,6 +489,8 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerUnlockPortHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerLockPortProcedure:
 			kurtosisCloudBackendServerLockPortHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerGetUnlockedPortsProcedure:
+			kurtosisCloudBackendServerGetUnlockedPortsHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerGetPortsMetadataProcedure:
 			kurtosisCloudBackendServerGetPortsMetadataHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerAddAliasProcedure:
@@ -539,6 +562,10 @@ func (UnimplementedKurtosisCloudBackendServerHandler) UnlockPort(context.Context
 
 func (UnimplementedKurtosisCloudBackendServerHandler) LockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.LockPortRequest]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.LockPort is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetUnlockedPorts is not implemented"))
 }
 
 func (UnimplementedKurtosisCloudBackendServerHandler) GetPortsMetadata(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataResponse], error) {
