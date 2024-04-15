@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.88.17](https://github.com/kurtosis-tech/kurtosis/compare/0.88.16...0.88.17) (2024-04-15)
+
+
+### Features
+
+* Add reason argument to the cancel subscription method ([#2377](https://github.com/kurtosis-tech/kurtosis/issues/2377)) ([dd8d1ff](https://github.com/kurtosis-tech/kurtosis/commit/dd8d1ffa8115666ae3a547ea1b6147f05d77c4f2))
+* change made with to star us on ([#2375](https://github.com/kurtosis-tech/kurtosis/issues/2375)) ([56677a1](https://github.com/kurtosis-tech/kurtosis/commit/56677a13226ad30c2272b4c1b761e8a658e5d19c))
+* get all services ([#2367](https://github.com/kurtosis-tech/kurtosis/issues/2367)) ([2ba98f5](https://github.com/kurtosis-tech/kurtosis/commit/2ba98f5f3d82ffd099cda0942ee358fe02bc70a5))
+
+
+### Bug Fixes
+
+* Use instance `updated at` attribute for uptime calculation ([#2378](https://github.com/kurtosis-tech/kurtosis/issues/2378)) ([421d275](https://github.com/kurtosis-tech/kurtosis/commit/421d27593d537a104c825e0e7120200175287e07))
+
 ## [0.88.16](https://github.com/kurtosis-tech/kurtosis/compare/0.88.15...0.88.16) (2024-04-08)
 
 
