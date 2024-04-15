@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -24,7 +25,7 @@ const (
 	descriptionFormatStr = "Removing service '%v'"
 )
 
-func NewRemoveService(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewRemoveService(serviceNetwork service_network.ServiceNetwork, interpretationTimeStore *interpretation_time_value_store.InterpretationTimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RemoveServiceBuiltinName,
@@ -58,7 +59,8 @@ func NewRemoveService(serviceNetwork service_network.ServiceNetwork) *kurtosis_p
 }
 
 type RemoveServiceCapabilities struct {
-	serviceNetwork service_network.ServiceNetwork
+	serviceNetwork          service_network.ServiceNetwork
+	interpretationTimeStore *interpretation_time_value_store.InterpretationTimeValueStore
 
 	serviceName service.ServiceName
 	description string
@@ -71,6 +73,10 @@ func (builtin *RemoveServiceCapabilities) Interpret(_ string, arguments *builtin
 	}
 
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
+	err = builtin.interpretationTimeStore.RemoveService(builtin.serviceName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred removing '%v' from interpretation time store", builtin.serviceName)
+	}
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
 	return starlark.None, nil
 }

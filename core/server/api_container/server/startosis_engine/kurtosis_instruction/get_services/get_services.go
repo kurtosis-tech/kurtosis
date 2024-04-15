@@ -47,8 +47,6 @@ type GetServicesCapabilities struct {
 func (builtin *GetServicesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, descriptionStr)
 
-	// Right now, due to semantics of interpretationTimeStore this will return all services that have been added during interpretation, not accounting for services removed
-	// TODO: Remove service from interpretationTimeStore during plan.remove_service()
 	services, err := builtin.interpretationTimeStore.GetServices()
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while fetching service.")

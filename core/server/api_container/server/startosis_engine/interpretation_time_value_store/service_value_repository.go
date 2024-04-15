@@ -135,6 +135,21 @@ func (repository *serviceInterpretationValueRepository) GetServices() ([]*kurtos
 	return services, nil
 }
 
+func (repository *serviceInterpretationValueRepository) RemoveService(name service.ServiceName) error {
+	logrus.Debugf("Removing service value for '%v' from service value repository...", name)
+	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(serviceInterpretationValueBucketName)
+
+		serviceNameKey := getKey(name)
+
+		return bucket.Delete(serviceNameKey)
+	}); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from service value repository", name)
+	}
+	logrus.Debugf("Successfully removed service value for '%v'", name)
+	return nil
+}
+
 func getKey(name service.ServiceName) []byte {
 	return []byte(name)
 }

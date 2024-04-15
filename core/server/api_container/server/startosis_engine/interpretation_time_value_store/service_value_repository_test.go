@@ -82,11 +82,11 @@ func TestGetServices(t *testing.T) {
 	ports := starlark.NewDict(1)
 	require.NoError(t, ports.SetKey(starlark.String("http"), port))
 
-	serviceOneName := fmt.Sprintf("%v-%v", serviceNameStarlarkStr, "1")
+	serviceOneName := fmt.Sprintf("%v-%v", serviceName, "1")
 	serviceOne, interpretationErr := kurtosis_types.CreateService(starlark.String(serviceOneName), hostName, ipAddress, ports)
 	require.Nil(t, interpretationErr)
 
-	serviceTwoName := fmt.Sprintf("%v-%v", serviceNameStarlarkStr, "2")
+	serviceTwoName := fmt.Sprintf("%v-%v", serviceName, "2")
 	serviceTwo, interpretationErr := kurtosis_types.CreateService(starlark.String(serviceTwoName), hostName, ipAddress, ports)
 	require.Nil(t, interpretationErr)
 
@@ -98,7 +98,47 @@ func TestGetServices(t *testing.T) {
 	actualServices, err := repository.GetServices()
 	require.NoError(t, err)
 	require.Len(t, actualServices, 2)
-	// TODO: check the contents of each objects
+
+	actualServiceOneName, err := actualServices[0].GetName()
+	require.Nil(t, err)
+	require.Equal(t, service.ServiceName(serviceOneName), actualServiceOneName)
+
+	actualServiceTwoName, err := actualServices[1].GetName()
+	require.Nil(t, err)
+	require.Equal(t, service.ServiceName(serviceTwoName), actualServiceTwoName)
+}
+
+func TestRemoveService(t *testing.T) {
+	repository := getServiceInterpretationTimeValueRepository(t)
+	require.NotNil(t, repository)
+
+	applicationProtocol := ""
+	maybeUrl := ""
+
+	port, interpretationErr := port_spec.CreatePortSpecUsingGoValues(
+		string(serviceName),
+		uint16(443),
+		port_spec_core.TransportProtocol_TCP,
+		&applicationProtocol,
+		"10s",
+		&maybeUrl,
+	)
+	require.Nil(t, interpretationErr)
+	ports := starlark.NewDict(1)
+	require.NoError(t, ports.SetKey(starlark.String("http"), port))
+
+	serviceOneName := fmt.Sprintf("%v-%v", serviceName, "1")
+	serviceOne, interpretationErr := kurtosis_types.CreateService(starlark.String(serviceOneName), hostName, ipAddress, ports)
+	require.Nil(t, interpretationErr)
+
+	err := repository.PutService(service.ServiceName(serviceOneName), serviceOne)
+	require.Nil(t, err)
+
+	err = repository.RemoveService(service.ServiceName(serviceOneName))
+	require.Nil(t, err)
+
+	_, err = repository.GetService(service.ServiceName(serviceOneName))
+	require.Error(t, err)
 }
 
 func getServiceInterpretationTimeValueRepository(t *testing.T) *serviceInterpretationValueRepository {
