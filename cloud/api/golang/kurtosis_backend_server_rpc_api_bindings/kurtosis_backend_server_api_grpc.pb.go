@@ -36,7 +36,7 @@ const (
 	KurtosisCloudBackendServer_UnlockPort_FullMethodName                  = "/kurtosis_cloud.KurtosisCloudBackendServer/UnlockPort"
 	KurtosisCloudBackendServer_LockPort_FullMethodName                    = "/kurtosis_cloud.KurtosisCloudBackendServer/LockPort"
 	KurtosisCloudBackendServer_GetUnlockedPorts_FullMethodName            = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnlockedPorts"
-	KurtosisCloudBackendServer_GetPortsMetadata_FullMethodName            = "/kurtosis_cloud.KurtosisCloudBackendServer/GetPortsMetadata"
+	KurtosisCloudBackendServer_GetPortData_FullMethodName                 = "/kurtosis_cloud.KurtosisCloudBackendServer/GetPortData"
 	KurtosisCloudBackendServer_AddAlias_FullMethodName                    = "/kurtosis_cloud.KurtosisCloudBackendServer/AddAlias"
 )
 
@@ -60,7 +60,7 @@ type KurtosisCloudBackendServerClient interface {
 	UnlockPort(ctx context.Context, in *UnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	LockPort(ctx context.Context, in *LockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetUnlockedPorts(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error)
-	GetPortsMetadata(ctx context.Context, in *GetPortsMetadataRequest, opts ...grpc.CallOption) (*GetPortsMetadataResponse, error)
+	GetPortData(ctx context.Context, in *GetPortDataRequest, opts ...grpc.CallOption) (*GetPortDataResponse, error)
 	AddAlias(ctx context.Context, in *AddAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -216,9 +216,9 @@ func (c *kurtosisCloudBackendServerClient) GetUnlockedPorts(ctx context.Context,
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) GetPortsMetadata(ctx context.Context, in *GetPortsMetadataRequest, opts ...grpc.CallOption) (*GetPortsMetadataResponse, error) {
-	out := new(GetPortsMetadataResponse)
-	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetPortsMetadata_FullMethodName, in, out, opts...)
+func (c *kurtosisCloudBackendServerClient) GetPortData(ctx context.Context, in *GetPortDataRequest, opts ...grpc.CallOption) (*GetPortDataResponse, error) {
+	out := new(GetPortDataResponse)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetPortData_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ type KurtosisCloudBackendServerServer interface {
 	UnlockPort(context.Context, *UnlockPortRequest) (*emptypb.Empty, error)
 	LockPort(context.Context, *LockPortRequest) (*emptypb.Empty, error)
 	GetUnlockedPorts(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error)
-	GetPortsMetadata(context.Context, *GetPortsMetadataRequest) (*GetPortsMetadataResponse, error)
+	GetPortData(context.Context, *GetPortDataRequest) (*GetPortDataResponse, error)
 	AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error)
 }
 
@@ -310,8 +310,8 @@ func (UnimplementedKurtosisCloudBackendServerServer) LockPort(context.Context, *
 func (UnimplementedKurtosisCloudBackendServerServer) GetUnlockedPorts(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUnlockedPorts not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) GetPortsMetadata(context.Context, *GetPortsMetadataRequest) (*GetPortsMetadataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPortsMetadata not implemented")
+func (UnimplementedKurtosisCloudBackendServerServer) GetPortData(context.Context, *GetPortDataRequest) (*GetPortDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPortData not implemented")
 }
 func (UnimplementedKurtosisCloudBackendServerServer) AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddAlias not implemented")
@@ -616,20 +616,20 @@ func _KurtosisCloudBackendServer_GetUnlockedPorts_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KurtosisCloudBackendServer_GetPortsMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPortsMetadataRequest)
+func _KurtosisCloudBackendServer_GetPortData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPortDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KurtosisCloudBackendServerServer).GetPortsMetadata(ctx, in)
+		return srv.(KurtosisCloudBackendServerServer).GetPortData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: KurtosisCloudBackendServer_GetPortsMetadata_FullMethodName,
+		FullMethod: KurtosisCloudBackendServer_GetPortData_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).GetPortsMetadata(ctx, req.(*GetPortsMetadataRequest))
+		return srv.(KurtosisCloudBackendServerServer).GetPortData(ctx, req.(*GetPortDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -724,8 +724,8 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _KurtosisCloudBackendServer_GetUnlockedPorts_Handler,
 		},
 		{
-			MethodName: "GetPortsMetadata",
-			Handler:    _KurtosisCloudBackendServer_GetPortsMetadata_Handler,
+			MethodName: "GetPortData",
+			Handler:    _KurtosisCloudBackendServer_GetPortData_Handler,
 		},
 		{
 			MethodName: "AddAlias",

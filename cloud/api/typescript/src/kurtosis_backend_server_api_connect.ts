@@ -4,7 +4,7 @@
 // @ts-nocheck
 
 import { Empty, MethodIdempotency, MethodKind } from "@bufbuild/protobuf";
-import { AddAliasRequest, CancelPaymentSubscriptionArgs, ChangeUserActiveRequest, CheckPortAuthorizationRequest, DeleteInstanceRequest, DeleteInstanceResponse, GetCloudInstanceConfigArgs, GetCloudInstanceConfigResponse, GetInstancesResponse, GetOrCreateApiKeyRequest, GetOrCreateApiKeyResponse, GetOrCreateInstanceRequest, GetOrCreateInstanceResponse, GetOrCreatePaymentConfigArgs, GetOrCreatePaymentConfigResponse, GetPortsMetadataRequest, GetPortsMetadataResponse, GetUnlockedPortsRequest, GetUnlockedPortsResponse, GetUserRequest, GetUserResponse, LockPortRequest, RefreshDefaultPaymentMethodArgs, UnlockPortRequest, UpdateAddressArgs } from "./kurtosis_backend_server_api_pb.js";
+import { AddAliasRequest, CancelPaymentSubscriptionArgs, ChangeUserActiveRequest, CheckPortAuthorizationRequest, DeleteInstanceRequest, DeleteInstanceResponse, GetCloudInstanceConfigArgs, GetCloudInstanceConfigResponse, GetInstancesResponse, GetOrCreateApiKeyRequest, GetOrCreateApiKeyResponse, GetOrCreateInstanceRequest, GetOrCreateInstanceResponse, GetOrCreatePaymentConfigArgs, GetOrCreatePaymentConfigResponse, GetPortDataRequest, GetPortDataResponse, GetUnlockedPortsRequest, GetUnlockedPortsResponse, GetUserRequest, GetUserResponse, LockPortRequest, RefreshDefaultPaymentMethodArgs, UnlockPortRequest, UpdateAddressArgs } from "./kurtosis_backend_server_api_pb.js";
 
 /**
  * @generated from service kurtosis_cloud.KurtosisCloudBackendServer
@@ -160,12 +160,12 @@ export const KurtosisCloudBackendServer = {
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc kurtosis_cloud.KurtosisCloudBackendServer.GetPortsMetadata
+     * @generated from rpc kurtosis_cloud.KurtosisCloudBackendServer.GetPortData
      */
-    getPortsMetadata: {
-      name: "GetPortsMetadata",
-      I: GetPortsMetadataRequest,
-      O: GetPortsMetadataResponse,
+    getPortData: {
+      name: "GetPortData",
+      I: GetPortDataRequest,
+      O: GetPortDataResponse,
       kind: MethodKind.Unary,
     },
     /**

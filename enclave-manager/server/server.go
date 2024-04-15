@@ -261,8 +261,8 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 	if err != nil {
 		return nil, err
 	}
-	getUnlockedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataRequest]{
-		Msg: &kurtosis_backend_server_rpc_api_bindings.GetPortsMetadataRequest{
+	getUnlockedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortDataRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.GetPortDataRequest{
 			AccessToken:       jwtToken,
 			InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
 			EnclaveShortUuid:  req.Msg.EnclaveShortenedUuid,
@@ -270,7 +270,7 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 	}
 
 	var portMetadata []*kurtosis_backend_server_rpc_api_bindings.PortMetadata
-	getUnauthenticatedPortsResponse, err := (*cloudClient).GetPortsMetadata(ctx, getUnlockedPortsRequest)
+	getUnauthenticatedPortsResponse, err := (*cloudClient).GetPortData(ctx, getUnlockedPortsRequest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while pulling unauthenticated ports from the cloud backend")
 	}

@@ -1527,9 +1527,9 @@ export class GetUnlockedPortsRequest extends Message<GetUnlockedPortsRequest> {
 }
 
 /**
- * @generated from message kurtosis_cloud.GetPortsMetadataRequest
+ * @generated from message kurtosis_cloud.GetPortDataRequest
  */
-export class GetPortsMetadataRequest extends Message<GetPortsMetadataRequest> {
+export class GetPortDataRequest extends Message<GetPortDataRequest> {
   /**
    * @generated from field: string access_token = 1;
    */
@@ -1545,33 +1545,33 @@ export class GetPortsMetadataRequest extends Message<GetPortsMetadataRequest> {
    */
   enclaveShortUuid = "";
 
-  constructor(data?: PartialMessage<GetPortsMetadataRequest>) {
+  constructor(data?: PartialMessage<GetPortDataRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "kurtosis_cloud.GetPortsMetadataRequest";
+  static readonly typeName = "kurtosis_cloud.GetPortDataRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "instance_short_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "enclave_short_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPortsMetadataRequest {
-    return new GetPortsMetadataRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPortDataRequest {
+    return new GetPortDataRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetPortsMetadataRequest {
-    return new GetPortsMetadataRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetPortDataRequest {
+    return new GetPortDataRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetPortsMetadataRequest {
-    return new GetPortsMetadataRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetPortDataRequest {
+    return new GetPortDataRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: GetPortsMetadataRequest | PlainMessage<GetPortsMetadataRequest> | undefined, b: GetPortsMetadataRequest | PlainMessage<GetPortsMetadataRequest> | undefined): boolean {
-    return proto3.util.equals(GetPortsMetadataRequest, a, b);
+  static equals(a: GetPortDataRequest | PlainMessage<GetPortDataRequest> | undefined, b: GetPortDataRequest | PlainMessage<GetPortDataRequest> | undefined): boolean {
+    return proto3.util.equals(GetPortDataRequest, a, b);
   }
 }
 
@@ -1855,39 +1855,39 @@ export class PortMetadata extends Message<PortMetadata> {
 }
 
 /**
- * @generated from message kurtosis_cloud.GetPortsMetadataResponse
+ * @generated from message kurtosis_cloud.GetPortDataResponse
  */
-export class GetPortsMetadataResponse extends Message<GetPortsMetadataResponse> {
+export class GetPortDataResponse extends Message<GetPortDataResponse> {
   /**
    * @generated from field: repeated kurtosis_cloud.PortMetadata portsAndMetadata = 1;
    */
   portsAndMetadata: PortMetadata[] = [];
 
-  constructor(data?: PartialMessage<GetPortsMetadataResponse>) {
+  constructor(data?: PartialMessage<GetPortDataResponse>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "kurtosis_cloud.GetPortsMetadataResponse";
+  static readonly typeName = "kurtosis_cloud.GetPortDataResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "portsAndMetadata", kind: "message", T: PortMetadata, repeated: true },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPortsMetadataResponse {
-    return new GetPortsMetadataResponse().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPortDataResponse {
+    return new GetPortDataResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetPortsMetadataResponse {
-    return new GetPortsMetadataResponse().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetPortDataResponse {
+    return new GetPortDataResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetPortsMetadataResponse {
-    return new GetPortsMetadataResponse().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetPortDataResponse {
+    return new GetPortDataResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: GetPortsMetadataResponse | PlainMessage<GetPortsMetadataResponse> | undefined, b: GetPortsMetadataResponse | PlainMessage<GetPortsMetadataResponse> | undefined): boolean {
-    return proto3.util.equals(GetPortsMetadataResponse, a, b);
+  static equals(a: GetPortDataResponse | PlainMessage<GetPortDataResponse> | undefined, b: GetPortDataResponse | PlainMessage<GetPortDataResponse> | undefined): boolean {
+    return proto3.util.equals(GetPortDataResponse, a, b);
   }
 }
 
