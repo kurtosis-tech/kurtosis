@@ -689,6 +689,11 @@ export class CancelPaymentSubscriptionArgs extends Message<CancelPaymentSubscrip
    */
   accessToken = "";
 
+  /**
+   * @generated from field: string reason = 2;
+   */
+  reason = "";
+
   constructor(data?: PartialMessage<CancelPaymentSubscriptionArgs>) {
     super();
     proto3.util.initPartial(data, this);
@@ -698,6 +703,7 @@ export class CancelPaymentSubscriptionArgs extends Message<CancelPaymentSubscrip
   static readonly typeName = "kurtosis_cloud.CancelPaymentSubscriptionArgs";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "reason", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CancelPaymentSubscriptionArgs {
