@@ -96,7 +96,8 @@ message LockUnlockPortRequest {
 }
 
 message AddAliasRequest {
-  uint32 port_number=1;
+  string alias=1;
+  uint32 port_number=2;
   string service_short_uuid=3;
   string enclave_short_uuid=4;
 }

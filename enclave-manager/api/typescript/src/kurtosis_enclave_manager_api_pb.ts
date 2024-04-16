@@ -537,7 +537,12 @@ export class LockUnlockPortRequest extends Message<LockUnlockPortRequest> {
  */
 export class AddAliasRequest extends Message<AddAliasRequest> {
   /**
-   * @generated from field: uint32 port_number = 1;
+   * @generated from field: string alias = 1;
+   */
+  alias = "";
+
+  /**
+   * @generated from field: uint32 port_number = 2;
    */
   portNumber = 0;
 
@@ -559,7 +564,8 @@ export class AddAliasRequest extends Message<AddAliasRequest> {
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "kurtosis_enclave_manager.AddAliasRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "port_number", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 1, name: "alias", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "port_number", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
     { no: 3, name: "service_short_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "enclave_short_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
