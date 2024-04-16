@@ -180,6 +180,27 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
     [kurtosisClient, refreshServices, state.enclaves],
   );
 
+  const addAlias = useCallback(
+    async (portNumber: number, serviceShortUUID: string, enclaveShortUUID: string, alias: string) => {
+      const resp = await kurtosisClient.addAlias(portNumber, serviceShortUUID, enclaveShortUUID, alias);
+
+      if (resp.isOk) {
+        const enclave = state.enclaves.isOk
+          ? state.enclaves.value.find((e) => e.shortenedUuid === enclaveShortUUID)
+          : undefined;
+
+        if (enclave) {
+          // perhaps there is some way to just change the port property isntead of refreshing it
+          // also this doesn't update in the enclaves table
+          await refreshServices(enclave);
+        }
+      }
+
+      return resp;
+    },
+    [kurtosisClient, refreshServices, state.enclaves],
+  );  
+
   const destroyEnclaves = useCallback(
     async (enclaveUUIDs: string[]) => {
       const responses: Result<Empty, string>[] = [];

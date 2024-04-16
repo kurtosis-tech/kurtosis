@@ -18,7 +18,7 @@ export type PortsTableRow = {
     locked: boolean | undefined;
     enclaveShortUuid: string;
     serviceShortUuid: string;
-    alias: string | undefined,
+    alias: string | undefined;
   };
   link: string;
 };
@@ -54,7 +54,7 @@ export const getPortTableRows = (
         locked: privatePorts[name].locked,
         enclaveShortUuid: shortUUID(enclaveUUID),
         serviceShortUuid: shortUUID(serviceUUID),
-        alias: privatePorts[name].alias;
+        alias: privatePorts[name].alias,
       },
       link: link,
     };
