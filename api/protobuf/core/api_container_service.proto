@@ -81,6 +81,9 @@ message Port {
 
   // this is useful in the cloud context; ignore in local
   optional bool locked = 5;
+
+  // this is useful in the cloud context; ignore in local
+  optional string alias = 6;
 }
 
 message Container {

@@ -77,6 +77,7 @@ export const Port = proto3.makeMessageType(
     { no: 3, name: "maybe_application_protocol", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 4, name: "maybe_wait_timeout", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 5, name: "locked", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+    { no: 6, name: "alias", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 
