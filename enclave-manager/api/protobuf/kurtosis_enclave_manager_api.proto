@@ -28,6 +28,7 @@ service KurtosisEnclaveManagerServer {
   rpc GetCloudInstanceConfig(google.protobuf.Empty) returns (kurtosis_cloud.GetCloudInstanceConfigResponse) {};
   rpc LockPort(LockUnlockPortRequest) returns (google.protobuf.Empty) {}
   rpc UnlockPort(LockUnlockPortRequest) returns(google.protobuf.Empty) {}
+  rpc AddAlias(AddAliasRequest) returns(google.protobuf.Empty){}
 }
 
 message HealthCheckRequest {
@@ -89,6 +90,12 @@ message CreateRepositoryWebhookRequest {
 }
 
 message LockUnlockPortRequest {
+  uint32 port_number=1;
+  string service_short_uuid=3;
+  string enclave_short_uuid=4;
+}
+
+message AddAliasRequest {
   uint32 port_number=1;
   string service_short_uuid=3;
   string enclave_short_uuid=4;
