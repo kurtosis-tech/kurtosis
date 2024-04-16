@@ -4,7 +4,7 @@
 // @ts-nocheck
 
 import { Empty, MethodIdempotency, MethodKind } from "@bufbuild/protobuf";
-import { AddAliasRequest, CancelPaymentSubscriptionArgs, ChangeUserActiveRequest, CheckPortAuthorizationRequest, DeleteInstanceRequest, DeleteInstanceResponse, GetCloudInstanceConfigArgs, GetCloudInstanceConfigResponse, GetCloudPortsRequest, GetCloudPortsResponse, GetInstancesResponse, GetOrCreateApiKeyRequest, GetOrCreateApiKeyResponse, GetOrCreateInstanceRequest, GetOrCreateInstanceResponse, GetOrCreatePaymentConfigArgs, GetOrCreatePaymentConfigResponse, GetUnlockedPortsRequest, GetUnlockedPortsResponse, GetUserRequest, GetUserResponse, LockPortRequest, RefreshDefaultPaymentMethodArgs, UnlockPortRequest, UpdateAddressArgs } from "./kurtosis_backend_server_api_pb.js";
+import { AddAliasRequest, CancelPaymentSubscriptionArgs, ChangeUserActiveRequest, CheckPortAuthorizationRequest, DeleteInstanceRequest, DeleteInstanceResponse, GetCloudInstanceConfigArgs, GetCloudInstanceConfigResponse, GetInstancesResponse, GetOrCreateApiKeyRequest, GetOrCreateApiKeyResponse, GetOrCreateInstanceRequest, GetOrCreateInstanceResponse, GetOrCreatePaymentConfigArgs, GetOrCreatePaymentConfigResponse, GetPortsRequest, GetPortsResponse, GetUnlockedPortsRequest, GetUnlockedPortsResponse, GetUserRequest, GetUserResponse, LockPortRequest, RefreshDefaultPaymentMethodArgs, UnlockPortRequest, UpdateAddressArgs } from "./kurtosis_backend_server_api_pb.js";
 
 /**
  * @generated from service kurtosis_cloud.KurtosisCloudBackendServer
@@ -160,12 +160,12 @@ export const KurtosisCloudBackendServer = {
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc kurtosis_cloud.KurtosisCloudBackendServer.GetCloudPorts
+     * @generated from rpc kurtosis_cloud.KurtosisCloudBackendServer.GetPorts
      */
-    getCloudPorts: {
-      name: "GetCloudPorts",
-      I: GetCloudPortsRequest,
-      O: GetCloudPortsResponse,
+    getPorts: {
+      name: "GetPorts",
+      I: GetPortsRequest,
+      O: GetPortsResponse,
       kind: MethodKind.Unary,
     },
     /**
