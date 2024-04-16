@@ -63,6 +63,12 @@ export type EnclavesState = {
     enclaveShortUUID: string,
     lock: boolean,
   ) => Promise<Result<Empty, string>>;
+  addAlias: (
+    portNumber: number,
+    serviceShortUUID: string,
+    enclaveShortUUID: string,
+    alias: string,
+  ) => Promise<Result<Empty, string>>;  
 };
 
 const EnclavesContext = createContext<EnclavesState>(null as any);
@@ -307,6 +313,7 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
         updateStarlarkFinishedInEnclave,
         createWebhook,
         lockUnlockPort,
+        addAlias,
       }}
     >
       {children}

@@ -7,6 +7,7 @@ import { KURTOSIS_CLOUD_HOST, KURTOSIS_CLOUD_PROTOCOL } from "../../../../client
 import { instanceUUID } from "../../../../cookies";
 import { transportProtocolToString } from "../utils";
 import { PortMaybeLink } from "../widgets/PortMaybeLink";
+import { useEnclavesContext } from "../../EnclavesContext";
 
 export type PortsTableRow = {
   port: {
@@ -72,6 +73,7 @@ type PortsTableProps = {
 };
 
 export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts, publicIp }: PortsTableProps) => {
+  const { addAlias } = useEnclavesContext();
   const columns = useMemo<ColumnDef<PortsTableRow, any>[]>(
     () => [
       columnHelper.accessor("port", {
@@ -109,6 +111,15 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
         cell: ({ row, getValue }) => (
           <Flex flexDirection={"column"} gap={"10px"}>
             <Text>{row.original.port.transportProtocol}</Text>
+          </Flex>
+        ),
+      }),
+      columnHelper.accessor("port", {
+        id: "port_transport",
+        header: "Transport Protocol",
+        cell: ({ row, getValue }) => (
+          <Flex flexDirection={"column"} gap={"10px"}>
+            <Text>{row.original.port.alias}</Text>
           </Flex>
         ),
       }),
