@@ -59,6 +59,18 @@ const (
 	// KurtosisCloudBackendServerUpdateAddressProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's UpdateAddress RPC.
 	KurtosisCloudBackendServerUpdateAddressProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/UpdateAddress"
+	// KurtosisCloudBackendServerGetInstancesProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's GetInstances RPC.
+	KurtosisCloudBackendServerGetInstancesProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetInstances"
+	// KurtosisCloudBackendServerDeleteInstanceProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's DeleteInstance RPC.
+	KurtosisCloudBackendServerDeleteInstanceProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/DeleteInstance"
+	// KurtosisCloudBackendServerChangeActiveStatusProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's ChangeActiveStatus RPC.
+	KurtosisCloudBackendServerChangeActiveStatusProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/ChangeActiveStatus"
+	// KurtosisCloudBackendServerGetUserProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's GetUser RPC.
+	KurtosisCloudBackendServerGetUserProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUser"
 	// KurtosisCloudBackendServerCheckPortAuthorizationProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's CheckPortAuthorization RPC.
 	KurtosisCloudBackendServerCheckPortAuthorizationProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/CheckPortAuthorization"
@@ -71,6 +83,12 @@ const (
 	// KurtosisCloudBackendServerGetUnlockedPortsProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's GetUnlockedPorts RPC.
 	KurtosisCloudBackendServerGetUnlockedPortsProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnlockedPorts"
+	// KurtosisCloudBackendServerGetPortsProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's GetPorts RPC.
+	KurtosisCloudBackendServerGetPortsProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetPorts"
+	// KurtosisCloudBackendServerAddAliasProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's AddAlias RPC.
+	KurtosisCloudBackendServerAddAliasProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/AddAlias"
 )
 
 // KurtosisCloudBackendServerClient is a client for the kurtosis_cloud.KurtosisCloudBackendServer
@@ -84,10 +102,16 @@ type KurtosisCloudBackendServerClient interface {
 	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
 	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
 	UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error)
+	GetInstances(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse], error)
+	DeleteInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse], error)
+	ChangeActiveStatus(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest]) (*connect.Response[emptypb.Empty], error)
+	GetUser(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUserRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUserResponse], error)
 	CheckPortAuthorization(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest]) (*connect.Response[emptypb.Empty], error)
 	UnlockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	LockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.LockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error)
+	GetPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetPortsResponse], error)
+	AddAlias(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -142,6 +166,26 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerUpdateAddressProcedure,
 			opts...,
 		),
+		getInstances: connect.NewClient[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerGetInstancesProcedure,
+			opts...,
+		),
+		deleteInstance: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest, kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerDeleteInstanceProcedure,
+			opts...,
+		),
+		changeActiveStatus: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerChangeActiveStatusProcedure,
+			opts...,
+		),
+		getUser: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetUserRequest, kurtosis_backend_server_rpc_api_bindings.GetUserResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerGetUserProcedure,
+			opts...,
+		),
 		checkPortAuthorization: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest, emptypb.Empty](
 			httpClient,
 			baseURL+KurtosisCloudBackendServerCheckPortAuthorizationProcedure,
@@ -163,6 +207,16 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerGetUnlockedPortsProcedure,
 			opts...,
 		),
+		getPorts: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetPortsResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerGetPortsProcedure,
+			opts...,
+		),
+		addAlias: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerAddAliasProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -176,10 +230,16 @@ type kurtosisCloudBackendServerClient struct {
 	refreshDefaultPaymentMethod *connect.Client[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs, emptypb.Empty]
 	cancelPaymentSubscription   *connect.Client[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs, emptypb.Empty]
 	updateAddress               *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs, emptypb.Empty]
+	getInstances                *connect.Client[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse]
+	deleteInstance              *connect.Client[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest, kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse]
+	changeActiveStatus          *connect.Client[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest, emptypb.Empty]
+	getUser                     *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUserRequest, kurtosis_backend_server_rpc_api_bindings.GetUserResponse]
 	checkPortAuthorization      *connect.Client[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest, emptypb.Empty]
 	unlockPort                  *connect.Client[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest, emptypb.Empty]
 	lockPort                    *connect.Client[kurtosis_backend_server_rpc_api_bindings.LockPortRequest, emptypb.Empty]
 	getUnlockedPorts            *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse]
+	getPorts                    *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetPortsResponse]
+	addAlias                    *connect.Client[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest, emptypb.Empty]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -225,6 +285,26 @@ func (c *kurtosisCloudBackendServerClient) UpdateAddress(ctx context.Context, re
 	return c.updateAddress.CallUnary(ctx, req)
 }
 
+// GetInstances calls kurtosis_cloud.KurtosisCloudBackendServer.GetInstances.
+func (c *kurtosisCloudBackendServerClient) GetInstances(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse], error) {
+	return c.getInstances.CallUnary(ctx, req)
+}
+
+// DeleteInstance calls kurtosis_cloud.KurtosisCloudBackendServer.DeleteInstance.
+func (c *kurtosisCloudBackendServerClient) DeleteInstance(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse], error) {
+	return c.deleteInstance.CallUnary(ctx, req)
+}
+
+// ChangeActiveStatus calls kurtosis_cloud.KurtosisCloudBackendServer.ChangeActiveStatus.
+func (c *kurtosisCloudBackendServerClient) ChangeActiveStatus(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.changeActiveStatus.CallUnary(ctx, req)
+}
+
+// GetUser calls kurtosis_cloud.KurtosisCloudBackendServer.GetUser.
+func (c *kurtosisCloudBackendServerClient) GetUser(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUserRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUserResponse], error) {
+	return c.getUser.CallUnary(ctx, req)
+}
+
 // CheckPortAuthorization calls kurtosis_cloud.KurtosisCloudBackendServer.CheckPortAuthorization.
 func (c *kurtosisCloudBackendServerClient) CheckPortAuthorization(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest]) (*connect.Response[emptypb.Empty], error) {
 	return c.checkPortAuthorization.CallUnary(ctx, req)
@@ -245,6 +325,16 @@ func (c *kurtosisCloudBackendServerClient) GetUnlockedPorts(ctx context.Context,
 	return c.getUnlockedPorts.CallUnary(ctx, req)
 }
 
+// GetPorts calls kurtosis_cloud.KurtosisCloudBackendServer.GetPorts.
+func (c *kurtosisCloudBackendServerClient) GetPorts(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetPortsResponse], error) {
+	return c.getPorts.CallUnary(ctx, req)
+}
+
+// AddAlias calls kurtosis_cloud.KurtosisCloudBackendServer.AddAlias.
+func (c *kurtosisCloudBackendServerClient) AddAlias(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.addAlias.CallUnary(ctx, req)
+}
+
 // KurtosisCloudBackendServerHandler is an implementation of the
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
@@ -256,10 +346,16 @@ type KurtosisCloudBackendServerHandler interface {
 	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
 	CancelPaymentSubscription(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs]) (*connect.Response[emptypb.Empty], error)
 	UpdateAddress(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs]) (*connect.Response[emptypb.Empty], error)
+	GetInstances(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse], error)
+	DeleteInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse], error)
+	ChangeActiveStatus(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest]) (*connect.Response[emptypb.Empty], error)
+	GetUser(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUserRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUserResponse], error)
 	CheckPortAuthorization(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest]) (*connect.Response[emptypb.Empty], error)
 	UnlockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	LockPort(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.LockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error)
+	GetPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetPortsResponse], error)
+	AddAlias(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -310,6 +406,26 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.UpdateAddress,
 		opts...,
 	)
+	kurtosisCloudBackendServerGetInstancesHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerGetInstancesProcedure,
+		svc.GetInstances,
+		opts...,
+	)
+	kurtosisCloudBackendServerDeleteInstanceHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerDeleteInstanceProcedure,
+		svc.DeleteInstance,
+		opts...,
+	)
+	kurtosisCloudBackendServerChangeActiveStatusHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerChangeActiveStatusProcedure,
+		svc.ChangeActiveStatus,
+		opts...,
+	)
+	kurtosisCloudBackendServerGetUserHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerGetUserProcedure,
+		svc.GetUser,
+		opts...,
+	)
 	kurtosisCloudBackendServerCheckPortAuthorizationHandler := connect.NewUnaryHandler(
 		KurtosisCloudBackendServerCheckPortAuthorizationProcedure,
 		svc.CheckPortAuthorization,
@@ -331,6 +447,16 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.GetUnlockedPorts,
 		opts...,
 	)
+	kurtosisCloudBackendServerGetPortsHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerGetPortsProcedure,
+		svc.GetPorts,
+		opts...,
+	)
+	kurtosisCloudBackendServerAddAliasHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerAddAliasProcedure,
+		svc.AddAlias,
+		opts...,
+	)
 	return "/kurtosis_cloud.KurtosisCloudBackendServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
@@ -349,6 +475,14 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerCancelPaymentSubscriptionHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerUpdateAddressProcedure:
 			kurtosisCloudBackendServerUpdateAddressHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerGetInstancesProcedure:
+			kurtosisCloudBackendServerGetInstancesHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerDeleteInstanceProcedure:
+			kurtosisCloudBackendServerDeleteInstanceHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerChangeActiveStatusProcedure:
+			kurtosisCloudBackendServerChangeActiveStatusHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerGetUserProcedure:
+			kurtosisCloudBackendServerGetUserHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerCheckPortAuthorizationProcedure:
 			kurtosisCloudBackendServerCheckPortAuthorizationHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerUnlockPortProcedure:
@@ -357,6 +491,10 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerLockPortHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerGetUnlockedPortsProcedure:
 			kurtosisCloudBackendServerGetUnlockedPortsHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerGetPortsProcedure:
+			kurtosisCloudBackendServerGetPortsHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerAddAliasProcedure:
+			kurtosisCloudBackendServerAddAliasHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -398,6 +536,22 @@ func (UnimplementedKurtosisCloudBackendServerHandler) UpdateAddress(context.Cont
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.UpdateAddress is not implemented"))
 }
 
+func (UnimplementedKurtosisCloudBackendServerHandler) GetInstances(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetInstances is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) DeleteInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.DeleteInstance is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) ChangeActiveStatus(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.ChangeActiveStatus is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) GetUser(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUserRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetUser is not implemented"))
+}
+
 func (UnimplementedKurtosisCloudBackendServerHandler) CheckPortAuthorization(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.CheckPortAuthorization is not implemented"))
 }
@@ -412,4 +566,12 @@ func (UnimplementedKurtosisCloudBackendServerHandler) LockPort(context.Context, 
 
 func (UnimplementedKurtosisCloudBackendServerHandler) GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetUnlockedPorts is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) GetPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetPortsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetPorts is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) AddAlias(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.AddAlias is not implemented"))
 }

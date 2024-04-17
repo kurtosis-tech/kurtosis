@@ -25,6 +25,7 @@ func NewPort(
 		MaybeApplicationProtocol: maybeApplicationProtocol,
 		MaybeWaitTimeout:         maybeWaitTimeout,
 		Locked:                   nil,
+		Alias:                    nil,
 	}
 }
 
@@ -79,6 +80,7 @@ func NewRunStarlarkPackageArgs(
 	cloudUserId string,
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 	nonBlockingMode bool,
+	githubAuthToken string,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -89,6 +91,8 @@ func NewRunStarlarkPackageArgs(
 	imageDownloadModeCopy := new(kurtosis_core_rpc_api_bindings.ImageDownloadMode)
 	*imageDownloadModeCopy = imageDownloadMode
 	clonePackage := false
+	githubAuthTokenCopy := new(string)
+	*githubAuthTokenCopy = githubAuthToken
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
 		ClonePackage:           &clonePackage,
@@ -103,6 +107,7 @@ func NewRunStarlarkPackageArgs(
 		CloudUserId:            cloudUserIdCopy,
 		ImageDownloadMode:      imageDownloadModeCopy,
 		NonBlockingMode:        &nonBlockingMode,
+		GithubAuthToken:        githubAuthTokenCopy,
 	}
 }
 
@@ -118,6 +123,7 @@ func NewRunStarlarkRemotePackageArgs(
 	cloudUserId string,
 	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 	nonBlockingMode bool,
+	githubAuthToken string,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -128,6 +134,8 @@ func NewRunStarlarkRemotePackageArgs(
 	imageDownloadModeCopy := new(kurtosis_core_rpc_api_bindings.ImageDownloadMode)
 	*imageDownloadModeCopy = imageDownloadMode
 	clonePackage := true
+	githubAuthTokenCopy := new(string)
+	*githubAuthTokenCopy = githubAuthToken
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
 		ClonePackage:           &clonePackage,
@@ -142,6 +150,7 @@ func NewRunStarlarkRemotePackageArgs(
 		CloudUserId:            cloudUserIdCopy,
 		ImageDownloadMode:      imageDownloadModeCopy,
 		NonBlockingMode:        &nonBlockingMode,
+		GithubAuthToken:        githubAuthTokenCopy,
 	}
 }
 

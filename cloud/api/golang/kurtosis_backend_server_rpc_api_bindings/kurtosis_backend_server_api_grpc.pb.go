@@ -28,10 +28,16 @@ const (
 	KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_FullMethodName = "/kurtosis_cloud.KurtosisCloudBackendServer/RefreshDefaultPaymentMethod"
 	KurtosisCloudBackendServer_CancelPaymentSubscription_FullMethodName   = "/kurtosis_cloud.KurtosisCloudBackendServer/CancelPaymentSubscription"
 	KurtosisCloudBackendServer_UpdateAddress_FullMethodName               = "/kurtosis_cloud.KurtosisCloudBackendServer/UpdateAddress"
+	KurtosisCloudBackendServer_GetInstances_FullMethodName                = "/kurtosis_cloud.KurtosisCloudBackendServer/GetInstances"
+	KurtosisCloudBackendServer_DeleteInstance_FullMethodName              = "/kurtosis_cloud.KurtosisCloudBackendServer/DeleteInstance"
+	KurtosisCloudBackendServer_ChangeActiveStatus_FullMethodName          = "/kurtosis_cloud.KurtosisCloudBackendServer/ChangeActiveStatus"
+	KurtosisCloudBackendServer_GetUser_FullMethodName                     = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUser"
 	KurtosisCloudBackendServer_CheckPortAuthorization_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/CheckPortAuthorization"
 	KurtosisCloudBackendServer_UnlockPort_FullMethodName                  = "/kurtosis_cloud.KurtosisCloudBackendServer/UnlockPort"
 	KurtosisCloudBackendServer_LockPort_FullMethodName                    = "/kurtosis_cloud.KurtosisCloudBackendServer/LockPort"
 	KurtosisCloudBackendServer_GetUnlockedPorts_FullMethodName            = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnlockedPorts"
+	KurtosisCloudBackendServer_GetPorts_FullMethodName                    = "/kurtosis_cloud.KurtosisCloudBackendServer/GetPorts"
+	KurtosisCloudBackendServer_AddAlias_FullMethodName                    = "/kurtosis_cloud.KurtosisCloudBackendServer/AddAlias"
 )
 
 // KurtosisCloudBackendServerClient is the client API for KurtosisCloudBackendServer service.
@@ -46,10 +52,16 @@ type KurtosisCloudBackendServerClient interface {
 	RefreshDefaultPaymentMethod(ctx context.Context, in *RefreshDefaultPaymentMethodArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CancelPaymentSubscription(ctx context.Context, in *CancelPaymentSubscriptionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateAddress(ctx context.Context, in *UpdateAddressArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetInstances(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetInstancesResponse, error)
+	DeleteInstance(ctx context.Context, in *DeleteInstanceRequest, opts ...grpc.CallOption) (*DeleteInstanceResponse, error)
+	ChangeActiveStatus(ctx context.Context, in *ChangeUserActiveRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
 	CheckPortAuthorization(ctx context.Context, in *CheckPortAuthorizationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnlockPort(ctx context.Context, in *UnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	LockPort(ctx context.Context, in *LockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetUnlockedPorts(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error)
+	GetPorts(ctx context.Context, in *GetPortsRequest, opts ...grpc.CallOption) (*GetPortsResponse, error)
+	AddAlias(ctx context.Context, in *AddAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type kurtosisCloudBackendServerClient struct {
@@ -132,6 +144,42 @@ func (c *kurtosisCloudBackendServerClient) UpdateAddress(ctx context.Context, in
 	return out, nil
 }
 
+func (c *kurtosisCloudBackendServerClient) GetInstances(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetInstancesResponse, error) {
+	out := new(GetInstancesResponse)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetInstances_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisCloudBackendServerClient) DeleteInstance(ctx context.Context, in *DeleteInstanceRequest, opts ...grpc.CallOption) (*DeleteInstanceResponse, error) {
+	out := new(DeleteInstanceResponse)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_DeleteInstance_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisCloudBackendServerClient) ChangeActiveStatus(ctx context.Context, in *ChangeUserActiveRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_ChangeActiveStatus_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisCloudBackendServerClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error) {
+	out := new(GetUserResponse)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetUser_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *kurtosisCloudBackendServerClient) CheckPortAuthorization(ctx context.Context, in *CheckPortAuthorizationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_CheckPortAuthorization_FullMethodName, in, out, opts...)
@@ -168,6 +216,24 @@ func (c *kurtosisCloudBackendServerClient) GetUnlockedPorts(ctx context.Context,
 	return out, nil
 }
 
+func (c *kurtosisCloudBackendServerClient) GetPorts(ctx context.Context, in *GetPortsRequest, opts ...grpc.CallOption) (*GetPortsResponse, error) {
+	out := new(GetPortsResponse)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetPorts_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisCloudBackendServerClient) AddAlias(ctx context.Context, in *AddAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_AddAlias_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KurtosisCloudBackendServerServer is the server API for KurtosisCloudBackendServer service.
 // All implementations should embed UnimplementedKurtosisCloudBackendServerServer
 // for forward compatibility
@@ -180,10 +246,16 @@ type KurtosisCloudBackendServerServer interface {
 	RefreshDefaultPaymentMethod(context.Context, *RefreshDefaultPaymentMethodArgs) (*emptypb.Empty, error)
 	CancelPaymentSubscription(context.Context, *CancelPaymentSubscriptionArgs) (*emptypb.Empty, error)
 	UpdateAddress(context.Context, *UpdateAddressArgs) (*emptypb.Empty, error)
+	GetInstances(context.Context, *emptypb.Empty) (*GetInstancesResponse, error)
+	DeleteInstance(context.Context, *DeleteInstanceRequest) (*DeleteInstanceResponse, error)
+	ChangeActiveStatus(context.Context, *ChangeUserActiveRequest) (*emptypb.Empty, error)
+	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
 	CheckPortAuthorization(context.Context, *CheckPortAuthorizationRequest) (*emptypb.Empty, error)
 	UnlockPort(context.Context, *UnlockPortRequest) (*emptypb.Empty, error)
 	LockPort(context.Context, *LockPortRequest) (*emptypb.Empty, error)
 	GetUnlockedPorts(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error)
+	GetPorts(context.Context, *GetPortsRequest) (*GetPortsResponse, error)
+	AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error)
 }
 
 // UnimplementedKurtosisCloudBackendServerServer should be embedded to have forward compatible implementations.
@@ -214,6 +286,18 @@ func (UnimplementedKurtosisCloudBackendServerServer) CancelPaymentSubscription(c
 func (UnimplementedKurtosisCloudBackendServerServer) UpdateAddress(context.Context, *UpdateAddressArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAddress not implemented")
 }
+func (UnimplementedKurtosisCloudBackendServerServer) GetInstances(context.Context, *emptypb.Empty) (*GetInstancesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetInstances not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) DeleteInstance(context.Context, *DeleteInstanceRequest) (*DeleteInstanceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteInstance not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) ChangeActiveStatus(context.Context, *ChangeUserActiveRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeActiveStatus not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
+}
 func (UnimplementedKurtosisCloudBackendServerServer) CheckPortAuthorization(context.Context, *CheckPortAuthorizationRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckPortAuthorization not implemented")
 }
@@ -225,6 +309,12 @@ func (UnimplementedKurtosisCloudBackendServerServer) LockPort(context.Context, *
 }
 func (UnimplementedKurtosisCloudBackendServerServer) GetUnlockedPorts(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUnlockedPorts not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) GetPorts(context.Context, *GetPortsRequest) (*GetPortsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPorts not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddAlias not implemented")
 }
 
 // UnsafeKurtosisCloudBackendServerServer may be embedded to opt out of forward compatibility for this service.
@@ -382,6 +472,78 @@ func _KurtosisCloudBackendServer_UpdateAddress_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisCloudBackendServer_GetInstances_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).GetInstances(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_GetInstances_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).GetInstances(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisCloudBackendServer_DeleteInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteInstanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).DeleteInstance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_DeleteInstance_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).DeleteInstance(ctx, req.(*DeleteInstanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisCloudBackendServer_ChangeActiveStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeUserActiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).ChangeActiveStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_ChangeActiveStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).ChangeActiveStatus(ctx, req.(*ChangeUserActiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisCloudBackendServer_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).GetUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_GetUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).GetUser(ctx, req.(*GetUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _KurtosisCloudBackendServer_CheckPortAuthorization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CheckPortAuthorizationRequest)
 	if err := dec(in); err != nil {
@@ -454,6 +616,42 @@ func _KurtosisCloudBackendServer_GetUnlockedPorts_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisCloudBackendServer_GetPorts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPortsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).GetPorts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_GetPorts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).GetPorts(ctx, req.(*GetPortsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisCloudBackendServer_AddAlias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddAliasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).AddAlias(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_AddAlias_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).AddAlias(ctx, req.(*AddAliasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KurtosisCloudBackendServer_ServiceDesc is the grpc.ServiceDesc for KurtosisCloudBackendServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -494,6 +692,22 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _KurtosisCloudBackendServer_UpdateAddress_Handler,
 		},
 		{
+			MethodName: "GetInstances",
+			Handler:    _KurtosisCloudBackendServer_GetInstances_Handler,
+		},
+		{
+			MethodName: "DeleteInstance",
+			Handler:    _KurtosisCloudBackendServer_DeleteInstance_Handler,
+		},
+		{
+			MethodName: "ChangeActiveStatus",
+			Handler:    _KurtosisCloudBackendServer_ChangeActiveStatus_Handler,
+		},
+		{
+			MethodName: "GetUser",
+			Handler:    _KurtosisCloudBackendServer_GetUser_Handler,
+		},
+		{
 			MethodName: "CheckPortAuthorization",
 			Handler:    _KurtosisCloudBackendServer_CheckPortAuthorization_Handler,
 		},
@@ -508,6 +722,14 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUnlockedPorts",
 			Handler:    _KurtosisCloudBackendServer_GetUnlockedPorts_Handler,
+		},
+		{
+			MethodName: "GetPorts",
+			Handler:    _KurtosisCloudBackendServer_GetPorts_Handler,
+		},
+		{
+			MethodName: "AddAlias",
+			Handler:    _KurtosisCloudBackendServer_AddAlias_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
