@@ -132,8 +132,6 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
   );
 };
 
-// ... (previous imports and code remain the same)
-
 const getPortAliasColumn = (
   privatePorts: Record<string, Port>,
   addAlias: (
@@ -145,7 +143,7 @@ const getPortAliasColumn = (
   editedAlias: string,
   setEditedAlias: (alias: string) => void,
 ) => {
-  if (!Object.values(privatePorts).some((port) => isDefined(port.alias) && port.alias !== "")) {
+  if (!Object.values(privatePorts).some((port) => isDefined(port.alias))) {
     return [];
   }
 
