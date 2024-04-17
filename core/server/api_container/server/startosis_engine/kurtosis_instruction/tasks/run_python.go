@@ -79,10 +79,8 @@ func NewRunPythonService(
 				{
 					Name:              ImageNameArgName,
 					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(argumentValue starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(argumentValue, ImageNameArgName)
-					},
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
+					Validator:         nil,
 				},
 				{
 					Name:              FilesArgName,
