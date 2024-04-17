@@ -3,7 +3,10 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"reflect"
 	"strings"
 	"time"
@@ -137,7 +140,7 @@ func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.S
 	return result
 }
 
-func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string][]string, imageName string) *startosis_errors.ValidationError {
+func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string][]string, serviceConfig *service.ServiceConfig) *startosis_errors.ValidationError {
 	if storeSpecList != nil {
 		if err := validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList); err != nil {
 			return startosis_errors.WrapWithValidationError(err, "error occurred while validating file paths to copy into file artifact")
@@ -156,7 +159,16 @@ func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvi
 		}
 	}
 
-	validatorEnvironment.AppendRequiredImagePull(imageName)
+	// add the images to be built here
+	if serviceConfig.GetImageBuildSpec() != nil {
+		validatorEnvironment.AppendRequiredImageBuild(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec())
+	} else if serviceConfig.GetImageRegistrySpec() != nil {
+		validatorEnvironment.AppendImageToPullWithAuth(serviceConfig.GetContainerImageName(), serviceConfig.GetImageRegistrySpec())
+	} else if serviceConfig.GetNixBuildSpec() != nil {
+		validatorEnvironment.AppendRequiredNixBuild(serviceConfig.GetContainerImageName(), serviceConfig.GetNixBuildSpec())
+	} else {
+		validatorEnvironment.AppendRequiredImagePull(serviceConfig.GetContainerImageName())
+	}
 	return nil
 
 }
@@ -252,15 +264,18 @@ func resultMapToString(resultMap map[string]starlark.Comparable, builtinNameForL
 }
 
 func getServiceConfig(
-	image string,
+	maybeImageName string,
+	maybeImageBuildSpec *image_build_spec.ImageBuildSpec,
+	maybeImageRegistrySpec *image_registry_spec.ImageRegistrySpec,
+	maybeNixBuildSpec *nix_build_spec.NixBuildSpec,
 	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
 	envVars *map[string]string,
 ) (*service.ServiceConfig, error) {
 	serviceConfig, err := service.CreateServiceConfig(
-		image,
-		nil,
-		nil,
-		nil,
+		maybeImageName,
+		maybeImageBuildSpec,
+		maybeImageRegistrySpec,
+		maybeNixBuildSpec,
 		nil,
 		nil,
 		// This make sure that the container does not stop as soon as it starts
