@@ -27,9 +27,6 @@ const (
 
 	// Name of directory INSIDE THE ENCLAVE DATA DIR at [absMountDirPath]  that contains info for authenticating GitHub operations
 	githubAuthStoreDirname = "github-auth"
-
-	// Name of file within [githubAuthStoreDirname] that contains the GitHub auth token
-	githubAuthTokenFilename = "token.txt"
 )
 
 // A directory containing all the data associated with a certain enclave (i.e. a Docker subnetwork where services are spun up)
@@ -85,7 +82,6 @@ func (dir EnclaveDataDirectory) GetEnclaveDataDirectoryPaths() (string, string, 
 	if err := ensureDirpathExists(githubAuthStoreDirpath); err != nil {
 		return "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the GitHub auth store dirpath '%v' exists.", githubAuthStoreDirpath)
 	}
-	githubAuthTokenFilepath := path.Join(dir.absMountDirpath, githubAuthStoreDirname, githubAuthTokenFilename)
 
-	return repositoriesStoreDirpath, tempRepositoriesStoreDirpath, githubAuthTokenFilepath, nil
+	return repositoriesStoreDirpath, tempRepositoriesStoreDirpath, githubAuthStoreDirpath, nil
 }

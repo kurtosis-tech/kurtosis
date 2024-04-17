@@ -1,6 +1,6 @@
 import * as jspb from 'google-protobuf'
 
-import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 
 
 export class Port extends jspb.Message {
@@ -336,6 +336,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasNonBlockingMode(): boolean;
   clearNonBlockingMode(): RunStarlarkPackageArgs;
 
+  getGithubAuthToken(): string;
+  setGithubAuthToken(value: string): RunStarlarkPackageArgs;
+  hasGithubAuthToken(): boolean;
+  clearGithubAuthToken(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -362,6 +367,7 @@ export namespace RunStarlarkPackageArgs {
     cloudUserId?: string,
     imageDownloadMode?: ImageDownloadMode,
     nonBlockingMode?: boolean,
+    githubAuthToken?: string,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -418,6 +424,11 @@ export namespace RunStarlarkPackageArgs {
   export enum NonBlockingModeCase { 
     _NON_BLOCKING_MODE_NOT_SET = 0,
     NON_BLOCKING_MODE = 15,
+  }
+
+  export enum GithubAuthTokenCase { 
+    _GITHUB_AUTH_TOKEN_NOT_SET = 0,
+    GITHUB_AUTH_TOKEN = 16,
   }
 }
 
