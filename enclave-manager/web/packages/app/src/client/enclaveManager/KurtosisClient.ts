@@ -18,6 +18,7 @@ import {
 } from "enclave-manager-sdk/build/engine_service_pb";
 import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {
+  AddAliasRequest,
   CreateRepositoryWebhookRequest,
   DownloadFilesArtifactRequest,
   GetListFilesArtifactNamesAndUuidsRequest,
@@ -27,7 +28,6 @@ import {
   LockUnlockPortRequest,
   RunStarlarkPackageRequest,
   RunStarlarkScriptRequest,
-  AddAliasRequest,
   StarlarkPackagePlanYamlArgs as StarlarkPackagePlanYamlArgsRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import { assertDefined, asyncResult, isDefined, RemoveFunctions } from "kurtosis-ui-components";
@@ -107,7 +107,7 @@ export abstract class KurtosisClient {
       ),
       `KurtosisClient not add alias ${alias} to port ${portNumber} for service ${serviceShortUUID} in enclave ${enclaveShortUUID}`,
     );
-  }  
+  }
 
   async lockPort(portNumber: number, serviceShortUUID: string, enclaveShortUUID: string) {
     return asyncResult(

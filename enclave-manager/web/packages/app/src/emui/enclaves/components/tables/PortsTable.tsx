@@ -1,13 +1,13 @@
-import { Flex, Text, Input } from "@chakra-ui/react";
+import { Flex, Input, Text } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DataTable, isDefined } from "kurtosis-ui-components";
 import { useMemo, useState } from "react";
 import { KURTOSIS_CLOUD_HOST, KURTOSIS_CLOUD_PROTOCOL } from "../../../../client/constants";
 import { instanceUUID } from "../../../../cookies";
+import { useEnclavesContext } from "../../EnclavesContext";
 import { transportProtocolToString } from "../utils";
 import { PortMaybeLink } from "../widgets/PortMaybeLink";
-import { useEnclavesContext } from "../../EnclavesContext";
 
 export type PortsTableRow = {
   port: {
@@ -134,7 +134,12 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
 
 const getPortAliasColumn = (
   privatePorts: Record<string, Port>,
-  addAlias: (portNumber: number, serviceShortUUID: string, enclaveShortUUID: string, alias: string) => Promise<Result<Empty, string>>,
+  addAlias: (
+    portNumber: number,
+    serviceShortUUID: string,
+    enclaveShortUUID: string,
+    alias: string,
+  ) => Promise<Result<Empty, string>>,
   editedAlias: string,
   setEditedAlias: (alias: string) => void,
 ) => {

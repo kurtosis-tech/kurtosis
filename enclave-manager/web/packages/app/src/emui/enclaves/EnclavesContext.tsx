@@ -68,7 +68,7 @@ export type EnclavesState = {
     serviceShortUUID: string,
     enclaveShortUUID: string,
     alias: string,
-  ) => Promise<Result<Empty, string>>;  
+  ) => Promise<Result<Empty, string>>;
 };
 
 const EnclavesContext = createContext<EnclavesState>(null as any);
@@ -205,7 +205,7 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
       return resp;
     },
     [kurtosisClient, refreshServices, state.enclaves],
-  );  
+  );
 
   const destroyEnclaves = useCallback(
     async (enclaveUUIDs: string[]) => {
