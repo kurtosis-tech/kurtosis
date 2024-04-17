@@ -73,7 +73,6 @@ type PortsTableProps = {
 };
 
 export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts, publicIp }: PortsTableProps) => {
-  const { addAlias } = useEnclavesContext();
   const [editedAlias, setEditedAlias] = useState<string>("");
 
   const columns = useMemo<ColumnDef<PortsTableRow, any>[]>(
@@ -134,15 +133,11 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
 
 const getPortAliasColumn = (
   privatePorts: Record<string, Port>,
-  addAlias: (
-    portNumber: number,
-    serviceShortUUID: string,
-    enclaveShortUUID: string,
-    alias: string,
-  ) => Promise<Result<Empty, string>>,
   editedAlias: string,
   setEditedAlias: (alias: string) => void,
 ) => {
+  const { addAlias } = useEnclavesContext();
+
   if (!Object.values(privatePorts).some((port) => isDefined(port.alias) && port.alias !== "")) {
     return [];
   }
