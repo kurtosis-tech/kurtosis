@@ -1,6 +1,6 @@
 import * as jspb from 'google-protobuf'
 
-import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
 
 
 export class Port extends jspb.Message {
@@ -16,6 +16,16 @@ export class Port extends jspb.Message {
   getMaybeWaitTimeout(): string;
   setMaybeWaitTimeout(value: string): Port;
 
+  getLocked(): boolean;
+  setLocked(value: boolean): Port;
+  hasLocked(): boolean;
+  clearLocked(): Port;
+
+  getAlias(): string;
+  setAlias(value: string): Port;
+  hasAlias(): boolean;
+  clearAlias(): Port;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Port.AsObject;
   static toObject(includeInstance: boolean, msg: Port): Port.AsObject;
@@ -30,12 +40,24 @@ export namespace Port {
     transportProtocol: Port.TransportProtocol,
     maybeApplicationProtocol: string,
     maybeWaitTimeout: string,
+    locked?: boolean,
+    alias?: string,
   }
 
   export enum TransportProtocol { 
     TCP = 0,
     SCTP = 1,
     UDP = 2,
+  }
+
+  export enum LockedCase { 
+    _LOCKED_NOT_SET = 0,
+    LOCKED = 5,
+  }
+
+  export enum AliasCase { 
+    _ALIAS_NOT_SET = 0,
+    ALIAS = 6,
   }
 }
 

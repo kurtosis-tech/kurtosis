@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.88.17](https://github.com/kurtosis-tech/kurtosis/compare/0.88.16...0.88.17) (2024-04-15)
+
+
+### Features
+
+* Add reason argument to the cancel subscription method ([#2377](https://github.com/kurtosis-tech/kurtosis/issues/2377)) ([dd8d1ff](https://github.com/kurtosis-tech/kurtosis/commit/dd8d1ffa8115666ae3a547ea1b6147f05d77c4f2))
+* change made with to star us on ([#2375](https://github.com/kurtosis-tech/kurtosis/issues/2375)) ([56677a1](https://github.com/kurtosis-tech/kurtosis/commit/56677a13226ad30c2272b4c1b761e8a658e5d19c))
+* get all services ([#2367](https://github.com/kurtosis-tech/kurtosis/issues/2367)) ([2ba98f5](https://github.com/kurtosis-tech/kurtosis/commit/2ba98f5f3d82ffd099cda0942ee358fe02bc70a5))
+
+
+### Bug Fixes
+
+* Use instance `updated at` attribute for uptime calculation ([#2378](https://github.com/kurtosis-tech/kurtosis/issues/2378)) ([421d275](https://github.com/kurtosis-tech/kurtosis/commit/421d27593d537a104c825e0e7120200175287e07))
+
+## [0.88.16](https://github.com/kurtosis-tech/kurtosis/compare/0.88.15...0.88.16) (2024-04-08)
+
+
+### Bug Fixes
+
+* locked is red unlocked is green ([#2363](https://github.com/kurtosis-tech/kurtosis/issues/2363)) ([851876d](https://github.com/kurtosis-tech/kurtosis/commit/851876df5e26d2fe466534e546eb7543d1603d80))
+
+## [0.88.15](https://github.com/kurtosis-tech/kurtosis/compare/0.88.14...0.88.15) (2024-04-08)
+
+
+### Features
+
+* enclave manager exposes api's to lock, unlock ports and view their current state ([#2348](https://github.com/kurtosis-tech/kurtosis/issues/2348)) ([23ef09c](https://github.com/kurtosis-tech/kurtosis/commit/23ef09c8492101cfb9c048d5911d8580a8b6bd89))
+
+## [0.88.14](https://github.com/kurtosis-tech/kurtosis/compare/0.88.13...0.88.14) (2024-04-04)
+
+
+### Features
+
+* Add instance termination warning to the enclave manager UI ([#2356](https://github.com/kurtosis-tech/kurtosis/issues/2356)) ([bb39d2c](https://github.com/kurtosis-tech/kurtosis/commit/bb39d2c89d20d41dd8928dddd7983e802443bc50))
+* Make the cloud instance config available to the EM UI ([#2350](https://github.com/kurtosis-tech/kurtosis/issues/2350)) ([8b9b5ce](https://github.com/kurtosis-tech/kurtosis/commit/8b9b5ce6564a1939897acfc91d25ed6ae56c046e))
+* take access token in body for consistency in port endpoints ([#2351](https://github.com/kurtosis-tech/kurtosis/issues/2351)) ([7f6f30a](https://github.com/kurtosis-tech/kurtosis/commit/7f6f30aa515a940e04a3b5fe89e018395e7130be))
+
+
+### Bug Fixes
+
+* get for port auth instead of post ([#2353](https://github.com/kurtosis-tech/kurtosis/issues/2353)) ([1ed7978](https://github.com/kurtosis-tech/kurtosis/commit/1ed79783671ad8a6e4a33122e9bbb35fb95e1c03))
+
 ## [0.88.13](https://github.com/kurtosis-tech/kurtosis/compare/0.88.12...0.88.13) (2024-04-02)
 
 
