@@ -3,7 +3,7 @@ import { Flex, Input, Text } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DataTable, isDefined } from "kurtosis-ui-components";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Result } from "true-myth";
 import { KURTOSIS_CLOUD_HOST, KURTOSIS_CLOUD_PROTOCOL } from "../../../../client/constants";
 import { instanceUUID } from "../../../../cookies";
@@ -76,7 +76,6 @@ type PortsTableProps = {
 
 export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts, publicIp }: PortsTableProps) => {
   const { addAlias } = useEnclavesContext();
-  const [editedAlias, setEditedAlias] = useState<string>("");
 
   const columns = useMemo<ColumnDef<PortsTableRow, any>[]>(
     () => [
@@ -118,9 +117,9 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
           </Flex>
         ),
       }),
-      ...getPortAliasColumn(privatePorts, addAlias, editedAlias, setEditedAlias),
+      ...getPortAliasColumn(privatePorts, addAlias),
     ],
-    [addAlias, editedAlias],
+    [addAlias],
   );
 
   return (
@@ -140,8 +139,6 @@ const getPortAliasColumn = (
     enclaveShortUUID: string,
     alias: string,
   ) => Promise<Result<Empty, string>>,
-  editedAlias: string,
-  setEditedAlias: (alias: string) => void,
 ) => {
   if (!Object.values(privatePorts).some((port) => isDefined(port.alias))) {
     return [];
@@ -157,12 +154,14 @@ const getPortAliasColumn = (
 
         const handleAliasSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           e.preventDefault();
-          if (isAliasEmpty && editedAlias !== "") {
+          const inputAlias = e.currentTarget.elements.namedItem("alias") as HTMLInputElement;
+          const newAlias = inputAlias.value.trim();
+          if (isAliasEmpty && newAlias !== "") {
             const result: Result<Empty, string> = await addAlias(
               privatePort,
               serviceShortUuid,
               enclaveShortUuid,
-              editedAlias,
+              newAlias,
             );
             if (result.isErr) {
               console.error("Failed to add alias:", result.error);
@@ -174,7 +173,7 @@ const getPortAliasColumn = (
           <Flex flexDirection={"column"} gap={"10px"}>
             {isAliasEmpty ? (
               <form onSubmit={handleAliasSubmit}>
-                <Input value={editedAlias} onChange={(e) => setEditedAlias(e.target.value)} placeholder="Add alias" />
+                <Input placeholder="Add alias" />
               </form>
             ) : (
               <Text>{alias}</Text>
