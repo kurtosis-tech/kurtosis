@@ -96,7 +96,7 @@ export abstract class KurtosisClient {
 
   async addAlias(portNumber: number, serviceShortUUID: string, enclaveShortUUID: string, alias: string) {
     return asyncResult(
-      this.client.lockPort(
+      this.client.addAlias(
         new AddAliasRequest({
           portNumber: portNumber,
           serviceShortUuid: serviceShortUUID,

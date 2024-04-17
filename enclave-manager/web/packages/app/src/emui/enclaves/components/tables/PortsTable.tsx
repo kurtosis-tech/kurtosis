@@ -155,11 +155,8 @@ const getPortAliasColumn = (
         const { alias, privatePort, serviceShortUuid, enclaveShortUuid } = row.original.port;
         const isAliasEmpty = !isDefined(alias) || alias === "";
 
-        const handleAliasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-          setEditedAlias(e.target.value);
-        };
-
-        const handleAliasBlur = async () => {
+        const handleAliasSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+          e.preventDefault();
           if (isAliasEmpty && editedAlias !== "") {
             const result: Result<Empty, string> = await addAlias(
               privatePort,
@@ -176,12 +173,9 @@ const getPortAliasColumn = (
         return (
           <Flex flexDirection={"column"} gap={"10px"}>
             {isAliasEmpty ? (
-              <Input
-                value={editedAlias}
-                onChange={handleAliasChange}
-                onBlur={handleAliasBlur}
-                placeholder="Add alias"
-              />
+              <form onSubmit={handleAliasSubmit}>
+                <Input value={editedAlias} onChange={(e) => setEditedAlias(e.target.value)} placeholder="Add alias" />
+              </form>
             ) : (
               <Text>{alias}</Text>
             )}
