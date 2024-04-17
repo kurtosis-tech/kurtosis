@@ -962,7 +962,7 @@ Finally, if you found Kurtosis interesting or useful, we'd appreciate a [star on
 [kurtosis-clean-reference]: ../cli-reference/clean.md
 [kurtosis-enclave-inspect-reference]: ../cli-reference/enclave-inspect.md
 [kurtosis-files-upload-reference]: ../cli-reference/files-upload.md
-[kurtosis-upload-files-reference]: ../api-reference/starlark-reference/plan.md#uploadfiles
+[kurtosis-upload-files-reference]: ../api-reference/starlark-reference/plan.md#upload_files
 [kurtosis-feedback-reference]: ../cli-reference/feedback.md
 [kurtosis-twitter]: ../cli-reference/twitter.md
 [starlark-reference]: ../advanced-concepts/starlark.md
