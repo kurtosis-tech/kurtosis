@@ -1,8 +1,8 @@
-import { Flex, Text } from "@chakra-ui/react";
+import { Flex, Text, Input } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DataTable, isDefined } from "kurtosis-ui-components";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { KURTOSIS_CLOUD_HOST, KURTOSIS_CLOUD_PROTOCOL } from "../../../../client/constants";
 import { instanceUUID } from "../../../../cookies";
 import { transportProtocolToString } from "../utils";
@@ -74,6 +74,8 @@ type PortsTableProps = {
 
 export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts, publicIp }: PortsTableProps) => {
   const { addAlias } = useEnclavesContext();
+  const [editedAlias, setEditedAlias] = useState<string>("");
+
   const columns = useMemo<ColumnDef<PortsTableRow, any>[]>(
     () => [
       columnHelper.accessor("port", {
@@ -114,17 +116,9 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
           </Flex>
         ),
       }),
-      columnHelper.accessor("port", {
-        id: "port_transport",
-        header: "Transport Protocol",
-        cell: ({ row, getValue }) => (
-          <Flex flexDirection={"column"} gap={"10px"}>
-            <Text>{row.original.port.alias}</Text>
-          </Flex>
-        ),
-      }),
+      ...getPortAliasColumn(privatePorts, addAlias, editedAlias, setEditedAlias),
     ],
-    [],
+    [addAlias, editedAlias],
   );
 
   return (
@@ -134,4 +128,61 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
       defaultSorting={[{ id: "port_name", desc: true }]}
     />
   );
+};
+
+// ... (previous imports and code remain the same)
+
+const getPortAliasColumn = (
+  privatePorts: Record<string, Port>,
+  addAlias: (portNumber: number, serviceShortUUID: string, enclaveShortUUID: string, alias: string) => Promise<Result<Empty, string>>,
+  editedAlias: string,
+  setEditedAlias: (alias: string) => void,
+) => {
+  if (!Object.values(privatePorts).some((port) => isDefined(port.alias) && port.alias !== "")) {
+    return [];
+  }
+
+  return [
+    columnHelper.accessor("port", {
+      id: "port_alias",
+      header: "Alias",
+      cell: ({ row, getValue }) => {
+        const { alias, privatePort, serviceShortUuid, enclaveShortUuid } = row.original.port;
+        const isAliasEmpty = !isDefined(alias) || alias === "";
+
+        const handleAliasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          setEditedAlias(e.target.value);
+        };
+
+        const handleAliasBlur = async () => {
+          if (isAliasEmpty && editedAlias !== "") {
+            const result: Result<Empty, string> = await addAlias(
+              privatePort,
+              serviceShortUuid,
+              enclaveShortUuid,
+              editedAlias,
+            );
+            if (result.isErr()) {
+              console.error("Failed to add alias:", result.error);
+            }
+          }
+        };
+
+        return (
+          <Flex flexDirection={"column"} gap={"10px"}>
+            {isAliasEmpty ? (
+              <Input
+                value={editedAlias}
+                onChange={handleAliasChange}
+                onBlur={handleAliasBlur}
+                placeholder="Add alias"
+              />
+            ) : (
+              <Text>{alias}</Text>
+            )}
+          </Flex>
+        );
+      },
+    }),
+  ];
 };
