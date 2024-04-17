@@ -74,6 +74,63 @@ type PortsTableProps = {
   publicIp: string;
 };
 
+const getPortAliasColumn = (
+  privatePorts: Record<string, Port>,
+  addAlias: (
+    portNumber: number,
+    serviceShortUUID: string,
+    enclaveShortUUID: string,
+    alias: string,
+  ) => Promise<Result<Empty, string>>,
+) => {
+  if (!Object.values(privatePorts).some((port) => isDefined(port.alias))) {
+    return [];
+  }
+
+  return [
+    columnHelper.accessor("port", {
+      id: "port_alias",
+      header: "Alias",
+      cell: ({ row, getValue }) => {
+        const { alias, privatePort, serviceShortUuid, enclaveShortUuid } = row.original.port;
+        const {link} = row.original.link;
+        const isAliasEmpty = !isDefined(alias) || alias === "";
+        const isHttpLink = port.port.applicationProtocol?.startsWith("http");
+
+        const handleAliasSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+          e.preventDefault();
+          const inputAlias = e.currentTarget.elements.namedItem("alias") as HTMLInputElement;
+          const newAlias = inputAlias.value.trim();
+          if (isAliasEmpty && newAlias !== "") {
+            const result: Result<Empty, string> = await addAlias(
+              privatePort,
+              serviceShortUuid,
+              enclaveShortUuid,
+              newAlias,
+            );
+            if (result.isErr) {
+              console.error("Failed to add alias:", result.error);
+            }
+            inputAlias.value = ""; // Clear the input field after form submission
+          }
+        };
+
+        return (
+          <Flex flexDirection={"column"} gap={"10px"}>
+            {isAliasEmpty && isHttpLink ? (
+              <form onSubmit={handleAliasSubmit}>
+                <Input name="alias" placeholder="Add alias" />
+              </form>
+            ) : (
+              <Text>{alias}</Text>
+            )}
+          </Flex>
+        );
+      },
+    }),
+  ];
+};
+
 export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts, publicIp }: PortsTableProps) => {
   const { addAlias } = useEnclavesContext();
 
@@ -119,7 +176,7 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
       }),
       ...getPortAliasColumn(privatePorts, addAlias),
     ],
-    [addAlias],
+    [addAlias, privatePorts],
   );
 
   return (
@@ -129,58 +186,4 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
       defaultSorting={[{ id: "port_name", desc: true }]}
     />
   );
-};
-
-const getPortAliasColumn = (
-  privatePorts: Record<string, Port>,
-  addAlias: (
-    portNumber: number,
-    serviceShortUUID: string,
-    enclaveShortUUID: string,
-    alias: string,
-  ) => Promise<Result<Empty, string>>,
-) => {
-  if (!Object.values(privatePorts).some((port) => isDefined(port.alias))) {
-    return [];
-  }
-
-  return [
-    columnHelper.accessor("port", {
-      id: "port_alias",
-      header: "Alias",
-      cell: ({ row, getValue }) => {
-        const { alias, privatePort, serviceShortUuid, enclaveShortUuid } = row.original.port;
-        const isAliasEmpty = !isDefined(alias) || alias === "";
-
-        const handleAliasSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-          e.preventDefault();
-          const inputAlias = e.currentTarget.elements.namedItem("alias") as HTMLInputElement;
-          const newAlias = inputAlias.value.trim();
-          if (isAliasEmpty && newAlias !== "") {
-            const result: Result<Empty, string> = await addAlias(
-              privatePort,
-              serviceShortUuid,
-              enclaveShortUuid,
-              newAlias,
-            );
-            if (result.isErr) {
-              console.error("Failed to add alias:", result.error);
-            }
-          }
-        };
-
-        return (
-          <Flex flexDirection={"column"} gap={"10px"}>
-            {isAliasEmpty ? (
-              <form onSubmit={handleAliasSubmit}>
-                <Input placeholder="Add alias" />
-              </form>
-            ) : (
-              <Text>{alias}</Text>
-            )}
-          </Flex>
-        );
-      },
-    }),
-  ];
 };
