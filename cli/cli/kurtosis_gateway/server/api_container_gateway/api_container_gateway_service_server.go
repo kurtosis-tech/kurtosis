@@ -342,6 +342,7 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 			MaybeApplicationProtocol: privateApiPort.GetMaybeApplicationProtocol(),
 			MaybeWaitTimeout:         privateApiPort.GetMaybeWaitTimeout(),
 			Locked:                   nil,
+			Alias:                    nil,
 		}
 	}
 

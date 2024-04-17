@@ -1174,6 +1174,9 @@ components:
         non_blocking_mode:
           type: boolean
           description: Defaults to false
+        github_auth_token:
+          type: string
+          description: Defaults to empty
 
     KurtosisFeatureFlag:
       type: string

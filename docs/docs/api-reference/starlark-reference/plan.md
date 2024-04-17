@@ -125,6 +125,25 @@ service = plan.get_service(
 )
 ```
 
+get_services
+-----------
+
+The `get_services` instruction allows you to get the [Service][service-starlark-reference] objects of running services in an enclave. This is 
+useful in situations where you are running Starlark against an existing enclave or need information about the services that an imported package started.
+
+```python
+# Returns a list of Service objects for all running services in the enclave (see the Service page in the sidebar)
+services = plan.get_services(
+  # A human friendly description for the end user of the package
+  # OPTIONAL (Default: Fetching services)
+  description = "gets you services"
+)
+
+for service in services:
+  plan.print(service.name)
+  plan.print(service.hostname)
+  plan.print(service.ip_address)
+```
 get_files_artifact
 -----------
 
