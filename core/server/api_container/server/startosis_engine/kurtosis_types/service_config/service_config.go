@@ -275,7 +275,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'", ImageAttr, ServiceConfigTypeName)
 	}
 	// TODO: refactor image build spec into a common interface
-	imageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, interpretationErr = convertImage(
+	imageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, interpretationErr = ConvertImage(
 		rawImageAttrValue,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		packageId,
@@ -698,7 +698,7 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 // If [image] is an ImageBuildSpec type, returns name for the image to build and ImageBuildSpec converted to KurtosisType
 // If [image] is a string, returns the image name with no image build spec (image will be fetched from local cache or remote)
 // If [image] is an ImageSpec type, returns the name for the image and the ImageSpec converted to KurtosisType
-func convertImage(
+func ConvertImage(
 	image starlark.Value,
 	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
 	packageId string,
