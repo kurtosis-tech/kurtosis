@@ -93,14 +93,14 @@ const getPortAliasColumn = (
       header: "Alias",
       cell: ({ row, getValue }) => {
         const { alias, privatePort, serviceShortUuid, enclaveShortUuid } = row.original.port;
-        const {link} = row.original.link;
         const isAliasEmpty = !isDefined(alias) || alias === "";
-        const isHttpLink = port.port.applicationProtocol?.startsWith("http");
+        const isHttpLink = row.original.port.applicationProtocol?.startsWith("http");
 
         const handleAliasSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           e.preventDefault();
           const inputAlias = e.currentTarget.elements.namedItem("alias") as HTMLInputElement;
           const newAlias = inputAlias.value.trim();
+          console.log(`in handle submit alias ${newAlias} and ${inputAlias}`);
           if (isAliasEmpty && newAlias !== "") {
             const result: Result<Empty, string> = await addAlias(
               privatePort,
@@ -111,7 +111,6 @@ const getPortAliasColumn = (
             if (result.isErr) {
               console.error("Failed to add alias:", result.error);
             }
-            inputAlias.value = ""; // Clear the input field after form submission
           }
         };
 
