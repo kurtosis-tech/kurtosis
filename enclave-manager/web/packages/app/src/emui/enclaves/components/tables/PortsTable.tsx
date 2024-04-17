@@ -1,8 +1,10 @@
+import { Empty } from "@bufbuild/protobuf";
 import { Flex, Input, Text } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DataTable, isDefined } from "kurtosis-ui-components";
 import { useMemo, useState } from "react";
+import { Result } from "true-myth";
 import { KURTOSIS_CLOUD_HOST, KURTOSIS_CLOUD_PROTOCOL } from "../../../../client/constants";
 import { instanceUUID } from "../../../../cookies";
 import { useEnclavesContext } from "../../EnclavesContext";
@@ -115,9 +117,9 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
           </Flex>
         ),
       }),
-      ...getPortAliasColumn(privatePorts, addAlias, editedAlias, setEditedAlias),
+      ...getPortAliasColumn(privatePorts, editedAlias, setEditedAlias),
     ],
-    [addAlias, editedAlias],
+    [setEditedAlias, editedAlias],
   );
 
   return (
@@ -162,7 +164,7 @@ const getPortAliasColumn = (
               enclaveShortUuid,
               editedAlias,
             );
-            if (result.isErr()) {
+            if (result.isErr) {
               console.error("Failed to add alias:", result.error);
             }
           }
