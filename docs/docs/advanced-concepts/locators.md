@@ -33,7 +33,7 @@ github.com/kurtosis-tech/kurtosis/starlark/test.star
 :::
 
 :::info
-Locators can point to public or private GitHub repositories. Read the [Running Private Packages][running-private-packages]guide to learn how to enable private locators.
+Locators can point to public or private GitHub repositories. Read the [Running Private Packages][running-private-packages] guide to learn how to enable private locators.
 :::
 
 ### Important Package Restriction
