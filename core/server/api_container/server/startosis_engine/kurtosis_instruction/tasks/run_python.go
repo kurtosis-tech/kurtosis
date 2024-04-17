@@ -22,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
@@ -47,7 +48,13 @@ const (
 	runPythonDefaultDescription = "Running Python script"
 )
 
-func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, nonBlockingMode bool) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewRunPythonService(
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	nonBlockingMode bool,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RunPythonBuiltinName,
@@ -102,19 +109,22 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &RunPythonCapabilities{
-				serviceNetwork:    serviceNetwork,
-				runtimeValueStore: runtimeValueStore,
-				pythonArguments:   nil,
-				packages:          nil,
-				name:              "",
-				nonBlockingMode:   nonBlockingMode,
-				serviceConfig:     nil, // populated at interpretation time
-				run:               "",  // populated at interpretation time
-				resultUuid:        "",  // populated at interpretation time
-				storeSpecList:     nil,
-				wait:              DefaultWaitTimeoutDurationStr,
-				description:       "",  // populated at interpretation time
-				returnValue:       nil, // populated at interpretation time
+				serviceNetwork:         serviceNetwork,
+				runtimeValueStore:      runtimeValueStore,
+				pythonArguments:        nil,
+				packages:               nil,
+				name:                   "",
+				nonBlockingMode:        nonBlockingMode,
+				packageId:              packageId,
+				packageContentProvider: packageContentProvider,
+				packageReplaceOptions:  packageReplaceOptions,
+				serviceConfig:          nil, // populated at interpretation time
+				run:                    "",  // populated at interpretation time
+				resultUuid:             "",  // populated at interpretation time
+				storeSpecList:          nil,
+				wait:                   DefaultWaitTimeoutDurationStr,
+				description:            "",  // populated at interpretation time
+				returnValue:            nil, // populated at interpretation time
 			}
 		},
 
@@ -142,6 +152,11 @@ type RunPythonCapabilities struct {
 	pythonArguments []string
 	packages        []string
 
+	// fields required for image building
+	packageId              string
+	packageContentProvider startosis_packages.PackageContentProvider
+	packageReplaceOptions  map[string]string
+
 	returnValue   *starlarkstruct.Struct
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
@@ -149,7 +164,7 @@ type RunPythonCapabilities struct {
 	description   string
 }
 
-func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	randomUuid := uuid.NewRandom()
 	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
@@ -183,15 +198,28 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 		builtin.packages = packagesList
 	}
 
-	var image string
+	var maybeImageName string
+	var maybeImageBuildSpec *image_build_spec.ImageBuildSpec
+	var maybeImageRegistrySpec *image_registry_spec.ImageRegistrySpec
+	var maybeNixBuildSpec *nix_build_spec.NixBuildSpec
+	var interpretationErr *startosis_errors.InterpretationError
 	if arguments.IsSet(ImageNameArgName) {
-		imageStarlark, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ImageNameArgName)
+		rawImageVal, err := builtin_argument.ExtractArgumentValue[starlark.Value](arguments, ImageNameArgName)
 		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ImageNameArgName)
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract raw image attribute.")
 		}
-		image = imageStarlark.GoString()
+
+		maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, interpretationErr = service_config.ConvertImage(
+			rawImageVal,
+			locatorOfModuleInWhichThisBuiltinIsBeingCalled,
+			builtin.packageId,
+			builtin.packageContentProvider,
+			builtin.packageReplaceOptions)
+		if interpretationErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred converting image for run sh.")
+		}
 	} else {
-		image = defaultRunPythonImageName
+		maybeImageName = defaultRunPythonImageName
 	}
 
 	var filesArtifactExpansion *service_directory.FilesArtifactsExpansion
@@ -222,12 +250,9 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	}
 
 	// build a service config from image and files artifacts expansion.
-	var emptyImageBuildSpec *image_build_spec.ImageBuildSpec
-	var emptyImageRegistrySpec *image_registry_spec.ImageRegistrySpec
-	var emptyNixBuildSpec *nix_build_spec.NixBuildSpec
-	builtin.serviceConfig, err = getServiceConfig(image, emptyImageBuildSpec, emptyImageRegistrySpec, emptyNixBuildSpec, filesArtifactExpansion, envVars)
+	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config for run python.")
 	}
 
 	if arguments.IsSet(StoreFilesArgName) {

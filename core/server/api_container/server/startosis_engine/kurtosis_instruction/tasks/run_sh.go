@@ -157,7 +157,7 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract raw image attribute.")
 		}
-		// TODO: refactor image build spec into a common interface
+
 		maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, interpretationErr = service_config.ConvertImage(
 			rawImageVal,
 			locatorOfModuleInWhichThisBuiltinIsBeingCalled,
