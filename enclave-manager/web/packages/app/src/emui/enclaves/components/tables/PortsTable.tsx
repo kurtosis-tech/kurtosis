@@ -1,5 +1,6 @@
 import { Empty } from "@bufbuild/protobuf";
-import { Flex, Input, Text } from "@chakra-ui/react";
+import { WarningIcon } from "@chakra-ui/icons";
+import { Box, Flex, Heading, Icon, Input, Text, useToast } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DataTable, isDefined } from "kurtosis-ui-components";
@@ -87,6 +88,7 @@ const getPortAliasColumn = (
     return [];
   }
 
+  const toast = useToast();
   return [
     columnHelper.accessor("port", {
       id: "port_alias",
@@ -110,6 +112,25 @@ const getPortAliasColumn = (
             );
             if (result.isErr) {
               console.error("Failed to add alias:", result.error);
+              toast({
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+                position: "bottom-right",
+                render: () => (
+                  <Flex color="white" p={3} bg="red.500" borderRadius={6} gap={4}>
+                    <Icon as={WarningIcon} w={6} h={6} />
+                    <Box>
+                      <Heading as="h4" fontSize="md" fontWeight="500" color="white">
+                        Couldn't add alias
+                      </Heading>
+                      <Text marginTop={1} color="white">
+                        Perhaps that alias is taken; try again.
+                      </Text>
+                    </Box>
+                  </Flex>
+                ),
+              });
             }
           }
         };
