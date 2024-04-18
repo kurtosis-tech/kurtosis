@@ -1,6 +1,6 @@
 import { Empty } from "@bufbuild/protobuf";
 import { WarningIcon } from "@chakra-ui/icons";
-import { Box, Flex, Heading, Icon, Input, Text, useToast } from "@chakra-ui/react";
+import { Box, Flex, Heading, Icon, Input, Text, useToast, UseToastOptions } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { Port } from "enclave-manager-sdk/build/api_container_service_pb";
 import { DataTable, isDefined } from "kurtosis-ui-components";
@@ -76,6 +76,7 @@ type PortsTableProps = {
 };
 
 const getPortAliasColumn = (
+  toast: (options?: UseToastOptions) => void,
   privatePorts: Record<string, Port>,
   addAlias: (
     portNumber: number,
@@ -88,7 +89,6 @@ const getPortAliasColumn = (
     return [];
   }
 
-  const toast = useToast();
   return [
     columnHelper.accessor("port", {
       id: "port_alias",
@@ -153,6 +153,7 @@ const getPortAliasColumn = (
 
 export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts, publicIp }: PortsTableProps) => {
   const { addAlias } = useEnclavesContext();
+  const toast = useToast();
 
   const columns = useMemo<ColumnDef<PortsTableRow, any>[]>(
     () => [
@@ -194,7 +195,7 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
           </Flex>
         ),
       }),
-      ...getPortAliasColumn(privatePorts, addAlias),
+      ...getPortAliasColumn(toast, privatePorts, addAlias),
     ],
     [addAlias, privatePorts],
   );
