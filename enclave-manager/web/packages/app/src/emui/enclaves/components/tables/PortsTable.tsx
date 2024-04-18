@@ -197,7 +197,7 @@ export const PortsTable = ({ enclaveUUID, serviceUUID, privatePorts, publicPorts
       }),
       ...getPortAliasColumn(toast, privatePorts, addAlias),
     ],
-    [addAlias, privatePorts],
+    [addAlias, toast, privatePorts],
   );
 
   return (
