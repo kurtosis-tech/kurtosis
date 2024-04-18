@@ -68,7 +68,8 @@ func TestForUserServiceContainer(t *testing.T) {
 		case "traefik.http.routers.65d2fb6d6732-3771c85af16a-23.rule":
 			require.Fail(t, "A traefik label for port 23 should not be present")
 		case "traefik.http.routers.65d2fb6d6732-3771c85af16a-45.rule":
-			require.Equal(t, labelValue.GetString(), "HostRegexp(`{^name:45-3771c85af16a-65d2fb6d6732-?.*$}`)")
+			expectedRule := "HostRegexp(`{^name:45-3771c85af16a-65d2fb6d6732-?.*$}`) || (Headers(`X-Kurtosis-Enclave-Short-UUID`, `65d2fb6d6732`) && Headers(`X-Kurtosis-Service-Short-UUID`, `3771c85af16a`) && Headers(`X-Kurtosis-Service-Port-Number`, `45`))"
+			require.Equal(t, expectedRule, labelValue.GetString())
 		case "traefik.http.routers.65d2fb6d6732-3771c85af16a-45.service":
 			require.Equal(t, labelValue.GetString(), "65d2fb6d6732-3771c85af16a-45")
 		case "traefik.http.services.65d2fb6d6732-3771c85af16a-45.loadbalancer.server.port":
