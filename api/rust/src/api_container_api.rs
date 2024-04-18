@@ -236,6 +236,9 @@ pub struct RunStarlarkPackageArgs {
     /// Defaults to false
     #[prost(bool, optional, tag = "15")]
     pub non_blocking_mode: ::core::option::Option<bool>,
+    /// token that will be used to authenticate requests for this package
+    #[prost(string, optional, tag = "16")]
+    pub github_auth_token: ::core::option::Option<::prost::alloc::string::String>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below

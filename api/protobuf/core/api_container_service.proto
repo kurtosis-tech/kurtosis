@@ -235,6 +235,9 @@ message RunStarlarkPackageArgs {
 
   // Defaults to false
   optional bool non_blocking_mode = 15;
+
+  // token that will be used to authenticate requests for this package
+  optional string github_auth_token = 16;
 }
 
 enum KurtosisFeatureFlag {

@@ -14,11 +14,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -57,15 +55,14 @@ type GitPackageContentProvider struct {
 	repositoriesTmpDir              string
 	repositoriesDir                 string
 	packageReplaceOptionsRepository *packageReplaceOptionsRepository
-
-	githubAuthTokenFile string
+	githubAuthProvider              *GitHubPackageAuthProvider
 }
 
-func NewGitPackageContentProvider(repositoriesDir, tmpDir, githubAuthTokenFile string, enclaveDb *enclave_db.EnclaveDB) *GitPackageContentProvider {
+func NewGitPackageContentProvider(repositoriesDir, tmpDir string, githubAuthProvider *GitHubPackageAuthProvider, enclaveDb *enclave_db.EnclaveDB) *GitPackageContentProvider {
 	return &GitPackageContentProvider{
 		repositoriesDir:                 repositoriesDir,
 		repositoriesTmpDir:              tmpDir,
-		githubAuthTokenFile:             githubAuthTokenFile,
+		githubAuthProvider:              githubAuthProvider,
 		packageReplaceOptionsRepository: newPackageReplaceOptionsRepository(enclaveDb),
 	}
 }
@@ -76,7 +73,7 @@ func (provider *GitPackageContentProvider) ClonePackage(packageId string) (strin
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred parsing Git URL for package ID '%s'", packageId)
 	}
 
-	if interpretationError := provider.atomicClone(parsedURL); interpretationError != nil {
+	if interpretationError := provider.atomicClone(parsedURL, provider.getGitHubAuthToken(packageId)); interpretationError != nil {
 		return "", interpretationError
 	}
 
@@ -140,7 +137,8 @@ func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(absoluteLocator
 	}
 
 	// Otherwise clone the repo and return the absolute path of the requested file
-	if interpretationError := provider.atomicClone(parsedURL); interpretationError != nil {
+	emptyPackageId := ""
+	if interpretationError := provider.atomicClone(parsedURL, provider.getGitHubAuthToken(emptyPackageId)); interpretationError != nil {
 		return "", interpretationError
 	}
 
@@ -327,7 +325,7 @@ func (provider *GitPackageContentProvider) CloneReplacedPackagesIfNeeded(current
 
 // atomicClone This first clones to a temporary directory and then moves it into the package file system
 // TODO make this support versioning via tags, commit hashes or branches
-func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.ParsedGitURL) *startosis_errors.InterpretationError {
+func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.ParsedGitURL, githubAuthToken string) *startosis_errors.InterpretationError {
 	// First we clone into a temporary directory
 	tempRepoDirPath, err := os.MkdirTemp(provider.repositoriesTmpDir, temporaryRepoDirPattern)
 	if err != nil {
@@ -342,10 +340,6 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 	}
 
 	var githubAuth *http.BasicAuth
-	githubAuthToken, err := provider.getGitHubAuthToken()
-	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "An error occurred retrieving GitHub auth token.")
-	}
 	if githubAuthToken != "" {
 		githubAuth = &http.BasicAuth{
 			Username: "token",
@@ -446,16 +440,16 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 	return nil
 }
 
-// Returns empty string if no token found in [githubAuthTokenFile] or [githubAuthTokenFile] doesn't exist
-func (provider *GitPackageContentProvider) getGitHubAuthToken() (string, error) {
-	tokenBytes, err := os.ReadFile(provider.githubAuthTokenFile)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return "", nil
-		}
-		return "", stacktrace.Propagate(err, "An error occurred reading contents at '%v' to retrieve GitHub auth token.", provider.githubAuthTokenFile)
+// Returns empty string if no token found by [githubAuthProvider]
+// If packageId is empty string, only checks for and returns github token for the user if it exists
+func (provider *GitPackageContentProvider) getGitHubAuthToken(packageId string) string {
+	var githubAuthToken string
+	githubAuthToken = provider.githubAuthProvider.GetGitHubTokenForPackage(packageId)
+	if githubAuthToken != "" {
+		return githubAuthToken
 	}
-	return string(tokenBytes), nil
+	githubAuthToken = provider.githubAuthProvider.GetGitHubTokenForUser()
+	return githubAuthToken
 }
 
 // methods checks whether the root of the package is same as repository root

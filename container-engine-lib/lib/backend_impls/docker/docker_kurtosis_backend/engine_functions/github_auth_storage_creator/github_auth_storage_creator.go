@@ -28,23 +28,18 @@ const (
 	authStorageCreationCmdMaxRetries     = 2
 	authStorageCreationCmdDelayInRetries = 200 * time.Millisecond
 
+	githubAuthTokenFilePath = "token.txt"
+
 	sleepSeconds = 1800
 )
 
-type GitHubAuthStorageCreator struct {
-	token string
-}
-
-func NewGitHubAuthStorageCreator(token string) *GitHubAuthStorageCreator {
-	return &GitHubAuthStorageCreator{token: token}
-}
-
-func (creator *GitHubAuthStorageCreator) CreateGitHubAuthStorage(
+func CreateGitHubAuthStorage(
 	ctx context.Context,
 	targetNetworkId string,
 	volumeName string,
 	githubAuthStorageDirPath string,
 	dockerManager *docker_manager.DockerManager,
+	token string,
 ) error {
 	entrypointArgs := []string{
 		shBinaryFilepath,
@@ -82,13 +77,14 @@ func (creator *GitHubAuthStorageCreator) CreateGitHubAuthStorage(
 		}
 	}()
 
-	if err := creator.storeTokenInVolume(
+	if err := storeTokenInVolume(
 		ctx,
 		dockerManager,
 		containerId,
 		authStorageCreationCmdMaxRetries,
 		authStorageCreationCmdDelayInRetries,
 		githubAuthStorageDirPath,
+		token,
 	); err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating  GitHub auth storage in volume.")
 	}
@@ -98,26 +94,27 @@ func (creator *GitHubAuthStorageCreator) CreateGitHubAuthStorage(
 
 // GetGitHubAuthToken Returns empty string if no token found in [githubAuthTokenFile] or [githubAuthTokenFile] doesn't exist
 func GetGitHubAuthToken() string {
-	tokenBytes, err := os.ReadFile(path.Join(consts.GitHubAuthStorageDirPath, consts.GithubAuthStorageToken))
+	tokenBytes, err := os.ReadFile(path.Join(consts.GitHubAuthStorageDirPath, githubAuthTokenFilePath))
 	if err != nil {
 		return ""
 	}
 	return string(tokenBytes)
 }
 
-func (creator *GitHubAuthStorageCreator) storeTokenInVolume(
+func storeTokenInVolume(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	containerId string,
 	maxRetries uint,
 	timeBetweenRetries time.Duration,
 	githubAuthStorageDirPath string,
+	token string,
 ) error {
 	commandStr := fmt.Sprintf(
 		"%v '%v' > %v",
 		printfCmdName,
-		creator.token,
-		fmt.Sprintf("%s/%s", githubAuthStorageDirPath, consts.GithubAuthStorageToken),
+		token,
+		fmt.Sprintf("%s/%s", githubAuthStorageDirPath, githubAuthTokenFilePath),
 	)
 
 	execCmd := []string{

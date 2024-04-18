@@ -327,6 +327,9 @@ type RunStarlarkPackage struct {
 	DryRun               *bool                  `json:"dry_run,omitempty"`
 	ExperimentalFeatures *[]KurtosisFeatureFlag `json:"experimental_features,omitempty"`
 
+	// GithubAuthToken Defaults to empty
+	GithubAuthToken *string `json:"github_auth_token,omitempty"`
+
 	// ImageDownloadMode 0 - ALWAYS
 	// 1 - MISSING
 	ImageDownloadMode *ImageDownloadMode `json:"image_download_mode,omitempty"`

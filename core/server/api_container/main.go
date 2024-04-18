@@ -127,11 +127,12 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred while getting the enclave db")
 	}
 
-	repositoriesDirPath, tempDirectoriesDirPath, githubAuthTokenFilePath, err := enclaveDataDir.GetEnclaveDataDirectoryPaths()
+	repositoriesDirPath, tempDirectoriesDirPath, githubAuthDirPath, err := enclaveDataDir.GetEnclaveDataDirectoryPaths()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting directory paths of the enclave data directory.")
 	}
-	gitPackageContentProvider := git_package_content_provider.NewGitPackageContentProvider(repositoriesDirPath, tempDirectoriesDirPath, githubAuthTokenFilePath, enclaveDb)
+	githubAuthProvider := git_package_content_provider.NewGitHubPackageAuthProvider(githubAuthDirPath)
+	gitPackageContentProvider := git_package_content_provider.NewGitPackageContentProvider(repositoriesDirPath, tempDirectoriesDirPath, githubAuthProvider, enclaveDb)
 
 	// TODO Extract into own function
 	var kurtosisBackend backend_interface.KurtosisBackend
@@ -237,6 +238,7 @@ func runMain() error {
 		gitPackageContentProvider,
 		restartPolicy,
 		metricsClient,
+		githubAuthProvider,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")

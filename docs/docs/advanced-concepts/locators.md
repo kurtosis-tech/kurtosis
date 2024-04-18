@@ -33,7 +33,7 @@ github.com/kurtosis-tech/kurtosis/starlark/test.star
 :::
 
 :::info
-Only locators pointing to public GitHub repositories are currently allowed.
+Locators can point to public or private GitHub repositories. Read the [Running Private Packages][running-private-packages] guide to learn how to enable private locators.
 :::
 
 ### Important Package Restriction
@@ -106,3 +106,4 @@ lib_via_absolute_import = import_module("github.com/kurtosis-tech/package-repo/s
 <!------------------ ONLY LINKS BELOW HERE -------------------->
 [packages]: ./packages.md
 [how-do-kurtosis-imports-work-explanation]: ../advanced-concepts/how-do-kurtosis-imports-work.md
+[running-private-packages]: ../guides/running-private-packages.md
