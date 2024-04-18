@@ -29,5 +29,5 @@ To submit code for review, follow these steps:
 
 1. Make sure your changes are building and passing all tests locally, project following [README's guidance](./README.md#build-instructions)
 2. Make sure your code is in accordance with our [Style Guide](https://github.com/kurtosis-tech/style-guide)
-3. Open a PR whose title obeys the [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#summary) convention and fill out the information provided in the Pull Request template. 
+3. Open a PR whose title obeys the [conventional commits] convention and fill out the information provided in the Pull Request template. 
 4. After all CI checks pass, tag `@kurtosis-tech/engineers` for review
