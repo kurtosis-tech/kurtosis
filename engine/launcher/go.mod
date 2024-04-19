@@ -15,10 +15,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 )
 
-require (
-	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-00010101000000-000000000000
-	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
-)
+require github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -34,8 +31,8 @@ require (
 	github.com/segmentio/backo-go v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
-	golang.org/x/net v0.19.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0 // indirect
