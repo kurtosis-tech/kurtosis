@@ -1065,11 +1065,7 @@ jobs:
           service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
           # Give the reverse proxy enough time to discover the httpd user service
           sleep 10
-          status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> \
-            -H "X-Kurtosis-Enclave-Short-UUID: $enclave_uuid" \
-            -H "X-Kurtosis-Service-Short-UUID: $service_uuid" \
-            -H "X-Kurtosis-Service-Port-Number: 80" \
-            | head -1 | awk '{print $2}')
+          status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
           if ! [ "${status_code}" -eq "200" ]; then
             echo 'HTTP request status code returned is '${status_code}' instead of 200'
             false
@@ -1086,11 +1082,7 @@ jobs:
                 service_uuid=$(${KURTOSIS_BINPATH} enclave inspect test-enclave | tail -2 | awk '{print $1}')
                 # Give the reverse proxy enough time to discover the httpd user service
                 sleep 10
-                status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> \
-                  -H "X-Kurtosis-Enclave-Short-UUID: $enclave_uuid" \
-                  -H "X-Kurtosis-Service-Short-UUID: $service_uuid" \
-                  -H "X-Kurtosis-Service-Port-Number: 80" \
-                  | head -1 | awk '{print $2}')
+                status_code=$(curl -I http://localhost:<< pipeline.parameters.reverse-proxy-entrypoint-web-port >> -H "Host: 80-$(echo $service_uuid)-$(echo $enclave_uuid)" | head -1 | awk '{print $2}')
                 if ! [ "${status_code}" -eq "200" ]; then
                   echo 'HTTP request status code returned is '${status_code}' instead of 200'
                   false
