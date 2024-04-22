@@ -154,7 +154,7 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	}
 
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
-	builtin.serviceConfig = apiServiceConfig // store this in the interpretation time value store
+	builtin.serviceConfig = apiServiceConfig
 	builtin.readyCondition = readyCondition
 	builtin.resultUuid, err = builtin.runtimeValueStore.GetOrCreateValueAssociatedWithService(builtin.serviceName)
 	if err != nil {
@@ -172,10 +172,7 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting return value for service '%v'", serviceName)
 	}
-	err = builtin.interpretationTimeValueStore.PutServiceConfig(builtin.serviceName, builtin.serviceConfig)
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while persisting return value for service '%v'", serviceName)
-	}
+	builtin.interpretationTimeValueStore.PutServiceConfig(builtin.serviceName, builtin.serviceConfig)
 
 	return builtin.returnValue, nil
 }
@@ -188,7 +185,6 @@ func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValu
 }
 
 func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	// pull service config from interpretation time value store
 	serviceConfig, err := builtin.interpretationTimeValueStore.GetServiceConfig(builtin.serviceName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting service config value from interpretation time value store for service '%v'", builtin.serviceName)

@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 )
 
 type InterpretationTimeValueStore struct {
@@ -40,21 +39,8 @@ func (itvs *InterpretationTimeValueStore) GetService(name service.ServiceName) (
 	return serviceStarlark, nil
 }
 
-func (itvs *InterpretationTimeValueStore) PutServiceConfig(name service.ServiceName, serviceConfig *service.ServiceConfig) error {
-	if currServiceConfig, ok := itvs.serviceConfigValues[name]; !ok {
-		itvs.serviceConfigValues[name] = serviceConfig
-	} else {
-		if serviceConfig.GetImageBuildSpec() != nil {
-			currServiceConfig.SetImageBuildSpec(serviceConfig.GetImageBuildSpec())
-			logrus.Infof("Updating image build spec of service config for '%v'", name)
-		}
-		if serviceConfig.GetContainerImageName() != "" {
-			currServiceConfig.SetContainerImageName(serviceConfig.GetContainerImageName())
-			logrus.Infof("Updating container image to use for service config for '%v'", name)
-		}
-		itvs.serviceConfigValues[name] = currServiceConfig
-	}
-	return nil
+func (itvs *InterpretationTimeValueStore) PutServiceConfig(name service.ServiceName, serviceConfig *service.ServiceConfig) {
+	itvs.serviceConfigValues[name] = serviceConfig
 }
 
 func (itvs *InterpretationTimeValueStore) GetServiceConfig(name service.ServiceName) (*service.ServiceConfig, error) {

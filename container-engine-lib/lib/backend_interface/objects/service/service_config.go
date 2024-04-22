@@ -29,9 +29,12 @@ type privateServiceConfig struct {
 
 	// Configuration for container engine to pull an in a private registry behind authentication
 	// If nil, we will use the ContainerImageName and not use any auth
-	// Mutually exclusive from ImageBuildSpec, ContainerImageName
-	ImagerRegistrySpec *image_registry_spec.ImageRegistrySpec
+	// Mutually exclusive from ImageBuildSpec, ContainerImageName, NixBuildSpec
+	ImageRegistrySpec *image_registry_spec.ImageRegistrySpec
 
+	// Configuration for container engine to using Nix
+	// If nil, we will use the ContainerImageName and not use any Nix
+	// Mutually exclusive from ImageBuildSpec, ContainerImageName, ImageRegistrySpec
 	NixBuildSpec *nix_build_spec.NixBuildSpec
 
 	PrivatePorts map[string]*port_spec.PortSpec
@@ -104,7 +107,7 @@ func CreateServiceConfig(
 	internalServiceConfig := &privateServiceConfig{
 		ContainerImageName:        containerImageName,
 		ImageBuildSpec:            imageBuildSpec,
-		ImagerRegistrySpec:        imageRegistrySpec,
+		ImageRegistrySpec:         imageRegistrySpec,
 		NixBuildSpec:              nixBuildSpec,
 		PrivatePorts:              privatePorts,
 		PublicPorts:               publicPorts,
@@ -146,11 +149,19 @@ func (serviceConfig *ServiceConfig) SetImageBuildSpec(imageBuildSpec *image_buil
 }
 
 func (serviceConfig *ServiceConfig) GetImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
-	return serviceConfig.privateServiceConfig.ImagerRegistrySpec
+	return serviceConfig.privateServiceConfig.ImageRegistrySpec
+}
+
+func (serviceConfig *ServiceConfig) SetImageRegistrySpec(imageRegistrySpec *image_registry_spec.ImageRegistrySpec) {
+	serviceConfig.privateServiceConfig.ImageRegistrySpec = imageRegistrySpec
 }
 
 func (serviceConfig *ServiceConfig) GetNixBuildSpec() *nix_build_spec.NixBuildSpec {
 	return serviceConfig.privateServiceConfig.NixBuildSpec
+}
+
+func (serviceConfig *ServiceConfig) SetNixBuildSpec(nixBuildSpec *nix_build_spec.NixBuildSpec) {
+	serviceConfig.privateServiceConfig.NixBuildSpec = nixBuildSpec
 }
 
 func (serviceConfig *ServiceConfig) GetPrivatePorts() map[string]*port_spec.PortSpec {

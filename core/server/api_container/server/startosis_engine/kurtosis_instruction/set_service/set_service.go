@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	SetServiceBuiltinName      = "set_service"
-	ServiceNameArgName         = "name"
-	UpdateServiceConfigArgName = "config"
+	SetServiceBuiltinName   = "set_service"
+	ServiceNameArgName      = "name"
+	SetServiceConfigArgName = "config"
 
 	descriptionFormatStr = "Updating config of service '%v'"
 )
@@ -52,14 +52,14 @@ func NewSetService(
 					},
 				},
 				{
-					Name:              UpdateServiceConfigArgName,
+					Name:              SetServiceConfigArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*service_config.ServiceConfig],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication with Interpret
 						_, ok := value.(*service_config.ServiceConfig)
 						if !ok {
-							return startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", UpdateServiceConfigArgName, reflect.TypeOf(value))
+							return startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", SetServiceConfigArgName, reflect.TypeOf(value))
 						}
 						return nil
 					},
@@ -113,9 +113,9 @@ func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 
 	builtin.serviceName = serviceName
 
-	updatedServiceConfig, err := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, UpdateServiceConfigArgName)
+	updatedServiceConfig, err := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, SetServiceConfigArgName)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", UpdateServiceConfigArgName)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SetServiceConfigArgName)
 	}
 	rawImageVal, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](updatedServiceConfig.KurtosisValueTypeDefault, service_config.ImageAttr)
 	if interpretationErr != nil {
@@ -125,7 +125,7 @@ func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, startosis_errors.NewInterpretationError("Unable to extract image attribute off of service config.")
 	}
 	builtin.imageVal = rawImageVal
-	updatedApiServiceConfig, _, interpretationErr := add_service.ValidateAndConvertConfigAndReadyCondition(
+	apiServiceConfigOverride, _, interpretationErr := add_service.ValidateAndConvertConfigAndReadyCondition(
 		builtin.serviceNetwork,
 		updatedServiceConfig,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
@@ -138,11 +138,13 @@ func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, interpretationErr
 	}
 
-	// implement a Put Service Config that overwrites whatever service config existed for that service
-	err = builtin.interpretationTimeStore.PutServiceConfig(serviceName, updatedApiServiceConfig)
+	// get existing service config for service and merge with apiServiceConfigOverride
+	currApiServiceConfig, err := builtin.interpretationTimeStore.GetServiceConfig(builtin.serviceName)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while fetching service '%v' from the store", serviceName)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred retrieving service config for service: %v'", builtin.serviceName)
 	}
+
+	builtin.interpretationTimeStore.PutServiceConfig(serviceName, upsertServiceConfigs(currApiServiceConfig, apiServiceConfigOverride))
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
 	return starlark.None, nil
@@ -157,7 +159,7 @@ func (builtin *SetServiceCapabilities) Validate(_ *builtin_argument.ArgumentValu
 
 func (builtin *SetServiceCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	// Note this is a no-op.
-	return fmt.Sprintf("Fetched service '%v'", builtin.serviceName), nil
+	return fmt.Sprintf("Set service config on service '%v'.", builtin.serviceName), nil
 }
 
 func (builtin *SetServiceCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
@@ -178,4 +180,18 @@ func (builtin *SetServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) 
 
 func (builtin *SetServiceCapabilities) Description() string {
 	return builtin.description
+}
+
+// Takes values set in [serviceConfigOverride] and sets them on [currServiceConfig], leaving other values of [currServiceConfig] untouched
+func upsertServiceConfigs(currServiceConfig, serviceConfigOverride *service.ServiceConfig) *service.ServiceConfig {
+	// only one of these image values will be set, the others will be nil or empty string
+	// as Starlark service config gurantees that the both service config objects has one set
+	currServiceConfig.SetContainerImageName(serviceConfigOverride.GetContainerImageName())
+	currServiceConfig.SetImageBuildSpec(serviceConfigOverride.GetImageBuildSpec())
+	currServiceConfig.SetImageRegistrySpec(serviceConfigOverride.GetImageRegistrySpec())
+	currServiceConfig.SetNixBuildSpec(serviceConfigOverride.GetNixBuildSpec())
+
+	// TODO: impl logic for updating other fields
+	// TODO: note: entrypoint, cmd, env vars, and ports will require special behavior to handle future references that could be overriden
+	return currServiceConfig
 }
