@@ -550,7 +550,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getTraefikLabelsForEn
 			shortServiceUuid := uuid_generator.ShortenedUUIDString(serviceUuid)
 			servicePortStr := fmt.Sprintf("%s-%s-%d", shortEnclaveUuid, shortServiceUuid, portSpec.GetNumber())
 
-			labelKeyValuePairs[fmt.Sprintf("traefik.http.routers.%s.rule", servicePortStr)] = fmt.Sprintf(`Headers("X-Kurtosis-Enclave-Short-UUID", "%s") && Headers("X-Kurtosis-Service-Short-UUID", "%s") && Headers("X-Kurtosis-Service-Port-Number", "%d")`, shortEnclaveUuid, shortServiceUuid, portSpec.GetNumber())
+			labelKeyValuePairs[fmt.Sprintf("http.routers.%s.rule", servicePortStr)] = fmt.Sprintf("Headers(`X-Kurtosis-Enclave-Short-UUID`, `%s`) && Headers(`X-Kurtosis-Service-Short-UUID`, `%s`) && Headers(`X-Kurtosis-Service-Port-Number`, `%d`)", shortEnclaveUuid, shortServiceUuid, portSpec.GetNumber())
 			labelKeyValuePairs[fmt.Sprintf("http.routers.%s.service", servicePortStr)] = servicePortStr
 			labelKeyValuePairs[fmt.Sprintf("http.services.%s.loadbalancer.server.port", servicePortStr)] = strconv.Itoa(int(portSpec.GetNumber()))
 		}
