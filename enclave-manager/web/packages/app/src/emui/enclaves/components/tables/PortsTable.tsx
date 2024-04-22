@@ -40,7 +40,7 @@ export const getPortTableRows = (
     let link;
     if (isDefined(instanceUUID) && instanceUUID.length > 0) {
       if (isDefined(port.alias) && port.alias.length > 0) {
-        link = `${KURTOSIS_CLOUD_PROTOCOL}://` + `${port.alias}` + `.${KURTOSIS_CLOUD_HOST}`;
+        link = `${KURTOSIS_CLOUD_PROTOCOL}://${port.alias}.${KURTOSIS_CLOUD_HOST}`;
       } else {
         link =
           `${KURTOSIS_CLOUD_PROTOCOL}://` +
