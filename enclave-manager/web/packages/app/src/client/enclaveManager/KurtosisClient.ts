@@ -18,6 +18,7 @@ import {
 } from "enclave-manager-sdk/build/engine_service_pb";
 import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {
+  AddAliasRequest,
   CreateRepositoryWebhookRequest,
   DownloadFilesArtifactRequest,
   GetListFilesArtifactNamesAndUuidsRequest,
@@ -90,6 +91,21 @@ export abstract class KurtosisClient {
     return asyncResult(
       this.client.destroyEnclave(new DestroyEnclaveArgs({ enclaveIdentifier: enclaveUUID }), this.getHeaderOptions()),
       `KurtosisClient could not destroy enclave ${enclaveUUID}`,
+    );
+  }
+
+  async addAlias(portNumber: number, serviceShortUUID: string, enclaveShortUUID: string, alias: string) {
+    return asyncResult(
+      this.client.addAlias(
+        new AddAliasRequest({
+          portNumber: portNumber,
+          serviceShortUuid: serviceShortUUID,
+          enclaveShortUuid: enclaveShortUUID,
+          alias: alias,
+        }),
+        this.getHeaderOptions(),
+      ),
+      `KurtosisClient not add alias ${alias} to port ${portNumber} for service ${serviceShortUUID} in enclave ${enclaveShortUUID}`,
     );
   }
 
