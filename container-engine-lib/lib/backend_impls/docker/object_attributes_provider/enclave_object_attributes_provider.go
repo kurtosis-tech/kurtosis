@@ -30,8 +30,6 @@ const (
 	logsCollectorFragment                  = "kurtosis-logs-collector"
 	// The collector is per enclave so this is a suffix
 	logsCollectorVolumeFragment = logsCollectorFragment + "-vol"
-
-	anyCharacterPrefixRegexToken = ".*"
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
