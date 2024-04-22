@@ -39,10 +39,14 @@ export const getPortTableRows = (
   return Object.entries(privatePorts).map(([name, port]) => {
     let link;
     if (isDefined(instanceUUID) && instanceUUID.length > 0) {
-      link =
-        `${KURTOSIS_CLOUD_PROTOCOL}://` +
-        `${port.number}-${shortUUID(serviceUUID)}-${shortUUID(enclaveUUID)}-${shortUUID(instanceUUID)}` +
-        `.${KURTOSIS_CLOUD_HOST}`;
+      if (isDefined(port.alias) && port.alias.length > 0) {
+        link = `${KURTOSIS_CLOUD_PROTOCOL}://` + `${port.alias}` + `.${KURTOSIS_CLOUD_HOST}`;
+      } else {
+        link =
+          `${KURTOSIS_CLOUD_PROTOCOL}://` +
+          `${port.number}-${shortUUID(serviceUUID)}-${shortUUID(enclaveUUID)}-${shortUUID(instanceUUID)}` +
+          `.${KURTOSIS_CLOUD_HOST}`;
+      }
     } else {
       link = `${port.maybeApplicationProtocol ? port.maybeApplicationProtocol + "://" : ""}${publicIp}:${
         publicPorts[name].number
