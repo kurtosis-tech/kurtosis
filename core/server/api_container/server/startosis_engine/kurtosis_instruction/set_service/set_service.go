@@ -1,4 +1,4 @@
-package update_service
+package set_service
 
 import (
 	"context"
@@ -24,14 +24,14 @@ import (
 )
 
 const (
-	UpdateServiceBuiltinName   = "update_service"
+	SetServiceBuiltinName      = "set_service"
 	ServiceNameArgName         = "name"
 	UpdateServiceConfigArgName = "config"
 
 	descriptionFormatStr = "Updating config of service '%v'"
 )
 
-func NewUpdateService(
+func NewSetService(
 	serviceNetwork service_network.ServiceNetwork,
 	interpretationTimeStore *interpretation_time_value_store.InterpretationTimeValueStore,
 	packageId string,
@@ -41,7 +41,7 @@ func NewUpdateService(
 ) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
-			Name: UpdateServiceBuiltinName,
+			Name: SetServiceBuiltinName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
 					Name:              ServiceNameArgName,
@@ -68,7 +68,7 @@ func NewUpdateService(
 			Deprecation: nil,
 		},
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
-			return &UpdateServiceCapabilities{
+			return &SetServiceCapabilities{
 				interpretationTimeStore: interpretationTimeStore,
 				serviceNetwork:          serviceNetwork,
 				serviceName:             "",  // populated at interpretation time
@@ -87,7 +87,7 @@ func NewUpdateService(
 	}
 }
 
-type UpdateServiceCapabilities struct {
+type SetServiceCapabilities struct {
 	interpretationTimeStore *interpretation_time_value_store.InterpretationTimeValueStore
 	serviceName             service.ServiceName
 	serviceConfig           *service.ServiceConfig
@@ -104,7 +104,7 @@ type UpdateServiceCapabilities struct {
 	description       string
 }
 
-func (builtin *UpdateServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
@@ -148,34 +148,34 @@ func (builtin *UpdateServiceCapabilities) Interpret(locatorOfModuleInWhichThisBu
 	return starlark.None, nil
 }
 
-func (builtin *UpdateServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+func (builtin *SetServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	if exists := validatorEnvironment.DoesServiceNameExist(builtin.serviceName); exists == startosis_validator.ComponentNotFound {
-		return startosis_errors.NewValidationError("Service '%v' required by '%v' instruction doesn't exist", builtin.serviceName, UpdateServiceBuiltinName)
+		return startosis_errors.NewValidationError("Service '%v' required by '%v' instruction doesn't exist", builtin.serviceName, SetServiceBuiltinName)
 	}
 	return nil
 }
 
-func (builtin *UpdateServiceCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+func (builtin *SetServiceCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	// Note this is a no-op.
 	return fmt.Sprintf("Fetched service '%v'", builtin.serviceName), nil
 }
 
-func (builtin *UpdateServiceCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *SetServiceCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual {
 		return enclave_structure.InstructionIsEqual
 	}
 	return enclave_structure.InstructionIsUnknown
 }
 
-func (builtin *UpdateServiceCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
-	builder.SetType(UpdateServiceBuiltinName).AddServiceName(builtin.serviceName)
+func (builtin *SetServiceCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(SetServiceBuiltinName).AddServiceName(builtin.serviceName)
 }
 
-func (builtin *UpdateServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
+func (builtin *SetServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) error {
 	// update service does not affect the plan
 	return nil
 }
 
-func (builtin *UpdateServiceCapabilities) Description() string {
+func (builtin *SetServiceCapabilities) Description() string {
 	return builtin.description
 }

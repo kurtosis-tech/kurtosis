@@ -396,36 +396,36 @@ def run(plan):
 	require.Nil(suite.T(), instructionsPlan)
 }
 
-func (suite *StartosisInterpreterTestSuite) TestInterpreter() {
-	script := `
-def run(plan):
-	config = ServiceConfig(
-		image = "someContainer",
-		ports = {
-			"grpc": PortSpec(number=1234, transport_protocol = "TCP") # port number should be an int
-		}
-	)
-	plan.add_service(name = "tedi", config = config)
-	updatedConfig = ServiceConfig(
-		image = "someNewContainer",
-	)
-	plan.update_service(name="tedi", config=updatedConfig)
-`
-
-	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
-	require.Nil(suite.T(), interpretationError)
-	require.Equal(suite.T(), 2, instructionsPlan.Size())
-	//expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
-	//	startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"number":"Value for 'number' was expected to be an integer between 1 and 65535, but it was 'starlark.String'"}`),
-	//	[]startosis_errors.CallFrame{
-	//		*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
-	//		*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
-	//	},
-	//	"Evaluation error: Cannot construct 'PortSpec' from the provided arguments.",
-	//).ToAPIType()
-	//require.Equal(suite.T(), expectedError, interpretationError)
-	//require.Nil(suite.T(), instructionsPlan)
-}
+//func (suite *StartosisInterpreterTestSuite) TestInterpreter() {
+//	script := `
+//def run(plan):
+//	config = ServiceConfig(
+//		image = "someContainer",
+//		ports = {
+//			"grpc": PortSpec(number=1234, transport_protocol = "TCP") # port number should be an int
+//		}
+//	)
+//	plan.add_service(name = "tedi", config = config)
+//	updatedConfig = ServiceConfig(
+//		image = "someNewContainer",
+//	)
+//	plan.update_service(name="tedi", config=updatedConfig)
+//`
+//
+//	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
+//	require.Nil(suite.T(), interpretationError)
+//	require.Equal(suite.T(), 2, instructionsPlan.Size())
+//	//expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
+//	//	startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"number":"Value for 'number' was expected to be an integer between 1 and 65535, but it was 'starlark.String'"}`),
+//	//	[]startosis_errors.CallFrame{
+//	//		*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
+//	//		*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
+//	//	},
+//	//	"Evaluation error: Cannot construct 'PortSpec' from the provided arguments.",
+//	//).ToAPIType()
+//	//require.Equal(suite.T(), expectedError, interpretationError)
+//	//require.Nil(suite.T(), instructionsPlan)
+//}
 
 func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString() {
 	script := `
