@@ -144,7 +144,12 @@ func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred retrieving service config for service: %v'", builtin.serviceName)
 	}
 
-	builtin.interpretationTimeStore.PutServiceConfig(serviceName, upsertServiceConfigs(currApiServiceConfig, apiServiceConfigOverride))
+	mergedServiceConfig, err := upsertServiceConfigs(currApiServiceConfig, apiServiceConfigOverride)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while overriding service configs in set service for service: %v", builtin.serviceName)
+	}
+
+	builtin.interpretationTimeStore.PutServiceConfig(serviceName, mergedServiceConfig)
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
 	return starlark.None, nil
@@ -183,15 +188,60 @@ func (builtin *SetServiceCapabilities) Description() string {
 }
 
 // Takes values set in [serviceConfigOverride] and sets them on [currServiceConfig], leaving other values of [currServiceConfig] untouched
-func upsertServiceConfigs(currServiceConfig, serviceConfigOverride *service.ServiceConfig) *service.ServiceConfig {
+func upsertServiceConfigs(currServiceConfig, serviceConfigOverride *service.ServiceConfig) (*service.ServiceConfig, error) {
 	// only one of these image values will be set, the others will be nil or empty string
-	// as Starlark service config gurantees that the both service config objects has one set
+	// as the Starlark service config gurantees that the service config objects only has one set
 	currServiceConfig.SetContainerImageName(serviceConfigOverride.GetContainerImageName())
 	currServiceConfig.SetImageBuildSpec(serviceConfigOverride.GetImageBuildSpec())
 	currServiceConfig.SetImageRegistrySpec(serviceConfigOverride.GetImageRegistrySpec())
 	currServiceConfig.SetNixBuildSpec(serviceConfigOverride.GetNixBuildSpec())
 
-	// TODO: impl logic for updating other fields
-	// TODO: note: entrypoint, cmd, env vars, and ports will require special behavior to handle future references that could be overriden
-	return currServiceConfig
+	// for other fields, only override if they are explicitly set on serviceConfigOverride
+	if cpuAllocationMillicpusOverride := serviceConfigOverride.GetCPUAllocationMillicpus(); cpuAllocationMillicpusOverride != 0 {
+		currServiceConfig.SetCPUAllocationMillicpus(cpuAllocationMillicpusOverride)
+	}
+	if memoryAllocationMegabytesOverride := serviceConfigOverride.GetMemoryAllocationMegabytes(); memoryAllocationMegabytesOverride != 0 {
+		currServiceConfig.SetMemoryAllocationMegabytes(memoryAllocationMegabytesOverride)
+	}
+	if minCPUAllocationMillicpusOverride := serviceConfigOverride.GetMinCPUAllocationMillicpus(); minCPUAllocationMillicpusOverride != 0 {
+		currServiceConfig.SetMinCPUAllocationMillicpus(minCPUAllocationMillicpusOverride)
+	}
+	if minMemoryAllocationMegabytesOverride := serviceConfigOverride.GetMinMemoryAllocationMegabytes(); minMemoryAllocationMegabytesOverride != 0 {
+		currServiceConfig.SetMinMemoryAllocationMegabytes(minMemoryAllocationMegabytesOverride)
+	}
+	if userOverride := serviceConfigOverride.GetUser(); userOverride != nil {
+		currServiceConfig.SetUser(userOverride)
+	}
+	if labelsOverride := serviceConfigOverride.GetLabels(); len(labelsOverride) > 0 {
+		currServiceConfig.SetLabels(labelsOverride)
+	}
+	if tolerationsOverride := serviceConfigOverride.GetTolerations(); len(tolerationsOverride) > 0 {
+		currServiceConfig.SetTolerations(tolerationsOverride)
+	}
+
+	// TODO: impl logic for overriding entrypoint, cmd, env vars, and ports
+	// TODO: note: these will require careful handling of future references that could be potentially be overriden and affect behavior
+	if len(serviceConfigOverride.GetEnvVars()) != 0 {
+		return nil, startosis_errors.NewInterpretationError("Overriding environment variables is currently not supported.")
+	}
+	if len(serviceConfigOverride.GetEntrypointArgs()) != 0 {
+		return nil, startosis_errors.NewInterpretationError("Overriding entrypoint args is currently not supported.")
+	}
+	if len(serviceConfigOverride.GetCmdArgs()) != 0 {
+		return nil, startosis_errors.NewInterpretationError("Overriding cmd args is currently not supported.")
+	}
+	if len(serviceConfigOverride.GetPrivatePorts()) != 0 {
+		return nil, startosis_errors.NewInterpretationError("Overriding private ports is currently not supported. ")
+	}
+	if len(serviceConfigOverride.GetPublicPorts()) != 0 {
+		return nil, startosis_errors.NewInterpretationError("Overriding public ports is currently not supported.")
+	}
+	if serviceConfigOverride.GetFilesArtifactsExpansion() != nil {
+		return nil, startosis_errors.NewInterpretationError("Overriding files artifacts is currently not supported.")
+	}
+	if serviceConfigOverride.GetPersistentDirectories() != nil {
+		return nil, startosis_errors.NewInterpretationError("Overriding persistent directories is currently not supported.")
+	}
+
+	return currServiceConfig, nil
 }

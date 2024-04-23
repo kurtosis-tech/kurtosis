@@ -91,7 +91,7 @@ func CreateServiceConfig(
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
 	privateIPAddrPlaceholder string,
-	minCpuMilliCores uint64,
+	minCpuMilliCpus uint64,
 	minMemoryMegaBytes uint64,
 	labels map[string]string,
 	user *service_user.ServiceUser,
@@ -120,7 +120,7 @@ func CreateServiceConfig(
 		MemoryAllocationMegabytes: memoryAllocationMegabytes,
 		PrivateIPAddrPlaceholder:  privateIPAddrPlaceholder,
 		// The minimum resources specification is only available for kubernetes
-		MinCpuAllocationMilliCpus:    minCpuMilliCores,
+		MinCpuAllocationMilliCpus:    minCpuMilliCpus,
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
 		Labels:                       labels,
 		User:                         user,
@@ -196,8 +196,16 @@ func (serviceConfig *ServiceConfig) GetCPUAllocationMillicpus() uint64 {
 	return serviceConfig.privateServiceConfig.CpuAllocationMillicpus
 }
 
+func (serviceConfig *ServiceConfig) SetCPUAllocationMillicpus(cpuAllocation uint64) {
+	serviceConfig.privateServiceConfig.CpuAllocationMillicpus = cpuAllocation
+}
+
 func (serviceConfig *ServiceConfig) GetMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.privateServiceConfig.MemoryAllocationMegabytes
+}
+
+func (serviceConfig *ServiceConfig) SetMemoryAllocationMegabytes(memoryAllocation uint64) {
+	serviceConfig.privateServiceConfig.MemoryAllocationMegabytes = memoryAllocation
 }
 
 func (serviceConfig *ServiceConfig) GetPrivateIPAddrPlaceholder() string {
@@ -209,25 +217,49 @@ func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
 	return serviceConfig.privateServiceConfig.MinCpuAllocationMilliCpus
 }
 
+func (serviceConfig *ServiceConfig) SetMinCPUAllocationMillicpus(cpuAllocation uint64) {
+	serviceConfig.privateServiceConfig.MemoryAllocationMegabytes = cpuAllocation
+}
+
 // only available for Kubernetes
 func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.privateServiceConfig.MinMemoryAllocationMegabytes
+}
+
+func (serviceConfig *ServiceConfig) SetMinMemoryAllocationMegabytes(memoryAllocation uint64) {
+	serviceConfig.privateServiceConfig.MemoryAllocationMegabytes = memoryAllocation
 }
 
 func (serviceConfig *ServiceConfig) GetUser() *service_user.ServiceUser {
 	return serviceConfig.privateServiceConfig.User
 }
 
+func (serviceConfig *ServiceConfig) SetUser(user *service_user.ServiceUser) {
+	serviceConfig.privateServiceConfig.User = user
+}
+
 func (serviceConfig *ServiceConfig) GetLabels() map[string]string {
 	return serviceConfig.privateServiceConfig.Labels
+}
+
+func (serviceConfig *ServiceConfig) SetLabels(labels map[string]string) {
+	serviceConfig.privateServiceConfig.Labels = labels
 }
 
 func (serviceConfig *ServiceConfig) GetTolerations() []v1.Toleration {
 	return serviceConfig.privateServiceConfig.Tolerations
 }
 
+func (serviceConfig *ServiceConfig) SetTolerations(tolerations []v1.Toleration) {
+	serviceConfig.privateServiceConfig.Tolerations = tolerations
+}
+
 func (serviceConfig *ServiceConfig) GetImageDownloadMode() image_download_mode.ImageDownloadMode {
 	return serviceConfig.privateServiceConfig.ImageDownloadMode
+}
+
+func (serviceConfig *ServiceConfig) SetImageDownloadMode(mode image_download_mode.ImageDownloadMode) {
+	serviceConfig.privateServiceConfig.ImageDownloadMode = mode
 }
 
 func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {

@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/set_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -395,37 +396,6 @@ def run(plan):
 	require.Equal(suite.T(), expectedError, interpretationError)
 	require.Nil(suite.T(), instructionsPlan)
 }
-
-//func (suite *StartosisInterpreterTestSuite) TestInterpreter() {
-//	script := `
-//def run(plan):
-//	config = ServiceConfig(
-//		image = "someContainer",
-//		ports = {
-//			"grpc": PortSpec(number=1234, transport_protocol = "TCP") # port number should be an int
-//		}
-//	)
-//	plan.add_service(name = "tedi", config = config)
-//	updatedConfig = ServiceConfig(
-//		image = "someNewContainer",
-//	)
-//	plan.update_service(name="tedi", config=updatedConfig)
-//`
-//
-//	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
-//	require.Nil(suite.T(), interpretationError)
-//	require.Equal(suite.T(), 2, instructionsPlan.Size())
-//	//expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
-//	//	startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"number":"Value for 'number' was expected to be an integer between 1 and 65535, but it was 'starlark.String'"}`),
-//	//	[]startosis_errors.CallFrame{
-//	//		*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 20)),
-//	//		*startosis_errors.NewCallFrame("PortSpec", startosis_errors.NewScriptPosition("<builtin>", 0, 0)),
-//	//	},
-//	//	"Evaluation error: Cannot construct 'PortSpec' from the provided arguments.",
-//	//).ToAPIType()
-//	//require.Equal(suite.T(), expectedError, interpretationError)
-//	//require.Nil(suite.T(), instructionsPlan)
-//}
 
 func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_ValidSimpleScriptWithInstructionPortNumberAsString() {
 	script := `
@@ -924,6 +894,49 @@ def run(plan):
 The service example-datastore-server has been removed
 `
 	validateScriptOutputFromPrintInstructions(suite.T(), instructionsPlan, expectedOutput)
+}
+
+func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_SetService() {
+	script := `
+def run(plan):
+	config = ServiceConfig(
+		image = "datastore-image",
+	)
+	plan.add_service(name = "example-datastore-server", config = config)
+
+	newConfig = ServiceConfig(
+		image = "someNewContainer",
+	)
+	plan.set_service(name="example-datastore-server", config=newConfig)
+`
+
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 2, instructionsPlan.Size())
+
+	assertInstructionTypeAndPosition(suite.T(), instructionsPlan, 0, add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 6, 18)
+	assertInstructionTypeAndPosition(suite.T(), instructionsPlan, 1, set_service.SetServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 18)
+}
+
+func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_SetServiceErrorsOnUnsupportedFields() {
+	script := `
+def run(plan):
+	config = ServiceConfig(
+		image = "datastore-image",
+	)
+	plan.add_service(name = "example-datastore-server", config = config)
+
+	newConfig = ServiceConfig(
+		image= "datastore-image",
+		env_vars = {
+			"SOME": "THING"
+		}
+	)
+	plan.set_service(name="example-datastore-server", config=newConfig)
+`
+
+	_, _, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
+	require.NotNil(suite.T(), interpretationError)
 }
 
 func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk() {
