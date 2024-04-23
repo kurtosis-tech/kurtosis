@@ -149,7 +149,7 @@ set_service
 -----------
 
 `set_service` instruction allows overriding the [ServiceConfig][service-config] of a service that exists in the plan. This is useful especially in cases where you are
-importing a [package][package] published by somebody else, but you want to modify aspects of it. For example, if you want to change the image that a service
+importing a package published by somebody else, but you want to modify aspects of it. For example, if you want to change the image that a service
 started by the imported package is using, but the package author has not parameterized the service image via the `run` function, you can use `set_service` to change the image!
 
 ```python
@@ -168,7 +168,7 @@ plan.set_service(
   description = "Setting new image on my-service"
 )
 ```
-Below is an example usage:
+Example usage:
 ```python
 # Postgres package starts a pg db off image "postgres:latest"
 postgres = import_module("github.com/kurtosis-tech/postgres-package/main.star")
@@ -188,6 +188,8 @@ def run(plan, args):
       ) 
     )
 ```
+Note: currently, setting the ServiceConfig image, user, labels, tolerations, and resource allocation values are supported.
+Overriding the ports, env vars, cmd/entrypoint args, and files are not supported. If this is something you'd like support for please let us know on [GitHub](https://github.com/kurtosis-tech/kurtosis/issues)!
 
 get_files_artifact
 -----------
