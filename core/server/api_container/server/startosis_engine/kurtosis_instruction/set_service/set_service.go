@@ -113,11 +113,11 @@ func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 
 	builtin.serviceName = serviceName
 
-	updatedServiceConfig, err := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, SetServiceConfigArgName)
+	serviceConfigOverride, err := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, SetServiceConfigArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SetServiceConfigArgName)
 	}
-	rawImageVal, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](updatedServiceConfig.KurtosisValueTypeDefault, service_config.ImageAttr)
+	rawImageVal, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](serviceConfigOverride.KurtosisValueTypeDefault, service_config.ImageAttr)
 	if interpretationErr != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract raw image attribute.")
 	}
@@ -127,7 +127,7 @@ func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 	builtin.imageVal = rawImageVal
 	apiServiceConfigOverride, _, interpretationErr := add_service.ValidateAndConvertConfigAndReadyCondition(
 		builtin.serviceNetwork,
-		updatedServiceConfig,
+		serviceConfigOverride,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		builtin.packageId,
 		builtin.packageContentProvider,
