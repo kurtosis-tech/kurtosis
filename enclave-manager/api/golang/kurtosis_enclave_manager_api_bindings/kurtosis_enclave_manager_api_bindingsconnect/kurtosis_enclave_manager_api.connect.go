@@ -92,6 +92,9 @@ const (
 	// KurtosisEnclaveManagerServerUnlockPortProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's UnlockPort RPC.
 	KurtosisEnclaveManagerServerUnlockPortProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/UnlockPort"
+	// KurtosisEnclaveManagerServerAddAliasProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's AddAlias RPC.
+	KurtosisEnclaveManagerServerAddAliasProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/AddAlias"
 )
 
 // KurtosisEnclaveManagerServerClient is a client for the
@@ -115,6 +118,7 @@ type KurtosisEnclaveManagerServerClient interface {
 	GetCloudInstanceConfig(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
 	LockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
+	AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerClient constructs a client for the
@@ -218,6 +222,11 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerUnlockPortProcedure,
 			opts...,
 		),
+		addAlias: connect.NewClient[kurtosis_enclave_manager_api_bindings.AddAliasRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerAddAliasProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -241,6 +250,7 @@ type kurtosisEnclaveManagerServerClient struct {
 	getCloudInstanceConfig         *connect.Client[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
 	lockPort                       *connect.Client[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty]
 	unlockPort                     *connect.Client[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty]
+	addAlias                       *connect.Client[kurtosis_enclave_manager_api_bindings.AddAliasRequest, emptypb.Empty]
 }
 
 // Check calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check.
@@ -341,6 +351,11 @@ func (c *kurtosisEnclaveManagerServerClient) UnlockPort(ctx context.Context, req
 	return c.unlockPort.CallUnary(ctx, req)
 }
 
+// AddAlias calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.AddAlias.
+func (c *kurtosisEnclaveManagerServerClient) AddAlias(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.addAlias.CallUnary(ctx, req)
+}
+
 // KurtosisEnclaveManagerServerHandler is an implementation of the
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer service.
 type KurtosisEnclaveManagerServerHandler interface {
@@ -362,6 +377,7 @@ type KurtosisEnclaveManagerServerHandler interface {
 	GetCloudInstanceConfig(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
 	LockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
+	AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerHandler builds an HTTP handler from the service implementation. It
@@ -460,6 +476,11 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		svc.UnlockPort,
 		opts...,
 	)
+	kurtosisEnclaveManagerServerAddAliasHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerAddAliasProcedure,
+		svc.AddAlias,
+		opts...,
+	)
 	return "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisEnclaveManagerServerCheckProcedure:
@@ -498,6 +519,8 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 			kurtosisEnclaveManagerServerLockPortHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerUnlockPortProcedure:
 			kurtosisEnclaveManagerServerUnlockPortHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerAddAliasProcedure:
+			kurtosisEnclaveManagerServerAddAliasHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -577,4 +600,8 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) LockPort(context.Context
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.UnlockPort is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.AddAlias is not implemented"))
 }

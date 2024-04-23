@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/get_files_artifact"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/get_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/get_services"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
@@ -72,17 +73,18 @@ func KurtosisPlanInstructions(
 		add_service.NewAddService(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode),
 		add_service.NewAddServices(serviceNetwork, runtimeValueStore, packageId, packageContentProvider, packageReplaceOptions, interpretationTimeValueStore, imageDownloadMode),
 		get_service.NewGetService(interpretationTimeValueStore),
+    get_services.NewGetServices(interpretationTimeValueStore),
 		set_service.NewSetService(serviceNetwork, interpretationTimeValueStore, packageId, packageContentProvider, packageReplaceOptions, imageDownloadMode),
 		get_files_artifact.NewGetFilesArtifact(),
 		verify.NewVerify(runtimeValueStore),
 		exec.NewExec(serviceNetwork, runtimeValueStore),
 		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),
-		remove_service.NewRemoveService(serviceNetwork),
+		remove_service.NewRemoveService(serviceNetwork, interpretationTimeValueStore),
 		render_templates.NewRenderTemplatesInstruction(serviceNetwork, runtimeValueStore),
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		start_service.NewStartService(serviceNetwork),
-		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore, nonBlockingMode),
-		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode),
+		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore, nonBlockingMode, packageId, packageContentProvider, packageReplaceOptions),
+		tasks.NewRunShService(serviceNetwork, runtimeValueStore, nonBlockingMode, packageId, packageContentProvider, packageReplaceOptions),
 		stop_service.NewStopService(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
 		upload_files.NewUploadFiles(packageId, serviceNetwork, packageContentProvider, packageReplaceOptions),

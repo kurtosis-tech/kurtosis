@@ -63,6 +63,12 @@ export type EnclavesState = {
     enclaveShortUUID: string,
     lock: boolean,
   ) => Promise<Result<Empty, string>>;
+  addAlias: (
+    portNumber: number,
+    serviceShortUUID: string,
+    enclaveShortUUID: string,
+    alias: string,
+  ) => Promise<Result<Empty, string>>;
 };
 
 const EnclavesContext = createContext<EnclavesState>(null as any);
@@ -162,6 +168,27 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
       const resp = lock
         ? await kurtosisClient.lockPort(portNumber, serviceShortUUID, enclaveShortUUID)
         : await kurtosisClient.unlockPort(portNumber, serviceShortUUID, enclaveShortUUID);
+
+      if (resp.isOk) {
+        const enclave = state.enclaves.isOk
+          ? state.enclaves.value.find((e) => e.shortenedUuid === enclaveShortUUID)
+          : undefined;
+
+        if (enclave) {
+          // perhaps there is some way to just change the port property isntead of refreshing it
+          // also this doesn't update in the enclaves table
+          await refreshServices(enclave);
+        }
+      }
+
+      return resp;
+    },
+    [kurtosisClient, refreshServices, state.enclaves],
+  );
+
+  const addAlias = useCallback(
+    async (portNumber: number, serviceShortUUID: string, enclaveShortUUID: string, alias: string) => {
+      const resp = await kurtosisClient.addAlias(portNumber, serviceShortUUID, enclaveShortUUID, alias);
 
       if (resp.isOk) {
         const enclave = state.enclaves.isOk
@@ -286,6 +313,7 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
         updateStarlarkFinishedInEnclave,
         createWebhook,
         lockUnlockPort,
+        addAlias,
       }}
     >
       {children}

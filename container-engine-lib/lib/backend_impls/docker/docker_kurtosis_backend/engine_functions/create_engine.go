@@ -244,8 +244,7 @@ func CreateEngine(
 	if err = dockerManager.CreateVolume(ctx, githubAuthStorageVolNameStr, githubAuthStorageVolLabelStrs); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating GitHub auth storage volume.")
 	}
-	githubAuthStorageCreator := github_auth_storage_creator.NewGitHubAuthStorageCreator(gitAuthToken)
-	err = githubAuthStorageCreator.CreateGitHubAuthStorage(ctx, targetNetworkId, githubAuthStorageVolNameStr, consts.GitHubAuthStorageDirPath, dockerManager)
+	err = github_auth_storage_creator.CreateGitHubAuthStorage(ctx, targetNetworkId, githubAuthStorageVolNameStr, consts.GitHubAuthStorageDirPath, dockerManager, gitAuthToken)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating GitHub auth storage.")
 	}

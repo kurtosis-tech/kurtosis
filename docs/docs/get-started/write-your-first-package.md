@@ -380,7 +380,7 @@ Special note here that we used a locator to import an external package from the 
 :::
 
 #### You imported seed data into your Kurtosis package
-The [`main.star` file][data-package-example-main.star] in that external "data-package" contained Starlark instructions to store the `.tar` data as a [files artifact][files-artifacts-reference] using the [`files_upload` Starlark instruction][kurtosis-files-upload-reference]:
+The [`main.star` file][data-package-example-main.star] in that external "data-package" contained Starlark instructions to store the `.tar` data as a [files artifact][files-artifacts-reference] using the [`upload_files` Starlark instruction][kurtosis-upload-files-reference]:
 
 ```python
 TAR_FILENAME = "dvd-rental-data.tar"
@@ -962,6 +962,7 @@ Finally, if you found Kurtosis interesting or useful, we'd appreciate a [star on
 [kurtosis-clean-reference]: ../cli-reference/clean.md
 [kurtosis-enclave-inspect-reference]: ../cli-reference/enclave-inspect.md
 [kurtosis-files-upload-reference]: ../cli-reference/files-upload.md
+[kurtosis-upload-files-reference]: ../api-reference/starlark-reference/plan.md#upload_files
 [kurtosis-feedback-reference]: ../cli-reference/feedback.md
 [kurtosis-twitter]: ../cli-reference/twitter.md
 [starlark-reference]: ../advanced-concepts/starlark.md

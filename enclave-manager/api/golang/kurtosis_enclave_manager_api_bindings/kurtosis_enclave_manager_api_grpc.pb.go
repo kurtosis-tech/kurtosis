@@ -41,6 +41,7 @@ const (
 	KurtosisEnclaveManagerServer_GetCloudInstanceConfig_FullMethodName         = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetCloudInstanceConfig"
 	KurtosisEnclaveManagerServer_LockPort_FullMethodName                       = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/LockPort"
 	KurtosisEnclaveManagerServer_UnlockPort_FullMethodName                     = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/UnlockPort"
+	KurtosisEnclaveManagerServer_AddAlias_FullMethodName                       = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/AddAlias"
 )
 
 // KurtosisEnclaveManagerServerClient is the client API for KurtosisEnclaveManagerServer service.
@@ -65,6 +66,7 @@ type KurtosisEnclaveManagerServerClient interface {
 	GetCloudInstanceConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error)
 	LockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnlockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AddAlias(ctx context.Context, in *AddAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type kurtosisEnclaveManagerServerClient struct {
@@ -329,6 +331,15 @@ func (c *kurtosisEnclaveManagerServerClient) UnlockPort(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *kurtosisEnclaveManagerServerClient) AddAlias(ctx context.Context, in *AddAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_AddAlias_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KurtosisEnclaveManagerServerServer is the server API for KurtosisEnclaveManagerServer service.
 // All implementations should embed UnimplementedKurtosisEnclaveManagerServerServer
 // for forward compatibility
@@ -351,6 +362,7 @@ type KurtosisEnclaveManagerServerServer interface {
 	GetCloudInstanceConfig(context.Context, *emptypb.Empty) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error)
 	LockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error)
 	UnlockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error)
+	AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error)
 }
 
 // UnimplementedKurtosisEnclaveManagerServerServer should be embedded to have forward compatible implementations.
@@ -410,6 +422,9 @@ func (UnimplementedKurtosisEnclaveManagerServerServer) LockPort(context.Context,
 }
 func (UnimplementedKurtosisEnclaveManagerServerServer) UnlockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnlockPort not implemented")
+}
+func (UnimplementedKurtosisEnclaveManagerServerServer) AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddAlias not implemented")
 }
 
 // UnsafeKurtosisEnclaveManagerServerServer may be embedded to opt out of forward compatibility for this service.
@@ -759,6 +774,24 @@ func _KurtosisEnclaveManagerServer_UnlockPort_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisEnclaveManagerServer_AddAlias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddAliasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisEnclaveManagerServerServer).AddAlias(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisEnclaveManagerServer_AddAlias_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisEnclaveManagerServerServer).AddAlias(ctx, req.(*AddAliasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KurtosisEnclaveManagerServer_ServiceDesc is the grpc.ServiceDesc for KurtosisEnclaveManagerServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -821,6 +854,10 @@ var KurtosisEnclaveManagerServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnlockPort",
 			Handler:    _KurtosisEnclaveManagerServer_UnlockPort_Handler,
+		},
+		{
+			MethodName: "AddAlias",
+			Handler:    _KurtosisEnclaveManagerServer_AddAlias_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

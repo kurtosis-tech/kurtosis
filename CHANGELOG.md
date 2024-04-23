@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.88.18](https://github.com/kurtosis-tech/kurtosis/compare/0.88.17...0.88.18) (2024-04-22)
+
+
+### Features
+
+* add and check port aliasing ([#2373](https://github.com/kurtosis-tech/kurtosis/issues/2373)) ([136f1e7](https://github.com/kurtosis-tech/kurtosis/commit/136f1e7d90b55594e175286c1fd1c1b2dd6a5539))
+* allow to set an alias and view them ([#2385](https://github.com/kurtosis-tech/kurtosis/issues/2385)) ([97e5c7d](https://github.com/kurtosis-tech/kurtosis/commit/97e5c7d8c4af755be3f20764a6ecb7b603837a80))
+* enable image build spec for tasks ([#2374](https://github.com/kurtosis-tech/kurtosis/issues/2374)) ([3d5e6ec](https://github.com/kurtosis-tech/kurtosis/commit/3d5e6ec3a77624a9c8b4b9cac2eddc83d28db58e))
+* enable setting git token per package run ([#2355](https://github.com/kurtosis-tech/kurtosis/issues/2355)) ([4eaae9f](https://github.com/kurtosis-tech/kurtosis/commit/4eaae9f8f99286835451a4ce1f60e1b6f352b0f3))
+
+## [0.88.17](https://github.com/kurtosis-tech/kurtosis/compare/0.88.16...0.88.17) (2024-04-15)
+
+
+### Features
+
+* Add reason argument to the cancel subscription method ([#2377](https://github.com/kurtosis-tech/kurtosis/issues/2377)) ([dd8d1ff](https://github.com/kurtosis-tech/kurtosis/commit/dd8d1ffa8115666ae3a547ea1b6147f05d77c4f2))
+* change made with to star us on ([#2375](https://github.com/kurtosis-tech/kurtosis/issues/2375)) ([56677a1](https://github.com/kurtosis-tech/kurtosis/commit/56677a13226ad30c2272b4c1b761e8a658e5d19c))
+* get all services ([#2367](https://github.com/kurtosis-tech/kurtosis/issues/2367)) ([2ba98f5](https://github.com/kurtosis-tech/kurtosis/commit/2ba98f5f3d82ffd099cda0942ee358fe02bc70a5))
+
+
+### Bug Fixes
+
+* Use instance `updated at` attribute for uptime calculation ([#2378](https://github.com/kurtosis-tech/kurtosis/issues/2378)) ([421d275](https://github.com/kurtosis-tech/kurtosis/commit/421d27593d537a104c825e0e7120200175287e07))
+
 ## [0.88.16](https://github.com/kurtosis-tech/kurtosis/compare/0.88.15...0.88.16) (2024-04-08)
 
 

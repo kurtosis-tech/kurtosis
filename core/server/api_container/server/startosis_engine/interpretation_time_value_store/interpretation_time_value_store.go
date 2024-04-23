@@ -39,6 +39,22 @@ func (itvs *InterpretationTimeValueStore) GetService(name service.ServiceName) (
 	return serviceStarlark, nil
 }
 
+func (itvs *InterpretationTimeValueStore) GetServices() ([]*kurtosis_types.Service, error) {
+	servicesStarlark, err := itvs.serviceValues.GetServices()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred fetching interpretation time service objects from db")
+	}
+	return servicesStarlark, nil
+}
+
+func (itvs *InterpretationTimeValueStore) RemoveService(name service.ServiceName) error {
+	err := itvs.serviceValues.RemoveService(name)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing interpretation time service object for service '%v'", name)
+	}
+	return nil
+}
+
 func (itvs *InterpretationTimeValueStore) PutServiceConfig(name service.ServiceName, serviceConfig *service.ServiceConfig) {
 	itvs.serviceConfigValues[name] = serviceConfig
 }

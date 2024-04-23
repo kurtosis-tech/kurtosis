@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/github/login"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/github_auth_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
@@ -23,7 +24,7 @@ var LogoutCmd = &lowlevel.LowlevelKurtosisCommand{
 	PostValidationAndRunFunc: nil,
 }
 
-func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
+func run(ctx context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 	githubAuthStore, err := github_auth_store.GetGitHubAuthStore()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred retrieving GitHub auth configuration.")
@@ -39,6 +40,10 @@ func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 	err = githubAuthStore.RemoveUser()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred logging out GitHub user: %v", username)
+	}
+	err = login.RestartEngineAfterGitHubAuth(ctx)
+	if err != nil {
+		return err
 	}
 	out.PrintOutLn(fmt.Sprintf("Successfully logged GitHub user '%v' out of Kurtosis CLI", username))
 	return nil
