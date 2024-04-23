@@ -3,6 +3,9 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
@@ -18,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
@@ -33,7 +37,13 @@ const (
 	runningShScriptPrefix  = "Running sh script"
 )
 
-func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, nonBlockingMode bool) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewRunShService(
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	nonBlockingMode bool,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: RunShBuiltinName,
@@ -47,10 +57,8 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				{
 					Name:              ImageNameArgName,
 					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(argumentValue starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(argumentValue, ImageNameArgName)
-					},
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
+					Validator:         nil,
 				},
 				{
 					Name:              FilesArgName,
@@ -83,17 +91,20 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &RunShCapabilities{
-				serviceNetwork:    serviceNetwork,
-				runtimeValueStore: runtimeValueStore,
-				name:              "",
-				nonBlockingMode:   nonBlockingMode,
-				serviceConfig:     nil, // populated at interpretation time
-				run:               "",  // populated at interpretation time
-				resultUuid:        "",  // populated at interpretation time
-				storeSpecList:     nil,
-				wait:              DefaultWaitTimeoutDurationStr,
-				description:       "",  // populated at interpretation time
-				returnValue:       nil, // populated at interpretation time
+				serviceNetwork:         serviceNetwork,
+				runtimeValueStore:      runtimeValueStore,
+				packageId:              packageId,
+				packageReplaceOptions:  packageReplaceOptions,
+				packageContentProvider: packageContentProvider,
+				name:                   "",
+				nonBlockingMode:        nonBlockingMode,
+				serviceConfig:          nil, // populated at interpretation time
+				run:                    "",  // populated at interpretation time
+				resultUuid:             "",  // populated at interpretation time
+				storeSpecList:          nil,
+				wait:                   DefaultWaitTimeoutDurationStr,
+				description:            "",  // populated at interpretation time
+				returnValue:            nil, // populated at interpretation time
 			}
 		},
 
@@ -117,6 +128,11 @@ type RunShCapabilities struct {
 	run             string
 	nonBlockingMode bool
 
+	// fields required for image building
+	packageId              string
+	packageContentProvider startosis_packages.PackageContentProvider
+	packageReplaceOptions  map[string]string
+
 	serviceConfig *service.ServiceConfig
 	storeSpecList []*store_spec.StoreSpec
 	returnValue   *starlarkstruct.Struct
@@ -124,22 +140,35 @@ type RunShCapabilities struct {
 	description   string
 }
 
-func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	runCommand, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RunArgName)
 	}
 	builtin.run = runCommand.GoString()
 
-	var image string
+	var maybeImageName string
+	var maybeImageBuildSpec *image_build_spec.ImageBuildSpec
+	var maybeImageRegistrySpec *image_registry_spec.ImageRegistrySpec
+	var maybeNixBuildSpec *nix_build_spec.NixBuildSpec
+	var interpretationErr *startosis_errors.InterpretationError
 	if arguments.IsSet(ImageNameArgName) {
-		imageStarlark, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ImageNameArgName)
+		rawImageVal, err := builtin_argument.ExtractArgumentValue[starlark.Value](arguments, ImageNameArgName)
 		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ImageNameArgName)
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract raw image attribute.")
 		}
-		image = imageStarlark.GoString()
+
+		maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, interpretationErr = service_config.ConvertImage(
+			rawImageVal,
+			locatorOfModuleInWhichThisBuiltinIsBeingCalled,
+			builtin.packageId,
+			builtin.packageContentProvider,
+			builtin.packageReplaceOptions)
+		if interpretationErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "An error occurred converting image for run sh.")
+		}
 	} else {
-		image = defaultRunShImageName
+		maybeImageName = defaultRunShImageName
 	}
 
 	var filesArtifactExpansion *service_directory.FilesArtifactsExpansion
@@ -170,9 +199,9 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion, envVars)
+	builtin.serviceConfig, err = getServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, filesArtifactExpansion, envVars)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using for run sh task.")
 	}
 
 	if arguments.IsSet(StoreFilesArgName) {
@@ -215,7 +244,7 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		serviceDirpathsToArtifactIdentifiers = builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers
 	}
-	return validateTasksCommon(validatorEnvironment, builtin.storeSpecList, serviceDirpathsToArtifactIdentifiers, builtin.serviceConfig.GetContainerImageName())
+	return validateTasksCommon(validatorEnvironment, builtin.storeSpecList, serviceDirpathsToArtifactIdentifiers, builtin.serviceConfig)
 }
 
 // Execute This is just v0 for run_sh task - we can later improve on it.

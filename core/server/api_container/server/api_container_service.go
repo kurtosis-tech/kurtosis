@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"io"
 	"math"
 	"net/http"
@@ -99,6 +100,8 @@ type ApiContainerService struct {
 	starlarkRun *kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse
 
 	metricsClient metrics_client.MetricsClient
+
+	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider
 }
 
 func NewApiContainerService(
@@ -109,6 +112,7 @@ func NewApiContainerService(
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
 	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy,
 	metricsClient metrics_client.MetricsClient,
+	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:     filesArtifactStore,
@@ -127,7 +131,8 @@ func NewApiContainerService(
 			ExperimentalFeatures:   []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
 			RestartPolicy:          kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
 		},
-		metricsClient: metricsClient,
+		metricsClient:      metricsClient,
+		githubAuthProvider: githubAuthProvider,
 	}
 
 	return service, nil
@@ -247,7 +252,6 @@ func (apicService *ApiContainerService) InspectFilesArtifactContents(_ context.C
 }
 
 func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
-
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
 	var isRemote bool
@@ -265,6 +269,17 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 	nonBlockingMode := args.GetNonBlockingMode()
+
+	packageGitHubAuthToken := args.GetGithubAuthToken()
+	if packageGitHubAuthToken != "" {
+		err := apicService.githubAuthProvider.StoreGitHubTokenForPackage(packageIdFromArgs, args.GetGithubAuthToken())
+		if err != nil {
+			if err = stream.SendMsg(binding_constructors.NewStarlarkExecutionError(err.Error())); err != nil {
+				return stacktrace.Propagate(err, "Error occurred providing github auth token for package: '%s'", packageIdFromArgs)
+			}
+		}
+	}
+
 	var actualRelativePathToMainFile string
 	if args.ClonePackage != nil {
 		scriptWithRunFunction, actualRelativePathToMainFile, detectedPackageId, detectedPackageReplaceOptions, interpretationError =

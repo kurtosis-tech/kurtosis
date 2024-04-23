@@ -261,34 +261,37 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 	if err != nil {
 		return nil, err
 	}
-	getUnlockedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]{
-		Msg: &kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest{
+	getUnlockedPortsRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.GetPortsRequest{
 			AccessToken:       jwtToken,
 			InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
 			EnclaveShortUuid:  req.Msg.EnclaveShortenedUuid,
 		},
 	}
 
-	var unlockedPortsAndServices []*kurtosis_backend_server_rpc_api_bindings.Port
-	getUnauthenticatedPortsResponse, err := (*cloudClient).GetUnlockedPorts(ctx, getUnlockedPortsRequest)
+	var portMetadata []*kurtosis_backend_server_rpc_api_bindings.CloudPort
+	cloudPortsResponse, err := (*cloudClient).GetPorts(ctx, getUnlockedPortsRequest)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while pulling unauthenticated ports from the cloud backend")
 	}
-	unlockedPortsAndServices = getUnauthenticatedPortsResponse.Msg.Port
+	portMetadata = cloudPortsResponse.Msg.CloudPorts
 
 	for _, service := range serviceInfoMapFromApicObj {
 		serviceShortUuid := service.ServiceUuid[:shortUuidLength]
 		for _, privatePort := range service.PrivatePorts {
 			locked := true
-			for _, unlockedPortsAndService := range unlockedPortsAndServices {
-				if unlockedPortsAndService.ServiceShortUuid == serviceShortUuid {
-					if privatePort.Number == unlockedPortsAndService.PortNumber {
-						locked = false
+			alias := ""
+			for _, unlockedPortsAndService := range portMetadata {
+				if unlockedPortsAndService.Port.ServiceShortUuid == serviceShortUuid {
+					if privatePort.Number == unlockedPortsAndService.Port.PortNumber {
+						locked = unlockedPortsAndService.Locked
+						alias = unlockedPortsAndService.Alias
 						break
 					}
 				}
 			}
 			privatePort.Locked = &locked
+			privatePort.Alias = &alias
 		}
 	}
 
@@ -299,6 +302,52 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 	}
 
 	return resp, nil
+}
+
+func (c *WebServer) AddAlias(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error) {
+	if !c.enforceAuth {
+		return nil, stacktrace.NewError("This method is only available in the cloud")
+	}
+	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+
+	cloudClient, err := c.createKurtosisCloudBackendClient(
+		kurtosisCloudApiHost,
+		kurtosisCloudApiPort,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
+	}
+
+	jwtToken, err := extractJwtToken(req.Header())
+	if err != nil {
+		return nil, err
+	}
+	addAliasRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.AddAliasRequest{
+			AccessToken: jwtToken,
+			Port: &kurtosis_backend_server_rpc_api_bindings.Port{
+				InstanceShortUuid: instanceConfig.InstanceId[:shortUuidLength],
+				PortNumber:        req.Msg.PortNumber,
+				EnclaveShortUuid:  req.Msg.EnclaveShortUuid,
+				ServiceShortUuid:  req.Msg.ServiceShortUuid,
+			},
+			Alias: req.Msg.Alias,
+		},
+	}
+
+	_, err = (*cloudClient).AddAlias(ctx, addAliasRequest)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while sending add alias request to the cloud backend")
+	}
+
+	return &connect.Response[emptypb.Empty]{}, nil
+
 }
 
 func (c *WebServer) LockPort(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {

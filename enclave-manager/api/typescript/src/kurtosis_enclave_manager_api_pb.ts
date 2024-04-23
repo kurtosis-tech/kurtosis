@@ -533,6 +533,61 @@ export class LockUnlockPortRequest extends Message<LockUnlockPortRequest> {
 }
 
 /**
+ * @generated from message kurtosis_enclave_manager.AddAliasRequest
+ */
+export class AddAliasRequest extends Message<AddAliasRequest> {
+  /**
+   * @generated from field: string alias = 1;
+   */
+  alias = "";
+
+  /**
+   * @generated from field: uint32 port_number = 2;
+   */
+  portNumber = 0;
+
+  /**
+   * @generated from field: string service_short_uuid = 3;
+   */
+  serviceShortUuid = "";
+
+  /**
+   * @generated from field: string enclave_short_uuid = 4;
+   */
+  enclaveShortUuid = "";
+
+  constructor(data?: PartialMessage<AddAliasRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_enclave_manager.AddAliasRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "alias", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "port_number", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
+    { no: 3, name: "service_short_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "enclave_short_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): AddAliasRequest {
+    return new AddAliasRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): AddAliasRequest {
+    return new AddAliasRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): AddAliasRequest {
+    return new AddAliasRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: AddAliasRequest | PlainMessage<AddAliasRequest> | undefined, b: AddAliasRequest | PlainMessage<AddAliasRequest> | undefined): boolean {
+    return proto3.util.equals(AddAliasRequest, a, b);
+  }
+}
+
+/**
  * ==============================================================================================
  *                               Get Starlark Plan Yaml
  * ==============================================================================================

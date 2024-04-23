@@ -21,6 +21,11 @@ export class Port extends jspb.Message {
   hasLocked(): boolean;
   clearLocked(): Port;
 
+  getAlias(): string;
+  setAlias(value: string): Port;
+  hasAlias(): boolean;
+  clearAlias(): Port;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Port.AsObject;
   static toObject(includeInstance: boolean, msg: Port): Port.AsObject;
@@ -36,6 +41,7 @@ export namespace Port {
     maybeApplicationProtocol: string,
     maybeWaitTimeout: string,
     locked?: boolean,
+    alias?: string,
   }
 
   export enum TransportProtocol { 
@@ -47,6 +53,11 @@ export namespace Port {
   export enum LockedCase { 
     _LOCKED_NOT_SET = 0,
     LOCKED = 5,
+  }
+
+  export enum AliasCase { 
+    _ALIAS_NOT_SET = 0,
+    ALIAS = 6,
   }
 }
 
@@ -325,6 +336,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasNonBlockingMode(): boolean;
   clearNonBlockingMode(): RunStarlarkPackageArgs;
 
+  getGithubAuthToken(): string;
+  setGithubAuthToken(value: string): RunStarlarkPackageArgs;
+  hasGithubAuthToken(): boolean;
+  clearGithubAuthToken(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -351,6 +367,7 @@ export namespace RunStarlarkPackageArgs {
     cloudUserId?: string,
     imageDownloadMode?: ImageDownloadMode,
     nonBlockingMode?: boolean,
+    githubAuthToken?: string,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -407,6 +424,11 @@ export namespace RunStarlarkPackageArgs {
   export enum NonBlockingModeCase { 
     _NON_BLOCKING_MODE_NOT_SET = 0,
     NON_BLOCKING_MODE = 15,
+  }
+
+  export enum GithubAuthTokenCase { 
+    _GITHUB_AUTH_TOKEN_NOT_SET = 0,
+    GITHUB_AUTH_TOKEN = 16,
   }
 }
 

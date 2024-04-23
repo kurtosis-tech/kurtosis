@@ -129,6 +129,13 @@ export declare class Port extends Message<Port> {
    */
   locked?: boolean;
 
+  /**
+   * this is useful in the cloud context; ignore in local
+   *
+   * @generated from field: optional string alias = 6;
+   */
+  alias?: string;
+
   constructor(data?: PartialMessage<Port>);
 
   static readonly runtime: typeof proto3;
@@ -511,6 +518,13 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * @generated from field: optional bool non_blocking_mode = 15;
    */
   nonBlockingMode?: boolean;
+
+  /**
+   * token that will be used to authenticate requests for this package
+   *
+   * @generated from field: optional string github_auth_token = 16;
+   */
+  githubAuthToken?: string;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 

@@ -4,7 +4,7 @@
 // @ts-nocheck
 
 import { Empty, MethodIdempotency, MethodKind } from "@bufbuild/protobuf";
-import { CancelPaymentSubscriptionArgs, ChangeUserActiveRequest, CheckPortAuthorizationRequest, DeleteInstanceRequest, DeleteInstanceResponse, GetCloudInstanceConfigArgs, GetCloudInstanceConfigResponse, GetInstancesResponse, GetOrCreateApiKeyRequest, GetOrCreateApiKeyResponse, GetOrCreateInstanceRequest, GetOrCreateInstanceResponse, GetOrCreatePaymentConfigArgs, GetOrCreatePaymentConfigResponse, GetUnlockedPortsRequest, GetUnlockedPortsResponse, GetUserRequest, GetUserResponse, LockPortRequest, RefreshDefaultPaymentMethodArgs, UnlockPortRequest, UpdateAddressArgs } from "./kurtosis_backend_server_api_pb.js";
+import { AddAliasRequest, CancelPaymentSubscriptionArgs, ChangeUserActiveRequest, CheckPortAuthorizationRequest, DeleteInstanceRequest, DeleteInstanceResponse, GetCloudInstanceConfigArgs, GetCloudInstanceConfigResponse, GetInstancesResponse, GetOrCreateApiKeyRequest, GetOrCreateApiKeyResponse, GetOrCreateInstanceRequest, GetOrCreateInstanceResponse, GetOrCreatePaymentConfigArgs, GetOrCreatePaymentConfigResponse, GetPortsRequest, GetPortsResponse, GetUnlockedPortsRequest, GetUnlockedPortsResponse, GetUserRequest, GetUserResponse, LockPortRequest, RefreshDefaultPaymentMethodArgs, UnlockPortRequest, UpdateAddressArgs } from "./kurtosis_backend_server_api_pb.js";
 
 /**
  * @generated from service kurtosis_cloud.KurtosisCloudBackendServer
@@ -157,6 +157,24 @@ export const KurtosisCloudBackendServer = {
       name: "GetUnlockedPorts",
       I: GetUnlockedPortsRequest,
       O: GetUnlockedPortsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_cloud.KurtosisCloudBackendServer.GetPorts
+     */
+    getPorts: {
+      name: "GetPorts",
+      I: GetPortsRequest,
+      O: GetPortsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_cloud.KurtosisCloudBackendServer.AddAlias
+     */
+    addAlias: {
+      name: "AddAlias",
+      I: AddAliasRequest,
+      O: Empty,
       kind: MethodKind.Unary,
     },
   }
