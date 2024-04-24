@@ -23,6 +23,11 @@ const (
 	DefaultEnableDebugMode                       = false
 	DefaultKurtosisContainerDebugImageNameSuffix = "debug"
 
+	// This is the persistent flag key used, accroos all the CLI commands, to set the kurtosis version used to
+	// start the Kurtosis containers
+	KurtosisVersionFlagKey = "version"
+	DefaultKurtosisVersion = ""
+
 	DefaultGitHubAuthTokenOverride = ""
 )
 
