@@ -205,7 +205,9 @@ func getDockerKurtosisBackend(
 	var serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
 	if optionalApiContainerModeArgs != nil {
 		productionMode = optionalApiContainerModeArgs.IsProduction
-		enclaveDb, err := enclave_db.GetEnclaveDatabase()
+		// using the noEnclaveDatabaseDirpath because at this point we know that the enclave database has been created, so we are getting it from this call
+		noEnclaveDatabaseDirpath := ""
+		enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase(noEnclaveDatabaseDirpath)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred opening local database")
 		}

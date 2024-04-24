@@ -58,10 +58,6 @@ func GetOrCreateEnclaveDatabase(enclaveDatabaseDirpath string) (*EnclaveDB, erro
 	return &EnclaveDB{databaseInstance}, nil
 }
 
-func GetEnclaveDatabase() (*EnclaveDB, error) {
-	return &EnclaveDB{databaseInstance}, nil
-}
-
 func EraseDatabase() error {
 	path := databaseInstance.Path()
 	err := databaseInstance.Close()
