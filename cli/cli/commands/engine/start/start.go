@@ -113,14 +113,14 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 	var engineClientCloseFunc func() error
 	var startEngineErr error
 
-	engineVersion, err := flags.GetString(engineVersionFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine Container Version using flag with key '%v'; this is a bug in Kurtosis", engineVersionFlagKey)
-	}
-
 	isDebugMode, err := flags.GetBool(defaults.DebugModeFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
+	}
+
+	engineVersion, err := getVersion(flags)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis engine version from the flags")
 	}
 
 	if engineVersion == defaultEngineVersion && isDebugMode {
@@ -146,4 +146,21 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 	logrus.Info("Kurtosis engine started")
 
 	return nil
+}
+
+func getVersion(flags *flags.ParsedFlags) (string, error) {
+
+	engineVersion, err := flags.GetString(engineVersionFlagKey)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine Container Version using flag with key '%v'; this is a bug in Kurtosis", engineVersionFlagKey)
+	}
+	if engineVersion != defaultEngineVersion {
+		return engineVersion, nil
+	}
+
+	kurtosisVersion, err := flags.GetString(defaults.KurtosisVersionFlagKey)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.KurtosisVersionFlagKey)
+	}
+	return kurtosisVersion, nil
 }

@@ -86,6 +86,7 @@ type GitHubReleaseReponse struct {
 
 var logLevelStr string
 var defaultLogLevelStr = logrus.InfoLevel.String()
+var kurtosisVersionStr string
 
 // RootCmd Suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
@@ -112,6 +113,13 @@ func init() {
 		defaults.DebugModeFlagKey,
 		defaults.DefaultEnableDebugMode,
 		"Whether should enable Kurtosis in debug mode. The debug mode will use the Kurtosis container debug images version (only enabled for the engine server so far)",
+	)
+
+	RootCmd.PersistentFlags().StringVar(
+		&kurtosisVersionStr,
+		defaults.KurtosisVersionFlagKey,
+		defaults.DefaultKurtosisVersion,
+		"The version (container tag) of all Kurtosis containers (engine and APIC components) that should be started (blank will start the default version)",
 	)
 
 	RootCmd.AddCommand(analytics.AnalyticsCmd.MustGetCobraCommand())
