@@ -1103,6 +1103,7 @@ func getApiContainerContainersAndVolumes(
 					MountPath: enclaveDataVolumeDirpath,
 				},
 			},
+			ImagePullPolicy: apiv1.PullAlways,
 		},
 	}
 

@@ -289,7 +289,7 @@ func CreateEngine(
 		usedPorts,
 	).WithLabels(
 		labelStrs,
-	)
+	).WithFetchingLatestImageAlways()
 
 	if shouldStartInDebugMode {
 		// Adding systrace capabilities when starting the debug server in the engine's container

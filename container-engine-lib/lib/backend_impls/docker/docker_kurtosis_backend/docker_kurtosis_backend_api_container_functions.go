@@ -213,7 +213,9 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 	).WithLabels(
 		labelStrs,
-	).WithRestartPolicy(docker_manager.RestartOnFailure)
+	).WithRestartPolicy(
+		docker_manager.RestartOnFailure,
+	).WithFetchingLatestImageAlways()
 
 	if shouldStartInDebugMode {
 		// Adding systrace capabilities when starting the debug server in the engine's container

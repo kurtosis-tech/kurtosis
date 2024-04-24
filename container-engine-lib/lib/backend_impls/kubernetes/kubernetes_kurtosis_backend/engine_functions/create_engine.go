@@ -457,10 +457,11 @@ func createEnginePod(
 	// nolint: exhaustruct
 	engineContainers := []apiv1.Container{
 		{
-			Name:  kurtosisEngineContainerName,
-			Image: containerImageAndTag,
-			Env:   engineContainerEnvVars,
-			Ports: containerPorts,
+			Name:            kurtosisEngineContainerName,
+			Image:           containerImageAndTag,
+			Env:             engineContainerEnvVars,
+			Ports:           containerPorts,
+			ImagePullPolicy: apiv1.PullAlways,
 		},
 	}
 
