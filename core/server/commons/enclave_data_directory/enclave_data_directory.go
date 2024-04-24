@@ -27,6 +27,9 @@ const (
 
 	// Name of directory INSIDE THE ENCLAVE DATA DIR at [absMountDirPath]  that contains info for authenticating GitHub operations
 	githubAuthStoreDirname = "github-auth"
+
+	// Name of directory INSIDE THE ENCLAVE DATA DIR containing the enclave database (currently the bolt dB is implemented)
+	enclaveDatabase = "enclave-database"
 )
 
 // A directory containing all the data associated with a certain enclave (i.e. a Docker subnetwork where services are spun up)
@@ -67,21 +70,26 @@ func (dir EnclaveDataDirectory) GetFilesArtifactStore() (*FilesArtifactStore, er
 	return currentFilesArtifactStore, dbError
 }
 
-func (dir EnclaveDataDirectory) GetEnclaveDataDirectoryPaths() (string, string, string, error) {
+func (dir EnclaveDataDirectory) GetEnclaveDataDirectoryPaths() (string, string, string, string, error) {
 	repositoriesStoreDirpath := path.Join(dir.absMountDirpath, repositoriesStoreDirname)
 	if err := ensureDirpathExists(repositoriesStoreDirpath); err != nil {
-		return "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the repositories store dirpath '%v' exists.", repositoriesStoreDirpath)
+		return "", "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the repositories store dirpath '%v' exists.", repositoriesStoreDirpath)
 	}
 
 	tempRepositoriesStoreDirpath := path.Join(dir.absMountDirpath, tmpRepositoriesStoreDirname)
 	if err := ensureDirpathExists(tempRepositoriesStoreDirpath); err != nil {
-		return "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the temporary repositories store dirpath '%v' exists.", tempRepositoriesStoreDirpath)
+		return "", "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the temporary repositories store dirpath '%v' exists.", tempRepositoriesStoreDirpath)
 	}
 
 	githubAuthStoreDirpath := path.Join(dir.absMountDirpath, githubAuthStoreDirname)
 	if err := ensureDirpathExists(githubAuthStoreDirpath); err != nil {
-		return "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the GitHub auth store dirpath '%v' exists.", githubAuthStoreDirpath)
+		return "", "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the GitHub auth store dirpath '%v' exists.", githubAuthStoreDirpath)
 	}
 
-	return repositoriesStoreDirpath, tempRepositoriesStoreDirpath, githubAuthStoreDirpath, nil
+	enclaveDatabaseDirpath := path.Join(dir.absMountDirpath, enclaveDatabase)
+	if err := ensureDirpathExists(enclaveDatabaseDirpath); err != nil {
+		return "", "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the enclave database store dirpath '%v' exists.", enclaveDatabaseDirpath)
+	}
+
+	return repositoriesStoreDirpath, tempRepositoriesStoreDirpath, githubAuthStoreDirpath, enclaveDatabaseDirpath, nil
 }

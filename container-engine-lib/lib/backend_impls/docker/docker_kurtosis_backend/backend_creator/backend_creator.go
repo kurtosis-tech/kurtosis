@@ -3,6 +3,7 @@ package backend_creator
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"net"
 	"os"
 	"path"
@@ -18,7 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/stacktrace"
@@ -205,7 +205,9 @@ func getDockerKurtosisBackend(
 	var serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
 	if optionalApiContainerModeArgs != nil {
 		productionMode = optionalApiContainerModeArgs.IsProduction
-		enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase()
+		// using the noEnclaveDatabaseDirpath because at this point we know that the enclave database has been created, so we are getting it from this call
+		noEnclaveDatabaseDirpath := ""
+		enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase(noEnclaveDatabaseDirpath)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred opening local database")
 		}
