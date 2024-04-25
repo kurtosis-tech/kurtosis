@@ -185,7 +185,7 @@ func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValu
 	return nil
 }
 
-func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+func (builtin *AddServiceCapabilities) Execute(ctx context.Context, arguments *builtin_argument.ArgumentValuesSet) (string, error) {
 	// update service config to use new service config set by a set_service instruction, if one exists
 	if builtin.interpretationTimeValueStore.ExistsNewServiceConfigForService(builtin.serviceName) {
 		newServiceConfig, err := builtin.interpretationTimeValueStore.GetNewServiceConfig(builtin.serviceName)
@@ -193,6 +193,7 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 			return "", stacktrace.Propagate(err, "An error occurred retrieving a new service config '%s'.", builtin.serviceName)
 		}
 		builtin.serviceConfig = newServiceConfig
+		builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(addServiceDescriptionFormatStr, builtin.serviceName, newServiceConfig.GetContainerImageName()))
 	}
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(builtin.runtimeValueStore, builtin.serviceName, builtin.serviceConfig)
 	if err != nil {
