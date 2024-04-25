@@ -138,7 +138,7 @@ func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, interpretationErr
 	}
 
-	// get existing service config for service and merge with apiServiceConfigOverride
+	// get original service config for service and merge with apiServiceConfigOverride
 	currApiServiceConfig, err := builtin.interpretationTimeStore.GetServiceConfig(builtin.serviceName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred retrieving service config for service: %v'", builtin.serviceName)
