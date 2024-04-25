@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -125,7 +125,7 @@ func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, startosis_errors.NewInterpretationError("Unable to extract image attribute off of service config.")
 	}
 	builtin.imageVal = rawImageVal
-	apiServiceConfigOverride, _, interpretationErr := shared_helpers.ValidateAndConvertConfigAndReadyCondition(
+	apiServiceConfigOverride, _, interpretationErr := add_service.ValidateAndConvertConfigAndReadyCondition(
 		builtin.serviceNetwork,
 		serviceConfigOverride,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
