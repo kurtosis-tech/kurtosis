@@ -168,7 +168,9 @@ func (builtin *SetServiceCapabilities) Execute(_ context.Context, _ *builtin_arg
 }
 
 func (builtin *SetServiceCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
-	if instructionsAreEqual {
+	if instructionsAreEqual && enclaveComponents.HasServiceBeenUpdated(builtin.serviceName) {
+		return enclave_structure.InstructionIsUpdate
+	} else if instructionsAreEqual {
 		return enclave_structure.InstructionIsEqual
 	}
 	return enclave_structure.InstructionIsUnknown

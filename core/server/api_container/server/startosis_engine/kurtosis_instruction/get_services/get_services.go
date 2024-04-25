@@ -84,6 +84,7 @@ func (builtin *GetServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 	if instructionsAreEqual {
 		return enclave_structure.InstructionIsEqual
 	}
+
 	return enclave_structure.InstructionIsUnknown
 }
 

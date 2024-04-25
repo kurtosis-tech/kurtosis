@@ -263,6 +263,12 @@ func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 		}
 	}
 
+	// We check if service config was changed by a set_service instruction. If that's the case, it should be rerun
+	if builtin.interpretationTimeValueStore.ExistsUpdatedServiceConfigForService(builtin.serviceName) {
+		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsUpdated)
+		return enclave_structure.InstructionIsUpdate
+	}
+
 	enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentWasLeftIntact)
 	return enclave_structure.InstructionIsEqual
 }
