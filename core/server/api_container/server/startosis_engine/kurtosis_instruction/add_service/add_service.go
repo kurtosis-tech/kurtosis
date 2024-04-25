@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -140,7 +141,7 @@ func (builtin *AddServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, startosis_errors.NewInterpretationError("Unable to extract image attribute off of service config.")
 	}
 	builtin.imageVal = rawImageVal
-	apiServiceConfig, readyCondition, interpretationErr := ValidateAndConvertConfigAndReadyCondition(
+	apiServiceConfig, readyCondition, interpretationErr := shared_helpers.ValidateAndConvertConfigAndReadyCondition(
 		builtin.serviceNetwork,
 		serviceConfig,
 		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
@@ -322,36 +323,4 @@ func (builtin *AddServiceCapabilities) UpdatePlan(planYaml *plan_yaml.PlanYaml) 
 
 func (builtin *AddServiceCapabilities) Description() string {
 	return builtin.description
-}
-
-func ValidateAndConvertConfigAndReadyCondition(
-	serviceNetwork service_network.ServiceNetwork,
-	rawConfig starlark.Value,
-	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
-	packageId string,
-	packageContentProvider startosis_packages.PackageContentProvider,
-	packageReplaceOptions map[string]string,
-	imageDownloadMode image_download_mode.ImageDownloadMode,
-) (*service.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
-	config, ok := rawConfig.(*service_config.ServiceConfig)
-	if !ok {
-		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
-	}
-	apiServiceConfig, interpretationErr := config.ToKurtosisType(
-		serviceNetwork,
-		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
-		packageId,
-		packageContentProvider,
-		packageReplaceOptions,
-		imageDownloadMode)
-	if interpretationErr != nil {
-		return nil, nil, interpretationErr
-	}
-
-	readyCondition, interpretationErr := config.GetReadyCondition()
-	if interpretationErr != nil {
-		return nil, nil, interpretationErr
-	}
-
-	return apiServiceConfig, readyCondition, nil
 }
