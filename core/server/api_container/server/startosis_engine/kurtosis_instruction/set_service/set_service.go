@@ -28,7 +28,7 @@ const (
 	ServiceNameArgName      = "name"
 	SetServiceConfigArgName = "config"
 
-	descriptionFormatStr = "Updating config of service '%v'"
+	descriptionFormatStr = "Setting config of service '%v'"
 )
 
 func NewSetService(
