@@ -177,7 +177,7 @@ def run(plan, args):
     postgres.run(plan)
     
     # Set service detects the "postgres" service in the plan and 
-    # Overrides the ServiceConfig set in the postgres package to use the provided image value
+    # Overrides the ServiceConfig set in the `add_service` instruction of postgres package to use the new image value
     plan.set_service(
       name="postgres", 
       config=ServiceConfig( 
