@@ -517,13 +517,7 @@ def run(plan):
 	)
 	plan.set_service(name="example-datastore-server", config=newConfig)
 `
-	//	updatedScript := `
-	//def run(plan):
-	//	newConfig = ServiceConfig(
-	//		image = "datastore-image:latest",
-	//	)
-	//	plan.set_service(name="example-datastore-server", config=newConfig)
-	//`
+
 	// Interpret the updated script against the current enclave plan
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
@@ -546,7 +540,7 @@ def run(plan):
 
 	scheduledInstruction1 := instructionSequence[0]
 	require.Equal(suite.T(), `add_service(name="example-datastore-server", config=ServiceConfig(image="datastore-image"))`, scheduledInstruction1.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction1.IsExecuted()) // the add service needs to be re-executed as the `set_service` changed the underlying service config
+	require.False(suite.T(), scheduledInstruction1.IsExecuted()) // the add service needs to be re-executed as the `set_service` changed the service config
 
 	scheduledInstruction2 := instructionSequence[1]
 	require.Equal(suite.T(), `set_service(name="example-datastore-server", config=ServiceConfig(image="datastore-image:latest"))`, scheduledInstruction2.GetInstruction().String())

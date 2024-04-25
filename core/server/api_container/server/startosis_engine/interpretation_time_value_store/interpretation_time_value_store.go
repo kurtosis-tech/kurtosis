@@ -58,32 +58,30 @@ func (itvs *InterpretationTimeValueStore) RemoveService(name service.ServiceName
 }
 
 func (itvs *InterpretationTimeValueStore) PutServiceConfig(name service.ServiceName, serviceConfig *service.ServiceConfig) {
-	if _, ok := itvs.serviceConfigValues[name]; !ok {
-		itvs.serviceConfigValues[name] = serviceConfig
-	} else {
-		itvs.setServiceConfigValues[name] = serviceConfig
-	}
+	itvs.serviceConfigValues[name] = serviceConfig
 }
 
-//
-//func (itvs *InterpretationTimeValueStore) SetServiceConfig(name service.ServiceName, serviceConfig *service.ServiceConfig) {
-//	itvs.serviceConfigValues[name] = serviceConfig
-//	itvs.setServiceConfigValues[name] = serviceConfig
-//}
+func (itvs *InterpretationTimeValueStore) GetServiceConfig(name service.ServiceName) (*service.ServiceConfig, error) {
+	serviceConfig, ok := itvs.serviceConfigValues[name]
+	if !ok {
+		return nil, stacktrace.NewError("Did not find new service config for '%v' in interpretation time value store.", name)
+	}
+	return serviceConfig, nil
+}
 
-func (itvs *InterpretationTimeValueStore) ExistsUpdatedServiceConfigForService(name service.ServiceName) bool {
+func (itvs *InterpretationTimeValueStore) SetServiceConfig(name service.ServiceName, serviceConfig *service.ServiceConfig) {
+	itvs.setServiceConfigValues[name] = serviceConfig
+}
+
+func (itvs *InterpretationTimeValueStore) ExistsNewServiceConfigForService(name service.ServiceName) bool {
 	_, doesConfigFromSetServiceInstructionExists := itvs.setServiceConfigValues[name]
 	return doesConfigFromSetServiceInstructionExists
 }
 
-func (itvs *InterpretationTimeValueStore) GetServiceConfig(name service.ServiceName) (*service.ServiceConfig, error) {
-	if maybeLatestServiceConfig, ok := itvs.setServiceConfigValues[name]; ok {
-		return maybeLatestServiceConfig, nil
-	} else {
-		serviceConfig, ok := itvs.serviceConfigValues[name]
-		if !ok {
-			return nil, stacktrace.NewError("Did not find service config for '%v' in interpretation time value store.", name)
-		}
-		return serviceConfig, nil
+func (itvs *InterpretationTimeValueStore) GetNewServiceConfig(name service.ServiceName) (*service.ServiceConfig, error) {
+	newServiceConfig, ok := itvs.setServiceConfigValues[name]
+	if !ok {
+		return nil, stacktrace.NewError("Did not find new service config for '%v' in interpretation time value store.", name)
 	}
+	return newServiceConfig, nil
 }

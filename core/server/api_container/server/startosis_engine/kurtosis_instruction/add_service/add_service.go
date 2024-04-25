@@ -185,11 +185,15 @@ func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValu
 }
 
 func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	serviceConfig, err := builtin.interpretationTimeValueStore.GetServiceConfig(builtin.serviceName)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting service config value from interpretation time value store for service '%v'", builtin.serviceName)
+	// update service config to use new service config set by a set_service instruction, if one exists
+	if builtin.interpretationTimeValueStore.ExistsNewServiceConfigForService(builtin.serviceName) {
+		newServiceConfig, err := builtin.interpretationTimeValueStore.GetNewServiceConfig(builtin.serviceName)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred retrieving a new service config '$s'.", builtin.serviceName)
+		}
+		builtin.serviceConfig = newServiceConfig
 	}
-	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(builtin.runtimeValueStore, builtin.serviceName, serviceConfig)
+	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(builtin.runtimeValueStore, builtin.serviceName, builtin.serviceConfig)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred replace a magic string in '%s' instruction arguments for service '%s'. Execution cannot proceed", AddServiceBuiltinName, builtin.serviceName)
 	}
@@ -264,7 +268,7 @@ func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 	}
 
 	// We check if service config was changed by a set_service instruction. If that's the case, it should be rerun
-	if builtin.interpretationTimeValueStore.ExistsUpdatedServiceConfigForService(builtin.serviceName) {
+	if builtin.interpretationTimeValueStore.ExistsNewServiceConfigForService(builtin.serviceName) {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsUpdated)
 		return enclave_structure.InstructionIsUpdate
 	}

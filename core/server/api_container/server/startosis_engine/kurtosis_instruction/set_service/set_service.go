@@ -149,7 +149,7 @@ func (builtin *SetServiceCapabilities) Interpret(locatorOfModuleInWhichThisBuilt
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while overriding service configs in set service for service: %v", builtin.serviceName)
 	}
 
-	builtin.interpretationTimeStore.PutServiceConfig(serviceName, mergedServiceConfig)
+	builtin.interpretationTimeStore.SetServiceConfig(serviceName, mergedServiceConfig)
 
 	builtin.description = builtin_argument.GetDescriptionOrFallBack(arguments, fmt.Sprintf(descriptionFormatStr, builtin.serviceName))
 	return starlark.None, nil
