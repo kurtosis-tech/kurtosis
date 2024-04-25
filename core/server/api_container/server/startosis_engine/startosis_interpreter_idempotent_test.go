@@ -547,6 +547,149 @@ def run(plan):
 	require.False(suite.T(), scheduledInstruction2.IsExecuted()) // set service should also be re-executed because it hasn't been run, but its a noop - its effect is to swap out the service config during interpretation time
 }
 
+func (suite *StartosisInterpreterIdempotentTestSuite) TestStartosisInterpreterIdempotent_MultipleSetService() {
+	initialScript := `
+def run(plan):
+	config = ServiceConfig(
+		image = "datastore-image",
+	)
+	plan.add_service(name = "example-datastore-server", config = config)
+`
+
+	// Interpretation of the initial script to generate the current enclave plan
+	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		initialScript,
+		noInputParams,
+		defaultNonBlockingMode,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0),
+		image_download_mode.ImageDownloadMode_Missing)
+	require.Nil(suite.T(), interpretationApiErr)
+	require.Equal(suite.T(), 1, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
+
+	updatedScript := `
+def run(plan):
+	config = ServiceConfig(
+		image = "datastore-image",
+	)
+	plan.add_service(name="example-datastore-server", config=config)
+
+	newConfig = ServiceConfig(
+		image = "datastore-image:latest",
+	)
+	plan.set_service(name="example-datastore-server", config=newConfig)
+
+	newerConfig = ServiceConfig(
+		image = "datastore-image:latest",
+		min_cpu=1
+	)
+	plan.set_service(name="example-datastore-server", config=newerConfig)
+`
+
+	// Interpret the updated script against the current enclave plan
+	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		noPackageReplaceOptions,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		updatedScript,
+		noInputParams,
+		defaultNonBlockingMode,
+		convertedEnclavePlan,
+		image_download_mode.ImageDownloadMode_Missing,
+	)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionSequence, err := instructionsPlan.GeneratePlan()
+	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 0, instructionsPlan.GetIndexOfFirstInstruction())
+	require.Equal(suite.T(), 3, len(instructionSequence))
+
+	scheduledInstruction1 := instructionSequence[0]
+	require.Equal(suite.T(), `add_service(name="example-datastore-server", config=ServiceConfig(image="datastore-image"))`, scheduledInstruction1.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction1.IsExecuted()) // the add service needs to be re-executed as the `set_service` changed the service config
+
+	scheduledInstruction2 := instructionSequence[1]
+	require.Equal(suite.T(), `set_service(name="example-datastore-server", config=ServiceConfig(image="datastore-image:latest"))`, scheduledInstruction2.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction2.IsExecuted()) // set service should be executed because it hasn't been run, but it's a noop - its effect is to swap out the service config during interpretation time
+
+	scheduledInstruction3 := instructionSequence[2]
+	require.Equal(suite.T(), `set_service(name="example-datastore-server", config=ServiceConfig(image="datastore-image:latest", min_cpu=1))`, scheduledInstruction3.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction3.IsExecuted()) // set service should be re-executed because it hasn't been run, but itss a noop - its effect is to swap out the service config during interpretation time
+	// TODO: ideally, we'd test that updated config for add_service is the most recent but we can't do that well now but we will be able to when making_set service work with ports
+	// TODO: in which case you can `get_service` and assert ports are from the most recent config
+}
+
+//func (suite *StartosisInterpreterIdempotentTestSuite) TestStartosisInterpreterIdempotent_SetServiceNewScript() {
+//	initialScript := `
+//def run(plan):
+//	config = ServiceConfig(
+//		image = "datastore-image",
+//	)
+//	plan.add_service(name = "example-datastore-server", config = config)
+//`
+//
+//	// Interpretation of the initial script to generate the current enclave plan
+//	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
+//		context.Background(),
+//		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+//		useDefaultMainFunctionName,
+//		noPackageReplaceOptions,
+//		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+//		initialScript,
+//		noInputParams,
+//		defaultNonBlockingMode,
+//		enclave_structure.NewEnclaveComponents(),
+//		resolver.NewInstructionsPlanMask(0),
+//		image_download_mode.ImageDownloadMode_Missing)
+//	require.Nil(suite.T(), interpretationApiErr)
+//	require.Equal(suite.T(), 1, currentEnclavePlan.Size())
+//	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
+//
+//	updatedScript := `
+//def run(plan):
+//	newConfig = ServiceConfig(
+//		image = "datastore-image:latest",
+//	)
+//	plan.set_service(name="example-datastore-server", config=newConfig)
+//`
+//
+//	// Interpret the updated script against the current enclave plan
+//	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
+//		context.Background(),
+//		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+//		noPackageReplaceOptions,
+//		useDefaultMainFunctionName,
+//		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+//		updatedScript,
+//		noInputParams,
+//		defaultNonBlockingMode,
+//		convertedEnclavePlan,
+//		image_download_mode.ImageDownloadMode_Missing,
+//	)
+//	require.Nil(suite.T(), interpretationError)
+//
+//	instructionSequence, err := instructionsPlan.GeneratePlan()
+//	require.Nil(suite.T(), err)
+//	require.Equal(suite.T(), 0, instructionsPlan.GetIndexOfFirstInstruction())
+//	require.Equal(suite.T(), 2, len(instructionSequence))
+//
+//	scheduledInstruction1 := instructionSequence[0]
+//	require.Equal(suite.T(), `add_service(name="example-datastore-server", config=ServiceConfig(image="datastore-image"))`, scheduledInstruction1.GetInstruction().String())
+//	require.False(suite.T(), scheduledInstruction1.IsExecuted()) // the add service needs to be re-executed as the `set_service` changed the service config
+//
+//	scheduledInstruction2 := instructionSequence[1]
+//	require.Equal(suite.T(), `set_service(name="example-datastore-server", config=ServiceConfig(image="datastore-image:latest"))`, scheduledInstruction2.GetInstruction().String())
+//	require.False(suite.T(), scheduledInstruction2.IsExecuted()) // set service should also be re-executed because it hasn't been run, but its a noop - its effect is to swap out the service config during interpretation time
+//}
+
 func (suite *StartosisInterpreterIdempotentTestSuite) convertInstructionPlanToEnclavePlan(instructionPlan *instructions_plan.InstructionsPlan) *enclave_plan_persistence.EnclavePlan {
 	enclavePlan := enclave_plan_persistence.NewEnclavePlan()
 	instructionPlanSequence, interpretationErr := instructionPlan.GeneratePlan()

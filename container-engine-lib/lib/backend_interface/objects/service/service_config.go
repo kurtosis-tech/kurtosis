@@ -218,7 +218,7 @@ func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
 }
 
 func (serviceConfig *ServiceConfig) SetMinCPUAllocationMillicpus(cpuAllocation uint64) {
-	serviceConfig.privateServiceConfig.MemoryAllocationMegabytes = cpuAllocation
+	serviceConfig.privateServiceConfig.MinCpuAllocationMilliCpus = cpuAllocation
 }
 
 // only available for Kubernetes
