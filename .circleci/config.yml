@@ -81,7 +81,8 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
     - run:
         name: Start Kurtosis engine in K8s backend
         command: |
-          ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
+          kurtosis_version="$(./scripts/get-docker-tag.sh)"
+          ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2 --kurtosis-version ${kurtosis_version}
     - run:
         name: Run Kurtosis gateway
         command: "${KURTOSIS_BINPATH} gateway"
@@ -94,7 +95,8 @@ run_prepare_testing_docker: &run_prepare_testing_docker
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-        ${KURTOSIS_BINPATH} engine start --cli-log-level trace
+        kurtosis_version="$(./scripts/get-docker-tag.sh)"
+        ${KURTOSIS_BINPATH} engine start --cli-log-level trace --kurtosis-version ${kurtosis_version}
 
 # Steps to prepare a job for Docker testing
 steps_prepare_testing_docker: &steps_prepare_testing_docker

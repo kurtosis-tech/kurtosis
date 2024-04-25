@@ -4,6 +4,7 @@
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cli_module_dirpath="$(dirname "${script_dirpath}")"
+get_tag_script_filepath="${script_dirpath}/../../../scripts/get-docker-tag.sh"
 
 
 # ==================================================================================================
@@ -34,7 +35,10 @@ if ! [ -f "${cli_binary_filepath}" ]; then
     exit 1
 fi
 
+# Getting the current version tag to start the development version
+kurtosis_version="$(${get_tag_script_filepath})"
+
 # The funky ${1+"${@}"} incantation is how you feed arguments exactly as-is to a child script in Bash
 # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if
 #  ${1} exists, evaluate ${@}"
-"${cli_binary_filepath}" ${1+"${@}"}
+"${cli_binary_filepath}" ${1+"${@}"} --kurtosis-version "${kurtosis_version}"

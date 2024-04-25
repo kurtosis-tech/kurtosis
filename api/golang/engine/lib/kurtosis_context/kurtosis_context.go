@@ -109,67 +109,46 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 
 // Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
 func (kurtosisCtx *KurtosisContext) CreateEnclave(ctx context.Context, enclaveName string) (*enclaves.EnclaveContext, error) {
-
 	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValues(enclaveName)
+	return kurtosisCtx.createEnclaveWithArgs(ctx, createEnclaveArgs)
+}
 
-	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave with name '%v'", enclaveName)
-	}
-
-	enclaveContext, err := newEnclaveContextFromEnclaveInfo(ctx, kurtosisCtx.portalClient, response.EnclaveInfo)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave context from a newly-created enclave; this should never happen")
-	}
-
-	return enclaveContext, nil
+func (kurtosisCtx *KurtosisContext) CreateEnclaveWithApiContainerVersion(ctx context.Context, enclaveName string, apiContainerVersion string) (*enclaves.EnclaveContext, error) {
+	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValues(enclaveName)
+	createEnclaveArgs.ApiContainerVersionTag = &apiContainerVersion
+	return kurtosisCtx.createEnclaveWithArgs(ctx, createEnclaveArgs)
 }
 
 func (kurtosisCtx *KurtosisContext) CreateEnclaveWithDebugEnabled(
 	ctx context.Context,
 	enclaveName string,
 ) (*enclaves.EnclaveContext, error) {
-
 	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValuesForDebugging(enclaveName)
-
-	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave with name '%v'", enclaveName)
-	}
-
-	enclaveContext, err := newEnclaveContextFromEnclaveInfo(ctx, kurtosisCtx.portalClient, response.EnclaveInfo)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave context from a newly-created enclave; this should never happen")
-	}
-
-	return enclaveContext, nil
+	return kurtosisCtx.createEnclaveWithArgs(ctx, createEnclaveArgs)
 }
 
 // Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
 func (kurtosisCtx *KurtosisContext) CreateProductionEnclave(ctx context.Context, enclaveName string) (*enclaves.EnclaveContext, error) {
-
 	createEnclaveArgs := newCreateProductionEnclaveWithDefaultValues(enclaveName)
+	return kurtosisCtx.createEnclaveWithArgs(ctx, createEnclaveArgs)
+}
 
-	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave with name '%v'", enclaveName)
-	}
-
-	enclaveContext, err := newEnclaveContextFromEnclaveInfo(ctx, kurtosisCtx.portalClient, response.EnclaveInfo)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave context from a newly-created enclave; this should never happen")
-	}
-
-	return enclaveContext, nil
+func (kurtosisCtx *KurtosisContext) CreateProductionEnclaveWithApiContainerVersion(ctx context.Context, enclaveName string, apiContainerVersion string) (*enclaves.EnclaveContext, error) {
+	createEnclaveArgs := newCreateProductionEnclaveWithDefaultValues(enclaveName)
+	createEnclaveArgs.ApiContainerVersionTag = &apiContainerVersion
+	return kurtosisCtx.createEnclaveWithArgs(ctx, createEnclaveArgs)
 }
 
 func (kurtosisCtx *KurtosisContext) CreateProductionEnclaveWithDebugEnabled(ctx context.Context, enclaveName string) (*enclaves.EnclaveContext, error) {
-
 	createEnclaveArgs := newCreateProductionEnclaveWithDefaultValuesForDebugging(enclaveName)
+	return kurtosisCtx.createEnclaveWithArgs(ctx, createEnclaveArgs)
+}
+
+func (kurtosisCtx *KurtosisContext) createEnclaveWithArgs(ctx context.Context, createEnclaveArgs *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*enclaves.EnclaveContext, error) {
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave with name '%v'", enclaveName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave with name '%v'", createEnclaveArgs.GetEnclaveName())
 	}
 
 	enclaveContext, err := newEnclaveContextFromEnclaveInfo(ctx, kurtosisCtx.portalClient, response.EnclaveInfo)

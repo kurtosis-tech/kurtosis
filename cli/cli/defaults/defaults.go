@@ -10,6 +10,8 @@ import (
 )
 
 const (
+	// If this version is passed to the CLI, the engine container will use the default version
+	DefaultEngineContainerVersion = ""
 	// If this version is passed to the engine, the engine will use its default version
 	DefaultAPIContainerVersion = ""
 	// TODO perhaps move this to the metrics library

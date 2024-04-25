@@ -89,20 +89,9 @@ func run(
 	_ *args.ParsedArgs,
 ) error {
 
-	apiContainerVersion, err := flags.GetString(apiContainerVersionFlagKey)
+	apiContainerVersion, shouldApicRunInDebugMode, err := getVersionAndShouldStartInDebugMode(flags)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting the API Container Version using flag with key '%v'; this is a bug in Kurtosis", apiContainerVersionFlagKey)
-	}
-
-	isDebugMode, err := flags.GetBool(defaults.DebugModeFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
-	}
-
-	shouldApicRunInDebugMode := defaults.DefaultEnableDebugMode
-	if isDebugMode && apiContainerVersion == defaults.DefaultAPIContainerVersion {
-		apiContainerVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
-		shouldApicRunInDebugMode = true
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis APIC version from the flags")
 	}
 
 	kurtosisLogLevelStr, err := flags.GetString(apiContainerLogLevelFlagKey)
@@ -159,4 +148,32 @@ func run(
 	defer output_printers.PrintEnclaveName(enclaveName)
 
 	return nil
+}
+
+func getVersionAndShouldStartInDebugMode(flags *flags.ParsedFlags) (string, bool, error) {
+	apiContainerVersion, err := flags.GetString(apiContainerVersionFlagKey)
+	if err != nil {
+		return "", false, stacktrace.Propagate(err, "An error occurred while getting the API Container Version using flag with key '%v'; this is a bug in Kurtosis", apiContainerVersionFlagKey)
+	}
+
+	isDebugMode, err := flags.GetBool(defaults.DebugModeFlagKey)
+	if err != nil {
+		return "", false, stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
+	}
+
+	shouldApicRunInDebugMode := defaults.DefaultEnableDebugMode
+	if isDebugMode && apiContainerVersion == defaults.DefaultAPIContainerVersion {
+		apiContainerVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
+		shouldApicRunInDebugMode = true
+	}
+
+	if apiContainerVersion != defaults.DefaultAPIContainerVersion {
+		return apiContainerVersion, shouldApicRunInDebugMode, nil
+	}
+
+	kurtosisVersion, err := flags.GetString(defaults.KurtosisVersionFlagKey)
+	if err != nil {
+		return "", false, stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.KurtosisVersionFlagKey)
+	}
+	return kurtosisVersion, shouldApicRunInDebugMode, nil
 }

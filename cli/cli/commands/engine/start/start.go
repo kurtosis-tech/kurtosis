@@ -24,7 +24,6 @@ const (
 	enclavePoolSizeFlagKey         = "enclave-pool-size"
 	githubAuthTokenOverrideFlagKey = "github-auth-token"
 
-	defaultEngineVersion          = ""
 	kurtosisTechEngineImagePrefix = "kurtosistech/engine"
 	imageVersionDelimiter         = ":"
 )
@@ -40,7 +39,7 @@ var StartCmd = &lowlevel.LowlevelKurtosisCommand{
 			Usage:     "The version (Docker tag) of the Kurtosis engine that should be started (blank will start the default version)",
 			Shorthand: "",
 			Type:      flags.FlagType_String,
-			Default:   defaultEngineVersion,
+			Default:   defaults.DefaultEngineContainerVersion,
 		},
 		{
 			Key: logLevelFlagKey,
@@ -123,12 +122,12 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis engine version from the flags")
 	}
 
-	if engineVersion == defaultEngineVersion && isDebugMode {
+	if engineVersion == defaults.DefaultEngineContainerVersion && isDebugMode {
 		engineDebugVersion := fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
 		logrus.Infof("Starting Kurtosis engine in debug mode from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineDebugVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineDebugVersion, logLevel, enclavePoolSize, true, githubAuthTokenOverride)
-	} else if engineVersion == defaultEngineVersion {
-		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.KurtosisVersion)
+	} else if engineVersion == defaults.DefaultEngineContainerVersion {
+		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.KurtosisLatestVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize, githubAuthTokenOverride)
 	} else {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineVersion)
@@ -149,12 +148,11 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 }
 
 func getVersion(flags *flags.ParsedFlags) (string, error) {
-
 	engineVersion, err := flags.GetString(engineVersionFlagKey)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine Container Version using flag with key '%v'; this is a bug in Kurtosis", engineVersionFlagKey)
 	}
-	if engineVersion != defaultEngineVersion {
+	if engineVersion != defaults.DefaultEngineContainerVersion {
 		return engineVersion, nil
 	}
 

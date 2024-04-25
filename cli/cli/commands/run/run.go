@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
 	"io"
 	"net/http"
@@ -349,7 +350,11 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isProduction)
+	kurtosisVersion, err := flags.GetString(defaults.KurtosisVersionFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.KurtosisVersionFlagKey)
+	}
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isProduction, kurtosisVersion)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
@@ -561,6 +566,7 @@ func getOrCreateEnclaveContext(
 	enclaveIdentifierOrName string,
 	kurtosisContext *kurtosis_context.KurtosisContext,
 	isProduction bool,
+	apiContainerVersion string,
 ) (*enclaves.EnclaveContext, bool, error) {
 
 	if enclaveIdentifierOrName != autogenerateEnclaveIdentifierKeyword {
@@ -577,9 +583,9 @@ func getOrCreateEnclaveContext(
 	var enclaveContext *enclaves.EnclaveContext
 	var err error
 	if isProduction {
-		enclaveContext, err = kurtosisContext.CreateProductionEnclave(ctx, enclaveIdentifierOrName)
+		enclaveContext, err = kurtosisContext.CreateProductionEnclaveWithApiContainerVersion(ctx, enclaveIdentifierOrName, apiContainerVersion)
 	} else {
-		enclaveContext, err = kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName)
+		enclaveContext, err = kurtosisContext.CreateEnclaveWithApiContainerVersion(ctx, enclaveIdentifierOrName, apiContainerVersion)
 	}
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))

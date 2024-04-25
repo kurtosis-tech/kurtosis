@@ -24,7 +24,6 @@ const (
 	enclavePoolSizeFlagKey         = "enclave-pool-size"
 	githubAuthTokenOverrideFlagKey = "github-auth-token"
 
-	defaultEngineVersion                   = ""
 	restartEngineOnSameVersionIfAnyRunning = false
 )
 
@@ -39,7 +38,7 @@ var RestartCmd = &lowlevel.LowlevelKurtosisCommand{
 			Usage:     "The version (Docker tag) of the Kurtosis engine that should be started (blank will start the default version)",
 			Shorthand: "",
 			Type:      flags.FlagType_String,
-			Default:   defaultEngineVersion,
+			Default:   defaults.DefaultEngineContainerVersion,
 		},
 		{
 			Key: logLevelFlagKey,
@@ -111,20 +110,9 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
 
-	engineVersion, err := flags.GetString(engineVersionFlagKey)
+	engineVersion, shouldStartInDebugMode, err := getVersionAndShouldStartInDebugMode(flags)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine Container Version using flag with key '%v'; this is a bug in Kurtosis", engineVersionFlagKey)
-	}
-
-	isDebugMode, err := flags.GetBool(defaults.DebugModeFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
-	}
-
-	shouldStartInDebugMode := defaults.DefaultEnableDebugMode
-	if isDebugMode {
-		engineVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
-		shouldStartInDebugMode = true
+		return stacktrace.Propagate(err, "An error occurred getting the engine version and the debug mode value")
 	}
 
 	var engineClientCloseFunc func() error
@@ -141,4 +129,32 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 
 	logrus.Infof("Engine restarted successfully")
 	return nil
+}
+
+func getVersionAndShouldStartInDebugMode(flags *flags.ParsedFlags) (string, bool, error) {
+	engineVersion, err := flags.GetString(engineVersionFlagKey)
+	if err != nil {
+		return "", false, stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine Container Version using flag with key '%v'; this is a bug in Kurtosis", engineVersionFlagKey)
+	}
+
+	isDebugMode, err := flags.GetBool(defaults.DebugModeFlagKey)
+	if err != nil {
+		return "", false, stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.DebugModeFlagKey)
+	}
+
+	shouldStartInDebugMode := defaults.DefaultEnableDebugMode
+	if isDebugMode {
+		engineVersion = fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
+		shouldStartInDebugMode = true
+	}
+
+	if engineVersion != defaults.DefaultEngineContainerVersion {
+		return engineVersion, shouldStartInDebugMode, nil
+	}
+
+	kurtosisVersion, err := flags.GetString(defaults.KurtosisVersionFlagKey)
+	if err != nil {
+		return "", false, stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.KurtosisVersionFlagKey)
+	}
+	return kurtosisVersion, shouldStartInDebugMode, nil
 }

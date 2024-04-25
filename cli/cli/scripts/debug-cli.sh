@@ -4,6 +4,7 @@
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cli_module_dirpath="$(dirname "${script_dirpath}")"
+get_tag_script_filepath="${script_dirpath}/../../../scripts/get-docker-tag.sh"
 
 
 # ==================================================================================================
@@ -69,4 +70,7 @@ do
   fi
 done
 
-dlv --listen="127.0.0.1:${CLI_DEBUG_SERVER_PORT}" --headless="${headless_val}" --api-version=2 --check-go-version=false --only-same-user=false exec "${cli_binary_filepath}" ${cli_arguments} -- "--debug-mode" ${cli_flags}
+# Getting the current version tag to start the development version
+kurtosis_version="$(${get_tag_script_filepath})"
+
+dlv --listen="127.0.0.1:${CLI_DEBUG_SERVER_PORT}" --headless="${headless_val}" --api-version=2 --check-go-version=false --only-same-user=false exec "${cli_binary_filepath}" ${cli_arguments} -- "--debug-mode" ${cli_flags} "--kurtosis-version" ${kurtosis_version}

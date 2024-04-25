@@ -3,6 +3,7 @@ package _import
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -156,7 +157,12 @@ func run(
 		return stacktrace.Propagate(err, "Couldn't find enclave name flag '%v'", enclaveNameFlagKey)
 	}
 
-	enclaveCtx, err := createEnclave(ctx, kurtosisCtx, enclaveName)
+	kurtosisVersion, err := flags.GetString(defaults.KurtosisVersionFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", defaults.KurtosisVersionFlagKey)
+	}
+
+	enclaveCtx, err := createEnclave(ctx, kurtosisCtx, enclaveName, kurtosisVersion)
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't create enclave")
 	}
@@ -287,10 +293,10 @@ func getMilliCpusReservation(deployConfig *types.DeployConfig) int {
 	return reservation
 }
 
-func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveName string) (*enclaves.EnclaveContext, error) {
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName)
+func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveName string, apiContainerVersion string) (*enclaves.EnclaveContext, error) {
+	enclaveCtx, err := kurtosisCtx.CreateEnclaveWithApiContainerVersion(ctx, enclaveName, apiContainerVersion)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave '%v'", enclaveName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave '%v' with APIC version '%s'", enclaveName, apiContainerVersion)
 	}
 	return enclaveCtx, nil
 }
