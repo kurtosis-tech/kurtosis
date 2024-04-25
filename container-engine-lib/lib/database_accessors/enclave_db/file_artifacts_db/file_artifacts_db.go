@@ -109,7 +109,9 @@ func GetOrCreateNewFileArtifactsDb() (*FileArtifactPersisted, error) {
 		map[string][]string{},
 		map[string][]byte{},
 	}
-	db, err := enclave_db.GetOrCreateEnclaveDatabase()
+	// using the noEnclaveDatabaseDirpath because at this point we know that the enclave database has been created, so we are getting it from this call
+	noEnclaveDatabaseDirpath := ""
+	db, err := enclave_db.GetOrCreateEnclaveDatabase(noEnclaveDatabaseDirpath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get enclave database")
 	}

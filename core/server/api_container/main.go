@@ -112,25 +112,26 @@ func runMain() error {
 
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataVolumeDirpath)
 
-	filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the files artifact store")
-	}
-
 	clusterConfig := serverArgs.KurtosisBackendConfig
 	if clusterConfig == nil {
 		return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
 	}
 
-	enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase()
+	repositoriesDirPath, tempDirectoriesDirPath, githubAuthDirPath, enclaveDatabaseDirpath, err := enclaveDataDir.GetEnclaveDataDirectoryPaths()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting directory paths of the enclave data directory.")
+	}
+
+	enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase(enclaveDatabaseDirpath)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the enclave db")
 	}
 
-	repositoriesDirPath, tempDirectoriesDirPath, githubAuthDirPath, err := enclaveDataDir.GetEnclaveDataDirectoryPaths()
+	filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting directory paths of the enclave data directory.")
+		return stacktrace.Propagate(err, "An error occurred getting the files artifact store")
 	}
+
 	githubAuthProvider := git_package_content_provider.NewGitHubPackageAuthProvider(githubAuthDirPath)
 	gitPackageContentProvider := git_package_content_provider.NewGitPackageContentProvider(repositoriesDirPath, tempDirectoriesDirPath, githubAuthProvider, enclaveDb)
 
