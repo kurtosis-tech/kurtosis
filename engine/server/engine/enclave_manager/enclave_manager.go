@@ -3,6 +3,7 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"sort"
 	"strings"
 	"sync"
@@ -386,6 +387,85 @@ func (manager *EnclaveManager) getExistingAndHistoricalEnclaveIdentifiersWithout
 	}
 
 	return enclaveIdentifiersResult, nil
+}
+
+func (manager *EnclaveManager) restartAllEnclaveAPIContainers(ctx context.Context) error {
+
+
+	manager.kurtosisBackend.GetEnclaves()
+
+	getAPIContainersRunningFilters := &api_container.APIContainerFilters{
+		EnclaveIDs: nil,
+		Statuses: map[container.ContainerStatus]bool{
+			container.ContainerStatus_Running: true,
+		},
+	}
+	allAPIContainersRunning, err := manager.kurtosisBackend.GetAPIContainers(ctx, getAPIContainersRunningFilters)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting API containers using filters '%+v'", getAPIContainersRunningFilters)
+	}
+
+	apiContainersToDestroyEnclaveUuids := map[enclave.EnclaveUUID]bool{}
+	for enclaveUuid := range allAPIContainersRunning {
+		apiContainersToDestroyEnclaveUuids[enclaveUuid] = true
+	}
+
+	if err := manager.destroyApiContainers(ctx, apiContainersToDestroyEnclaveUuids); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying API containers on enclave with UUIDs '%*v'", apiContainersToDestroyEnclaveUuids)
+	}
+
+	//TODO check if we should get this from the CLI commands probably is there a flag for it
+	useDefaultApiContainerVersionTag := ""
+
+	//TODO check if we can get this one from any place, just using the default for now
+	restartAPIContainerDefaultLogLevel := logrus.DebugLevel
+
+	for enclaveUuid, currentAPIContainer := range allAPIContainersRunning {
+
+		isProduction := false
+		if currentAPIContainer. == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
+			isProduction = true
+		}
+
+		manager.enclaveCreator.LaunchApiContainer(
+			ctx,
+			useDefaultApiContainerVersionTag,
+			restartAPIContainerDefaultLogLevel,
+			enclaveUuid,
+			apiContainerListenGrpcPortNumInsideNetwork,
+			manager.enclaveEnvVars,
+			manager.
+		)
+	}
+
+
+}
+
+func (manager *EnclaveManager) destroyApiContainers(ctx context.Context, enclaveUuids map[enclave.EnclaveUUID]bool) error {
+
+	destroyAPIContainersFilters := &api_container.APIContainerFilters{
+		EnclaveIDs: enclaveUuids,
+		Statuses:   nil,
+	}
+
+	_, erroredApiContainerIds, err := manager.kurtosisBackend.DestroyAPIContainers(ctx, destroyAPIContainersFilters)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred")
+	}
+
+	if len(erroredApiContainerIds) > 0 {
+		logrus.Errorf("Errors occurred destroying the following API containers")
+		var removalErrorStrings []string
+		for idx, apiContainerErr := range erroredApiContainerIds {
+			logrus.Errorf("APIC in Enclave '%v' Error: '%v'", idx, apiContainerErr.Error())
+			indexedResultErrStr := fmt.Sprintf(">>>>>>>>>>>>>>>>> APIC in Enclave '%v' ERROR <<<<<<<<<<<<<<<<<\n%v", idx, apiContainerErr.Error())
+			removalErrorStrings = append(removalErrorStrings, indexedResultErrStr)
+		}
+		joinedRemovalErrors := strings.Join(removalErrorStrings, errorDelimiter)
+		return stacktrace.NewError("Following errors occurred while destroying some API containers :\n%v", joinedRemovalErrors)
+	}
+
+	return nil
 }
 
 // ====================================================================================================
