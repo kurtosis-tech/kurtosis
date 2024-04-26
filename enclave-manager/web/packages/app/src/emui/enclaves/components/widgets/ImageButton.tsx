@@ -11,11 +11,11 @@ import {
   ModalHeader,
   ModalOverlay,
 } from "@chakra-ui/react";
-import { RemoveFunctions } from "kurtosis-ui-components";
+import {isDefined, RemoveFunctions} from "kurtosis-ui-components";
 import { useMemo, useState } from "react";
 import { IoLogoDocker } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
-import { useEnclavesContext } from "../../EnclavesContext";
+import {useEnclavesContext} from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 
 function getUrlForImage(image: string): string | URL | undefined {
@@ -31,27 +31,56 @@ function getUrlForImage(image: string): string | URL | undefined {
   return;
 }
 
+function objectToStarlark(o: any, indent: number) {
+  const padLeft = "".padStart(indent, " ");
+  if (!isDefined(o)) {
+    return "None";
+  }
+  if (Array.isArray(o)) {
+    let result = `[`;
+    o.forEach((arrayValue) => {
+      result += `${objectToStarlark(arrayValue, indent + 4)},\n`;
+    });
+    result += `${padLeft}],\n`;
+    return result;
+  }
+  if (typeof o === "number") {
+    return `${o}`;
+  }
+  if (typeof o === "string") {
+    return `${o}`;
+  }
+  if (typeof o === "boolean") {
+    return o ? "True" : "False";
+  }
+  if (typeof o === "object") {
+    let result = "{";
+    Object.entries(o).forEach(([key, value]) => {
+      result += `\n${padLeft}"${key}": "${objectToStarlark(value, indent + 4)}",`;
+    });
+    result += `${padLeft}}`;
+    return result;
+  }
+}
+
 export type SetImageModalProps = {
   isOpen: boolean;
   onClose: () => void;
   currentImage: string;
   serviceName: string;
-  enclave?: RemoveFunctions<EnclaveFullInfo> | undefined;
+  enclave: RemoveFunctions<EnclaveFullInfo>;
 };
 
 export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, enclave }: SetImageModalProps) => {
   const { runStarlarkScript } = useEnclavesContext(); // Assuming this is defined elsewhere
-  const [newImage, setNewImage] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+
+  const [newImage, setNewImage] = useState("");
   const navigator = useNavigate(); // Assuming you're using React Router's useNavigate
 
   const handleSetImageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!enclave) {
-      setError("Enclave is undefined. This is unexpected.");
-      return;
-    }
 
     const starlarkRun = enclave.starlarkRun;
     if (!starlarkRun || starlarkRun.isErr) {
@@ -62,15 +91,18 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
     // TODO: persist package id across runs
     const packageId = starlarkRun.value.packageId;
 
-    // TODO: get initial args of enclave
+    const initialArgs = objectToStarlark(enclave.initialSubmissionData, 8)
+    console.log(enclave.initialSubmissionData)
+    console.log(`initial args used to start package:\n${initialArgs}`)
 
     const updateImageStarlarkScript = `
-    package = import_module("${packageId}/main.star")
+package = import_module("${packageId}/main.star")
 
-    def run(plan, args):
-      package.run(plan, **{ })
-      
-      plan.set_service(name="${serviceName}", config=ServiceConfig(image="${newImage}"))`;
+def run(plan, args):
+  package.run(plan, **${initialArgs})
+  
+  plan.set_service(name="${serviceName}", config=ServiceConfig(image="${newImage}"))`;
+    console.log(`starlark script to service ${serviceName} to image ${newImage}\n${updateImageStarlarkScript}`)
 
     try {
       const logsIterator = await runStarlarkScript(enclave, updateImageStarlarkScript, {}, false);
@@ -117,8 +149,12 @@ type ImageButtonProps = {
 };
 
 export const ImageButton = ({ image, serviceName, enclave }: ImageButtonProps) => {
-  const url = useMemo(() => getUrlForImage(image), [image]);
   const [showModal, setShowModal] = useState(false);
+  const url = useMemo(() => getUrlForImage(image), [image]);
+  if (!enclave) {
+    console.log(`enclave doesn't exist or initial submission data doesn't exist. this is unexpected`)
+    return null
+  }
 
   return (
     <>

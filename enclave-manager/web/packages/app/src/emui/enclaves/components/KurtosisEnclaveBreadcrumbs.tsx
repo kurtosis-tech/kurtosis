@@ -19,7 +19,7 @@ type KurtosisEnclavesBreadcrumbsProps = {
 };
 
 export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcrumbsProps) => {
-  const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave, starlarkRunningInEnclaves } =
+  const { enclaves, filesAndArtifactsByEnclave, starlarkRunsByEnclave, servicesByEnclave, starlarkRunningInEnclaves , enclaveInitialSubmissionData} =
     useEnclavesContext();
 
   const matchCrumbs = useMemo(
@@ -33,6 +33,7 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
               starlarkRunsByEnclave,
               servicesByEnclave,
               starlarkRunningInEnclaves,
+              enclaveInitialSubmissionData,
             },
             match.params,
           );
@@ -62,6 +63,7 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
                   starlarkRunsByEnclave,
                   servicesByEnclave,
                   starlarkRunningInEnclaves,
+                  enclaveInitialSubmissionData,
                 },
                 match.params,
               )

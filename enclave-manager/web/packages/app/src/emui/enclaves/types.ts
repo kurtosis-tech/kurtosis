@@ -11,4 +11,5 @@ export type EnclaveFullInfo = RemoveFunctions<EnclaveInfo> & {
   starlarkRun?: Result<RemoveFunctions<GetStarlarkRunResponse>, string>;
   services?: Result<RemoveFunctions<GetServicesResponse>, string>;
   filesAndArtifacts?: Result<RemoveFunctions<ListFilesArtifactNamesAndUuidsResponse>, string>;
+  initialSubmissionData?: Record<string, any>;
 };

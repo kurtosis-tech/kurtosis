@@ -304,7 +304,7 @@ export function generateStarlarkFromGraph(
     return `"${formatString}".format(${references.join(", ")})`;
   };
 
-  function objectToStarlark(o: any, indent: number) {
+   function objectToStarlark(o: any, indent: number) {
     const padLeft = "".padStart(indent, " ");
     if (!isDefined(o)) {
       return "None";
