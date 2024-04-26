@@ -49,6 +49,7 @@ export const EnclaveOverview = ({ enclave }: EnclaveOverviewProps) => {
             servicesResponse={enclave.services.value}
             enclaveUUID={enclave.enclaveUuid}
             enclaveShortUUID={enclave.shortenedUuid}
+            enclave={enclave}
           />
         )}
         {isDefined(enclave.services) && enclave.services.isErr && <KurtosisAlert message={enclave.services.error} />}
