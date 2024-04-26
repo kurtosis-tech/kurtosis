@@ -59,7 +59,10 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
       return;
     }
 
+    // TODO: persist package id across runs
     const packageId = starlarkRun.value.packageId;
+
+    // TODO: get initial args of enclave
 
     const updateImageStarlarkScript = `
     package = import_module("${packageId}/main.star")
