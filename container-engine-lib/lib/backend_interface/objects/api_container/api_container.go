@@ -80,3 +80,7 @@ func (apiContainer *APIContainer) GetPublicIPAddress() net.IP {
 func (apiContainer *APIContainer) GetPublicGRPCPort() *port_spec.PortSpec {
 	return apiContainer.publicGrpcPort
 }
+
+func (apiContainer *APIContainer) IsProductionEnclave() bool {
+	return apiContainer.isProductionEnclave
+}
