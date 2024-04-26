@@ -1,23 +1,22 @@
 import {
-  Button, FormControl, FormLabel,
-  Icon, Input,
-  Modal, ModalBody,
+  Button,
+  FormControl,
+  Icon,
+  Input,
+  Modal,
+  ModalBody,
   ModalCloseButton,
-  ModalContent, ModalFooter,
+  ModalContent,
+  ModalFooter,
   ModalHeader,
   ModalOverlay,
-  Text,
-  Tooltip
 } from "@chakra-ui/react";
-import {FileDisplay, isDefined, RemoveFunctions, stringifyError} from "kurtosis-ui-components";
-import {useMemo, useState} from "react";
+import { isDefined, RemoveFunctions, stringifyError } from "kurtosis-ui-components";
+import { useState } from "react";
 import { IoLogoDocker } from "react-icons/io5";
-import {FiGithub} from "react-icons/fi";
-import {AddGithubActionModal, AddGithubActionModalProps} from "../modals/AddGithubActionModal";
-import {apiKey, instanceUUID} from "../../../../cookies";
-import {useNavigate} from "react-router-dom";
-import {useEnclavesContext} from "../../EnclavesContext";
-import {EnclaveFullInfo} from "../../types";
+import { useNavigate } from "react-router-dom";
+import { useEnclavesContext } from "../../EnclavesContext";
+import { EnclaveFullInfo } from "../../types";
 
 function getUrlForImage(image: string): string | null {
   const [imageName] = image.split(":");
@@ -42,32 +41,32 @@ export type SetImageModalProps = {
 
 export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, enclave }: SetImageModalProps) => {
   const { runStarlarkScript } = useEnclavesContext();
-  const [newImage, setInputValue] = useState('');
+  const [newImage, setInputValue] = useState("");
   const [error, setError] = useState<string>();
   const navigator = useNavigate();
 
   if (!isDefined(enclave)) {
-    return null
+    return null;
   }
 
   const handleSetImageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(`in handle set image ${newImage}`)
+    console.log(`in handle set image ${newImage}`);
 
     // const serviceName = row.original.name;
     // if (!isDefined(serviceName)) {
     //   setError("No service name set.")
     //   return null
     // }
-    console.log(`service name: ${serviceName}`)
+    console.log(`service name: ${serviceName}`);
 
     if (!isDefined(enclave.starlarkRun) || enclave.starlarkRun.isErr) {
-      setError("No starlark run!")
-      return null
+      setError("No starlark run!");
+      return null;
     }
     // TODO: make this packageId stay for consecutive runs
-    let packageId  = enclave.starlarkRun.value.packageId;
-    console.log(`package id: ${packageId}`)
+    let packageId = enclave.starlarkRun.value.packageId;
+    console.log(`package id: ${packageId}`);
 
     // TODO: get the initial args of the package
     const updateImageStarlarkScript = `
@@ -77,43 +76,43 @@ def run(plan, args):
   package.run(plan)
   
   plan.set_service(name="${serviceName}", config=ServiceConfig(image="${newImage}"))`;
-    console.log(`starlark script to update image for ${serviceName} to ${newImage}:\n ${updateImageStarlarkScript}`)
+    console.log(`starlark script to update image for ${serviceName} to ${newImage}:\n ${updateImageStarlarkScript}`);
 
-    const args : Record<string, string> = {};
+    const args: Record<string, string> = {};
     try {
       const logsIterator = await runStarlarkScript(enclave, updateImageStarlarkScript, args, false);
       navigator(`/enclave/${enclave.shortenedUuid}/logs`, { state: { logs: logsIterator } });
     } catch (error: any) {
       setError(stringifyError(error));
-      console.log(error)
+      console.log(error);
     }
   };
 
   return (
-      <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={onClose} isCentered>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Set new image for {serviceName}</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <form onSubmit={handleSetImageSubmit}>
-              <FormControl>
-                <Input
-                    type="text"
-                    name="setimage"
-                    placeholder={currentImage}
-                    value={newImage}
-                    onChange={(e) => setInputValue(e.target.value)}
-                />
-              </FormControl>
-              <Button mt={4} colorScheme="green" type="submit">
-                Update
-              </Button>
-            </form>
-          </ModalBody>
-          <ModalFooter>*Note: only service and downstream dependencies will be affected.</ModalFooter>
-        </ModalContent>
-      </Modal>
+    <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={onClose} isCentered>
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Set new image for {serviceName}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <form onSubmit={handleSetImageSubmit}>
+            <FormControl>
+              <Input
+                type="text"
+                name="setimage"
+                placeholder={currentImage}
+                value={newImage}
+                onChange={(e) => setInputValue(e.target.value)}
+              />
+            </FormControl>
+            <Button mt={4} colorScheme="green" type="submit">
+              Update
+            </Button>
+          </form>
+        </ModalBody>
+        <ModalFooter>*Note: only service and downstream dependencies will be affected.</ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 };
 
@@ -129,19 +128,19 @@ export const ImageButton = ({ image, serviceName, enclave }: ImageButtonProps) =
   return (
     <>
       <Button
-          leftIcon={<Icon as={IoLogoDocker} color={"gray.400"} />}
-          variant={"ghost"}
-          size={"xs"}
-          onClick={() => setShowModal(true)}
+        leftIcon={<Icon as={IoLogoDocker} color={"gray.400"} />}
+        variant={"ghost"}
+        size={"xs"}
+        onClick={() => setShowModal(true)}
       >
         {image}
       </Button>
       <SetImageModel
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          currentImage={image}
-          serviceName={serviceName}
-          enclave={enclave}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        currentImage={image}
+        serviceName={serviceName}
+        enclave={enclave}
       />
     </>
   );

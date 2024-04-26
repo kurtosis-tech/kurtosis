@@ -1,20 +1,14 @@
-import {Box, Button, Flex, Heading, Icon, Input, Text, useToast, UseToastOptions} from "@chakra-ui/react";
+import { Button } from "@chakra-ui/react";
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
-import {
-    GetServicesResponse,
-    ServiceInfo,
-    ServiceStatus, StarlarkRunResponseLine
-} from "enclave-manager-sdk/build/api_container_service_pb";
-import {DataTable, isDefined, RemoveFunctions, stringifyError} from "kurtosis-ui-components";
-import {useMemo, useState} from "react";
-import {Link, NavigateFunction, useNavigate} from "react-router-dom";
+import { GetServicesResponse, ServiceInfo, ServiceStatus } from "enclave-manager-sdk/build/api_container_service_pb";
+import { DataTable, RemoveFunctions } from "kurtosis-ui-components";
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
+import { EnclaveFullInfo } from "../../types";
 import { ImageButton } from "../widgets/ImageButton";
 import { PortsSummary } from "../widgets/PortsSummary";
 import { ServiceStatusTag } from "../widgets/ServiceStatus";
 import { getPortTableRows, PortsTableRow } from "./PortsTable";
-import {useEnclavesContext} from "../../EnclavesContext";
-import {EnclaveInfo} from "enclave-manager-sdk/build/engine_service_pb";
-import {EnclaveFullInfo} from "../../types";
 
 type ServicesTableRow = {
   serviceUUID: string;
@@ -23,7 +17,7 @@ type ServicesTableRow = {
   // started: DateTime | null; TODO: The api needs to support this field
   image?: string;
   ports: PortsTableRow[];
-  setimage?: string
+  setimage?: string;
 };
 
 const serviceToRow = (enclaveUUID: string, service: ServiceInfo): ServicesTableRow => {
