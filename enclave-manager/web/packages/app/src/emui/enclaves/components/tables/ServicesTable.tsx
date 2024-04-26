@@ -17,7 +17,6 @@ type ServicesTableRow = {
   // started: DateTime | null; TODO: The api needs to support this field
   image?: string;
   ports: PortsTableRow[];
-  setimage?: string;
 };
 
 const serviceToRow = (enclaveUUID: string, service: ServiceInfo): ServicesTableRow => {
@@ -26,7 +25,6 @@ const serviceToRow = (enclaveUUID: string, service: ServiceInfo): ServicesTableR
     name: service.name,
     status: service.serviceStatus,
     image: service.container?.imageName,
-    setimage: service.container?.imageName, // set to same as container image, initially
     ports: getPortTableRows(
       enclaveUUID,
       service.serviceUuid,
@@ -67,7 +65,7 @@ export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse,
       }),
       columnHelper.accessor("image", {
         header: "Image",
-        cell: (imageCell) => <ImageButton image={imageCell.getValue()} serviceName={"postgres"} enclave={enclave} />,
+        cell: (imageCell) => <ImageButton image={imageCell.getValue()} serviceName={imageCell.row.original.name} enclave={enclave} />,
       }),
       columnHelper.accessor("ports", {
         header: "Ports",
