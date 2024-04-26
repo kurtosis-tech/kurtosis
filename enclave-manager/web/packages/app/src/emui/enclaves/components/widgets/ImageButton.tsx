@@ -11,8 +11,8 @@ import {
   ModalHeader,
   ModalOverlay,
 } from "@chakra-ui/react";
-import { isDefined, RemoveFunctions, stringifyError } from "kurtosis-ui-components";
-import {useMemo, useState} from "react";
+import { RemoveFunctions } from "kurtosis-ui-components";
+import { useMemo, useState } from "react";
 import { IoLogoDocker } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { useEnclavesContext } from "../../EnclavesContext";
@@ -28,7 +28,7 @@ function getUrlForImage(image: string): string | URL | undefined {
     return `https://hub.docker.com/r/${imageParts[0]}/${imageParts[1]}`;
   }
   // Currently no other registries supported
-  return
+  return;
 }
 
 export type SetImageModalProps = {
@@ -82,31 +82,31 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
   };
 
   return (
-      <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={onClose} isCentered>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Set new image for {serviceName}</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <form onSubmit={handleSetImageSubmit}>
-              <FormControl>
-                <Input
-                    type="text"
-                    name="setimage"
-                    placeholder={currentImage}
-                    value={newImage}
-                    onChange={(e) => setNewImage(e.target.value)}
-                />
-              </FormControl>
-              <Button mt={4} colorScheme="green" type="submit">
-                Update
-              </Button>
-            </form>
-          </ModalBody>
-          <ModalFooter>*Note: only service and downstream dependencies will be affected.</ModalFooter>
-          {error && <div style={{ color: "red", marginTop: "10px" }}>{error}</div>}
-        </ModalContent>
-      </Modal>
+    <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={onClose} isCentered>
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Set new image for {serviceName}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <form onSubmit={handleSetImageSubmit}>
+            <FormControl>
+              <Input
+                type="text"
+                name="setimage"
+                placeholder={currentImage}
+                value={newImage}
+                onChange={(e) => setNewImage(e.target.value)}
+              />
+            </FormControl>
+            <Button mt={4} colorScheme="green" type="submit">
+              Update
+            </Button>
+          </form>
+        </ModalBody>
+        <ModalFooter>*Note: only service and downstream dependencies will be affected.</ModalFooter>
+        {error && <div style={{ color: "red", marginTop: "10px" }}>{error}</div>}
+      </ModalContent>
+    </Modal>
   );
 };
 
@@ -123,18 +123,14 @@ export const ImageButton = ({ image, serviceName, enclave }: ImageButtonProps) =
   return (
     <>
       <Icon
-          as={IoLogoDocker}
-          color={"gray.400"}
-          boxSize={3}
-          cursor={"pointer"}
-          onClick={() => window.open(url, "_blank")}
-          ml={2} // Adjust margin as needed
+        as={IoLogoDocker}
+        color={"gray.400"}
+        boxSize={3}
+        cursor={"pointer"}
+        onClick={() => window.open(url, "_blank")}
+        ml={2} // Adjust margin as needed
       />
-      <Button
-        variant={"ghost"}
-        size={"xs"}
-        onClick={() => setShowModal(true)}
-      >
+      <Button variant={"ghost"} size={"xs"} onClick={() => setShowModal(true)}>
         {image}
       </Button>
       <SetImageModel

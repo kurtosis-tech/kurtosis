@@ -65,7 +65,9 @@ export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse,
       }),
       columnHelper.accessor("image", {
         header: "Image",
-        cell: (imageCell) => <ImageButton image={imageCell.getValue()} serviceName={imageCell.row.original.name} enclave={enclave} />,
+        cell: (imageCell) => (
+          <ImageButton image={imageCell.getValue()} serviceName={imageCell.row.original.name} enclave={enclave} />
+        ),
       }),
       columnHelper.accessor("ports", {
         header: "Ports",
