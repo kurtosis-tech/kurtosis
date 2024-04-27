@@ -27,7 +27,6 @@ type EnclaveTableRow = {
 };
 
 const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResponse, string>): EnclaveTableRow => {
-  const starlarkRun = enclave.starlarkRun;
   return {
     uuid: enclave.shortenedUuid,
     name: enclave.name,

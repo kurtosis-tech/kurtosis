@@ -477,7 +477,14 @@ export const useFullEnclaves = (): Result<EnclaveFullInfo[], string> => {
           initialPackageId: enclaveInitialPackageId[enclave.shortenedUuid],
         })),
       ),
-    [enclaves, cachedServicesByEnclave, cachedStarlarkRunsByEnclave, cachedFilesAndArtifactsByEnclave],
+    [
+      enclaves,
+      cachedServicesByEnclave,
+      cachedStarlarkRunsByEnclave,
+      cachedFilesAndArtifactsByEnclave,
+      enclaveInitialSubmissionData,
+      enclaveInitialPackageId,
+    ],
   );
 
   return fullEnclaves;
