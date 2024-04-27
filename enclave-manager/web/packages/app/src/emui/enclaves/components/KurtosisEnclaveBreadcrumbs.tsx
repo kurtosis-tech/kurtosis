@@ -56,6 +56,8 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
       starlarkRunsByEnclave,
       servicesByEnclave,
       starlarkRunningInEnclaves,
+      enclaveInitialSubmissionData,
+      enclaveInitialPackageId,
     ],
   );
 
@@ -87,6 +89,8 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
       starlarkRunsByEnclave,
       servicesByEnclave,
       starlarkRunningInEnclaves,
+      enclaveInitialSubmissionData,
+      enclaveInitialPackageId,
     ],
   );
 
