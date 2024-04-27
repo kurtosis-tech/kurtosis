@@ -88,8 +88,11 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
       return;
     }
 
-    // TODO: persist package id across runs
-    const packageId = starlarkRun.value.packageId;
+    if (!enclave.initialPackageId) {
+      setError("Error: No package id found that was run in this enclave.")
+      return;
+    }
+    const packageId = enclave.initialPackageId;
 
     const initialArgs = objectToStarlark(enclave.initialSubmissionData, 8)
     console.log(enclave.initialSubmissionData)

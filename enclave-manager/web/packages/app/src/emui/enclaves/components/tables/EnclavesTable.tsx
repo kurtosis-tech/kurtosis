@@ -34,10 +34,10 @@ const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResp
     status: enclave.containersStatus,
     created: enclave.creationTime ? DateTime.fromJSDate(enclave.creationTime.toDate()) : null,
     source:
-      !isDefined(starlarkRun) || !isDefined(catalog)
+      !isDefined(catalog)
         ? "loading"
-        : starlarkRun.isOk && catalog.isOk
-        ? catalog.value.packages.find((kurtosisPackage) => kurtosisPackage.name === starlarkRun.value.packageId) || null
+        : catalog.isOk
+        ? catalog.value.packages.find((kurtosisPackage) => kurtosisPackage.name === enclave.initialPackageId) || null
         : null,
     services: !isDefined(enclave.services)
       ? "loading"
