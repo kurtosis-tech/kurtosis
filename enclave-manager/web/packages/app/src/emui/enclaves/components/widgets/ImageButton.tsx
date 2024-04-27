@@ -145,16 +145,12 @@ def run(plan, args):
 type ImageButtonProps = {
   image: string;
   serviceName: string;
-  enclave?: RemoveFunctions<EnclaveFullInfo> | undefined;
+  enclave: RemoveFunctions<EnclaveFullInfo>;
 };
 
 export const ImageButton = ({ image, serviceName, enclave }: ImageButtonProps) => {
   const [showModal, setShowModal] = useState(false);
   const url = useMemo(() => getUrlForImage(image), [image]);
-  if (!enclave) {
-    console.log(`enclave doesn't exist or initial submission data doesn't exist. this is unexpected`)
-    return null
-  }
 
   return (
     <>
@@ -164,7 +160,7 @@ export const ImageButton = ({ image, serviceName, enclave }: ImageButtonProps) =
         boxSize={3}
         cursor={"pointer"}
         onClick={() => window.open(url, "_blank")}
-        ml={2} // Adjust margin as needed
+        ml={2}
       />
       <Button variant={"ghost"} size={"xs"} onClick={() => setShowModal(true)}>
         {image}

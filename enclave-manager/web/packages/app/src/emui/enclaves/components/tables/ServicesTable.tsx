@@ -41,7 +41,7 @@ type ServicesTableProps = {
   enclaveUUID: string;
   enclaveShortUUID: string;
   servicesResponse: RemoveFunctions<GetServicesResponse>;
-  enclave?: RemoveFunctions<EnclaveFullInfo>;
+  enclave: RemoveFunctions<EnclaveFullInfo>;
 };
 
 export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse, enclave }: ServicesTableProps) => {
