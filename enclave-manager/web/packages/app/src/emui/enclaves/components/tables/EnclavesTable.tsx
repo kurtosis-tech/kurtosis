@@ -33,12 +33,11 @@ const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResp
     name: enclave.name,
     status: enclave.containersStatus,
     created: enclave.creationTime ? DateTime.fromJSDate(enclave.creationTime.toDate()) : null,
-    source:
-      !isDefined(catalog)
-        ? "loading"
-        : catalog.isOk
-        ? catalog.value.packages.find((kurtosisPackage) => kurtosisPackage.name === enclave.initialPackageId) || null
-        : null,
+    source: !isDefined(catalog)
+      ? "loading"
+      : catalog.isOk
+      ? catalog.value.packages.find((kurtosisPackage) => kurtosisPackage.name === enclave.initialPackageId) || null
+      : null,
     services: !isDefined(enclave.services)
       ? "loading"
       : enclave.services.isOk

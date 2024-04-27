@@ -11,11 +11,11 @@ import {
   ModalHeader,
   ModalOverlay,
 } from "@chakra-ui/react";
-import {isDefined, RemoveFunctions} from "kurtosis-ui-components";
+import { isDefined, RemoveFunctions } from "kurtosis-ui-components";
 import { useMemo, useState } from "react";
 import { IoLogoDocker } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
-import {useEnclavesContext} from "../../EnclavesContext";
+import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 
 function getUrlForImage(image: string): string | URL | undefined {
@@ -75,7 +75,6 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
   const { runStarlarkScript } = useEnclavesContext(); // Assuming this is defined elsewhere
   const [error, setError] = useState<string | null>(null);
 
-
   const [newImage, setNewImage] = useState("");
   const navigator = useNavigate(); // Assuming you're using React Router's useNavigate
 
@@ -89,14 +88,14 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
     }
 
     if (!enclave.initialPackageId) {
-      setError("Error: No package id found that was run in this enclave.")
+      setError("Error: No package id found that was run in this enclave.");
       return;
     }
     const packageId = enclave.initialPackageId;
 
-    const initialArgs = objectToStarlark(enclave.initialSubmissionData, 8)
-    console.log(enclave.initialSubmissionData)
-    console.log(`initial args used to start package:\n${initialArgs}`)
+    const initialArgs = objectToStarlark(enclave.initialSubmissionData, 8);
+    console.log(enclave.initialSubmissionData);
+    console.log(`initial args used to start package:\n${initialArgs}`);
 
     const updateImageStarlarkScript = `
 package = import_module("${packageId}/main.star")
@@ -105,7 +104,7 @@ def run(plan, args):
   package.run(plan, **${initialArgs})
   
   plan.set_service(name="${serviceName}", config=ServiceConfig(image="${newImage}"))`;
-    console.log(`starlark script to service ${serviceName} to image ${newImage}\n${updateImageStarlarkScript}`)
+    console.log(`starlark script to service ${serviceName} to image ${newImage}\n${updateImageStarlarkScript}`);
 
     try {
       const logsIterator = await runStarlarkScript(enclave, updateImageStarlarkScript, {}, false);

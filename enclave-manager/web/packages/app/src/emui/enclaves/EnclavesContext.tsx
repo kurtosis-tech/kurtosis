@@ -89,7 +89,7 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
     starlarkRunsByEnclave: {},
     starlarkRunningInEnclaves: [],
     enclaveInitialSubmissionData: {},
-    enclaveInitialPackageId: {}
+    enclaveInitialPackageId: {},
   });
   const kurtosisClient = useKurtosisClient();
 
@@ -251,8 +251,14 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
       dryRun: boolean = false,
     ) => {
       setState((state) => ({ ...state, starlarkRunningInEnclaves: [...state.starlarkRunningInEnclaves, enclave] }));
-      setState((state) => ({...state, enclaveInitialSubmissionData: {...state.enclaveInitialSubmissionData, [enclave.shortenedUuid]: args }}));
-      setState((state) => ({...state, enclaveInitialPackageId: {...state.enclaveInitialPackageId, [enclave.shortenedUuid]: packageId }}));
+      setState((state) => ({
+        ...state,
+        enclaveInitialSubmissionData: { ...state.enclaveInitialSubmissionData, [enclave.shortenedUuid]: args },
+      }));
+      setState((state) => ({
+        ...state,
+        enclaveInitialPackageId: { ...state.enclaveInitialPackageId, [enclave.shortenedUuid]: packageId },
+      }));
       assertDefined(enclave.apiContainerInfo, `apic info not defined in enclave ${enclave.name}`);
       const resp = await kurtosisClient.runStarlarkPackage(enclave.apiContainerInfo, packageId, args, dryRun);
       return resp;
@@ -349,8 +355,8 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
   const services = servicesByEnclave[enclaveUUID];
   const filesAndArtifacts = filesAndArtifactsByEnclave[enclaveUUID];
   const starlarkRun = starlarkRunsByEnclave[enclaveUUID];
-  const initialSubmissionData = enclaveInitialSubmissionData[enclaveUUID]
-  const initialPackageId = enclaveInitialPackageId[enclaveUUID]
+  const initialSubmissionData = enclaveInitialSubmissionData[enclaveUUID];
+  const initialPackageId = enclaveInitialPackageId[enclaveUUID];
 
   const result = useMemo<Result<EnclaveFullInfo, string>>(() => {
     if (!isDefined(enclave)) {
@@ -369,7 +375,16 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
       initialSubmissionData,
       initialPackageId,
     });
-  }, [enclaveUUID, enclaves, enclave, services, filesAndArtifacts, starlarkRun, initialSubmissionData, initialPackageId]);
+  }, [
+    enclaveUUID,
+    enclaves,
+    enclave,
+    services,
+    filesAndArtifacts,
+    starlarkRun,
+    initialSubmissionData,
+    initialPackageId,
+  ]);
 
   useEffect(() => {
     if (isDefined(enclave) && !isDefined(services)) {
