@@ -28,7 +28,7 @@ type StartosisRunner struct {
 const (
 	defaultCurrentStepNumber  = 0
 	defaultTotalStepsNumber   = 0
-	startingInterpretationMsg = "Interpreting Starlark code - execution will begin shortly"
+	startingInterpretationMsg = "Interpreting plan - execution will begin shortly"
 	startingValidationMsg     = "Starting validation"
 	startingExecutionMsg      = "Starting execution"
 )
@@ -76,7 +76,7 @@ func (runner *StartosisRunner) Run(
 				}
 			}
 
-			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg("Made with Kurtosis - https://kurtosis.com")
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg("⭐ us on GitHub - https://github.com/kurtosis-tech/kurtosis")
 			close(starlarkRunResponseLines)
 		}()
 

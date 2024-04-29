@@ -2,6 +2,7 @@ package enclave_db
 
 import (
 	"os"
+	"path"
 	"sync"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 
 const (
 	readWritePermissionToDatabase = 0666
-	enclaveDbFilePath             = "enclave.db"
+	enclaveDbFileName             = "enclave.db"
 	timeOut                       = 10 * time.Second
 )
 
@@ -19,15 +20,23 @@ var (
 	openDatabaseOnce  sync.Once
 	databaseInstance  *bolt.DB
 	databaseOpenError error
+	enclaveDbDirpath  string
 )
 
 type EnclaveDB struct {
 	*bolt.DB
 }
 
-func GetOrCreateEnclaveDatabase() (*EnclaveDB, error) {
+func GetOrCreateEnclaveDatabase(enclaveDatabaseDirpath string) (*EnclaveDB, error) {
+
+	//Checking first if there is already one enclaveDbDirpath and if it's different
+	if enclaveDbDirpath != "" && enclaveDbDirpath != enclaveDatabaseDirpath {
+		return nil, stacktrace.NewError("It's not possible to create a new enclave database in '%s' because there is already one in '%s'", enclaveDatabaseDirpath, enclaveDbDirpath)
+	}
+
 	openDatabaseOnce.Do(func() {
-		databaseInstance, databaseOpenError = bolt.Open(enclaveDbFilePath, readWritePermissionToDatabase, &bolt.Options{
+		enclaveDatabaseFilepath := path.Join(enclaveDatabaseDirpath, enclaveDbFileName)
+		databaseInstance, databaseOpenError = bolt.Open(enclaveDatabaseFilepath, readWritePermissionToDatabase, &bolt.Options{
 			Timeout:         timeOut, //to fail if any other process is locking the file
 			NoGrowSync:      false,
 			NoFreelistSync:  false,

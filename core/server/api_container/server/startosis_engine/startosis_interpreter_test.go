@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/set_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -158,6 +159,31 @@ def my_func(my_arg1, my_arg2, args):
 	require.NotNil(suite.T(), result)
 	expectedResult := "\"foo--bar--arg1-value:arg2-value\""
 	require.Equal(suite.T(), expectedResult, result)
+}
+
+func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_MainFunctionAndParamsErrWhenOnlyDeprecatedArgsObjectProvided() {
+	script := `
+def run(plan, args):
+	all_arg_values = args["arg1"] + ":" + args["arg2"]
+	return all_arg_values
+`
+	mainFunctionName := "run"
+	// passing in only "args" dictionary is deprecated
+	inputArgs := `{"args": {"arg1": "arg1-value", "arg2": "arg2-value"}}`
+
+	_, _, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, inputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
+	require.NotNil(suite.T(), interpretationError)
+	require.Equal(suite.T(), "Evaluation error: key \"arg1\" not in dict\n\tat [3:23]: run", interpretationError.GetErrorMessage())
+
+	scriptWithKwarg := `
+def run(plan, arg0, args):
+	all_arg_values = arg0 + args["arg1"] + ":" + args["arg2"]
+	return all_arg_values
+`
+	// however passing in kwargs, with args at the end is still fine
+	inputArgsWithKwarg := `{"arg0": "foo", "args": {"arg1": "arg1-value", "arg2": "arg2-value"}}`
+	_, _, interpretationError = suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, scriptWithKwarg, inputArgsWithKwarg, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
+	require.Nil(suite.T(), interpretationError)
 }
 
 func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_Test() {
@@ -868,6 +894,49 @@ def run(plan):
 The service example-datastore-server has been removed
 `
 	validateScriptOutputFromPrintInstructions(suite.T(), instructionsPlan, expectedOutput)
+}
+
+func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_SetService() {
+	script := `
+def run(plan):
+	config = ServiceConfig(
+		image = "datastore-image",
+	)
+	plan.add_service(name = "example-datastore-server", config = config)
+
+	newConfig = ServiceConfig(
+		image = "someNewContainer",
+	)
+	plan.set_service(name="example-datastore-server", config=newConfig)
+`
+
+	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
+	require.Nil(suite.T(), interpretationError)
+	require.Equal(suite.T(), 2, instructionsPlan.Size())
+
+	assertInstructionTypeAndPosition(suite.T(), instructionsPlan, 0, add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 6, 18)
+	assertInstructionTypeAndPosition(suite.T(), instructionsPlan, 1, set_service.SetServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 11, 18)
+}
+
+func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_SetServiceErrorsOnUnsupportedFields() {
+	script := `
+def run(plan):
+	config = ServiceConfig(
+		image = "datastore-image",
+	)
+	plan.add_service(name = "example-datastore-server", config = config)
+
+	newConfig = ServiceConfig(
+		image= "datastore-image",
+		env_vars = {
+			"SOME": "THING"
+		}
+	)
+	plan.set_service(name="example-datastore-server", config=newConfig)
+`
+
+	_, _, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, noPackageReplaceOptions, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, defaultNonBlockingMode, emptyEnclaveComponents, emptyInstructionsPlanMask, defaultImageDownloadMode)
+	require.NotNil(suite.T(), interpretationError)
 }
 
 func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk() {

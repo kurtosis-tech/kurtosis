@@ -602,6 +602,7 @@ func (manager *enclaveRuntime) PostEnclavesEnclaveIdentifierStarlarkPackagesPack
 		// clone_package below
 		StarlarkPackageContent: nil,
 		NonBlockingMode:        request.Body.NonBlockingMode,
+		GithubAuthToken:        request.Body.GithubAuthToken,
 	}
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())

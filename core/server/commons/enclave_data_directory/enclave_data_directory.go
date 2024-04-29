@@ -6,9 +6,7 @@
 package enclave_data_directory
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
 	"sync"
@@ -30,8 +28,8 @@ const (
 	// Name of directory INSIDE THE ENCLAVE DATA DIR at [absMountDirPath]  that contains info for authenticating GitHub operations
 	githubAuthStoreDirname = "github-auth"
 
-	// Name of file within [githubAuthStoreDirname] that contains the GitHub auth token
-	githubAuthTokenFilename = "token.txt"
+	// Name of directory INSIDE THE ENCLAVE DATA DIR containing the enclave database (currently the bolt dB is implemented)
+	enclaveDatabase = "enclave-database"
 )
 
 // A directory containing all the data associated with a certain enclave (i.e. a Docker subnetwork where services are spun up)
@@ -72,22 +70,26 @@ func (dir EnclaveDataDirectory) GetFilesArtifactStore() (*FilesArtifactStore, er
 	return currentFilesArtifactStore, dbError
 }
 
-func (dir EnclaveDataDirectory) GetGitPackageContentProvider(enclaveDb *enclave_db.EnclaveDB) (*git_package_content_provider.GitPackageContentProvider, error) {
+func (dir EnclaveDataDirectory) GetEnclaveDataDirectoryPaths() (string, string, string, string, error) {
 	repositoriesStoreDirpath := path.Join(dir.absMountDirpath, repositoriesStoreDirname)
 	if err := ensureDirpathExists(repositoriesStoreDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring the repositories store dirpath '%v' exists.", repositoriesStoreDirpath)
+		return "", "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the repositories store dirpath '%v' exists.", repositoriesStoreDirpath)
 	}
 
 	tempRepositoriesStoreDirpath := path.Join(dir.absMountDirpath, tmpRepositoriesStoreDirname)
 	if err := ensureDirpathExists(tempRepositoriesStoreDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring the temporary repositories store dirpath '%v' exists.", tempRepositoriesStoreDirpath)
+		return "", "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the temporary repositories store dirpath '%v' exists.", tempRepositoriesStoreDirpath)
 	}
 
 	githubAuthStoreDirpath := path.Join(dir.absMountDirpath, githubAuthStoreDirname)
 	if err := ensureDirpathExists(githubAuthStoreDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring the GitHub auth store dirpath '%v' exists.", githubAuthStoreDirpath)
+		return "", "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the GitHub auth store dirpath '%v' exists.", githubAuthStoreDirpath)
 	}
-	githubAuthTokenFilepath := path.Join(dir.absMountDirpath, githubAuthStoreDirname, githubAuthTokenFilename)
 
-	return git_package_content_provider.NewGitPackageContentProvider(repositoriesStoreDirpath, tempRepositoriesStoreDirpath, githubAuthTokenFilepath, enclaveDb), nil
+	enclaveDatabaseDirpath := path.Join(dir.absMountDirpath, enclaveDatabase)
+	if err := ensureDirpathExists(enclaveDatabaseDirpath); err != nil {
+		return "", "", "", "", stacktrace.Propagate(err, "An error occurred ensuring the enclave database store dirpath '%v' exists.", enclaveDatabaseDirpath)
+	}
+
+	return repositoriesStoreDirpath, tempRepositoriesStoreDirpath, githubAuthStoreDirpath, enclaveDatabaseDirpath, nil
 }

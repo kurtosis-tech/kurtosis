@@ -29,9 +29,12 @@ type privateServiceConfig struct {
 
 	// Configuration for container engine to pull an in a private registry behind authentication
 	// If nil, we will use the ContainerImageName and not use any auth
-	// Mutually exclusive from ImageBuildSpec, ContainerImageName
-	ImagerRegistrySpec *image_registry_spec.ImageRegistrySpec
+	// Mutually exclusive from ImageBuildSpec, ContainerImageName, NixBuildSpec
+	ImageRegistrySpec *image_registry_spec.ImageRegistrySpec
 
+	// Configuration for container engine to using Nix
+	// If nil, we will use the ContainerImageName and not use any Nix
+	// Mutually exclusive from ImageBuildSpec, ContainerImageName, ImageRegistrySpec
 	NixBuildSpec *nix_build_spec.NixBuildSpec
 
 	PrivatePorts map[string]*port_spec.PortSpec
@@ -88,7 +91,7 @@ func CreateServiceConfig(
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
 	privateIPAddrPlaceholder string,
-	minCpuMilliCores uint64,
+	minCpuMilliCpus uint64,
 	minMemoryMegaBytes uint64,
 	labels map[string]string,
 	user *service_user.ServiceUser,
@@ -104,7 +107,7 @@ func CreateServiceConfig(
 	internalServiceConfig := &privateServiceConfig{
 		ContainerImageName:        containerImageName,
 		ImageBuildSpec:            imageBuildSpec,
-		ImagerRegistrySpec:        imageRegistrySpec,
+		ImageRegistrySpec:         imageRegistrySpec,
 		NixBuildSpec:              nixBuildSpec,
 		PrivatePorts:              privatePorts,
 		PublicPorts:               publicPorts,
@@ -117,7 +120,7 @@ func CreateServiceConfig(
 		MemoryAllocationMegabytes: memoryAllocationMegabytes,
 		PrivateIPAddrPlaceholder:  privateIPAddrPlaceholder,
 		// The minimum resources specification is only available for kubernetes
-		MinCpuAllocationMilliCpus:    minCpuMilliCores,
+		MinCpuAllocationMilliCpus:    minCpuMilliCpus,
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
 		Labels:                       labels,
 		User:                         user,
@@ -133,16 +136,32 @@ func (serviceConfig *ServiceConfig) GetContainerImageName() string {
 	return serviceConfig.privateServiceConfig.ContainerImageName
 }
 
+func (serviceConfig *ServiceConfig) SetContainerImageName(containerImage string) {
+	serviceConfig.privateServiceConfig.ContainerImageName = containerImage
+}
+
 func (serviceConfig *ServiceConfig) GetImageBuildSpec() *image_build_spec.ImageBuildSpec {
 	return serviceConfig.privateServiceConfig.ImageBuildSpec
 }
 
+func (serviceConfig *ServiceConfig) SetImageBuildSpec(imageBuildSpec *image_build_spec.ImageBuildSpec) {
+	serviceConfig.privateServiceConfig.ImageBuildSpec = imageBuildSpec
+}
+
 func (serviceConfig *ServiceConfig) GetImageRegistrySpec() *image_registry_spec.ImageRegistrySpec {
-	return serviceConfig.privateServiceConfig.ImagerRegistrySpec
+	return serviceConfig.privateServiceConfig.ImageRegistrySpec
+}
+
+func (serviceConfig *ServiceConfig) SetImageRegistrySpec(imageRegistrySpec *image_registry_spec.ImageRegistrySpec) {
+	serviceConfig.privateServiceConfig.ImageRegistrySpec = imageRegistrySpec
 }
 
 func (serviceConfig *ServiceConfig) GetNixBuildSpec() *nix_build_spec.NixBuildSpec {
 	return serviceConfig.privateServiceConfig.NixBuildSpec
+}
+
+func (serviceConfig *ServiceConfig) SetNixBuildSpec(nixBuildSpec *nix_build_spec.NixBuildSpec) {
+	serviceConfig.privateServiceConfig.NixBuildSpec = nixBuildSpec
 }
 
 func (serviceConfig *ServiceConfig) GetPrivatePorts() map[string]*port_spec.PortSpec {
@@ -177,8 +196,16 @@ func (serviceConfig *ServiceConfig) GetCPUAllocationMillicpus() uint64 {
 	return serviceConfig.privateServiceConfig.CpuAllocationMillicpus
 }
 
+func (serviceConfig *ServiceConfig) SetCPUAllocationMillicpus(cpuAllocation uint64) {
+	serviceConfig.privateServiceConfig.CpuAllocationMillicpus = cpuAllocation
+}
+
 func (serviceConfig *ServiceConfig) GetMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.privateServiceConfig.MemoryAllocationMegabytes
+}
+
+func (serviceConfig *ServiceConfig) SetMemoryAllocationMegabytes(memoryAllocation uint64) {
+	serviceConfig.privateServiceConfig.MemoryAllocationMegabytes = memoryAllocation
 }
 
 func (serviceConfig *ServiceConfig) GetPrivateIPAddrPlaceholder() string {
@@ -190,25 +217,49 @@ func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
 	return serviceConfig.privateServiceConfig.MinCpuAllocationMilliCpus
 }
 
+func (serviceConfig *ServiceConfig) SetMinCPUAllocationMillicpus(cpuAllocation uint64) {
+	serviceConfig.privateServiceConfig.MinCpuAllocationMilliCpus = cpuAllocation
+}
+
 // only available for Kubernetes
 func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.privateServiceConfig.MinMemoryAllocationMegabytes
+}
+
+func (serviceConfig *ServiceConfig) SetMinMemoryAllocationMegabytes(memoryAllocation uint64) {
+	serviceConfig.privateServiceConfig.MemoryAllocationMegabytes = memoryAllocation
 }
 
 func (serviceConfig *ServiceConfig) GetUser() *service_user.ServiceUser {
 	return serviceConfig.privateServiceConfig.User
 }
 
+func (serviceConfig *ServiceConfig) SetUser(user *service_user.ServiceUser) {
+	serviceConfig.privateServiceConfig.User = user
+}
+
 func (serviceConfig *ServiceConfig) GetLabels() map[string]string {
 	return serviceConfig.privateServiceConfig.Labels
+}
+
+func (serviceConfig *ServiceConfig) SetLabels(labels map[string]string) {
+	serviceConfig.privateServiceConfig.Labels = labels
 }
 
 func (serviceConfig *ServiceConfig) GetTolerations() []v1.Toleration {
 	return serviceConfig.privateServiceConfig.Tolerations
 }
 
+func (serviceConfig *ServiceConfig) SetTolerations(tolerations []v1.Toleration) {
+	serviceConfig.privateServiceConfig.Tolerations = tolerations
+}
+
 func (serviceConfig *ServiceConfig) GetImageDownloadMode() image_download_mode.ImageDownloadMode {
 	return serviceConfig.privateServiceConfig.ImageDownloadMode
+}
+
+func (serviceConfig *ServiceConfig) SetImageDownloadMode(mode image_download_mode.ImageDownloadMode) {
+	serviceConfig.privateServiceConfig.ImageDownloadMode = mode
 }
 
 func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {

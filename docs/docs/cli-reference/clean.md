@@ -15,7 +15,7 @@ The `clean` command serves the purpose of freeing up resources from your local m
   kurtosis clean [flags]
 ```
 Flags:
-1. The `a, --all` removes running enclaves as well
+1. The `-a, --all` removes running enclaves as well
 2. The `-h, --help` flag shows help for clean
 
 

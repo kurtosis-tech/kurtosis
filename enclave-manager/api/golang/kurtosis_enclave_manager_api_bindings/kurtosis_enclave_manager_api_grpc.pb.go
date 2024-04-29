@@ -10,6 +10,7 @@ import (
 	context "context"
 	kurtosis_core_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	kurtosis_engine_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	kurtosis_backend_server_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -37,6 +38,10 @@ const (
 	KurtosisEnclaveManagerServer_GetStarlarkScriptPlanYaml_FullMethodName      = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetStarlarkScriptPlanYaml"
 	KurtosisEnclaveManagerServer_GetStarlarkPackagePlanYaml_FullMethodName     = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetStarlarkPackagePlanYaml"
 	KurtosisEnclaveManagerServer_CreateRepositoryWebhook_FullMethodName        = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/CreateRepositoryWebhook"
+	KurtosisEnclaveManagerServer_GetCloudInstanceConfig_FullMethodName         = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetCloudInstanceConfig"
+	KurtosisEnclaveManagerServer_LockPort_FullMethodName                       = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/LockPort"
+	KurtosisEnclaveManagerServer_UnlockPort_FullMethodName                     = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/UnlockPort"
+	KurtosisEnclaveManagerServer_AddAlias_FullMethodName                       = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/AddAlias"
 )
 
 // KurtosisEnclaveManagerServerClient is the client API for KurtosisEnclaveManagerServer service.
@@ -58,6 +63,10 @@ type KurtosisEnclaveManagerServerClient interface {
 	GetStarlarkScriptPlanYaml(ctx context.Context, in *StarlarkScriptPlanYamlArgs, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
 	GetStarlarkPackagePlanYaml(ctx context.Context, in *StarlarkPackagePlanYamlArgs, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
 	CreateRepositoryWebhook(ctx context.Context, in *CreateRepositoryWebhookRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetCloudInstanceConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error)
+	LockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UnlockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AddAlias(ctx context.Context, in *AddAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type kurtosisEnclaveManagerServerClient struct {
@@ -295,6 +304,42 @@ func (c *kurtosisEnclaveManagerServerClient) CreateRepositoryWebhook(ctx context
 	return out, nil
 }
 
+func (c *kurtosisEnclaveManagerServerClient) GetCloudInstanceConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
+	out := new(kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse)
+	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetCloudInstanceConfig_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisEnclaveManagerServerClient) LockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_LockPort_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisEnclaveManagerServerClient) UnlockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_UnlockPort_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisEnclaveManagerServerClient) AddAlias(ctx context.Context, in *AddAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_AddAlias_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KurtosisEnclaveManagerServerServer is the server API for KurtosisEnclaveManagerServer service.
 // All implementations should embed UnimplementedKurtosisEnclaveManagerServerServer
 // for forward compatibility
@@ -314,6 +359,10 @@ type KurtosisEnclaveManagerServerServer interface {
 	GetStarlarkScriptPlanYaml(context.Context, *StarlarkScriptPlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
 	GetStarlarkPackagePlanYaml(context.Context, *StarlarkPackagePlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
 	CreateRepositoryWebhook(context.Context, *CreateRepositoryWebhookRequest) (*emptypb.Empty, error)
+	GetCloudInstanceConfig(context.Context, *emptypb.Empty) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error)
+	LockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error)
+	UnlockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error)
+	AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error)
 }
 
 // UnimplementedKurtosisEnclaveManagerServerServer should be embedded to have forward compatible implementations.
@@ -364,6 +413,18 @@ func (UnimplementedKurtosisEnclaveManagerServerServer) GetStarlarkPackagePlanYam
 }
 func (UnimplementedKurtosisEnclaveManagerServerServer) CreateRepositoryWebhook(context.Context, *CreateRepositoryWebhookRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRepositoryWebhook not implemented")
+}
+func (UnimplementedKurtosisEnclaveManagerServerServer) GetCloudInstanceConfig(context.Context, *emptypb.Empty) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCloudInstanceConfig not implemented")
+}
+func (UnimplementedKurtosisEnclaveManagerServerServer) LockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LockPort not implemented")
+}
+func (UnimplementedKurtosisEnclaveManagerServerServer) UnlockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnlockPort not implemented")
+}
+func (UnimplementedKurtosisEnclaveManagerServerServer) AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddAlias not implemented")
 }
 
 // UnsafeKurtosisEnclaveManagerServerServer may be embedded to opt out of forward compatibility for this service.
@@ -659,6 +720,78 @@ func _KurtosisEnclaveManagerServer_CreateRepositoryWebhook_Handler(srv interface
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisEnclaveManagerServer_GetCloudInstanceConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisEnclaveManagerServerServer).GetCloudInstanceConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisEnclaveManagerServer_GetCloudInstanceConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisEnclaveManagerServerServer).GetCloudInstanceConfig(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisEnclaveManagerServer_LockPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LockUnlockPortRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisEnclaveManagerServerServer).LockPort(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisEnclaveManagerServer_LockPort_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisEnclaveManagerServerServer).LockPort(ctx, req.(*LockUnlockPortRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisEnclaveManagerServer_UnlockPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LockUnlockPortRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisEnclaveManagerServerServer).UnlockPort(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisEnclaveManagerServer_UnlockPort_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisEnclaveManagerServerServer).UnlockPort(ctx, req.(*LockUnlockPortRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisEnclaveManagerServer_AddAlias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddAliasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisEnclaveManagerServerServer).AddAlias(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisEnclaveManagerServer_AddAlias_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisEnclaveManagerServerServer).AddAlias(ctx, req.(*AddAliasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KurtosisEnclaveManagerServer_ServiceDesc is the grpc.ServiceDesc for KurtosisEnclaveManagerServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -709,6 +842,22 @@ var KurtosisEnclaveManagerServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateRepositoryWebhook",
 			Handler:    _KurtosisEnclaveManagerServer_CreateRepositoryWebhook_Handler,
+		},
+		{
+			MethodName: "GetCloudInstanceConfig",
+			Handler:    _KurtosisEnclaveManagerServer_GetCloudInstanceConfig_Handler,
+		},
+		{
+			MethodName: "LockPort",
+			Handler:    _KurtosisEnclaveManagerServer_LockPort_Handler,
+		},
+		{
+			MethodName: "UnlockPort",
+			Handler:    _KurtosisEnclaveManagerServer_UnlockPort_Handler,
+		},
+		{
+			MethodName: "AddAlias",
+			Handler:    _KurtosisEnclaveManagerServer_AddAlias_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

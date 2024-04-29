@@ -9,17 +9,17 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/docker_compose_transpiler"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -40,7 +40,7 @@ const (
 	// this gets us the entire history - useful for fetching commits on a repo
 	depthAssumingBranchTagsCommitsAreSpecified = 0
 
-	filePathToKurtosisYamlNotFound           = ""
+	filePathToKurtosisOrComposeYamlNotFound  = ""
 	replaceCountPackageDirWithGithubConstant = 1
 
 	osPathSeparatorString = string(os.PathSeparator)
@@ -55,15 +55,14 @@ type GitPackageContentProvider struct {
 	repositoriesTmpDir              string
 	repositoriesDir                 string
 	packageReplaceOptionsRepository *packageReplaceOptionsRepository
-
-	githubAuthTokenFile string
+	githubAuthProvider              *GitHubPackageAuthProvider
 }
 
-func NewGitPackageContentProvider(repositoriesDir, tmpDir, githubAuthTokenFile string, enclaveDb *enclave_db.EnclaveDB) *GitPackageContentProvider {
+func NewGitPackageContentProvider(repositoriesDir, tmpDir string, githubAuthProvider *GitHubPackageAuthProvider, enclaveDb *enclave_db.EnclaveDB) *GitPackageContentProvider {
 	return &GitPackageContentProvider{
 		repositoriesDir:                 repositoriesDir,
 		repositoriesTmpDir:              tmpDir,
-		githubAuthTokenFile:             githubAuthTokenFile,
+		githubAuthProvider:              githubAuthProvider,
 		packageReplaceOptionsRepository: newPackageReplaceOptionsRepository(enclaveDb),
 	}
 }
@@ -74,7 +73,7 @@ func (provider *GitPackageContentProvider) ClonePackage(packageId string) (strin
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred parsing Git URL for package ID '%s'", packageId)
 	}
 
-	if interpretationError := provider.atomicClone(parsedURL); interpretationError != nil {
+	if interpretationError := provider.atomicClone(parsedURL, provider.getGitHubAuthToken(packageId)); interpretationError != nil {
 		return "", interpretationError
 	}
 
@@ -131,14 +130,15 @@ func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(absoluteLocator
 	}
 
 	// Check if the repo exists
-	// If the repo exists but the `pathToFileOnDisk` doesn't that means there's a mistake in the locator
+	// If the repo exists but the `pathToFileOnDisk` doesn't exist, the locator is invalid
 	if _, err := os.Stat(pathToPackageOnDisk); err == nil {
 		relativeFilePathWithoutPackageName := strings.Replace(parsedURL.GetRelativeFilePath(), parsedURL.GetRelativeRepoPath(), replacedWithEmptyString, onlyOneReplacement)
 		return "", startosis_errors.NewInterpretationError("'%v' doesn't exist in the package '%v'", relativeFilePathWithoutPackageName, parsedURL.GetRelativeRepoPath())
 	}
 
 	// Otherwise clone the repo and return the absolute path of the requested file
-	if interpretationError := provider.atomicClone(parsedURL); interpretationError != nil {
+	emptyPackageId := ""
+	if interpretationError := provider.atomicClone(parsedURL, provider.getGitHubAuthToken(emptyPackageId)); interpretationError != nil {
 		return "", interpretationError
 	}
 
@@ -147,17 +147,19 @@ func (provider *GitPackageContentProvider) getOnDiskAbsolutePath(absoluteLocator
 	}
 
 	// check whether kurtosis yaml exists in the path
-	maybeKurtosisYamlPath, interpretationError := getKurtosisYamlPathForFileUrl(pathToFileOnDisk, provider.repositoriesDir)
+	maybeKurtosisOrComposeYamlPath, interpretationError := getKurtosisOrComposeYamlPathForFile(pathToFileOnDisk, provider.repositoriesDir)
 	if interpretationError != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while verifying whether '%v' belongs to a Kurtosis package.", repositoryPathURL)
 	}
 
-	if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
-		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, repositoryPathURL, user_support_constants.HowImportWorksLink)
+	if maybeKurtosisOrComposeYamlPath == filePathToKurtosisOrComposeYamlNotFound {
+		return "", startosis_errors.NewInterpretationError("%v or valid Docker Compose yaml not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, repositoryPathURL, user_support_constants.HowImportWorksLink)
 	}
 
-	if _, interpretationError = validateAndGetKurtosisYaml(maybeKurtosisYamlPath, provider.repositoriesDir); interpretationError != nil {
-		return "", interpretationError
+	if containsKurtosisYaml(maybeKurtosisOrComposeYamlPath) {
+		if _, interpretationError = validateAndGetKurtosisYaml(maybeKurtosisOrComposeYamlPath, provider.repositoriesDir); interpretationError != nil {
+			return "", interpretationError
+		}
 	}
 
 	return pathToFileOnDisk, nil
@@ -169,13 +171,20 @@ func (provider *GitPackageContentProvider) GetModuleContents(absoluteLocator *st
 		return "", interpretationError
 	}
 
-	// Load the file content from its absolute path
-	contents, err := os.ReadFile(pathToFile)
-	if err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "Loading module content for module '%s' failed. An error occurred in reading contents of the file '%v'", absoluteLocator.GetLocator(), pathToFile)
+	// if pathToFile contains compose yaml, assume Docker Compose Package
+	if containsComposeYaml(pathToFile) {
+		contents, err := docker_compose_transpiler.TranspileDockerComposePackageToStarlark(filepath.Dir(pathToFile), filepath.Base(pathToFile))
+		if err != nil {
+			return "", startosis_errors.WrapWithInterpretationError(err, "Loading module content for module '%s' failed. An error occurred in transpiling the Docker Compose Package to Starlark at path '%v'", absoluteLocator.GetLocator(), pathToFile)
+		}
+		return contents, nil
+	} else {
+		contentsBytes, err := os.ReadFile(pathToFile)
+		if err != nil {
+			return "", startosis_errors.WrapWithInterpretationError(err, "Loading module content for module '%s' failed. An error occurred in reading contents of the file '%v'", absoluteLocator.GetLocator(), pathToFile)
+		}
+		return string(contentsBytes), nil
 	}
-
-	return string(contents), nil
 }
 
 func (provider *GitPackageContentProvider) GetOnDiskAbsolutePackagePath(packageId string) (string, *startosis_errors.InterpretationError) {
@@ -316,7 +325,7 @@ func (provider *GitPackageContentProvider) CloneReplacedPackagesIfNeeded(current
 
 // atomicClone This first clones to a temporary directory and then moves it into the package file system
 // TODO make this support versioning via tags, commit hashes or branches
-func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.ParsedGitURL) *startosis_errors.InterpretationError {
+func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.ParsedGitURL, githubAuthToken string) *startosis_errors.InterpretationError {
 	// First we clone into a temporary directory
 	tempRepoDirPath, err := os.MkdirTemp(provider.repositoriesTmpDir, temporaryRepoDirPattern)
 	if err != nil {
@@ -331,10 +340,6 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 	}
 
 	var githubAuth *http.BasicAuth
-	githubAuthToken, err := provider.getGitHubAuthToken()
-	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "An error occurred retrieving GitHub auth token.")
-	}
 	if githubAuthToken != "" {
 		githubAuth = &http.BasicAuth{
 			Username: "token",
@@ -435,16 +440,16 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 	return nil
 }
 
-// Returns empty string if no token found in [githubAuthTokenFile] or [githubAuthTokenFile] doesn't exist
-func (provider *GitPackageContentProvider) getGitHubAuthToken() (string, error) {
-	tokenBytes, err := os.ReadFile(provider.githubAuthTokenFile)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return "", nil
-		}
-		return "", stacktrace.Propagate(err, "An error occurred reading contents at '%v' to retrieve GitHub auth token.", provider.githubAuthTokenFile)
+// Returns empty string if no token found by [githubAuthProvider]
+// If packageId is empty string, only checks for and returns github token for the user if it exists
+func (provider *GitPackageContentProvider) getGitHubAuthToken(packageId string) string {
+	var githubAuthToken string
+	githubAuthToken = provider.githubAuthProvider.GetGitHubTokenForPackage(packageId)
+	if githubAuthToken != "" {
+		return githubAuthToken
 	}
-	return string(tokenBytes), nil
+	githubAuthToken = provider.githubAuthProvider.GetGitHubTokenForUser()
+	return githubAuthToken
 }
 
 // methods checks whether the root of the package is same as repository root
@@ -500,7 +505,7 @@ func validateAndGetKurtosisYaml(absPathToKurtosisYmlInThePackage string, package
 		return nil, startosis_errors.WrapWithInterpretationError(errWhileParsing, "Error occurred while parsing %v", absPathToKurtosisYmlInThePackage)
 	}
 
-	// this method validates whether the package name is also the locator - it should the location where kurtosis.yml exists
+	// this method validates whether the package name is also the locator - it should be the location where kurtosis.yml exists
 	if err := validatePackageNameMatchesKurtosisYamlLocation(kurtosisYaml, absPathToKurtosisYmlInThePackage, packageDir); err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating %v", absPathToKurtosisYmlInThePackage)
 	}
@@ -538,48 +543,68 @@ func validatePackageNameMatchesKurtosisYamlLocation(kurtosisYaml *yaml_parser.Ku
 // TODO: we should clean this up and have a dependency management system; all the dependencies should be stated kurtosis.yml upfront
 // TODO: this will simplify our validation process, and enable customers to use local packages like go.
 // TODO: in my opinion - we should eventually clone and validate the packages even before we start the interpretation process, maybe inside
-//
-//	api_container_service
-func getKurtosisYamlPathForFileUrl(absPathToFile string, packagesDir string) (string, *startosis_errors.InterpretationError) {
-	return getKurtosisYamlPathForFileUrlInternal(absPathToFile, packagesDir, os.Stat)
+// TODO: api_container_service
+func getKurtosisOrComposeYamlPathForFile(absPathToFile string, packagesDir string) (string, *startosis_errors.InterpretationError) {
+	return getKurtosisOrComposeYamlPathForFileUrlInternal(absPathToFile, packagesDir, os.Stat)
 }
 
-// This method walks along the path of the file and determines whether kurtosis.yml is found in any directory. If the path is found, it returns
-// the absolute path of kurtosis.yml, otherwise it returns an empty string when the kurtosis.yml is not found.
+// This method walks along the path of the file and determines whether kurtosis.yml or a valid compose.yml is found in any directory. If the path is found, it returns
+// the absolute path of the .yml, otherwise it returns an empty string when either kurtosis.yml or valid compose.yml not found.
 //
 // For example, the path to the file is /kurtosis-data/startosis-packages/some-repo/some-folder/some-file-to-be-read.star
 // This method will start the walk from some-repo, then go to some-folder and so on.
 // It will continue the search for kurtosis.yml until either kurtosis.yml is found or the path is fully transversed.
-func getKurtosisYamlPathForFileUrlInternal(absPathToFile string, packagesDir string, stat func(string) (os.FileInfo, error)) (string, *startosis_errors.InterpretationError) {
+func getKurtosisOrComposeYamlPathForFileUrlInternal(absPathToFile string, packagesDir string, stat func(string) (os.FileInfo, error)) (string, *startosis_errors.InterpretationError) {
 	// it will remove /kurtosis-data/startosis-package from absPathToFile and start the search from repo itself.
 	// we can be sure that kurtosis.yml will never be found in those folders.
 	beginSearchForKurtosisYamlFromRepo := strings.TrimPrefix(absPathToFile, packagesDir)
 	if beginSearchForKurtosisYamlFromRepo == absPathToFile {
-		return filePathToKurtosisYamlNotFound, startosis_errors.NewInterpretationError("Absolute path to file: %v must start with following prefix %v", absPathToFile, packagesDir)
+		return filePathToKurtosisOrComposeYamlNotFound, startosis_errors.NewInterpretationError("Absolute path to file: %v must start with following prefix %v", absPathToFile, packagesDir)
 	}
 
 	removeTrailingPathSeparator := strings.Trim(beginSearchForKurtosisYamlFromRepo, osPathSeparatorString)
 	dirs := strings.Split(removeTrailingPathSeparator, osPathSeparatorString)
 	logrus.Debugf("Found directories: %v", dirs)
 
+	var validYamlFilenames []string
+	validYamlFilenames = append(validYamlFilenames, startosis_constants.KurtosisYamlName)
+	validYamlFilenames = append(validYamlFilenames, docker_compose_transpiler.DefaultComposeFilenames...)
+
 	maybePackageRootPath := packagesDir
 	for _, dir := range dirs[:len(dirs)-1] {
 		maybePackageRootPath = path.Join(maybePackageRootPath, dir)
-		pathToKurtosisYaml := path.Join(maybePackageRootPath, startosis_constants.KurtosisYamlName)
-		if _, err := stat(pathToKurtosisYaml); err == nil {
-			logrus.Debugf("Found root path: %v", maybePackageRootPath)
-			// the method should return the absolute path to minimize the confusion
-			return pathToKurtosisYaml, nil
-		} else if !errors.Is(err, os.ErrNotExist) {
-			return filePathToKurtosisYamlNotFound, startosis_errors.WrapWithInterpretationError(err, "An error occurred while locating %v in the path of '%v'", startosis_constants.KurtosisYamlName, absPathToFile)
+		for _, validYamlFilename := range validYamlFilenames {
+			pathToYaml := path.Join(maybePackageRootPath, validYamlFilename)
+			if _, err := stat(pathToYaml); err == nil {
+				logrus.Debugf("Found root path: %v", maybePackageRootPath)
+				// the method should return the absolute path to minimize the confusion
+				return pathToYaml, nil
+			} else if !errors.Is(err, os.ErrNotExist) {
+				return filePathToKurtosisOrComposeYamlNotFound, startosis_errors.WrapWithInterpretationError(err, "An error occurred while locating %v in the path of '%v'", validYamlFilename, absPathToFile)
+			}
 		}
 	}
-	return filePathToKurtosisYamlNotFound, nil
+
+	return filePathToKurtosisOrComposeYamlNotFound, nil
 }
 
 func isLocalDependencyReplace(replace string) bool {
 	if strings.HasPrefix(replace, osPathSeparatorString) || strings.HasPrefix(replace, dotRelativePathIndicatorString) {
 		return true
+	}
+	return false
+}
+
+// Returns if kurtosisOrComposeYamlPath contains the kurtosis.yml substring
+func containsKurtosisYaml(kurtosisOrComposeYamlPath string) bool {
+	return strings.Contains(kurtosisOrComposeYamlPath, startosis_constants.KurtosisYamlName)
+}
+
+func containsComposeYaml(filepath string) bool {
+	for _, composeYaml := range docker_compose_transpiler.DefaultComposeFilenames {
+		if strings.Contains(filepath, composeYaml) {
+			return true
+		}
 	}
 	return false
 }

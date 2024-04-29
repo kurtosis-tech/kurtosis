@@ -78,6 +78,12 @@ message Port {
   string maybe_application_protocol = 3;
   // The wait timeout duration in string
   string maybe_wait_timeout = 4;
+
+  // this is useful in the cloud context; ignore in local
+  optional bool locked = 5;
+
+  // this is useful in the cloud context; ignore in local
+  optional string alias = 6;
 }
 
 message Container {
@@ -229,6 +235,9 @@ message RunStarlarkPackageArgs {
 
   // Defaults to false
   optional bool non_blocking_mode = 15;
+
+  // token that will be used to authenticate requests for this package
+  optional string github_auth_token = 16;
 }
 
 enum KurtosisFeatureFlag {

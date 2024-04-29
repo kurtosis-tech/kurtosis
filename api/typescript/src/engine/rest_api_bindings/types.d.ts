@@ -1358,6 +1358,8 @@ export interface components {
             image_download_mode?: components["schemas"]["ImageDownloadMode"];
             /** @description Defaults to false */
             non_blocking_mode?: boolean;
+            /** @description Defaults to empty */
+            github_auth_token?: string;
         };
         /**
          * @description 0 - NO_INSTRUCTIONS_CACHING

@@ -110,7 +110,7 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 					instructionWrapper.String(),
 					instructionWrapper.GetPositionInOriginalScript().String())
 			}
-			if enclavePlanInstructionPulledFromMaskMaybe != nil {
+			if enclavePlanInstructionPulledFromMaskMaybe != nil { // why is it that the mask is invalid if this is the case? and why not make this check before adding the instruction to the plan?
 				builtin.instructionPlanMask.MarkAsInvalid()
 				logrus.Debugf("Marking the plan as invalid as instruction '%s' differs from '%s'",
 					instructionWrapper.String(), enclavePlanInstructionPulledFromMaskMaybe.StarlarkCode)

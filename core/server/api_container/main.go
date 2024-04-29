@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"net"
 	"os"
 	"path"
@@ -111,25 +112,28 @@ func runMain() error {
 
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataVolumeDirpath)
 
-	filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the files artifact store")
-	}
-
 	clusterConfig := serverArgs.KurtosisBackendConfig
 	if clusterConfig == nil {
 		return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
 	}
 
-	enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase()
+	repositoriesDirPath, tempDirectoriesDirPath, githubAuthDirPath, enclaveDatabaseDirpath, err := enclaveDataDir.GetEnclaveDataDirectoryPaths()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting directory paths of the enclave data directory.")
+	}
+
+	enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase(enclaveDatabaseDirpath)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the enclave db")
 	}
 
-	gitPackageContentProvider, err := enclaveDataDir.GetGitPackageContentProvider(enclaveDb)
+	filesArtifactStore, err := enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating the Git module content provider")
+		return stacktrace.Propagate(err, "An error occurred getting the files artifact store")
 	}
+
+	githubAuthProvider := git_package_content_provider.NewGitHubPackageAuthProvider(githubAuthDirPath)
+	gitPackageContentProvider := git_package_content_provider.NewGitPackageContentProvider(repositoriesDirPath, tempDirectoriesDirPath, githubAuthProvider, enclaveDb)
 
 	// TODO Extract into own function
 	var kurtosisBackend backend_interface.KurtosisBackend
@@ -235,6 +239,7 @@ func runMain() error {
 		gitPackageContentProvider,
 		restartPolicy,
 		metricsClient,
+		githubAuthProvider,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")
