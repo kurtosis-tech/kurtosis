@@ -130,11 +130,11 @@ func CreateEnclaveManager(
 // is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-// If blank, will use the default
+	// If blank, will use the default
 	engineVersion string,
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-//If blank, will use a random one
+	//If blank, will use a random one
 	enclaveName string,
 	isProduction bool,
 	shouldAPICRunInDebugMode bool,
