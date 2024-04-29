@@ -698,8 +698,6 @@ func createStartServiceOperation(
 			memoryAllocationMegabytes,
 		).WithSkipAddingToBridgeNetworkIfStaticIpIsSet(
 			skipAddingUserServiceToBridgeNetwork,
-		).WithContainerInitEnabled(
-			true,
 		).WithVolumeMounts(
 			volumeMounts,
 		).WithLoggingDriver(
