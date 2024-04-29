@@ -21,7 +21,7 @@ def run(plan):
   file_artifacts = result.files_artifacts
   result2 = plan.run_sh(run="cat /temp/tech.txt", files={"/temp": file_artifacts[0]})
   plan.verify(result2.output, "==", "kurtosis\n")
-  result3 = plan.run_sh(run="cat /task/src/tech.txt", files={"/task": file_artifacts[1]})
+  result3 = plan.run_sh(run="cat /task/tech.txt", files={"/task": file_artifacts[1]})
   plan.verify(result3.output, "==", "kurtosis\n")
   result4 = plan.run_sh(run = "cat /task/example.txt", files={"/task": file_artifacts[2]})
   plan.verify(result4.output, "==", "example\n")
