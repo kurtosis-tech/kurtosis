@@ -3,7 +3,6 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"sort"
 	"strings"
 	"sync"
@@ -389,10 +388,9 @@ func (manager *EnclaveManager) getExistingAndHistoricalEnclaveIdentifiersWithout
 	return enclaveIdentifiersResult, nil
 }
 
-func (manager *EnclaveManager) restartAllEnclaveAPIContainers(ctx context.Context) error {
+func (manager *EnclaveManager) RestartAllEnclaveAPIContainers(ctx context.Context) error {
 
-
-	manager.kurtosisBackend.GetEnclaves()
+	logrus.Info("Restarting all API containers...")
 
 	getAPIContainersRunningFilters := &api_container.APIContainerFilters{
 		EnclaveIDs: nil,
@@ -411,7 +409,7 @@ func (manager *EnclaveManager) restartAllEnclaveAPIContainers(ctx context.Contex
 	}
 
 	if err := manager.destroyApiContainers(ctx, apiContainersToDestroyEnclaveUuids); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying API containers on enclave with UUIDs '%*v'", apiContainersToDestroyEnclaveUuids)
+		return stacktrace.Propagate(err, "An error occurred destroying API containers on enclave with UUIDs '%+v'", apiContainersToDestroyEnclaveUuids)
 	}
 
 	//TODO check if we should get this from the CLI commands probably is there a flag for it
@@ -420,25 +418,34 @@ func (manager *EnclaveManager) restartAllEnclaveAPIContainers(ctx context.Contex
 	//TODO check if we can get this one from any place, just using the default for now
 	restartAPIContainerDefaultLogLevel := logrus.DebugLevel
 
+	//TODO not using debug mode on restart so far
+	noDebugMode := false
+
 	for enclaveUuid, currentAPIContainer := range allAPIContainersRunning {
 
-		isProduction := false
-		if currentAPIContainer. == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
-			isProduction = true
-		}
-
-		manager.enclaveCreator.LaunchApiContainer(
+		_, err := manager.enclaveCreator.LaunchApiContainer(
 			ctx,
 			useDefaultApiContainerVersionTag,
 			restartAPIContainerDefaultLogLevel,
 			enclaveUuid,
 			apiContainerListenGrpcPortNumInsideNetwork,
 			manager.enclaveEnvVars,
-			manager.
+			currentAPIContainer.IsProductionEnclave(),
+			manager.metricsUserID,
+			manager.didUserAcceptSendingMetrics,
+			manager.isCI,
+			manager.cloudUserID,
+			manager.cloudInstanceID,
+			noDebugMode,
 		)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred launching the API container")
+		}
 	}
 
+	logrus.Info("...all API containers restarted.")
 
+	return nil
 }
 
 func (manager *EnclaveManager) destroyApiContainers(ctx context.Context, enclaveUuids map[enclave.EnclaveUUID]bool) error {

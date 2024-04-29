@@ -81,6 +81,9 @@ type engineExistenceGuarantor struct {
 
 	// token with git auth to override existing GitHub auth if there is any
 	githubAuthTokenOverride string
+
+	//TODO to complete
+	restartAPIContainers bool
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -98,7 +101,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	allowedCORSOrigins *[]string,
 	shouldRunInDebugMode bool,
 	githubAuthTokenOverride string,
-
+	restartAPIContainers bool,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -116,6 +119,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		allowedCORSOrigins,
 		shouldRunInDebugMode,
 		githubAuthTokenOverride,
+		restartAPIContainers,
 	)
 }
 
@@ -135,6 +139,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	allowedCORSOrigins *[]string,
 	shouldRunInDebugMode bool,
 	githubAuthTokenOverride string,
+	restartAPIContainers bool,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -154,6 +159,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		allowedCORSOrigins:                        allowedCORSOrigins,
 		shouldRunInDebugMode:                      shouldRunInDebugMode,
 		githubAuthTokenOverride:                   githubAuthTokenOverride,
+		restartAPIContainers:                      restartAPIContainers,
 	}
 }
 
@@ -212,6 +218,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.allowedCORSOrigins,
 			guarantor.shouldRunInDebugMode,
 			githubAuthToken,
+			guarantor.restartAPIContainers,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -231,6 +238,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.allowedCORSOrigins,
 			guarantor.shouldRunInDebugMode,
 			githubAuthToken,
+			guarantor.restartAPIContainers,
 		)
 	}
 	if engineLaunchErr != nil {

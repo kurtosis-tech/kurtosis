@@ -26,6 +26,9 @@ const (
 
 	defaultEngineVersion                   = ""
 	restartEngineOnSameVersionIfAnyRunning = false
+
+	defaultShouldRestartAPIContainers = "false"
+	restartAPIContainersFlagKey       = "restart-api-containers"
 )
 
 var RestartCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -70,6 +73,13 @@ var RestartCmd = &lowlevel.LowlevelKurtosisCommand{
 			Shorthand: "",
 			Type:      flags.FlagType_String,
 			Default:   defaults.DefaultGitHubAuthTokenOverride,
+		},
+		{
+			Key:       restartAPIContainersFlagKey,
+			Usage:     "", //TODO completar
+			Shorthand: "",
+			Type:      flags.FlagType_Bool,
+			Default:   defaultShouldRestartAPIContainers,
 		},
 	},
 	PreValidationAndRunFunc:  nil,
@@ -127,9 +137,14 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		shouldStartInDebugMode = true
 	}
 
+	shouldRestartAPIContainers, err := flags.GetBool(restartAPIContainersFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", restartAPIContainersFlagKey)
+	}
+
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}

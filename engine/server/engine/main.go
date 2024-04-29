@@ -291,6 +291,12 @@ func runMain() error {
 		}
 	}()
 
+	if serverArgs.RestartAPIContainers {
+		if err := enclaveManager.RestartAllEnclaveAPIContainers(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred restarting all API containers.")
+		}
+	}
+
 	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
 	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
