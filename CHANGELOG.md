@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.89.0](https://github.com/kurtosis-tech/kurtosis/compare/0.88.19...0.89.0) (2024-04-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* copy contents of directory instead of the directory if store is used for directories ([#2326](https://github.com/kurtosis-tech/kurtosis/issues/2326))
+
+### Bug Fixes
+
+* copy contents of directory instead of the directory if store is used for directories ([#2326](https://github.com/kurtosis-tech/kurtosis/issues/2326)) ([4c776be](https://github.com/kurtosis-tech/kurtosis/commit/4c776be01c169af8cf11623f5c441fbad3a021e9)), closes [#2227](https://github.com/kurtosis-tech/kurtosis/issues/2227)
+
+## [0.88.19](https://github.com/kurtosis-tech/kurtosis/compare/0.88.18...0.88.19) (2024-04-25)
+
+
+### Features
+
+* adding the enclave-db inside the enclave's volume ([#2399](https://github.com/kurtosis-tech/kurtosis/issues/2399)) ([75805ef](https://github.com/kurtosis-tech/kurtosis/commit/75805efd4b6917c71d2e1aa6b55484a5f453397a))
+* set service v0 ([#2372](https://github.com/kurtosis-tech/kurtosis/issues/2372)) ([7056164](https://github.com/kurtosis-tech/kurtosis/commit/7056164c446c428f33d7d6c8cbfd7ed641b54583))
+
+
+### Bug Fixes
+
+* typo in clean -a docs ([#2402](https://github.com/kurtosis-tech/kurtosis/issues/2402)) ([136ec4c](https://github.com/kurtosis-tech/kurtosis/commit/136ec4c384a5458b3c1758791126ff34fd5a79b7))
+
 ## [0.88.18](https://github.com/kurtosis-tech/kurtosis/compare/0.88.17...0.88.18) (2024-04-22)
 
 
