@@ -82,7 +82,7 @@ type engineExistenceGuarantor struct {
 	// token with git auth to override existing GitHub auth if there is any
 	githubAuthTokenOverride string
 
-	//TODO to complete
+	// To restart the current API containers after the engine has been restarted
 	restartAPIContainers bool
 }
 

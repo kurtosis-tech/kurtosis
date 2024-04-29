@@ -77,7 +77,7 @@ var StartCmd = &lowlevel.LowlevelKurtosisCommand{
 		},
 		{
 			Key:       restartAPIContainersFlagKey,
-			Usage:     "", //TODO completar
+			Usage:     "Restart the current API containers after starting the Kurtosis engine.",
 			Shorthand: "",
 			Type:      flags.FlagType_Bool,
 			Default:   defaultShouldRestartAPIContainers,

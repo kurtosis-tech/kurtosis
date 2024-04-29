@@ -62,7 +62,7 @@ type EngineServerArgs struct {
 	// List of allowed origins to validate CORS requests on the REST API. If undefined, defaults to '*' (any origin).
 	AllowedCORSOrigins *[]string `json:"allowed_cors_origins,omitempty"`
 
-	// TODO put a comment
+	// To restart the current API containers after the engine has been restarted
 	RestartAPIContainers bool `json:"restart_api_containers"`
 }
 

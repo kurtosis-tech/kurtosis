@@ -130,11 +130,11 @@ func CreateEnclaveManager(
 // is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-	// If blank, will use the default
+// If blank, will use the default
 	engineVersion string,
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-	//If blank, will use a random one
+//If blank, will use a random one
 	enclaveName string,
 	isProduction bool,
 	shouldAPICRunInDebugMode bool,
@@ -412,13 +412,12 @@ func (manager *EnclaveManager) RestartAllEnclaveAPIContainers(ctx context.Contex
 		return stacktrace.Propagate(err, "An error occurred destroying API containers on enclave with UUIDs '%+v'", apiContainersToDestroyEnclaveUuids)
 	}
 
-	//TODO check if we should get this from the CLI commands probably is there a flag for it
+	// this way we are going to use always the same engine's version
 	useDefaultApiContainerVersionTag := ""
 
 	//TODO check if we can get this one from any place, just using the default for now
 	restartAPIContainerDefaultLogLevel := logrus.DebugLevel
 
-	//TODO not using debug mode on restart so far
 	noDebugMode := false
 
 	for enclaveUuid, currentAPIContainer := range allAPIContainersRunning {
