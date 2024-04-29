@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.89.0](https://github.com/kurtosis-tech/kurtosis/compare/0.88.19...0.89.0) (2024-04-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* copy contents of directory instead of the directory if store is used for directories ([#2326](https://github.com/kurtosis-tech/kurtosis/issues/2326))
+
+### Bug Fixes
+
+* copy contents of directory instead of the directory if store is used for directories ([#2326](https://github.com/kurtosis-tech/kurtosis/issues/2326)) ([4c776be](https://github.com/kurtosis-tech/kurtosis/commit/4c776be01c169af8cf11623f5c441fbad3a021e9)), closes [#2227](https://github.com/kurtosis-tech/kurtosis/issues/2227)
+
 ## [0.88.19](https://github.com/kurtosis-tech/kurtosis/compare/0.88.18...0.88.19) (2024-04-25)
 
 
