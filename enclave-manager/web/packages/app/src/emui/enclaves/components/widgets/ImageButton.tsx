@@ -81,7 +81,7 @@ function deserializeParams(serializedParams: string): Record<string, string> {
     }
   } catch (error) {
     console.error("Error deserializing params:", error);
-    return {}; // Return empty object on error
+    return {};
   }
 }
 
@@ -96,9 +96,8 @@ export type SetImageModalProps = {
 export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, enclave }: SetImageModalProps) => {
   const { runStarlarkScript } = useEnclavesContext(); // Assuming this is defined elsewhere
   const [error, setError] = useState<string | null>(null);
-
   const [newImage, setNewImage] = useState("");
-  const navigator = useNavigate(); // Assuming you're using React Router's useNavigate
+  const navigator = useNavigate();
 
   const handleSetImageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
