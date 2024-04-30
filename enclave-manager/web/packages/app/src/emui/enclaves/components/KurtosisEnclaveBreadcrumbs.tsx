@@ -85,8 +85,9 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
       starlarkRunsByEnclave,
       servicesByEnclave,
       starlarkRunningInEnclaves,
-      enclaveInitialSubmissionData
-  ]);
+      enclaveInitialSubmissionData,
+    ],
+  );
 
   return <KurtosisBreadcrumbsImpl matchCrumbs={matchCrumbs} extraControls={extraControls} />;
 };

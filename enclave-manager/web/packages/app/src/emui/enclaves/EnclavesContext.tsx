@@ -366,15 +366,7 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
       starlarkRun,
       initialSubmissionData,
     });
-  }, [
-    enclaveUUID,
-    enclaves,
-    enclave,
-    services,
-    filesAndArtifacts,
-    starlarkRun,
-    initialSubmissionData,
-  ]);
+  }, [enclaveUUID, enclaves, enclave, services, filesAndArtifacts, starlarkRun, initialSubmissionData]);
 
   useEffect(() => {
     if (isDefined(enclave) && !isDefined(services)) {
