@@ -25,7 +25,6 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
     starlarkRunsByEnclave,
     servicesByEnclave,
     starlarkRunningInEnclaves,
-    enclaveInitialSubmissionData,
   } = useEnclavesContext();
 
   const matchCrumbs = useMemo(
@@ -39,7 +38,6 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
               starlarkRunsByEnclave,
               servicesByEnclave,
               starlarkRunningInEnclaves,
-              enclaveInitialSubmissionData,
             },
             match.params,
           );
@@ -54,7 +52,6 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
       starlarkRunsByEnclave,
       servicesByEnclave,
       starlarkRunningInEnclaves,
-      enclaveInitialSubmissionData,
     ],
   );
 
@@ -70,7 +67,6 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
                   starlarkRunsByEnclave,
                   servicesByEnclave,
                   starlarkRunningInEnclaves,
-                  enclaveInitialSubmissionData,
                 },
                 match.params,
               )
@@ -85,7 +81,6 @@ export const KurtosisEnclavesBreadcrumbs = ({ matches }: KurtosisEnclavesBreadcr
       starlarkRunsByEnclave,
       servicesByEnclave,
       starlarkRunningInEnclaves,
-      enclaveInitialSubmissionData,
     ],
   );
 

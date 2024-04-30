@@ -115,7 +115,7 @@ func NewApiContainerService(
 	metricsClient metrics_client.MetricsClient,
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider,
 ) (*ApiContainerService, error) {
-	emptyInitialSerializedParams := emptySerializedParams
+	var emptyInitialSerializedParams *string
 	service := &ApiContainerService{
 		filesArtifactStore:     filesArtifactStore,
 		serviceNetwork:         serviceNetwork,
@@ -132,7 +132,7 @@ func NewApiContainerService(
 			MainFunctionName:        "",
 			ExperimentalFeatures:    []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
 			RestartPolicy:           kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
-			InitialSerializedParams: &emptyInitialSerializedParams,
+			InitialSerializedParams: emptyInitialSerializedParams,
 		},
 		metricsClient:      metricsClient,
 		githubAuthProvider: githubAuthProvider,
@@ -185,7 +185,8 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		ExperimentalFeatures:   experimentalFeatures,
 		RestartPolicy:          apicService.restartPolicy,
 	}
-	if apicService.starlarkRun.InitialSerializedParams != nil && *apicService.starlarkRun.InitialSerializedParams == emptySerializedParams {
+	if apicService.starlarkRun.InitialSerializedParams == nil || *apicService.starlarkRun.InitialSerializedParams == "" {
+		logrus.Infof("updating initial params with: %v", serializedParams)
 		apicService.starlarkRun.InitialSerializedParams = &serializedParams
 	}
 
@@ -613,6 +614,7 @@ func (apicService *ApiContainerService) ListFilesArtifactNamesAndUuids(_ context
 }
 
 func (apicService *ApiContainerService) GetStarlarkRun(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
+	logrus.Infof("initiali serialized params %v", apicService.starlarkRun.InitialSerializedParams)
 	return apicService.starlarkRun, nil
 }
 

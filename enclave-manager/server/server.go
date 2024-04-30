@@ -679,6 +679,7 @@ func (c *WebServer) GetStarlarkRun(
 	if err != nil {
 		return nil, err
 	}
+	logrus.Infof("initial serialized params %v", result.Msg.InitialSerializedParams)
 	resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse]{
 		Msg: &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 			PackageId:               result.Msg.PackageId,

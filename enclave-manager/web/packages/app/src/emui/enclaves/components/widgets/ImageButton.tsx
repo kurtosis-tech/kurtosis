@@ -111,19 +111,22 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
 
     const packageId = starlarkRun.value.packageId;
 
-    if (!starlarkRun.value.initialSerializedParams) {
-      setError("Error: No initial params found on Starlark Run.");
-      return;
+    let argsRecord;
+    if (starlarkRun.value.initialSerializedParams) {
+      console.log(`initial serialized params: ${starlarkRun.value.initialSerializedParams}`)
+      argsRecord = deserializeParams(starlarkRun.value.initialSerializedParams);
+    } else {
+      console.log(`serialized params: ${starlarkRun.value.initialSerializedParams}`)
+      argsRecord = deserializeParams(starlarkRun.value.serializedParams);
     }
-    const initialArgsRecord = deserializeParams(starlarkRun.value.initialSerializedParams);
-    const initialArgs = objectToStarlark(initialArgsRecord, 8);
-    console.log(`initial args used to start package:\n${initialArgs}`);
+    const args = objectToStarlark(argsRecord, 8);
+    console.log(`initial args used to start package:\n${args}`);
 
     const updateImageStarlarkScript = `
 package = import_module("${packageId}/main.star")
 
 def run(plan, args):
-  package.run(plan, **${initialArgs})
+  package.run(plan, **${args})
   
   plan.set_service(name="${serviceName}", config=ServiceConfig(image="${newImage}"))`;
     console.log(`starlark script to service ${serviceName} to image ${newImage}\n${updateImageStarlarkScript}`);
