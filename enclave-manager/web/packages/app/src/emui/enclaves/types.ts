@@ -12,5 +12,4 @@ export type EnclaveFullInfo = RemoveFunctions<EnclaveInfo> & {
   services?: Result<RemoveFunctions<GetServicesResponse>, string>;
   filesAndArtifacts?: Result<RemoveFunctions<ListFilesArtifactNamesAndUuidsResponse>, string>;
   initialSubmissionData?: Record<string, any>;
-  initialPackageId?: string;
 };

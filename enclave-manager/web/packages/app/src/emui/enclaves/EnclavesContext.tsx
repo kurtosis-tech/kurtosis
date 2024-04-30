@@ -29,7 +29,6 @@ export type EnclavesState = {
   starlarkRunsByEnclave: Record<string, Result<GetStarlarkRunResponse, string>>;
   starlarkRunningInEnclaves: RemoveFunctions<EnclaveInfo>[];
   enclaveInitialSubmissionData: Record<string, Record<string, any>>;
-  enclaveInitialPackageId: Record<string, string>;
 
   // Methods
   refreshEnclaves: () => Promise<Result<RemoveFunctions<EnclaveInfo>[], string>>;
@@ -89,7 +88,6 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
     starlarkRunsByEnclave: {},
     starlarkRunningInEnclaves: [],
     enclaveInitialSubmissionData: {},
-    enclaveInitialPackageId: {},
   });
   const kurtosisClient = useKurtosisClient();
 
@@ -255,10 +253,6 @@ export const EnclavesContextProvider = ({ skipInitialLoad, children }: EnclavesC
         ...state,
         enclaveInitialSubmissionData: { ...state.enclaveInitialSubmissionData, [enclave.shortenedUuid]: args },
       }));
-      setState((state) => ({
-        ...state,
-        enclaveInitialPackageId: { ...state.enclaveInitialPackageId, [enclave.shortenedUuid]: packageId },
-      }));
       assertDefined(enclave.apiContainerInfo, `apic info not defined in enclave ${enclave.name}`);
       const resp = await kurtosisClient.runStarlarkPackage(enclave.apiContainerInfo, packageId, args, dryRun);
       return resp;
@@ -344,7 +338,6 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
     filesAndArtifactsByEnclave,
     starlarkRunsByEnclave,
     enclaveInitialSubmissionData,
-    enclaveInitialPackageId,
     refreshServices,
     refreshStarlarkRun,
     refreshFilesAndArtifacts,
@@ -356,7 +349,6 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
   const filesAndArtifacts = filesAndArtifactsByEnclave[enclaveUUID];
   const starlarkRun = starlarkRunsByEnclave[enclaveUUID];
   const initialSubmissionData = enclaveInitialSubmissionData[enclaveUUID];
-  const initialPackageId = enclaveInitialPackageId[enclaveUUID];
 
   const result = useMemo<Result<EnclaveFullInfo, string>>(() => {
     if (!isDefined(enclave)) {
@@ -373,7 +365,6 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
       filesAndArtifacts,
       starlarkRun,
       initialSubmissionData,
-      initialPackageId,
     });
   }, [
     enclaveUUID,
@@ -383,7 +374,6 @@ export const useFullEnclave = (enclaveUUID: string): Result<EnclaveFullInfo, str
     filesAndArtifacts,
     starlarkRun,
     initialSubmissionData,
-    initialPackageId,
   ]);
 
   useEffect(() => {
@@ -414,7 +404,6 @@ export const useFullEnclaves = (): Result<EnclaveFullInfo[], string> => {
     filesAndArtifactsByEnclave,
     starlarkRunsByEnclave,
     enclaveInitialSubmissionData,
-    enclaveInitialPackageId,
     refreshServices,
     refreshStarlarkRun,
     refreshFilesAndArtifacts,
@@ -474,7 +463,6 @@ export const useFullEnclaves = (): Result<EnclaveFullInfo[], string> => {
           filesAndArtifacts: cachedFilesAndArtifactsByEnclave[enclave.shortenedUuid],
           starlarkRun: cachedStarlarkRunsByEnclave[enclave.shortenedUuid],
           initialSubmissionData: enclaveInitialSubmissionData[enclave.shortenedUuid],
-          initialPackageId: enclaveInitialPackageId[enclave.shortenedUuid],
         })),
       ),
     [
@@ -483,7 +471,6 @@ export const useFullEnclaves = (): Result<EnclaveFullInfo[], string> => {
       cachedStarlarkRunsByEnclave,
       cachedFilesAndArtifactsByEnclave,
       enclaveInitialSubmissionData,
-      enclaveInitialPackageId,
     ],
   );
 

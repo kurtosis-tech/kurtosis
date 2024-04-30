@@ -27,16 +27,18 @@ type EnclaveTableRow = {
 };
 
 const enclaveToRow = (enclave: EnclaveFullInfo, catalog?: Result<GetPackagesResponse, string>): EnclaveTableRow => {
+    const starlarkRun = enclave.starlarkRun;
   return {
     uuid: enclave.shortenedUuid,
     name: enclave.name,
     status: enclave.containersStatus,
     created: enclave.creationTime ? DateTime.fromJSDate(enclave.creationTime.toDate()) : null,
-    source: !isDefined(catalog)
-      ? "loading"
-      : catalog.isOk
-      ? catalog.value.packages.find((kurtosisPackage) => kurtosisPackage.name === enclave.initialPackageId) || null
-      : null,
+  source:
+      !isDefined(starlarkRun) || !isDefined(catalog)
+          ? "loading"
+          : starlarkRun.isOk && catalog.isOk
+              ? catalog.value.packages.find((kurtosisPackage) => kurtosisPackage.name === starlarkRun.value.packageId) || null
+              : null,
     services: !isDefined(enclave.services)
       ? "loading"
       : enclave.services.isOk

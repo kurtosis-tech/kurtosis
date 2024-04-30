@@ -87,14 +87,9 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
       return;
     }
 
-    if (!enclave.initialPackageId) {
-      setError("Error: No package id found that was run in this enclave.");
-      return;
-    }
-    const packageId = enclave.initialPackageId;
+    const packageId = starlarkRun.value.packageId;
 
     const initialArgs = objectToStarlark(enclave.initialSubmissionData, 8);
-    console.log(enclave.initialSubmissionData);
     console.log(`initial args used to start package:\n${initialArgs}`);
 
     const updateImageStarlarkScript = `
