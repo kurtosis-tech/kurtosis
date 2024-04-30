@@ -75,6 +75,7 @@ const (
 	isNotScript              = false
 	isNotRemote              = false
 	defaultParallelism       = 4
+	emptySerializedParams    = ""
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -114,6 +115,7 @@ func NewApiContainerService(
 	metricsClient metrics_client.MetricsClient,
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider,
 ) (*ApiContainerService, error) {
+	emptyInitialSerializedParams := emptySerializedParams
 	service := &ApiContainerService{
 		filesArtifactStore:     filesArtifactStore,
 		serviceNetwork:         serviceNetwork,
@@ -122,14 +124,15 @@ func NewApiContainerService(
 		packageContentProvider: startosisModuleContentProvider,
 		restartPolicy:          restartPolicy,
 		starlarkRun: &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-			PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
-			SerializedScript:       "",
-			SerializedParams:       "",
-			Parallelism:            defaultParallelism,
-			RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-			MainFunctionName:       "",
-			ExperimentalFeatures:   []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
-			RestartPolicy:          kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
+			PackageId:               startosis_constants.PackageIdPlaceholderForStandaloneScript,
+			SerializedScript:        "",
+			SerializedParams:        "",
+			Parallelism:             defaultParallelism,
+			RelativePathToMainFile:  startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+			MainFunctionName:        "",
+			ExperimentalFeatures:    []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
+			RestartPolicy:           kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
+			InitialSerializedParams: &emptyInitialSerializedParams,
 		},
 		metricsClient:      metricsClient,
 		githubAuthProvider: githubAuthProvider,
@@ -181,6 +184,9 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		MainFunctionName:       mainFuncName,
 		ExperimentalFeatures:   experimentalFeatures,
 		RestartPolicy:          apicService.restartPolicy,
+	}
+	if apicService.starlarkRun.InitialSerializedParams != nil && *apicService.starlarkRun.InitialSerializedParams == emptySerializedParams {
+		apicService.starlarkRun.InitialSerializedParams = &serializedParams
 	}
 
 	return nil
@@ -324,6 +330,9 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		MainFunctionName:       mainFuncName,
 		ExperimentalFeatures:   args.ExperimentalFeatures,
 		RestartPolicy:          apicService.restartPolicy,
+	}
+	if apicService.starlarkRun.InitialSerializedParams != nil && *apicService.starlarkRun.InitialSerializedParams == emptySerializedParams {
+		apicService.starlarkRun.InitialSerializedParams = &serializedParams
 	}
 	return nil
 }
