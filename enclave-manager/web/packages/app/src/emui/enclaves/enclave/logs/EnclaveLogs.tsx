@@ -217,6 +217,7 @@ export const EnclaveLogs = () => {
               enclaveUUID={enclave.enclaveUuid}
               enclaveShortUUID={enclave.shortenedUuid}
               servicesResponse={enclave.services.value}
+              enclave={enclave}
             />
           </TitledBox>
         )}

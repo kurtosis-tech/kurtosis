@@ -1,6 +1,6 @@
 import * as jspb from 'google-protobuf'
 
-import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 
 
 export class Port extends jspb.Message {
@@ -1447,6 +1447,11 @@ export class GetStarlarkRunResponse extends jspb.Message {
   getRestartPolicy(): RestartPolicy;
   setRestartPolicy(value: RestartPolicy): GetStarlarkRunResponse;
 
+  getInitialSerializedParams(): string;
+  setInitialSerializedParams(value: string): GetStarlarkRunResponse;
+  hasInitialSerializedParams(): boolean;
+  clearInitialSerializedParams(): GetStarlarkRunResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetStarlarkRunResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetStarlarkRunResponse): GetStarlarkRunResponse.AsObject;
@@ -1465,6 +1470,12 @@ export namespace GetStarlarkRunResponse {
     mainFunctionName: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
     restartPolicy: RestartPolicy,
+    initialSerializedParams?: string,
+  }
+
+  export enum InitialSerializedParamsCase { 
+    _INITIAL_SERIALIZED_PARAMS_NOT_SET = 0,
+    INITIAL_SERIALIZED_PARAMS = 9,
   }
 }
 
