@@ -446,12 +446,7 @@ export const useFullEnclaves = (): Result<EnclaveFullInfo[], string> => {
           starlarkRun: cachedStarlarkRunsByEnclave[enclave.shortenedUuid],
         })),
       ),
-    [
-      enclaves,
-      cachedServicesByEnclave,
-      cachedStarlarkRunsByEnclave,
-      cachedFilesAndArtifactsByEnclave,
-    ],
+    [enclaves, cachedServicesByEnclave, cachedStarlarkRunsByEnclave, cachedFilesAndArtifactsByEnclave],
   );
 
   return fullEnclaves;
