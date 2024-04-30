@@ -136,7 +136,6 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	//     - if it's not successful, then the mask is not compatible with the package. Go back to step 1
 	var firstPossibleIndexForMatchingInstruction int
 	if currentEnclavePlan.Size() > naiveInstructionsPlan.Size() {
-
 		firstPossibleIndexForMatchingInstruction = currentEnclavePlan.Size() - naiveInstructionsPlan.Size()
 	}
 	for {
@@ -149,7 +148,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 		if matchingInstructionIdx >= 0 {
 			logrus.Debugf("Found an instruction in enclave state at index %d which matches the first instruction of the new instructions plan", matchingInstructionIdx)
 			// we found a match
-			// -> First recopy store that index into the plan so that all instructions prior to this match will be
+			// -> First store that index into the plan so that all instructions prior to this match will be
 			// kept in the enclave plan
 			logrus.Debugf("Stored index of matching instructions: %d into the new plan. The instructions prior to this index in the enclave plan won't be executed but need to be kept in the enclave plan", matchingInstructionIdx)
 			optimizedPlan.SetIndexOfFirstInstruction(matchingInstructionIdx)

@@ -2,20 +2,26 @@ package shared_helpers
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/verify"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"reflect"
 	"time"
 )
 
 const (
 	bufferedChannelSize = 2
 	starlarkThreadName  = "starlark-value-serde-for-test-thread"
+	configArgName       = "config"
 )
 
 func NewDummyStarlarkValueSerDeForTest() *kurtosis_types.StarlarkValueSerde {
@@ -146,4 +152,36 @@ func executeServiceAssertionWithRecipeWithTicker(
 			return lastResult, tries, nil
 		}
 	}
+}
+
+func ValidateAndConvertConfigAndReadyCondition(
+	serviceNetwork service_network.ServiceNetwork,
+	rawConfig starlark.Value,
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string,
+	packageId string,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string,
+	imageDownloadMode image_download_mode.ImageDownloadMode,
+) (*service.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
+	config, ok := rawConfig.(*service_config.ServiceConfig)
+	if !ok {
+		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", configArgName, reflect.TypeOf(rawConfig))
+	}
+	apiServiceConfig, interpretationErr := config.ToKurtosisType(
+		serviceNetwork,
+		locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+		packageId,
+		packageContentProvider,
+		packageReplaceOptions,
+		imageDownloadMode)
+	if interpretationErr != nil {
+		return nil, nil, interpretationErr
+	}
+
+	readyCondition, interpretationErr := config.GetReadyCondition()
+	if interpretationErr != nil {
+		return nil, nil, interpretationErr
+	}
+
+	return apiServiceConfig, readyCondition, nil
 }

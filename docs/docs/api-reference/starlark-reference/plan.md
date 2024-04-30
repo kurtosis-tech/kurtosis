@@ -128,7 +128,7 @@ service = plan.get_service(
 get_services
 -----------
 
-The `get_services` instruction allows you to get the [Service][service-starlark-reference] objects of running services in an enclave. This is 
+The `get_services` instruction allows retrieving the [Service][service-starlark-reference] objects of running services in an enclave. This is 
 useful in situations where you are running Starlark against an existing enclave or need information about the services that an imported package started.
 
 ```python
@@ -144,6 +144,53 @@ for service in services:
   plan.print(service.hostname)
   plan.print(service.ip_address)
 ```
+
+set_service
+-----------
+
+`set_service` instruction allows overriding the [ServiceConfig][service-config] of a service that exists in the plan. This is useful especially in cases where you are
+importing a package published by somebody else, but you want to modify aspects of it. For example, if you want to change the image that a service
+started by the imported package is using, but the package author has not parameterized the service image via the `run` function, you can use `set_service` to change the image!
+
+```python
+# Returns a Service object (see the Service page in the sidebar)
+plan.set_service(
+  # The name of the service to set the config of
+  # MANDATORY
+  name = "my-service",
+
+  # A ServiceConfig object populated with fields to override the existing ServiceConfig object with
+  # OPTIONAL (Default: Fetching service 'SERVICE_NAME')
+  config = ServiceConfig(...),
+  
+  # A human friendly description for the end user of the package
+  # OPTIONAL (Default: Set service on service "my-service")
+  description = "Setting new image on my-service"
+)
+```
+Example usage:
+```python
+# Postgres package starts a pg db off image "postgres:latest"
+postgres = import_module("github.com/kurtosis-tech/postgres-package/main.star")
+
+def run(plan, args):
+    postgres.run(plan)
+    
+    # Set service detects the "postgres" service in the plan and 
+    # Overrides the ServiceConfig set in the `add_service` instruction of postgres package to use the new image value
+    plan.set_service(
+      name="postgres", 
+      config=ServiceConfig( 
+        image=ImageBuildSpec( 
+          image_name="my-pg-db", # use my custom db instead!
+          build_context_dir="./database"
+        )
+      ) 
+    )
+```
+Note: currently, setting the ServiceConfig image, user, labels, tolerations, and resource allocation values are supported.
+Overriding the ports, env vars, cmd/entrypoint args, and files are not supported. If this is something you'd like support for please let us know on [GitHub](https://github.com/kurtosis-tech/kurtosis/issues)!
+
 get_files_artifact
 -----------
 

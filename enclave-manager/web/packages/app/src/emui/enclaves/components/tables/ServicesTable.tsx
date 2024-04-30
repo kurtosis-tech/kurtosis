@@ -4,6 +4,7 @@ import { GetServicesResponse, ServiceInfo, ServiceStatus } from "enclave-manager
 import { DataTable, RemoveFunctions } from "kurtosis-ui-components";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { EnclaveFullInfo } from "../../types";
 import { ImageButton } from "../widgets/ImageButton";
 import { PortsSummary } from "../widgets/PortsSummary";
 import { ServiceStatusTag } from "../widgets/ServiceStatus";
@@ -40,9 +41,10 @@ type ServicesTableProps = {
   enclaveUUID: string;
   enclaveShortUUID: string;
   servicesResponse: RemoveFunctions<GetServicesResponse>;
+  enclave: RemoveFunctions<EnclaveFullInfo>;
 };
 
-export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse }: ServicesTableProps) => {
+export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse, enclave }: ServicesTableProps) => {
   const services = Object.values(servicesResponse.serviceInfo).map((service) => serviceToRow(enclaveUUID, service));
 
   const columns = useMemo<ColumnDef<ServicesTableRow, any>[]>(
@@ -63,7 +65,9 @@ export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse 
       }),
       columnHelper.accessor("image", {
         header: "Image",
-        cell: (imageCell) => <ImageButton image={imageCell.getValue()} />,
+        cell: (imageCell) => (
+          <ImageButton image={imageCell.getValue()} serviceName={imageCell.row.original.name} enclave={enclave} />
+        ),
       }),
       columnHelper.accessor("ports", {
         header: "Ports",
@@ -82,7 +86,7 @@ export const ServicesTable = ({ enclaveUUID, enclaveShortUUID, servicesResponse 
         enableSorting: false,
       }),
     ],
-    [enclaveShortUUID],
+    [enclaveShortUUID, enclave],
   );
 
   return <DataTable columns={columns} data={services} defaultSorting={[{ id: "name", desc: true }]} />;

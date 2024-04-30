@@ -2,7 +2,6 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 	"time"
 
@@ -200,13 +199,9 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 			}
 
 			if containerType == label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString() {
-				envVars := container.GetEnvVars()
-				serializedArgsValue, found := envVars[serializedArgs]
-				if found {
-					productionMode, err = getProductionModeFromEnvVars(serializedArgsValue)
-					if err != nil {
-						return nil, stacktrace.Propagate(err, "Error occurred while parsing env vars from api container for %v", enclaveName)
-					}
+				productionMode, err = getProductionMode(container)
+				if err != nil {
+					return nil, stacktrace.Propagate(err, "Error occurred while getting production mode from api container for %v", enclaveName)
 				}
 				break
 			}
@@ -851,19 +846,4 @@ func getEnclaveNameFromNetwork(network *types.Network) string {
 	}
 
 	return enclaveNameStr
-}
-
-func getProductionModeFromEnvVars(serializedParamsStr string) (bool, error) {
-	type Args struct {
-		IsProductionEnclave bool `json:"isProductionEnclave"`
-	}
-
-	var args Args
-	paramsJsonBytes := []byte(serializedParamsStr)
-	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred deserializing the args JSON '%v'", serializedParamsStr)
-	}
-
-	return args.IsProductionEnclave, nil
-
 }

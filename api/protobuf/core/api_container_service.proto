@@ -578,6 +578,9 @@ message GetStarlarkRunResponse {
   repeated KurtosisFeatureFlag experimental_features = 7;
 
   RestartPolicy restart_policy = 8;
+
+  // The params that were used on for the very first Starlark run in an APIC
+  optional string initial_serialized_params = 9;
 }
 
 // ==============================================================================================

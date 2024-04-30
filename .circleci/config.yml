@@ -821,6 +821,9 @@ jobs:
           command: yarn cypress:ete
           working_directory: enclave-manager/web
 
+      - store_artifacts:
+          path: /home/circleci/project/enclave-manager/web/cypress/screenshots
+
   test_basic_cli_functionality:
     executor: ubuntu_vm
     parameters:

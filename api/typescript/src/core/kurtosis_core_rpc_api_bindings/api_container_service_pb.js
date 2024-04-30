@@ -10348,7 +10348,8 @@ proto.api_container_api.GetStarlarkRunResponse.toObject = function(includeInstan
     relativePathToMainFile: jspb.Message.getFieldWithDefault(msg, 5, ""),
     mainFunctionName: jspb.Message.getFieldWithDefault(msg, 6, ""),
     experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f,
-    restartPolicy: jspb.Message.getFieldWithDefault(msg, 8, 0)
+    restartPolicy: jspb.Message.getFieldWithDefault(msg, 8, 0),
+    initialSerializedParams: jspb.Message.getFieldWithDefault(msg, 9, "")
   };
 
   if (includeInstance) {
@@ -10418,6 +10419,10 @@ proto.api_container_api.GetStarlarkRunResponse.deserializeBinaryFromReader = fun
     case 8:
       var value = /** @type {!proto.api_container_api.RestartPolicy} */ (reader.readEnum());
       msg.setRestartPolicy(value);
+      break;
+    case 9:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setInitialSerializedParams(value);
       break;
     default:
       reader.skipField();
@@ -10501,6 +10506,13 @@ proto.api_container_api.GetStarlarkRunResponse.serializeBinaryToWriter = functio
   if (f !== 0.0) {
     writer.writeEnum(
       8,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 9));
+  if (f != null) {
+    writer.writeString(
+      9,
       f
     );
   }
@@ -10667,6 +10679,42 @@ proto.api_container_api.GetStarlarkRunResponse.prototype.getRestartPolicy = func
  */
 proto.api_container_api.GetStarlarkRunResponse.prototype.setRestartPolicy = function(value) {
   return jspb.Message.setProto3EnumField(this, 8, value);
+};
+
+
+/**
+ * optional string initial_serialized_params = 9;
+ * @return {string}
+ */
+proto.api_container_api.GetStarlarkRunResponse.prototype.getInitialSerializedParams = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.GetStarlarkRunResponse} returns this
+ */
+proto.api_container_api.GetStarlarkRunResponse.prototype.setInitialSerializedParams = function(value) {
+  return jspb.Message.setField(this, 9, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.GetStarlarkRunResponse} returns this
+ */
+proto.api_container_api.GetStarlarkRunResponse.prototype.clearInitialSerializedParams = function() {
+  return jspb.Message.setField(this, 9, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.GetStarlarkRunResponse.prototype.hasInitialSerializedParams = function() {
+  return jspb.Message.getField(this, 9) != null;
 };
 
 
