@@ -140,31 +140,31 @@ def run(plan, args):
   };
 
   return (
-      <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={onClose} isCentered lockFocusAcrossFrames={undefined}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Set new image for {serviceName}</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <form onSubmit={handleSetImageSubmit}>
-              <FormControl>
-                <Input
-                    type="text"
-                    name="setimage"
-                    placeholder={currentImage}
-                    value={newImage}
-                    onChange={(e) => setNewImage(e.target.value)}
-                />
-              </FormControl>
-              <Button mt={4} colorScheme="green" type="submit">
-                Update
-              </Button>
-            </form>
-          </ModalBody>
-          <ModalFooter>*Note: only service and downstream dependencies will be affected.</ModalFooter>
-          {error && <div style={{ color: "red", marginTop: "10px" }}>{error}</div>}
-        </ModalContent>
-      </Modal>
+    <Modal closeOnOverlayClick={false} isOpen={isOpen} onClose={onClose} isCentered lockFocusAcrossFrames={undefined}>
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Set new image for {serviceName}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <form onSubmit={handleSetImageSubmit}>
+            <FormControl>
+              <Input
+                type="text"
+                name="setimage"
+                placeholder={currentImage}
+                value={newImage}
+                onChange={(e) => setNewImage(e.target.value)}
+              />
+            </FormControl>
+            <Button mt={4} colorScheme="green" type="submit">
+              Update
+            </Button>
+          </form>
+        </ModalBody>
+        <ModalFooter>*Note: only service and downstream dependencies will be affected.</ModalFooter>
+        {error && <div style={{ color: "red", marginTop: "10px" }}>{error}</div>}
+      </ModalContent>
+    </Modal>
   );
 };
 
