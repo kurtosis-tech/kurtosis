@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.89.1](https://github.com/kurtosis-tech/kurtosis/compare/0.89.0...0.89.1) (2024-04-30)
+
+
+### Features
+
+* adding enclave production mode value in the APIC primitive ([#2407](https://github.com/kurtosis-tech/kurtosis/issues/2407)) ([86acc7f](https://github.com/kurtosis-tech/kurtosis/commit/86acc7f757d23ff65bc20af4b8a250846cee693e))
+* set service image in em ui ([#2406](https://github.com/kurtosis-tech/kurtosis/issues/2406)) ([917f011](https://github.com/kurtosis-tech/kurtosis/commit/917f011afdc5a1c20fbfeeb384ad9e0af3019156))
+
 ## [0.89.0](https://github.com/kurtosis-tech/kurtosis/compare/0.88.19...0.89.0) (2024-04-29)
 
 
