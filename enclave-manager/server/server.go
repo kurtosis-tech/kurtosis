@@ -681,14 +681,15 @@ func (c *WebServer) GetStarlarkRun(
 	}
 	resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse]{
 		Msg: &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-			PackageId:              result.Msg.PackageId,
-			SerializedScript:       result.Msg.SerializedScript,
-			SerializedParams:       result.Msg.SerializedParams,
-			Parallelism:            result.Msg.Parallelism,
-			RelativePathToMainFile: result.Msg.RelativePathToMainFile,
-			MainFunctionName:       result.Msg.MainFunctionName,
-			ExperimentalFeatures:   result.Msg.ExperimentalFeatures,
-			RestartPolicy:          result.Msg.RestartPolicy,
+			PackageId:               result.Msg.PackageId,
+			SerializedScript:        result.Msg.SerializedScript,
+			SerializedParams:        result.Msg.SerializedParams,
+			Parallelism:             result.Msg.Parallelism,
+			RelativePathToMainFile:  result.Msg.RelativePathToMainFile,
+			MainFunctionName:        result.Msg.MainFunctionName,
+			ExperimentalFeatures:    result.Msg.ExperimentalFeatures,
+			RestartPolicy:           result.Msg.RestartPolicy,
+			InitialSerializedParams: result.Msg.InitialSerializedParams,
 		},
 	}
 	return resp, nil

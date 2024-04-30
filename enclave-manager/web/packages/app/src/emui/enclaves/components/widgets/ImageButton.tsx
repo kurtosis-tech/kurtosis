@@ -63,6 +63,28 @@ function objectToStarlark(o: any, indent: number) {
   }
 }
 
+function deserializeParams(serializedParams: string): Record<string, string> {
+  try {
+    const parsedParams = JSON.parse(serializedParams);
+    if (typeof parsedParams === 'object' && parsedParams !== null) {
+      const deserialized: Record<string, string> = {};
+      for (const key in parsedParams) {
+        if (typeof parsedParams[key] === 'string') {
+          deserialized[key] = parsedParams[key];
+        } else {
+          throw new Error('Value is not a string.');
+        }
+      }
+      return deserialized;
+    } else {
+      throw new Error('Invalid JSON format.');
+    }
+  } catch (error) {
+    console.error('Error deserializing params:', error);
+    return {}; // Return empty object on error
+  }
+}
+
 export type SetImageModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -89,7 +111,12 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
 
     const packageId = starlarkRun.value.packageId;
 
-    const initialArgs = objectToStarlark(enclave.initialSubmissionData, 8);
+    if (!starlarkRun.value.initialSerializedParams) {
+      setError("Error: No initial params found on Starlark Run.");
+      return;
+    }
+    const initialArgsRecord = deserializeParams(starlarkRun.value.initialSerializedParams)
+    const initialArgs = objectToStarlark(initialArgsRecord, 8);
     console.log(`initial args used to start package:\n${initialArgs}`);
 
     const updateImageStarlarkScript = `
