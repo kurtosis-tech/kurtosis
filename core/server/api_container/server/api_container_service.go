@@ -175,19 +175,20 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		args.GetExperimentalFeatures(),
 		stream)
 
-	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-		PackageId:              apicService.starlarkRun.PackageId,
-		SerializedScript:       serializedStarlarkScript,
-		SerializedParams:       serializedParams,
-		Parallelism:            int32(parallelism),
-		RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		MainFunctionName:       mainFuncName,
-		ExperimentalFeatures:   experimentalFeatures,
-		RestartPolicy:          apicService.restartPolicy,
-	}
+	var initialSerializedParams *string
 	if apicService.starlarkRun.InitialSerializedParams == nil || *apicService.starlarkRun.InitialSerializedParams == "" {
-		logrus.Infof("updating initial params with: %v", serializedParams)
-		apicService.starlarkRun.InitialSerializedParams = &serializedParams
+		initialSerializedParams = &apicService.starlarkRun.SerializedParams
+	}
+	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
+		PackageId:               apicService.starlarkRun.PackageId,
+		SerializedScript:        serializedStarlarkScript,
+		SerializedParams:        serializedParams,
+		Parallelism:             int32(parallelism),
+		RelativePathToMainFile:  startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		MainFunctionName:        mainFuncName,
+		ExperimentalFeatures:    experimentalFeatures,
+		RestartPolicy:           apicService.restartPolicy,
+		InitialSerializedParams: initialSerializedParams,
 	}
 
 	return nil
@@ -322,18 +323,20 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		serializedParams)
 	apicService.runStarlark(parallelism, dryRun, detectedPackageId, detectedPackageReplaceOptions, mainFuncName, actualRelativePathToMainFile, scriptWithRunFunction, serializedParams, downloadMode, nonBlockingMode, args.ExperimentalFeatures, stream)
 
-	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-		PackageId:              packageIdFromArgs,
-		SerializedScript:       scriptWithRunFunction,
-		SerializedParams:       serializedParams,
-		Parallelism:            int32(parallelism),
-		RelativePathToMainFile: requestedRelativePathToMainFile,
-		MainFunctionName:       mainFuncName,
-		ExperimentalFeatures:   args.ExperimentalFeatures,
-		RestartPolicy:          apicService.restartPolicy,
+	var initialSerializedParams *string
+	if apicService.starlarkRun.InitialSerializedParams == nil || *apicService.starlarkRun.InitialSerializedParams == "" {
+		initialSerializedParams = &apicService.starlarkRun.SerializedParams
 	}
-	if apicService.starlarkRun.InitialSerializedParams != nil && *apicService.starlarkRun.InitialSerializedParams == emptySerializedParams {
-		apicService.starlarkRun.InitialSerializedParams = &serializedParams
+	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
+		PackageId:               packageIdFromArgs,
+		SerializedScript:        scriptWithRunFunction,
+		SerializedParams:        serializedParams,
+		Parallelism:             int32(parallelism),
+		RelativePathToMainFile:  requestedRelativePathToMainFile,
+		MainFunctionName:        mainFuncName,
+		ExperimentalFeatures:    args.ExperimentalFeatures,
+		RestartPolicy:           apicService.restartPolicy,
+		InitialSerializedParams: initialSerializedParams,
 	}
 	return nil
 }
@@ -614,7 +617,6 @@ func (apicService *ApiContainerService) ListFilesArtifactNamesAndUuids(_ context
 }
 
 func (apicService *ApiContainerService) GetStarlarkRun(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
-	logrus.Infof("initiali serialized params %v", apicService.starlarkRun.InitialSerializedParams)
 	return apicService.starlarkRun, nil
 }
 

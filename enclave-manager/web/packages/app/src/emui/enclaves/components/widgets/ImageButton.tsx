@@ -116,7 +116,7 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
       console.log(`initial serialized params: ${starlarkRun.value.initialSerializedParams}`);
       argsRecord = deserializeParams(starlarkRun.value.initialSerializedParams);
     } else {
-      console.log(`serialized params: ${starlarkRun.value.initialSerializedParams}`);
+      console.log(`serialized params: ${starlarkRun.value.serializedParams}`);
       argsRecord = deserializeParams(starlarkRun.value.serializedParams);
     }
     const args = objectToStarlark(argsRecord, 8);
