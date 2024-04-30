@@ -173,7 +173,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-		PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		PackageId:              apicService.starlarkRun.PackageId,
 		SerializedScript:       serializedStarlarkScript,
 		SerializedParams:       serializedParams,
 		Parallelism:            int32(parallelism),
