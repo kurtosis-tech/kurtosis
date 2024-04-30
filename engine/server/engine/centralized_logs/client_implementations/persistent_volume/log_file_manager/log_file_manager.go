@@ -29,16 +29,20 @@ type LogFileManager struct {
 	filesystem volume_filesystem.VolumeFilesystem
 
 	time logs_clock.LogsClock
+
+	logRetentionPeriodInWeeks int
 }
 
 func NewLogFileManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	filesystem volume_filesystem.VolumeFilesystem,
-	time logs_clock.LogsClock) *LogFileManager {
+	time logs_clock.LogsClock,
+	logRetentionPeriodInWeeks int) *LogFileManager {
 	return &LogFileManager{
-		kurtosisBackend: kurtosisBackend,
-		filesystem:      filesystem,
-		time:            time,
+		kurtosisBackend:           kurtosisBackend,
+		filesystem:                filesystem,
+		time:                      time,
+		logRetentionPeriodInWeeks: logRetentionPeriodInWeeks,
 	}
 }
 
@@ -125,7 +129,7 @@ func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 // RemoveLogsBeyondRetentionPeriod implements the Job cron interface. It removes logs a week older than the log retention period.
 func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
 	// compute the next oldest week
-	year, weekToRemove := manager.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks) * oneWeek).ISOWeek()
+	year, weekToRemove := manager.time.Now().Add(time.Duration(-manager.logRetentionPeriodInWeeks) * oneWeek).ISOWeek()
 
 	// remove directory for that week
 	oldLogsDirPath := getLogsDirPathForWeek(year, weekToRemove)
@@ -146,7 +150,7 @@ func (manager *LogFileManager) RemoveAllLogs() error {
 
 func (manager *LogFileManager) RemoveEnclaveLogs(enclaveUuid string) error {
 	currentTime := manager.time.Now()
-	for i := 0; i < volume_consts.LogRetentionPeriodInWeeks; i++ {
+	for i := 0; i < manager.logRetentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
 		enclaveLogsDirPathForWeek := getEnclaveLogsDirPath(year, week, enclaveUuid)
 		if err := manager.filesystem.RemoveAll(enclaveLogsDirPathForWeek); err != nil {

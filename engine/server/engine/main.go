@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"net"
 	"net/http"
 	"os"
@@ -174,7 +175,7 @@ func runMain() error {
 	// TODO: Move log file management into LogsDatabaseClient
 	osFs := volume_filesystem.NewOsVolumeFilesystem()
 	realTime := logs_clock.NewRealClock()
-	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
+	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime, volume_consts.LogRetentionPeriodInWeeks)
 	logFileManager.StartLogFileManagement(ctx)
 
 	enclaveManager, err := getEnclaveManager(
@@ -389,7 +390,7 @@ func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosi
 	case args.KurtosisBackendType_Docker:
 		osFs := volume_filesystem.NewOsVolumeFilesystem()
 		realTime := logs_clock.NewRealClock()
-		perWeekStreamLogsStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime)
+		perWeekStreamLogsStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime, volume_consts.LogRetentionPeriodInWeeks)
 		logsDatabaseClient = persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamLogsStrategy)
 	case args.KurtosisBackendType_Kubernetes:
 		logsDatabaseClient = kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
