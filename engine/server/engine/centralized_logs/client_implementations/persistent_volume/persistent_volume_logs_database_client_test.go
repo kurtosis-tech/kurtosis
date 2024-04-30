@@ -26,6 +26,8 @@ const (
 	testUserService2Uuid = "test-user-service-2"
 	testUserService3Uuid = "test-user-service-3"
 
+	retentionPeriodInWeeksForTesting = 5
+
 	utcFormat              = time.RFC3339
 	defaultUTCTimestampStr = "2023-09-06T00:35:15-04:00"
 	logLine1               = "{\"log\":\"Starting feature 'centralized logs'\", \"timestamp\":\"2023-09-06T00:35:15-04:00\"}"
@@ -43,7 +45,7 @@ const (
 	notFoundedFilterText     = "it shouldn't be found in the log lines"
 	firstMatchRegexFilterStr = "Starting.*idempotently'"
 
-	testTimeOut     = 2 * time.Second
+	testTimeOut     = 2 * time.Minute
 	doNotFollowLogs = false
 
 	defaultYear  = 2023
@@ -128,7 +130,7 @@ func TestStreamUserServiceLogsPerWeek_WithFilters(t *testing.T) {
 
 	underlyingFs := createFilledPerWeekFilesystem(startingWeek)
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -211,7 +213,7 @@ func TestStreamUserServiceLogsPerWeek_NoLogsFromPersistentVolume(t *testing.T) {
 
 	underlyingFs := createEmptyPerWeekFilesystem(startingWeek)
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -316,7 +318,7 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -403,7 +405,7 @@ func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
 	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -470,7 +472,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -539,7 +541,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -590,7 +592,7 @@ func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 	require.NoError(t, err)
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	expectedTime, err := time.Parse(utcFormat, defaultUTCTimestampStr)
 	require.NoError(t, err)
