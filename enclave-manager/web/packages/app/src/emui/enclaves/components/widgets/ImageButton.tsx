@@ -12,12 +12,12 @@ import {
   ModalOverlay,
 } from "@chakra-ui/react";
 import { isDefined, RemoveFunctions } from "kurtosis-ui-components";
-import {useCallback, useMemo, useState} from "react";
+import { useCallback, useMemo, useState } from "react";
 import { IoLogoDocker } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import { useKurtosisPackageIndexerClient } from "../../../../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
-import {useKurtosisPackageIndexerClient} from "../../../../client/packageIndexer/KurtosisPackageIndexerClientContext";
 
 function getUrlForImage(image: string): string | URL | undefined {
   const [imageName] = image.split(":");
@@ -66,8 +66,8 @@ function objectToStarlark(o: any, indent: number) {
 
 function wrapWithArgs(args: Record<string, any>) {
   return {
-    "args": args,
-  }
+    args: args,
+  };
 }
 
 export type SetImageModalProps = {
@@ -86,10 +86,10 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
   const navigator = useNavigate();
 
   const getPackageInfo = useCallback(
-      async (packageName: string) => {
-        return await packageIndexerClient.readPackage(packageName);
-      },
-      [packageIndexerClient],
+    async (packageName: string) => {
+      return await packageIndexerClient.readPackage(packageName);
+    },
+    [packageIndexerClient],
   );
 
   const handleSetImageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -103,8 +103,8 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
 
     const packageId = starlarkRun.value.packageId;
     const packageInfoResponse = await getPackageInfo(packageId);
-    if(packageInfoResponse.isErr) {
-      setError(`Error occurred getting info about ${packageId} from indexer.`)
+    if (packageInfoResponse.isErr) {
+      setError(`Error occurred getting info about ${packageId} from indexer.`);
       return;
     }
     if (!packageInfoResponse.value.package) {
@@ -121,16 +121,16 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
     }
     const argsRecord = JSON.parse(argsJson);
     if (typeof argsRecord !== "object" || argsRecord === null) {
-      setError("Error: deserializing initial params of starlark package run failed.")
+      setError("Error: deserializing initial params of starlark package run failed.");
       return;
     }
 
     let args;
-    console.log(packageArgs)
-    if(packageArgs.length == 2 && packageArgs[1].name == "args") {
-     args = objectToStarlark(wrapWithArgs(argsRecord), 4);
+    console.log(packageArgs);
+    if (packageArgs.length == 2 && packageArgs[1].name == "args") {
+      args = objectToStarlark(wrapWithArgs(argsRecord), 4);
     } else {
-     args = objectToStarlark(argsRecord, 4);
+      args = objectToStarlark(argsRecord, 4);
     }
     console.log(`args used to start package:\n${args}`);
 
