@@ -100,7 +100,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 		}()
 	}
 
-	apiContainer, err := creator.launchApiContainer(setupCtx,
+	apiContainer, err := creator.LaunchApiContainer(setupCtx,
 		apiContainerImageVersionTag,
 		apiContainerLogLevel,
 		enclaveUuid,
@@ -185,7 +185,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	return newEnclaveInfo, nil
 }
 
-func (creator *EnclaveCreator) launchApiContainer(
+func (creator *EnclaveCreator) LaunchApiContainer(
 	ctx context.Context,
 	apiContainerImageVersionTag string,
 	logLevel logrus.Level,

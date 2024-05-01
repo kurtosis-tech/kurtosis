@@ -123,7 +123,8 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	// we only start in a stopped state, the idempotent visitor gets stuck with engine_manager.EngineStatus_ContainerRunningButServerNotResponding if the gateway isn't running
 	// TODO - fix the idempotent starter longer term
 	if engineStatus == engine_manager.EngineStatus_Stopped {
-		_, engineClientCloseFunc, err := engineManagerNewCluster.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultGitHubAuthTokenOverride)
+		dontRestartAPIContainers := false
+		_, engineClientCloseFunc, err := engineManagerNewCluster.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultGitHubAuthTokenOverride, dontRestartAPIContainers)
 		if err != nil {
 			return stacktrace.Propagate(err, "Engine could not be started after cluster was updated. Its status can be retrieved "+
 				"running 'kurtosis %s %s' and it can potentially be started running 'kurtosis %s %s'",

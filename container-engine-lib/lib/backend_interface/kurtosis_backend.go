@@ -169,7 +169,7 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Stops API containers matching the given filters
+	// Destroy API containers matching the given filters
 	DestroyAPIContainers(
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
