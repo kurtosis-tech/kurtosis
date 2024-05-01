@@ -314,7 +314,7 @@ export function generateStarlarkFromGraph(
       o.forEach((arrayValue) => {
         result += `${objectToStarlark(arrayValue, indent + 4)},\n`;
       });
-      result += `${padLeft}],\n`;
+      result += `${padLeft}]\n`;
       return result;
     }
     if (typeof o === "number") {
