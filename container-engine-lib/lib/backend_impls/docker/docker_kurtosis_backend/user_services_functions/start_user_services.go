@@ -179,7 +179,7 @@ func StartRegisteredUserServices(
 		publicPorts := serviceConfig.GetPublicPorts()
 		if len(publicPorts) > 0 {
 			privatePorts := serviceConfig.GetPrivatePorts()
-			err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
+			err := checkPrivateAndPublicPortIdsMatch(privatePorts, publicPorts)
 			if err != nil {
 				failedServicesPool[serviceUuid] = stacktrace.Propagate(err, "Private and public ports for service with UUID '%v' are not one to one.", serviceUuid)
 				delete(serviceConfigsToStart, serviceUuid)
@@ -815,11 +815,7 @@ func getUpdatedEntrypointAndCmdFromFilesToBeMoved(ctx context.Context, dockerMan
 // - There is a matching publicPort for every portID in privatePorts
 // - There are the same amount of private and public ports
 // If error is nil, the public and private ports are one to one.
-func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec) error {
-	if len(privatePorts) != len(publicPorts) {
-		return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
-	}
-
+func checkPrivateAndPublicPortIdsMatch(privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec) error {
 	for portID, privatePortSpec := range privatePorts {
 		if _, found := publicPorts[portID]; !found {
 			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
