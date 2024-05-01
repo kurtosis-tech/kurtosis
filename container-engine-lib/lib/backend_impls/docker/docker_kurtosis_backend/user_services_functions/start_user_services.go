@@ -657,7 +657,7 @@ func createStartServiceOperation(
 				return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 			}
 			//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-			if len(publicPorts) > 0 {
+			if portShouldBeManuallyPublished(portId, publicPorts) {
 				publicPortSpec, found := publicPorts[portId]
 				if !found {
 					return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())
@@ -906,4 +906,12 @@ func quoteAndJoinArgs(args []string) string {
 		quotedArgs = append(quotedArgs, strconv.Quote(arg))
 	}
 	return strings.Join(quotedArgs, " ")
+}
+
+func portShouldBeManuallyPublished(key string, publicPorts map[string]*port_spec.PortSpec) bool {
+	if len(publicPorts) == 0 {
+		return false
+	}
+	_, found := publicPorts[key]
+	return found
 }
