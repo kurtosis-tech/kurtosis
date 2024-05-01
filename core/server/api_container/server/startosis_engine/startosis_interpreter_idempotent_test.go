@@ -479,6 +479,115 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 	require.True(suite.T(), scheduledInstruction4.IsExecuted()) // this instruction is not affected, i.e. it won't be re-run
 }
 
+func (suite *StartosisInterpreterIdempotentTestSuite) TestStartosisInterpreterIdempotent_SetServiceRunsTwice() {
+	initialScript := `
+def run(plan):
+  plan.add_service(name="database", config=ServiceConfig(image="ubuntu"))
+
+  plan.add_service(name="backend", config=ServiceConfig(image="ubuntu"))
+`
+
+	// Interpretation of the initial script to generate the current enclave plan
+	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		noPackageReplaceOptions,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		initialScript,
+		noInputParams,
+		defaultNonBlockingMode,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0),
+		image_download_mode.ImageDownloadMode_Missing)
+	require.Nil(suite.T(), interpretationApiErr)
+	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
+
+	updatedScript := `
+def run(plan, args):
+  plan.add_service(name="database", config=ServiceConfig(image="ubuntu"))
+
+  plan.add_service(name="backend", config=ServiceConfig(image="ubuntu"))
+
+  plan.set_service(name="database", config=ServiceConfig(image="debian"))
+`
+
+	// Interpret the updated script against the current enclave plan
+	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		noPackageReplaceOptions,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		updatedScript,
+		noInputParams,
+		defaultNonBlockingMode,
+		convertedEnclavePlan,
+		image_download_mode.ImageDownloadMode_Missing,
+	)
+	require.Nil(suite.T(), interpretationError)
+	secondConvertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(instructionsPlan)
+
+	instructionSequence, err := instructionsPlan.GeneratePlan()
+	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 0, instructionsPlan.GetIndexOfFirstInstruction())
+	require.Equal(suite.T(), 3, len(instructionSequence))
+
+	scheduledInstruction1 := instructionSequence[0]
+	require.Equal(suite.T(), `add_service(name="database", config=ServiceConfig(image="ubuntu"))`, scheduledInstruction1.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction1.IsExecuted()) // the add service needs to be re-executed as the `set_service` changed the service config
+
+	scheduledInstruction2 := instructionSequence[1]
+	require.Equal(suite.T(), `add_service(name="backend", config=ServiceConfig(image="ubuntu"))`, scheduledInstruction2.GetInstruction().String())
+	require.True(suite.T(), scheduledInstruction2.IsExecuted()) // this add service should not be re-executed
+
+	scheduledInstruction3 := instructionSequence[2]
+	require.Equal(suite.T(), `set_service(name="database", config=ServiceConfig(image="debian"))`, scheduledInstruction3.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction3.IsExecuted()) // set service should also be executed because it hasn't been run, but its a noop - its effect is to swap out the service config during interpretation time
+
+	updatedScriptAgain := `
+def run(plan, args):
+  plan.add_service(name="database", config=ServiceConfig(image="ubuntu"))
+
+  plan.add_service(name="backend", config=ServiceConfig(image="ubuntu"))
+
+  plan.set_service(name="database", config=ServiceConfig(image="alpine"))
+`
+
+	// Interpret the second updated script against the current enclave plan
+	_, instructionsPlan, interpretationError = suite.interpreter.InterpretAndOptimizePlan(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		noPackageReplaceOptions,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		updatedScriptAgain,
+		noInputParams,
+		defaultNonBlockingMode,
+		secondConvertedEnclavePlan,
+		image_download_mode.ImageDownloadMode_Missing,
+	)
+	require.Nil(suite.T(), interpretationError)
+	secondInstructionSequence, err := instructionsPlan.GeneratePlan()
+
+	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 0, instructionsPlan.GetIndexOfFirstInstruction())
+	require.Equal(suite.T(), 3, len(instructionSequence))
+
+	secondScheduledInstruction1 := secondInstructionSequence[0]
+	require.Equal(suite.T(), `add_service(name="database", config=ServiceConfig(image="ubuntu"))`, secondScheduledInstruction1.GetInstruction().String())
+	require.False(suite.T(), secondScheduledInstruction1.IsExecuted()) // the add service needs to be re-executed as the `set_service` changed the service config
+
+	secondScheduledInstruction2 := secondInstructionSequence[1]
+	require.Equal(suite.T(), `add_service(name="backend", config=ServiceConfig(image="ubuntu"))`, secondScheduledInstruction2.GetInstruction().String())
+	require.True(suite.T(), secondScheduledInstruction2.IsExecuted()) // this add service should not be re-executed
+
+	secondScheduledInstruction3 := secondInstructionSequence[2]
+	require.Equal(suite.T(), `set_service(name="database", config=ServiceConfig(image="alpine"))`, secondScheduledInstruction3.GetInstruction().String())
+	require.False(suite.T(), secondScheduledInstruction3.IsExecuted()) // set service should also be executed because it hasn't been run, but its a noop - its effect is to swap out the service config during interpretation time
+}
+
 func (suite *StartosisInterpreterIdempotentTestSuite) TestStartosisInterpreterIdempotent_SetService() {
 	initialScript := `
 def run(plan):
