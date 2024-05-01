@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.89.2](https://github.com/kurtosis-tech/kurtosis/compare/0.89.1...0.89.2) (2024-05-01)
+
+
+### Features
+
+* change log retention period to one week ([#2403](https://github.com/kurtosis-tech/kurtosis/issues/2403)) ([3f68795](https://github.com/kurtosis-tech/kurtosis/commit/3f68795bb9d4e4441b6623eefafb9475e5832d8c))
+* public ports don't have to be same length as private ports ([#2416](https://github.com/kurtosis-tech/kurtosis/issues/2416)) ([9b8b9e3](https://github.com/kurtosis-tech/kurtosis/commit/9b8b9e353354aeef90e56be625bdac8d43f7649a))
+
 ## [0.89.1](https://github.com/kurtosis-tech/kurtosis/compare/0.89.0...0.89.1) (2024-04-30)
 
 

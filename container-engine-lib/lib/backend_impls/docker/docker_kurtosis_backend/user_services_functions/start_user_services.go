@@ -179,7 +179,7 @@ func StartRegisteredUserServices(
 		publicPorts := serviceConfig.GetPublicPorts()
 		if len(publicPorts) > 0 {
 			privatePorts := serviceConfig.GetPrivatePorts()
-			err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
+			err := checkPrivateAndPublicPortIdsMatch(privatePorts, publicPorts)
 			if err != nil {
 				failedServicesPool[serviceUuid] = stacktrace.Propagate(err, "Private and public ports for service with UUID '%v' are not one to one.", serviceUuid)
 				delete(serviceConfigsToStart, serviceUuid)
@@ -657,7 +657,7 @@ func createStartServiceOperation(
 				return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 			}
 			//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-			if len(publicPorts) > 0 {
+			if portShouldBeManuallyPublished(portId, publicPorts) {
 				publicPortSpec, found := publicPorts[portId]
 				if !found {
 					return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())
@@ -811,18 +811,11 @@ func getUpdatedEntrypointAndCmdFromFilesToBeMoved(ctx context.Context, dockerMan
 	return cmdArgs, entrypointArgs, nil
 }
 
-// Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
-// - There is a matching publicPort for every portID in privatePorts
-// - There are the same amount of private and public ports
-// If error is nil, the public and private ports are one to one.
-func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec) error {
-	if len(privatePorts) != len(publicPorts) {
-		return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
-	}
-
-	for portID, privatePortSpec := range privatePorts {
-		if _, found := publicPorts[portID]; !found {
-			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
+// Ensure that every public port has a matching private port id
+func checkPrivateAndPublicPortIdsMatch(privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec) error {
+	for portID, publicPortSpec := range publicPorts {
+		if _, found := privatePorts[portID]; !found {
+			return stacktrace.NewError("Expected to receive private port with ID '%v' bound for public port number '%v', but it was not found", portID, publicPortSpec.GetNumber())
 		}
 	}
 	return nil
@@ -910,4 +903,12 @@ func quoteAndJoinArgs(args []string) string {
 		quotedArgs = append(quotedArgs, strconv.Quote(arg))
 	}
 	return strings.Join(quotedArgs, " ")
+}
+
+func portShouldBeManuallyPublished(key string, publicPorts map[string]*port_spec.PortSpec) bool {
+	if len(publicPorts) == 0 {
+		return false
+	}
+	_, found := publicPorts[key]
+	return found
 }
