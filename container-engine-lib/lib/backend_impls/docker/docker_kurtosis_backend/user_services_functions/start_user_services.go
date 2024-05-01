@@ -811,14 +811,11 @@ func getUpdatedEntrypointAndCmdFromFilesToBeMoved(ctx context.Context, dockerMan
 	return cmdArgs, entrypointArgs, nil
 }
 
-// Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
-// - There is a matching publicPort for every portID in privatePorts
-// - There are the same amount of private and public ports
-// If error is nil, the public and private ports are one to one.
+// Ensure that every public port has a matching private port id
 func checkPrivateAndPublicPortIdsMatch(privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec) error {
-	for portID, privatePortSpec := range privatePorts {
-		if _, found := publicPorts[portID]; !found {
-			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
+	for portID, publicPortSpec := range publicPorts {
+		if _, found := privatePorts[portID]; !found {
+			return stacktrace.NewError("Expected to receive private port with ID '%v' bound for public port number '%v', but it was not found", portID, publicPortSpec.GetNumber())
 		}
 	}
 	return nil
