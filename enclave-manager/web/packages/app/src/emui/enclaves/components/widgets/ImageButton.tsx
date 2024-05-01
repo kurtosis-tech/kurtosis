@@ -125,7 +125,6 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
     }
 
     let args;
-    console.log(packageArgs);
     if (packageArgs.length === 2 && packageArgs[1].name === "args") {
       args = objectToStarlark(wrapWithArgs(argsRecord), 4);
     } else {
