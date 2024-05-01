@@ -113,13 +113,11 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
     }
     const packageArgs = packageInfoResponse.value.package.args;
 
-    let argsJson;
-    if (starlarkRun.value.initialSerializedParams) {
-      argsJson = starlarkRun.value.initialSerializedParams;
-    } else {
-      argsJson = starlarkRun.value.serializedParams;
+    if(!starlarkRun.value.initialSerializedParams) {
+      setError(`Error occurred getting initial params used to start package.`)
+      return;
     }
-    const argsRecord = JSON.parse(argsJson);
+    const argsRecord = JSON.parse(starlarkRun.value.initialSerializedParams);
     if (typeof argsRecord !== "object" || argsRecord === null) {
       setError("Error: deserializing initial params of starlark package run failed.");
       return;
