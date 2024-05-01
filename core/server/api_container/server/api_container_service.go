@@ -115,7 +115,9 @@ func NewApiContainerService(
 	metricsClient metrics_client.MetricsClient,
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider,
 ) (*ApiContainerService, error) {
-	var emptyInitialSerializedParams *string
+	var emptyInitialSerializedParams string
+	emptyInitialSerializedParamsPtr := &emptyInitialSerializedParams
+	*emptyInitialSerializedParamsPtr = ""
 	service := &ApiContainerService{
 		filesArtifactStore:     filesArtifactStore,
 		serviceNetwork:         serviceNetwork,
@@ -132,7 +134,7 @@ func NewApiContainerService(
 			MainFunctionName:        "",
 			ExperimentalFeatures:    []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
 			RestartPolicy:           kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
-			InitialSerializedParams: emptyInitialSerializedParams,
+			InitialSerializedParams: emptyInitialSerializedParamsPtr,
 		},
 		metricsClient:      metricsClient,
 		githubAuthProvider: githubAuthProvider,
@@ -175,9 +177,8 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		args.GetExperimentalFeatures(),
 		stream)
 
-	var initialSerializedParams *string
 	if apicService.starlarkRun.InitialSerializedParams == nil || *apicService.starlarkRun.InitialSerializedParams == "" {
-		initialSerializedParams = &apicService.starlarkRun.SerializedParams
+		apicService.starlarkRun.InitialSerializedParams = &serializedParams
 	}
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 		PackageId:               apicService.starlarkRun.PackageId,
@@ -188,7 +189,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		MainFunctionName:        mainFuncName,
 		ExperimentalFeatures:    experimentalFeatures,
 		RestartPolicy:           apicService.restartPolicy,
-		InitialSerializedParams: initialSerializedParams,
+		InitialSerializedParams: apicService.starlarkRun.InitialSerializedParams,
 	}
 
 	return nil
@@ -323,9 +324,8 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		serializedParams)
 	apicService.runStarlark(parallelism, dryRun, detectedPackageId, detectedPackageReplaceOptions, mainFuncName, actualRelativePathToMainFile, scriptWithRunFunction, serializedParams, downloadMode, nonBlockingMode, args.ExperimentalFeatures, stream)
 
-	var initialSerializedParams *string
 	if apicService.starlarkRun.InitialSerializedParams == nil || *apicService.starlarkRun.InitialSerializedParams == "" {
-		initialSerializedParams = &apicService.starlarkRun.SerializedParams
+		apicService.starlarkRun.InitialSerializedParams = &serializedParams
 	}
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 		PackageId:               packageIdFromArgs,
@@ -336,7 +336,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		MainFunctionName:        mainFuncName,
 		ExperimentalFeatures:    args.ExperimentalFeatures,
 		RestartPolicy:           apicService.restartPolicy,
-		InitialSerializedParams: initialSerializedParams,
+		InitialSerializedParams: apicService.starlarkRun.InitialSerializedParams,
 	}
 	return nil
 }
