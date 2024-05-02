@@ -700,7 +700,7 @@ func createStartServiceOperation(
 		).WithSkipAddingToBridgeNetworkIfStaticIpIsSet(
 			skipAddingUserServiceToBridgeNetwork,
 		).WithContainerInitEnabled(
-			true,
+			tiniEnabled,
 		).WithVolumeMounts(
 			volumeMounts,
 		).WithLoggingDriver(
@@ -709,7 +709,7 @@ func createStartServiceOperation(
 			restartPolicy,
 		).WithUser(
 			user,
-		).WithContainerInitEnabled(tiniEnabled)
+		)
 
 		if entrypointArgs != nil {
 			createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)
