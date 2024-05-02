@@ -83,5 +83,6 @@ func (itvs *InterpretationTimeValueStore) GetNewServiceConfig(name service.Servi
 	if !ok {
 		return nil, stacktrace.NewError("Did not find new service config for '%v' in interpretation time value store.", name)
 	}
+	delete(itvs.setServiceConfigValues, name)
 	return newServiceConfig, nil
 }
