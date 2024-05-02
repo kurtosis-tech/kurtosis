@@ -229,7 +229,7 @@ config = ServiceConfig(
     # OPTIONAL
     node_selectors = {
         "disktype": "ssd",
-    }
+    },
     
     # tini_enabled allows you to set the `--init` options when a container is started in Docker.
     # OPTIONAL
