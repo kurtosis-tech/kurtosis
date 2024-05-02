@@ -176,7 +176,7 @@ func (builtin *SetServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 
 	// if service names are equal but the instructions are not equal, it means the service config has been updated.
 	// The instruction should be rerun
-	if !instructionsAreEqual && other != nil && other.HasOnlyServiceName(builtin.serviceName) {
+	if !instructionsAreEqual {
 		return enclave_structure.InstructionIsUpdate
 	}
 
