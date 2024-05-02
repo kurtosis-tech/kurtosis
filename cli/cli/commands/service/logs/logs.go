@@ -35,7 +35,7 @@ const (
 
 	serviceIdentifierArgKey        = "service"
 	isServiceIdentifierArgOptional = false
-	isServiceIdentifierArgGreedy   = false
+	isServiceIdentifierArgGreedy   = true
 
 	shouldFollowLogsFlagKey  = "follow"
 	returnNumLogsFlagKey     = "num"
@@ -131,8 +131,8 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		service_identifier_arg.NewHistoricalServiceIdentifierArgWithValidationDisabled(
 			serviceIdentifierArgKey,
 			enclaveIdentifierArgKey,
-			isServiceIdentifierArgGreedy,
 			isServiceIdentifierArgOptional,
+			isServiceIdentifierArgGreedy,
 		),
 	},
 	RunFunc: run,
@@ -151,7 +151,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using arg key '%v'", enclaveIdentifierArgKey)
 	}
 
-	serviceIdentifier, err := args.GetNonGreedyArg(serviceIdentifierArgKey)
+	serviceIdentifiers, err := args.GetGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the service identifier using arg key '%v'", serviceIdentifierArgKey)
 	}
@@ -191,10 +191,12 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	serviceUuid := getEnclaveAndServiceUuidForIdentifiers(kurtosisCtx, ctx, enclaveIdentifier, serviceIdentifier)
-
-	userServiceUuids := map[services.ServiceUUID]bool{
-		serviceUuid: true,
+	userServiceUuids := map[services.ServiceUUID]bool{}
+	serviceUuids := []services.ServiceUUID{}
+	for _, serviceIdentifier := range serviceIdentifiers {
+		serviceUuid := getEnclaveAndServiceUuidForIdentifiers(kurtosisCtx, ctx, enclaveIdentifier, serviceIdentifier)
+		serviceUuids = append(serviceUuids, serviceUuid)
+		userServiceUuids[serviceUuid] = true
 	}
 
 	logLineFilter, err := getLogLineFilterFromFilterFlagValues(matchTextStr, matchRegexStr, invertMatch)
@@ -227,13 +229,15 @@ func run(
 
 			userServiceLogsByUuid := serviceLogsStreamContent.GetServiceLogsByServiceUuids()
 
-			userServiceLogs, found := userServiceLogsByUuid[serviceUuid]
-			if !found {
-				return stacktrace.NewError("Expected to find logs for user service with UUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceUuid, userServiceLogsByUuid)
-			}
+			for _, serviceUuid := range serviceUuids {
+				userServiceLogs, found := userServiceLogsByUuid[serviceUuid]
+				if !found {
+					return stacktrace.NewError("Expected to find logs for user service with UUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceUuid, userServiceLogsByUuid)
+				}
 
-			for _, serviceLog := range userServiceLogs {
-				out.PrintOutLn(serviceLog.GetContent())
+				for _, serviceLog := range userServiceLogs {
+					out.PrintOutLn(serviceLog.GetContent())
+				}
 			}
 		case <-interruptChan:
 			logrus.Debugf("Received signal interruption in service logs Kurtosis CLI command")

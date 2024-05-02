@@ -24,6 +24,7 @@ var validArgsConfig = []*ArgConfig{
 		IsGreedy: true,
 	},
 }
+
 var validTokens = []string{
 	arg1Value,
 	arg2Value,
