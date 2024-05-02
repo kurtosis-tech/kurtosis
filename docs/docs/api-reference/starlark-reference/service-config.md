@@ -230,6 +230,11 @@ config = ServiceConfig(
     node_selectors = {
         "disktype": "ssd",
     }
+    
+    # tini_enabled allows you to set the `--init` options when a container is started in Docker.
+    # OPTIONAL
+    # Default (true)
+    tini_enabled = True
 )
 ```
 Note that `ImageBuildSpec` can only be used in packages and not standalone scripts as it relies on build context in package. More info on [`ImageBuildSpec`](./image-build-spec.md) here.
