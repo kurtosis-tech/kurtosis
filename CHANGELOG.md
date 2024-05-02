@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.89.3](https://github.com/kurtosis-tech/kurtosis/compare/0.89.2...0.89.3) (2024-05-02)
+
+
+### Features
+
+* new feature to restart the API containers after the Kurtosis engine is started ([#2413](https://github.com/kurtosis-tech/kurtosis/issues/2413)) ([494357f](https://github.com/kurtosis-tech/kurtosis/commit/494357f2fea8467de39c0ed0980fbe7875f94b2d))
+
+
+### Bug Fixes
+
+* set service idempotency logic ([#2422](https://github.com/kurtosis-tech/kurtosis/issues/2422)) ([cbd68bf](https://github.com/kurtosis-tech/kurtosis/commit/cbd68bf2aff7343ea40992eecbf4f872df7c5c7b))
+* update image UI arg parsing ([#2419](https://github.com/kurtosis-tech/kurtosis/issues/2419)) ([cd3d928](https://github.com/kurtosis-tech/kurtosis/commit/cd3d928ad2bc53e78e7b43897300d55b33b4a021))
+
 ## [0.89.2](https://github.com/kurtosis-tech/kurtosis/compare/0.89.1...0.89.2) (2024-05-01)
 
 
