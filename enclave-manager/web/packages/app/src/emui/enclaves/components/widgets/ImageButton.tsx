@@ -132,13 +132,21 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
     }
     console.log(`args used to start package:\n${args}`);
 
-    const updateImageStarlarkScript = `
-package = import_module("${packageId}/main.star")
+    // if we've already run an update image, just append another set service instruction, otherwise create a new set service script
+    let updateImageStarlarkScript;
+    console.log(`serialized script: ${starlarkRun.value.serializedScript}`)
+    console.log(starlarkRun.value.serializedScript.slice(0, 7).toLowerCase())
+    if(starlarkRun.value.serializedScript.slice(0, 7).toLowerCase() === "package") {
+      const latestSetService = `\n\n  plan.set_service(name="${serviceName}", config=ServiceConfig(image="${newImage}"))`;
+      updateImageStarlarkScript = starlarkRun.value.serializedScript + latestSetService;
+    } else {
+      updateImageStarlarkScript = `package = import_module("${packageId}/main.star")
 
 def run(plan, args):
   package.run(plan, **${args})
   
   plan.set_service(name="${serviceName}", config=ServiceConfig(image="${newImage}"))`;
+    }
     console.log(`starlark script to service ${serviceName} to image ${newImage}\n${updateImageStarlarkScript}`);
 
     try {
