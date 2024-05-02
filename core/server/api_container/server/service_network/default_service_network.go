@@ -628,7 +628,7 @@ func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceC
 	return successfulExecs, failedExecs, nil
 }
 
-func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error) {
+func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error) {
 	logrus.Debugf("Making a request '%v' '%v' '%v' '%v' '%v' '%v'", serviceIdentifier, portId, method, contentType, endpoint, body)
 	userService, getServiceErr := network.GetService(ctx, serviceIdentifier)
 	if getServiceErr != nil {
@@ -642,6 +642,9 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 	req, err := http.NewRequestWithContext(ctx, method, url, strings.NewReader(body))
 	if err != nil {
 		return nil, stacktrace.NewError("An error occurred building HTTP request on service '%v', URL '%v'", userService, url)
+	}
+	for header, headerValue := range headers {
+		req.Header.Set(header, headerValue)
 	}
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
