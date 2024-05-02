@@ -12,9 +12,10 @@ import {
   ModalOverlay,
 } from "@chakra-ui/react";
 import { isDefined, RemoveFunctions } from "kurtosis-ui-components";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { IoLogoDocker } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import { useKurtosisPackageIndexerClient } from "../../../../client/packageIndexer/KurtosisPackageIndexerClientContext";
 import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 
@@ -41,14 +42,14 @@ function objectToStarlark(o: any, indent: number) {
     o.forEach((arrayValue) => {
       result += `${objectToStarlark(arrayValue, indent + 4)},\n`;
     });
-    result += `${padLeft}],\n`;
+    result += `${padLeft}]\n`;
     return result;
   }
   if (typeof o === "number") {
     return `${o}`;
   }
   if (typeof o === "string") {
-    return `${o}`;
+    return `"${o}"`;
   }
   if (typeof o === "boolean") {
     return o ? "True" : "False";
@@ -56,33 +57,17 @@ function objectToStarlark(o: any, indent: number) {
   if (typeof o === "object") {
     let result = "{";
     Object.entries(o).forEach(([key, value]) => {
-      result += `\n${padLeft}"${key}": "${objectToStarlark(value, indent + 4)}",`;
+      result += `\n${padLeft}"${key}": ${objectToStarlark(value, indent + 4)},`;
     });
     result += `${padLeft}}`;
     return result;
   }
 }
 
-function deserializeParams(serializedParams: string): Record<string, string> {
-  try {
-    const parsedParams = JSON.parse(serializedParams);
-    if (typeof parsedParams === "object" && parsedParams !== null) {
-      const deserialized: Record<string, string> = {};
-      for (const key in parsedParams) {
-        if (typeof parsedParams[key] === "string") {
-          deserialized[key] = parsedParams[key];
-        } else {
-          throw new Error("Value is not a string.");
-        }
-      }
-      return deserialized;
-    } else {
-      throw new Error("Invalid JSON format.");
-    }
-  } catch (error) {
-    console.error("Error deserializing params:", error);
-    return {};
-  }
+function wrapWithArgs(args: Record<string, any>) {
+  return {
+    args: args,
+  };
 }
 
 export type SetImageModalProps = {
@@ -97,7 +82,15 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
   const { runStarlarkScript } = useEnclavesContext(); // Assuming this is defined elsewhere
   const [error, setError] = useState<string | null>(null);
   const [newImage, setNewImage] = useState("");
+  const packageIndexerClient = useKurtosisPackageIndexerClient();
   const navigator = useNavigate();
+
+  const getPackageInfo = useCallback(
+    async (packageName: string) => {
+      return await packageIndexerClient.readPackage(packageName);
+    },
+    [packageIndexerClient],
+  );
 
   const handleSetImageSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,25 +102,51 @@ export const SetImageModel = ({ isOpen, onClose, currentImage, serviceName, encl
     }
 
     const packageId = starlarkRun.value.packageId;
-
-    let argsRecord;
-    if (starlarkRun.value.initialSerializedParams) {
-      console.log(`initial serialized params: ${starlarkRun.value.initialSerializedParams}`);
-      argsRecord = deserializeParams(starlarkRun.value.initialSerializedParams);
-    } else {
-      console.log(`serialized params: ${starlarkRun.value.serializedParams}`);
-      argsRecord = deserializeParams(starlarkRun.value.serializedParams);
+    const packageInfoResponse = await getPackageInfo(packageId);
+    if (packageInfoResponse.isErr) {
+      setError(`Error occurred getting info about ${packageId} from indexer.`);
+      return;
     }
-    const args = objectToStarlark(argsRecord, 8);
-    console.log(`initial args used to start package:\n${args}`);
+    if (!packageInfoResponse.value.package) {
+      setError(`Could not find package ${packageId}`);
+      return;
+    }
+    const packageArgs = packageInfoResponse.value.package.args;
 
-    const updateImageStarlarkScript = `
-package = import_module("${packageId}/main.star")
+    console.log(`initial serialized params: ${starlarkRun.value.initialSerializedParams}`);
+    if (!starlarkRun.value.initialSerializedParams) {
+      setError(`Error occurred getting initial params used to start package.`);
+      return;
+    }
+    const argsRecord = JSON.parse(starlarkRun.value.initialSerializedParams);
+    if (typeof argsRecord !== "object" || argsRecord === null) {
+      setError("Error: deserializing initial params of starlark package run failed.");
+      return;
+    }
+
+    let args;
+    if (packageArgs.length === 2 && packageArgs[1].name === "args") {
+      args = objectToStarlark(wrapWithArgs(argsRecord), 4);
+    } else {
+      args = objectToStarlark(argsRecord, 4);
+    }
+    console.log(`args used to start package:\n${args}`);
+
+    // if we've already run an update image, just append another set service instruction, otherwise create a new set service script
+    let updateImageStarlarkScript;
+    console.log(`serialized script: ${starlarkRun.value.serializedScript}`);
+    console.log(starlarkRun.value.serializedScript.slice(0, 7).toLowerCase());
+    if (starlarkRun.value.serializedScript.slice(0, 7).toLowerCase() === "package") {
+      const latestSetService = `\n\n  plan.set_service(name="${serviceName}", config=ServiceConfig(image="${newImage}"))`;
+      updateImageStarlarkScript = starlarkRun.value.serializedScript + latestSetService;
+    } else {
+      updateImageStarlarkScript = `package = import_module("${packageId}/main.star")
 
 def run(plan, args):
   package.run(plan, **${args})
   
   plan.set_service(name="${serviceName}", config=ServiceConfig(image="${newImage}"))`;
+    }
     console.log(`starlark script to service ${serviceName} to image ${newImage}\n${updateImageStarlarkScript}`);
 
     try {
