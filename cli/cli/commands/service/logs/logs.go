@@ -8,6 +8,7 @@ package logs
 import (
 	"context"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -34,10 +35,12 @@ const (
 	isEnclaveIdArgGreedy    = false
 
 	serviceIdentifierArgKey        = "service"
-	isServiceIdentifierArgOptional = false
+	isServiceIdentifierArgOptional = true // don't need to pass this in if they use the return all services flag
 	isServiceIdentifierArgGreedy   = true
 
 	shouldFollowLogsFlagKey  = "follow"
+	returnAllServiceLogs     = "all-services"
+	allServicesWildcard      = "*"
 	returnNumLogsFlagKey     = "num"
 	returnAllLogsFlagKey     = "all"
 	matchTextFilterFlagKey   = "match"
@@ -55,12 +58,25 @@ const (
 	commonInstructionInMatchFlags = "Important: " + matchTextFilterFlagKey + " and " + matchRegexFilterFlagKey + " flags cannot be used at the same time. You should either use one or the other."
 )
 
+type ColorPrinter func(a ...interface{}) string
+
+var colorList = []ColorPrinter{
+	color.New(color.FgBlue).SprintFunc(),
+	color.New(color.FgCyan).SprintFunc(),
+	color.New(color.FgGreen).SprintFunc(),
+	color.New(color.FgMagenta).SprintFunc(),
+	color.New(color.FgYellow).SprintFunc(),
+	color.New(color.FgHiRed).SprintFunc(),
+	color.New(color.FgHiBlue).SprintFunc(),
+	color.New(color.FgHiWhite).SprintFunc(),
+}
+
 var doNotFilterLogLines *kurtosis_context.LogLineFilter = nil
 
 var defaultShouldFollowLogs = strconv.FormatBool(false)
 var defaultInvertMatchFilterFlagValue = strconv.FormatBool(false)
-
 var defaultShouldReturnAllLogs = strconv.FormatBool(false)
+var defaultShouldReturnAllServiceLog = strconv.FormatBool(false)
 var defaultNumLogLinesFlagValue = strconv.Itoa(defaultNumLogLines)
 
 var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -121,6 +137,13 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:      flags.FlagType_Bool,
 			Default:   defaultInvertMatchFilterFlagValue,
 		},
+		{
+			Key:       returnAllServiceLogs,
+			Usage:     "Returns service log streams for all logs in an enclave",
+			Shorthand: "x",
+			Type:      flags.FlagType_Bool,
+			Default:   defaultShouldReturnAllServiceLog,
+		},
 	},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewHistoricalEnclaveIdentifiersArgWithValidationDisabled(
@@ -151,9 +174,19 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using arg key '%v'", enclaveIdentifierArgKey)
 	}
 
-	serviceIdentifiers, err := args.GetGreedyArg(serviceIdentifierArgKey)
+	shouldReturnAllServiceLogs, err := flags.GetBool(returnAllServiceLogs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the 'all-services' flag using key '%v'", returnAllServiceLogs)
+	}
+
+	var serviceIdentifiers []string
+	serviceIdentifiers, err = args.GetGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the service identifier using arg key '%v'", serviceIdentifierArgKey)
+	}
+	// if no service identifiers were passed or just the wildcard was passed, default to returning all
+	if len(serviceIdentifiers) == 0 || (len(serviceIdentifiers) == 1 && serviceIdentifiers[0] == allServicesWildcard) { //
+		shouldReturnAllServiceLogs = true
 	}
 
 	shouldFollowLogs, err := flags.GetBool(shouldFollowLogsFlagKey)
@@ -191,11 +224,26 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
+	if shouldReturnAllServiceLogs {
+		enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred retrieving enclave context for '%v'", enclaveIdentifier)
+		}
+
+		allServiceIdentifiers, err := enclaveCtx.GetExistingAndHistoricalServiceIdentifiers(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred retrieving service identifiers for enclave '%v'", enclaveIdentifier)
+		}
+		serviceIdentifiers = allServiceIdentifiers.GetOrderedListOfNames()
+	}
+
 	userServiceUuids := map[services.ServiceUUID]bool{}
-	serviceUuids := []services.ServiceUUID{}
-	for _, serviceIdentifier := range serviceIdentifiers {
+	serviceUuids := map[services.ServiceUUID]string{}
+	serviceColorPrinterMap := map[string]ColorPrinter{}
+	for idx, serviceIdentifier := range serviceIdentifiers {
 		serviceUuid := getEnclaveAndServiceUuidForIdentifiers(kurtosisCtx, ctx, enclaveIdentifier, serviceIdentifier)
-		serviceUuids = append(serviceUuids, serviceUuid)
+		serviceUuids[serviceUuid] = serviceIdentifier
+		serviceColorPrinterMap[serviceIdentifier] = colorList[idx%len(colorList)]
 		userServiceUuids[serviceUuid] = true
 	}
 
@@ -228,15 +276,15 @@ func run(
 			}
 
 			userServiceLogsByUuid := serviceLogsStreamContent.GetServiceLogsByServiceUuids()
-
-			for _, serviceUuid := range serviceUuids {
+			for serviceUuid, serviceIdentifier := range serviceUuids {
 				userServiceLogs, found := userServiceLogsByUuid[serviceUuid]
 				if !found {
 					return stacktrace.NewError("Expected to find logs for user service with UUID '%v' on user service logs map '%+v' but was not found; this should never happen, and is a bug in Kurtosis", serviceUuid, userServiceLogsByUuid)
 				}
 
 				for _, serviceLog := range userServiceLogs {
-					out.PrintOutLn(serviceLog.GetContent())
+					colorPrinter := serviceColorPrinterMap[serviceIdentifier]
+					out.PrintOutLn(fmt.Sprintf("%v %v", colorPrinter("[%v]", serviceIdentifier), serviceLog.GetContent()))
 				}
 			}
 		case <-interruptChan:
