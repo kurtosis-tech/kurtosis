@@ -20,24 +20,26 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	KurtosisCloudBackendServer_IsAvailable_FullMethodName                 = "/kurtosis_cloud.KurtosisCloudBackendServer/IsAvailable"
-	KurtosisCloudBackendServer_GetCloudInstanceConfig_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetCloudInstanceConfig"
-	KurtosisCloudBackendServer_GetOrCreateApiKey_FullMethodName           = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateApiKey"
-	KurtosisCloudBackendServer_GetOrCreateInstance_FullMethodName         = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateInstance"
-	KurtosisCloudBackendServer_GetOrCreatePaymentConfig_FullMethodName    = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreatePaymentConfig"
-	KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_FullMethodName = "/kurtosis_cloud.KurtosisCloudBackendServer/RefreshDefaultPaymentMethod"
-	KurtosisCloudBackendServer_CancelPaymentSubscription_FullMethodName   = "/kurtosis_cloud.KurtosisCloudBackendServer/CancelPaymentSubscription"
-	KurtosisCloudBackendServer_UpdateAddress_FullMethodName               = "/kurtosis_cloud.KurtosisCloudBackendServer/UpdateAddress"
-	KurtosisCloudBackendServer_GetInstances_FullMethodName                = "/kurtosis_cloud.KurtosisCloudBackendServer/GetInstances"
-	KurtosisCloudBackendServer_DeleteInstance_FullMethodName              = "/kurtosis_cloud.KurtosisCloudBackendServer/DeleteInstance"
-	KurtosisCloudBackendServer_ChangeActiveStatus_FullMethodName          = "/kurtosis_cloud.KurtosisCloudBackendServer/ChangeActiveStatus"
-	KurtosisCloudBackendServer_GetUser_FullMethodName                     = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUser"
-	KurtosisCloudBackendServer_CheckPortAuthorization_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/CheckPortAuthorization"
-	KurtosisCloudBackendServer_UnlockPort_FullMethodName                  = "/kurtosis_cloud.KurtosisCloudBackendServer/UnlockPort"
-	KurtosisCloudBackendServer_LockPort_FullMethodName                    = "/kurtosis_cloud.KurtosisCloudBackendServer/LockPort"
-	KurtosisCloudBackendServer_GetUnlockedPorts_FullMethodName            = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnlockedPorts"
-	KurtosisCloudBackendServer_GetPorts_FullMethodName                    = "/kurtosis_cloud.KurtosisCloudBackendServer/GetPorts"
-	KurtosisCloudBackendServer_AddAlias_FullMethodName                    = "/kurtosis_cloud.KurtosisCloudBackendServer/AddAlias"
+	KurtosisCloudBackendServer_IsAvailable_FullMethodName                   = "/kurtosis_cloud.KurtosisCloudBackendServer/IsAvailable"
+	KurtosisCloudBackendServer_GetCloudInstanceConfig_FullMethodName        = "/kurtosis_cloud.KurtosisCloudBackendServer/GetCloudInstanceConfig"
+	KurtosisCloudBackendServer_GetOrCreateApiKey_FullMethodName             = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateApiKey"
+	KurtosisCloudBackendServer_GetOrCreateInstance_FullMethodName           = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateInstance"
+	KurtosisCloudBackendServer_GetOrCreatePaymentConfig_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreatePaymentConfig"
+	KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_FullMethodName   = "/kurtosis_cloud.KurtosisCloudBackendServer/RefreshDefaultPaymentMethod"
+	KurtosisCloudBackendServer_CancelPaymentSubscription_FullMethodName     = "/kurtosis_cloud.KurtosisCloudBackendServer/CancelPaymentSubscription"
+	KurtosisCloudBackendServer_UpdateAddress_FullMethodName                 = "/kurtosis_cloud.KurtosisCloudBackendServer/UpdateAddress"
+	KurtosisCloudBackendServer_GetInstances_FullMethodName                  = "/kurtosis_cloud.KurtosisCloudBackendServer/GetInstances"
+	KurtosisCloudBackendServer_DeleteInstance_FullMethodName                = "/kurtosis_cloud.KurtosisCloudBackendServer/DeleteInstance"
+	KurtosisCloudBackendServer_ChangeActiveStatus_FullMethodName            = "/kurtosis_cloud.KurtosisCloudBackendServer/ChangeActiveStatus"
+	KurtosisCloudBackendServer_GetUser_FullMethodName                       = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUser"
+	KurtosisCloudBackendServer_CheckPortAuthorization_FullMethodName        = "/kurtosis_cloud.KurtosisCloudBackendServer/CheckPortAuthorization"
+	KurtosisCloudBackendServer_UnlockPort_FullMethodName                    = "/kurtosis_cloud.KurtosisCloudBackendServer/UnlockPort"
+	KurtosisCloudBackendServer_LockPort_FullMethodName                      = "/kurtosis_cloud.KurtosisCloudBackendServer/LockPort"
+	KurtosisCloudBackendServer_GetUnlockedPorts_FullMethodName              = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnlockedPorts"
+	KurtosisCloudBackendServer_GetPorts_FullMethodName                      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetPorts"
+	KurtosisCloudBackendServer_AddAlias_FullMethodName                      = "/kurtosis_cloud.KurtosisCloudBackendServer/AddAlias"
+	KurtosisCloudBackendServer_IsNewKurtosisVersionAvailable_FullMethodName = "/kurtosis_cloud.KurtosisCloudBackendServer/IsNewKurtosisVersionAvailable"
+	KurtosisCloudBackendServer_UpgradeKurtosisVersion_FullMethodName        = "/kurtosis_cloud.KurtosisCloudBackendServer/UpgradeKurtosisVersion"
 )
 
 // KurtosisCloudBackendServerClient is the client API for KurtosisCloudBackendServer service.
@@ -62,6 +64,8 @@ type KurtosisCloudBackendServerClient interface {
 	GetUnlockedPorts(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error)
 	GetPorts(ctx context.Context, in *GetPortsRequest, opts ...grpc.CallOption) (*GetPortsResponse, error)
 	AddAlias(ctx context.Context, in *AddAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	IsNewKurtosisVersionAvailable(ctx context.Context, in *IsNewKurtosisVersionAvailableRequest, opts ...grpc.CallOption) (*IsNewKurtosisVersionAvailableResponse, error)
+	UpgradeKurtosisVersion(ctx context.Context, in *UpgradeKurtosisVersionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type kurtosisCloudBackendServerClient struct {
@@ -234,6 +238,24 @@ func (c *kurtosisCloudBackendServerClient) AddAlias(ctx context.Context, in *Add
 	return out, nil
 }
 
+func (c *kurtosisCloudBackendServerClient) IsNewKurtosisVersionAvailable(ctx context.Context, in *IsNewKurtosisVersionAvailableRequest, opts ...grpc.CallOption) (*IsNewKurtosisVersionAvailableResponse, error) {
+	out := new(IsNewKurtosisVersionAvailableResponse)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_IsNewKurtosisVersionAvailable_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisCloudBackendServerClient) UpgradeKurtosisVersion(ctx context.Context, in *UpgradeKurtosisVersionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_UpgradeKurtosisVersion_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KurtosisCloudBackendServerServer is the server API for KurtosisCloudBackendServer service.
 // All implementations should embed UnimplementedKurtosisCloudBackendServerServer
 // for forward compatibility
@@ -256,6 +278,8 @@ type KurtosisCloudBackendServerServer interface {
 	GetUnlockedPorts(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error)
 	GetPorts(context.Context, *GetPortsRequest) (*GetPortsResponse, error)
 	AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error)
+	IsNewKurtosisVersionAvailable(context.Context, *IsNewKurtosisVersionAvailableRequest) (*IsNewKurtosisVersionAvailableResponse, error)
+	UpgradeKurtosisVersion(context.Context, *UpgradeKurtosisVersionRequest) (*emptypb.Empty, error)
 }
 
 // UnimplementedKurtosisCloudBackendServerServer should be embedded to have forward compatible implementations.
@@ -315,6 +339,12 @@ func (UnimplementedKurtosisCloudBackendServerServer) GetPorts(context.Context, *
 }
 func (UnimplementedKurtosisCloudBackendServerServer) AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddAlias not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) IsNewKurtosisVersionAvailable(context.Context, *IsNewKurtosisVersionAvailableRequest) (*IsNewKurtosisVersionAvailableResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsNewKurtosisVersionAvailable not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) UpgradeKurtosisVersion(context.Context, *UpgradeKurtosisVersionRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpgradeKurtosisVersion not implemented")
 }
 
 // UnsafeKurtosisCloudBackendServerServer may be embedded to opt out of forward compatibility for this service.
@@ -652,6 +682,42 @@ func _KurtosisCloudBackendServer_AddAlias_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisCloudBackendServer_IsNewKurtosisVersionAvailable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IsNewKurtosisVersionAvailableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).IsNewKurtosisVersionAvailable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_IsNewKurtosisVersionAvailable_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).IsNewKurtosisVersionAvailable(ctx, req.(*IsNewKurtosisVersionAvailableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisCloudBackendServer_UpgradeKurtosisVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpgradeKurtosisVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).UpgradeKurtosisVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_UpgradeKurtosisVersion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).UpgradeKurtosisVersion(ctx, req.(*UpgradeKurtosisVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KurtosisCloudBackendServer_ServiceDesc is the grpc.ServiceDesc for KurtosisCloudBackendServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -730,6 +796,14 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddAlias",
 			Handler:    _KurtosisCloudBackendServer_AddAlias_Handler,
+		},
+		{
+			MethodName: "IsNewKurtosisVersionAvailable",
+			Handler:    _KurtosisCloudBackendServer_IsNewKurtosisVersionAvailable_Handler,
+		},
+		{
+			MethodName: "UpgradeKurtosisVersion",
+			Handler:    _KurtosisCloudBackendServer_UpgradeKurtosisVersion_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

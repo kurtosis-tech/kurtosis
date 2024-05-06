@@ -226,8 +226,16 @@ func runMain() error {
 	}()
 
 	go func() {
+		isLocalRun := false
+		if _, found := os.LookupEnv("KURTOSIS_ENGINE_LOCAL_RUN"); found {
+			logrus.Info("The 'KURTOSIS_ENGINE_LOCAL_RUN' has been set, local Kurtosis cloud backend will be called.")
+			isLocalRun = true
+		} else {
+			logrus.Info("LEO-DEBUG KURTOSIS_ENGINE_LOCAL_RUN was not found.")
+		}
+
 		enforceAuth := serverArgs.OnBastionHost
-		err = em_api.RunEnclaveManagerApiServer(enforceAuth)
+		err = em_api.RunEnclaveManagerApiServer(enforceAuth, isLocalRun)
 		if err != nil {
 			logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
 			fmt.Fprintln(logrus.StandardLogger().Out, err)

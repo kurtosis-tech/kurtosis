@@ -5,9 +5,9 @@
 
 import { AddAliasRequest, CreateRepositoryWebhookRequest, DownloadFilesArtifactRequest, GetListFilesArtifactNamesAndUuidsRequest, GetServicesRequest, GetStarlarkRunRequest, HealthCheckRequest, HealthCheckResponse, InspectFilesArtifactContentsRequest, LockUnlockPortRequest, RunStarlarkPackageRequest, RunStarlarkScriptRequest, StarlarkPackagePlanYamlArgs, StarlarkScriptPlanYamlArgs } from "./kurtosis_enclave_manager_api_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
-import { CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
+import { CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetEngineInfoResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
 import { GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, PlanYaml, StarlarkRunResponseLine, StreamedDataChunk } from "./api_container_service_pb.js";
-import { GetCloudInstanceConfigResponse } from "./kurtosis_backend_server_api_pb.js";
+import { GetCloudInstanceConfigResponse, IsNewKurtosisVersionAvailableResponse, UpgradeKurtosisVersionRequest } from "./kurtosis_backend_server_api_pb.js";
 
 /**
  * @generated from service kurtosis_enclave_manager.KurtosisEnclaveManagerServer
@@ -22,6 +22,15 @@ export const KurtosisEnclaveManagerServer = {
       name: "Check",
       I: HealthCheckRequest,
       O: HealthCheckResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEngineInfo
+     */
+    getEngineInfo: {
+      name: "GetEngineInfo",
+      I: Empty,
+      O: GetEngineInfoResponse,
       kind: MethodKind.Unary,
     },
     /**
@@ -183,6 +192,24 @@ export const KurtosisEnclaveManagerServer = {
     addAlias: {
       name: "AddAlias",
       I: AddAliasRequest,
+      O: Empty,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.IsNewKurtosisVersionAvailable
+     */
+    isNewKurtosisVersionAvailable: {
+      name: "IsNewKurtosisVersionAvailable",
+      I: Empty,
+      O: IsNewKurtosisVersionAvailableResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.UpgradeKurtosisVersion
+     */
+    upgradeKurtosisVersion: {
+      name: "UpgradeKurtosisVersion",
+      I: UpgradeKurtosisVersionRequest,
       O: Empty,
       kind: MethodKind.Unary,
     },

@@ -11,6 +11,7 @@ import "kurtosis_backend_server_api.proto";
 
 service KurtosisEnclaveManagerServer {
   rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc GetEngineInfo(google.protobuf.Empty) returns (engine_api.GetEngineInfoResponse) {};
   rpc GetEnclaves(google.protobuf.Empty) returns (engine_api.GetEnclavesResponse) {};
   rpc GetServices(GetServicesRequest) returns (api_container_api.GetServicesResponse) {};
   rpc GetServiceLogs(engine_api.GetServiceLogsArgs) returns (stream engine_api.GetServiceLogsResponse) {};
@@ -29,6 +30,8 @@ service KurtosisEnclaveManagerServer {
   rpc LockPort(LockUnlockPortRequest) returns (google.protobuf.Empty) {}
   rpc UnlockPort(LockUnlockPortRequest) returns(google.protobuf.Empty) {}
   rpc AddAlias(AddAliasRequest) returns(google.protobuf.Empty){}
+  rpc IsNewKurtosisVersionAvailable(google.protobuf.Empty) returns(kurtosis_cloud.IsNewKurtosisVersionAvailableResponse){}
+  rpc UpgradeKurtosisVersion(kurtosis_cloud.UpgradeKurtosisVersionRequest) returns(google.protobuf.Empty){};
 }
 
 message HealthCheckRequest {

@@ -1946,3 +1946,120 @@ export class AddAliasRequest extends Message<AddAliasRequest> {
   }
 }
 
+/**
+ * @generated from message kurtosis_cloud.IsNewKurtosisVersionAvailableRequest
+ */
+export class IsNewKurtosisVersionAvailableRequest extends Message<IsNewKurtosisVersionAvailableRequest> {
+  /**
+   * @generated from field: string current_kurtosis_version = 2;
+   */
+  currentKurtosisVersion = "";
+
+  constructor(data?: PartialMessage<IsNewKurtosisVersionAvailableRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_cloud.IsNewKurtosisVersionAvailableRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 2, name: "current_kurtosis_version", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): IsNewKurtosisVersionAvailableRequest {
+    return new IsNewKurtosisVersionAvailableRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): IsNewKurtosisVersionAvailableRequest {
+    return new IsNewKurtosisVersionAvailableRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): IsNewKurtosisVersionAvailableRequest {
+    return new IsNewKurtosisVersionAvailableRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: IsNewKurtosisVersionAvailableRequest | PlainMessage<IsNewKurtosisVersionAvailableRequest> | undefined, b: IsNewKurtosisVersionAvailableRequest | PlainMessage<IsNewKurtosisVersionAvailableRequest> | undefined): boolean {
+    return proto3.util.equals(IsNewKurtosisVersionAvailableRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message kurtosis_cloud.IsNewKurtosisVersionAvailableResponse
+ */
+export class IsNewKurtosisVersionAvailableResponse extends Message<IsNewKurtosisVersionAvailableResponse> {
+  /**
+   * @generated from field: bool isAvailable = 1;
+   */
+  isAvailable = false;
+
+  /**
+   * @generated from field: string latestVersion = 2;
+   */
+  latestVersion = "";
+
+  constructor(data?: PartialMessage<IsNewKurtosisVersionAvailableResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_cloud.IsNewKurtosisVersionAvailableResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "isAvailable", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 2, name: "latestVersion", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): IsNewKurtosisVersionAvailableResponse {
+    return new IsNewKurtosisVersionAvailableResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): IsNewKurtosisVersionAvailableResponse {
+    return new IsNewKurtosisVersionAvailableResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): IsNewKurtosisVersionAvailableResponse {
+    return new IsNewKurtosisVersionAvailableResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: IsNewKurtosisVersionAvailableResponse | PlainMessage<IsNewKurtosisVersionAvailableResponse> | undefined, b: IsNewKurtosisVersionAvailableResponse | PlainMessage<IsNewKurtosisVersionAvailableResponse> | undefined): boolean {
+    return proto3.util.equals(IsNewKurtosisVersionAvailableResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message kurtosis_cloud.UpgradeKurtosisVersionRequest
+ */
+export class UpgradeKurtosisVersionRequest extends Message<UpgradeKurtosisVersionRequest> {
+  /**
+   * @generated from field: string api_key = 1;
+   */
+  apiKey = "";
+
+  constructor(data?: PartialMessage<UpgradeKurtosisVersionRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_cloud.UpgradeKurtosisVersionRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "api_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpgradeKurtosisVersionRequest {
+    return new UpgradeKurtosisVersionRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): UpgradeKurtosisVersionRequest {
+    return new UpgradeKurtosisVersionRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): UpgradeKurtosisVersionRequest {
+    return new UpgradeKurtosisVersionRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: UpgradeKurtosisVersionRequest | PlainMessage<UpgradeKurtosisVersionRequest> | undefined, b: UpgradeKurtosisVersionRequest | PlainMessage<UpgradeKurtosisVersionRequest> | undefined): boolean {
+    return proto3.util.equals(UpgradeKurtosisVersionRequest, a, b);
+  }
+}
+

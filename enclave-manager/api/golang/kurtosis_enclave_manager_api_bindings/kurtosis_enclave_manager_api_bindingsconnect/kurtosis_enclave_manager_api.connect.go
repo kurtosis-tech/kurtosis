@@ -41,6 +41,9 @@ const (
 	// KurtosisEnclaveManagerServerCheckProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's Check RPC.
 	KurtosisEnclaveManagerServerCheckProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/Check"
+	// KurtosisEnclaveManagerServerGetEngineInfoProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's GetEngineInfo RPC.
+	KurtosisEnclaveManagerServerGetEngineInfoProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEngineInfo"
 	// KurtosisEnclaveManagerServerGetEnclavesProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's GetEnclaves RPC.
 	KurtosisEnclaveManagerServerGetEnclavesProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEnclaves"
@@ -95,12 +98,19 @@ const (
 	// KurtosisEnclaveManagerServerAddAliasProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's AddAlias RPC.
 	KurtosisEnclaveManagerServerAddAliasProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/AddAlias"
+	// KurtosisEnclaveManagerServerIsNewKurtosisVersionAvailableProcedure is the fully-qualified name of
+	// the KurtosisEnclaveManagerServer's IsNewKurtosisVersionAvailable RPC.
+	KurtosisEnclaveManagerServerIsNewKurtosisVersionAvailableProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/IsNewKurtosisVersionAvailable"
+	// KurtosisEnclaveManagerServerUpgradeKurtosisVersionProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's UpgradeKurtosisVersion RPC.
+	KurtosisEnclaveManagerServerUpgradeKurtosisVersionProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/UpgradeKurtosisVersion"
 )
 
 // KurtosisEnclaveManagerServerClient is a client for the
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer service.
 type KurtosisEnclaveManagerServerClient interface {
 	Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error)
+	GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error)
 	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
 	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error)
@@ -119,6 +129,8 @@ type KurtosisEnclaveManagerServerClient interface {
 	LockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
+	IsNewKurtosisVersionAvailable(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error)
+	UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerClient constructs a client for the
@@ -135,6 +147,11 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 		check: connect.NewClient[kurtosis_enclave_manager_api_bindings.HealthCheckRequest, kurtosis_enclave_manager_api_bindings.HealthCheckResponse](
 			httpClient,
 			baseURL+KurtosisEnclaveManagerServerCheckProcedure,
+			opts...,
+		),
+		getEngineInfo: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerGetEngineInfoProcedure,
 			opts...,
 		),
 		getEnclaves: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse](
@@ -227,12 +244,23 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerAddAliasProcedure,
 			opts...,
 		),
+		isNewKurtosisVersionAvailable: connect.NewClient[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerIsNewKurtosisVersionAvailableProcedure,
+			opts...,
+		),
+		upgradeKurtosisVersion: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerUpgradeKurtosisVersionProcedure,
+			opts...,
+		),
 	}
 }
 
 // kurtosisEnclaveManagerServerClient implements KurtosisEnclaveManagerServerClient.
 type kurtosisEnclaveManagerServerClient struct {
 	check                          *connect.Client[kurtosis_enclave_manager_api_bindings.HealthCheckRequest, kurtosis_enclave_manager_api_bindings.HealthCheckResponse]
+	getEngineInfo                  *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse]
 	getEnclaves                    *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]
 	getServices                    *connect.Client[kurtosis_enclave_manager_api_bindings.GetServicesRequest, kurtosis_core_rpc_api_bindings.GetServicesResponse]
 	getServiceLogs                 *connect.Client[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]
@@ -251,11 +279,18 @@ type kurtosisEnclaveManagerServerClient struct {
 	lockPort                       *connect.Client[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty]
 	unlockPort                     *connect.Client[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty]
 	addAlias                       *connect.Client[kurtosis_enclave_manager_api_bindings.AddAliasRequest, emptypb.Empty]
+	isNewKurtosisVersionAvailable  *connect.Client[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse]
+	upgradeKurtosisVersion         *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest, emptypb.Empty]
 }
 
 // Check calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check.
 func (c *kurtosisEnclaveManagerServerClient) Check(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error) {
 	return c.check.CallUnary(ctx, req)
+}
+
+// GetEngineInfo calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEngineInfo.
+func (c *kurtosisEnclaveManagerServerClient) GetEngineInfo(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
+	return c.getEngineInfo.CallUnary(ctx, req)
 }
 
 // GetEnclaves calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEnclaves.
@@ -356,10 +391,23 @@ func (c *kurtosisEnclaveManagerServerClient) AddAlias(ctx context.Context, req *
 	return c.addAlias.CallUnary(ctx, req)
 }
 
+// IsNewKurtosisVersionAvailable calls
+// kurtosis_enclave_manager.KurtosisEnclaveManagerServer.IsNewKurtosisVersionAvailable.
+func (c *kurtosisEnclaveManagerServerClient) IsNewKurtosisVersionAvailable(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error) {
+	return c.isNewKurtosisVersionAvailable.CallUnary(ctx, req)
+}
+
+// UpgradeKurtosisVersion calls
+// kurtosis_enclave_manager.KurtosisEnclaveManagerServer.UpgradeKurtosisVersion.
+func (c *kurtosisEnclaveManagerServerClient) UpgradeKurtosisVersion(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.upgradeKurtosisVersion.CallUnary(ctx, req)
+}
+
 // KurtosisEnclaveManagerServerHandler is an implementation of the
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer service.
 type KurtosisEnclaveManagerServerHandler interface {
 	Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error)
+	GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error)
 	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
 	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error
@@ -378,6 +426,8 @@ type KurtosisEnclaveManagerServerHandler interface {
 	LockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
+	IsNewKurtosisVersionAvailable(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error)
+	UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerHandler builds an HTTP handler from the service implementation. It
@@ -389,6 +439,11 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 	kurtosisEnclaveManagerServerCheckHandler := connect.NewUnaryHandler(
 		KurtosisEnclaveManagerServerCheckProcedure,
 		svc.Check,
+		opts...,
+	)
+	kurtosisEnclaveManagerServerGetEngineInfoHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerGetEngineInfoProcedure,
+		svc.GetEngineInfo,
 		opts...,
 	)
 	kurtosisEnclaveManagerServerGetEnclavesHandler := connect.NewUnaryHandler(
@@ -481,10 +536,22 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		svc.AddAlias,
 		opts...,
 	)
+	kurtosisEnclaveManagerServerIsNewKurtosisVersionAvailableHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerIsNewKurtosisVersionAvailableProcedure,
+		svc.IsNewKurtosisVersionAvailable,
+		opts...,
+	)
+	kurtosisEnclaveManagerServerUpgradeKurtosisVersionHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerUpgradeKurtosisVersionProcedure,
+		svc.UpgradeKurtosisVersion,
+		opts...,
+	)
 	return "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisEnclaveManagerServerCheckProcedure:
 			kurtosisEnclaveManagerServerCheckHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerGetEngineInfoProcedure:
+			kurtosisEnclaveManagerServerGetEngineInfoHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetEnclavesProcedure:
 			kurtosisEnclaveManagerServerGetEnclavesHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetServicesProcedure:
@@ -521,6 +588,10 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 			kurtosisEnclaveManagerServerUnlockPortHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerAddAliasProcedure:
 			kurtosisEnclaveManagerServerAddAliasHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerIsNewKurtosisVersionAvailableProcedure:
+			kurtosisEnclaveManagerServerIsNewKurtosisVersionAvailableHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerUpgradeKurtosisVersionProcedure:
+			kurtosisEnclaveManagerServerUpgradeKurtosisVersionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -532,6 +603,10 @@ type UnimplementedKurtosisEnclaveManagerServerHandler struct{}
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEngineInfo is not implemented"))
 }
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
@@ -604,4 +679,12 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) UnlockPort(context.Conte
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.AddAlias is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) IsNewKurtosisVersionAvailable(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.IsNewKurtosisVersionAvailable is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.UpgradeKurtosisVersion is not implemented"))
 }
