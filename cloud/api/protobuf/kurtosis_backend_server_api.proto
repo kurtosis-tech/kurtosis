@@ -297,5 +297,4 @@ message IsNewKurtosisVersionAvailableResponse {
 
 message UpgradeKurtosisVersionRequest {
   string access_token = 1;
-  string api_key = 2;
 }
