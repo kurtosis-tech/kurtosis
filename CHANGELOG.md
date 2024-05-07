@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.89.6](https://github.com/kurtosis-tech/kurtosis/compare/0.89.5...0.89.6) (2024-05-07)
+
+
+### Bug Fixes
+
+* multi service logging ([#2435](https://github.com/kurtosis-tech/kurtosis/issues/2435)) ([d303597](https://github.com/kurtosis-tech/kurtosis/commit/d303597fc30f119c7523101ee2679ab1051d9252))
+
 ## [0.89.5](https://github.com/kurtosis-tech/kurtosis/compare/0.89.4...0.89.5) (2024-05-07)
 
 
