@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.89.4](https://github.com/kurtosis-tech/kurtosis/compare/0.89.3...0.89.4) (2024-05-07)
+
+
+### Features
+
+* `IsNewKurtosisVersionAvailable` and `UpgradeKurtosisVersion` GRPC endpoints added ([#2427](https://github.com/kurtosis-tech/kurtosis/issues/2427)) ([6a6969f](https://github.com/kurtosis-tech/kurtosis/commit/6a6969fd2a13842a263b444dcad74c0ad148f647))
+* allow disabling tini ([#2425](https://github.com/kurtosis-tech/kurtosis/issues/2425)) ([7927da4](https://github.com/kurtosis-tech/kurtosis/commit/7927da4bdc5e74a322ac9794364c8630da255be5))
+* allow users to set custom headers for recipes ([#2424](https://github.com/kurtosis-tech/kurtosis/issues/2424)) ([07d6ebf](https://github.com/kurtosis-tech/kurtosis/commit/07d6ebfccf87e639ef9729773bf2b2e729009884))
+
 ## [0.89.3](https://github.com/kurtosis-tech/kurtosis/compare/0.89.2...0.89.3) (2024-05-02)
 
 
