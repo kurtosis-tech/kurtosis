@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.89.5](https://github.com/kurtosis-tech/kurtosis/compare/0.89.4...0.89.5) (2024-05-07)
+
+
+### Features
+
+* retrieve multiple service logs stream at once via cli ([#2426](https://github.com/kurtosis-tech/kurtosis/issues/2426)) ([b071ba2](https://github.com/kurtosis-tech/kurtosis/commit/b071ba2872d2f666bfea3925e8d9e6bfbda2b031))
+
 ## [0.89.4](https://github.com/kurtosis-tech/kurtosis/compare/0.89.3...0.89.4) (2024-05-07)
 
 
