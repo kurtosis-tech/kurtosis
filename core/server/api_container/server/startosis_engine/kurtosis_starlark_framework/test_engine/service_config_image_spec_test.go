@@ -60,29 +60,7 @@ func (t *serviceConfigImageSpecTest) Assert(typeValue builtin_argument.KurtosisV
 	require.Nil(t, interpretationErr)
 
 	expectedImageRegistrySpec := image_registry_spec.NewImageRegistrySpec(testContainerImageName, testRegistryUsername, testRegistryPassword, testRegistryAddr)
-	expectedServiceConfig, err := service.CreateServiceConfig(
-		testContainerImageName,
-		nil,
-		expectedImageRegistrySpec,
-		nil,
-		map[string]*port_spec.PortSpec{},
-		map[string]*port_spec.PortSpec{},
-		nil,
-		nil,
-		map[string]string{},
-		nil,
-		nil,
-		0,
-		0,
-		service_config.DefaultPrivateIPAddrPlaceholder,
-		0,
-		0,
-		map[string]string{},
-		nil,
-		nil,
-		map[string]string{},
-		image_download_mode.ImageDownloadMode_Missing,
-	)
+	expectedServiceConfig, err := service.CreateServiceConfig(testContainerImageName, nil, expectedImageRegistrySpec, nil, map[string]*port_spec.PortSpec{}, map[string]*port_spec.PortSpec{}, nil, nil, map[string]string{}, nil, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
 	require.NoError(t, err)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
 	require.Equal(t, expectedImageRegistrySpec, serviceConfig.GetImageRegistrySpec())

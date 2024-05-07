@@ -542,6 +542,7 @@ func createStartServiceOperation(
 		privateIPAddrPlaceholder := serviceConfig.GetPrivateIPAddrPlaceholder()
 		user := serviceConfig.GetUser()
 		filesToBeMoved := serviceConfig.GetFilesToBeMoved()
+		tiniEnabled := serviceConfig.GetTiniEnabled()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -699,14 +700,16 @@ func createStartServiceOperation(
 		).WithSkipAddingToBridgeNetworkIfStaticIpIsSet(
 			skipAddingUserServiceToBridgeNetwork,
 		).WithContainerInitEnabled(
-			true,
+			tiniEnabled,
 		).WithVolumeMounts(
 			volumeMounts,
 		).WithLoggingDriver(
 			fluentdLoggingDriverCnfg,
 		).WithRestartPolicy(
 			restartPolicy,
-		).WithUser(user)
+		).WithUser(
+			user,
+		)
 
 		if entrypointArgs != nil {
 			createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)

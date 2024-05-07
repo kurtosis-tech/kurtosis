@@ -34,6 +34,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestGetHttpRequestRecipe() {
 		"",
 		"/test",
 		"",
+		testEmptyHeaders,
 	).Times(1).Return(
 		&http.Response{
 			Status:           "200 OK",

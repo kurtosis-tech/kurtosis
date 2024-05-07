@@ -30,6 +30,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestRequestWithPositionalArgs() {
 		requestContentType,
 		requestEndpoint,
 		requestBody,
+		testEmptyHeaders,
 	).Times(1).Return(
 		&http.Response{
 			Status:           "200 OK",
