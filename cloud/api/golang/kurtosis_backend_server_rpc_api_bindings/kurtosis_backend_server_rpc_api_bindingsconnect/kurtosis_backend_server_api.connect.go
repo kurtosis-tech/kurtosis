@@ -89,6 +89,12 @@ const (
 	// KurtosisCloudBackendServerAddAliasProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's AddAlias RPC.
 	KurtosisCloudBackendServerAddAliasProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/AddAlias"
+	// KurtosisCloudBackendServerIsNewKurtosisVersionAvailableProcedure is the fully-qualified name of
+	// the KurtosisCloudBackendServer's IsNewKurtosisVersionAvailable RPC.
+	KurtosisCloudBackendServerIsNewKurtosisVersionAvailableProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/IsNewKurtosisVersionAvailable"
+	// KurtosisCloudBackendServerUpgradeKurtosisVersionProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's UpgradeKurtosisVersion RPC.
+	KurtosisCloudBackendServerUpgradeKurtosisVersionProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/UpgradeKurtosisVersion"
 )
 
 // KurtosisCloudBackendServerClient is a client for the kurtosis_cloud.KurtosisCloudBackendServer
@@ -112,6 +118,8 @@ type KurtosisCloudBackendServerClient interface {
 	GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error)
 	GetPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetPortsResponse], error)
 	AddAlias(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
+	IsNewKurtosisVersionAvailable(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error)
+	UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -217,29 +225,41 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerAddAliasProcedure,
 			opts...,
 		),
+		isNewKurtosisVersionAvailable: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest, kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerIsNewKurtosisVersionAvailableProcedure,
+			opts...,
+		),
+		upgradeKurtosisVersion: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerUpgradeKurtosisVersionProcedure,
+			opts...,
+		),
 	}
 }
 
 // kurtosisCloudBackendServerClient implements KurtosisCloudBackendServerClient.
 type kurtosisCloudBackendServerClient struct {
-	isAvailable                 *connect.Client[emptypb.Empty, emptypb.Empty]
-	getCloudInstanceConfig      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
-	getOrCreateApiKey           *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse]
-	getOrCreateInstance         *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse]
-	getOrCreatePaymentConfig    *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse]
-	refreshDefaultPaymentMethod *connect.Client[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs, emptypb.Empty]
-	cancelPaymentSubscription   *connect.Client[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs, emptypb.Empty]
-	updateAddress               *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs, emptypb.Empty]
-	getInstances                *connect.Client[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse]
-	deleteInstance              *connect.Client[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest, kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse]
-	changeActiveStatus          *connect.Client[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest, emptypb.Empty]
-	getUser                     *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUserRequest, kurtosis_backend_server_rpc_api_bindings.GetUserResponse]
-	checkPortAuthorization      *connect.Client[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest, emptypb.Empty]
-	unlockPort                  *connect.Client[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest, emptypb.Empty]
-	lockPort                    *connect.Client[kurtosis_backend_server_rpc_api_bindings.LockPortRequest, emptypb.Empty]
-	getUnlockedPorts            *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse]
-	getPorts                    *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetPortsResponse]
-	addAlias                    *connect.Client[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest, emptypb.Empty]
+	isAvailable                   *connect.Client[emptypb.Empty, emptypb.Empty]
+	getCloudInstanceConfig        *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
+	getOrCreateApiKey             *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse]
+	getOrCreateInstance           *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse]
+	getOrCreatePaymentConfig      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse]
+	refreshDefaultPaymentMethod   *connect.Client[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs, emptypb.Empty]
+	cancelPaymentSubscription     *connect.Client[kurtosis_backend_server_rpc_api_bindings.CancelPaymentSubscriptionArgs, emptypb.Empty]
+	updateAddress                 *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpdateAddressArgs, emptypb.Empty]
+	getInstances                  *connect.Client[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.GetInstancesResponse]
+	deleteInstance                *connect.Client[kurtosis_backend_server_rpc_api_bindings.DeleteInstanceRequest, kurtosis_backend_server_rpc_api_bindings.DeleteInstanceResponse]
+	changeActiveStatus            *connect.Client[kurtosis_backend_server_rpc_api_bindings.ChangeUserActiveRequest, emptypb.Empty]
+	getUser                       *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUserRequest, kurtosis_backend_server_rpc_api_bindings.GetUserResponse]
+	checkPortAuthorization        *connect.Client[kurtosis_backend_server_rpc_api_bindings.CheckPortAuthorizationRequest, emptypb.Empty]
+	unlockPort                    *connect.Client[kurtosis_backend_server_rpc_api_bindings.UnlockPortRequest, emptypb.Empty]
+	lockPort                      *connect.Client[kurtosis_backend_server_rpc_api_bindings.LockPortRequest, emptypb.Empty]
+	getUnlockedPorts              *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse]
+	getPorts                      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest, kurtosis_backend_server_rpc_api_bindings.GetPortsResponse]
+	addAlias                      *connect.Client[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest, emptypb.Empty]
+	isNewKurtosisVersionAvailable *connect.Client[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest, kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse]
+	upgradeKurtosisVersion        *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest, emptypb.Empty]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -335,6 +355,17 @@ func (c *kurtosisCloudBackendServerClient) AddAlias(ctx context.Context, req *co
 	return c.addAlias.CallUnary(ctx, req)
 }
 
+// IsNewKurtosisVersionAvailable calls
+// kurtosis_cloud.KurtosisCloudBackendServer.IsNewKurtosisVersionAvailable.
+func (c *kurtosisCloudBackendServerClient) IsNewKurtosisVersionAvailable(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error) {
+	return c.isNewKurtosisVersionAvailable.CallUnary(ctx, req)
+}
+
+// UpgradeKurtosisVersion calls kurtosis_cloud.KurtosisCloudBackendServer.UpgradeKurtosisVersion.
+func (c *kurtosisCloudBackendServerClient) UpgradeKurtosisVersion(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.upgradeKurtosisVersion.CallUnary(ctx, req)
+}
+
 // KurtosisCloudBackendServerHandler is an implementation of the
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
@@ -356,6 +387,8 @@ type KurtosisCloudBackendServerHandler interface {
 	GetUnlockedPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetUnlockedPortsResponse], error)
 	GetPorts(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetPortsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetPortsResponse], error)
 	AddAlias(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
+	IsNewKurtosisVersionAvailable(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error)
+	UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -457,6 +490,16 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.AddAlias,
 		opts...,
 	)
+	kurtosisCloudBackendServerIsNewKurtosisVersionAvailableHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerIsNewKurtosisVersionAvailableProcedure,
+		svc.IsNewKurtosisVersionAvailable,
+		opts...,
+	)
+	kurtosisCloudBackendServerUpgradeKurtosisVersionHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerUpgradeKurtosisVersionProcedure,
+		svc.UpgradeKurtosisVersion,
+		opts...,
+	)
 	return "/kurtosis_cloud.KurtosisCloudBackendServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
@@ -495,6 +538,10 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerGetPortsHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerAddAliasProcedure:
 			kurtosisCloudBackendServerAddAliasHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerIsNewKurtosisVersionAvailableProcedure:
+			kurtosisCloudBackendServerIsNewKurtosisVersionAvailableHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerUpgradeKurtosisVersionProcedure:
+			kurtosisCloudBackendServerUpgradeKurtosisVersionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -574,4 +621,12 @@ func (UnimplementedKurtosisCloudBackendServerHandler) GetPorts(context.Context, 
 
 func (UnimplementedKurtosisCloudBackendServerHandler) AddAlias(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.AddAlias is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) IsNewKurtosisVersionAvailable(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.IsNewKurtosisVersionAvailable is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.UpgradeKurtosisVersion is not implemented"))
 }
