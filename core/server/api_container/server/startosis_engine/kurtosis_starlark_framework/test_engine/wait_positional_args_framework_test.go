@@ -32,6 +32,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestWaitWithPositionalArgs() {
 		waitRecipeContentType,
 		waitRecipeEndpoint,
 		waitRecipeBody,
+		testEmptyHeaders,
 	).Times(1).Return(
 		&http.Response{
 			Status:           "200 OK",
