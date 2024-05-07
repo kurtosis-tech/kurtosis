@@ -2,12 +2,9 @@ package service_config
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
-	"math"
-	"path"
-
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -27,6 +24,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
 	v1 "k8s.io/api/core/v1"
+	"math"
+	"path"
 )
 
 const (
@@ -52,6 +51,7 @@ const (
 	TolerationsAttr                 = "tolerations"
 	NodeSelectorsAttr               = "node_selectors"
 	FilesToBeMovedAttr              = "files_to_be_moved"
+	TiniEnabledAttr                 = "tini_enabled"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -220,6 +220,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.StringMappingToString(value, FilesToBeMovedAttr)
 					},
+				},
+				{
+					Name:              TiniEnabledAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
+					Validator:         nil,
 				},
 			},
 		},
@@ -525,6 +531,15 @@ func (config *ServiceConfig) ToKurtosisType(
 		}
 	}
 
+	tiniEnabled := true
+	tiniEnabledStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Bool](config.KurtosisValueTypeDefault, TiniEnabledAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		tiniEnabled = bool(tiniEnabledStarlark)
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -547,6 +562,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		tolerations,
 		nodeSelectors,
 		imageDownloadMode,
+		tiniEnabled,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")

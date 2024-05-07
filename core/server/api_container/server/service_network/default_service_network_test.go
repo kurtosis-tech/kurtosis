@@ -1205,29 +1205,7 @@ func openFreeTCPAndUDPLocalHostPortAddressesForTesting() (*netip.AddrPort, *neti
 }
 
 func testServiceConfig(t *testing.T, imageName string) *service.ServiceConfig {
-	serviceConfig, err := service.CreateServiceConfig(
-		imageName,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		0,
-		0,
-		"",
-		0,
-		0,
-		map[string]string{},
-		nil,
-		nil,
-		map[string]string{},
-		image_download_mode.ImageDownloadMode_Missing,
-	)
+	serviceConfig, err := service.CreateServiceConfig(imageName, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
 	require.NoError(t, err)
 	return serviceConfig
 }
