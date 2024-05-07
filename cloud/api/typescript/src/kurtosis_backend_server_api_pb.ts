@@ -1951,6 +1951,11 @@ export class AddAliasRequest extends Message<AddAliasRequest> {
  */
 export class IsNewKurtosisVersionAvailableRequest extends Message<IsNewKurtosisVersionAvailableRequest> {
   /**
+   * @generated from field: string access_token = 1;
+   */
+  accessToken = "";
+
+  /**
    * @generated from field: string current_kurtosis_version = 2;
    */
   currentKurtosisVersion = "";
@@ -1963,6 +1968,7 @@ export class IsNewKurtosisVersionAvailableRequest extends Message<IsNewKurtosisV
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "kurtosis_cloud.IsNewKurtosisVersionAvailableRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "current_kurtosis_version", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
@@ -2031,7 +2037,12 @@ export class IsNewKurtosisVersionAvailableResponse extends Message<IsNewKurtosis
  */
 export class UpgradeKurtosisVersionRequest extends Message<UpgradeKurtosisVersionRequest> {
   /**
-   * @generated from field: string api_key = 1;
+   * @generated from field: string access_token = 1;
+   */
+  accessToken = "";
+
+  /**
+   * @generated from field: string api_key = 2;
    */
   apiKey = "";
 
@@ -2043,7 +2054,8 @@ export class UpgradeKurtosisVersionRequest extends Message<UpgradeKurtosisVersio
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "kurtosis_cloud.UpgradeKurtosisVersionRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "api_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "api_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpgradeKurtosisVersionRequest {

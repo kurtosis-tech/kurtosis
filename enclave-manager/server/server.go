@@ -223,8 +223,15 @@ func (c *WebServer) IsNewKurtosisVersionAvailable(ctx context.Context, req *conn
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
 
+	/*jwtToken, err := extractJwtToken(req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred extracting the JWT token from the request")
+	}*/
+
 	isNewKurtosisVersionAvailableRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest{
+			//AccessToken:            jwtToken,
+			AccessToken:            "",
 			CurrentKurtosisVersion: currentEngineKurtosisVersion,
 		},
 	}
@@ -251,9 +258,16 @@ func (c *WebServer) UpgradeKurtosisVersion(ctx context.Context, req *connect.Req
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
 
+	/*jwtToken, err := extractJwtToken(req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred extracting the JWT token from the request")
+	}*/
+
 	upgradeKurtosisVersionRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest{
-			ApiKey: auth.ApiKey,
+			//AccessToken: jwtToken,
+			AccessToken: "",
+			ApiKey:      auth.ApiKey,
 		},
 	}
 
@@ -858,7 +872,6 @@ func (c *WebServer) createAPICClient(
 func (c *WebServer) createKurtosisCloudBackendClient() (*kurtosis_backend_server_rpc_api_bindingsconnect.KurtosisCloudBackendServerClient, error) {
 	host := kurtosisCloudApiHost
 	if c.isLocalRun {
-		host = kurtosisCloudApiLocalHost
 		hostIP, found := os.LookupEnv("KURTOSIS_ENGINE_LOCAL_DOCKER_BRIDGE_IP")
 		if found {
 			logrus.Info("The 'KURTOSIS_ENGINE_LOCAL_DOCKER_BRIDGE_IP' has been set.")

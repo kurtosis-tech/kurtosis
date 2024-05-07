@@ -286,6 +286,7 @@ message  AddAliasRequest {
 }
 
 message IsNewKurtosisVersionAvailableRequest {
+  string access_token = 1;
   string current_kurtosis_version = 2;
 }
 
@@ -295,5 +296,6 @@ message IsNewKurtosisVersionAvailableResponse {
 }
 
 message UpgradeKurtosisVersionRequest {
-  string api_key = 1;
+  string access_token = 1;
+  string api_key = 2;
 }
