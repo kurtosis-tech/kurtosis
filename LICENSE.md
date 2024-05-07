@@ -3,7 +3,7 @@ Business Source License 1.1
 Parameters
 
 Licensor:             Kurtosis Technologies, Inc.
-Licensed Work:        Kurtosis 0.89.5
+Licensed Work:        Kurtosis 0.89.6
 The Licensed Work is (c) 2024 Kurtosis Technologies, Inc.
 Additional Use Grant: You may make use of the Licensed Work, provided that
 you may not use the Licensed Work for an Environment Orchestration Service.
