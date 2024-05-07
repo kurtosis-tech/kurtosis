@@ -13,7 +13,7 @@ def run(plan):
 `
 )
 
-func (suite *StartosisAddServiceTestSuite) TestAddServicesTiniEnabled() {
+func (suite *StartosisAddServiceTestSuite) TestAddServicesTiniDisabled() {
 	ctx := context.Background()
 	runResult, err := suite.RunScript(ctx, addServicesWithTiniDisabled)
 
