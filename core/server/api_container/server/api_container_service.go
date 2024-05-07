@@ -75,6 +75,7 @@ const (
 	isNotScript              = false
 	isNotRemote              = false
 	defaultParallelism       = 4
+	emptySerializedParams    = ""
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -114,6 +115,9 @@ func NewApiContainerService(
 	metricsClient metrics_client.MetricsClient,
 	githubAuthProvider *git_package_content_provider.GitHubPackageAuthProvider,
 ) (*ApiContainerService, error) {
+	var emptyInitialSerializedParams string
+	emptyInitialSerializedParamsPtr := &emptyInitialSerializedParams
+	*emptyInitialSerializedParamsPtr = ""
 	service := &ApiContainerService{
 		filesArtifactStore:     filesArtifactStore,
 		serviceNetwork:         serviceNetwork,
@@ -122,14 +126,15 @@ func NewApiContainerService(
 		packageContentProvider: startosisModuleContentProvider,
 		restartPolicy:          restartPolicy,
 		starlarkRun: &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-			PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
-			SerializedScript:       "",
-			SerializedParams:       "",
-			Parallelism:            defaultParallelism,
-			RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-			MainFunctionName:       "",
-			ExperimentalFeatures:   []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
-			RestartPolicy:          kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
+			PackageId:               startosis_constants.PackageIdPlaceholderForStandaloneScript,
+			SerializedScript:        "",
+			SerializedParams:        "",
+			Parallelism:             defaultParallelism,
+			RelativePathToMainFile:  startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+			MainFunctionName:        "",
+			ExperimentalFeatures:    []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
+			RestartPolicy:           kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
+			InitialSerializedParams: emptyInitialSerializedParamsPtr,
 		},
 		metricsClient:      metricsClient,
 		githubAuthProvider: githubAuthProvider,
@@ -172,15 +177,19 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		args.GetExperimentalFeatures(),
 		stream)
 
+	if apicService.starlarkRun.InitialSerializedParams == nil || *apicService.starlarkRun.InitialSerializedParams == "" {
+		apicService.starlarkRun.InitialSerializedParams = &serializedParams
+	}
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-		PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		SerializedScript:       serializedStarlarkScript,
-		SerializedParams:       serializedParams,
-		Parallelism:            int32(parallelism),
-		RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		MainFunctionName:       mainFuncName,
-		ExperimentalFeatures:   experimentalFeatures,
-		RestartPolicy:          apicService.restartPolicy,
+		PackageId:               apicService.starlarkRun.PackageId,
+		SerializedScript:        serializedStarlarkScript,
+		SerializedParams:        serializedParams,
+		Parallelism:             int32(parallelism),
+		RelativePathToMainFile:  startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		MainFunctionName:        mainFuncName,
+		ExperimentalFeatures:    experimentalFeatures,
+		RestartPolicy:           apicService.restartPolicy,
+		InitialSerializedParams: apicService.starlarkRun.InitialSerializedParams,
 	}
 
 	return nil
@@ -315,15 +324,19 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		serializedParams)
 	apicService.runStarlark(parallelism, dryRun, detectedPackageId, detectedPackageReplaceOptions, mainFuncName, actualRelativePathToMainFile, scriptWithRunFunction, serializedParams, downloadMode, nonBlockingMode, args.ExperimentalFeatures, stream)
 
+	if apicService.starlarkRun.InitialSerializedParams == nil || *apicService.starlarkRun.InitialSerializedParams == "" {
+		apicService.starlarkRun.InitialSerializedParams = &serializedParams
+	}
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-		PackageId:              packageIdFromArgs,
-		SerializedScript:       scriptWithRunFunction,
-		SerializedParams:       serializedParams,
-		Parallelism:            int32(parallelism),
-		RelativePathToMainFile: requestedRelativePathToMainFile,
-		MainFunctionName:       mainFuncName,
-		ExperimentalFeatures:   args.ExperimentalFeatures,
-		RestartPolicy:          apicService.restartPolicy,
+		PackageId:               packageIdFromArgs,
+		SerializedScript:        scriptWithRunFunction,
+		SerializedParams:        serializedParams,
+		Parallelism:             int32(parallelism),
+		RelativePathToMainFile:  requestedRelativePathToMainFile,
+		MainFunctionName:        mainFuncName,
+		ExperimentalFeatures:    args.ExperimentalFeatures,
+		RestartPolicy:           apicService.restartPolicy,
+		InitialSerializedParams: apicService.starlarkRun.InitialSerializedParams,
 	}
 	return nil
 }

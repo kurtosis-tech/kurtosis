@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -27,6 +28,7 @@ const (
 	// Common attributes for both [Get|Post]HttpRequestRecipe
 	PortIdAttr   = "port_id"
 	EndpointAttr = "endpoint"
+	HeadersAttr  = "headers"
 	ExtractAttr  = "extract"
 )
 
@@ -50,6 +52,7 @@ func executeInternal(
 	contentType string,
 	endpoint string,
 	extractors map[string]string,
+	headers map[string]string,
 ) (map[string]starlark.Comparable, error) {
 	var response *http.Response
 	var err error
@@ -63,15 +66,7 @@ func executeInternal(
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
-	response, err = serviceNetwork.HttpRequestService(
-		ctx,
-		serviceNameStr,
-		portId,
-		method,
-		contentType,
-		endpoint,
-		recipeBodyWithRuntimeValue,
-	)
+	response, err = serviceNetwork.HttpRequestService(ctx, serviceNameStr, portId, method, contentType, endpoint, recipeBodyWithRuntimeValue, headers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe")
 	}
@@ -133,6 +128,21 @@ func createStarlarkReturnValueInternal(resultUuid string, extractors map[string]
 	}
 	dict.Freeze()
 	return dict, nil
+}
+
+func convertHeadersToMapStringString(isSet bool, headersStarlarkValue starlark.Value) (map[string]string, *startosis_errors.InterpretationError) {
+	if !isSet {
+		return map[string]string{}, nil
+	}
+	headersDict, ok := headersStarlarkValue.(*starlark.Dict)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError("expected '%v' to be a starlark dict but got '%v'", headersStarlarkValue, reflect.TypeOf(headersStarlarkValue))
+	}
+	headers, interpretationErr := kurtosis_types.SafeCastToMapStringString(headersDict, HeadersAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	return headers, nil
 }
 
 func convertExtractorsToDict(isAttrSet bool, extractorsValue starlark.Value) (map[string]string, *startosis_errors.InterpretationError) {

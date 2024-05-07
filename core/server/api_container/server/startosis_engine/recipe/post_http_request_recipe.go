@@ -70,6 +70,15 @@ func NewPostHttpRequestRecipeType() *kurtosis_type_constructor.KurtosisTypeConst
 						return interpretationErr
 					},
 				},
+				{
+					Name:              HeadersAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						_, interpretationErr := convertHeadersToMapStringString(true, value)
+						return interpretationErr
+					},
+				},
 			},
 		},
 		Instantiate: instantiatePostHttpRequestRecipe,
@@ -154,6 +163,16 @@ func (recipe *PostHttpRequestRecipe) Execute(
 		return nil, interpretationErr
 	}
 
+	rawHeaders, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
+		recipe.KurtosisValueTypeDefault, HeadersAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	headers, interpretationErr := convertHeadersToMapStringString(found, rawHeaders)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
 	serviceNameStr := string(serviceName)
 	if serviceNameStr == "" {
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
@@ -170,6 +189,7 @@ func (recipe *PostHttpRequestRecipe) Execute(
 		contentType.GoString(),
 		endpoint.GoString(),
 		extractors,
+		headers,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when running HTTP request recipe '%v'", recipe.String())

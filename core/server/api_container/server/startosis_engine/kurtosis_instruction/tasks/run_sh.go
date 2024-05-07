@@ -358,29 +358,7 @@ func repacaeMagicStringsInEnvVars(runtimeValueStore *runtime_value_store.Runtime
 		}
 	}
 
-	renderedServiceConfig, err := service.CreateServiceConfig(
-		serviceConfig.GetContainerImageName(),
-		serviceConfig.GetImageBuildSpec(),
-		serviceConfig.GetImageRegistrySpec(),
-		serviceConfig.GetNixBuildSpec(),
-		serviceConfig.GetPrivatePorts(),
-		serviceConfig.GetPublicPorts(),
-		serviceConfig.GetEntrypointArgs(),
-		serviceConfig.GetCmdArgs(),
-		envVars,
-		serviceConfig.GetFilesArtifactsExpansion(),
-		serviceConfig.GetPersistentDirectories(),
-		serviceConfig.GetCPUAllocationMillicpus(),
-		serviceConfig.GetMemoryAllocationMegabytes(),
-		serviceConfig.GetPrivateIPAddrPlaceholder(),
-		serviceConfig.GetMinCPUAllocationMillicpus(),
-		serviceConfig.GetMinMemoryAllocationMegabytes(),
-		serviceConfig.GetLabels(),
-		serviceConfig.GetUser(),
-		serviceConfig.GetTolerations(),
-		serviceConfig.GetNodeSelectors(),
-		serviceConfig.GetImageDownloadMode(),
-	)
+	renderedServiceConfig, err := service.CreateServiceConfig(serviceConfig.GetContainerImageName(), serviceConfig.GetImageBuildSpec(), serviceConfig.GetImageRegistrySpec(), serviceConfig.GetNixBuildSpec(), serviceConfig.GetPrivatePorts(), serviceConfig.GetPublicPorts(), serviceConfig.GetEntrypointArgs(), serviceConfig.GetCmdArgs(), envVars, serviceConfig.GetFilesArtifactsExpansion(), serviceConfig.GetPersistentDirectories(), serviceConfig.GetCPUAllocationMillicpus(), serviceConfig.GetMemoryAllocationMegabytes(), serviceConfig.GetPrivateIPAddrPlaceholder(), serviceConfig.GetMinCPUAllocationMillicpus(), serviceConfig.GetMinMemoryAllocationMegabytes(), serviceConfig.GetLabels(), serviceConfig.GetUser(), serviceConfig.GetTolerations(), serviceConfig.GetNodeSelectors(), serviceConfig.GetImageDownloadMode(), tiniEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a service config with env var magric strings replaced.")
 	}

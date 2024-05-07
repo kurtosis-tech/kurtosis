@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.89.3](https://github.com/kurtosis-tech/kurtosis/compare/0.89.2...0.89.3) (2024-05-02)
+
+
+### Features
+
+* new feature to restart the API containers after the Kurtosis engine is started ([#2413](https://github.com/kurtosis-tech/kurtosis/issues/2413)) ([494357f](https://github.com/kurtosis-tech/kurtosis/commit/494357f2fea8467de39c0ed0980fbe7875f94b2d))
+
+
+### Bug Fixes
+
+* set service idempotency logic ([#2422](https://github.com/kurtosis-tech/kurtosis/issues/2422)) ([cbd68bf](https://github.com/kurtosis-tech/kurtosis/commit/cbd68bf2aff7343ea40992eecbf4f872df7c5c7b))
+* update image UI arg parsing ([#2419](https://github.com/kurtosis-tech/kurtosis/issues/2419)) ([cd3d928](https://github.com/kurtosis-tech/kurtosis/commit/cd3d928ad2bc53e78e7b43897300d55b33b4a021))
+
+## [0.89.2](https://github.com/kurtosis-tech/kurtosis/compare/0.89.1...0.89.2) (2024-05-01)
+
+
+### Features
+
+* change log retention period to one week ([#2403](https://github.com/kurtosis-tech/kurtosis/issues/2403)) ([3f68795](https://github.com/kurtosis-tech/kurtosis/commit/3f68795bb9d4e4441b6623eefafb9475e5832d8c))
+* public ports don't have to be same length as private ports ([#2416](https://github.com/kurtosis-tech/kurtosis/issues/2416)) ([9b8b9e3](https://github.com/kurtosis-tech/kurtosis/commit/9b8b9e353354aeef90e56be625bdac8d43f7649a))
+
+## [0.89.1](https://github.com/kurtosis-tech/kurtosis/compare/0.89.0...0.89.1) (2024-04-30)
+
+
+### Features
+
+* adding enclave production mode value in the APIC primitive ([#2407](https://github.com/kurtosis-tech/kurtosis/issues/2407)) ([86acc7f](https://github.com/kurtosis-tech/kurtosis/commit/86acc7f757d23ff65bc20af4b8a250846cee693e))
+* set service image in em ui ([#2406](https://github.com/kurtosis-tech/kurtosis/issues/2406)) ([917f011](https://github.com/kurtosis-tech/kurtosis/commit/917f011afdc5a1c20fbfeeb384ad9e0af3019156))
+
 ## [0.89.0](https://github.com/kurtosis-tech/kurtosis/compare/0.88.19...0.89.0) (2024-04-29)
 
 

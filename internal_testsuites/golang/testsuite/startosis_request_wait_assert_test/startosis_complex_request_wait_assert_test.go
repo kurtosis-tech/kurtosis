@@ -39,16 +39,19 @@ def run(plan):
 		port_id = "http-port",
 		endpoint = "/",
 		content_type="text/plain",
+		headers={"fizz":"buzz"},
 		body=response["extract.exploded-slash"],
 		extract = {
 			"my-body": ".body",
-			"my-content-type": '.headers["content-type"]'
+			"my-content-type": '.headers["content-type"]',
+			"my-headers-fizz": '.headers["fizz"]'
 		}
 	)
 	plan.wait(recipe=post_recipe, field="code", assertion="==", target_value=200, service_name="web-server-complex-request-wait-test")
 	post_response = plan.request(recipe=post_recipe, service_name="web-server-complex-request-wait-test")
 	plan.verify(post_response["code"], "==", 200)
 	plan.verify(post_response["extract.my-content-type"], "==", "text/plain")
+	plan.verify(post_response["extract.my-headers-fizz"], "==", "buzz")
 	plan.verify(post_response["extract.my-body"], "==", "bar")
 	post_recipe_no_body = PostHttpRequestRecipe(
 		port_id = "http-port",

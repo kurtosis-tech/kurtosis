@@ -28,6 +28,12 @@ get_request_recipe = GetHttpRequestRecipe(
     extract = {
         "extractfield" : ".name.id",
     },
+    
+    # This field allows you to pass custom headers with the GET request
+    # OPTIONAL (Default: {})
+    headers = {
+        "Authorization": "Bearer my.secret.token" 
+    },
 )
 ```
 

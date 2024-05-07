@@ -34,12 +34,14 @@ const (
 // [.../28/d3e8832d671f/61830789f03a.json] is the file containing logs from service with uuid 61830789f03a, in enclave with uuid d3e8832d671f,
 // in the 28th week of the current year
 type PerWeekStreamLogsStrategy struct {
-	time logs_clock.LogsClock
+	time                      logs_clock.LogsClock
+	logRetentionPeriodInWeeks int
 }
 
-func NewPerWeekStreamLogsStrategy(time logs_clock.LogsClock) *PerWeekStreamLogsStrategy {
+func NewPerWeekStreamLogsStrategy(time logs_clock.LogsClock, logRetentionPeriodInWeeks int) *PerWeekStreamLogsStrategy {
 	return &PerWeekStreamLogsStrategy{
-		time: time,
+		time:                      time,
+		logRetentionPeriodInWeeks: logRetentionPeriodInWeeks,
 	}
 }
 
@@ -55,7 +57,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	shouldReturnAllLogs bool,
 	numLogLines uint32,
 ) {
-	paths, err := strategy.getLogFilePaths(fs, volume_consts.LogRetentionPeriodInWeeks, string(enclaveUuid), string(serviceUuid))
+	paths, err := strategy.getLogFilePaths(fs, strategy.logRetentionPeriodInWeeks, string(enclaveUuid), string(serviceUuid))
 	if err != nil {
 		streamErrChan <- stacktrace.Propagate(err, "An error occurred retrieving log file paths for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 		return
@@ -68,11 +70,11 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			serviceUuid, enclaveUuid)
 		return
 	}
-	if len(paths) > volume_consts.LogRetentionPeriodInWeeks {
+	if len(paths) > strategy.logRetentionPeriodInWeeks {
 		logrus.Warnf(
 			`We expected to retrieve logs going back '%v' weeks, but instead retrieved logs going back '%v' weeks. 
 					This means logs past the retention period are being returned, likely a bug in Kurtosis.`,
-			volume_consts.LogRetentionPeriodInWeeks, len(paths))
+			strategy.logRetentionPeriodInWeeks, len(paths))
 	}
 
 	logsReader, files, err := getLogsReader(fs, paths)
@@ -347,7 +349,7 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 
 // Returns true if [logLine] has no timestamp
 func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine *logline.LogLine) (bool, error) {
-	retentionPeriod := strategy.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks) * oneWeek)
+	retentionPeriod := strategy.time.Now().Add(time.Duration(-strategy.logRetentionPeriodInWeeks) * oneWeek)
 	timestamp := logLine.GetTimestamp()
 	return timestamp.After(retentionPeriod), nil
 }

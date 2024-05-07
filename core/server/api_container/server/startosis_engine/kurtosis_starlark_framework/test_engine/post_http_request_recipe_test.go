@@ -34,6 +34,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestPostHttpRequestRecipe() {
 		"application/json",
 		"/test",
 		"{}",
+		map[string]string{"key": "value"},
 	).Times(1).Return(
 		&http.Response{
 			Status:           "200 OK",
@@ -63,7 +64,8 @@ func (suite *KurtosisTypeConstructorTestSuite) TestPostHttpRequestRecipe() {
 
 func (t *postHttpRequestRecipeTestCase) GetStarlarkCode() string {
 	extractors := `{"result": ".value"}`
-	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q, %s=%s)", recipe.PostHttpRecipeTypeName, recipe.PortIdAttr, testPrivatePortId, recipe.EndpointAttr, "/test", recipe.RequestBodyAttr, "{}", recipe.ContentTypeAttr, "application/json", recipe.ExtractAttr, extractors)
+	headers := `{"key": "value"}`
+	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q, %s=%s, %s=%s)", recipe.PostHttpRecipeTypeName, recipe.PortIdAttr, testPrivatePortId, recipe.EndpointAttr, "/test", recipe.RequestBodyAttr, "{}", recipe.ContentTypeAttr, "application/json", recipe.ExtractAttr, extractors, recipe.HeadersAttr, headers)
 }
 
 func (t *postHttpRequestRecipeTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
