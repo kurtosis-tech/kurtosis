@@ -34,8 +34,8 @@ func (suite *StartosisAddServiceTestSuite) SetupTest() {
 }
 
 func (suite *StartosisAddServiceTestSuite) TearDownTest() {
-	//err := nil
-	//require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
+	err := suite.destroyEnclaveFunc()
+	require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
 }
 
 func (suite *StartosisAddServiceTestSuite) RunScript(ctx context.Context, script string) (*enclaves.StarlarkRunResult, error) {
