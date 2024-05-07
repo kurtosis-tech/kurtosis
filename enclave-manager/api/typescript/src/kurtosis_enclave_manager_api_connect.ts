@@ -7,7 +7,7 @@ import { AddAliasRequest, CreateRepositoryWebhookRequest, DownloadFilesArtifactR
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 import { CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetEngineInfoResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
 import { GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, PlanYaml, StarlarkRunResponseLine, StreamedDataChunk } from "./api_container_service_pb.js";
-import { GetCloudInstanceConfigResponse, IsNewKurtosisVersionAvailableResponse, UpgradeKurtosisVersionRequest } from "./kurtosis_backend_server_api_pb.js";
+import { GetCloudInstanceConfigResponse, IsNewKurtosisVersionAvailableResponse } from "./kurtosis_backend_server_api_pb.js";
 
 /**
  * @generated from service kurtosis_enclave_manager.KurtosisEnclaveManagerServer
@@ -209,7 +209,7 @@ export const KurtosisEnclaveManagerServer = {
      */
     upgradeKurtosisVersion: {
       name: "UpgradeKurtosisVersion",
-      I: UpgradeKurtosisVersionRequest,
+      I: Empty,
       O: Empty,
       kind: MethodKind.Unary,
     },

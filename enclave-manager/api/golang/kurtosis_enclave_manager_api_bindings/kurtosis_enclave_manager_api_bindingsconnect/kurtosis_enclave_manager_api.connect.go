@@ -130,7 +130,7 @@ type KurtosisEnclaveManagerServerClient interface {
 	UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
 	IsNewKurtosisVersionAvailable(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error)
-	UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error)
+	UpgradeKurtosisVersion(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerClient constructs a client for the
@@ -249,7 +249,7 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerIsNewKurtosisVersionAvailableProcedure,
 			opts...,
 		),
-		upgradeKurtosisVersion: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest, emptypb.Empty](
+		upgradeKurtosisVersion: connect.NewClient[emptypb.Empty, emptypb.Empty](
 			httpClient,
 			baseURL+KurtosisEnclaveManagerServerUpgradeKurtosisVersionProcedure,
 			opts...,
@@ -280,7 +280,7 @@ type kurtosisEnclaveManagerServerClient struct {
 	unlockPort                     *connect.Client[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty]
 	addAlias                       *connect.Client[kurtosis_enclave_manager_api_bindings.AddAliasRequest, emptypb.Empty]
 	isNewKurtosisVersionAvailable  *connect.Client[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse]
-	upgradeKurtosisVersion         *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest, emptypb.Empty]
+	upgradeKurtosisVersion         *connect.Client[emptypb.Empty, emptypb.Empty]
 }
 
 // Check calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check.
@@ -399,7 +399,7 @@ func (c *kurtosisEnclaveManagerServerClient) IsNewKurtosisVersionAvailable(ctx c
 
 // UpgradeKurtosisVersion calls
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer.UpgradeKurtosisVersion.
-func (c *kurtosisEnclaveManagerServerClient) UpgradeKurtosisVersion(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error) {
+func (c *kurtosisEnclaveManagerServerClient) UpgradeKurtosisVersion(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return c.upgradeKurtosisVersion.CallUnary(ctx, req)
 }
 
@@ -427,7 +427,7 @@ type KurtosisEnclaveManagerServerHandler interface {
 	UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
 	IsNewKurtosisVersionAvailable(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error)
-	UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error)
+	UpgradeKurtosisVersion(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerHandler builds an HTTP handler from the service implementation. It
@@ -685,6 +685,6 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) IsNewKurtosisVersionAvai
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.IsNewKurtosisVersionAvailable is not implemented"))
 }
 
-func (UnimplementedKurtosisEnclaveManagerServerHandler) UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error) {
+func (UnimplementedKurtosisEnclaveManagerServerHandler) UpgradeKurtosisVersion(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.UpgradeKurtosisVersion is not implemented"))
 }

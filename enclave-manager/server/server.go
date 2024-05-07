@@ -237,7 +237,7 @@ func (c *WebServer) IsNewKurtosisVersionAvailable(ctx context.Context, req *conn
 	return isNewKurtosisVersionAvailableResponse, nil
 }
 
-func (c *WebServer) UpgradeKurtosis(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+func (c *WebServer) UpgradeKurtosisVersion(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	auth, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")

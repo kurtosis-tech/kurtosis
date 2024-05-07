@@ -92,7 +92,7 @@ export abstract class KurtosisClient {
   }
 
   async upgradeKurtosisVersion() {
-    return this.client.up
+    return this.client.upgradeKurtosisVersion({}, this.getHeaderOptions());
   }
 
   async getEnclaves() {

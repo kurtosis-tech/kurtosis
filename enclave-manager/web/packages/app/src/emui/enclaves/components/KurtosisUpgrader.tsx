@@ -29,8 +29,14 @@ export const KurtosisUpgrader = () => {
     }
   };
 
-  const upgradeKurtosis = () => {
-    console.log("upgrade Kurtosis");
+  const upgradeKurtosis = async () => {
+    console.log("upgrading Kurtosis...");
+    try {
+      const upgradeKurtosisVersionResponse = await kurtosisClient.upgradeKurtosisVersion();
+      console.log("...Kurtosis successfully upgraded");
+    } catch (error) {
+      console.error(`Error occurred when upgrading Kurtosis to the latest version. ${error}`);
+    }
   };
 
   if (!isNewKurtosisVersionAvailable) {

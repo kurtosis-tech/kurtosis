@@ -31,7 +31,7 @@ service KurtosisEnclaveManagerServer {
   rpc UnlockPort(LockUnlockPortRequest) returns(google.protobuf.Empty) {}
   rpc AddAlias(AddAliasRequest) returns(google.protobuf.Empty){}
   rpc IsNewKurtosisVersionAvailable(google.protobuf.Empty) returns(kurtosis_cloud.IsNewKurtosisVersionAvailableResponse){}
-  rpc UpgradeKurtosisVersion(kurtosis_cloud.UpgradeKurtosisVersionRequest) returns(google.protobuf.Empty){};
+  rpc UpgradeKurtosisVersion(google.protobuf.Empty) returns(google.protobuf.Empty){};
 }
 
 message HealthCheckRequest {
