@@ -32,7 +32,7 @@ post_request_recipe = PostHttpRequestRecipe(
         "extractfield" : ".name.id",
     },
 
-    # This field allows you to pass custom headers with the GET request
+    # This field allows you to pass custom headers with the POST request
     # Any content type passed through the content_type attribtue will hold preference
     # over content type passed through this
     # OPTIONAL (Default: {})
