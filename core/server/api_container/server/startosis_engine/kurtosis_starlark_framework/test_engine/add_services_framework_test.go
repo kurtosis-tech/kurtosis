@@ -127,6 +127,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		"",
 		testReadyConditionsRecipeEndpoint,
 		"",
+		testEmptyHeaders,
 	).Times(1).Return(&http.Response{
 		Status:     "200 OK",
 		StatusCode: 200,
@@ -155,6 +156,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		"",
 		testReadyConditions2RecipeEndpoint,
 		"",
+		testEmptyHeaders,
 	).Times(1).Return(&http.Response{
 		Status:     "201 OK",
 		StatusCode: 201,

@@ -90,7 +90,7 @@ type ServiceNetwork interface {
 		error,
 	)
 
-	HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error)
+	HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error)
 
 	GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error)
 

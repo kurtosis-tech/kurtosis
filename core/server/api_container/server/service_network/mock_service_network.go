@@ -682,25 +682,25 @@ func (_c *MockServiceNetwork_GetUniqueNameForFileArtifact_Call) RunAndReturn(run
 	return _c
 }
 
-// HttpRequestService provides a mock function with given fields: ctx, serviceIdentifier, portId, method, contentType, endpoint, body
-func (_m *MockServiceNetwork) HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error) {
-	ret := _m.Called(ctx, serviceIdentifier, portId, method, contentType, endpoint, body)
+// HttpRequestService provides a mock function with given fields: ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers
+func (_m *MockServiceNetwork) HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string, headers map[string]string) (*http.Response, error) {
+	ret := _m.Called(ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers)
 
 	var r0 *http.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) (*http.Response, error)); ok {
-		return rf(ctx, serviceIdentifier, portId, method, contentType, endpoint, body)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, map[string]string) (*http.Response, error)); ok {
+		return rf(ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) *http.Response); ok {
-		r0 = rf(ctx, serviceIdentifier, portId, method, contentType, endpoint, body)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, map[string]string) *http.Response); ok {
+		r0 = rf(ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string) error); ok {
-		r1 = rf(ctx, serviceIdentifier, portId, method, contentType, endpoint, body)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string, map[string]string) error); ok {
+		r1 = rf(ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -721,13 +721,14 @@ type MockServiceNetwork_HttpRequestService_Call struct {
 //   - contentType string
 //   - endpoint string
 //   - body string
-func (_e *MockServiceNetwork_Expecter) HttpRequestService(ctx interface{}, serviceIdentifier interface{}, portId interface{}, method interface{}, contentType interface{}, endpoint interface{}, body interface{}) *MockServiceNetwork_HttpRequestService_Call {
-	return &MockServiceNetwork_HttpRequestService_Call{Call: _e.mock.On("HttpRequestService", ctx, serviceIdentifier, portId, method, contentType, endpoint, body)}
+//   - headers map[string]string
+func (_e *MockServiceNetwork_Expecter) HttpRequestService(ctx interface{}, serviceIdentifier interface{}, portId interface{}, method interface{}, contentType interface{}, endpoint interface{}, body interface{}, headers interface{}) *MockServiceNetwork_HttpRequestService_Call {
+	return &MockServiceNetwork_HttpRequestService_Call{Call: _e.mock.On("HttpRequestService", ctx, serviceIdentifier, portId, method, contentType, endpoint, body, headers)}
 }
 
-func (_c *MockServiceNetwork_HttpRequestService_Call) Run(run func(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string)) *MockServiceNetwork_HttpRequestService_Call {
+func (_c *MockServiceNetwork_HttpRequestService_Call) Run(run func(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string, headers map[string]string)) *MockServiceNetwork_HttpRequestService_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(string), args[6].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string), args[4].(string), args[5].(string), args[6].(string), args[7].(map[string]string))
 	})
 	return _c
 }
@@ -737,7 +738,7 @@ func (_c *MockServiceNetwork_HttpRequestService_Call) Return(_a0 *http.Response,
 	return _c
 }
 
-func (_c *MockServiceNetwork_HttpRequestService_Call) RunAndReturn(run func(context.Context, string, string, string, string, string, string) (*http.Response, error)) *MockServiceNetwork_HttpRequestService_Call {
+func (_c *MockServiceNetwork_HttpRequestService_Call) RunAndReturn(run func(context.Context, string, string, string, string, string, string, map[string]string) (*http.Response, error)) *MockServiceNetwork_HttpRequestService_Call {
 	_c.Call.Return(run)
 	return _c
 }

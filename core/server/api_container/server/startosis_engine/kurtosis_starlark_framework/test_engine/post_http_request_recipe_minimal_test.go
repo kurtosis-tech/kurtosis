@@ -30,6 +30,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestPostHttpRequestRecipeMinimal(
 		"application/json",
 		"/test",
 		"",
+		testEmptyHeaders,
 	).Times(1).Return(
 		&http.Response{
 			Status:           "200 OK",

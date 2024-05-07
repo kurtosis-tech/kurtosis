@@ -31,6 +31,14 @@ post_request_recipe = PostHttpRequestRecipe(
     extract = {
         "extractfield" : ".name.id",
     },
+
+    # This field allows you to pass custom headers with the POST request
+    # Any content type passed through the content_type attribtue will hold preference
+    # over content type passed through this
+    # OPTIONAL (Default: {})
+    headers = {
+        "Authorization": "Bearer my.secret.token"
+    },
 )
 ```
 

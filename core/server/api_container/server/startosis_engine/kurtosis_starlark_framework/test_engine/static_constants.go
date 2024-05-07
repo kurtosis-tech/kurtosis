@@ -115,6 +115,7 @@ var (
 	testReadyConditionsTarget         = "200"
 	testReadyConditionsInterval       = "1s"
 	testReadyConditionsTimeout        = "100ms"
+	testEmptyHeaders                  = map[string]string{}
 
 	testReadyConditions2RecipePortId   = "https"
 	testReadyConditions2RecipeEndpoint = "/user-access"
