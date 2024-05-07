@@ -284,7 +284,7 @@ func run(
 
 				for _, serviceLog := range userServiceLogs {
 					colorPrinter := serviceColorPrinterMap[serviceIdentifier]
-					out.PrintOutLn(fmt.Sprintf("%v %v", colorPrinter("[%v]", serviceIdentifier), serviceLog.GetContent()))
+					out.PrintOutLn(fmt.Sprintf("[%v] %v", colorPrinter(serviceIdentifier), serviceLog.GetContent()))
 				}
 			}
 		case <-interruptChan:
