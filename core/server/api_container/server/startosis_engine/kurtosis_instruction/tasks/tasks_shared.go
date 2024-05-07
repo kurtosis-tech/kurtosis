@@ -50,6 +50,9 @@ const (
 	shellWrapperCommand = "/bin/sh"
 	noNameSet           = ""
 	uniqueNameGenErrStr = "error occurred while generating unique name for the file artifact"
+
+	//  enables init mode on containers; cleaning up any zombie processes
+	tiniEnabled = true
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
@@ -271,7 +274,7 @@ func getServiceConfig(
 	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
 	envVars *map[string]string,
 ) (*service.ServiceConfig, error) {
-	serviceConfig, err := service.CreateServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, nil, nil, runTailCommandToPreventContainerToStopOnCreating, nil, *envVars, filesArtifactExpansion, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, true)
+	serviceConfig, err := service.CreateServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, nil, nil, runTailCommandToPreventContainerToStopOnCreating, nil, *envVars, filesArtifactExpansion, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, tiniEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
 	}
