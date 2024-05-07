@@ -280,7 +280,6 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 }
 
 func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], stream *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
-
 	args := connectArgs.Msg
 	enclaveIdentifier := args.GetEnclaveIdentifier()
 	enclaveUuid, err := service.enclaveManager.GetEnclaveUuidForEnclaveIdentifier(context.Background(), enclaveIdentifier)
