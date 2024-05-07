@@ -2041,11 +2041,6 @@ export class UpgradeKurtosisVersionRequest extends Message<UpgradeKurtosisVersio
    */
   accessToken = "";
 
-  /**
-   * @generated from field: string api_key = 2;
-   */
-  apiKey = "";
-
   constructor(data?: PartialMessage<UpgradeKurtosisVersionRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -2055,7 +2050,6 @@ export class UpgradeKurtosisVersionRequest extends Message<UpgradeKurtosisVersio
   static readonly typeName = "kurtosis_cloud.UpgradeKurtosisVersionRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "api_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): UpgradeKurtosisVersionRequest {
