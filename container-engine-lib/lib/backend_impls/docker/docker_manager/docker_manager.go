@@ -1635,7 +1635,7 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 	logrus.Infof("Pulling image '%s'", imageName)
 	err, retryWithLinuxAmd64 := pullImage(manager.dockerClientNoTimeout, imageName, registrySpec, defaultPlatform)
 	if err == nil {
-		return stacktrace.Propagate(err, "An error occurred pulling image '%s'", imageName)
+		return nil
 	}
 	if err != nil && !retryWithLinuxAmd64 {
 		return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
