@@ -35,7 +35,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		out.PrintOutLn(fmt.Sprintf("Kurtosis Portal is running and healthy on PID %d", pid))
 		return nil
 	} else if process != nil {
-		out.PrintOutLn(fmt.Sprintf("Kurtosis Portal process is on PID %d but it is unreachable", pid))
+		out.PrintOutLn(fmt.Sprintf("Kurtosis Portal process is running on PID %d but the cloud instance was unreachable. Check your network connection, or re-connect to your cloud instance: https://cloud.kurtosis.com/connect", pid))
 		return nil
 	} else if pid != 0 {
 		out.PrintOutLn("Kurtosis Portal PID file exits but process is dead")
