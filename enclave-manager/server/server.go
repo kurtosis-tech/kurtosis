@@ -33,7 +33,6 @@ const (
 	grpcServerStopGracePeriod  = 5 * time.Second
 	engineHostUrl              = "http://localhost:9710"
 	kurtosisCloudApiHost       = "https://cloud.kurtosis.com"
-	kurtosisCloudApiLocalHost  = "http://localhost"
 	kurtosisCloudApiPort       = 8080
 	numberOfElementsAuthHeader = 2
 	numberOfElementsHostString = 2
@@ -87,7 +86,7 @@ func (c *WebServer) Check(context.Context, *connect.Request[kurtosis_enclave_man
 }
 
 func (c *WebServer) CreateRepositoryWebhook(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -135,39 +134,39 @@ func (c *WebServer) ValidateRequestAuthorization(
 	ctx context.Context,
 	enforceAuth bool,
 	header http.Header,
-) (*Authentication, bool, *kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
+) (bool, *kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
 	if !enforceAuth {
-		return nil, true, nil, nil
+		return true, nil, nil
 	}
 	reqToken, err := extractJwtToken(header)
 	if err != nil {
-		return nil, false, nil, err
+		return false, nil, err
 	}
 	auth, err := c.ConvertJwtTokenToApiKey(ctx, reqToken)
 	if err != nil {
-		return nil, false, nil, stacktrace.Propagate(err, "Failed to convert jwt token to API key")
+		return false, nil, stacktrace.Propagate(err, "Failed to convert jwt token to API key")
 	}
 	if auth == nil || len(auth.ApiKey) == 0 {
-		return nil, false, nil, stacktrace.NewError("An internal error has occurred. An empty API key was found")
+		return false, nil, stacktrace.NewError("An internal error has occurred. An empty API key was found")
 	}
 
 	instanceConfig, err := c.getCloudInstanceConfig(ctx, reqToken, auth.ApiKey)
 	if err != nil {
-		return nil, false, nil, stacktrace.Propagate(err, "Failed to retrieve the instance config")
+		return false, nil, stacktrace.Propagate(err, "Failed to retrieve the instance config")
 	}
 	reqHost := header.Get("Host")
 	splitHost := strings.Split(reqHost, ":")
 	if len(splitHost) != numberOfElementsHostString {
-		return nil, false, nil, stacktrace.NewError("Host header malformed. host:port format required")
+		return false, nil, stacktrace.NewError("Host header malformed. host:port format required")
 	}
 	reqHost = splitHost[0]
 	if instanceConfig.LaunchResult.PublicDns != reqHost {
 		delete(c.apiKeyMap, reqToken)
 		delete(c.instanceConfigMap, reqToken)
-		return nil, false, nil, stacktrace.NewError("either the requested instance does not exist or the user is not authorized to access the resource")
+		return false, nil, stacktrace.NewError("either the requested instance does not exist or the user is not authorized to access the resource")
 	}
 
-	return auth, true, instanceConfig, nil
+	return true, instanceConfig, nil
 }
 
 func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
@@ -200,11 +199,11 @@ func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Req
 }
 
 func (c *WebServer) IsNewKurtosisVersionAvailable(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 
@@ -231,7 +230,7 @@ func (c *WebServer) IsNewKurtosisVersionAvailable(ctx context.Context, req *conn
 	isNewKurtosisVersionAvailableRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest{
 			//AccessToken:            jwtToken,
-			AccessToken:            "",
+			AccessToken:            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlRYd2VsWUxSNmF2blVnMFdWVThBciJ9.eyJodHRwczovL2Nsb3VkLmt1cnRvc2lzLmNvbS9lbWFpbCI6ImxlYW5kcm9wb3JvbGlAZ21haWwuY29tIiwiaXNzIjoiaHR0cHM6Ly9sb2dpbi5rdXJ0b3Npcy5jb20vIiwic3ViIjoiZ2l0aHVifDI5OTUxNjIzIiwiYXVkIjpbImh0dHBzOi8vY2xvdWQua3VydG9zaXMuY29tIiwiaHR0cHM6Ly9kZXYtbHN3amFvLTcudXMuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTcxNTE4NTAxMCwiZXhwIjoxNzE1MjcxNDEwLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiYXpwIjoiMjExazkza0RLWDIyQTNUWDZzOFJlZGEwcWVSb1dzb3YifQ.ZCy59243uWQG6L9Fnd7eeAb39HyRjZ6YCjaIEZX-HrdUQ44wgDId_COXez_3iD_nuajxtpmTHWVrNV4uxf4JJh6WmiPS1AUyCoDOYgv8VStaiR-e4VB4DLd1hMhGEKKJtKSzHtyhLHqbcK_S21soS3Uas77n8efmXJ7AJBUnRRlxeKUJhWP46ZhwFnycisnc4d6pERaNfMG4tPSMXXmbzN2gnG_CSh3Gh-pC4B8MAUMxSCzAuXnFGInezhR2wHaKzsfiz-X6kcGmkYEPAuphOHkaWEPyMsxgxciSIbDLHe8Nv0n23LHJug9tVCs_1gHv0uKDmXlLWUJ8vuwTRbKUzw",
 			CurrentKurtosisVersion: currentEngineKurtosisVersion,
 		},
 	}
@@ -245,11 +244,11 @@ func (c *WebServer) IsNewKurtosisVersionAvailable(ctx context.Context, req *conn
 }
 
 func (c *WebServer) UpgradeKurtosisVersion(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
-	auth, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 
@@ -266,8 +265,7 @@ func (c *WebServer) UpgradeKurtosisVersion(ctx context.Context, req *connect.Req
 	upgradeKurtosisVersionRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest{
 			//AccessToken: jwtToken,
-			AccessToken: "",
-			ApiKey:      auth.ApiKey,
+			AccessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlRYd2VsWUxSNmF2blVnMFdWVThBciJ9.eyJodHRwczovL2Nsb3VkLmt1cnRvc2lzLmNvbS9lbWFpbCI6ImxlYW5kcm9wb3JvbGlAZ21haWwuY29tIiwiaXNzIjoiaHR0cHM6Ly9sb2dpbi5rdXJ0b3Npcy5jb20vIiwic3ViIjoiZ2l0aHVifDI5OTUxNjIzIiwiYXVkIjpbImh0dHBzOi8vY2xvdWQua3VydG9zaXMuY29tIiwiaHR0cHM6Ly9kZXYtbHN3amFvLTcudXMuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTcxNTE4NTAxMCwiZXhwIjoxNzE1MjcxNDEwLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiYXpwIjoiMjExazkza0RLWDIyQTNUWDZzOFJlZGEwcWVSb1dzb3YifQ.ZCy59243uWQG6L9Fnd7eeAb39HyRjZ6YCjaIEZX-HrdUQ44wgDId_COXez_3iD_nuajxtpmTHWVrNV4uxf4JJh6WmiPS1AUyCoDOYgv8VStaiR-e4VB4DLd1hMhGEKKJtKSzHtyhLHqbcK_S21soS3Uas77n8efmXJ7AJBUnRRlxeKUJhWP46ZhwFnycisnc4d6pERaNfMG4tPSMXXmbzN2gnG_CSh3Gh-pC4B8MAUMxSCzAuXnFGInezhR2wHaKzsfiz-X6kcGmkYEPAuphOHkaWEPyMsxgxciSIbDLHe8Nv0n23LHJug9tVCs_1gHv0uKDmXlLWUJ8vuwTRbKUzw",
 		},
 	}
 
@@ -280,11 +278,11 @@ func (c *WebServer) UpgradeKurtosisVersion(ctx context.Context, req *connect.Req
 }
 
 func (c *WebServer) GetEngineInfo(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	engineInfo, err := (*c.engineServiceClient).GetEngineInfo(ctx, req)
@@ -296,11 +294,11 @@ func (c *WebServer) GetEngineInfo(ctx context.Context, req *connect.Request[empt
 }
 
 func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	enclaves, err := (*c.engineServiceClient).GetEnclaves(ctx, req)
@@ -315,11 +313,11 @@ func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptyp
 	return resp, nil
 }
 func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
-	_, validRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -403,11 +401,11 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 
 func (c *WebServer) AddAlias(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error) {
 
-	_, validRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 
@@ -446,11 +444,11 @@ func (c *WebServer) LockPort(ctx context.Context, req *connect.Request[kurtosis_
 	if !c.enforceAuth {
 		return nil, stacktrace.NewError("This method is only available in the cloud")
 	}
-	_, validRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 
@@ -487,8 +485,8 @@ func (c *WebServer) UnlockPort(ctx context.Context, req *connect.Request[kurtosi
 	if !c.enforceAuth {
 		return nil, stacktrace.NewError("This method is only available in the cloud")
 	}
-	_, validRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
-	if !validRequest {
+	isValidRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 
@@ -546,11 +544,11 @@ func (c *WebServer) GetServiceLogs(
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -635,11 +633,11 @@ func (c *WebServer) RunStarlarkScript(ctx context.Context, req *connect.Request[
 }
 
 func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	_, err = (*c.engineServiceClient).DestroyEnclave(ctx, req)
@@ -652,11 +650,11 @@ func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kur
 }
 
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	result, err := (*c.engineServiceClient).CreateEnclave(ctx, req)
@@ -672,11 +670,11 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 }
 
 func (c *WebServer) InspectFilesArtifactContents(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -706,11 +704,11 @@ func (c *WebServer) DownloadFilesArtifact(
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest],
 	str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk],
 ) error {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -746,11 +744,11 @@ func (c *WebServer) GetStarlarkRun(
 	ctx context.Context,
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -786,11 +784,11 @@ func (c *WebServer) GetStarlarkScriptPlanYaml(
 	ctx context.Context,
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -821,11 +819,11 @@ func (c *WebServer) GetStarlarkPackagePlanYaml(
 	ctx context.Context,
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error) {
-	_, validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !validRequest {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
