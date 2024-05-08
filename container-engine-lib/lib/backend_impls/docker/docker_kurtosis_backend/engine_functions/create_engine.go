@@ -29,8 +29,8 @@ const (
 	enclaveManagerUIPort                        = 9711
 	enclaveManagerAPIPort                       = 8081
 	engineDebugServerPort                       = 50102 // in ClI this is 50101 and 50103 for the APIC
-	maxWaitForEngineAvailabilityRetries         = 10
-	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
+	maxWaitForEngineAvailabilityRetries         = 40
+	timeBetweenWaitForEngineAvailabilityRetries = 2 * time.Second
 	logsStorageDirPath                          = "/var/log/kurtosis/"
 )
 
