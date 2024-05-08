@@ -49,6 +49,9 @@ const (
 	onlyOneReplace = 1
 
 	defaultMainBranch = ""
+
+	maxRetries           = 3
+	retryDelayStartValue = 1 * time.Second
 )
 
 type GitPackageContentProvider struct {
@@ -415,8 +418,7 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 }
 
 func (provider *GitPackageContentProvider) cloneWithRetries(parsedURL *shared_utils.ParsedGitURL, gitClonePath string, githubAuth *http.BasicAuth, depth int) (*git.Repository, *startosis_errors.InterpretationError) {
-	maxRetries := 3
-	retryDelay := 1 * time.Second
+	retryDelay := retryDelayStartValue
 
 	var repo *git.Repository
 	var err error
