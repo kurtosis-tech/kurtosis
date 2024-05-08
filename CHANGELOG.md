@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.89.7](https://github.com/kurtosis-tech/kurtosis/compare/0.89.6...0.89.7) (2024-05-08)
+
+
+### Bug Fixes
+
+* retry GitHub package pulling a few times ([#2437](https://github.com/kurtosis-tech/kurtosis/issues/2437)) ([96bc89b](https://github.com/kurtosis-tech/kurtosis/commit/96bc89b058c2c7586d43b9f09f61db0a8040c2b7))
+
 ## [0.89.6](https://github.com/kurtosis-tech/kurtosis/compare/0.89.5...0.89.6) (2024-05-07)
 
 
