@@ -285,6 +285,11 @@ message  AddAliasRequest {
   string alias=3;
 }
 
+message DeleteAliasRequest {
+  string access_token=1;
+  string alias=2;
+}
+
 message IsNewKurtosisVersionAvailableRequest {
   string access_token = 1;
   string current_kurtosis_version = 2;
