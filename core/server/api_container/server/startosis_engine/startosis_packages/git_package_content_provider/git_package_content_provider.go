@@ -21,6 +21,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -347,36 +348,9 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 		}
 	}
 
-	//TODO evaluate to use the GitHub client GetContents call instead, because we are cloning the entire repository's workspace with this approach
-	//TODO and the startosis package could be just a small sub-folder inside a giant mono-repository
-	//TODO and even now, in the upload_files instruction, we are allowing to upload files or a folder for any repository, but we are cloning the entire repository for this
-	repo, err := git.PlainClone(gitClonePath, isNotBareClone, &git.CloneOptions{
-		URL:               parsedURL.GetGitURL(),
-		Auth:              githubAuth,
-		RemoteName:        "",
-		ReferenceName:     "",
-		SingleBranch:      false,
-		NoCheckout:        false,
-		Depth:             depth,
-		RecurseSubmodules: 0,
-		Progress:          io.Discard,
-		Tags:              0,
-		InsecureSkipTLS:   false,
-		CABundle:          nil,
-		Mirror:            false,
-		ShallowSubmodules: false,
-		ProxyOptions: transport.ProxyOptions{
-			URL:      "",
-			Username: "",
-			Password: "",
-		},
-		Shared: false,
-	})
-	if err != nil {
-		// We silent the underlying error here as it can be confusing to the user. For example, when there's a typo in
-		// the repo name, pointing to a non existing repo, the underlying error is: "authentication required"
-		logrus.Errorf("Error cloning git repository: '%s' to '%s'. Error was: \n%s", parsedURL.GetGitURL(), gitClonePath, err.Error())
-		return startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists or if it's a private repository, that you are logged into GitHub via `kurtosis github login`.", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
+	repo, interpretationError := provider.cloneWithRetries(parsedURL, gitClonePath, githubAuth, depth)
+	if interpretationError != nil {
+		return interpretationError
 	}
 
 	if parsedURL.GetTagBranchOrCommit() != emptyTagBranchOrCommit {
@@ -438,6 +412,60 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.P
 		return startosis_errors.NewInterpretationError("Cloning the repository '%s' failed. An error occurred while moving repository at temporary destination '%s' to final destination '%s'", parsedURL.GetGitURL(), gitClonePath, packagePath)
 	}
 	return nil
+}
+
+func (provider *GitPackageContentProvider) cloneWithRetries(parsedURL *shared_utils.ParsedGitURL, gitClonePath string, githubAuth *http.BasicAuth, depth int) (*git.Repository, *startosis_errors.InterpretationError) {
+	maxRetries := 3
+	retryDelay := 1 * time.Second
+
+	var repo *git.Repository
+	var err error
+
+	for retry := 0; retry < maxRetries; retry++ {
+
+		//TODO evaluate to use the GitHub client GetContents call instead, because we are cloning the entire repository's workspace with this approach
+		//TODO and the Starlark package could be just a small sub-folder inside a giant mono-repository
+		//TODO and even now, in the upload_files instruction, we are allowing to upload files or a folder for any repository, but we are cloning the entire repository for this
+		repo, err = git.PlainClone(gitClonePath, isNotBareClone, &git.CloneOptions{
+			URL:               parsedURL.GetGitURL(),
+			Auth:              githubAuth,
+			RemoteName:        "",
+			ReferenceName:     "",
+			SingleBranch:      false,
+			NoCheckout:        false,
+			Depth:             depth,
+			RecurseSubmodules: 0,
+			Progress:          io.Discard,
+			Tags:              0,
+			InsecureSkipTLS:   false,
+			CABundle:          nil,
+			Mirror:            false,
+			ShallowSubmodules: false,
+			ProxyOptions: transport.ProxyOptions{
+				URL:      "",
+				Username: "",
+				Password: "",
+			},
+			Shared: false,
+		})
+
+		if err == nil {
+			break
+		}
+
+		if retry < maxRetries-1 {
+			logrus.Infof("Cloning failed with error '%v'. Retrying in '%v'", err, retryDelay)
+			time.Sleep(retryDelay)
+			retryDelay *= 2
+		}
+	}
+	if err != nil {
+		// We silence the underlying error here as it can be confusing to the user. For example, when there's a typo in
+		// the repo name, pointing to a non existing repo, the underlying error is: "authentication required"
+		logrus.Errorf("Error cloning git repository: '%s' to '%s'. Error was: \n%s", parsedURL.GetGitURL(), gitClonePath, err.Error())
+		return nil, startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists or if it's a private repository, that you are logged into GitHub via `kurtosis github login`.", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
+	}
+	return repo, nil
 }
 
 // Returns empty string if no token found by [githubAuthProvider]
