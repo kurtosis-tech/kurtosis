@@ -1947,6 +1947,49 @@ export class AddAliasRequest extends Message<AddAliasRequest> {
 }
 
 /**
+ * @generated from message kurtosis_cloud.DeleteAliasRequest
+ */
+export class DeleteAliasRequest extends Message<DeleteAliasRequest> {
+  /**
+   * @generated from field: string access_token = 1;
+   */
+  accessToken = "";
+
+  /**
+   * @generated from field: string alias = 2;
+   */
+  alias = "";
+
+  constructor(data?: PartialMessage<DeleteAliasRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_cloud.DeleteAliasRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "alias", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DeleteAliasRequest {
+    return new DeleteAliasRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DeleteAliasRequest {
+    return new DeleteAliasRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DeleteAliasRequest {
+    return new DeleteAliasRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: DeleteAliasRequest | PlainMessage<DeleteAliasRequest> | undefined, b: DeleteAliasRequest | PlainMessage<DeleteAliasRequest> | undefined): boolean {
+    return proto3.util.equals(DeleteAliasRequest, a, b);
+  }
+}
+
+/**
  * @generated from message kurtosis_cloud.IsNewKurtosisVersionAvailableRequest
  */
 export class IsNewKurtosisVersionAvailableRequest extends Message<IsNewKurtosisVersionAvailableRequest> {

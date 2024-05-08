@@ -38,6 +38,7 @@ const (
 	KurtosisCloudBackendServer_GetUnlockedPorts_FullMethodName              = "/kurtosis_cloud.KurtosisCloudBackendServer/GetUnlockedPorts"
 	KurtosisCloudBackendServer_GetPorts_FullMethodName                      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetPorts"
 	KurtosisCloudBackendServer_AddAlias_FullMethodName                      = "/kurtosis_cloud.KurtosisCloudBackendServer/AddAlias"
+	KurtosisCloudBackendServer_DeleteAlias_FullMethodName                   = "/kurtosis_cloud.KurtosisCloudBackendServer/DeleteAlias"
 	KurtosisCloudBackendServer_IsNewKurtosisVersionAvailable_FullMethodName = "/kurtosis_cloud.KurtosisCloudBackendServer/IsNewKurtosisVersionAvailable"
 	KurtosisCloudBackendServer_UpgradeKurtosisVersion_FullMethodName        = "/kurtosis_cloud.KurtosisCloudBackendServer/UpgradeKurtosisVersion"
 )
@@ -64,6 +65,7 @@ type KurtosisCloudBackendServerClient interface {
 	GetUnlockedPorts(ctx context.Context, in *GetUnlockedPortsRequest, opts ...grpc.CallOption) (*GetUnlockedPortsResponse, error)
 	GetPorts(ctx context.Context, in *GetPortsRequest, opts ...grpc.CallOption) (*GetPortsResponse, error)
 	AddAlias(ctx context.Context, in *AddAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteAlias(ctx context.Context, in *DeleteAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	IsNewKurtosisVersionAvailable(ctx context.Context, in *IsNewKurtosisVersionAvailableRequest, opts ...grpc.CallOption) (*IsNewKurtosisVersionAvailableResponse, error)
 	UpgradeKurtosisVersion(ctx context.Context, in *UpgradeKurtosisVersionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -238,6 +240,15 @@ func (c *kurtosisCloudBackendServerClient) AddAlias(ctx context.Context, in *Add
 	return out, nil
 }
 
+func (c *kurtosisCloudBackendServerClient) DeleteAlias(ctx context.Context, in *DeleteAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_DeleteAlias_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *kurtosisCloudBackendServerClient) IsNewKurtosisVersionAvailable(ctx context.Context, in *IsNewKurtosisVersionAvailableRequest, opts ...grpc.CallOption) (*IsNewKurtosisVersionAvailableResponse, error) {
 	out := new(IsNewKurtosisVersionAvailableResponse)
 	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_IsNewKurtosisVersionAvailable_FullMethodName, in, out, opts...)
@@ -278,6 +289,7 @@ type KurtosisCloudBackendServerServer interface {
 	GetUnlockedPorts(context.Context, *GetUnlockedPortsRequest) (*GetUnlockedPortsResponse, error)
 	GetPorts(context.Context, *GetPortsRequest) (*GetPortsResponse, error)
 	AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error)
+	DeleteAlias(context.Context, *DeleteAliasRequest) (*emptypb.Empty, error)
 	IsNewKurtosisVersionAvailable(context.Context, *IsNewKurtosisVersionAvailableRequest) (*IsNewKurtosisVersionAvailableResponse, error)
 	UpgradeKurtosisVersion(context.Context, *UpgradeKurtosisVersionRequest) (*emptypb.Empty, error)
 }
@@ -339,6 +351,9 @@ func (UnimplementedKurtosisCloudBackendServerServer) GetPorts(context.Context, *
 }
 func (UnimplementedKurtosisCloudBackendServerServer) AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddAlias not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) DeleteAlias(context.Context, *DeleteAliasRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAlias not implemented")
 }
 func (UnimplementedKurtosisCloudBackendServerServer) IsNewKurtosisVersionAvailable(context.Context, *IsNewKurtosisVersionAvailableRequest) (*IsNewKurtosisVersionAvailableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsNewKurtosisVersionAvailable not implemented")
@@ -682,6 +697,24 @@ func _KurtosisCloudBackendServer_AddAlias_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisCloudBackendServer_DeleteAlias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteAliasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).DeleteAlias(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_DeleteAlias_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).DeleteAlias(ctx, req.(*DeleteAliasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _KurtosisCloudBackendServer_IsNewKurtosisVersionAvailable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IsNewKurtosisVersionAvailableRequest)
 	if err := dec(in); err != nil {
@@ -796,6 +829,10 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddAlias",
 			Handler:    _KurtosisCloudBackendServer_AddAlias_Handler,
+		},
+		{
+			MethodName: "DeleteAlias",
+			Handler:    _KurtosisCloudBackendServer_DeleteAlias_Handler,
 		},
 		{
 			MethodName: "IsNewKurtosisVersionAvailable",
