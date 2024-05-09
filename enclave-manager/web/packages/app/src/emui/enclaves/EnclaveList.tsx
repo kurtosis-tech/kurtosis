@@ -1,6 +1,7 @@
 import { Button, ButtonGroup, Flex } from "@chakra-ui/react";
 import { AppPageLayout, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { useEffect, useMemo, useState } from "react";
+import { useExperiments } from "../experiments/ExperimentsContext";
 import { KurtosisUpgrader } from "./components/KurtosisUpgrader";
 import { EnclavesTable } from "./components/tables/EnclavesTable";
 import { CreateEnclaveButton } from "./components/widgets/CreateEnclaveButton";
@@ -10,9 +11,8 @@ import { EnclaveFullInfo } from "./types";
 
 export const EnclaveList = () => {
   const enclaves = useFullEnclaves();
-
   const [selectedEnclaves, setSelectedEnclaves] = useState<EnclaveFullInfo[]>([]);
-
+  const { experiments } = useExperiments();
   const enclavesKey = useMemo(
     () =>
       enclaves.isErr
@@ -45,7 +45,7 @@ export const EnclaveList = () => {
         </Flex>
       </Flex>
       <Flex direction="column" pt={"24px"} width={"100%"} gap={8}>
-        <KurtosisUpgrader />
+        {experiments.enableCloudVersionUpgrade && <KurtosisUpgrader />}
         {enclaves.isOk && (
           <EnclavesTable
             enclavesData={enclaves.value}
