@@ -459,7 +459,7 @@ func newEnclaveContextFromEnclaveInfo(
 		apiContainerHostMachineInfo.GrpcPortOnHostMachine,
 	)
 	// TODO SECURITY: use HTTPS!
-	apiContainerConn, err := grpc.Dial(apiContainerHostMachineUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	apiContainerConn, err := grpc.Dial(apiContainerHostMachineUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(hundredMegabytes)))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred connecting to the API container on host machine URL '%v'", apiContainerHostMachineUrl)
 	}
