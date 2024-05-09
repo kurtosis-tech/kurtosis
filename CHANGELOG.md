@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.89.8](https://github.com/kurtosis-tech/kurtosis/compare/0.89.7...0.89.8) (2024-05-09)
+
+
+### Features
+
+* added api for alias deletion ([#2439](https://github.com/kurtosis-tech/kurtosis/issues/2439)) ([cf464cf](https://github.com/kurtosis-tech/kurtosis/commit/cf464cfeaa8adbb47359fda57275baecf000aa1e))
+
+
+### Bug Fixes
+
+* clarify error message for kurtosis portal command ([#2433](https://github.com/kurtosis-tech/kurtosis/issues/2433)) ([75a730b](https://github.com/kurtosis-tech/kurtosis/commit/75a730b6d70c6d225ab8f946317f0cccb0ab626d))
+* restart APICs containers when the engine is restarted ([#2441](https://github.com/kurtosis-tech/kurtosis/issues/2441)) ([e93f3f2](https://github.com/kurtosis-tech/kurtosis/commit/e93f3f2db3bd1ae7492f8b80bcf796ee9ac7b59b))
+
 ## [0.89.7](https://github.com/kurtosis-tech/kurtosis/compare/0.89.6...0.89.7) (2024-05-08)
 
 
