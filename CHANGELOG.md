@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.89.9](https://github.com/kurtosis-tech/kurtosis/compare/0.89.8...0.89.9) (2024-05-09)
+
+
+### Bug Fixes
+
+* set max receive size to 100Mb from 4Mb ([#2442](https://github.com/kurtosis-tech/kurtosis/issues/2442)) ([6c70ffd](https://github.com/kurtosis-tech/kurtosis/commit/6c70ffdcf6248f68d3c9c0b696c95772871b8674)), closes [#2357](https://github.com/kurtosis-tech/kurtosis/issues/2357)
+
 ## [0.89.8](https://github.com/kurtosis-tech/kurtosis/compare/0.89.7...0.89.8) (2024-05-09)
 
 
