@@ -1,58 +1,52 @@
-import { Box, Button, Text } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import { FiDownloadCloud } from "react-icons/fi";
+import { Alert, AlertDescription, AlertIcon, Box, Button, Flex } from "@chakra-ui/react";
+import { PropsWithChildren, useEffect, useState } from "react";
+import { FiDownloadCloud, FiRotateCcw } from "react-icons/fi";
+import { GoBug } from "react-icons/go";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
+import { GITHUB_ISSUE_URL } from "../../constants";
+
+const UpgradeAlert = ({
+  children,
+  status,
+}: PropsWithChildren<{ status: "info" | "warning" | "error" | "success" }>) => {
+  return (
+    <Alert status={status}>
+      <AlertIcon />
+      <AlertDescription width={"100%"}>
+        <Flex justifyContent={"space-between"} alignItems={"center"} width={"100%"}>
+          {children}
+        </Flex>
+      </AlertDescription>
+    </Alert>
+  );
+};
+
+enum UpgradeStatus {
+  NONE, // Default state
+  AVAILABLE,
+  IN_PROGRESS,
+  SUCCESS,
+  ERROR,
+}
+
+const skipCache = true;
 
 export const KurtosisUpgrader = () => {
   const kurtosisClient = useKurtosisClient();
-  const skipCache = true;
-  const [isNewKurtosisVersionAvailable, setIsNewKurtosisVersionAvailable] = useState(false);
+  const [upgradeStatus, setUpgradeStatus] = useState<UpgradeStatus>(UpgradeStatus.NONE);
   const [latestKurtosisVersion, setLatestKurtosisVersion] = useState("");
-  const [isUpgradeInProgress, setIsUpgradeInProgress] = useState(false);
-  const [isUpgradeFinished, setIsUpgradeFinished] = useState(false);
 
-  //TODO add error messages when something fails
-  //TODO add the refresh page button when the upgrade finished
-  //TODO add upgrade in progress icon or animation
-
-  useEffect(() => {
-    //if (kurtosisClient.isRunningInCloud()) {
-    checkForNewKurtosisVersion(isNewKurtosisVersionAvailable);
-    //Implementing the setInterval method
-    const interval = setInterval(() => {
-      if (isUpgradeInProgress) {
-        try {
-          kurtosisClient.getCloudInstanceConfig(skipCache).then((getCloudInstanceConfigResponse) => {
-            const instanceStatus = getCloudInstanceConfigResponse.status;
-            console.log(`Instance status in interval: ${instanceStatus}`);
-            if (instanceStatus === "running") {
-              setIsUpgradeInProgress(false);
-              setIsUpgradeFinished(true);
-              clearInterval(interval);
-            }
-          });
-        } catch (error) {
-          console.error(`Error occurred getting the cloud instance config. ${error}`);
-        }
-      }
-      if (isUpgradeFinished) {
-        clearInterval(interval);
-      }
-    }, 2000);
-
-    //Clearing the interval
-    return () => clearInterval(interval);
-    //}
-  });
-
-  const checkForNewKurtosisVersion = async (isNewKurtosisVersionAvailable: boolean) => {
+  const checkForNewKurtosisVersion = async () => {
     try {
       const isNewKurtosisVersionAvailableResponse = await kurtosisClient.isNewKurtosisVersionAvailable();
-      setIsNewKurtosisVersionAvailable(isNewKurtosisVersionAvailableResponse.isAvailable);
-      setLatestKurtosisVersion(isNewKurtosisVersionAvailableResponse.latestVersion);
-      //TODO remove these console logs
-      console.log(`LATEST KURTOSIS VERSION: ${latestKurtosisVersion}`);
-      console.log(`IS NEW KURTOSIS VERSION AVAILABLE: ${isNewKurtosisVersionAvailable}`);
+      // TODO remove these console logs
+      console.log(`LATEST KURTOSIS VERSION: ${isNewKurtosisVersionAvailableResponse.latestVersion})`);
+      console.log(`IS NEW KURTOSIS VERSION AVAILABLE: ${isNewKurtosisVersionAvailableResponse.isAvailable}`);
+
+      if (isNewKurtosisVersionAvailableResponse.isAvailable) {
+        setUpgradeStatus(UpgradeStatus.AVAILABLE);
+        setLatestKurtosisVersion(isNewKurtosisVersionAvailableResponse.latestVersion);
+      }
     } catch (error) {
       console.error(`Error occurred when checking for new Kurtosis version. ${error}`);
     }
@@ -61,36 +55,109 @@ export const KurtosisUpgrader = () => {
   const upgradeKurtosis = async () => {
     console.log("User pressed the upgrade button");
     try {
-      const upgradeKurtosisVersionResponse = await kurtosisClient.upgradeKurtosisVersion();
+      setUpgradeStatus(UpgradeStatus.IN_PROGRESS);
+      // TODO: Uncomment this check once local testing is done?
+      // const upgradeKurtosisVersionResponse = await kurtosisClient.upgradeKurtosisVersion();
       const getCloudInstanceConfigResponse = await kurtosisClient.getCloudInstanceConfig(skipCache);
       const instanceStatus = getCloudInstanceConfigResponse.status;
-      if (instanceStatus === "upgrading") {
-        console.log(`Instance status in upgradeKurtosis: ${instanceStatus}`);
-      } else {
-        console.log(`Instance status in upgradeKurtosis: ${instanceStatus}`);
-      }
-      setIsUpgradeInProgress(true);
+      console.log(`Instance status in upgradeKurtosis: ${instanceStatus}`);
     } catch (error) {
-      setIsUpgradeInProgress(false);
-      console.error(`Error occurred when upgrading Kurtosis to the latest version. ${error}`);
+      setUpgradeStatus(UpgradeStatus.ERROR);
+      console.error(`Error occurred while upgrading Kurtosis to the latest version. ${error}`);
     }
   };
 
-  if (!isNewKurtosisVersionAvailable) {
+  // Check once on load if a new Kurtosis version is available
+  useEffect(() => {
+    // TODO: Uncomment this check once local testing is done?
+    // if (!kurtosisClient.isRunningInCloud()) return
+
+    checkForNewKurtosisVersion();
+
+    // Only run effect once, ignore eslint warning
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // If upgrade is in progress, check the status every 2 seconds
+  useEffect(() => {
+    if (upgradeStatus !== UpgradeStatus.IN_PROGRESS) return;
+
+    // Implementing the setInterval method
+    const interval = setInterval(async () => {
+      try {
+        const getCloudInstanceConfigResponse = await kurtosisClient.getCloudInstanceConfig(skipCache);
+        const instanceStatus = getCloudInstanceConfigResponse.status;
+        console.log(`Instance status in interval: ${instanceStatus}`);
+        if (instanceStatus === "running") {
+          setUpgradeStatus(UpgradeStatus.SUCCESS);
+          clearInterval(interval);
+        }
+      } catch (error) {
+        console.error(`Error occurred getting the cloud instance config. ${error}`);
+        setUpgradeStatus(UpgradeStatus.ERROR);
+        clearInterval(interval);
+      }
+    }, 2000);
+
+    // Clearing the interval on unmount
+    return () => clearInterval(interval);
+  }, [upgradeStatus, kurtosisClient]);
+
+  if (upgradeStatus === UpgradeStatus.NONE) {
     return null;
   }
+
   return (
-    <Box>
-      {!isUpgradeFinished && !isUpgradeInProgress && (
-        <Text fontSize="xs">A new Kurtosis version is available {latestKurtosisVersion}</Text>
+    <Box width={"100%"}>
+      {upgradeStatus === UpgradeStatus.AVAILABLE && (
+        <UpgradeAlert status="warning">
+          A new Kurtosis version (v{latestKurtosisVersion}) is available.
+          <Button colorScheme={"orange"} leftIcon={<FiDownloadCloud />} size={"sm"} onClick={upgradeKurtosis}>
+            Upgrade Cloud Instance
+          </Button>
+        </UpgradeAlert>
       )}
-      {!isUpgradeFinished && !isUpgradeInProgress && (
-        <Button colorScheme={"green"} leftIcon={<FiDownloadCloud />} size={"sm"} onClick={upgradeKurtosis}>
-          Upgrade Kurtosis
-        </Button>
+
+      {upgradeStatus === UpgradeStatus.IN_PROGRESS && (
+        <UpgradeAlert status="info">
+          Upgrading Kurtosis to version to: v{latestKurtosisVersion}...
+          <Button colorScheme={"blue"} isLoading size={"sm"}>
+            Loading
+          </Button>
+        </UpgradeAlert>
       )}
-      {isUpgradeInProgress && <Text fontSize="xs">Upgrading Kurtosis to version {latestKurtosisVersion}...</Text>}
-      {isUpgradeFinished && <Text fontSize="xs">Kurtosis has been updated to version {latestKurtosisVersion}</Text>}
+
+      {upgradeStatus === UpgradeStatus.SUCCESS && (
+        <UpgradeAlert status="success">
+          Kurtosis has been upgraded to version: v{latestKurtosisVersion}. Please refresh the page.
+          <Button
+            colorScheme={"green"}
+            leftIcon={<FiRotateCcw />}
+            size={"sm"}
+            onClick={() => {
+              window.location.reload();
+            }}
+          >
+            Refresh
+          </Button>
+        </UpgradeAlert>
+      )}
+
+      {upgradeStatus === UpgradeStatus.ERROR && (
+        <UpgradeAlert status="error">
+          Upgrading Kurtosis version failed. Please open a GitHub issue for support.
+          <Button
+            colorScheme={"red"}
+            as={"a"}
+            href={`${GITHUB_ISSUE_URL}&version=${latestKurtosisVersion}`}
+            leftIcon={<GoBug />}
+            target={"_blank"}
+            size={"sm"}
+          >
+            Report a Bug
+          </Button>
+        </UpgradeAlert>
+      )}
     </Box>
   );
 };

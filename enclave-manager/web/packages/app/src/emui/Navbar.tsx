@@ -21,6 +21,7 @@ import { PiLinkSimpleBold } from "react-icons/pi";
 import { Link, useLocation } from "react-router-dom";
 import { KURTOSIS_CLOUD_CONNECT_URL } from "../client/constants";
 import { useKurtosisClient } from "../client/enclaveManager/KurtosisClientContext";
+import { GITHUB_ISSUE_URL } from "./constants";
 
 export const Navbar = () => {
   //const { updateSetting, settings } = useSettings();
@@ -47,10 +48,7 @@ export const Navbar = () => {
         </Link>
       )}
       <NavigationDivider />
-      <Link
-        to={`https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=&labels=bug&projects=&template=bug-report.yml&version=${kurtosisVersion}`}
-        target={"_blank"}
-      >
+      <Link to={`${GITHUB_ISSUE_URL}&version=${kurtosisVersion}`} target={"_blank"}>
         <NavButton label={"Report a Bug"} Icon={<GoBug />} />
       </Link>
       <NavButton label={"About"} Icon={<MdInfoOutline />} onClick={() => setShowAboutDialog(true)} />

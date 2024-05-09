@@ -80,7 +80,7 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
   }
 
   // TS cannot infer that children is an array if numberOfChildren === 2
-  if (numberOfChildren === 3 && Array.isArray(children)) {
+  if (numberOfChildren === 2 && Array.isArray(children)) {
     return (
       <Flex flexDirection={"column"} width={"100%"} h={preventPageScroll ? `100vh` : "100%"} flex={"1"}>
         <Flex width={"100%"} bg={"gray.850"} justifyContent={"center"}>
@@ -92,17 +92,6 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
           >
             <KurtosisBreadcrumbs />
             {children[0]}
-          </Box>
-        </Flex>
-        <Flex flexDirection={"column"} alignItems={"left"} h={"20px"}>
-          <Box
-            width={"100%"}
-            pt={"5px"}
-            pl={hasNavbar ? MAIN_APP_LEFT_PADDING_WITH_NAV : MAIN_APP_LEFT_PADDING_WITHOUT_NAV}
-            pr={MAIN_APP_RIGHT_PADDING}
-            maxW={MAIN_APP_MAX_WIDTH}
-          >
-            {children[1]}
           </Box>
         </Flex>
         <Flex h={"100%"} flex={"1"} flexDirection={"column"} alignItems={"center"}>
@@ -117,7 +106,7 @@ export const AppPageLayout = ({ preventPageScroll, children }: AppPageLayoutProp
             minH={preventPageScroll ? "0" : undefined}
             flex={"1"}
           >
-            {children[2]}
+            {children[1]}
           </Flex>
         </Flex>
       </Flex>

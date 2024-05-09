@@ -44,10 +44,8 @@ export const EnclaveList = () => {
           <CreateEnclaveButton />
         </Flex>
       </Flex>
-      <Flex>
+      <Flex direction="column" pt={"24px"} width={"100%"} gap={8}>
         <KurtosisUpgrader />
-      </Flex>
-      <Flex direction="column" pt={"24px"} width={"100%"} flex={"1"}>
         {enclaves.isOk && (
           <EnclavesTable
             enclavesData={enclaves.value}
