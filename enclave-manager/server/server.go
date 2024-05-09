@@ -150,7 +150,8 @@ func (c *WebServer) ValidateRequestAuthorization(
 		return false, nil, stacktrace.NewError("An internal error has occurred. An empty API key was found")
 	}
 
-	instanceConfig, err := c.getCloudInstanceConfig(ctx, reqToken, auth.ApiKey)
+	doNotSkipCache := false
+	instanceConfig, err := c.getCloudInstanceConfig(ctx, reqToken, auth.ApiKey, doNotSkipCache)
 	if err != nil {
 		return false, nil, stacktrace.Propagate(err, "Failed to retrieve the instance config")
 	}
@@ -169,15 +170,16 @@ func (c *WebServer) ValidateRequestAuthorization(
 	return true, instanceConfig, nil
 }
 
-func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
-	if !c.enforceAuth {
+func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetCloudInstanceConfigRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
+	/*if !c.enforceAuth {
 		return nil, stacktrace.NewError("This method is only available in the cloud")
 	}
 
 	jwtToken, err := extractJwtToken(req.Header())
 	if err != nil {
 		return nil, err
-	}
+	}*/
+	jwtToken := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlRYd2VsWUxSNmF2blVnMFdWVThBciJ9.eyJodHRwczovL2Nsb3VkLmt1cnRvc2lzLmNvbS9lbWFpbCI6ImxlYW5kcm9wb3JvbGlAZ21haWwuY29tIiwiaXNzIjoiaHR0cHM6Ly9sb2dpbi5rdXJ0b3Npcy5jb20vIiwic3ViIjoiZ2l0aHVifDI5OTUxNjIzIiwiYXVkIjpbImh0dHBzOi8vY2xvdWQua3VydG9zaXMuY29tIiwiaHR0cHM6Ly9kZXYtbHN3amFvLTcudXMuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTcxNTI1MjI1NywiZXhwIjoxNzE1MzM4NjU3LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiYXpwIjoiMjExazkza0RLWDIyQTNUWDZzOFJlZGEwcWVSb1dzb3YifQ.luiBXxLgPQeqQo66WHF6pJjxFZ2pCYUAW5EY5rGlQ83i5Vue6kTbB5P4F-GHoYrav_F89_p4qJtVis7p4e0ChCA_bAW-CLQ-tejteQO2g45mv8PzAV2Sc5VA5_MbjxV24_XmQISG7i-OQPU7YPFbDGnyVy_5H1ImazdTKC-Hxo6fp_0flY8obX3sdqEvMCsXGAarbKKew6xNO8JwTv3Z0P1wh5oCXu_tdUCwkNLp33IpULV0-FY81sVNWHE2lQJ5hYPqC3zCzVZ2KEWeLMUM1JzNxgaOzTl8NVLvmg6EGtULfaFbqtNnQy5XRzrByRW-qz5-AJ0SbfUqnPNEBO9GQA"
 	auth, err := c.ConvertJwtTokenToApiKey(ctx, jwtToken)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to convert jwt token to API key")
@@ -186,7 +188,7 @@ func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Req
 		return nil, stacktrace.NewError("An internal error has occurred. An empty API key was found")
 	}
 
-	instanceConfig, err := c.getCloudInstanceConfig(ctx, jwtToken, auth.ApiKey)
+	instanceConfig, err := c.getCloudInstanceConfig(ctx, jwtToken, auth.ApiKey, req.Msg.SkipCache)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to retrieve the instance config")
 	}
@@ -199,6 +201,10 @@ func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Req
 }
 
 func (c *WebServer) IsNewKurtosisVersionAvailable(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error) {
+	/*if !c.enforceAuth {
+		return nil, stacktrace.NewError("This method is only available in the cloud")
+	}*/
+
 	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
@@ -230,7 +236,7 @@ func (c *WebServer) IsNewKurtosisVersionAvailable(ctx context.Context, req *conn
 	isNewKurtosisVersionAvailableRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest{
 			//AccessToken:            jwtToken,
-			AccessToken:            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlRYd2VsWUxSNmF2blVnMFdWVThBciJ9.eyJodHRwczovL2Nsb3VkLmt1cnRvc2lzLmNvbS9lbWFpbCI6ImxlYW5kcm9wb3JvbGlAZ21haWwuY29tIiwiaXNzIjoiaHR0cHM6Ly9sb2dpbi5rdXJ0b3Npcy5jb20vIiwic3ViIjoiZ2l0aHVifDI5OTUxNjIzIiwiYXVkIjpbImh0dHBzOi8vY2xvdWQua3VydG9zaXMuY29tIiwiaHR0cHM6Ly9kZXYtbHN3amFvLTcudXMuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTcxNTE4NTAxMCwiZXhwIjoxNzE1MjcxNDEwLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiYXpwIjoiMjExazkza0RLWDIyQTNUWDZzOFJlZGEwcWVSb1dzb3YifQ.ZCy59243uWQG6L9Fnd7eeAb39HyRjZ6YCjaIEZX-HrdUQ44wgDId_COXez_3iD_nuajxtpmTHWVrNV4uxf4JJh6WmiPS1AUyCoDOYgv8VStaiR-e4VB4DLd1hMhGEKKJtKSzHtyhLHqbcK_S21soS3Uas77n8efmXJ7AJBUnRRlxeKUJhWP46ZhwFnycisnc4d6pERaNfMG4tPSMXXmbzN2gnG_CSh3Gh-pC4B8MAUMxSCzAuXnFGInezhR2wHaKzsfiz-X6kcGmkYEPAuphOHkaWEPyMsxgxciSIbDLHe8Nv0n23LHJug9tVCs_1gHv0uKDmXlLWUJ8vuwTRbKUzw",
+			AccessToken:            "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlRYd2VsWUxSNmF2blVnMFdWVThBciJ9.eyJodHRwczovL2Nsb3VkLmt1cnRvc2lzLmNvbS9lbWFpbCI6ImxlYW5kcm9wb3JvbGlAZ21haWwuY29tIiwiaXNzIjoiaHR0cHM6Ly9sb2dpbi5rdXJ0b3Npcy5jb20vIiwic3ViIjoiZ2l0aHVifDI5OTUxNjIzIiwiYXVkIjpbImh0dHBzOi8vY2xvdWQua3VydG9zaXMuY29tIiwiaHR0cHM6Ly9kZXYtbHN3amFvLTcudXMuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTcxNTI1MjI1NywiZXhwIjoxNzE1MzM4NjU3LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiYXpwIjoiMjExazkza0RLWDIyQTNUWDZzOFJlZGEwcWVSb1dzb3YifQ.luiBXxLgPQeqQo66WHF6pJjxFZ2pCYUAW5EY5rGlQ83i5Vue6kTbB5P4F-GHoYrav_F89_p4qJtVis7p4e0ChCA_bAW-CLQ-tejteQO2g45mv8PzAV2Sc5VA5_MbjxV24_XmQISG7i-OQPU7YPFbDGnyVy_5H1ImazdTKC-Hxo6fp_0flY8obX3sdqEvMCsXGAarbKKew6xNO8JwTv3Z0P1wh5oCXu_tdUCwkNLp33IpULV0-FY81sVNWHE2lQJ5hYPqC3zCzVZ2KEWeLMUM1JzNxgaOzTl8NVLvmg6EGtULfaFbqtNnQy5XRzrByRW-qz5-AJ0SbfUqnPNEBO9GQA",
 			CurrentKurtosisVersion: currentEngineKurtosisVersion,
 		},
 	}
@@ -244,6 +250,10 @@ func (c *WebServer) IsNewKurtosisVersionAvailable(ctx context.Context, req *conn
 }
 
 func (c *WebServer) UpgradeKurtosisVersion(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	/*if !c.enforceAuth {
+		return nil, stacktrace.NewError("This method is only available in the cloud")
+	}*/
+
 	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
@@ -265,7 +275,7 @@ func (c *WebServer) UpgradeKurtosisVersion(ctx context.Context, req *connect.Req
 	upgradeKurtosisVersionRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest{
 			//AccessToken: jwtToken,
-			AccessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlRYd2VsWUxSNmF2blVnMFdWVThBciJ9.eyJodHRwczovL2Nsb3VkLmt1cnRvc2lzLmNvbS9lbWFpbCI6ImxlYW5kcm9wb3JvbGlAZ21haWwuY29tIiwiaXNzIjoiaHR0cHM6Ly9sb2dpbi5rdXJ0b3Npcy5jb20vIiwic3ViIjoiZ2l0aHVifDI5OTUxNjIzIiwiYXVkIjpbImh0dHBzOi8vY2xvdWQua3VydG9zaXMuY29tIiwiaHR0cHM6Ly9kZXYtbHN3amFvLTcudXMuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTcxNTE4NTAxMCwiZXhwIjoxNzE1MjcxNDEwLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiYXpwIjoiMjExazkza0RLWDIyQTNUWDZzOFJlZGEwcWVSb1dzb3YifQ.ZCy59243uWQG6L9Fnd7eeAb39HyRjZ6YCjaIEZX-HrdUQ44wgDId_COXez_3iD_nuajxtpmTHWVrNV4uxf4JJh6WmiPS1AUyCoDOYgv8VStaiR-e4VB4DLd1hMhGEKKJtKSzHtyhLHqbcK_S21soS3Uas77n8efmXJ7AJBUnRRlxeKUJhWP46ZhwFnycisnc4d6pERaNfMG4tPSMXXmbzN2gnG_CSh3Gh-pC4B8MAUMxSCzAuXnFGInezhR2wHaKzsfiz-X6kcGmkYEPAuphOHkaWEPyMsxgxciSIbDLHe8Nv0n23LHJug9tVCs_1gHv0uKDmXlLWUJ8vuwTRbKUzw",
+			AccessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlRYd2VsWUxSNmF2blVnMFdWVThBciJ9.eyJodHRwczovL2Nsb3VkLmt1cnRvc2lzLmNvbS9lbWFpbCI6ImxlYW5kcm9wb3JvbGlAZ21haWwuY29tIiwiaXNzIjoiaHR0cHM6Ly9sb2dpbi5rdXJ0b3Npcy5jb20vIiwic3ViIjoiZ2l0aHVifDI5OTUxNjIzIiwiYXVkIjpbImh0dHBzOi8vY2xvdWQua3VydG9zaXMuY29tIiwiaHR0cHM6Ly9kZXYtbHN3amFvLTcudXMuYXV0aDAuY29tL3VzZXJpbmZvIl0sImlhdCI6MTcxNTI1MjI1NywiZXhwIjoxNzE1MzM4NjU3LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiYXpwIjoiMjExazkza0RLWDIyQTNUWDZzOFJlZGEwcWVSb1dzb3YifQ.luiBXxLgPQeqQo66WHF6pJjxFZ2pCYUAW5EY5rGlQ83i5Vue6kTbB5P4F-GHoYrav_F89_p4qJtVis7p4e0ChCA_bAW-CLQ-tejteQO2g45mv8PzAV2Sc5VA5_MbjxV24_XmQISG7i-OQPU7YPFbDGnyVy_5H1ImazdTKC-Hxo6fp_0flY8obX3sdqEvMCsXGAarbKKew6xNO8JwTv3Z0P1wh5oCXu_tdUCwkNLp33IpULV0-FY81sVNWHE2lQJ5hYPqC3zCzVZ2KEWeLMUM1JzNxgaOzTl8NVLvmg6EGtULfaFbqtNnQy5XRzrByRW-qz5-AJ0SbfUqnPNEBO9GQA",
 		},
 	}
 
@@ -892,9 +902,10 @@ func (c *WebServer) getCloudInstanceConfig(
 	ctx context.Context,
 	jwtToken string,
 	apiKey string,
+	skipCache bool,
 ) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
 	// Check if we have already fetched the instance config, if so return the cache
-	if c.instanceConfigMap[jwtToken] != nil {
+	if c.instanceConfigMap[jwtToken] != nil && !skipCache {
 		return c.instanceConfigMap[jwtToken], nil
 	}
 

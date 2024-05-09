@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddAliasRequest, CreateRepositoryWebhookRequest, DownloadFilesArtifactRequest, GetListFilesArtifactNamesAndUuidsRequest, GetServicesRequest, GetStarlarkRunRequest, HealthCheckRequest, HealthCheckResponse, InspectFilesArtifactContentsRequest, LockUnlockPortRequest, RunStarlarkPackageRequest, RunStarlarkScriptRequest, StarlarkPackagePlanYamlArgs, StarlarkScriptPlanYamlArgs } from "./kurtosis_enclave_manager_api_pb.js";
+import { AddAliasRequest, CreateRepositoryWebhookRequest, DownloadFilesArtifactRequest, GetCloudInstanceConfigRequest, GetListFilesArtifactNamesAndUuidsRequest, GetServicesRequest, GetStarlarkRunRequest, HealthCheckRequest, HealthCheckResponse, InspectFilesArtifactContentsRequest, LockUnlockPortRequest, RunStarlarkPackageRequest, RunStarlarkScriptRequest, StarlarkPackagePlanYamlArgs, StarlarkScriptPlanYamlArgs } from "./kurtosis_enclave_manager_api_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 import { CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetEngineInfoResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
 import { GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, PlanYaml, StarlarkRunResponseLine, StreamedDataChunk } from "./api_container_service_pb.js";
@@ -164,7 +164,7 @@ export const KurtosisEnclaveManagerServer = {
      */
     getCloudInstanceConfig: {
       name: "GetCloudInstanceConfig",
-      I: Empty,
+      I: GetCloudInstanceConfigRequest,
       O: GetCloudInstanceConfigResponse,
       kind: MethodKind.Unary,
     },

@@ -21,6 +21,7 @@ import {
   AddAliasRequest,
   CreateRepositoryWebhookRequest,
   DownloadFilesArtifactRequest,
+  GetCloudInstanceConfigRequest,
   GetListFilesArtifactNamesAndUuidsRequest,
   GetServicesRequest,
   GetStarlarkRunRequest,
@@ -327,7 +328,10 @@ export abstract class KurtosisClient {
     });
   }
 
-  async getCloudInstanceConfig() {
-    return this.client.getCloudInstanceConfig({}, this.getHeaderOptions());
+  async getCloudInstanceConfig(skipCache: boolean) {
+    const request = new GetCloudInstanceConfigRequest({
+      skipCache: skipCache,
+    });
+    return this.client.getCloudInstanceConfig(request, this.getHeaderOptions());
   }
 }

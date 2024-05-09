@@ -8,6 +8,45 @@ import { Message, proto3 } from "@bufbuild/protobuf";
 import { DownloadFilesArtifactArgs, FilesArtifactNameAndUuid, RunStarlarkPackageArgs, RunStarlarkScriptArgs, StarlarkPackagePlanYamlArgs as StarlarkPackagePlanYamlArgs$1, StarlarkScriptPlanYamlArgs as StarlarkScriptPlanYamlArgs$1 } from "./api_container_service_pb.js";
 
 /**
+ * @generated from message kurtosis_enclave_manager.GetCloudInstanceConfigRequest
+ */
+export class GetCloudInstanceConfigRequest extends Message<GetCloudInstanceConfigRequest> {
+  /**
+   * to skip the EM cache for this endpoint and make a direct call to the cloud-backend
+   *
+   * @generated from field: bool skip_cache = 1;
+   */
+  skipCache = false;
+
+  constructor(data?: PartialMessage<GetCloudInstanceConfigRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_enclave_manager.GetCloudInstanceConfigRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "skip_cache", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetCloudInstanceConfigRequest {
+    return new GetCloudInstanceConfigRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetCloudInstanceConfigRequest {
+    return new GetCloudInstanceConfigRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetCloudInstanceConfigRequest {
+    return new GetCloudInstanceConfigRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetCloudInstanceConfigRequest | PlainMessage<GetCloudInstanceConfigRequest> | undefined, b: GetCloudInstanceConfigRequest | PlainMessage<GetCloudInstanceConfigRequest> | undefined): boolean {
+    return proto3.util.equals(GetCloudInstanceConfigRequest, a, b);
+  }
+}
+
+/**
  * @generated from message kurtosis_enclave_manager.HealthCheckRequest
  */
 export class HealthCheckRequest extends Message<HealthCheckRequest> {

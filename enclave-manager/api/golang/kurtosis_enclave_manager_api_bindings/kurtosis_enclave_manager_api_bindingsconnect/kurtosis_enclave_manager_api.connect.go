@@ -125,7 +125,7 @@ type KurtosisEnclaveManagerServerClient interface {
 	GetStarlarkScriptPlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
 	GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
 	CreateRepositoryWebhook(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error)
-	GetCloudInstanceConfig(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
+	GetCloudInstanceConfig(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetCloudInstanceConfigRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
 	LockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
@@ -224,7 +224,7 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerCreateRepositoryWebhookProcedure,
 			opts...,
 		),
-		getCloudInstanceConfig: connect.NewClient[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse](
+		getCloudInstanceConfig: connect.NewClient[kurtosis_enclave_manager_api_bindings.GetCloudInstanceConfigRequest, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse](
 			httpClient,
 			baseURL+KurtosisEnclaveManagerServerGetCloudInstanceConfigProcedure,
 			opts...,
@@ -275,7 +275,7 @@ type kurtosisEnclaveManagerServerClient struct {
 	getStarlarkScriptPlanYaml      *connect.Client[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs, kurtosis_core_rpc_api_bindings.PlanYaml]
 	getStarlarkPackagePlanYaml     *connect.Client[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs, kurtosis_core_rpc_api_bindings.PlanYaml]
 	createRepositoryWebhook        *connect.Client[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest, emptypb.Empty]
-	getCloudInstanceConfig         *connect.Client[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
+	getCloudInstanceConfig         *connect.Client[kurtosis_enclave_manager_api_bindings.GetCloudInstanceConfigRequest, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
 	lockPort                       *connect.Client[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty]
 	unlockPort                     *connect.Client[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest, emptypb.Empty]
 	addAlias                       *connect.Client[kurtosis_enclave_manager_api_bindings.AddAliasRequest, emptypb.Empty]
@@ -372,7 +372,7 @@ func (c *kurtosisEnclaveManagerServerClient) CreateRepositoryWebhook(ctx context
 
 // GetCloudInstanceConfig calls
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetCloudInstanceConfig.
-func (c *kurtosisEnclaveManagerServerClient) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
+func (c *kurtosisEnclaveManagerServerClient) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetCloudInstanceConfigRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
 	return c.getCloudInstanceConfig.CallUnary(ctx, req)
 }
 
@@ -422,7 +422,7 @@ type KurtosisEnclaveManagerServerHandler interface {
 	GetStarlarkScriptPlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
 	GetStarlarkPackagePlanYaml(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error)
 	CreateRepositoryWebhook(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error)
-	GetCloudInstanceConfig(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
+	GetCloudInstanceConfig(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetCloudInstanceConfigRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
 	LockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	UnlockPort(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error)
 	AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
@@ -665,7 +665,7 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) CreateRepositoryWebhook(
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.CreateRepositoryWebhook is not implemented"))
 }
 
-func (UnimplementedKurtosisEnclaveManagerServerHandler) GetCloudInstanceConfig(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
+func (UnimplementedKurtosisEnclaveManagerServerHandler) GetCloudInstanceConfig(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetCloudInstanceConfigRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetCloudInstanceConfig is not implemented"))
 }
 

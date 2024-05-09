@@ -19,7 +19,8 @@ export const InstanceTerminationWarning = () => {
 
   const fetchCloudInstanceCreationTime = async () => {
     try {
-      const cloudInstanceConfigResponse = await kurtosisClient.getCloudInstanceConfig();
+      const skipCache = false;
+      const cloudInstanceConfigResponse = await kurtosisClient.getCloudInstanceConfig(skipCache);
       const upTime = Math.floor((Date.now() - new Date(cloudInstanceConfigResponse.updated).getTime()) / (3600 * 1000));
       const remainingHours = KURTOSIS_CLOUD_INSTANCE_MAX_UPTIME_IN_HOURS - upTime - 1;
       setCloudInstanceRemainingHours(remainingHours);

@@ -67,7 +67,7 @@ type KurtosisEnclaveManagerServerClient interface {
 	GetStarlarkScriptPlanYaml(ctx context.Context, in *StarlarkScriptPlanYamlArgs, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
 	GetStarlarkPackagePlanYaml(ctx context.Context, in *StarlarkPackagePlanYamlArgs, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
 	CreateRepositoryWebhook(ctx context.Context, in *CreateRepositoryWebhookRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetCloudInstanceConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error)
+	GetCloudInstanceConfig(ctx context.Context, in *GetCloudInstanceConfigRequest, opts ...grpc.CallOption) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error)
 	LockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UnlockPort(ctx context.Context, in *LockUnlockPortRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AddAlias(ctx context.Context, in *AddAliasRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -319,7 +319,7 @@ func (c *kurtosisEnclaveManagerServerClient) CreateRepositoryWebhook(ctx context
 	return out, nil
 }
 
-func (c *kurtosisEnclaveManagerServerClient) GetCloudInstanceConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
+func (c *kurtosisEnclaveManagerServerClient) GetCloudInstanceConfig(ctx context.Context, in *GetCloudInstanceConfigRequest, opts ...grpc.CallOption) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
 	out := new(kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse)
 	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetCloudInstanceConfig_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -393,7 +393,7 @@ type KurtosisEnclaveManagerServerServer interface {
 	GetStarlarkScriptPlanYaml(context.Context, *StarlarkScriptPlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
 	GetStarlarkPackagePlanYaml(context.Context, *StarlarkPackagePlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error)
 	CreateRepositoryWebhook(context.Context, *CreateRepositoryWebhookRequest) (*emptypb.Empty, error)
-	GetCloudInstanceConfig(context.Context, *emptypb.Empty) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error)
+	GetCloudInstanceConfig(context.Context, *GetCloudInstanceConfigRequest) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error)
 	LockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error)
 	UnlockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error)
 	AddAlias(context.Context, *AddAliasRequest) (*emptypb.Empty, error)
@@ -453,7 +453,7 @@ func (UnimplementedKurtosisEnclaveManagerServerServer) GetStarlarkPackagePlanYam
 func (UnimplementedKurtosisEnclaveManagerServerServer) CreateRepositoryWebhook(context.Context, *CreateRepositoryWebhookRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRepositoryWebhook not implemented")
 }
-func (UnimplementedKurtosisEnclaveManagerServerServer) GetCloudInstanceConfig(context.Context, *emptypb.Empty) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
+func (UnimplementedKurtosisEnclaveManagerServerServer) GetCloudInstanceConfig(context.Context, *GetCloudInstanceConfigRequest) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCloudInstanceConfig not implemented")
 }
 func (UnimplementedKurtosisEnclaveManagerServerServer) LockPort(context.Context, *LockUnlockPortRequest) (*emptypb.Empty, error) {
@@ -784,7 +784,7 @@ func _KurtosisEnclaveManagerServer_CreateRepositoryWebhook_Handler(srv interface
 }
 
 func _KurtosisEnclaveManagerServer_GetCloudInstanceConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(GetCloudInstanceConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -796,7 +796,7 @@ func _KurtosisEnclaveManagerServer_GetCloudInstanceConfig_Handler(srv interface{
 		FullMethod: KurtosisEnclaveManagerServer_GetCloudInstanceConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisEnclaveManagerServerServer).GetCloudInstanceConfig(ctx, req.(*emptypb.Empty))
+		return srv.(KurtosisEnclaveManagerServerServer).GetCloudInstanceConfig(ctx, req.(*GetCloudInstanceConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
