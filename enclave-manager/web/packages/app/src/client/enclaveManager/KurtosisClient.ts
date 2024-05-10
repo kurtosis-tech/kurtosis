@@ -84,10 +84,6 @@ export abstract class KurtosisClient {
     return asyncResult(this.client.check({}, this.getHeaderOptions()));
   }
 
-  async getEngineInfo() {
-    return this.client.getEngineInfo({}, this.getHeaderOptions());
-  }
-
   async isNewKurtosisVersionAvailable() {
     return this.client.isNewKurtosisVersionAvailable({}, this.getHeaderOptions());
   }
