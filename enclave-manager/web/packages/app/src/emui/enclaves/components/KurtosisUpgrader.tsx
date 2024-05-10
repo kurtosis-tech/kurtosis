@@ -39,10 +39,6 @@ export const KurtosisUpgrader = () => {
   const checkForNewKurtosisVersion = async () => {
     try {
       const isNewKurtosisVersionAvailableResponse = await kurtosisClient.isNewKurtosisVersionAvailable();
-      // TODO remove these console logs
-      console.log(`LATEST KURTOSIS VERSION: ${isNewKurtosisVersionAvailableResponse.latestVersion})`);
-      console.log(`IS NEW KURTOSIS VERSION AVAILABLE: ${isNewKurtosisVersionAvailableResponse.isAvailable}`);
-
       if (isNewKurtosisVersionAvailableResponse.isAvailable) {
         setUpgradeStatus(UpgradeStatus.AVAILABLE);
         setLatestKurtosisVersion(isNewKurtosisVersionAvailableResponse.latestVersion);
@@ -56,11 +52,7 @@ export const KurtosisUpgrader = () => {
     console.log("User pressed the upgrade button");
     try {
       setUpgradeStatus(UpgradeStatus.IN_PROGRESS);
-      // TODO: Uncomment this check once local testing is done?
-      // const upgradeKurtosisVersionResponse = await kurtosisClient.upgradeKurtosisVersion();
-      const getCloudInstanceConfigResponse = await kurtosisClient.getCloudInstanceConfig(skipCache);
-      const instanceStatus = getCloudInstanceConfigResponse.status;
-      console.log(`Instance status in upgradeKurtosis: ${instanceStatus}`);
+      const upgradeKurtosisVersionResponse = await kurtosisClient.upgradeKurtosisVersion();
     } catch (error) {
       setUpgradeStatus(UpgradeStatus.ERROR);
       console.error(`Error occurred while upgrading Kurtosis to the latest version. ${error}`);
@@ -69,7 +61,6 @@ export const KurtosisUpgrader = () => {
 
   // Check once on load if a new Kurtosis version is available
   useEffect(() => {
-    // TODO: Uncomment this check once local testing is done?
     // if (!kurtosisClient.isRunningInCloud()) return
 
     checkForNewKurtosisVersion();
@@ -82,12 +73,10 @@ export const KurtosisUpgrader = () => {
   useEffect(() => {
     if (upgradeStatus !== UpgradeStatus.IN_PROGRESS) return;
 
-    // Implementing the setInterval method
     const interval = setInterval(async () => {
       try {
         const getCloudInstanceConfigResponse = await kurtosisClient.getCloudInstanceConfig(skipCache);
         const instanceStatus = getCloudInstanceConfigResponse.status;
-        console.log(`Instance status in interval: ${instanceStatus}`);
         if (instanceStatus === "running") {
           setUpgradeStatus(UpgradeStatus.SUCCESS);
           clearInterval(interval);
@@ -99,7 +88,6 @@ export const KurtosisUpgrader = () => {
       }
     }, 2000);
 
-    // Clearing the interval on unmount
     return () => clearInterval(interval);
   }, [upgradeStatus, kurtosisClient]);
 
@@ -120,7 +108,7 @@ export const KurtosisUpgrader = () => {
 
       {upgradeStatus === UpgradeStatus.IN_PROGRESS && (
         <UpgradeAlert status="info">
-          Upgrading Kurtosis to version to: v{latestKurtosisVersion}...
+          Upgrading Kurtosis to version: v{latestKurtosisVersion}
           <Button colorScheme={"blue"} isLoading size={"sm"}>
             Loading
           </Button>
