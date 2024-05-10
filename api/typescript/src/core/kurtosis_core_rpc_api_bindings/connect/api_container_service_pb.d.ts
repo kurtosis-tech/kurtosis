@@ -1816,7 +1816,7 @@ export declare class GetStarlarkRunResponse extends Message<GetStarlarkRunRespon
   restartPolicy: RestartPolicy;
 
   /**
-   * The params that were used for the very first run of the script
+   * The params that were used on for the very first Starlark run in an APIC
    *
    * @generated from field: optional string initial_serialized_params = 9;
    */

@@ -687,7 +687,7 @@ pub struct GetStarlarkRunResponse {
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
     #[prost(enumeration = "RestartPolicy", tag = "8")]
     pub restart_policy: i32,
-    /// The params that were used for the very first run of the script
+    /// The params that were used on for the very first Starlark run in an APIC
     #[prost(string, optional, tag = "9")]
     pub initial_serialized_params: ::core::option::Option<
         ::prost::alloc::string::String,

@@ -4,7 +4,7 @@
 // @ts-nocheck
 
 import { Empty, MethodIdempotency, MethodKind } from "@bufbuild/protobuf";
-import { AddAliasRequest, CancelPaymentSubscriptionArgs, ChangeUserActiveRequest, CheckPortAuthorizationRequest, DeleteAliasRequest, DeleteInstanceRequest, DeleteInstanceResponse, GetCloudInstanceConfigArgs, GetCloudInstanceConfigResponse, GetInstancesResponse, GetOrCreateApiKeyRequest, GetOrCreateApiKeyResponse, GetOrCreateInstanceRequest, GetOrCreateInstanceResponse, GetOrCreatePaymentConfigArgs, GetOrCreatePaymentConfigResponse, GetPortsRequest, GetPortsResponse, GetUnlockedPortsRequest, GetUnlockedPortsResponse, GetUserRequest, GetUserResponse, IsNewKurtosisVersionAvailableRequest, IsNewKurtosisVersionAvailableResponse, LockPortRequest, RefreshDefaultPaymentMethodArgs, UnlockPortRequest, UpdateAddressArgs, UpgradeKurtosisVersionRequest } from "./kurtosis_backend_server_api_pb.js";
+import { AddAliasRequest, CancelPaymentSubscriptionArgs, ChangeUserActiveRequest, CheckPortAuthorizationRequest, DeleteAliasRequest, DeleteInstancesRequest, DeleteInstancesResponse, GetCloudInstanceConfigArgs, GetCloudInstanceConfigResponse, GetInstancesResponse, GetOrCreateApiKeyRequest, GetOrCreateApiKeyResponse, GetOrCreateInstanceRequest, GetOrCreateInstanceResponse, GetOrCreatePaymentConfigArgs, GetOrCreatePaymentConfigResponse, GetPortsRequest, GetPortsResponse, GetUnlockedPortsRequest, GetUnlockedPortsResponse, GetUserRequest, GetUserResponse, IsNewKurtosisVersionAvailableRequest, IsNewKurtosisVersionAvailableResponse, LockPortRequest, RefreshDefaultPaymentMethodArgs, UnlockPortRequest, UpdateAddressArgs, UpgradeKurtosisVersionRequest } from "./kurtosis_backend_server_api_pb.js";
 
 /**
  * @generated from service kurtosis_cloud.KurtosisCloudBackendServer
@@ -96,12 +96,12 @@ export const KurtosisCloudBackendServer = {
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc kurtosis_cloud.KurtosisCloudBackendServer.DeleteInstance
+     * @generated from rpc kurtosis_cloud.KurtosisCloudBackendServer.DeleteInstances
      */
-    deleteInstance: {
-      name: "DeleteInstance",
-      I: DeleteInstanceRequest,
-      O: DeleteInstanceResponse,
+    deleteInstances: {
+      name: "DeleteInstances",
+      I: DeleteInstancesRequest,
+      O: DeleteInstancesResponse,
       kind: MethodKind.Unary,
     },
     /**
