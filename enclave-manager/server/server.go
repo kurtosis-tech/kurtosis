@@ -278,22 +278,6 @@ func (c *WebServer) UpgradeKurtosisVersion(ctx context.Context, req *connect.Req
 	return upgradeKurtosisVersionResponse, nil
 }
 
-func (c *WebServer) GetEngineInfo(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
-	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
-	}
-	if !isValidRequest {
-		return nil, stacktrace.Propagate(err, "User not authorized")
-	}
-	engineInfo, err := (*c.engineServiceClient).GetEngineInfo(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return engineInfo, nil
-}
-
 func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
 	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {

@@ -11,7 +11,6 @@ import "kurtosis_backend_server_api.proto";
 
 service KurtosisEnclaveManagerServer {
   rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
-  rpc GetEngineInfo(google.protobuf.Empty) returns (engine_api.GetEngineInfoResponse) {};
   rpc GetEnclaves(google.protobuf.Empty) returns (engine_api.GetEnclavesResponse) {};
   rpc GetServices(GetServicesRequest) returns (api_container_api.GetServicesResponse) {};
   rpc GetServiceLogs(engine_api.GetServiceLogsArgs) returns (stream engine_api.GetServiceLogsResponse) {};

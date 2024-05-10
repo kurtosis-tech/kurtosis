@@ -41,9 +41,6 @@ const (
 	// KurtosisEnclaveManagerServerCheckProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's Check RPC.
 	KurtosisEnclaveManagerServerCheckProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/Check"
-	// KurtosisEnclaveManagerServerGetEngineInfoProcedure is the fully-qualified name of the
-	// KurtosisEnclaveManagerServer's GetEngineInfo RPC.
-	KurtosisEnclaveManagerServerGetEngineInfoProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEngineInfo"
 	// KurtosisEnclaveManagerServerGetEnclavesProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's GetEnclaves RPC.
 	KurtosisEnclaveManagerServerGetEnclavesProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEnclaves"
@@ -110,7 +107,6 @@ const (
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer service.
 type KurtosisEnclaveManagerServerClient interface {
 	Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error)
-	GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error)
 	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
 	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error)
@@ -147,11 +143,6 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 		check: connect.NewClient[kurtosis_enclave_manager_api_bindings.HealthCheckRequest, kurtosis_enclave_manager_api_bindings.HealthCheckResponse](
 			httpClient,
 			baseURL+KurtosisEnclaveManagerServerCheckProcedure,
-			opts...,
-		),
-		getEngineInfo: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse](
-			httpClient,
-			baseURL+KurtosisEnclaveManagerServerGetEngineInfoProcedure,
 			opts...,
 		),
 		getEnclaves: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse](
@@ -260,7 +251,6 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 // kurtosisEnclaveManagerServerClient implements KurtosisEnclaveManagerServerClient.
 type kurtosisEnclaveManagerServerClient struct {
 	check                          *connect.Client[kurtosis_enclave_manager_api_bindings.HealthCheckRequest, kurtosis_enclave_manager_api_bindings.HealthCheckResponse]
-	getEngineInfo                  *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse]
 	getEnclaves                    *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]
 	getServices                    *connect.Client[kurtosis_enclave_manager_api_bindings.GetServicesRequest, kurtosis_core_rpc_api_bindings.GetServicesResponse]
 	getServiceLogs                 *connect.Client[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]
@@ -286,11 +276,6 @@ type kurtosisEnclaveManagerServerClient struct {
 // Check calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check.
 func (c *kurtosisEnclaveManagerServerClient) Check(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error) {
 	return c.check.CallUnary(ctx, req)
-}
-
-// GetEngineInfo calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEngineInfo.
-func (c *kurtosisEnclaveManagerServerClient) GetEngineInfo(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
-	return c.getEngineInfo.CallUnary(ctx, req)
 }
 
 // GetEnclaves calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEnclaves.
@@ -407,7 +392,6 @@ func (c *kurtosisEnclaveManagerServerClient) UpgradeKurtosisVersion(ctx context.
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer service.
 type KurtosisEnclaveManagerServerHandler interface {
 	Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error)
-	GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error)
 	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
 	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error
@@ -439,11 +423,6 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 	kurtosisEnclaveManagerServerCheckHandler := connect.NewUnaryHandler(
 		KurtosisEnclaveManagerServerCheckProcedure,
 		svc.Check,
-		opts...,
-	)
-	kurtosisEnclaveManagerServerGetEngineInfoHandler := connect.NewUnaryHandler(
-		KurtosisEnclaveManagerServerGetEngineInfoProcedure,
-		svc.GetEngineInfo,
 		opts...,
 	)
 	kurtosisEnclaveManagerServerGetEnclavesHandler := connect.NewUnaryHandler(
@@ -550,8 +529,6 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		switch r.URL.Path {
 		case KurtosisEnclaveManagerServerCheckProcedure:
 			kurtosisEnclaveManagerServerCheckHandler.ServeHTTP(w, r)
-		case KurtosisEnclaveManagerServerGetEngineInfoProcedure:
-			kurtosisEnclaveManagerServerGetEngineInfoHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetEnclavesProcedure:
 			kurtosisEnclaveManagerServerGetEnclavesHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerGetServicesProcedure:
@@ -603,10 +580,6 @@ type UnimplementedKurtosisEnclaveManagerServerHandler struct{}
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check is not implemented"))
-}
-
-func (UnimplementedKurtosisEnclaveManagerServerHandler) GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEngineInfo is not implemented"))
 }
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {

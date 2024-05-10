@@ -24,7 +24,6 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	KurtosisEnclaveManagerServer_Check_FullMethodName                          = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/Check"
-	KurtosisEnclaveManagerServer_GetEngineInfo_FullMethodName                  = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEngineInfo"
 	KurtosisEnclaveManagerServer_GetEnclaves_FullMethodName                    = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEnclaves"
 	KurtosisEnclaveManagerServer_GetServices_FullMethodName                    = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetServices"
 	KurtosisEnclaveManagerServer_GetServiceLogs_FullMethodName                 = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetServiceLogs"
@@ -52,7 +51,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KurtosisEnclaveManagerServerClient interface {
 	Check(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error)
-	GetEngineInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse, error)
 	GetEnclaves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
 	GetServices(ctx context.Context, in *GetServicesRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error)
 	GetServiceLogs(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, opts ...grpc.CallOption) (KurtosisEnclaveManagerServer_GetServiceLogsClient, error)
@@ -86,15 +84,6 @@ func NewKurtosisEnclaveManagerServerClient(cc grpc.ClientConnInterface) Kurtosis
 func (c *kurtosisEnclaveManagerServerClient) Check(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error) {
 	out := new(HealthCheckResponse)
 	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_Check_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *kurtosisEnclaveManagerServerClient) GetEngineInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse, error) {
-	out := new(kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse)
-	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetEngineInfo_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +367,6 @@ func (c *kurtosisEnclaveManagerServerClient) UpgradeKurtosisVersion(ctx context.
 // for forward compatibility
 type KurtosisEnclaveManagerServerServer interface {
 	Check(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error)
-	GetEngineInfo(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse, error)
 	GetEnclaves(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
 	GetServices(context.Context, *GetServicesRequest) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error)
 	GetServiceLogs(*kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, KurtosisEnclaveManagerServer_GetServiceLogsServer) error
@@ -407,9 +395,6 @@ type UnimplementedKurtosisEnclaveManagerServerServer struct {
 
 func (UnimplementedKurtosisEnclaveManagerServerServer) Check(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Check not implemented")
-}
-func (UnimplementedKurtosisEnclaveManagerServerServer) GetEngineInfo(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetEngineInfo not implemented")
 }
 func (UnimplementedKurtosisEnclaveManagerServerServer) GetEnclaves(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnclaves not implemented")
@@ -497,24 +482,6 @@ func _KurtosisEnclaveManagerServer_Check_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KurtosisEnclaveManagerServerServer).Check(ctx, req.(*HealthCheckRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _KurtosisEnclaveManagerServer_GetEngineInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(KurtosisEnclaveManagerServerServer).GetEngineInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: KurtosisEnclaveManagerServer_GetEngineInfo_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisEnclaveManagerServerServer).GetEngineInfo(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -901,10 +868,6 @@ var KurtosisEnclaveManagerServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Check",
 			Handler:    _KurtosisEnclaveManagerServer_Check_Handler,
-		},
-		{
-			MethodName: "GetEngineInfo",
-			Handler:    _KurtosisEnclaveManagerServer_GetEngineInfo_Handler,
 		},
 		{
 			MethodName: "GetEnclaves",

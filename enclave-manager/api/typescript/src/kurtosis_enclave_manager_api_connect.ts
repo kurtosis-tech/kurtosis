@@ -5,7 +5,7 @@
 
 import { AddAliasRequest, CreateRepositoryWebhookRequest, DownloadFilesArtifactRequest, GetCloudInstanceConfigRequest, GetListFilesArtifactNamesAndUuidsRequest, GetServicesRequest, GetStarlarkRunRequest, HealthCheckRequest, HealthCheckResponse, InspectFilesArtifactContentsRequest, LockUnlockPortRequest, RunStarlarkPackageRequest, RunStarlarkScriptRequest, StarlarkPackagePlanYamlArgs, StarlarkScriptPlanYamlArgs } from "./kurtosis_enclave_manager_api_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
-import { CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetEngineInfoResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
+import { CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
 import { GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, PlanYaml, StarlarkRunResponseLine, StreamedDataChunk } from "./api_container_service_pb.js";
 import { GetCloudInstanceConfigResponse, IsNewKurtosisVersionAvailableResponse } from "./kurtosis_backend_server_api_pb.js";
 
@@ -22,15 +22,6 @@ export const KurtosisEnclaveManagerServer = {
       name: "Check",
       I: HealthCheckRequest,
       O: HealthCheckResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEngineInfo
-     */
-    getEngineInfo: {
-      name: "GetEngineInfo",
-      I: Empty,
-      O: GetEngineInfoResponse,
       kind: MethodKind.Unary,
     },
     /**
