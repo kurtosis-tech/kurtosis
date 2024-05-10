@@ -7,10 +7,9 @@ import (
 
 const (
 	enforceAuth = false
-	isLocalRun  = true
 )
 
 func main() {
 	logrus.Info("Running the enclave manager from the enclave manager main package.")
-	server.RunEnclaveManagerApiServer(enforceAuth, isLocalRun)
+	server.RunEnclaveManagerApiServer(enforceAuth)
 }

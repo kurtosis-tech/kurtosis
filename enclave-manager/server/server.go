@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions/github_auth_storage_creator"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -54,10 +53,9 @@ type WebServer struct {
 	instanceConfigMap   map[string]*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse
 	apiKeyMap           map[string]*string
 	githubAccessToken   string
-	isLocalRun          bool
 }
 
-func NewWebserver(enforceAuth bool, isLocalRun bool) (*WebServer, error) {
+func NewWebserver(enforceAuth bool) (*WebServer, error) {
 	engineServiceClient := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceClient(
 		http.DefaultClient,
 		engineHostUrl,
@@ -72,7 +70,6 @@ func NewWebserver(enforceAuth bool, isLocalRun bool) (*WebServer, error) {
 		instanceConfigMap:   map[string]*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse{},
 		instanceConfig:      nil,
 		githubAccessToken:   githubAuthToken,
-		isLocalRun:          isLocalRun,
 	}, nil
 }
 
@@ -872,15 +869,7 @@ func (c *WebServer) createAPICClient(
 }
 
 func (c *WebServer) createKurtosisCloudBackendClient() (*kurtosis_backend_server_rpc_api_bindingsconnect.KurtosisCloudBackendServerClient, error) {
-	host := kurtosisCloudApiHost
-	if c.isLocalRun {
-		hostIP, found := os.LookupEnv("KURTOSIS_ENGINE_LOCAL_DOCKER_BRIDGE_IP")
-		if found {
-			logrus.Info("The 'KURTOSIS_ENGINE_LOCAL_DOCKER_BRIDGE_IP' has been set.")
-		}
-		host = fmt.Sprintf("http://%s", hostIP)
-	}
-	parsedUrl, err := url.Parse(fmt.Sprintf("%s:%d", host, kurtosisCloudApiPort))
+	parsedUrl, err := url.Parse(fmt.Sprintf("%s:%d", kurtosisCloudApiHost, kurtosisCloudApiPort))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse the connection url for Kurtosis Cloud Backend")
 	}
@@ -993,8 +982,8 @@ func extractJwtToken(header http.Header) (string, error) {
 	return reqToken, nil
 }
 
-func RunEnclaveManagerApiServer(enforceAuth bool, isLocalRun bool) error {
-	srv, err := NewWebserver(enforceAuth, isLocalRun)
+func RunEnclaveManagerApiServer(enforceAuth bool) error {
+	srv, err := NewWebserver(enforceAuth)
 	if err != nil {
 		logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
 		return err
@@ -1002,9 +991,6 @@ func RunEnclaveManagerApiServer(enforceAuth bool, isLocalRun bool) error {
 	apiPath, handler := kurtosis_enclave_manager_api_bindingsconnect.NewKurtosisEnclaveManagerServerHandler(srv)
 
 	logrus.Infof("Web server running and listening on port %d", listenPort)
-	if isLocalRun {
-		logrus.Info("Running the EM local version")
-	}
 	apiServer := connect_server.NewConnectServer(
 		listenPort,
 		grpcServerStopGracePeriod,
