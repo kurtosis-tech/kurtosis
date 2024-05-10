@@ -9,28 +9,30 @@ import { BuildEnclave } from "./enclaves/components/BuildEnclave";
 import { CreateEnclave } from "./enclaves/components/CreateEnclave";
 import { enclaveRoutes } from "./enclaves/EnclaveRoutes";
 import { EnclavesContextProvider } from "./enclaves/EnclavesContext";
+import Experiments from "./experiments/Experiments";
+import { ExperimentsContextProvider } from "./experiments/ExperimentsContext";
 import { Navbar } from "./Navbar";
 import { SettingsContextProvider } from "./settings";
 
 const logLogo = (t: string) => console.log(`%c ${t}`, "background: black; color: #00C223");
-logLogo(`                                                                               
-                                                ///////////////////             
-                    //////////                 ///////////////////              
-                 .////     ,///             /////          ////*                
-               /////        ///           /////         /////                   
-            ,////        ,////         *////          ////*                     
-             //        /////         /////         /////                        
-                    *////         *////          ////*                          
-                  /////         /////         /////                             
-               *////         /////          /////                               
-             .////         /////         /////                                  
-            .///        /////          ////*        //                          
-            ///.      /////         //////          /////                       
-            ////                  ////*.////          *////                     
-             ////              /////      /////          /////                  
-              /////         *////*          .////          *////                
-                 //////////////                ////////////////////             
-                                                                                
+logLogo(`
+                                                ///////////////////
+                    //////////                 ///////////////////
+                 .////     ,///             /////          ////*
+               /////        ///           /////         /////
+            ,////        ,////         *////          ////*
+             //        /////         /////         /////
+                    *////         *////          ////*
+                  /////         /////         /////
+               *////         /////          /////
+             .////         /////         /////
+            .///        /////          ////*        //
+            ///.      /////         //////          /////
+            ////                  ////*.////          *////
+             ////              /////      /////          /////
+              /////         *////*          .////          *////
+                 //////////////                ////////////////////
+
 `);
 
 console.log(`Kurtosis web UI version: ${process.env.REACT_APP_VERSION || "Unknown"}`);
@@ -58,9 +60,11 @@ const KurtosisRouter = () => {
         [
           {
             element: (
-              <AppLayout navbar={<Navbar />}>
-                <Outlet />
-              </AppLayout>
+              <ExperimentsContextProvider>
+                <AppLayout navbar={<Navbar />}>
+                  <Outlet />
+                </AppLayout>
+              </ExperimentsContextProvider>
             ),
             children: [
               {
@@ -82,6 +86,15 @@ const KurtosisRouter = () => {
                   </CatalogContextProvider>
                 ),
                 children: catalogRoutes(),
+              },
+              {
+                path: "/experiments",
+                handle: {
+                  type: "experiments" as "experiments",
+                  crumb: () => ({ name: "Experiments", destination: "/experiments" }),
+                },
+                id: "experiments",
+                element: <Experiments />,
               },
             ],
           },
