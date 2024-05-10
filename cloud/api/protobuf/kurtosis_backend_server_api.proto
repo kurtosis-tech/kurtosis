@@ -31,6 +31,7 @@ service KurtosisCloudBackendServer {
   rpc GetUnlockedPorts(GetUnlockedPortsRequest) returns(GetUnlockedPortsResponse){};
   rpc GetPorts(GetPortsRequest) returns(GetPortsResponse){};
   rpc AddAlias(AddAliasRequest) returns(google.protobuf.Empty){};
+  rpc DeleteAlias(DeleteAliasRequest) returns (google.protobuf.Empty){};
   rpc IsNewKurtosisVersionAvailable(IsNewKurtosisVersionAvailableRequest) returns(IsNewKurtosisVersionAvailableResponse){};
   rpc UpgradeKurtosisVersion(UpgradeKurtosisVersionRequest) returns(google.protobuf.Empty){};
 }
@@ -283,6 +284,11 @@ message  AddAliasRequest {
   string access_token=1;
   Port port=2;
   string alias=3;
+}
+
+message DeleteAliasRequest {
+  string access_token=1;
+  string alias=2;
 }
 
 message IsNewKurtosisVersionAvailableRequest {

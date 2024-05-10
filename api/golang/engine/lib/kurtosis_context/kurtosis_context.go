@@ -42,6 +42,8 @@ const (
 
 	defaultShouldAPICRunInDebugMode = false
 	runAPICInDebugMode              = true
+
+	hundredMegabytes = 100 * 1024 * 1024
 )
 
 var (
@@ -72,7 +74,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	kurtosisEngineSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, DefaultGrpcEngineServerPortNum)
 
 	// TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers
-	conn, err := grpc.Dial(kurtosisEngineSocketStr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(kurtosisEngineSocketStr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(hundredMegabytes)))
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -457,7 +459,7 @@ func newEnclaveContextFromEnclaveInfo(
 		apiContainerHostMachineInfo.GrpcPortOnHostMachine,
 	)
 	// TODO SECURITY: use HTTPS!
-	apiContainerConn, err := grpc.Dial(apiContainerHostMachineUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	apiContainerConn, err := grpc.Dial(apiContainerHostMachineUrl, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(hundredMegabytes)))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred connecting to the API container on host machine URL '%v'", apiContainerHostMachineUrl)
 	}

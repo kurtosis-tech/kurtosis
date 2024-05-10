@@ -261,6 +261,12 @@ func runMain() error {
 		}
 	}()
 
+	if serverArgs.RestartAPIContainers {
+		if err := enclaveManager.RestartAllEnclaveAPIContainers(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred restarting all API containers.")
+		}
+	}
+
 	go func() {
 		err := restApiServer(
 			ctx,
@@ -291,12 +297,6 @@ func runMain() error {
 			logrus.Errorf("We tried to close the engine connect server service but something fails. Err:\n%v", err)
 		}
 	}()
-
-	if serverArgs.RestartAPIContainers {
-		if err := enclaveManager.RestartAllEnclaveAPIContainers(ctx); err != nil {
-			return stacktrace.Propagate(err, "An error occurred restarting all API containers.")
-		}
-	}
 
 	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
 	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {

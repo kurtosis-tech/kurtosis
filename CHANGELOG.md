@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.89.9](https://github.com/kurtosis-tech/kurtosis/compare/0.89.8...0.89.9) (2024-05-09)
+
+
+### Bug Fixes
+
+* set max receive size to 100Mb from 4Mb ([#2442](https://github.com/kurtosis-tech/kurtosis/issues/2442)) ([6c70ffd](https://github.com/kurtosis-tech/kurtosis/commit/6c70ffdcf6248f68d3c9c0b696c95772871b8674)), closes [#2357](https://github.com/kurtosis-tech/kurtosis/issues/2357)
+
+## [0.89.8](https://github.com/kurtosis-tech/kurtosis/compare/0.89.7...0.89.8) (2024-05-09)
+
+
+### Features
+
+* added api for alias deletion ([#2439](https://github.com/kurtosis-tech/kurtosis/issues/2439)) ([cf464cf](https://github.com/kurtosis-tech/kurtosis/commit/cf464cfeaa8adbb47359fda57275baecf000aa1e))
+
+
+### Bug Fixes
+
+* clarify error message for kurtosis portal command ([#2433](https://github.com/kurtosis-tech/kurtosis/issues/2433)) ([75a730b](https://github.com/kurtosis-tech/kurtosis/commit/75a730b6d70c6d225ab8f946317f0cccb0ab626d))
+* restart APICs containers when the engine is restarted ([#2441](https://github.com/kurtosis-tech/kurtosis/issues/2441)) ([e93f3f2](https://github.com/kurtosis-tech/kurtosis/commit/e93f3f2db3bd1ae7492f8b80bcf796ee9ac7b59b))
+
+## [0.89.7](https://github.com/kurtosis-tech/kurtosis/compare/0.89.6...0.89.7) (2024-05-08)
+
+
+### Bug Fixes
+
+* retry GitHub package pulling a few times ([#2437](https://github.com/kurtosis-tech/kurtosis/issues/2437)) ([96bc89b](https://github.com/kurtosis-tech/kurtosis/commit/96bc89b058c2c7586d43b9f09f61db0a8040c2b7))
+
+## [0.89.6](https://github.com/kurtosis-tech/kurtosis/compare/0.89.5...0.89.6) (2024-05-07)
+
+
+### Bug Fixes
+
+* multi service logging ([#2435](https://github.com/kurtosis-tech/kurtosis/issues/2435)) ([d303597](https://github.com/kurtosis-tech/kurtosis/commit/d303597fc30f119c7523101ee2679ab1051d9252))
+
+## [0.89.5](https://github.com/kurtosis-tech/kurtosis/compare/0.89.4...0.89.5) (2024-05-07)
+
+
+### Features
+
+* retrieve multiple service logs stream at once via cli ([#2426](https://github.com/kurtosis-tech/kurtosis/issues/2426)) ([b071ba2](https://github.com/kurtosis-tech/kurtosis/commit/b071ba2872d2f666bfea3925e8d9e6bfbda2b031))
+
+## [0.89.4](https://github.com/kurtosis-tech/kurtosis/compare/0.89.3...0.89.4) (2024-05-07)
+
+
+### Features
+
+* `IsNewKurtosisVersionAvailable` and `UpgradeKurtosisVersion` GRPC endpoints added ([#2427](https://github.com/kurtosis-tech/kurtosis/issues/2427)) ([6a6969f](https://github.com/kurtosis-tech/kurtosis/commit/6a6969fd2a13842a263b444dcad74c0ad148f647))
+* allow disabling tini ([#2425](https://github.com/kurtosis-tech/kurtosis/issues/2425)) ([7927da4](https://github.com/kurtosis-tech/kurtosis/commit/7927da4bdc5e74a322ac9794364c8630da255be5))
+* allow users to set custom headers for recipes ([#2424](https://github.com/kurtosis-tech/kurtosis/issues/2424)) ([07d6ebf](https://github.com/kurtosis-tech/kurtosis/commit/07d6ebfccf87e639ef9729773bf2b2e729009884))
+
 ## [0.89.3](https://github.com/kurtosis-tech/kurtosis/compare/0.89.2...0.89.3) (2024-05-02)
 
 

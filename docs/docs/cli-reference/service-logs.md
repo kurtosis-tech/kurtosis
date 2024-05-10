@@ -4,13 +4,13 @@ sidebar_label: service logs
 slug: /service-logs
 ---
 
-To print the logs for a service, run:
+To print the logs for services in an enclave, run:
 
 
 ```bash
-kurtosis service logs $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER
+kurtosis service logs $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER1 $THE_SERVICE_IDENTIFIER2 $THE_SERVICE_IDENTIFIER3
 ```
-where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../advanced-concepts/resource-identifier.md) for the enclave and service, respectively. The service identifier (name or UUID) is printed upon inspecting an enclave. 
+where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../advanced-concepts/resource-identifier.md) for the enclave and services, respectively. The service identifier (name or UUID) is printed upon inspecting an enclave. 
 :::
 
 :::note Number of log lines
@@ -23,7 +23,8 @@ Kurtosis will keep logs for up to 4 weeks before removing them to prevent logs f
 The following optional arguments can be used:
 1. `-a`, `--all` can be used to retrieve all logs.
 1. `-n`, `--num=uint32` can be used to retrieve X last log lines. (eg. `-n 10` will retrieve last 10 log lines, similar to `tail -n 10`)
-1. `-f`, `-follow` can be added to continue following the logs, similar to `tail -f`.
+1. `-f`, `--follow` can be added to continue following the logs, similar to `tail -f`.
+1. `-x`, `--all-services` can be used to retrieve logs for all services in an enclave. Another option is to pass in the escaped wildcard operator like so `kurtosis service logs enclave-name '*'`
 1. `--match=text` can be used for filtering the log lines containing the text.
 1. `--regex-match="regex"` can be used for filtering the log lines containing the regex. This filter will also work for text but will have degraded performance.
 1. `-v`, `--invert-match` can be used to invert the filter condition specified by either `--match` or `--regex-match`. Log lines NOT containing the match will be returned.

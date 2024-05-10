@@ -49,7 +49,7 @@ func NewHistoricalServiceIdentifierArgWithValidationDisabled(
 	return &args.ArgConfig{
 		Key:                   serviceIdentifierArgKey,
 		IsOptional:            isOptional,
-		DefaultValue:          "",
+		DefaultValue:          []string{},
 		IsGreedy:              isGreedy,
 		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletionsForExistingAndHistoricalServices(enclaveIdentifierArgKey)),
 		ValidationFunc:        noValidationFunc,
