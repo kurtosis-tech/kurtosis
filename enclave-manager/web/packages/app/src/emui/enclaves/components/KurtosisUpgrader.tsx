@@ -49,7 +49,6 @@ export const KurtosisUpgrader = () => {
   };
 
   const upgradeKurtosis = async () => {
-    console.log("User pressed the upgrade button");
     try {
       setUpgradeStatus(UpgradeStatus.IN_PROGRESS);
       const upgradeKurtosisVersionResponse = await kurtosisClient.upgradeKurtosisVersion();
@@ -61,7 +60,7 @@ export const KurtosisUpgrader = () => {
 
   // Check once on load if a new Kurtosis version is available
   useEffect(() => {
-    // if (!kurtosisClient.isRunningInCloud()) return
+    if (!kurtosisClient.isRunningInCloud()) return;
 
     checkForNewKurtosisVersion();
 
