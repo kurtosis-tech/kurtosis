@@ -25,7 +25,6 @@ var AllConfigOverridesDeserializers = map[config_version.ConfigVersion]configOve
 		overrides := &v3.KurtosisConfigV3{
 			ConfigVersion:     0,
 			ShouldSendMetrics: nil,
-			GitProxy:          nil,
 			KurtosisClusters:  nil,
 			CloudConfig:       nil,
 		}

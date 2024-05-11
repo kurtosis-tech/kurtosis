@@ -19,9 +19,7 @@ type KurtosisConfigV3 struct {
 	// vvvvvvvvv Every new Kurtosis config version must have this key vvvvvvvv
 	ConfigVersion config_version.ConfigVersion `yaml:"config-version"`
 	// ^^^^^^^^^ Every new Kurtosis config version must have this key ^^^^^^^^
-
 	ShouldSendMetrics *bool                               `yaml:"should-send-metrics,omitempty"`
-	GitProxy          *string                             `yaml:"git-proxy,omitempty"`
 	KurtosisClusters  map[string]*KurtosisClusterConfigV3 `yaml:"kurtosis-clusters,omitempty"`
 	CloudConfig       *KurtosisCloudConfigV3              `yaml:"cloud-config,omitempty"`
 }

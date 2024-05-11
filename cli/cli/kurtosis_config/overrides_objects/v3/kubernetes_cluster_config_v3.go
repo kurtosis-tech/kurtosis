@@ -11,6 +11,6 @@ package v3
 
 type KubernetesClusterConfigV3 struct {
 	KubernetesClusterName  *string `yaml:"kubernetes-cluster-name,omitempty"`
-	StorageClass           *string `yaml:"storage-class,omitempty"`
+	StorageClass           *string `yaml:"storage-class,omitemprty"`
 	EnclaveSizeInMegabytes *uint   `yaml:"enclave-size-in-megabytes,omitempty"`
 }

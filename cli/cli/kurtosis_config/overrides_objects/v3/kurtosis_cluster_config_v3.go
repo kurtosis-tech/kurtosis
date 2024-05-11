@@ -12,5 +12,6 @@ package v3
 type KurtosisClusterConfigV3 struct {
 	Type *string `yaml:"type,omitempty"`
 	// If we ever get another type of cluster that has configuration, this will need to be polymorphically deserialized
-	Config *KubernetesClusterConfigV3 `yaml:"config,omitempty"`
+	Config   *KubernetesClusterConfigV3 `yaml:"config,omitempty"`
+	GitProxy *string                    `yaml:"git-proxy,omitempty"`
 }

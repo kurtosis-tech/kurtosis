@@ -67,7 +67,6 @@ func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 	originalOverrides := v3.KurtosisConfigV3{
 		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
-		GitProxy:          nil,
 		KurtosisClusters:  nil,
 		CloudConfig:       nil,
 	}
@@ -99,7 +98,6 @@ func TestCloudConfigOverridesApiUrl(t *testing.T) {
 	originalOverrides := v3.KurtosisConfigV3{
 		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
-		GitProxy:          nil,
 		KurtosisClusters:  nil,
 		CloudConfig: &v3.KurtosisCloudConfigV3{
 			ApiUrl:           &apiUrl,

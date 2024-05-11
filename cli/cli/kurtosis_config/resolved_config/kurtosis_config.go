@@ -139,7 +139,6 @@ func NewKurtosisConfigFromRequiredFields(shouldSendMetrics bool) (*KurtosisConfi
 	overrides := &v3.KurtosisConfigV3{
 		ConfigVersion:     0,
 		ShouldSendMetrics: &shouldSendMetrics,
-		GitProxy:          nil,
 		KurtosisClusters:  nil,
 		CloudConfig:       nil,
 	}

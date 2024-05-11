@@ -53,9 +53,11 @@ func TestNewKurtosisClusterConfigKubernetesPartialConfig(t *testing.T) {
 		StorageClass:           nil,
 		EnclaveSizeInMegabytes: nil,
 	}
+	gitProxy := "some-git-proxy"
 	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
-		Type:   &kubernetesType,
-		Config: &kubernetesPartialConfig,
+		Type:     &kubernetesType,
+		Config:   &kubernetesPartialConfig,
+		GitProxy: &gitProxy,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.Error(t, err)
@@ -71,9 +73,11 @@ func TestNewKurtosisClusterConfigKubernetesFullConfig(t *testing.T) {
 		StorageClass:           &kubernetesStorageClass,
 		EnclaveSizeInMegabytes: &kubernetesEnclaveSizeInMB,
 	}
+	gitProxy := "some-git-proxy"
 	kurtosisClusterConfigOverrides := v3.KurtosisClusterConfigV3{
-		Type:   &kubernetesType,
-		Config: &kubernetesFullConfig,
+		Type:     &kubernetesType,
+		Config:   &kubernetesFullConfig,
+		GitProxy: &gitProxy,
 	}
 	_, err := NewKurtosisClusterConfigFromOverrides("test", &kurtosisClusterConfigOverrides)
 	require.NoError(t, err)
