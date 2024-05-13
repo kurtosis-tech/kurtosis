@@ -118,7 +118,7 @@ config = ServiceConfig(
         ),
     },
     
-    # The determinsitic public ports that Kurtosis will expose from the container to the machine
+    # The deterministic public ports that Kurtosis will expose from the container to the machine
     # This only applies to Docker; the port ids here must be a subset of `ports`
     # If no ports are provided; normal ports behavior will happen and the exposed ports will be randomly allocated
     # This doesn't work on Kubernetes!!!
