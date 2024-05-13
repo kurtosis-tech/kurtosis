@@ -21,6 +21,7 @@ import {
   AddAliasRequest,
   CreateRepositoryWebhookRequest,
   DownloadFilesArtifactRequest,
+  GetCloudInstanceConfigRequest,
   GetListFilesArtifactNamesAndUuidsRequest,
   GetServicesRequest,
   GetStarlarkRunRequest,
@@ -81,6 +82,14 @@ export abstract class KurtosisClient {
 
   async checkHealth() {
     return asyncResult(this.client.check({}, this.getHeaderOptions()));
+  }
+
+  async isNewKurtosisVersionAvailable() {
+    return this.client.isNewKurtosisVersionAvailable({}, this.getHeaderOptions());
+  }
+
+  async upgradeKurtosisVersion() {
+    return this.client.upgradeKurtosisVersion({}, this.getHeaderOptions());
   }
 
   async getEnclaves() {
@@ -315,7 +324,10 @@ export abstract class KurtosisClient {
     });
   }
 
-  async getCloudInstanceConfig() {
-    return this.client.getCloudInstanceConfig({}, this.getHeaderOptions());
+  async getCloudInstanceConfig(skipCache: boolean) {
+    const request = new GetCloudInstanceConfigRequest({
+      skipCache: skipCache,
+    });
+    return this.client.getCloudInstanceConfig(request, this.getHeaderOptions());
   }
 }
