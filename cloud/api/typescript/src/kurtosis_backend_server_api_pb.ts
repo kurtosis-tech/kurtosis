@@ -918,9 +918,9 @@ export class DeleteInstancesRequest extends Message<DeleteInstancesRequest> {
   /**
    * must be system user to delete instances
    *
-   * @generated from field: string system_user_api_key = 2;
+   * @generated from field: string api_key = 2;
    */
-  systemUserApiKey = "";
+  apiKey = "";
 
   /**
    * can optionally pass a status to only delete instances with a certain status, eg. configuring
@@ -938,7 +938,7 @@ export class DeleteInstancesRequest extends Message<DeleteInstancesRequest> {
   static readonly typeName = "kurtosis_cloud.DeleteInstancesRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "instance_ids", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
-    { no: 2, name: "system_user_api_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "api_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "status", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ]);
 

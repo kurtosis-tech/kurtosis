@@ -160,7 +160,7 @@ message DeleteInstancesRequest {
   repeated string instance_ids = 1;
 
   // must be system user to delete instances
-  string system_user_api_key = 2;
+  string api_key = 2;
 
   // can optionally pass a status to only delete instances with a certain status, eg. configuring
   optional string status = 3;
