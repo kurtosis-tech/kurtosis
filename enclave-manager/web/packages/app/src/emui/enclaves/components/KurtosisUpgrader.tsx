@@ -85,7 +85,7 @@ export const KurtosisUpgrader = () => {
         setUpgradeStatus(UpgradeStatus.ERROR);
         clearInterval(interval);
       }
-    }, 2000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [upgradeStatus, kurtosisClient]);
