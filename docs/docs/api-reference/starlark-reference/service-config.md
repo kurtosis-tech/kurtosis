@@ -114,7 +114,7 @@ config = ServiceConfig(
             #  wait = None
             # The feature is enabled by default with a default timeout of 15s
             # OPTIONAL (DEFAULT:"15s")
-            wait = "4s",
+            wait = "4s"
         ),
     },
     
@@ -135,7 +135,7 @@ config = ServiceConfig(
 
             # Application protocol for the port
             # Optional
-            application_protocol = "http",
+            application_protocol = "http"
         )
     },
 
