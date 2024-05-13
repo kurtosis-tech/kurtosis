@@ -20,7 +20,7 @@ service KurtosisCloudBackendServer {
   rpc CancelPaymentSubscription (CancelPaymentSubscriptionArgs) returns (google.protobuf.Empty) {};
   rpc UpdateAddress(UpdateAddressArgs) returns (google.protobuf.Empty) {};
   rpc GetInstances(google.protobuf.Empty) returns (GetInstancesResponse) {};
-  rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse) {};
+  rpc DeleteInstances(DeleteInstancesRequest) returns (DeleteInstancesResponse) {};
   rpc ChangeActiveStatus(ChangeUserActiveRequest) returns (google.protobuf.Empty) {};
   rpc GetUser(GetUserRequest) returns (GetUserResponse) {};
   rpc CheckPortAuthorization(CheckPortAuthorizationRequest) returns(google.protobuf.Empty){
@@ -156,13 +156,18 @@ message UpdateAddressArgs {
   string country = 8;
 }
 
-message DeleteInstanceRequest {
-  string instance_id = 1;
-  string ec2_id = 2;
+message DeleteInstancesRequest {
+  repeated string instance_ids = 1;
+
+  // must be system user to delete instances
+  string api_key = 2;
+
+  // can optionally pass a status to only delete instances with a certain status, eg. configuring
+  optional string status = 3;
 }
 
-message DeleteInstanceResponse {
-  string status = 1;
+message DeleteInstancesResponse {
+  repeated string deleted_instances = 1;
 }
 
 message GetInstancesResponse {
