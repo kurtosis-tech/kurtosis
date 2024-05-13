@@ -105,16 +105,6 @@ config = ServiceConfig(
             # Application protocol for the port
             # Optional
             application_protocol = "http",
-
-            # Kurtosis will automatically perform a check to ensure all declared UDP and TCP ports are open and ready for traffic and connections upon startup.
-            # You may specify a custom wait timeout duration or disable the feature entirely.
-            # You may specify a custom wait timeout duration with a string:
-            #  wait = "2m"
-            # Or, you can disable this feature by setting the value to None:
-            #  wait = None
-            # The feature is enabled by default with a default timeout of 15s
-            # OPTIONAL (DEFAULT:"15s")
-            wait = "4s"
         ),
     },
     
