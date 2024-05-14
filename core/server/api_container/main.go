@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/interpretation_time_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_run"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"net"
 	"os"
@@ -226,6 +227,11 @@ func runMain() error {
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
 		startosis_engine.NewStartosisExecutor(starlarkValueSerde, runtimeValueStore, enclavePlan, enclaveDb))
 
+	starlarkRunRepository, err := starlark_run.GetOrCreateNewStarlarkRunRepository(enclaveDb)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the new starlark run repository")
+	}
+
 	//Creation of ApiContainerService
 	restartPolicy := kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER
 	if serverArgs.IsProductionEnclave {
@@ -240,6 +246,7 @@ func runMain() error {
 		restartPolicy,
 		metricsClient,
 		githubAuthProvider,
+		starlarkRunRepository,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")

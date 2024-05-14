@@ -76,7 +76,6 @@ const (
 	isNotScript              = false
 	isNotRemote              = false
 	defaultParallelism       = 4
-	emptySerializedParams    = ""
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -116,7 +115,7 @@ func NewApiContainerService(
 	starlarkRunRepository *starlark_run.StarlarkRunRepository,
 ) (*ApiContainerService, error) {
 
-	if err := initStarlarkRun(starlarkRunRepository); err != nil {
+	if err := initStarlarkRun(starlarkRunRepository, restartPolicy); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred initializing the starlark run")
 	}
 
@@ -126,7 +125,6 @@ func NewApiContainerService(
 		startosisRunner:        startosisRunner,
 		startosisInterpreter:   startosisInterpreter,
 		packageContentProvider: startosisModuleContentProvider,
-		restartPolicy:          restartPolicy,
 		starlarkRunRepository:  starlarkRunRepository,
 		metricsClient:          metricsClient,
 		githubAuthProvider:     githubAuthProvider,
@@ -215,7 +213,7 @@ func (apicService *ApiContainerService) saveStarlarkRun(
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		mainFuncName,
 		experimentalFeaturesSlice,
-		int32(apicService.restartPolicy.Number()),
+		previousStarlarkRun.GetRestartPolicy(),
 		initialSerializedParams,
 	)
 
@@ -381,7 +379,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		scriptWithRunFunction,
 		parallelism,
 		mainFuncName,
-		experimentalFeatures,
+		args.ExperimentalFeatures,
 	); err != nil {
 		return stacktrace.Propagate(err, "An error occurred saving the starlark run info while running the script")
 	}
@@ -665,7 +663,32 @@ func (apicService *ApiContainerService) ListFilesArtifactNamesAndUuids(_ context
 }
 
 func (apicService *ApiContainerService) GetStarlarkRun(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
-	return apicService.starlarkRunRepository, nil
+
+	currentStarlarkRun, err := apicService.starlarkRunRepository.Get()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the starlark run from the repository")
+	}
+
+	kurtosisFeatureFlags := []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
+	for _, experimentalFeature := range currentStarlarkRun.GetExperimentalFeatures() {
+		kurtosisFeatureFlags = append(kurtosisFeatureFlags, kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag(experimentalFeature))
+	}
+	restartPolicy := kurtosis_core_rpc_api_bindings.RestartPolicy(currentStarlarkRun.GetRestartPolicy())
+	initialSerializedParams := currentStarlarkRun.GetInitialSerializedParams()
+
+	getStarlarkRunResponse := &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
+		PackageId:               currentStarlarkRun.GetPackageId(),
+		SerializedScript:        currentStarlarkRun.GetSerializedScript(),
+		SerializedParams:        currentStarlarkRun.GetSerializedParams(),
+		Parallelism:             currentStarlarkRun.GetParallelism(),
+		RelativePathToMainFile:  currentStarlarkRun.GetRelativePathToMainFile(),
+		MainFunctionName:        currentStarlarkRun.GetMainFunctionName(),
+		ExperimentalFeatures:    kurtosisFeatureFlags,
+		RestartPolicy:           restartPolicy,
+		InitialSerializedParams: &initialSerializedParams,
+	}
+
+	return getStarlarkRunResponse, nil
 }
 
 func (apicService *ApiContainerService) GetStarlarkPackagePlanYaml(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
@@ -1195,7 +1218,10 @@ func convertFromImageDownloadModeAPI(api_mode kurtosis_core_rpc_api_bindings.Ima
 	}
 }
 
-func initStarlarkRun(starlarkRunRepository *starlark_run.StarlarkRunRepository) error {
+func initStarlarkRun(
+	starlarkRunRepository *starlark_run.StarlarkRunRepository,
+	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy,
+) error {
 
 	currentStarlarkRun, err := starlarkRunRepository.Get()
 	if err != nil {
@@ -1211,7 +1237,7 @@ func initStarlarkRun(starlarkRunRepository *starlark_run.StarlarkRunRepository) 
 			startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 			"",
 			[]int32{},
-			int32(kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER.Number()),
+			int32(restartPolicy.Number()),
 			"",
 		)
 
