@@ -32,6 +32,14 @@ func TestSaveAndGetStarlarkRun_Success(t *testing.T) {
 	require.Equal(t, originalStarlarRunForTest, starlarkRunFromRepository)
 }
 
+func TestGetNilStarlarkRun_Success(t *testing.T) {
+	repository := getRepositoryForTest(t)
+
+	starlarkRunFromRepository, err := repository.Get()
+	require.NoError(t, err)
+	require.Nil(t, starlarkRunFromRepository)
+}
+
 func getRepositoryForTest(t *testing.T) *StarlarkRunRepository {
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer func() {

@@ -55,7 +55,7 @@ func (repository *StarlarkRunRepository) Get() (*StarlarkRun, error) {
 			return nil
 		}
 
-		starlarkRunObj = &StarlarkRun{}
+		starlarkRunObj = &StarlarkRun{nil}
 		if err = json.Unmarshal(starlarkRunBytes, starlarkRunObj); err != nil {
 			return stacktrace.Propagate(err, "An error occurred unmarshalling starlark run")
 		}
