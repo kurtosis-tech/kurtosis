@@ -19,7 +19,9 @@ import (
 
 const (
 	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "kurtosistech/engine"
+	defaultImageAuthor       = "kurtosistech"
+	authorImageNameSeparator = "/"
+	engineImageName          = "engine"
 )
 
 type EngineServerLauncher struct {
@@ -99,12 +101,59 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
+	return launcher.LaunchWithCustomImageRepository(
+		ctx,
+		imageVersionTag,
+		defaultImageAuthor,
+		logLevel,
+		grpcListenPortNum,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
+		backendConfigSupplier,
+		onBastionHost,
+		poolSize,
+		enclaveEnvVars,
+		isCI,
+		cloudUserID,
+		cloudInstanceID,
+		allowedCORSOrigins,
+		shouldStartInDebugMode,
+		githubAuthToken,
+		restartAPIContainers,
+	)
+}
+
+func (launcher *EngineServerLauncher) LaunchWithCustomImageRepository(
+	ctx context.Context,
+	imageVersionTag string,
+	imageAuthor string,
+	logLevel logrus.Level,
+	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
+	backendConfigSupplier KurtosisBackendConfigSupplier,
+	onBastionHost bool,
+	poolSize uint8,
+	enclaveEnvVars string,
+	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
+	allowedCORSOrigins *[]string,
+	shouldStartInDebugMode bool,
+	githubAuthToken string,
+	restartAPIContainers bool,
+) (
+	resultPublicIpAddr net.IP,
+	resultPublicGrpcPortSpec *port_spec.PortSpec,
+	resultErr error,
+) {
 	kurtosisBackendType, kurtosisBackendConfig := backendConfigSupplier.getKurtosisBackendConfig()
 
 	argsObj, err := args.NewEngineServerArgs(
 		grpcListenPortNum,
 		logLevel.String(),
 		imageVersionTag,
+		defaultImageAuthor,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		kurtosisBackendType,
@@ -129,7 +178,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 
 	engine, err := launcher.kurtosisBackend.CreateEngine(
 		ctx,
-		containerImage,
+		imageAuthor+authorImageNameSeparator+engineImageName,
 		imageVersionTag,
 		grpcListenPortNum,
 		envVars,

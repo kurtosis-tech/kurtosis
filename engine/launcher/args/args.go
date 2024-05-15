@@ -64,6 +64,8 @@ type EngineServerArgs struct {
 
 	// To restart the current API containers after the engine has been restarted
 	RestartAPIContainers bool `json:"restart_api_containers"`
+
+	ImageRepository string `json:"image_repository"`
 }
 
 var skipValidation = map[string]bool{
@@ -108,6 +110,7 @@ func NewEngineServerArgs(
 	grpcListenPortNum uint16,
 	logLevelStr string,
 	imageVersionTag string,
+	imageRepository string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	kurtosisBackendType KurtosisBackendType,
@@ -140,6 +143,7 @@ func NewEngineServerArgs(
 		CloudInstanceID:             cloudInstanceID,
 		AllowedCORSOrigins:          allowedCORSOrigins,
 		RestartAPIContainers:        restartAPIContainers,
+		ImageRepository:             imageRepository,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")
