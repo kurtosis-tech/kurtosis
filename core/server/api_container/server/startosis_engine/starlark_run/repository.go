@@ -38,6 +38,7 @@ func GetOrCreateNewStarlarkRunRepository(enclaveDb *enclave_db.EnclaveDB) (*Star
 	return starlarkRunRepository, nil
 }
 
+// Get will return either the starlark run or nil
 func (repository *StarlarkRunRepository) Get() (*StarlarkRun, error) {
 	var (
 		starlarkRunObj *StarlarkRun
@@ -50,7 +51,12 @@ func (repository *StarlarkRunRepository) Get() (*StarlarkRun, error) {
 		// first get the bytes
 		starlarkRunBytes := bucket.Get(starlarkRunKey)
 
-		if err := json.Unmarshal(starlarkRunBytes, starlarkRunObj); err != nil {
+		if starlarkRunBytes == nil {
+			return nil
+		}
+
+		starlarkRunObj = &StarlarkRun{}
+		if err = json.Unmarshal(starlarkRunBytes, starlarkRunObj); err != nil {
 			return stacktrace.Propagate(err, "An error occurred unmarshalling starlark run")
 		}
 

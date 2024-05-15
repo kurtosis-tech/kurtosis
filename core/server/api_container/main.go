@@ -229,7 +229,7 @@ func runMain() error {
 
 	starlarkRunRepository, err := starlark_run.GetOrCreateNewStarlarkRunRepository(enclaveDb)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the new starlark run repository")
+		return stacktrace.Propagate(err, "An error occurred creating the starlark run repository")
 	}
 
 	//Creation of ApiContainerService
