@@ -54,6 +54,10 @@ type APIContainerArgs struct {
 
 	// The Cloud Instance ID of the current user if available
 	CloudInstanceID metrics_client.CloudInstanceID `json:"cloud_instance_id"`
+
+	// The author of the image for the APIC, Engine and Files Artifact Expander
+	// In case someone is using a non Kurtosis published image
+	ImageAuthor string `json:"image_author"`
 }
 
 var skipValidation = map[string]bool{
@@ -110,6 +114,7 @@ func NewAPIContainerArgs(
 	isCI bool,
 	cloudUserID metrics_client.CloudUserID,
 	cloudInstanceID metrics_client.CloudInstanceID,
+	imageAuthor string,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		Version:                     version,
@@ -126,6 +131,7 @@ func NewAPIContainerArgs(
 		IsCI:                        isCI,
 		CloudUserID:                 cloudUserID,
 		CloudInstanceID:             cloudInstanceID,
+		ImageAuthor:                 imageAuthor,
 	}
 
 	if err := result.validate(); err != nil {

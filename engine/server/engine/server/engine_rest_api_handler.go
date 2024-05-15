@@ -21,6 +21,9 @@ type EngineRuntime struct {
 	// The version tag of the engine server image, so it can report its own version
 	ImageVersionTag string
 
+	// The Author of the image
+	ImageAuthor string
+
 	EnclaveManager *enclave_manager.EnclaveManager
 
 	LogFileManager *log_file_manager.LogFileManager
@@ -103,6 +106,7 @@ func (engine EngineRuntime) PostEnclaves(ctx context.Context, request api.PostEn
 	enclaveInfo, err := engine.EnclaveManager.CreateEnclave(
 		ctx,
 		engine.ImageVersionTag,
+		engine.ImageAuthor,
 		apicVersionTag,
 		apiContainerLogLevel,
 		enclaveName,

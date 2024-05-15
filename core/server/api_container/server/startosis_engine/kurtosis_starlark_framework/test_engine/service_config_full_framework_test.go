@@ -25,7 +25,7 @@ type serviceConfigFullTestCase struct {
 
 func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFull() {
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Times(1).Return(
-		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), 0, "0.0.0"),
+		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), 0, "0.0.0", "kurtosistech"),
 	)
 
 	suite.run(&serviceConfigFullTestCase{

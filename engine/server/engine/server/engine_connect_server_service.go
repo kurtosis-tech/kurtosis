@@ -30,6 +30,9 @@ type EngineConnectServerService struct {
 	// The version tag of the engine server image, so it can report its own version
 	imageVersionTag string
 
+	// The author of the image of the engine
+	imageAuthor string
+
 	enclaveManager *enclave_manager.EnclaveManager
 
 	// The protected user ID for metrics analytics purpose
@@ -48,6 +51,7 @@ type EngineConnectServerService struct {
 
 func NewEngineConnectServerService(
 	imageVersionTag string,
+	imageAuthor string,
 	enclaveManager *enclave_manager.EnclaveManager,
 	metricsUserId string,
 	didUserAcceptSendingMetrics bool,
@@ -57,6 +61,7 @@ func NewEngineConnectServerService(
 ) *EngineConnectServerService {
 	service := &EngineConnectServerService{
 		imageVersionTag:             imageVersionTag,
+		imageAuthor:                 imageAuthor,
 		enclaveManager:              enclaveManager,
 		metricsUserID:               metricsUserId,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
@@ -183,6 +188,7 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		service.imageVersionTag,
+		service.imageAuthor,
 		args.GetApiContainerVersionTag(),
 		apiContainerLogLevel,
 		args.GetEnclaveName(),

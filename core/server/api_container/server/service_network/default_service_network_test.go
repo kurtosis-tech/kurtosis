@@ -52,6 +52,7 @@ var (
 		testIpFromInt(0),
 		uint16(1234),
 		"0.0.0",
+		"kurtosistech",
 	)
 	unusedEnclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 

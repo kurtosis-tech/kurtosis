@@ -283,6 +283,7 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*types.Encla
 
 	newEnclaveInfo, err := pool.enclaveCreator.CreateEnclave(
 		ctx,
+		"kurtosistech",
 		apiContainerVersion,
 		defaultApiContainerLogLevel,
 		enclaveName,

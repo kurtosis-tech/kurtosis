@@ -20,11 +20,13 @@ import (
 
 const (
 	engineVersionFlagKey           = "version"
+	engineAuthorFlagKey            = "author"
 	logLevelFlagKey                = "log-level"
 	enclavePoolSizeFlagKey         = "enclave-pool-size"
 	githubAuthTokenOverrideFlagKey = "github-auth-token"
 
 	defaultEngineVersion                   = ""
+	defaultEngineAuthor                    = "kurtosistech"
 	restartEngineOnSameVersionIfAnyRunning = false
 
 	defaultShouldRestartAPIContainers = "false"
@@ -43,6 +45,13 @@ var RestartCmd = &lowlevel.LowlevelKurtosisCommand{
 			Shorthand: "",
 			Type:      flags.FlagType_String,
 			Default:   defaultEngineVersion,
+		},
+		{
+			Key:       engineAuthorFlagKey,
+			Usage:     "The author (Docker username) of the Kurtosis engine that should be started (blank will start the kurtosistech version)",
+			Shorthand: "",
+			Type:      flags.FlagType_String,
+			Default:   defaultEngineAuthor,
 		},
 		{
 			Key: logLevelFlagKey,
@@ -142,9 +151,14 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", restartAPIContainersFlagKey)
 	}
 
+	engineAuthorFlag, err := flags.GetString(engineAuthorFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", engineAuthorFlagKey)
+	}
+
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, engineAuthor, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}

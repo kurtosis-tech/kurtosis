@@ -57,7 +57,7 @@ const (
 
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
 	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
-	filesArtifactsExpanderImage string = "kurtosistech/files-artifacts-expander"
+	filesArtifactsExpanderImage string = "files-artifacts-expander"
 
 	minimumMemoryAllocationMegabytes = 6
 )
@@ -623,7 +623,8 @@ func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string][]str
 	}
 
 	expanderImageAndTag := fmt.Sprintf(
-		"%v:%v",
+		"%v/%v:%v",
+		apiContainerInfo.GetImageAuthor(),
 		filesArtifactsExpanderImage,
 		apiContainerInfo.GetVersion(),
 	)

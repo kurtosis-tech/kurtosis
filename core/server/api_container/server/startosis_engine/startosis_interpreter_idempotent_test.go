@@ -69,7 +69,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 
 	serviceNetwork := service_network.NewMockServiceNetwork(suite.T())
 	serviceNetwork.EXPECT().GetApiContainerInfo().Maybe().Return(
-		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), uint16(1234), "0.0.0"),
+		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), uint16(1234), "0.0.0", "kurtosistech"),
 	)
 	serviceNetwork.EXPECT().GetEnclaveUuid().Maybe().Return(enclaveUuid)
 	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, starlarkValueSerde, "", interpretationTimeValueStore)

@@ -132,6 +132,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
 	// If blank, will use the default
 	engineVersion string,
+	imageAuthor string,
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
 	//If blank, will use a random one
@@ -184,6 +185,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	if enclaveInfo == nil {
 		enclaveInfo, err = manager.enclaveCreator.CreateEnclave(
 			setupCtx,
+			imageAuthor,
 			apiContainerImageVersionTag,
 			apiContainerLogLevel,
 			enclaveName,
@@ -414,6 +416,7 @@ func (manager *EnclaveManager) RestartAllEnclaveAPIContainers(ctx context.Contex
 
 	// this way we are going to use always the same engine's version
 	useDefaultApiContainerVersionTag := ""
+	useDefaultImageAuthor := "kurtosistech"
 
 	//TODO check if we can get this one from any place, just using the default for now
 	restartAPIContainerDefaultLogLevel := logrus.DebugLevel
@@ -424,6 +427,7 @@ func (manager *EnclaveManager) RestartAllEnclaveAPIContainers(ctx context.Contex
 
 		_, err := manager.enclaveCreator.LaunchApiContainer(
 			ctx,
+			useDefaultImageAuthor,
 			useDefaultApiContainerVersionTag,
 			restartAPIContainerDefaultLogLevel,
 			enclaveUuid,

@@ -219,6 +219,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 	ctx context.Context,
 	engineImageVersionTag string,
+	engineAuthorFlagKey string,
 	logLevel logrus.Level,
 	poolSize uint8,
 	shouldStartInDebugMode bool,
@@ -343,6 +344,7 @@ func (manager *EngineManager) RestartEngineIdempotently(
 	ctx context.Context,
 	logLevel logrus.Level,
 	optionalVersionToUse string,
+	engineAuthorFlagKey string,
 	restartEngineOnSameVersionIfAnyRunning bool,
 	poolSize uint8,
 	shouldStartInDebugMode bool,

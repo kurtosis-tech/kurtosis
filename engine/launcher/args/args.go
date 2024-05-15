@@ -65,7 +65,7 @@ type EngineServerArgs struct {
 	// To restart the current API containers after the engine has been restarted
 	RestartAPIContainers bool `json:"restart_api_containers"`
 
-	ImageRepository string `json:"image_repository"`
+	ImageAuthor string `json:"image_author"`
 }
 
 var skipValidation = map[string]bool{
@@ -143,7 +143,7 @@ func NewEngineServerArgs(
 		CloudInstanceID:             cloudInstanceID,
 		AllowedCORSOrigins:          allowedCORSOrigins,
 		RestartAPIContainers:        restartAPIContainers,
-		ImageRepository:             imageRepository,
+		ImageAuthor:                 imageRepository,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

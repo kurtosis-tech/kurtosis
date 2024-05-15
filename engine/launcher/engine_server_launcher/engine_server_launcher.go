@@ -101,7 +101,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
-	return launcher.LaunchWithCustomImageRepository(
+	return launcher.LaunchWithCustomImageAuthor(
 		ctx,
 		imageVersionTag,
 		defaultImageAuthor,
@@ -123,7 +123,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	)
 }
 
-func (launcher *EngineServerLauncher) LaunchWithCustomImageRepository(
+func (launcher *EngineServerLauncher) LaunchWithCustomImageAuthor(
 	ctx context.Context,
 	imageVersionTag string,
 	imageAuthor string,
