@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.89.10](https://github.com/kurtosis-tech/kurtosis/compare/0.89.9...0.89.10) (2024-05-13)
+
+
+### Features
+
+* update delete instances request ([#2445](https://github.com/kurtosis-tech/kurtosis/issues/2445)) ([ef9b885](https://github.com/kurtosis-tech/kurtosis/commit/ef9b8852989ed8dd87664fac66724f1bccf4e246))
+
 ## [0.89.9](https://github.com/kurtosis-tech/kurtosis/compare/0.89.8...0.89.9) (2024-05-09)
 
 

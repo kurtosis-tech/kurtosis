@@ -25,10 +25,17 @@ service KurtosisEnclaveManagerServer {
   rpc GetStarlarkScriptPlanYaml(StarlarkScriptPlanYamlArgs) returns (api_container_api.PlanYaml) {};
   rpc GetStarlarkPackagePlanYaml(StarlarkPackagePlanYamlArgs) returns (api_container_api.PlanYaml) {};
   rpc CreateRepositoryWebhook(CreateRepositoryWebhookRequest) returns (google.protobuf.Empty) {};
-  rpc GetCloudInstanceConfig(google.protobuf.Empty) returns (kurtosis_cloud.GetCloudInstanceConfigResponse) {};
+  rpc GetCloudInstanceConfig(GetCloudInstanceConfigRequest) returns (kurtosis_cloud.GetCloudInstanceConfigResponse) {};
   rpc LockPort(LockUnlockPortRequest) returns (google.protobuf.Empty) {}
   rpc UnlockPort(LockUnlockPortRequest) returns(google.protobuf.Empty) {}
   rpc AddAlias(AddAliasRequest) returns(google.protobuf.Empty){}
+  rpc IsNewKurtosisVersionAvailable(google.protobuf.Empty) returns(kurtosis_cloud.IsNewKurtosisVersionAvailableResponse){}
+  rpc UpgradeKurtosisVersion(google.protobuf.Empty) returns(google.protobuf.Empty){};
+}
+
+message GetCloudInstanceConfigRequest {
+  // to skip the EM cache for this endpoint and make a direct call to the cloud-backend
+  bool skip_cache = 1;
 }
 
 message HealthCheckRequest {
