@@ -35,6 +35,8 @@ const (
 	errorDelimiter = ", "
 
 	enclaveNameNotFound = "Name Not Found"
+
+	defaultImageAuthor = "kurtosistech"
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -168,7 +170,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	// TODO(victor.colombo): Extend enclave pool to have warm production enclaves
-	if !isProduction && manager.enclavePool != nil {
+	if (imageAuthor == defaultImageAuthor) && !isProduction && manager.enclavePool != nil {
 		enclaveInfo, err = manager.enclavePool.GetEnclave(
 			setupCtx,
 			enclaveName,
