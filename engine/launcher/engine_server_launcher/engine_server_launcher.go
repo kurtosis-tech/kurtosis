@@ -186,7 +186,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomImageAuthor(
 		githubAuthToken,
 	)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%+v'", envVars)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container")
 	}
 	return engine.GetPublicIPAddress(), engine.GetPublicGRPCPort(), nil
 }

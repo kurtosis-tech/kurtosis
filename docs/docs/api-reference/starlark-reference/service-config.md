@@ -117,6 +117,27 @@ config = ServiceConfig(
             wait = "4s"
         ),
     },
+    
+    # The deterministic public ports that Kurtosis will expose from the container to the machine
+    # This only applies to Docker; the port ids here must be a subset of `ports`
+    # If no ports are provided; normal ports behavior will happen and the exposed ports will be randomly allocated
+    # This doesn't work on Kubernetes!!!
+    # OPTIONAL (Default: {})
+    public_ports = {
+        "grpc": PortSpec(
+            # The port number which we want to expose
+            # MANDATORY
+            number = 3000,
+
+            # Transport protocol for the port (can be either "TCP" or "UDP")
+            # Optional (DEFAULT:"TCP")
+            transport_protocol = "TCP",
+
+            # Application protocol for the port
+            # Optional
+            application_protocol = "http"
+        )
+    },
 
     # A mapping of path_on_container_where_contents_will_be_mounted -> Directory object or file artifact name
     # For more info on what a Directory object is, see below

@@ -83,11 +83,11 @@ func (c *WebServer) Check(context.Context, *connect.Request[kurtosis_enclave_man
 }
 
 func (c *WebServer) CreateRepositoryWebhook(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.CreateRepositoryWebhookRequest]) (*connect.Response[emptypb.Empty], error) {
-	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	validRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !validRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 
@@ -147,7 +147,8 @@ func (c *WebServer) ValidateRequestAuthorization(
 		return false, nil, stacktrace.NewError("An internal error has occurred. An empty API key was found")
 	}
 
-	instanceConfig, err := c.getCloudInstanceConfig(ctx, reqToken, auth.ApiKey)
+	doNotSkipCache := false
+	instanceConfig, err := c.getCloudInstanceConfig(ctx, reqToken, auth.ApiKey, doNotSkipCache)
 	if err != nil {
 		return false, nil, stacktrace.Propagate(err, "Failed to retrieve the instance config")
 	}
@@ -166,7 +167,7 @@ func (c *WebServer) ValidateRequestAuthorization(
 	return true, instanceConfig, nil
 }
 
-func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
+func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetCloudInstanceConfigRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error) {
 	if !c.enforceAuth {
 		return nil, stacktrace.NewError("This method is only available in the cloud")
 	}
@@ -183,7 +184,7 @@ func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Req
 		return nil, stacktrace.NewError("An internal error has occurred. An empty API key was found")
 	}
 
-	instanceConfig, err := c.getCloudInstanceConfig(ctx, jwtToken, auth.ApiKey)
+	instanceConfig, err := c.getCloudInstanceConfig(ctx, jwtToken, auth.ApiKey, req.Msg.SkipCache)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to retrieve the instance config")
 	}
@@ -195,12 +196,94 @@ func (c *WebServer) GetCloudInstanceConfig(ctx context.Context, req *connect.Req
 	return resp, nil
 }
 
-func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
-	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+func (c *WebServer) IsNewKurtosisVersionAvailable(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error) {
+	if !c.enforceAuth {
+		return nil, stacktrace.NewError("This method is only available in the cloud")
+	}
+
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+
+	emptyReq := connect.NewRequest(&emptypb.Empty{})
+	engineInfo, err := (*c.engineServiceClient).GetEngineInfo(ctx, emptyReq)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the engine info")
+	}
+	currentEngineKurtosisVersion := engineInfo.Msg.GetEngineVersion()
+
+	cloudClient, err := c.createKurtosisCloudBackendClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
+	}
+
+	jwtToken, err := extractJwtToken(req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred extracting the JWT token from the request")
+	}
+
+	isNewKurtosisVersionAvailableRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest{
+			AccessToken:            jwtToken,
+			CurrentKurtosisVersion: currentEngineKurtosisVersion,
+		},
+	}
+
+	isNewKurtosisVersionAvailableResponse, err := (*cloudClient).IsNewKurtosisVersionAvailable(ctx, isNewKurtosisVersionAvailableRequest)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while checking is a new Kurtosis version is available")
+	}
+
+	return isNewKurtosisVersionAvailableResponse, nil
+}
+
+func (c *WebServer) UpgradeKurtosisVersion(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	if !c.enforceAuth {
+		return nil, stacktrace.NewError("This method is only available in the cloud")
+	}
+
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !isValidRequest {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+
+	cloudClient, err := c.createKurtosisCloudBackendClient()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
+	}
+
+	jwtToken, err := extractJwtToken(req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred extracting the JWT token from the request")
+	}
+
+	upgradeKurtosisVersionRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest{
+			AccessToken: jwtToken,
+		},
+	}
+
+	upgradeKurtosisVersionResponse, err := (*cloudClient).UpgradeKurtosisVersion(ctx, upgradeKurtosisVersionRequest)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while upgrading the Kurtosis version")
+	}
+
+	return upgradeKurtosisVersionResponse, nil
+}
+
+func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	enclaves, err := (*c.engineServiceClient).GetEnclaves(ctx, req)
@@ -215,11 +298,11 @@ func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptyp
 	return resp, nil
 }
 func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
-	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -249,10 +332,7 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 		return resp, nil
 	}
 
-	cloudClient, err := c.createKurtosisCloudBackendClient(
-		kurtosisCloudApiHost,
-		kurtosisCloudApiPort,
-	)
+	cloudClient, err := c.createKurtosisCloudBackendClient()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
@@ -305,21 +385,16 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 }
 
 func (c *WebServer) AddAlias(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error) {
-	if !c.enforceAuth {
-		return nil, stacktrace.NewError("This method is only available in the cloud")
-	}
-	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+
+	isValidRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 
-	cloudClient, err := c.createKurtosisCloudBackendClient(
-		kurtosisCloudApiHost,
-		kurtosisCloudApiPort,
-	)
+	cloudClient, err := c.createKurtosisCloudBackendClient()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
@@ -354,18 +429,15 @@ func (c *WebServer) LockPort(ctx context.Context, req *connect.Request[kurtosis_
 	if !c.enforceAuth {
 		return nil, stacktrace.NewError("This method is only available in the cloud")
 	}
-	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 
-	cloudClient, err := c.createKurtosisCloudBackendClient(
-		kurtosisCloudApiHost,
-		kurtosisCloudApiPort,
-	)
+	cloudClient, err := c.createKurtosisCloudBackendClient()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
@@ -398,15 +470,12 @@ func (c *WebServer) UnlockPort(ctx context.Context, req *connect.Request[kurtosi
 	if !c.enforceAuth {
 		return nil, stacktrace.NewError("This method is only available in the cloud")
 	}
-	auth, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
-	if !auth {
+	isValidRequest, instanceConfig, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 
-	cloudClient, err := c.createKurtosisCloudBackendClient(
-		kurtosisCloudApiHost,
-		kurtosisCloudApiPort,
-	)
+	cloudClient, err := c.createKurtosisCloudBackendClient()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
@@ -460,11 +529,11 @@ func (c *WebServer) GetServiceLogs(
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
-	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -549,11 +618,11 @@ func (c *WebServer) RunStarlarkScript(ctx context.Context, req *connect.Request[
 }
 
 func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
-	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	_, err = (*c.engineServiceClient).DestroyEnclave(ctx, req)
@@ -566,11 +635,11 @@ func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kur
 }
 
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
-	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	result, err := (*c.engineServiceClient).CreateEnclave(ctx, req)
@@ -586,11 +655,11 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 }
 
 func (c *WebServer) InspectFilesArtifactContents(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
-	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -620,11 +689,11 @@ func (c *WebServer) DownloadFilesArtifact(
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.DownloadFilesArtifactRequest],
 	str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk],
 ) error {
-	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -660,11 +729,11 @@ func (c *WebServer) GetStarlarkRun(
 	ctx context.Context,
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error) {
-	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -700,11 +769,11 @@ func (c *WebServer) GetStarlarkScriptPlanYaml(
 	ctx context.Context,
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkScriptPlanYamlArgs],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error) {
-	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -735,11 +804,11 @@ func (c *WebServer) GetStarlarkPackagePlanYaml(
 	ctx context.Context,
 	req *connect.Request[kurtosis_enclave_manager_api_bindings.StarlarkPackagePlanYamlArgs],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.PlanYaml], error) {
-	auth, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
-	if !auth {
+	if !isValidRequest {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
@@ -783,11 +852,8 @@ func (c *WebServer) createAPICClient(
 	return &apiContainerServiceClient, nil
 }
 
-func (c *WebServer) createKurtosisCloudBackendClient(
-	host string,
-	port int,
-) (*kurtosis_backend_server_rpc_api_bindingsconnect.KurtosisCloudBackendServerClient, error) {
-	parsedUrl, err := url.Parse(fmt.Sprintf("%s:%d", host, port))
+func (c *WebServer) createKurtosisCloudBackendClient() (*kurtosis_backend_server_rpc_api_bindingsconnect.KurtosisCloudBackendServerClient, error) {
+	parsedUrl, err := url.Parse(fmt.Sprintf("%s:%d", kurtosisCloudApiHost, kurtosisCloudApiPort))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse the connection url for Kurtosis Cloud Backend")
 	}
@@ -803,9 +869,10 @@ func (c *WebServer) getCloudInstanceConfig(
 	ctx context.Context,
 	jwtToken string,
 	apiKey string,
+	skipCache bool,
 ) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
 	// Check if we have already fetched the instance config, if so return the cache
-	if c.instanceConfigMap[jwtToken] != nil {
+	if c.instanceConfigMap[jwtToken] != nil && !skipCache {
 		return c.instanceConfigMap[jwtToken], nil
 	}
 
@@ -813,10 +880,7 @@ func (c *WebServer) getCloudInstanceConfig(
 	c.instanceConfigMutex.Lock()
 	defer c.instanceConfigMutex.Unlock()
 
-	client, err := c.createKurtosisCloudBackendClient(
-		kurtosisCloudApiHost,
-		kurtosisCloudApiPort,
-	)
+	client, err := c.createKurtosisCloudBackendClient()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
@@ -851,10 +915,7 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 	ctx context.Context,
 	jwtToken string,
 ) (*Authentication, error) {
-	client, err := c.createKurtosisCloudBackendClient(
-		kurtosisCloudApiHost,
-		kurtosisCloudApiPort,
-	)
+	client, err := c.createKurtosisCloudBackendClient()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
