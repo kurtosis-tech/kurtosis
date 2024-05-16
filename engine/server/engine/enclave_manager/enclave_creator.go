@@ -210,9 +210,10 @@ func (creator *EnclaveCreator) LaunchApiContainer(
 		creator.kurtosisBackend,
 	)
 	if apiContainerImageVersionTag != "" {
-		apiContainer, err := apiContainerLauncher.LaunchWithCustomVersion(
+		apiContainer, err := apiContainerLauncher.LaunchWithCustomImageAuthor(
 			ctx,
 			apiContainerImageVersionTag,
+			imageAuthor,
 			logLevel,
 			enclaveUuid,
 			grpcListenPort,

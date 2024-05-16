@@ -23,6 +23,7 @@ import (
 const (
 	// If set to empty, then we'll use whichever default version the launcher provides
 	defaultEngineImageVersionTag                                           = ""
+	defaultEngineAuthor                                                    = "kurtosistech"
 	shouldForceLogsComponentsContainersRestartWhenEngineContainerIsStopped = true
 	shouldForceLogsComponentsContainersRestartWhenEngineContainerIsRunning = false
 )
@@ -84,6 +85,9 @@ type engineExistenceGuarantor struct {
 
 	// To restart the current API containers after the engine has been restarted
 	restartAPIContainers bool
+
+	// The author of the repository where the engine is
+	engineAuthor string
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -110,6 +114,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		shouldSendMetrics,
 		engineServerKurtosisBackendConfigSupplier,
 		defaultEngineImageVersionTag,
+		defaultEngineAuthor,
 		logLevel,
 		maybeCurrentlyRunningEngineVersionTag,
 		kurtosisClusterType,
@@ -130,6 +135,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
 	imageVersionTag string,
+	engineAuthor string,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 	kurtosisClusterType resolved_config.KurtosisClusterType,
@@ -160,6 +166,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		shouldRunInDebugMode:                      shouldRunInDebugMode,
 		githubAuthTokenOverride:                   githubAuthTokenOverride,
 		restartAPIContainers:                      restartAPIContainers,
+		engineAuthor:                              engineAuthor,
 	}
 }
 
@@ -221,9 +228,10 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.restartAPIContainers,
 		)
 	} else {
-		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
+		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomImageAuthor(
 			guarantor.ctx,
 			guarantor.imageVersionTag,
+			guarantor.engineAuthor,
 			guarantor.logLevel,
 			kurtosis_context.DefaultGrpcEngineServerPortNum,
 			metricsUserId,

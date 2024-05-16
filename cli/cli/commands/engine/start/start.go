@@ -20,11 +20,13 @@ import (
 
 const (
 	engineVersionFlagKey           = "version"
+	engineAuthorFlagKey            = "author"
 	logLevelFlagKey                = "log-level"
 	enclavePoolSizeFlagKey         = "enclave-pool-size"
 	githubAuthTokenOverrideFlagKey = "github-auth-token"
 
 	defaultEngineVersion          = ""
+	defaultEngineAuthor           = "kurtosistech"
 	kurtosisTechEngineImagePrefix = "kurtosistech/engine"
 	imageVersionDelimiter         = ":"
 
@@ -44,6 +46,13 @@ var StartCmd = &lowlevel.LowlevelKurtosisCommand{
 			Shorthand: "",
 			Type:      flags.FlagType_String,
 			Default:   defaultEngineVersion,
+		},
+		{
+			Key:       engineAuthorFlagKey,
+			Usage:     "The author (Docker username) of the Kurtosis engine that should be started (blank will start the kurtosistech version)",
+			Shorthand: "",
+			Type:      flags.FlagType_String,
+			Default:   defaultEngineAuthor,
 		},
 		{
 			Key: logLevelFlagKey,
@@ -138,16 +147,30 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", restartAPIContainersFlagKey)
 	}
 
+	engineAuthor, err := flags.GetString(engineAuthorFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", engineAuthorFlagKey)
+	}
+
+	if engineAuthor != defaultEngineAuthor && engineVersion == defaultEngineVersion {
+		return stacktrace.NewError("Expected '%v' to be set as '%v' was set. Need to enter a custom engine veresion if a custom engine author is set", engineVersionFlagKey, engineAuthorFlagKey)
+	}
+
+	imageForLogging := kurtosisTechEngineImagePrefix
+	if engineAuthor != defaultEngineAuthor {
+		imageForLogging = strings.Replace(imageForLogging, defaultEngineAuthor, engineAuthor, 1)
+	}
+
 	if engineVersion == defaultEngineVersion && isDebugMode {
 		engineDebugVersion := fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
-		logrus.Infof("Starting Kurtosis engine in debug mode from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineDebugVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineDebugVersion, logLevel, enclavePoolSize, true, githubAuthTokenOverride, shouldRestartAPIContainers)
+		logrus.Infof("Starting Kurtosis engine in debug mode from image '%v%v%v'...", imageForLogging, imageVersionDelimiter, engineDebugVersion)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineDebugVersion, engineAuthor, logLevel, enclavePoolSize, true, githubAuthTokenOverride, shouldRestartAPIContainers)
 	} else if engineVersion == defaultEngineVersion {
-		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.KurtosisVersion)
+		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", imageForLogging, imageVersionDelimiter, kurtosis_version.KurtosisVersion)
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize, githubAuthTokenOverride, shouldRestartAPIContainers)
 	} else {
-		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel, enclavePoolSize, defaults.DefaultEnableDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers)
+		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", imageForLogging, imageVersionDelimiter, engineVersion)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, engineAuthor, logLevel, enclavePoolSize, defaults.DefaultEnableDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers)
 	}
 	if startEngineErr != nil {
 		return stacktrace.Propagate(startEngineErr, "An error occurred starting the Kurtosis engine")

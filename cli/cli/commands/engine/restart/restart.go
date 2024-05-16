@@ -151,7 +151,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", restartAPIContainersFlagKey)
 	}
 
-	engineAuthorFlag, err := flags.GetString(engineAuthorFlagKey)
+	engineAuthor, err := flags.GetString(engineAuthorFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", engineAuthorFlagKey)
 	}
