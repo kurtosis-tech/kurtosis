@@ -76,12 +76,18 @@ type privateServiceConfig struct {
 	FilesToBeMoved map[string]string
 
 	TiniEnabled bool
+
+	Capabilities []string
 }
 
-func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool) (*ServiceConfig, error) {
+func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_spec.ImageBuildSpec, imageRegistrySpec *image_registry_spec.ImageRegistrySpec, nixBuildSpec *nix_build_spec.NixBuildSpec, privatePorts map[string]*port_spec.PortSpec, publicPorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, envVars map[string]string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion, persistentDirectories *service_directory.PersistentDirectories, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, privateIPAddrPlaceholder string, minCpuMilliCpus uint64, minMemoryMegaBytes uint64, labels map[string]string, user *service_user.ServiceUser, tolerations []v1.Toleration, nodeSelectors map[string]string, imageDownloadMode image_download_mode.ImageDownloadMode, tiniEnabled bool, capabilities []string) (*ServiceConfig, error) {
 
 	if err := ValidateServiceConfigLabels(labels); err != nil {
 		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
+	}
+
+	if capabilities == nil {
+		capabilities = []string{}
 	}
 
 	internalServiceConfig := &privateServiceConfig{
@@ -109,6 +115,7 @@ func CreateServiceConfig(containerImageName string, imageBuildSpec *image_build_
 		ImageDownloadMode:            imageDownloadMode,
 		FilesToBeMoved:               map[string]string{},
 		TiniEnabled:                  tiniEnabled,
+		Capabilities:                 capabilities,
 	}
 	return &ServiceConfig{internalServiceConfig}, nil
 }
@@ -261,6 +268,14 @@ func (serviceConfig *ServiceConfig) GetFilesToBeMoved() map[string]string {
 
 func (serviceConfig *ServiceConfig) GetTiniEnabled() bool {
 	return serviceConfig.privateServiceConfig.TiniEnabled
+}
+
+func (serviceConfig *ServiceConfig) GetCapabilities() []string {
+	return serviceConfig.privateServiceConfig.Capabilities
+}
+
+func (serviceConfig *ServiceConfig) SetCapabilities(capabilities []string) {
+	serviceConfig.privateServiceConfig.Capabilities = capabilities
 }
 
 func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {

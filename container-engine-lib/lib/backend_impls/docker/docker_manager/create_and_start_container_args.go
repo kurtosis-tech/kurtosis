@@ -296,3 +296,10 @@ func (builder *CreateAndStartContainerArgsBuilder) WithImageRegistrySpec(imageRe
 	builder.imageRegistrySpec = imageRegistrySpec
 	return builder
 }
+
+func (builder *CreateAndStartContainerArgsBuilder) WithCapabilities(capabilities []string) *CreateAndStartContainerArgsBuilder {
+	for _, capability := range capabilities {
+		builder.addedCapabilities[ContainerCapability(capability)] = true
+	}
+	return builder
+}

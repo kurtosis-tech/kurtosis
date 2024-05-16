@@ -543,6 +543,7 @@ func createStartServiceOperation(
 		user := serviceConfig.GetUser()
 		filesToBeMoved := serviceConfig.GetFilesToBeMoved()
 		tiniEnabled := serviceConfig.GetTiniEnabled()
+		capabilities := serviceConfig.GetCapabilities()
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddrStr := privateIpAddr.String()
@@ -709,6 +710,8 @@ func createStartServiceOperation(
 			restartPolicy,
 		).WithUser(
 			user,
+		).WithCapabilities(
+			capabilities,
 		)
 
 		if entrypointArgs != nil {
