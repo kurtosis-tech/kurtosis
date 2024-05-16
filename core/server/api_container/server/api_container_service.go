@@ -1010,7 +1010,7 @@ func (apicService *ApiContainerService) runStarlark(
 					mainFunctionName,
 					experimentalFeatures,
 				); err != nil {
-					logrus.Errorf("The Starlark code wass successfully executed but something failed when trying to save the 'run' info in the enclave's database. Error was: \n%v", err.Error())
+					logrus.Errorf("The Starlark code was successfully executed but something failed when trying to save the 'run' info in the enclave's database. Error was: \n%v", err.Error())
 				}
 
 				isSuccessful := runFinishedEvent.GetIsRunSuccessful()
