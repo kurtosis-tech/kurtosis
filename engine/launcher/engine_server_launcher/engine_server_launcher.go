@@ -153,7 +153,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomImageAuthor(
 		grpcListenPortNum,
 		logLevel.String(),
 		imageVersionTag,
-		defaultImageAuthor,
+		imageAuthor,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		kurtosisBackendType,
