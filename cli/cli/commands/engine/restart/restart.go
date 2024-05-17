@@ -156,6 +156,10 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", engineAuthorFlagKey)
 	}
 
+	if engineAuthor != defaultEngineAuthor && engineVersion == defaultEngineVersion {
+		return stacktrace.NewError("Expected '%v' to be set as '%v' was set. Need to enter a custom engine veresion if a custom engine author is set", engineVersionFlagKey, engineAuthorFlagKey)
+	}
+
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, engineAuthor, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers)

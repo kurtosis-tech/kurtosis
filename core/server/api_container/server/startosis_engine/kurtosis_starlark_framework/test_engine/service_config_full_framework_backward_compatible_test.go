@@ -22,7 +22,7 @@ type serviceConfigFullTestCaseBackwardCompatible struct {
 
 func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFullBackwardCompatible() {
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Times(1).Return(
-		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), 0, "0.0.0", "kurtosistech"),
+		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), 0, "0.0.0", testImageAuthor),
 	)
 
 	suite.run(&serviceConfigFullTestCaseBackwardCompatible{

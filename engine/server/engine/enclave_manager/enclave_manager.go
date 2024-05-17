@@ -170,6 +170,8 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	// TODO(victor.colombo): Extend enclave pool to have warm production enclaves
+	// if the image author is default only then we use the pooling
+	// TODO(gm) fix t his
 	if (imageAuthor == defaultImageAuthor) && !isProduction && manager.enclavePool != nil {
 		enclaveInfo, err = manager.enclavePool.GetEnclave(
 			setupCtx,
@@ -185,7 +187,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	// if the api container version isn't set and the engine author isn't kurtosistech we set it to the
-	// engine version passed
+	// engine version passed; otherwise try user passed version with custom author
 	if imageAuthor != defaultImageAuthor && apiContainerImageVersionTag == "" {
 		apiContainerImageVersionTag = engineVersion
 	}

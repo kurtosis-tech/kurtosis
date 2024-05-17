@@ -151,4 +151,6 @@ var (
 	testTolerationSeconds = int64(64)
 
 	testFilesToBeMoved = "test.txt"
+
+	testImageAuthor = "kurtosistech"
 )
