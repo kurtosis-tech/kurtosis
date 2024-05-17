@@ -8,6 +8,7 @@ import { CreateEnclaveButton } from "./components/widgets/CreateEnclaveButton";
 import { DeleteEnclavesButton } from "./components/widgets/DeleteEnclavesButton";
 import { useFullEnclaves } from "./EnclavesContext";
 import { EnclaveFullInfo } from "./types";
+import {BrowserRecommendator} from "./components/BrowserRecommendator";
 
 export const EnclaveList = () => {
   const enclaves = useFullEnclaves();
@@ -48,6 +49,7 @@ export const EnclaveList = () => {
       </Flex>
       <Flex direction="column" pt={"24px"} width={"100%"} gap={8}>
         {experiments.enableCloudVersionUpgrade && <KurtosisUpgrader />}
+        <BrowserRecommendator />
         {enclaves.isOk && (
           <EnclavesTable
             enclavesData={enclaves.value}

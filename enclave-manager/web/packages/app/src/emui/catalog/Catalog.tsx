@@ -43,6 +43,7 @@ import { useSearchParams } from "react-router-dom";
 import { CreateOrConfigureEnclaveDrawer } from "../enclaves/components/configuration/drawer/CreateOrConfigureEnclaveDrawer";
 import { EnclavesContextProvider } from "../enclaves/EnclavesContext";
 import { useCatalogContext } from "./CatalogContext";
+import {BrowserRecommendator} from "../enclaves/components/BrowserRecommendator";
 
 type SearchState = {
   term: string;
@@ -325,6 +326,7 @@ const CatalogDefaultView = ({ catalog, onPackageRunClicked, onSearchStateChanged
 
   return (
     <>
+      <BrowserRecommendator />
       {savedPackages.length > 0 && (
         <Box as={"section"}>
           <Card>

@@ -10,6 +10,7 @@
     "lodash": "^4.17.21",
     "luxon": "^3.4.3",
     "react": "^18.2.0",
+    "react-device-detect": "^2.2.3",
     "react-dom": "^18.2.0",
     "react-icons": "^4.11.0",
     "true-myth": "^7.1.0"
