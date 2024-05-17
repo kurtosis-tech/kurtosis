@@ -184,6 +184,12 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}
 
+	// if the api container version isn't set and the engine author isn't kurtosistech we set it to the
+	// engine version passed
+	if imageAuthor != defaultImageAuthor && apiContainerImageVersionTag == "" {
+		apiContainerImageVersionTag = engineVersion
+	}
+
 	if enclaveInfo == nil {
 		enclaveInfo, err = manager.enclaveCreator.CreateEnclave(
 			setupCtx,
