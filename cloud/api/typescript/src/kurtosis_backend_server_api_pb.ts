@@ -2127,9 +2127,9 @@ export class UpgradeKurtosisVersionRequest extends Message<UpgradeKurtosisVersio
  */
 export class GetInstanceMetricsRequest extends Message<GetInstanceMetricsRequest> {
   /**
-   * @generated from field: string api_key = 1;
+   * @generated from field: string access_token = 1;
    */
-  apiKey = "";
+  accessToken = "";
 
   constructor(data?: PartialMessage<GetInstanceMetricsRequest>) {
     super();
@@ -2139,7 +2139,7 @@ export class GetInstanceMetricsRequest extends Message<GetInstanceMetricsRequest
   static readonly runtime: typeof proto3 = proto3;
   static readonly typeName = "kurtosis_cloud.GetInstanceMetricsRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "api_key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetInstanceMetricsRequest {
