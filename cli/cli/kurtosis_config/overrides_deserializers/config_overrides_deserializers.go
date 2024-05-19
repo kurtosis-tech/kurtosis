@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v0"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v1"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	v3 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -20,6 +21,18 @@ type configOverridesDeserializer func(configFileBytes []byte) (interface{}, erro
 // We keep these sorted in REVERSE chronological order so you don't need to scroll to the bottom each time
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 var AllConfigOverridesDeserializers = map[config_version.ConfigVersion]configOverridesDeserializer{
+	config_version.ConfigVersion_v3: func(configFileBytes []byte) (interface{}, error) {
+		overrides := &v3.KurtosisConfigV3{
+			ConfigVersion:     0,
+			ShouldSendMetrics: nil,
+			KurtosisClusters:  nil,
+			CloudConfig:       nil,
+		}
+		if err := yaml.Unmarshal(configFileBytes, overrides); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(configFileBytes))
+		}
+		return overrides, nil
+	},
 	config_version.ConfigVersion_v2: func(configFileBytes []byte) (interface{}, error) {
 		overrides := &v2.KurtosisConfigV2{
 			ConfigVersion:     0,

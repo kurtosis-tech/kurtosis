@@ -2,7 +2,7 @@ package resolved_config
 
 import (
 	"context"
-	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	v3 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
 	"strings"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
@@ -24,9 +24,10 @@ type KurtosisClusterConfig struct {
 	kurtosisBackendSupplier     kurtosisBackendSupplier
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterType                 KurtosisClusterType
+	gitProxy                    string
 }
 
-func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.KurtosisClusterConfigV2) (*KurtosisClusterConfig, error) {
+func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v3.KurtosisClusterConfigV3) (*KurtosisClusterConfig, error) {
 	if overrides.Type == nil {
 		return nil, stacktrace.NewError("Kurtosis cluster must have a defined type")
 	}
@@ -51,6 +52,7 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.Kurto
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
 		clusterType:                 clusterType,
+		gitProxy:                    *overrides.GitProxy,
 	}, nil
 }
 
@@ -70,12 +72,16 @@ func (clusterConfig *KurtosisClusterConfig) GetClusterType() KurtosisClusterType
 	return clusterConfig.clusterType
 }
 
+func (clusterConfig *KurtosisClusterConfig) GetGitProxy() string {
+	return clusterConfig.gitProxy
+}
+
 // ====================================================================================================
 //
 //	Private Helpers
 //
 // ====================================================================================================
-func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v2.KubernetesClusterConfigV2) (
+func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v3.KubernetesClusterConfigV3) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
 	error,

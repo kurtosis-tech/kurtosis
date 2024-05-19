@@ -64,6 +64,8 @@ type EngineServerArgs struct {
 
 	// To restart the current API containers after the engine has been restarted
 	RestartAPIContainers bool `json:"restart_api_containers"`
+
+	GitProxy string `json:"git_proxy"`
 }
 
 var skipValidation = map[string]bool{
@@ -120,6 +122,7 @@ func NewEngineServerArgs(
 	cloudInstanceID metrics_client.CloudInstanceID,
 	allowedCORSOrigins *[]string,
 	restartAPIContainers bool,
+	gitProxy string,
 ) (*EngineServerArgs, error) {
 	if enclaveEnvVars == "" {
 		enclaveEnvVars = emptyJsonField
@@ -140,6 +143,7 @@ func NewEngineServerArgs(
 		CloudInstanceID:             cloudInstanceID,
 		AllowedCORSOrigins:          allowedCORSOrigins,
 		RestartAPIContainers:        restartAPIContainers,
+		GitProxy:                    gitProxy,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")
