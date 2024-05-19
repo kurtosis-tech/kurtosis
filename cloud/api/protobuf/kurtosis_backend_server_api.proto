@@ -312,7 +312,7 @@ message UpgradeKurtosisVersionRequest {
 }
 
 message GetInstanceMetricsRequest {
-  string api_key = 1;
+  string access_token = 1;
 }
 
 message GetInstanceMetricsResponse {
