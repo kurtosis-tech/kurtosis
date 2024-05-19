@@ -100,6 +100,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 		}()
 	}
 
+	// and then pass in the proxy setting from the config to each enclave (just like metricsUserId here:
 	apiContainer, err := creator.LaunchApiContainer(setupCtx,
 		apiContainerImageVersionTag,
 		apiContainerLogLevel,

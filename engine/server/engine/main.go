@@ -146,6 +146,7 @@ func runMain() error {
 	}
 	logrus.SetLevel(logLevel)
 
+	// so you can access it on the other side when the engine starts here
 	backendConfig := serverArgs.KurtosisLocalBackendConfig
 	if backendConfig == nil {
 		return stacktrace.NewError("Backend configuration parameters are null - there must be backend configuration parameters.")
@@ -186,6 +187,7 @@ func runMain() error {
 		serverArgs.EnclaveEnvVars,
 		logFileManager,
 		serverArgs.MetricsUserID,
+		// provide gitproxy here
 		serverArgs.DidUserAcceptSendingMetrics,
 		serverArgs.IsCI,
 		serverArgs.CloudUserID,

@@ -37,6 +37,7 @@ const (
 	doNotStartTheEngineInDebugModeForDefaultVersion = false
 )
 
+// what's happening here in this file
 type EngineManager struct {
 	kurtosisBackend                           backend_interface.KurtosisBackend
 	shouldSendMetrics                         bool
@@ -188,7 +189,11 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
 	logrus.Debugf("Engine status: '%v'", status)
+
+	// Given that the gitproxy parameter will live directly on kurtosis_cluster_config.go I would say I'd first pull
+	//this property off like clusterType is pulled off the clusterConfig here
 	clusterType := manager.clusterConfig.GetClusterType()
+	gitProxy := manager.clusterConfig.GetGitProxy()
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -205,6 +210,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 		doNotStartTheEngineInDebugModeForDefaultVersion,
 		githubAuthTokenOverride,
 		restartAPIContainers,
+		gitProxy,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -231,6 +237,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 	}
 
 	clusterType := manager.clusterConfig.GetClusterType()
+	gitProxy := manager.clusterConfig.GetGitProxy()
 	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
 		maybeHostMachinePortBinding,
@@ -248,6 +255,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 		shouldStartInDebugMode,
 		githubAuthTokenOverride,
 		restartAPIContainers,
+		gitProxy,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {

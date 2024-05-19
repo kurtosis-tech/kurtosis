@@ -24,6 +24,7 @@ type KurtosisClusterConfig struct {
 	kurtosisBackendSupplier     kurtosisBackendSupplier
 	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterType                 KurtosisClusterType
+	gitProxy                    string
 }
 
 func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v3.KurtosisClusterConfigV3) (*KurtosisClusterConfig, error) {
@@ -51,6 +52,7 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v3.Kurto
 		kurtosisBackendSupplier:     backendSupplier,
 		engineBackendConfigSupplier: engineBackendConfigSupplier,
 		clusterType:                 clusterType,
+		gitProxy:                    *overrides.GitProxy,
 	}, nil
 }
 
@@ -68,6 +70,10 @@ func (clusterConfig *KurtosisClusterConfig) GetEngineBackendConfigSupplier() eng
 
 func (clusterConfig *KurtosisClusterConfig) GetClusterType() KurtosisClusterType {
 	return clusterConfig.clusterType
+}
+
+func (clusterConfig *KurtosisClusterConfig) GetGitProxy() string {
+	return clusterConfig.gitProxy
 }
 
 // ====================================================================================================

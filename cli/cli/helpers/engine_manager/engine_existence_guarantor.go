@@ -84,6 +84,8 @@ type engineExistenceGuarantor struct {
 
 	// To restart the current API containers after the engine has been restarted
 	restartAPIContainers bool
+
+	gitProxy string
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -102,6 +104,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	shouldRunInDebugMode bool,
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
+	gitProxy string,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -120,6 +123,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		shouldRunInDebugMode,
 		githubAuthTokenOverride,
 		restartAPIContainers,
+		gitProxy,
 	)
 }
 
@@ -140,6 +144,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	shouldRunInDebugMode bool,
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
+	gitProxy string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -160,6 +165,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		shouldRunInDebugMode:                      shouldRunInDebugMode,
 		githubAuthTokenOverride:                   githubAuthTokenOverride,
 		restartAPIContainers:                      restartAPIContainers,
+		gitProxy:                                  gitProxy,
 	}
 }
 
@@ -219,7 +225,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.shouldRunInDebugMode,
 			githubAuthToken,
 			guarantor.restartAPIContainers,
-		)
+			guarantor.gitProxy)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
 			guarantor.ctx,
@@ -239,7 +245,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.shouldRunInDebugMode,
 			githubAuthToken,
 			guarantor.restartAPIContainers,
-		)
+			guarantor.gitProxy)
 	}
 	if engineLaunchErr != nil {
 		return stacktrace.Propagate(engineLaunchErr, "An error occurred launching the engine server container")
