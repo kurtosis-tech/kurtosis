@@ -313,6 +313,7 @@ message UpgradeKurtosisVersionRequest {
 
 message GetInstanceMetricsRequest {
   string access_token = 1;
+  string instance_id = 2;
 }
 
 message GetInstanceMetricsResponse {
