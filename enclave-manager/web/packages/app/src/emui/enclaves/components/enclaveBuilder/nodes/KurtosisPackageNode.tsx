@@ -184,7 +184,7 @@ export const KurtosisPackageNode = memo(
               const serviceVariable = `{{service.${serviceNamesToId[task.serviceName]}.name}}`;
               updateData(`${id}:${task.uuid}`, {
                 type: "exec",
-                name: "",
+                name: task.name,
                 isValid: true,
                 isFromPackage: true,
                 service: serviceVariable,
@@ -195,7 +195,7 @@ export const KurtosisPackageNode = memo(
             if (task.taskType === "python") {
               updateData(`${id}:${task.uuid}`, {
                 type: "python",
-                name: `Python ${task.uuid}`,
+                name: task.name,
                 isValid: true,
                 isFromPackage: true,
                 command: (task.command || []).join(" "),
@@ -231,7 +231,7 @@ export const KurtosisPackageNode = memo(
             if (task.taskType === "sh") {
               updateData(`${id}:${task.uuid}`, {
                 type: "shell",
-                name: `Shell ${task.uuid}`,
+                name: task.name,
                 isValid: true,
                 isFromPackage: true,
                 command: (task.command || []).join(" "),

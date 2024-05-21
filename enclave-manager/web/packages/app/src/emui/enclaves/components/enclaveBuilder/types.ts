@@ -153,6 +153,7 @@ export type PlanService = {
 type PlanExecTask = {
   taskType: "exec";
   uuid: string;
+  name: string;
   command: string[];
   serviceName: string;
   acceptableCodes?: number[];
@@ -161,6 +162,7 @@ type PlanExecTask = {
 type PlanPythonTask = {
   taskType: "python";
   uuid: string;
+  name: string;
   command?: string[];
   image: string;
   files?: PlanFile[];
@@ -171,6 +173,7 @@ type PlanPythonTask = {
 type PlanShTask = {
   taskType: "sh";
   uuid: string;
+  name: string;
   command?: string[];
   image: string;
   files?: PlanFile[];
