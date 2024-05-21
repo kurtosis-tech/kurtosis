@@ -2136,6 +2136,21 @@ export class GetInstanceMetricsRequest extends Message<GetInstanceMetricsRequest
    */
   instanceId = "";
 
+  /**
+   * @generated from field: int32 interval = 3;
+   */
+  interval = 0;
+
+  /**
+   * @generated from field: int32 utc_offset = 4;
+   */
+  utcOffset = 0;
+
+  /**
+   * @generated from field: kurtosis_cloud.GetInstanceMetricsRequest.Theme theme = 5;
+   */
+  theme = GetInstanceMetricsRequest_Theme.LIGHT;
+
   constructor(data?: PartialMessage<GetInstanceMetricsRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -2146,6 +2161,9 @@ export class GetInstanceMetricsRequest extends Message<GetInstanceMetricsRequest
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "access_token", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "interval", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 4, name: "utc_offset", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 5, name: "theme", kind: "enum", T: proto3.getEnumType(GetInstanceMetricsRequest_Theme) },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetInstanceMetricsRequest {
@@ -2164,6 +2182,26 @@ export class GetInstanceMetricsRequest extends Message<GetInstanceMetricsRequest
     return proto3.util.equals(GetInstanceMetricsRequest, a, b);
   }
 }
+
+/**
+ * @generated from enum kurtosis_cloud.GetInstanceMetricsRequest.Theme
+ */
+export enum GetInstanceMetricsRequest_Theme {
+  /**
+   * @generated from enum value: LIGHT = 0;
+   */
+  LIGHT = 0,
+
+  /**
+   * @generated from enum value: DARK = 1;
+   */
+  DARK = 1,
+}
+// Retrieve enum metadata with: proto3.getEnumType(GetInstanceMetricsRequest_Theme)
+proto3.util.setEnumType(GetInstanceMetricsRequest_Theme, "kurtosis_cloud.GetInstanceMetricsRequest.Theme", [
+  { no: 0, name: "LIGHT" },
+  { no: 1, name: "DARK" },
+]);
 
 /**
  * @generated from message kurtosis_cloud.GetInstanceMetricsResponse

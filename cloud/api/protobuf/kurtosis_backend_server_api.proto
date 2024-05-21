@@ -314,6 +314,15 @@ message UpgradeKurtosisVersionRequest {
 message GetInstanceMetricsRequest {
   string access_token = 1;
   string instance_id = 2;
+  int32 interval = 3;
+  int32 utc_offset = 4;
+
+  enum Theme {
+    LIGHT = 0;
+    DARK = 1;
+  }
+
+  Theme theme = 5;
 }
 
 message GetInstanceMetricsResponse {
