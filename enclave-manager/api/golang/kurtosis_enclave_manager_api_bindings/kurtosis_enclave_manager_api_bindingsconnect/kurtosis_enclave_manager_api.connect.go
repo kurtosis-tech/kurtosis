@@ -101,6 +101,9 @@ const (
 	// KurtosisEnclaveManagerServerUpgradeKurtosisVersionProcedure is the fully-qualified name of the
 	// KurtosisEnclaveManagerServer's UpgradeKurtosisVersion RPC.
 	KurtosisEnclaveManagerServerUpgradeKurtosisVersionProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/UpgradeKurtosisVersion"
+	// KurtosisEnclaveManagerServerPublishPackageRepositoryProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's PublishPackageRepository RPC.
+	KurtosisEnclaveManagerServerPublishPackageRepositoryProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/PublishPackageRepository"
 )
 
 // KurtosisEnclaveManagerServerClient is a client for the
@@ -127,6 +130,7 @@ type KurtosisEnclaveManagerServerClient interface {
 	AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
 	IsNewKurtosisVersionAvailable(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error)
 	UpgradeKurtosisVersion(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
+	PublishPackageRepository(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.PublishPackageRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerClient constructs a client for the
@@ -245,6 +249,11 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerUpgradeKurtosisVersionProcedure,
 			opts...,
 		),
+		publishPackageRepository: connect.NewClient[kurtosis_enclave_manager_api_bindings.PublishPackageRequest, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerPublishPackageRepositoryProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -271,6 +280,7 @@ type kurtosisEnclaveManagerServerClient struct {
 	addAlias                       *connect.Client[kurtosis_enclave_manager_api_bindings.AddAliasRequest, emptypb.Empty]
 	isNewKurtosisVersionAvailable  *connect.Client[emptypb.Empty, kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse]
 	upgradeKurtosisVersion         *connect.Client[emptypb.Empty, emptypb.Empty]
+	publishPackageRepository       *connect.Client[kurtosis_enclave_manager_api_bindings.PublishPackageRequest, emptypb.Empty]
 }
 
 // Check calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check.
@@ -388,6 +398,12 @@ func (c *kurtosisEnclaveManagerServerClient) UpgradeKurtosisVersion(ctx context.
 	return c.upgradeKurtosisVersion.CallUnary(ctx, req)
 }
 
+// PublishPackageRepository calls
+// kurtosis_enclave_manager.KurtosisEnclaveManagerServer.PublishPackageRepository.
+func (c *kurtosisEnclaveManagerServerClient) PublishPackageRepository(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.PublishPackageRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.publishPackageRepository.CallUnary(ctx, req)
+}
+
 // KurtosisEnclaveManagerServerHandler is an implementation of the
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer service.
 type KurtosisEnclaveManagerServerHandler interface {
@@ -412,6 +428,7 @@ type KurtosisEnclaveManagerServerHandler interface {
 	AddAlias(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.AddAliasRequest]) (*connect.Response[emptypb.Empty], error)
 	IsNewKurtosisVersionAvailable(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error)
 	UpgradeKurtosisVersion(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
+	PublishPackageRepository(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.PublishPackageRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerHandler builds an HTTP handler from the service implementation. It
@@ -525,6 +542,11 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		svc.UpgradeKurtosisVersion,
 		opts...,
 	)
+	kurtosisEnclaveManagerServerPublishPackageRepositoryHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerPublishPackageRepositoryProcedure,
+		svc.PublishPackageRepository,
+		opts...,
+	)
 	return "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisEnclaveManagerServerCheckProcedure:
@@ -569,6 +591,8 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 			kurtosisEnclaveManagerServerIsNewKurtosisVersionAvailableHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerUpgradeKurtosisVersionProcedure:
 			kurtosisEnclaveManagerServerUpgradeKurtosisVersionHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerPublishPackageRepositoryProcedure:
+			kurtosisEnclaveManagerServerPublishPackageRepositoryHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -660,4 +684,8 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) IsNewKurtosisVersionAvai
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) UpgradeKurtosisVersion(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.UpgradeKurtosisVersion is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) PublishPackageRepository(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.PublishPackageRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.PublishPackageRepository is not implemented"))
 }

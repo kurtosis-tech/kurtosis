@@ -16,9 +16,9 @@ export const BuildEnclave = () => {
 
   useEffect(() => {
     const query = new URLSearchParams(location.search);
-    const code = query.get('code');
+    const code = query.get("code");
     if (code) {
-      window.opener.postMessage({ code }, 'http://localhost:4000');
+      window.opener.postMessage({ code }, "http://localhost:4000");
       window.close();
     }
   }, []);
