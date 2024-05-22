@@ -1,11 +1,12 @@
 import { Box, Flex } from "@chakra-ui/react";
 import { RemoveFunctions } from "kurtosis-ui-components";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
   Controls,
   Edge,
+  MarkerType,
   Node,
   ReactFlow,
   useEdgesState,
@@ -20,6 +21,7 @@ import { KurtosisPythonNode } from "./nodes/KurtosisPythonNode";
 import { KurtosisServiceNode } from "./nodes/KurtosisServiceNode";
 import { KurtosisShellNode } from "./nodes/KurtosisShellNode";
 import { Toolbar } from "./Toolbar";
+import { useUIState } from "./UIStateContext";
 import { generateStarlarkFromGraph, getNodeDependencies } from "./utils";
 import { useVariableContext } from "./VariableContextProvider";
 import "./Visualiser.css";
@@ -48,28 +50,36 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
     const { fitView } = useReactFlow();
     const [nodes, , onNodesChange] = useNodesState(initialNodes || []);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
+    // TODO(skylar): make this work for multiple packages?
+    const [shouldApplyAutoLayout, setShouldApplyAutoLayout] = useState(false);
+    const { expandedNodes, applyAutoLayout } = useUIState();
 
-    const handleNodeDoubleClick = useCallback(
+    const handleNodeClick = useCallback(
       (e: React.MouseEvent, node: Node) => {
-        fitView({ nodes: [node], maxZoom: 1, duration: 500 });
+        // Only zoom to node if it is not expanded (i.e. it is about to be expanded)
+        if (expandedNodes[node.id]) {
+          return;
+        }
+        fitView({ nodes: [node], maxZoom: 1, duration: 500, padding: 1 });
       },
-      [fitView],
+      [fitView, expandedNodes],
     );
 
     useEffect(() => {
       setEdges((prevState) => {
-        return Object.entries(getNodeDependencies(data)).flatMap(([to, froms]) =>
+        const nextEdges = Object.entries(getNodeDependencies(data)).flatMap(([to, froms]) =>
           [...froms].map((from) => ({
             id: `${from}-${to}`,
             source: from,
             target: to,
-            animated: true,
-            type: "straight",
-            style: { strokeWidth: "3px" },
           })),
         );
+        if (nextEdges.length > 0) {
+          setShouldApplyAutoLayout(true);
+        }
+        return nextEdges;
       });
-    }, [setEdges, data]);
+    }, [setEdges, data, applyAutoLayout]);
 
     // Remove the resizeObserver error
     useEffect(() => {
@@ -102,6 +112,12 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
       [nodes, edges, data, existingEnclave],
     );
 
+    useEffect(() => {
+      if (shouldApplyAutoLayout) {
+        applyAutoLayout();
+      }
+    }, [shouldApplyAutoLayout, applyAutoLayout]);
+
     return (
       <Flex position="relative" flexDirection={"column"} h={"100%"} gap={"8px"}>
         <Toolbar />
@@ -115,12 +131,23 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
             onMove={() => (insertOffset.current = 1)}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onNodeDoubleClick={handleNodeDoubleClick}
+            // TODO(skylar): fix this. it currently zooms to a random place off the top of the graph
+            onNodeClick={handleNodeClick}
             nodeTypes={nodeTypes}
             fitView
+            snapToGrid
+            onlyRenderVisibleElements
+            defaultEdgeOptions={{
+              focusable: false,
+              animated: false,
+              style: { strokeWidth: "2px" },
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+              },
+            }}
           >
             <Controls />
-            <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+            <Background variant={BackgroundVariant.Dots} gap={24} size={2} />
           </ReactFlow>
         </Box>
       </Flex>

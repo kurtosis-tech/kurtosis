@@ -10,6 +10,7 @@ import { StringArgumentInput } from "../../form/StringArgumentInput";
 import { validateName } from "../input/validators";
 import { ConfigurePackageNodeModal } from "../modals/ConfigurePackageNodeModal";
 import { KurtosisPackageNodeData, PlanFileArtifact, PlanTask, PlanYaml } from "../types";
+import { useUIState } from "../UIStateContext";
 import { useVariableContext } from "../VariableContextProvider";
 import { KurtosisNode } from "./KurtosisNode";
 
@@ -17,12 +18,13 @@ type Mode = { type: "loading" } | { type: "error"; error: string } | { type: "re
 
 export const KurtosisPackageNode = memo(
   ({ id, selected }: NodeProps) => {
-    const { getNodes, deleteElements, setNodes } = useReactFlow();
+    const { getNodes, deleteElements, setNodes, getEdges } = useReactFlow();
     const [showPackageConfigModal, setShowPackageConfigModal] = useState(false);
     const [mode, setMode] = useState<Mode>({ type: "ready" });
     const kurtosisClient = useKurtosisClient();
     const { data, updateData, removeData } = useVariableContext();
     const nodeData = data[id] as KurtosisPackageNodeData | undefined;
+    const { applyAutoLayout } = useUIState();
 
     useEffect(() => {
       const packageId = nodeData?.packageId;
@@ -338,7 +340,7 @@ export const KurtosisPackageNode = memo(
               onClick={() => setShowPackageConfigModal(true)}
               isLoading={mode.type === "loading"}
             >
-              Edit Hello
+              Edit
             </Button>
           </KurtosisFormControl>
         </Flex>

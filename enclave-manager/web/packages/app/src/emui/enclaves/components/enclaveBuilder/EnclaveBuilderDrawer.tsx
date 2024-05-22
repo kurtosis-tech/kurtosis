@@ -82,11 +82,13 @@ export const EnclaveBuilderDrawer = (props: EnclaveBuilderDrawerProps) => {
   }
 
   return (
-    <VariableContextProvider key={variableContextKey.current} initialData={initialData}>
-      <UIStateProvider>
-        <EnclaveBuilderDrawerImpl {...props} initialNodes={initialNodes} initialEdges={initialEdges} />
-      </UIStateProvider>
-    </VariableContextProvider>
+    <ReactFlowProvider>
+      <VariableContextProvider key={variableContextKey.current} initialData={initialData}>
+        <UIStateProvider>
+          <EnclaveBuilderDrawerImpl {...props} initialNodes={initialNodes} initialEdges={initialEdges} />
+        </UIStateProvider>
+      </VariableContextProvider>
+    </ReactFlowProvider>
   );
 };
 
@@ -170,14 +172,12 @@ const EnclaveBuilderDrawerImpl = ({
         <DrawerCloseButton />
         <DrawerBody paddingInline={"0"} p={"0"}>
           {isDefined(error) && <KurtosisAlert message={error} />}
-          <ReactFlowProvider>
-            <Visualiser
-              ref={visualiserRef}
-              initialNodes={initialNodes}
-              initialEdges={initialEdges}
-              existingEnclave={existingEnclave}
-            />
-          </ReactFlowProvider>
+          <Visualiser
+            ref={visualiserRef}
+            initialNodes={initialNodes}
+            initialEdges={initialEdges}
+            existingEnclave={existingEnclave}
+          />
         </DrawerBody>
         <DrawerFooter>
           <ButtonGroup>

@@ -101,13 +101,13 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
         <Handle
           type="target"
           position={Position.Left}
-          style={{ background: "transparent", border: "none" }}
+          style={{ left: 0, border: 0, background: "transparent" }}
           isConnectable={false}
         />
         <Handle
           type="source"
           position={Position.Right}
-          style={{ background: "transparent", border: "none" }}
+          style={{ right: 0, border: 0, background: "transparent" }}
           isConnectable={false}
         />
         <BasicKurtosisNode type={nodeData.type} name={nodeData.name} onClick={() => toggleExpanded(id)} />
@@ -203,13 +203,13 @@ const KurtosisFormNode = <DataType extends KurtosisNodeData>({
         <Handle
           type="target"
           position={Position.Left}
-          style={{ background: "transparent", border: "none" }}
+          style={{ left: 0, background: "transparent", border: "none" }}
           isConnectable={false}
         />
         <Handle
           type="source"
           position={Position.Right}
-          style={{ background: "transparent", border: "none" }}
+          style={{ right: 0, background: "transparent", border: "none" }}
           isConnectable={false}
         />
         <NodeResizeControl

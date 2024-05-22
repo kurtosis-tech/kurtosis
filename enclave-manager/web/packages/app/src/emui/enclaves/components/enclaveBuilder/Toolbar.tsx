@@ -1,55 +1,20 @@
 import { Box, Button, ButtonGroup, Icon } from "@chakra-ui/react";
-import Dagre from "@dagrejs/dagre";
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
 import { FiShare2 } from "react-icons/fi";
-import { Edge, Node, useOnViewportChange, useReactFlow, XYPosition } from "reactflow";
+import { useOnViewportChange, useReactFlow, XYPosition } from "reactflow";
 import { v4 as uuidv4 } from "uuid";
 import { nodeIcons } from "./nodes/KurtosisNode";
+import { useUIState } from "./UIStateContext";
 import { useVariableContext } from "./VariableContextProvider";
-
-const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
-const getLayoutedElements = <T extends object>(nodes: Node<T>[], edges: Edge<any>[]) => {
-  if (nodes.length === 0) {
-    return { nodes, edges };
-  }
-  g.setGraph({ rankdir: "LR", ranksep: 100 });
-
-  edges.forEach((edge) => g.setEdge(edge.source, edge.target));
-  nodes.forEach((node) =>
-    g.setNode(node.id, node as Node<{ label: string }, string | undefined> & { width?: number; height?: number }),
-  );
-
-  Dagre.layout(g);
-
-  return {
-    nodes: nodes.map((node) => {
-      const { x, y } = g.node(node.id);
-
-      return { ...node, position: { x, y } };
-    }),
-    edges,
-  };
-};
 
 export const Toolbar = () => {
   const insertOffset = useRef(0);
   const { updateData } = useVariableContext();
-  const { fitView, getViewport, getNodes, getEdges, addNodes, setNodes, setEdges } = useReactFlow();
+  const { getViewport, addNodes } = useReactFlow();
+
+  const { applyAutoLayout } = useUIState();
 
   useOnViewportChange({ onEnd: () => (insertOffset.current = 1) });
-
-  const onLayout = useCallback(() => {
-    const nodes = getNodes();
-    const edges = getEdges();
-    const layouted = getLayoutedElements(nodes, edges);
-
-    setNodes([...layouted.nodes]);
-    setEdges([...layouted.edges]);
-
-    window.requestAnimationFrame(() => {
-      fitView();
-    });
-  }, [fitView, setEdges, setNodes, getEdges, getNodes]);
 
   const getNewNodePosition = (): XYPosition => {
     const viewport = getViewport();
@@ -204,6 +169,7 @@ export const Toolbar = () => {
     });
     addNodes({
       id,
+      selected: true,
       position: getNewNodePosition(),
       width: 900,
       style: { width: "900px" },
@@ -223,26 +189,26 @@ export const Toolbar = () => {
       p={"8px"}
     >
       <ButtonGroup size={"sm"}>
-        <Button leftIcon={<Icon as={FiShare2} />} onClick={onLayout}>
+        <Button leftIcon={<Icon as={FiShare2} />} onClick={applyAutoLayout}>
           Auto-Layout
         </Button>
         <Button leftIcon={<Icon as={nodeIcons["service"]} />} onClick={handleAddServiceNode}>
-          Add Service Node
+          Add Service
         </Button>
         <Button leftIcon={<Icon as={nodeIcons["artifact"]} />} onClick={handleAddArtifactNode}>
-          Add Files Node
+          Add File
         </Button>
         <Button leftIcon={<Icon as={nodeIcons["exec"]} />} onClick={handleAddExecNode}>
-          Add Exec Node
+          Add Exec Task
         </Button>
         <Button leftIcon={<Icon as={nodeIcons["shell"]} />} onClick={handleAddShellNode}>
-          Add Shell Node
+          Add Shell Script
         </Button>
         <Button leftIcon={<Icon as={nodeIcons["python"]} />} onClick={handleAddPythonNode}>
-          Add Python Node
+          Add Python Script
         </Button>
         <Button leftIcon={<Icon as={nodeIcons["package"]} />} onClick={handleAddPackageNode}>
-          Add Package Node
+          Import Package
         </Button>
       </ButtonGroup>
     </Box>
