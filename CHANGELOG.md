@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.89.11](https://github.com/kurtosis-tech/kurtosis/compare/0.89.10...0.89.11) (2024-05-22)
+
+
+### Features
+
+* adding the `starlark run` repository to maintain this data after an APIC restart ([#2452](https://github.com/kurtosis-tech/kurtosis/issues/2452)) ([7bad2a9](https://github.com/kurtosis-tech/kurtosis/commit/7bad2a9123f1a8a68d0a3935c963d971fd71c9c2))
+* display task names in picasso  ([#2458](https://github.com/kurtosis-tech/kurtosis/issues/2458)) ([424dc39](https://github.com/kurtosis-tech/kurtosis/commit/424dc39e99c4619325d6f8a9575d26cdafd1aea1))
+
 ## [0.89.10](https://github.com/kurtosis-tech/kurtosis/compare/0.89.9...0.89.10) (2024-05-13)
 
 
