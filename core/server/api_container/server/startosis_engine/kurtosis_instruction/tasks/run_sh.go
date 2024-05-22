@@ -322,7 +322,7 @@ func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_pla
 }
 
 func (builtin *RunShCapabilities) UpdatePlan(plan *plan_yaml.PlanYaml) error {
-	err := plan.AddRunSh(builtin.run, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList)
+	err := plan.AddRunSh(builtin.run, builtin.description, builtin.returnValue, builtin.serviceConfig, builtin.storeSpecList)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding run sh task to the plan")
 	}

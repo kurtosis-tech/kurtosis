@@ -163,7 +163,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunShWithFilesArtifacts()
         },
         store=[
             StoreSpec(src="/bye.txt", name="bye-file")
-        ]
+        ],
+		description = "Store bye",
     )
 `
 	inputArgs := `{"hi_files_artifact": "hi-file"}`
@@ -195,6 +196,7 @@ filesArtifacts:
   - /bye.txt
 tasks:
 - uuid: "1"
+  name: Store bye
   taskType: sh
   command:
   - echo bye > /bye.txt
@@ -235,6 +237,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRunPython() {
         store = [
             StoreSpec(src = "bye.txt", name = "bye-file"),
         ],
+		description = "Request docs"
 )
 `
 	inputArgs := `{"hi_files_artifact": "hi-file"}`
@@ -266,6 +269,7 @@ filesArtifacts:
   - bye.txt
 tasks:
 - uuid: "1"
+  name: Request docs
   taskType: python
   command:
   - "\n    import requests\n    response = requests.get(\"docs.kurtosis.com\")\n    print(response.status_code)
@@ -301,12 +305,13 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestExec() {
 			files = {
 				"/root": hi_files_artifact,
 			}
-		)
+		),
 	)
 	result = plan.exec(
 		service_name="db",
 		recipe=ExecRecipe(command=["echo", "Hello, world"]),
 		acceptable_codes=[0],
+		description = "Say Hello"
 	)
 `
 	inputArgs := `{"hi_files_artifact": "hi-file"}`
@@ -349,6 +354,7 @@ filesArtifacts:
   name: hi-file
 tasks:
 - uuid: "3"
+  name: Say Hello
   taskType: exec
   command:
   - echo
@@ -381,6 +387,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRenderTemplate() {
         files = {
             "/root": bye_files_artifact,
         },
+		description = "Say bye",
     )
 `
 	inputArgs := `{"hi_files_artifact": "hi-file"}`
@@ -411,6 +418,7 @@ filesArtifacts:
   - fairwell.txt
 tasks:
 - uuid: "2"
+  name: Say bye
   taskType: sh
   command:
   - cat /root/bye.txt
@@ -563,6 +571,7 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestUploadFiles() {
         files = {
             "/root": dockerfile_artifact,
         },
+		description = "Say dockerfile contents"
     )
 `
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(
@@ -591,6 +600,7 @@ filesArtifacts:
   - ./server/Dockerfile
 tasks:
 - uuid: "2"
+  name: Say dockerfile contents
   taskType: sh
   command:
   - cat /root/Dockerfile
@@ -732,12 +742,15 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestFutureReferencesAreSwappe
 			command=["echo", service.ip_address + " " + service.hostname]
 		),
 		acceptable_codes=[0],
+		description = "Get db ip"
 	)	
 	runShResult = plan.run_sh(
 		run="echo " + execResult["code"] + " " + execResult["output"],
+        description = "Say db ip"
 	)
 	plan.run_sh(
 		run="echo " + runShResult.code + " " + runShResult.output,
+ 		description = "Say db ip again"
 	)
 `
 	inputArgs := `{"hi_files_artifact": "hi-file"}`
@@ -780,6 +793,7 @@ filesArtifacts:
   name: hi-file
 tasks:
 - uuid: "3"
+  name: Get db ip
   taskType: exec
   command:
   - echo
@@ -788,11 +802,13 @@ tasks:
   acceptableCodes:
   - 0
 - uuid: "4"
+  name: Say db ip
   taskType: sh
   command:
   - echo {{ kurtosis.3.code }} {{ kurtosis.3.output }}
   image: badouralix/curl-jq
 - uuid: "5"
+  name: Say db ip again
   taskType: sh
   command:
   - echo {{ kurtosis.4.code }} {{ kurtosis.4.output }}
