@@ -8,10 +8,12 @@ const UIContext = createContext<{
   expandedNodes: Record<string, boolean>;
   toggleExpanded: (nodeId: string) => void;
   applyAutoLayout: () => void;
+  zoomToNode: (node: Node) => void;
 }>({
   expandedNodes: {},
   toggleExpanded: () => {},
   applyAutoLayout: () => {},
+  zoomToNode: () => {},
 });
 
 // Graph layout for auto-layouting the nodes
@@ -59,16 +61,32 @@ export const UIStateProvider = ({ children }: PropsWithChildren) => {
     const nodes = getNodes();
     const edges = getEdges();
     const layouted = getLayoutedElements(nodes, edges);
+    // Reset package node to 0, 0 or zooming gets weird
+    const packageNode = layouted.nodes.find((node) => node.type === "packageNode");
+    if (packageNode != null) {
+      packageNode.position = { x: 0, y: 0 };
+    }
 
     setNodes([...layouted.nodes]);
     setEdges([...layouted.edges]);
 
     window.requestAnimationFrame(() => {
-      fitView();
+      fitView({ nodes: layouted.nodes, duration: 500 });
     });
-  }, [fitView, setEdges, setNodes, getEdges, getNodes]);
+  }, [setEdges, setNodes, getEdges, getNodes, fitView]);
 
-  return <UIContext.Provider value={{ expandedNodes, toggleExpanded, applyAutoLayout }}>{children}</UIContext.Provider>;
+  const zoomToNode = useCallback(
+    (node: Node) => {
+      fitView({ nodes: [node], maxZoom: 1, duration: 500 });
+    },
+    [fitView],
+  );
+
+  return (
+    <UIContext.Provider value={{ expandedNodes, toggleExpanded, applyAutoLayout, zoomToNode }}>
+      {children}
+    </UIContext.Provider>
+  );
 };
 
 // Define the hook

@@ -1,7 +1,7 @@
-import { Box, Button, ButtonGroup, Icon } from "@chakra-ui/react";
+import { Box, Button, ButtonGroup, Flex, Icon, Menu, MenuButton, MenuItem, MenuList } from "@chakra-ui/react";
 import { useRef } from "react";
-import { FiShare2 } from "react-icons/fi";
-import { useOnViewportChange, useReactFlow, XYPosition } from "reactflow";
+import { FiDownload, FiGrid, FiPlus } from "react-icons/fi";
+import { Node, useOnViewportChange, useReactFlow, XYPosition } from "reactflow";
 import { v4 as uuidv4 } from "uuid";
 import { nodeIcons } from "./nodes/KurtosisNode";
 import { useUIState } from "./UIStateContext";
@@ -12,7 +12,7 @@ export const Toolbar = () => {
   const { updateData } = useVariableContext();
   const { getViewport, addNodes } = useReactFlow();
 
-  const { applyAutoLayout } = useUIState();
+  const { applyAutoLayout, toggleExpanded, zoomToNode } = useUIState();
 
   useOnViewportChange({ onEnd: () => (insertOffset.current = 1) });
 
@@ -20,6 +20,12 @@ export const Toolbar = () => {
     const viewport = getViewport();
     insertOffset.current += 1;
     return { x: -viewport.x + insertOffset.current * 20 + 400, y: -viewport.y + insertOffset.current * 20 };
+  };
+
+  const addAndFocusNode = (node: Node) => {
+    addNodes(node);
+    toggleExpanded(node.id);
+    setTimeout(() => zoomToNode(node), 0);
   };
 
   const handleAddServiceNode = () => {
@@ -45,7 +51,7 @@ export const Toolbar = () => {
       entrypoint: "",
       isValid: false,
     });
-    addNodes({
+    addAndFocusNode({
       id,
       position: getNewNodePosition(),
       width: 650,
@@ -65,7 +71,7 @@ export const Toolbar = () => {
       acceptableCodes: [],
       isValid: false,
     });
-    addNodes({
+    addAndFocusNode({
       id,
       position: getNewNodePosition(),
       width: 650,
@@ -78,7 +84,7 @@ export const Toolbar = () => {
   const handleAddArtifactNode = () => {
     const id = uuidv4();
     updateData(id, { type: "artifact", name: "", files: {}, isValid: false });
-    addNodes({
+    addAndFocusNode({
       id,
       position: getNewNodePosition(),
       width: 400,
@@ -112,7 +118,7 @@ export const Toolbar = () => {
       wait: "",
       isValid: false,
     });
-    addNodes({
+    addAndFocusNode({
       id,
       position: getNewNodePosition(),
       width: 650,
@@ -147,7 +153,7 @@ export const Toolbar = () => {
       wait: "",
       isValid: false,
     });
-    addNodes({
+    addAndFocusNode({
       id,
       position: getNewNodePosition(),
       width: 650,
@@ -167,7 +173,7 @@ export const Toolbar = () => {
       locator: "",
       isValid: false,
     });
-    addNodes({
+    addAndFocusNode({
       id,
       selected: true,
       position: getNewNodePosition(),
@@ -189,26 +195,43 @@ export const Toolbar = () => {
       p={"8px"}
     >
       <ButtonGroup size={"sm"}>
-        <Button leftIcon={<Icon as={FiShare2} />} onClick={applyAutoLayout}>
-          Auto-Layout
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["service"]} />} onClick={handleAddServiceNode}>
-          Add Service
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["artifact"]} />} onClick={handleAddArtifactNode}>
-          Add File
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["exec"]} />} onClick={handleAddExecNode}>
-          Add Exec Task
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["shell"]} />} onClick={handleAddShellNode}>
-          Add Shell Script
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["python"]} />} onClick={handleAddPythonNode}>
-          Add Python Script
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["package"]} />} onClick={handleAddPackageNode}>
+        <Menu>
+          <MenuButton as={Button} leftIcon={<FiPlus />}>
+            Add node
+          </MenuButton>
+          <MenuList>
+            <MenuItem as="button" onClick={handleAddServiceNode}>
+              <Flex gap={2} alignItems="center">
+                <Icon as={nodeIcons["service"]} /> Service
+              </Flex>
+            </MenuItem>
+            <MenuItem as="button" onClick={handleAddArtifactNode}>
+              <Flex gap={2} alignItems="center">
+                <Icon as={nodeIcons["artifact"]} /> File
+              </Flex>
+            </MenuItem>
+            <MenuItem as="button" onClick={handleAddExecNode}>
+              <Flex gap={2} alignItems="center">
+                <Icon as={nodeIcons["exec"]} /> Exec Task
+              </Flex>
+            </MenuItem>
+            <MenuItem as="button" onClick={handleAddShellNode}>
+              <Flex gap={2} alignItems="center">
+                <Icon as={nodeIcons["shell"]} /> Shell Script
+              </Flex>
+            </MenuItem>
+            <MenuItem as="button" onClick={handleAddPythonNode}>
+              <Flex gap={2} alignItems="center">
+                <Icon as={nodeIcons["python"]} /> Python Script
+              </Flex>
+            </MenuItem>
+          </MenuList>
+        </Menu>
+        <Button leftIcon={<FiDownload />} onClick={handleAddPackageNode}>
           Import Package
+        </Button>
+        <Button leftIcon={<FiGrid />} onClick={applyAutoLayout}>
+          Apply Auto-Layout
         </Button>
       </ButtonGroup>
     </Box>

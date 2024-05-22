@@ -10,7 +10,6 @@ import { StringArgumentInput } from "../../form/StringArgumentInput";
 import { validateName } from "../input/validators";
 import { ConfigurePackageNodeModal } from "../modals/ConfigurePackageNodeModal";
 import { KurtosisPackageNodeData, PlanFileArtifact, PlanTask, PlanYaml } from "../types";
-import { useUIState } from "../UIStateContext";
 import { useVariableContext } from "../VariableContextProvider";
 import { KurtosisNode } from "./KurtosisNode";
 
@@ -24,7 +23,6 @@ export const KurtosisPackageNode = memo(
     const kurtosisClient = useKurtosisClient();
     const { data, updateData, removeData } = useVariableContext();
     const nodeData = data[id] as KurtosisPackageNodeData | undefined;
-    const { applyAutoLayout } = useUIState();
 
     useEffect(() => {
       const packageId = nodeData?.packageId;

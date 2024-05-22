@@ -191,9 +191,6 @@ const KurtosisFormNode = <DataType extends KurtosisNodeData>({
         flexDirection={"column"}
         height={"100%"}
         borderRadius={"8px"}
-        borderWidth={"3px"}
-        outline={"3px solid transparent"}
-        outlineOffset={"3px"}
         boxShadow={selected ? `0 0 0 4px ${chakraColor}` : undefined}
         _hover={{ boxShadow: !selected ? `0 0 0 1px ${chakraColor}` : undefined }}
         borderColor={color}
@@ -223,6 +220,7 @@ const KurtosisFormNode = <DataType extends KurtosisNodeData>({
         <Flex
           flexDirection={"column"}
           borderWidth={"10px"}
+          borderRadius={"8px"}
           borderColor={"gray.600"}
           h={"100%"}
           w={"100%"}

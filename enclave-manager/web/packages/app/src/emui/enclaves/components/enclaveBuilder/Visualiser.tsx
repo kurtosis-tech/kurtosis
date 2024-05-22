@@ -11,7 +11,6 @@ import {
   ReactFlow,
   useEdgesState,
   useNodesState,
-  useReactFlow,
 } from "reactflow";
 import { EnclaveFullInfo } from "../../types";
 import { KurtosisArtifactNode } from "./nodes/KurtosisArtifactNode";
@@ -47,12 +46,11 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
   ({ initialNodes, initialEdges, existingEnclave }, ref) => {
     const { data } = useVariableContext();
     const insertOffset = useRef(0);
-    const { fitView } = useReactFlow();
     const [nodes, , onNodesChange] = useNodesState(initialNodes || []);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
     // TODO(skylar): make this work for multiple packages?
     const [shouldApplyAutoLayout, setShouldApplyAutoLayout] = useState(false);
-    const { expandedNodes, applyAutoLayout } = useUIState();
+    const { expandedNodes, applyAutoLayout, zoomToNode } = useUIState();
 
     const handleNodeClick = useCallback(
       (e: React.MouseEvent, node: Node) => {
@@ -60,9 +58,9 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
         if (expandedNodes[node.id]) {
           return;
         }
-        fitView({ nodes: [node], maxZoom: 1, duration: 500, padding: 1 });
+        zoomToNode(node);
       },
-      [fitView, expandedNodes],
+      [zoomToNode, expandedNodes],
     );
 
     useEffect(() => {
@@ -136,7 +134,7 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
             nodeTypes={nodeTypes}
             fitView
             snapToGrid
-            onlyRenderVisibleElements
+            onlyRenderVisibleElements={false} // This is required to prevent the package node from re-fetching data when it is re-rendered
             defaultEdgeOptions={{
               focusable: false,
               animated: false,
