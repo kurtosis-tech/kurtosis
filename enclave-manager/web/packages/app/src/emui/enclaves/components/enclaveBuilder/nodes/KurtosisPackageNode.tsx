@@ -338,7 +338,7 @@ export const KurtosisPackageNode = memo(
               onClick={() => setShowPackageConfigModal(true)}
               isLoading={mode.type === "loading"}
             >
-              Edit
+              Edit Hello
             </Button>
           </KurtosisFormControl>
         </Flex>

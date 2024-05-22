@@ -7,6 +7,7 @@ import { FiCpu, FiFile, FiPackage, FiTerminal, FiTrash } from "react-icons/fi";
 import { RxCornerBottomRight } from "react-icons/rx";
 import { Handle, NodeResizeControl, Position, useReactFlow, useViewport } from "reactflow";
 import { KurtosisNodeData } from "../types";
+import { useUIState } from "../UIStateContext";
 import { useVariableContext } from "../VariableContextProvider";
 
 const colors: Record<KurtosisNodeData["type"], string> = {
@@ -44,17 +45,18 @@ type KurtosisNodeProps = PropsWithChildren<{
   // Optional element to show outside of the zoom aware behaviour
   portalContent?: ReactElement;
   backgroundColor?: string;
+  onClick?: () => void;
 }>;
 
 export const KurtosisNode = memo(
   <DataType extends KurtosisNodeData>({
-    id,
-    selected,
-    minWidth,
-    maxWidth,
-    portalContent,
     backgroundColor,
     children,
+    id,
+    maxWidth,
+    minWidth,
+    portalContent,
+    selected,
   }: KurtosisNodeProps) => {
     const { data } = useVariableContext();
     const nodeData = data[id] as DataType;
@@ -65,13 +67,13 @@ export const KurtosisNode = memo(
 
     return (
       <KurtosisNodeImpl<DataType>
+        backgroundColor={backgroundColor}
         id={id}
-        selected={selected}
-        minWidth={minWidth}
         maxWidth={maxWidth}
+        minWidth={minWidth}
         nodeData={nodeData}
         portalContent={portalContent}
-        backgroundColor={backgroundColor}
+        selected={selected}
       >
         {children}
       </KurtosisNodeImpl>
@@ -81,19 +83,21 @@ export const KurtosisNode = memo(
 
 type KurtosisNodeImplProps<DataType extends KurtosisNodeData> = KurtosisNodeProps & { nodeData: DataType };
 const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
-  id,
-  nodeData,
-  selected,
-  minWidth,
-  maxWidth,
-  portalContent,
   backgroundColor,
   children,
+  id,
+  maxWidth,
+  minWidth,
+  nodeData,
+  portalContent,
 }: KurtosisNodeImplProps<DataType>) => {
+  const { expandedNodes, toggleExpanded } = useUIState();
+
+  const selected = Boolean(expandedNodes[id]);
+
   if (!selected) {
     return (
       <>
-        {" "}
         <Handle
           type="target"
           position={Position.Left}
@@ -106,7 +110,7 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
           style={{ background: "transparent", border: "none" }}
           isConnectable={false}
         />
-        <BasicKurtosisNode type={nodeData.type} name={nodeData.name} />
+        <BasicKurtosisNode type={nodeData.type} name={nodeData.name} onClick={() => toggleExpanded(id)} />
       </>
     );
   }
@@ -120,6 +124,7 @@ const KurtosisNodeImpl = <DataType extends KurtosisNodeData>({
       nodeData={nodeData}
       portalContent={portalContent}
       backgroundColor={backgroundColor}
+      onClick={() => toggleExpanded(id)}
     >
       {children}
     </KurtosisFormNode>
@@ -224,6 +229,7 @@ const KurtosisFormNode = <DataType extends KurtosisNodeData>({
           bg={backgroundColor || "gray.600"}
         >
           <ZoomAwareNodeContent
+            id={id}
             name={nodeData.name}
             type={nodeData.type}
             isDisabled={nodeData.isFromPackage}
@@ -242,13 +248,21 @@ type ZoomAwareNodeContentProps = PropsWithChildren<{
   name: string;
   type: KurtosisNodeData["type"];
   isDisabled?: boolean;
+  id: string;
   onDelete: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }>;
 
-const ZoomAwareNodeContent = ({ name, type, isDisabled, onDelete, children }: ZoomAwareNodeContentProps) => {
+const ZoomAwareNodeContent = ({ name, type, isDisabled, id, onDelete, children }: ZoomAwareNodeContentProps) => {
   const viewport = useViewport();
   return (
-    <ZoomAwareNodeContentImpl name={name} type={type} isDisabled={isDisabled} onDelete={onDelete} zoom={viewport.zoom}>
+    <ZoomAwareNodeContentImpl
+      name={name}
+      type={type}
+      isDisabled={isDisabled}
+      id={id}
+      onDelete={onDelete}
+      zoom={viewport.zoom}
+    >
       {children}
     </ZoomAwareNodeContentImpl>
   );
@@ -257,7 +271,8 @@ const ZoomAwareNodeContent = ({ name, type, isDisabled, onDelete, children }: Zo
 type ZoomAwareNodeContentImplProps = ZoomAwareNodeContentProps & { zoom: number };
 
 const ZoomAwareNodeContentImpl = memo(
-  ({ name, type, isDisabled, onDelete, zoom, children }: ZoomAwareNodeContentImplProps) => {
+  ({ name, type, isDisabled, id, onDelete, zoom, children }: ZoomAwareNodeContentImplProps) => {
+    const { toggleExpanded } = useUIState();
     const { zoomOut, zoomIn } = useReactFlow();
     const handleScroll = useCallback(
       (e: React.WheelEvent<HTMLDivElement>) => {
@@ -280,7 +295,14 @@ const ZoomAwareNodeContentImpl = memo(
 
     return (
       <>
-        <Flex justifyContent={"space-between"} alignItems={"center"} minH={"0"} bg={"gray.600"}>
+        <Flex
+          justifyContent={"space-between"}
+          alignItems={"center"}
+          minH={"0"}
+          bg={"gray.600"}
+          role="button"
+          onClick={() => toggleExpanded(id)}
+        >
           <Flex gap={"8px"} alignItems={"center"}>
             <Icon as={nodeIcons[type]} w={"20px"} h={"20px"} />
             <Text fontWeight={"semibold"}>{name || <i>Unnamed</i>}</Text>
@@ -320,10 +342,24 @@ const ZoomAwareNodeContentImpl = memo(
 type BasicKurtosisNodeProps = {
   type: KurtosisNodeData["type"];
   name?: string;
+  onClick?: () => void;
 };
-const BasicKurtosisNode = ({ type, name }: BasicKurtosisNodeProps) => {
+
+const BasicKurtosisNode = ({ type, name, onClick }: BasicKurtosisNodeProps) => {
   return (
-    <Flex gap={"20px"} alignItems={"center"} justifyContent={"center"} h={"100%"} bg={"gray.600"}>
+    <Flex
+      gap={"20px"}
+      alignItems={"center"}
+      justifyContent={"center"}
+      h={"100%"}
+      bg={"gray.600"}
+      px={"24px"}
+      role="button"
+      border={"2px solid"}
+      borderColor={"whiteAlpha.300"}
+      borderRadius={"8px"}
+      onClick={onClick}
+    >
       <Icon as={nodeIcons[type]} h={"40px"} w={"40px"} />
       <Text fontSize={"40px"} textAlign={"center"} p={"20px"}>
         {name || <i>Unnamed</i>}

@@ -23,6 +23,7 @@ import { useEnclavesContext } from "../../EnclavesContext";
 import { EnclaveFullInfo } from "../../types";
 import { ViewStarlarkModal } from "./modals/ViewStarlarkModal";
 import { KurtosisNodeData } from "./types";
+import { UIStateProvider } from "./UIStateContext";
 import { getInitialGraphStateFromEnclave } from "./utils";
 import { useVariableContext, VariableContextProvider } from "./VariableContextProvider";
 import { Visualiser, VisualiserImperativeAttributes } from "./Visualiser";
@@ -82,7 +83,9 @@ export const EnclaveBuilderDrawer = (props: EnclaveBuilderDrawerProps) => {
 
   return (
     <VariableContextProvider key={variableContextKey.current} initialData={initialData}>
-      <EnclaveBuilderDrawerImpl {...props} initialNodes={initialNodes} initialEdges={initialEdges} />
+      <UIStateProvider>
+        <EnclaveBuilderDrawerImpl {...props} initialNodes={initialNodes} initialEdges={initialEdges} />
+      </UIStateProvider>
     </VariableContextProvider>
   );
 };
