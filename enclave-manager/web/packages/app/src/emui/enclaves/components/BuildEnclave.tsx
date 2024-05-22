@@ -14,6 +14,15 @@ export const BuildEnclave = () => {
     setBuildEnclaveOpen(location.hash === `#${KURTOSIS_BUILD_ENCLAVE_URL_ARG}`);
   }, [location]);
 
+  useEffect(() => {
+    const query = new URLSearchParams(location.search);
+    const code = query.get('code');
+    if (code) {
+      window.opener.postMessage({ code }, 'http://localhost:4000');
+      window.close();
+    }
+  }, []);
+
   const handleCloseBuildEnclave = () => {
     setBuildEnclaveOpen(false);
     if (isDefined(location.hash)) {
