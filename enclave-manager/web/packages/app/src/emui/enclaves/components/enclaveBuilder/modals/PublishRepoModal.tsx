@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { isDefined } from "kurtosis-ui-components";
 import { ChangeEvent, useState } from "react";
-import {useKurtosisClient} from "../../../../../client/enclaveManager/KurtosisClientContext";
+import { useKurtosisClient } from "../../../../../client/enclaveManager/KurtosisClientContext";
 
 type PublishRepoModalProps = {
   isOpen: boolean;
@@ -44,7 +44,7 @@ export const PublishRepoModal = ({ isOpen, onClose, code, starlark }: PublishRep
           const uint8Array = new Uint8Array(arrayBuffer);
           resolve(uint8Array);
         } else {
-          reject(new Error('Failed to read file as ArrayBuffer.'));
+          reject(new Error("Failed to read file as ArrayBuffer."));
         }
       };
       reader.onerror = (error) => {
@@ -59,7 +59,7 @@ export const PublishRepoModal = ({ isOpen, onClose, code, starlark }: PublishRep
 
     let imageData: Uint8Array = new Uint8Array(100);
     if (image) {
-      imageData = await getImageData(image)
+      imageData = await getImageData(image);
     }
     console.log("Uploaded Image:", image);
 
@@ -69,12 +69,12 @@ export const PublishRepoModal = ({ isOpen, onClose, code, starlark }: PublishRep
     }
 
     const resp = await kurtosisClient.publishPackageRequest(code, repoName, starlark, imageData);
-    if(resp.isOk){
-      console.log(`successfully published package`)
+    if (resp.isOk) {
+      console.log(`successfully published package`);
     } else {
-      console.log(`did not successfully publish package`)
+      console.log(`did not successfully publish package`);
     }
-    return
+    return;
   };
 
   return (
@@ -92,9 +92,13 @@ export const PublishRepoModal = ({ isOpen, onClose, code, starlark }: PublishRep
             <FormLabel>Upload Package Icon</FormLabel>
             <Input type="file" accept="image/*" onChange={handleImageChange} />
             {image && (
-                <Box mt={4}>
-                  <Image src={URL.createObjectURL(new Blob([image], { type: 'image/png' }))} alt="Uploaded image" boxSize="100px" />
-                </Box>
+              <Box mt={4}>
+                <Image
+                  src={URL.createObjectURL(new Blob([image], { type: "image/png" }))}
+                  alt="Uploaded image"
+                  boxSize="100px"
+                />
+              </Box>
             )}
           </FormControl>
         </ModalBody>

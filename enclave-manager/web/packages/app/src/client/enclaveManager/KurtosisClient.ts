@@ -26,7 +26,8 @@ import {
   GetServicesRequest,
   GetStarlarkRunRequest,
   InspectFilesArtifactContentsRequest,
-  LockUnlockPortRequest, PublishPackageRequest,
+  LockUnlockPortRequest,
+  PublishPackageRequest,
   RunStarlarkPackageRequest,
   RunStarlarkScriptRequest,
   StarlarkPackagePlanYamlArgs as StarlarkPackagePlanYamlArgsRequest,
@@ -103,7 +104,12 @@ export abstract class KurtosisClient {
     );
   }
 
-  async publishPackageRequest(githubAuthCode: string, packageName: string, serializedStarlarkScript: string, serializedPackageIcon?:Uint8Array) {
+  async publishPackageRequest(
+    githubAuthCode: string,
+    packageName: string,
+    serializedStarlarkScript: string,
+    serializedPackageIcon?: Uint8Array,
+  ) {
     return asyncResult(
       this.client.publishPackageRepository(
         new PublishPackageRequest({
@@ -112,8 +118,9 @@ export abstract class KurtosisClient {
           serializedStarlarkScript: serializedStarlarkScript,
           serializedPackageIcon: serializedPackageIcon,
         }),
-        this.getHeaderOptions()),
-        `KurtosisClient could not public package result for ${packageName}`,
+        this.getHeaderOptions(),
+      ),
+      `KurtosisClient could not public package result for ${packageName}`,
     );
   }
 
