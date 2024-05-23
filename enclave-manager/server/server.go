@@ -434,58 +434,10 @@ func (c *WebServer) PublishPackageRepository(ctx context.Context, req *connect.R
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
 
-	authCode := req.Msg.AuthCode
-	packageName := req.Msg.PackageName
-	//serializedStarlarkScript := req.Msg.SerializedStarlarkScript
-	//serializedPackageIcon := req.Msg.SerializedPackageIcon
-
-	// Step 2: Exchange the code for an access token
-	accessToken, err := exchangeCodeForToken(authCode)
+	err = PublishPackageRepository(ctx, req.Msg.AuthCode, req.Msg.PackageName, req.Msg.SerializedStarlarkScript, req.Msg.SerializedPackageIcon)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving access token for publishing pakcage.")
+		return nil, stacktrace.Propagate(err, "An error occurred publishing package repo")
 	}
-	logrus.Infof("Access Token for GitHUb: %v", accessToken)
-
-	// Step 3: Create a new repository
-	repo, err := createRepo(accessToken, packageName)
-	if err != nil {
-		fmt.Println("Error creating repository:", err)
-		return nil, stacktrace.Propagate(err, "An error occurred creating repo for publishing package.")
-	}
-	logrus.Infof("Repo creation success: %v", repo)
-	//
-	//// Step 4: Create blob data for files to be committed
-	//files := []BlobData{
-	//	{Path: "main.star", Content: serializedStarlarkScript},
-	//	{Path: "kurtosis.yml", Content: fmt.Sprintf("name: github.com/%v/%v", repo.Owner, packageName)},
-	//	{Path: "kurtosis-package-icon.png", Content: string(serializedPackageIcon)}, // TODO: this isn't gonna work figure it out
-	//	{Path: "README_K.md", Content: getPackageReadMeContents(repo.Owner.Login, packageName) },
-	//}
-	//blobMap, err := createBlob(accessToken, repo.Owner.Login, packageName, files)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "An error occurred creating blobs")
-	//}
-	//
-	//baseTreeSha := "BASE_TREE_SHA" // Replace with the base tree SHA
-	//treeSha, err := createTree(accessToken, repo.Owner.Login, packageName, baseTreeSha, files)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "An error occurred creating tree.")
-	//}
-	//fmt.Println("Tree created. SHA:", treeSha)
-	//
-	//// Step 6: Create a commit
-	//message := "Initial commit" // Replace with the commit message
-	//commitSha, err := createCommit(accessToken, repo.Owner.Login, packageName, message, treeSha, baseTreeSha)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "An error occurred creating commit to publish package.")
-	//}
-	//fmt.Println("Commit created. SHA:", commitSha)
-	//
-	//// Step 7: Update reference
-	//err = updateReference(accessToken, repo.Owner.Login, packageName, commitSha)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate("An error occurred updating reference.")
-	//}
 
 	return &connect.Response[emptypb.Empty]{}, nil
 }
@@ -1048,7 +1000,7 @@ func RunEnclaveManagerApiServer(enforceAuth bool) error {
 	)
 
 	emCors := cors.AllowAll()
-	emCors.Log = logrus.StandardLogger()
+	//emCors.Log = logrus.StandardLogger()
 
 	if err := apiServer.RunServerUntilInterruptedWithCors(emCors); err != nil {
 		logrus.Error("An error occurred running the server", err)

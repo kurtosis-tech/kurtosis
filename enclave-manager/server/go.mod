@@ -15,6 +15,7 @@ require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/rs/cors v1.9.0
 	github.com/sirupsen/logrus v1.9.3
+	golang.org/x/oauth2 v0.11.0
 	google.golang.org/protobuf v1.33.0
 )
 
@@ -60,6 +61,7 @@ require (
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230803162519-f966b187b2e5 // indirect
 	google.golang.org/grpc v1.57.1 // indirect
 )
