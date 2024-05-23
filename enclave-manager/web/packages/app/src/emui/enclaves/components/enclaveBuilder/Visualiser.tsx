@@ -44,7 +44,7 @@ type VisualiserProps = {
 };
 export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserProps>(
   ({ initialNodes, initialEdges, existingEnclave }, ref) => {
-    const { data } = useVariableContext();
+    const { data, initialImportedPackageData } = useVariableContext();
     const insertOffset = useRef(0);
     const [nodes, , onNodesChange] = useNodesState(initialNodes || []);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
@@ -104,10 +104,10 @@ export const Visualiser = forwardRef<VisualiserImperativeAttributes, VisualiserP
       ref,
       () => ({
         getStarlark: () => {
-          return generateStarlarkFromGraph(nodes, edges, data, existingEnclave);
+          return generateStarlarkFromGraph(nodes, edges, data, initialImportedPackageData, existingEnclave);
         },
       }),
-      [nodes, edges, data, existingEnclave],
+      [nodes, edges, data, initialImportedPackageData, existingEnclave],
     );
 
     useEffect(() => {

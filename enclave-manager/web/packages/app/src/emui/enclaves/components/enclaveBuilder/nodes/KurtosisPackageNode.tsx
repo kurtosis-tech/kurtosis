@@ -21,7 +21,8 @@ export const KurtosisPackageNode = memo(
     const [showPackageConfigModal, setShowPackageConfigModal] = useState(false);
     const [mode, setMode] = useState<Mode>({ type: "ready" });
     const kurtosisClient = useKurtosisClient();
-    const { data, updateData, removeData } = useVariableContext();
+    const { data, updateData, removeData, initialImportedPackageData, setInitialImportedPackageData } =
+      useVariableContext();
     const nodeData = data[id] as KurtosisPackageNodeData | undefined;
 
     useEffect(() => {
@@ -301,6 +302,15 @@ export const KurtosisPackageNode = memo(
       setNodes,
       updateData,
     ]);
+
+    // If we import a package, save a snapshot of the initial configuration
+    // so we can calculate differential updates to the Starlark code later
+    useEffect(() => {
+      if (initialImportedPackageData == null && Object.values(data).some((node) => node.isFromPackage)) {
+        console.log("Saving initial imported package data", data);
+        setInitialImportedPackageData(data);
+      }
+    }, [data, initialImportedPackageData, setInitialImportedPackageData]);
 
     if (!isDefined(nodeData)) {
       return null;
