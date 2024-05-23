@@ -92,11 +92,11 @@ export const PublishRepoModal = ({ isOpen, onClose, code, starlark }: PublishRep
             <FormLabel>Upload Package Icon</FormLabel>
             <Input type="file" accept="image/*" onChange={handleImageChange} />
             {image && (
-              <Box mt={4}>
+              <Box mt={3}>
                 <Image
                   src={URL.createObjectURL(new Blob([image], { type: "image/png" }))}
                   alt="Uploaded image"
-                  boxSize="100px"
+                  boxSize="75px"
                 />
               </Box>
             )}
