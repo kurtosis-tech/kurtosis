@@ -31,6 +31,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
+	em_api "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
