@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 const (
@@ -57,20 +58,22 @@ func PublishPackageRepository(ctx context.Context, authCode, packageName, serial
 		//{Path: "README_K.md", Content: getPackageReadMeContents(repo.Owner.Login, packageName) },
 	}
 
-	baseTreeSha, err := getBaseTreeSha(ctx, ghClient, "tedim52", packageName, "main")
+	time.Sleep(10 * time.Second)
+
+	baseTreeSha, err := getBaseTreeSha(ctx, ghClient, *repo.Owner.Login, packageName, "main")
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting base tree")
 	}
 	logrus.Infof("Base tree SHA successfully retrieved: %v", baseTreeSha)
 
-	treeSha, err := createTree(ctx, ghClient, accessToken, "tedim52", packageName, baseTreeSha, files)
+	treeSha, err := createTree(ctx, ghClient, accessToken, *repo.Owner.Login, packageName, baseTreeSha, files)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating tree.")
 	}
 	logrus.Infof("Tree successfully created: %v", treeSha)
 
 	// Step 6: Create a commit
-	message := "Initial commit" // Replace with the commit message
+	message := "Creating package!" // Replace with the commit message
 	commitSha, err := createCommit(ctx, ghClient, *repo.Owner.Login, packageName, message, treeSha, baseTreeSha)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating commit to publish package.")

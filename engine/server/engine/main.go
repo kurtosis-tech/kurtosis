@@ -31,7 +31,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
-	em_api "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
@@ -225,16 +224,16 @@ func runMain() error {
 			logrus.Debugf("error while starting the webapp: \n%v", err)
 		}
 	}()
-
-	go func() {
-		enforceAuth := serverArgs.OnBastionHost
-		err = em_api.RunEnclaveManagerApiServer(enforceAuth)
-		if err != nil {
-			logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			os.Exit(failureExitCode)
-		}
-	}()
+	//
+	//go func() {
+	//	enforceAuth := serverArgs.OnBastionHost
+	//	err = em_api.RunEnclaveManagerApiServer(enforceAuth)
+	//	if err != nil {
+	//		logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
+	//		fmt.Fprintln(logrus.StandardLogger().Out, err)
+	//		os.Exit(failureExitCode)
+	//	}
+	//}()
 
 	logger := logrus.StandardLogger()
 	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
