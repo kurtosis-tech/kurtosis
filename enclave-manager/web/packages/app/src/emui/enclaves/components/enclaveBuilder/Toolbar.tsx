@@ -1,60 +1,31 @@
-import { Box, Button, ButtonGroup, Icon } from "@chakra-ui/react";
-import Dagre from "@dagrejs/dagre";
-import { useCallback, useRef } from "react";
-import { FiShare2 } from "react-icons/fi";
-import { Edge, Node, useOnViewportChange, useReactFlow, XYPosition } from "reactflow";
+import { Box, Button, ButtonGroup, Flex, Icon, Menu, MenuButton, MenuItem, MenuList } from "@chakra-ui/react";
+import { useRef } from "react";
+import { FiDownload, FiGrid, FiPlus } from "react-icons/fi";
+import { Node, useOnViewportChange, useReactFlow, XYPosition } from "reactflow";
 import { v4 as uuidv4 } from "uuid";
 import { nodeIcons } from "./nodes/KurtosisNode";
+import { useUIState } from "./UIStateContext";
 import { useVariableContext } from "./VariableContextProvider";
-
-const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
-const getLayoutedElements = <T extends object>(nodes: Node<T>[], edges: Edge<any>[]) => {
-  if (nodes.length === 0) {
-    return { nodes, edges };
-  }
-  g.setGraph({ rankdir: "LR", ranksep: 100 });
-
-  edges.forEach((edge) => g.setEdge(edge.source, edge.target));
-  nodes.forEach((node) =>
-    g.setNode(node.id, node as Node<{ label: string }, string | undefined> & { width?: number; height?: number }),
-  );
-
-  Dagre.layout(g);
-
-  return {
-    nodes: nodes.map((node) => {
-      const { x, y } = g.node(node.id);
-
-      return { ...node, position: { x, y } };
-    }),
-    edges,
-  };
-};
 
 export const Toolbar = () => {
   const insertOffset = useRef(0);
   const { updateData } = useVariableContext();
-  const { fitView, getViewport, getNodes, getEdges, addNodes, setNodes, setEdges } = useReactFlow();
+  const { getViewport, addNodes } = useReactFlow();
+
+  const { applyAutoLayout, toggleExpanded, zoomToNode } = useUIState();
 
   useOnViewportChange({ onEnd: () => (insertOffset.current = 1) });
-
-  const onLayout = useCallback(() => {
-    const nodes = getNodes();
-    const edges = getEdges();
-    const layouted = getLayoutedElements(nodes, edges);
-
-    setNodes([...layouted.nodes]);
-    setEdges([...layouted.edges]);
-
-    window.requestAnimationFrame(() => {
-      fitView();
-    });
-  }, [fitView, setEdges, setNodes, getEdges, getNodes]);
 
   const getNewNodePosition = (): XYPosition => {
     const viewport = getViewport();
     insertOffset.current += 1;
     return { x: -viewport.x + insertOffset.current * 20 + 400, y: -viewport.y + insertOffset.current * 20 };
+  };
+
+  const addAndFocusNode = (node: Node) => {
+    addNodes(node);
+    toggleExpanded(node.id);
+    setTimeout(() => zoomToNode(node), 0);
   };
 
   const handleAddServiceNode = () => {
@@ -80,7 +51,7 @@ export const Toolbar = () => {
       entrypoint: "",
       isValid: false,
     });
-    addNodes({
+    addAndFocusNode({
       id,
       position: getNewNodePosition(),
       width: 650,
@@ -100,7 +71,7 @@ export const Toolbar = () => {
       acceptableCodes: [],
       isValid: false,
     });
-    addNodes({
+    addAndFocusNode({
       id,
       position: getNewNodePosition(),
       width: 650,
@@ -113,7 +84,7 @@ export const Toolbar = () => {
   const handleAddArtifactNode = () => {
     const id = uuidv4();
     updateData(id, { type: "artifact", name: "", files: {}, isValid: false });
-    addNodes({
+    addAndFocusNode({
       id,
       position: getNewNodePosition(),
       width: 400,
@@ -147,7 +118,7 @@ export const Toolbar = () => {
       wait: "",
       isValid: false,
     });
-    addNodes({
+    addAndFocusNode({
       id,
       position: getNewNodePosition(),
       width: 650,
@@ -182,7 +153,7 @@ export const Toolbar = () => {
       wait: "",
       isValid: false,
     });
-    addNodes({
+    addAndFocusNode({
       id,
       position: getNewNodePosition(),
       width: 650,
@@ -202,8 +173,9 @@ export const Toolbar = () => {
       locator: "",
       isValid: false,
     });
-    addNodes({
+    addAndFocusNode({
       id,
+      selected: true,
       position: getNewNodePosition(),
       width: 900,
       style: { width: "900px" },
@@ -223,26 +195,43 @@ export const Toolbar = () => {
       p={"8px"}
     >
       <ButtonGroup size={"sm"}>
-        <Button leftIcon={<Icon as={FiShare2} />} onClick={onLayout}>
-          Auto-Layout
+        <Menu>
+          <MenuButton as={Button} leftIcon={<FiPlus />}>
+            Add node
+          </MenuButton>
+          <MenuList>
+            <MenuItem as="button" onClick={handleAddServiceNode}>
+              <Flex gap={2} alignItems="center">
+                <Icon as={nodeIcons["service"]} /> Service
+              </Flex>
+            </MenuItem>
+            <MenuItem as="button" onClick={handleAddArtifactNode}>
+              <Flex gap={2} alignItems="center">
+                <Icon as={nodeIcons["artifact"]} /> File
+              </Flex>
+            </MenuItem>
+            <MenuItem as="button" onClick={handleAddExecNode}>
+              <Flex gap={2} alignItems="center">
+                <Icon as={nodeIcons["exec"]} /> Exec Task
+              </Flex>
+            </MenuItem>
+            <MenuItem as="button" onClick={handleAddShellNode}>
+              <Flex gap={2} alignItems="center">
+                <Icon as={nodeIcons["shell"]} /> Shell Script
+              </Flex>
+            </MenuItem>
+            <MenuItem as="button" onClick={handleAddPythonNode}>
+              <Flex gap={2} alignItems="center">
+                <Icon as={nodeIcons["python"]} /> Python Script
+              </Flex>
+            </MenuItem>
+          </MenuList>
+        </Menu>
+        <Button leftIcon={<FiDownload />} onClick={handleAddPackageNode}>
+          Import Package
         </Button>
-        <Button leftIcon={<Icon as={nodeIcons["service"]} />} onClick={handleAddServiceNode}>
-          Add Service Node
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["artifact"]} />} onClick={handleAddArtifactNode}>
-          Add Files Node
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["exec"]} />} onClick={handleAddExecNode}>
-          Add Exec Node
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["shell"]} />} onClick={handleAddShellNode}>
-          Add Shell Node
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["python"]} />} onClick={handleAddPythonNode}>
-          Add Python Node
-        </Button>
-        <Button leftIcon={<Icon as={nodeIcons["package"]} />} onClick={handleAddPackageNode}>
-          Add Package Node
+        <Button leftIcon={<FiGrid />} onClick={applyAutoLayout}>
+          Apply Auto-Layout
         </Button>
       </ButtonGroup>
     </Box>

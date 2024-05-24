@@ -1,6 +1,7 @@
 import { SmallCloseIcon } from "@chakra-ui/icons";
 import {
   Button,
+  Divider,
   Flex,
   Icon,
   Input,
@@ -8,6 +9,11 @@ import {
   InputLeftElement,
   InputRightElement,
   Spinner,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
   Text,
 } from "@chakra-ui/react";
 import { KurtosisPackage } from "kurtosis-cloud-indexer-sdk";
@@ -105,7 +111,7 @@ export const PackageSelector = ({ onPackageSelected }: PackageSelectorProps) => 
   }
 
   return (
-    <>
+    <Tabs>
       <InputGroup variant={"solid"} width={"100%"} color={"gray.150"}>
         <InputLeftElement>
           <Icon as={FiSearch} />
@@ -128,66 +134,80 @@ export const PackageSelector = ({ onPackageSelected }: PackageSelectorProps) => 
           )}
         </InputRightElement>
       </InputGroup>
-      {isDefined(exactMatch) && (
-        <Flex flexDirection={"column"} gap={"10px"}>
-          <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
-            Exact Match
-          </Text>
-          {exactMatch.type === "loading" && (
-            <Flex flexDirection={"column"} alignItems={"center"}>
-              <Spinner />
-              <Text>Looking for a Kurtosis Package at {exactMatch.url}</Text>
+      <Flex p={2}></Flex>
+      <TabList>
+        <Tab>Kurtosis Packages</Tab>
+        <Tab>Docker-compose Packages</Tab>
+      </TabList>
+      <Divider />
+      <Flex p={4}></Flex>
+      <TabPanels>
+        <TabPanel>
+          {isDefined(exactMatch) && (
+            <Flex flexDirection={"column"} gap={"10px"}>
+              <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
+                Exact Match
+              </Text>
+              {exactMatch.type === "loading" && (
+                <Flex flexDirection={"column"} alignItems={"center"}>
+                  <Spinner />
+                  <Text>Looking for a Kurtosis Package at {exactMatch.url}</Text>
+                </Flex>
+              )}
+              {exactMatch.type === "loaded" && (
+                <KurtosisPackageCardHorizontal
+                  kurtosisPackage={exactMatch.package}
+                  onClick={() => onPackageSelected(exactMatch.package)}
+                />
+              )}
+              {exactMatch.type === "error" && (
+                <KurtosisAlert message={"Error looking up package"} details={exactMatch.error} />
+              )}
             </Flex>
           )}
-          {exactMatch.type === "loaded" && (
-            <KurtosisPackageCardHorizontal
-              kurtosisPackage={exactMatch.package}
-              onClick={() => onPackageSelected(exactMatch.package)}
-            />
+          {(searchTerm.length > 0 || savedPackages.length === 0) && (
+            <Flex flexDirection={"column"} gap={"10px"}>
+              <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
+                {searchTerm.length === 0 ? "All Packages" : "Search Results"}
+              </Text>
+              {searchResults.value.map((kurtosisPackage) => (
+                <KurtosisPackageCardHorizontal
+                  key={kurtosisPackage.name}
+                  kurtosisPackage={kurtosisPackage}
+                  onClick={() => onPackageSelected(kurtosisPackage)}
+                />
+              ))}
+            </Flex>
           )}
-          {exactMatch.type === "error" && (
-            <KurtosisAlert message={"Error looking up package"} details={exactMatch.error} />
+          {searchTerm.length === 0 && savedPackages.length > 0 && (
+            <Flex flexDirection={"column"} gap={"10px"}>
+              <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
+                Saved
+              </Text>
+              {savedPackages.map((kurtosisPackage) => (
+                <KurtosisPackageCardHorizontal
+                  key={kurtosisPackage.name}
+                  kurtosisPackage={kurtosisPackage}
+                  onClick={() => onPackageSelected(kurtosisPackage)}
+                />
+              ))}
+              <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
+                All Packages
+              </Text>
+              {searchResults.value.map((kurtosisPackage) => (
+                <KurtosisPackageCardHorizontal
+                  key={kurtosisPackage.name}
+                  kurtosisPackage={kurtosisPackage}
+                  onClick={() => onPackageSelected(kurtosisPackage)}
+                />
+              ))}
+            </Flex>
           )}
-        </Flex>
-      )}
-      {(searchTerm.length > 0 || savedPackages.length === 0) && (
-        <Flex flexDirection={"column"} gap={"10px"}>
-          <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
-            {searchTerm.length === 0 ? "All Packages" : "Search Results"}
-          </Text>
-          {searchResults.value.map((kurtosisPackage) => (
-            <KurtosisPackageCardHorizontal
-              key={kurtosisPackage.name}
-              kurtosisPackage={kurtosisPackage}
-              onClick={() => onPackageSelected(kurtosisPackage)}
-            />
-          ))}
-        </Flex>
-      )}
-      {searchTerm.length === 0 && savedPackages.length > 0 && (
-        <Flex flexDirection={"column"} gap={"10px"}>
-          <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
-            Saved
-          </Text>
-          {savedPackages.map((kurtosisPackage) => (
-            <KurtosisPackageCardHorizontal
-              key={kurtosisPackage.name}
-              kurtosisPackage={kurtosisPackage}
-              onClick={() => onPackageSelected(kurtosisPackage)}
-            />
-          ))}
-          <Text fontWeight={"semibold"} pt={"16px"} pb={"6px"}>
-            All Packages
-          </Text>
-          {searchResults.value.map((kurtosisPackage) => (
-            <KurtosisPackageCardHorizontal
-              key={kurtosisPackage.name}
-              kurtosisPackage={kurtosisPackage}
-              onClick={() => onPackageSelected(kurtosisPackage)}
-            />
-          ))}
-        </Flex>
-      )}
-    </>
+        </TabPanel>
+        <TabPanel>
+          <p>Docker compose!</p>
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
   );
 };

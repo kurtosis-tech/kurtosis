@@ -45,9 +45,11 @@ export const KurtosisServiceNode = memo(
             name={"image.image"}
             label={"Container Image"}
             isRequired
-            isDisabled={nodeData.isFromPackage}
+            // isDisabled={nodeData.isFromPackage}
           >
-            <ImageConfigInput disabled={nodeData.isFromPackage} />
+            <ImageConfigInput
+            // disabled={nodeData.isFromPackage}
+            />
           </KurtosisFormControl>
         </Flex>
         <Tabs isLazy>
