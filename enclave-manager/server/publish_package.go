@@ -26,13 +26,13 @@ type BlobData struct {
 func PublishPackageRepository(ctx context.Context, authCode, packageName, serializedStarlarkScript string, serializedPackageIcon []byte) error {
 	logrus.Infof("Attempting to publish package using github code: %v, package name: %v", authCode, packageName)
 
-	//// Step 1: Exchange the code for an access token
-	//accessToken, _, err := exchangeCodeForToken(authCode)
-	//if err != nil {
-	//	return stacktrace.Propagate(err, "An error occurred retrieving access token for publishing pakcage.")
-	//}
-	//logrus.Infof("Access Token for GitHub %v", accessToken)
-	accessToken := ""
+	// Step 1: Exchange the code for an access token
+	accessToken, _, err := exchangeCodeForToken(authCode)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred retrieving access token for publishing pakcage.")
+	}
+	logrus.Infof("Access Token for GitHub %v", accessToken)
+	//accessToken := ""
 
 	// Step 2: create ghclient authed with user acccess
 	ts := oauth2.StaticTokenSource(
@@ -42,13 +42,13 @@ func PublishPackageRepository(ctx context.Context, authCode, packageName, serial
 	ghClient := github.NewClient(tc)
 	logrus.Infof("Successfully created authed github client using access token: %v", accessToken)
 
-	//// Step 3: Create a new repository
-	//repo, err := createRepo(ctx, ghClient, accessToken, packageName)
-	//if err != nil {
-	//	fmt.Println("Error creating repository:", err)
-	//	return stacktrace.Propagate(err, "An error occurred creating repo for publishing package.")
-	//}
-	//logrus.Infof("Repo creation success: %v", repo)
+	// Step 3: Create a new repository
+	repo, err := createRepo(ctx, ghClient, accessToken, packageName)
+	if err != nil {
+		fmt.Println("Error creating repository:", err)
+		return stacktrace.Propagate(err, "An error occurred creating repo for publishing package.")
+	}
+	logrus.Infof("Repo creation success: %v", repo)
 
 	// Step 4: Create blob data for files to be committed
 	files := []BlobData{
