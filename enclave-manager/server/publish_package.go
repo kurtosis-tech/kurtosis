@@ -32,7 +32,6 @@ func PublishPackageRepository(ctx context.Context, authCode, packageName, serial
 		return stacktrace.Propagate(err, "An error occurred retrieving access token for publishing pakcage.")
 	}
 	logrus.Infof("Access Token for GitHub %v", accessToken)
-	//accessToken := ""
 
 	// Step 2: create ghclient authed with user acccess
 	ts := oauth2.StaticTokenSource(
@@ -72,16 +71,14 @@ func PublishPackageRepository(ctx context.Context, authCode, packageName, serial
 
 	// Step 6: Create a commit
 	message := "Initial commit" // Replace with the commit message
-	//commitSha, err := createCommit(accessToken, repo.Owner.Login, packageName, message, treeSha, baseTreeSha)
-	commitSha, err := createCommit(ctx, ghClient, "tedim52", packageName, message, treeSha, baseTreeSha)
+	commitSha, err := createCommit(ctx, ghClient, *repo.Owner.Login, packageName, message, treeSha, baseTreeSha)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating commit to publish package.")
 	}
 	fmt.Println("Commit created. SHA:", commitSha)
 
 	// Step 7: Update reference
-	// err = updateReference(ctx, ghClient, repo.Owner.Login, packageName, commitSha)
-	err = updateReference(ctx, ghClient, "tedim52", packageName, commitSha)
+	err = updateReference(ctx, ghClient, *repo.Owner.Login, packageName, commitSha)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating reference.")
 	}
@@ -136,33 +133,6 @@ func createRepo(ctx context.Context, client *github.Client, accessToken string, 
 	//logrus.Infof("Response body from create repo call %v", resp)
 	//logrus.Infof("Result from create repo call %v", template)
 	return template, nil
-}
-
-func createBlob(ctx context.Context, client *github.Client, accessToken, owner, repo string, blobs []BlobData) (map[string]string, error) {
-	// Create a map to store the results
-	resultMap := make(map[string]string)
-
-	// Iterate over the blobs and create them
-	for _, blob := range blobs {
-		encodedContent := base64.StdEncoding.EncodeToString([]byte(blob.Content))
-
-		// Create a new blob object
-		gitBlob := &github.Blob{
-			Content:  github.String(encodedContent),
-			Encoding: github.String("base64"),
-		}
-
-		// Create the blob in the repository
-		createdBlob, _, err := client.Git.CreateBlob(ctx, owner, repo, gitBlob)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating blocb at path %v", blob.Path)
-		}
-
-		// Store the SHA of the created blob in the result map
-		resultMap[blob.Path] = createdBlob.GetSHA()
-	}
-
-	return resultMap, nil
 }
 
 func createTree(ctx context.Context, client *github.Client, accessToken, owner, repo, baseTreeSha string, files []BlobData) (string, error) {
