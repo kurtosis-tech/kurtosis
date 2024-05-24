@@ -224,16 +224,16 @@ func runMain() error {
 			logrus.Debugf("error while starting the webapp: \n%v", err)
 		}
 	}()
-	//
-	//go func() {
-	//	enforceAuth := serverArgs.OnBastionHost
-	//	err = em_api.RunEnclaveManagerApiServer(enforceAuth)
-	//	if err != nil {
-	//		logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
-	//		fmt.Fprintln(logrus.StandardLogger().Out, err)
-	//		os.Exit(failureExitCode)
-	//	}
-	//}()
+
+	go func() {
+		enforceAuth := serverArgs.OnBastionHost
+		err = em_api.RunEnclaveManagerApiServer(enforceAuth)
+		if err != nil {
+			logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			os.Exit(failureExitCode)
+		}
+	}()
 
 	logger := logrus.StandardLogger()
 	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
