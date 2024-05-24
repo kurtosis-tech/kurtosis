@@ -34,25 +34,7 @@ type EnclaveBuilderDrawerProps = {
   existingEnclave?: RemoveFunctions<EnclaveFullInfo>;
 };
 
-const CLIENT_ID = `Iv23lilNl5JG75qwF2fD`;
-const CLIENT_SECRET = `c8dae35d3c111bc02cc3206b3c075b3987039050`;
-
-async function exchangeCodeForToken(code: string): Promise<string> {
-  const response = await fetch("https://github.com/login/oauth/access_token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      code: code,
-    }),
-  });
-  const data = await response.json();
-  return data.access_token;
-}
+const CLIENT_ID = `Iv23liicwMSrJ7dqrqdO`;
 
 export const EnclaveBuilderDrawer = (props: EnclaveBuilderDrawerProps) => {
   const variableContextKey = useRef(0);
@@ -180,47 +162,12 @@ const EnclaveBuilderDrawerImpl = ({
     setCurrentStarlarkPreview(visualiserRef.current?.getStarlark() || "Unable to render");
   };
 
-  // TODO: implement publish to github
-  // display a form fill to enter information about the repository
-  // name of the package
-  // kurtosis package icon
-  //
-  // need to authenticate to users github using web app OAuth flow - token and refresh token with proper perms
-  // create a github app to do that
-  // figure out what requests need to be made to GitHub api to create a repository and fill it with info
-  // create a new repository on users behalf
-  // commit code to that repository
-  // readme.md
-  //  add a button to share to twitter in the readme and in the step after publishing
-  //  add a button in the readme that takes you straight to the Kurtosis package
-  // main.star, kurtosis.yml, kurtosis-package-icon.png
-
-  // const response = await fetch('https://github.com/login/oauth/access_token', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //     'Accept': 'application/json'
-  //   },
-  //   body: JSON.stringify({
-  //     client_id: CLIENT_ID,
-  //     client_secret: CLIENT_SECRET,
-  //     code: code
-  //   })
-  // });
-  // const data = await response.json();
-  //
-  // const accessToken = await exchangeCodeForToken(code, CLIENT_ID, CLIENT_SECRET);
-  // const params = new URLSearchParams(window.location.search);
-  // const code = params.get('code');
-  // if (!code) return;
-  //
-  // console.log(accessToken);
-
   const handlePublish = () => {
     const REDIRECT_URI = `http://localhost:4000`;
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=repo,read:user,workflow&redirect_uri=${encodeURIComponent(
-      REDIRECT_URI,
-    )}`;
+    // const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=repo,read:user,workflow&redirect_uri=${encodeURIComponent(
+    //   REDIRECT_URI,
+    // )}`;
+    const authUrl = `https://github.com/apps/kurtosis-test-app/installations/new/permissions?target_id=46531991`
     const windowFeatures = "popup=yes, width=400, height=600";
     window.open(authUrl, undefined, windowFeatures);
 

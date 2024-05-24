@@ -436,8 +436,10 @@ func (c *WebServer) PublishPackageRepository(ctx context.Context, req *connect.R
 
 	err = PublishPackageRepository(ctx, req.Msg.AuthCode, req.Msg.PackageName, req.Msg.SerializedStarlarkScript, req.Msg.SerializedPackageIcon)
 	if err != nil {
+		logrus.Errorf("An error occurred publishing package: %v", err)
 		return nil, stacktrace.Propagate(err, "An error occurred publishing package repo")
 	}
+	logrus.Info("Successfully published package.")
 
 	return &connect.Response[emptypb.Empty]{}, nil
 }

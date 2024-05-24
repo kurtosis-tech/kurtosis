@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/google/go-github/v60/github"
 	"github.com/kurtosis-tech/stacktrace"
@@ -13,7 +14,7 @@ import (
 )
 
 const (
-	clientID     = ""
+	clientID     = "Iv23liicwMSrJ7dqrqdO"
 	clientSecret = ""
 )
 
@@ -25,13 +26,15 @@ type BlobData struct {
 func PublishPackageRepository(ctx context.Context, authCode, packageName, serializedStarlarkScript string, serializedPackageIcon []byte) error {
 	logrus.Infof("Attempting to publish package using github code: %v, package name: %v", authCode, packageName)
 
-	// Step 2: Exchange the code for an access token
-	accessToken, _, err := exchangeCodeForToken(authCode)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred retrieving access token for publishing pakcage.")
-	}
-	logrus.Infof("Access Token for GitHub %v", accessToken)
+	//// Step 1: Exchange the code for an access token
+	//accessToken, _, err := exchangeCodeForToken(authCode)
+	//if err != nil {
+	//	return stacktrace.Propagate(err, "An error occurred retrieving access token for publishing pakcage.")
+	//}
+	//logrus.Infof("Access Token for GitHub %v", accessToken)
+	accessToken := ""
 
+	// Step 2: create ghclient authed with user acccess
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: accessToken},
 	)
@@ -39,58 +42,49 @@ func PublishPackageRepository(ctx context.Context, authCode, packageName, serial
 	ghClient := github.NewClient(tc)
 	logrus.Infof("Successfully created authed github client using access token: %v", accessToken)
 
-	// list all repositories for the authenticated user
-	repos, resp, err := ghClient.Repositories.ListByOrg(ctx, "kurtosis-tech", nil)
-	if err != nil {
-		return err
-	}
-	logrus.Infof("Users repositories: %v\n%v", repos, resp)
-	user, resp, err := ghClient.Users.Get(ctx, "tedim52")
-	if err != nil {
-		return err
-	}
-	logrus.Infof("Information about our authed user: %v %v\n", user, resp)
-
-	// Step 3: Create a new repository
-	repo, err := createRepo(ctx, ghClient, accessToken, packageName)
-	if err != nil {
-		fmt.Println("Error creating repository:", err)
-		return stacktrace.Propagate(err, "An error occurred creating repo for publishing package.")
-	}
-	logrus.Infof("Repo creation success: %v", repo)
-
-	//// Step 4: Create blob data for files to be committed
-	//files := []BlobData{
-	//	{Path: "main.star", Content: serializedStarlarkScript},
-	//	{Path: "kurtosis.yml", Content: fmt.Sprintf("name: github.com/%v/%v", repo.Owner, packageName)},
-	//	{Path: "kurtosis-package-icon.png", Content: string(serializedPackageIcon)}, // TODO: this isn't gonna work figure it out
-	//	{Path: "README_K.md", Content: getPackageReadMeContents(repo.Owner.Login, packageName) },
-	//}
-	//blobMap, err := createBlob(accessToken, repo.Owner.Login, packageName, files)
+	//// Step 3: Create a new repository
+	//repo, err := createRepo(ctx, ghClient, accessToken, packageName)
 	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "An error occurred creating blobs")
+	//	fmt.Println("Error creating repository:", err)
+	//	return stacktrace.Propagate(err, "An error occurred creating repo for publishing package.")
 	//}
-	//
-	//baseTreeSha := "BASE_TREE_SHA" // Replace with the base tree SHA
-	//treeSha, err := createTree(accessToken, repo.Owner.Login, packageName, baseTreeSha, files)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "An error occurred creating tree.")
-	//}
-	//fmt.Println("Tree created. SHA:", treeSha)
-	//
-	//// Step 6: Create a commit
-	//message := "Initial commit" // Replace with the commit message
+	//logrus.Infof("Repo creation success: %v", repo)
+
+	// Step 4: Create blob data for files to be committed
+	files := []BlobData{
+		{Path: "main.star", Content: serializedStarlarkScript},
+		{Path: "kurtosis.yml", Content: fmt.Sprintf("name: github.com/%v/%v", "tedim52", "basic-package")},
+		{Path: "kurtosis-package-icon.png", Content: string(serializedPackageIcon)},
+		//{Path: "README_K.md", Content: getPackageReadMeContents(repo.Owner.Login, packageName) },
+	}
+
+	baseTreeSha, err := getBaseTreeSha(ctx, ghClient, "tedim52", packageName, "main")
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting base tree")
+	}
+	logrus.Infof("Base tree SHA successfully retrieved: %v", baseTreeSha)
+
+	treeSha, err := createTree(ctx, ghClient, accessToken, "tedim52", packageName, baseTreeSha, files)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating tree.")
+	}
+	logrus.Infof("Tree successfully created: %v", treeSha)
+
+	// Step 6: Create a commit
+	message := "Initial commit" // Replace with the commit message
 	//commitSha, err := createCommit(accessToken, repo.Owner.Login, packageName, message, treeSha, baseTreeSha)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "An error occurred creating commit to publish package.")
-	//}
-	//fmt.Println("Commit created. SHA:", commitSha)
-	//
-	//// Step 7: Update reference
-	//err = updateReference(accessToken, repo.Owner.Login, packageName, commitSha)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate("An error occurred updating reference.")
-	//}
+	commitSha, err := createCommit(ctx, ghClient, "tedim52", packageName, message, treeSha, baseTreeSha)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating commit to publish package.")
+	}
+	fmt.Println("Commit created. SHA:", commitSha)
+
+	// Step 7: Update reference
+	// err = updateReference(ctx, ghClient, repo.Owner.Login, packageName, commitSha)
+	err = updateReference(ctx, ghClient, "tedim52", packageName, commitSha)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating reference.")
+	}
 	return nil
 }
 
@@ -128,98 +122,6 @@ func exchangeCodeForToken(code string) (string, string, error) {
 }
 
 func createRepo(ctx context.Context, client *github.Client, accessToken string, packageName string) (*github.Repository, error) {
-	//repo := &github.Repository{
-	//	ID:                nil,
-	//	NodeID:            nil,
-	//	Owner:             nil,
-	//	Name:              &packageName,
-	//	FullName:          nil,
-	//	Description:       nil,
-	//	Homepage:          nil,
-	//	CodeOfConduct:     nil,
-	//	DefaultBranch:     nil,
-	//	MasterBranch:      nil,
-	//	CreatedAt:         nil,
-	//	PushedAt:          nil,
-	//	UpdatedAt:         nil,
-	//	HTMLURL:           nil,
-	//	CloneURL:          nil,
-	//	GitURL:            nil,
-	//	MirrorURL:         nil,
-	//	SSHURL:            nil,
-	//	SVNURL:            nil,
-	//	Language:          nil,
-	//	Fork:              nil,
-	//	ForksCount:        nil,
-	//	NetworkCount:      nil,
-	//	OpenIssuesCount:   nil,
-	//	StargazersCount:   nil,
-	//	SubscribersCount:  nil,
-	//	WatchersCount:     nil,
-	//	Size:              nil,
-	//	AutoInit:          nil,
-	//	Parent:            nil,
-	//	Source:            nil,
-	//	Organization:      nil,
-	//	Permissions:       nil,
-	//	AllowRebaseMerge:  nil,
-	//	AllowSquashMerge:  nil,
-	//	AllowMergeCommit:  nil,
-	//	Topics:            nil,
-	//	License:           nil,
-	//	Private:           nil,
-	//	HasIssues:         nil,
-	//	HasWiki:           nil,
-	//	HasPages:          nil,
-	//	HasProjects:       nil,
-	//	HasDownloads:      nil,
-	//	LicenseTemplate:   nil,
-	//	GitignoreTemplate: nil,
-	//	Archived:          nil,
-	//	TeamID:            nil,
-	//	URL:               nil,
-	//	ArchiveURL:        nil,
-	//	AssigneesURL:      nil,
-	//	BlobsURL:          nil,
-	//	BranchesURL:       nil,
-	//	CollaboratorsURL:  nil,
-	//	CommentsURL:       nil,
-	//	CommitsURL:        nil,
-	//	CompareURL:        nil,
-	//	ContentsURL:       nil,
-	//	ContributorsURL:   nil,
-	//	DeploymentsURL:    nil,
-	//	DownloadsURL:      nil,
-	//	EventsURL:         nil,
-	//	ForksURL:          nil,
-	//	GitCommitsURL:     nil,
-	//	GitRefsURL:        nil,
-	//	GitTagsURL:        nil,
-	//	HooksURL:          nil,
-	//	IssueCommentURL:   nil,
-	//	IssueEventsURL:    nil,
-	//	IssuesURL:         nil,
-	//	KeysURL:           nil,
-	//	LabelsURL:         nil,
-	//	LanguagesURL:      nil,
-	//	MergesURL:         nil,
-	//	MilestonesURL:     nil,
-	//	NotificationsURL:  nil,
-	//	PullsURL:          nil,
-	//	ReleasesURL:       nil,
-	//	StargazersURL:     nil,
-	//	StatusesURL:       nil,
-	//	SubscribersURL:    nil,
-	//	SubscriptionURL:   nil,
-	//	TagsURL:           nil,
-	//	TreesURL:          nil,
-	//	TeamsURL:          nil,
-	//	TextMatches:       nil,
-	//}
-	//repoResult, resp, err := client.Repositories.Create(ctx, "", repo)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "An error occurred creating repository.")
-	//}
 	packageTemplateRepoReq := &github.TemplateRepoRequest{
 		Name:               &packageName,
 		Owner:              nil,
@@ -227,235 +129,130 @@ func createRepo(ctx context.Context, client *github.Client, accessToken string, 
 		IncludeAllBranches: nil,
 		Private:            nil,
 	}
-	template, resp, err := client.Repositories.CreateFromTemplate(ctx, "kurtosis-tech", "package-template-repo", packageTemplateRepoReq)
+	template, _, err := client.Repositories.CreateFromTemplate(ctx, "kurtosis-tech", "package-template-repo", packageTemplateRepoReq)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating repository from template.")
 	}
-	logrus.Infof("Response body from create repo call %v", resp)
-	logrus.Infof("Result from create repo call %v", template)
+	//logrus.Infof("Response body from create repo call %v", resp)
+	//logrus.Infof("Result from create repo call %v", template)
 	return template, nil
 }
 
-//
-//func createBlob(accessToken, owner, repo string, blobs []BlobData) (map[string]string, error) {
-//	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/blobs", owner, repo)
-//	blobMap := make(map[string]map[string]interface{})
-//	for _, blob := range blobs {
-//		blobMap[blob.Path] = map[string]interface{}{
-//			"content":  base64.StdEncoding.EncodeToString([]byte(blob.Content)),
-//			"encoding": "base64",
-//		}
-//	}
-//
-//	data := make([]map[string]interface{}, 0, len(blobMap))
-//	for path, blobData := range blobMap {
-//		data = append(data, map[string]interface{}{
-//			"path":     path,
-//			"content":  blobData["content"],
-//			"encoding": blobData["encoding"],
-//		})
-//	}
-//
-//	payload, err := json.Marshal(data)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
-//	if err != nil {
-//		return nil, err
-//	}
-//	req.Header.Set("Authorization", "token "+accessToken)
-//	req.Header.Set("Content-Type", "application/json")
-//
-//	client := &http.Client{}
-//	resp, err := client.Do(req)
-//	if err != nil {
-//		return nil, err
-//	}
-//	defer resp.Body.Close()
-//
-//	body, err := io.ReadAll(resp.Body)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	var results []map[string]string
-//	if err := json.Unmarshal(body, &results); err != nil {
-//		return nil, err
-//	}
-//
-//	resultMap := make(map[string]string)
-//	for _, result := range results {
-//		resultMap[result["path"]] = result["sha"]
-//	}
-//
-//	return resultMap, nil
-//}
-//
-//func createTree(accessToken, owner, repo, baseTreeSha string, files []BlobData) (string, error) {
-//	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/trees", owner, repo)
-//
-//	tree := make([]map[string]interface{}, len(files))
-//	for i, file := range files {
-//		tree[i] = map[string]interface{}{
-//			"path": file.Path,
-//			"mode": "100644",
-//			"type": "blob",
-//			"sha":  file.Content,
-//		}
-//	}
-//
-//	data := map[string]interface{}{
-//		"base_tree": baseTreeSha,
-//		"tree":      tree,
-//	}
-//	payload, err := json.Marshal(data)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
-//	if err != nil {
-//		return "", err
-//	}
-//	req.Header.Set("Authorization", "token "+accessToken)
-//	req.Header.Set("Content-Type", "application/json")
-//
-//	client := &http.Client{}
-//	resp, err := client.Do(req)
-//	if err != nil {
-//		return "", err
-//	}
-//	defer resp.Body.Close()
-//
-//	body, err := io.ReadAll(resp.Body)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	var result map[string]string
-//	if err := json.Unmarshal(body, &result); err != nil {
-//		return "", err
-//	}
-//
-//	sha, ok := result["sha"]
-//	if !ok {
-//		return "", fmt.Errorf("sha not found in response")
-//	}
-//
-//	return sha, nil
-//}
-//
-//func createCommit(accessToken, owner, repo, message, treeSha, parentSha string) (string, error) {
-//	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/commits", owner, repo)
-//
-//	data := map[string]interface{}{
-//		"message": message,
-//		"tree":    treeSha,
-//		"parents": []string{parentSha},
-//	}
-//	payload, err := json.Marshal(data)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
-//	if err != nil {
-//		return "", err
-//	}
-//	req.Header.Set("Authorization", "token "+accessToken)
-//	req.Header.Set("Content-Type", "application/json")
-//
-//	client := &http.Client{}
-//	resp, err := client.Do(req)
-//	if err != nil {
-//		return "", err
-//	}
-//	defer resp.Body.Close()
-//
-//	body, err := io.ReadAll(resp.Body)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	var result map[string]string
-//	if err := json.Unmarshal(body, &result); err != nil {
-//		return "", err
-//	}
-//
-//	sha, ok := result["sha"]
-//	if !ok {
-//		return "", fmt.Errorf("sha not found in response")
-//	}
-//
-//	return sha, nil
-//}
-//
-//func updateReference(accessToken, owner, repo, commitSha string) error {
-//	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/refs/heads/main", owner, repo)
-//
-//	data := map[string]string{"sha": commitSha}
-//	payload, err := json.Marshal(data)
-//	if err != nil {
-//		return err
-//	}
-//
-//	req, err := http.NewRequest("PATCH", url, bytes.NewBuffer(payload))
-//	if err != nil {
-//		return err
-//	}
-//	req.Header.Set("Authorization", "token "+accessToken)
-//	req.Header.Set("Content-Type", "application/json")
-//
-//	client := &http.Client{}
-//	resp, err := client.Do(req)
-//	if err != nil {
-//		return err
-//	}
-//	defer resp.Body.Close()
-//
-//	if resp.StatusCode != http.StatusOK {
-//		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-//	}
-//
-//	return nil
-//}
-//
-//func getBaseTreeSha(accessToken, owner, repo, branch string) (string, error) {
-//	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/git/refs/heads/%s", owner, repo, branch)
-//
-//	req, err := http.NewRequest("GET", url, nil)
-//	if err != nil {
-//		return "", err
-//	}
-//	req.Header.Set("Authorization", "token "+accessToken)
-//	req.Header.Set("Accept", "application/vnd.github.v3+json")
-//
-//	client := &http.Client{}
-//	resp, err := client.Do(req)
-//	if err != nil {
-//		return "", err
-//	}
-//	defer resp.Body.Close()
-//
-//	if resp.StatusCode != http.StatusOK {
-//		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-//	}
-//
-//	var result map[string]interface{}
-//	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-//		return "", err
-//	}
-//
-//	commitSHA, ok := result["object"].(map[string]interface{})["sha"].(string)
-//	if !ok {
-//		return "", fmt.Errorf("commit SHA not found in response")
-//	}
-//
-//	return commitSHA, nil
-//}
-//
+func createBlob(ctx context.Context, client *github.Client, accessToken, owner, repo string, blobs []BlobData) (map[string]string, error) {
+	// Create a map to store the results
+	resultMap := make(map[string]string)
+
+	// Iterate over the blobs and create them
+	for _, blob := range blobs {
+		encodedContent := base64.StdEncoding.EncodeToString([]byte(blob.Content))
+
+		// Create a new blob object
+		gitBlob := &github.Blob{
+			Content:  github.String(encodedContent),
+			Encoding: github.String("base64"),
+		}
+
+		// Create the blob in the repository
+		createdBlob, _, err := client.Git.CreateBlob(ctx, owner, repo, gitBlob)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating blocb at path %v", blob.Path)
+		}
+
+		// Store the SHA of the created blob in the result map
+		resultMap[blob.Path] = createdBlob.GetSHA()
+	}
+
+	return resultMap, nil
+}
+
+func createTree(ctx context.Context, client *github.Client, accessToken, owner, repo, baseTreeSha string, files []BlobData) (string, error) {
+	// Create a slice to hold tree entries
+	var entries []*github.TreeEntry
+
+	// Create blobs and add them to the tree
+	for _, file := range files {
+		// Create a new blob object
+		encodedContent := base64.StdEncoding.EncodeToString([]byte(file.Content))
+		blob := &github.Blob{
+			Content:  github.String(encodedContent),
+			Encoding: github.String("base64"),
+		}
+
+		// Create the blob in the repository
+		createdBlob, _, err := client.Git.CreateBlob(ctx, owner, repo, blob)
+		if err != nil {
+			return "", err
+		}
+
+		// Create a new tree entry for the blob
+		entry := &github.TreeEntry{
+			Path: github.String(file.Path),
+			Mode: github.String("100644"), // File mode
+			Type: github.String("blob"),
+			SHA:  createdBlob.SHA,
+		}
+
+		entries = append(entries, entry)
+	}
+
+	// Create the tree with the new entries
+	tree, _, err := client.Git.CreateTree(ctx, owner, repo, baseTreeSha, entries)
+	if err != nil {
+		return "", err
+	}
+
+	return tree.GetSHA(), nil
+}
+
+func createCommit(ctx context.Context, client *github.Client, owner, repo, message, treeSha, parentSha string) (string, error) {
+	commit := &github.Commit{
+		Message: github.String(message),
+		Tree:    &github.Tree{SHA: github.String(treeSha)},
+		Parents: []*github.Commit{{SHA: github.String(parentSha)}},
+	}
+	createCommitOpts := &github.CreateCommitOptions{}
+	createdCommit, _, err := client.Git.CreateCommit(ctx, owner, repo, commit, createCommitOpts)
+	if err != nil {
+		return "", err
+	}
+	return createdCommit.GetSHA(), nil
+}
+
+func updateReference(ctx context.Context, client *github.Client, owner, repo, commitSha string) error {
+	ref := "refs/heads/main"
+	force := true
+
+	// Create a new reference object
+	gitRef := &github.Reference{
+		Ref:    github.String(ref),
+		Object: &github.GitObject{SHA: github.String(commitSha)},
+	}
+
+	// Update the reference in the repository
+	_, _, err := client.Git.UpdateRef(ctx, owner, repo, gitRef, force)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getBaseTreeSha(ctx context.Context, client *github.Client, owner, repo, branch string) (string, error) {
+	ref := fmt.Sprintf("refs/heads/%s", branch)
+
+	// Get the reference for the branch
+	gitRef, _, err := client.Git.GetRef(ctx, owner, repo, ref)
+	if err != nil {
+		return "", err
+	}
+
+	if gitRef.Object == nil || gitRef.Object.SHA == nil {
+		return "", fmt.Errorf("commit SHA not found in response")
+	}
+
+	return *gitRef.Object.SHA, nil
+}
+
 //func getPackageReadMeContents(owner, repoName string) string {
 //	// TODO: turn this into a go template to parametrize owner and repo name
 //	readMeBytes, err := os.ReadFile("./README_.md.tmpl")

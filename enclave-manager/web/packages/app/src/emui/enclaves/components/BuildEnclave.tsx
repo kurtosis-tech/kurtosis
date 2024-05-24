@@ -18,6 +18,7 @@ export const BuildEnclave = () => {
     const query = new URLSearchParams(location.search);
     const code = query.get("code");
     if (code) {
+      console.log(`code ${code}`)
       window.opener.postMessage({ code }, "http://localhost:4000");
       window.close();
     }
