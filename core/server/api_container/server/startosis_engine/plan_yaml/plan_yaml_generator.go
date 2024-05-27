@@ -133,6 +133,7 @@ func (planYaml *PlanYaml) AddService(
 
 func (planYaml *PlanYaml) AddRunSh(
 	runCommand string,
+	description string,
 	returnValue *starlarkstruct.Struct,
 	serviceConfig *service.ServiceConfig,
 	storeSpecList []*store_spec2.StoreSpec,
@@ -161,6 +162,7 @@ func (planYaml *PlanYaml) AddRunSh(
 
 	// create task yaml object
 	taskYaml := &Task{} //nolint exhaustruct
+	taskYaml.Name = description
 	taskYaml.Uuid = uuid
 	taskYaml.TaskType = shell
 
@@ -179,7 +181,7 @@ func (planYaml *PlanYaml) AddRunSh(
 	taskYaml.Files = planYaml.getFileMountsFromFilesArtifacts(serviceConfig.GetFilesArtifactsExpansion())
 
 	// for store
-	// - all files artifacts product from store are new files artifact that are added to the plan
+	// - all files artifacts produced from store are new files artifact that are added to the plan
 	//		- add them to files artifacts list
 	// 		- add them to the store section of run sh
 	var store []*FilesArtifact
@@ -205,6 +207,7 @@ func (planYaml *PlanYaml) AddRunSh(
 
 func (planYaml *PlanYaml) AddRunPython(
 	runCommand string,
+	description string,
 	returnValue *starlarkstruct.Struct,
 	serviceConfig *service.ServiceConfig,
 	storeSpecList []*store_spec2.StoreSpec,
@@ -234,6 +237,7 @@ func (planYaml *PlanYaml) AddRunPython(
 
 	// create task yaml object
 	taskYaml := &Task{} //nolint exhaustruct
+	taskYaml.Name = description
 	taskYaml.Uuid = uuid
 	taskYaml.TaskType = python
 
@@ -282,6 +286,7 @@ func (planYaml *PlanYaml) AddRunPython(
 
 func (planYaml *PlanYaml) AddExec(
 	serviceName string,
+	description string,
 	returnValue *starlark.Dict,
 	cmdList []string,
 	acceptableCodes []int64) error {
@@ -315,6 +320,7 @@ func (planYaml *PlanYaml) AddExec(
 
 	// create task yaml
 	taskYaml := &Task{} //nolint exhaustruct
+	taskYaml.Name = description
 	taskYaml.Uuid = uuid
 	taskYaml.TaskType = exec
 	taskYaml.ServiceName = serviceName
