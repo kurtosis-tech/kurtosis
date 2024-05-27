@@ -2,13 +2,13 @@ import { Button, ButtonGroup, Flex } from "@chakra-ui/react";
 import { AppPageLayout, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { useEffect, useMemo, useState } from "react";
 import { useExperiments } from "../experiments/ExperimentsContext";
+import { BrowserRecommendator } from "./components/BrowserRecommendator";
 import { KurtosisUpgrader } from "./components/KurtosisUpgrader";
 import { EnclavesTable } from "./components/tables/EnclavesTable";
 import { CreateEnclaveButton } from "./components/widgets/CreateEnclaveButton";
 import { DeleteEnclavesButton } from "./components/widgets/DeleteEnclavesButton";
 import { useFullEnclaves } from "./EnclavesContext";
 import { EnclaveFullInfo } from "./types";
-import {BrowserRecommendator} from "./components/BrowserRecommendator";
 
 export const EnclaveList = () => {
   const enclaves = useFullEnclaves();

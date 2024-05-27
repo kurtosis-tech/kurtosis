@@ -1,18 +1,19 @@
-import { Box, Alert, AlertIcon, AlertDescription, } from "@chakra-ui/react";
-import { isChrome } from 'react-device-detect';
+import { Alert, AlertDescription, AlertIcon, Box } from "@chakra-ui/react";
+import { isChrome } from "react-device-detect";
 
 export const BrowserRecommendator = () => {
+  if (isChrome) {
+    return null;
+  }
 
-    if (isChrome) {
-        return null
-    }
-
-    return (
-        <Box width={"100%"}>
-            <Alert status='warning'>
-                <AlertIcon />
-                <AlertDescription width={"100%"}>We suggest you use Kurtosis Cloud with Google Chrome otherwise your experience may be degraded.</AlertDescription>
-            </Alert>
-        </Box>
-    );
-}
+  return (
+    <Box width={"100%"}>
+      <Alert status="warning">
+        <AlertIcon />
+        <AlertDescription width={"100%"}>
+          We suggest you use Kurtosis Cloud with Google Chrome otherwise your experience may be degraded.
+        </AlertDescription>
+      </Alert>
+    </Box>
+  );
+};

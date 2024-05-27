@@ -40,10 +40,10 @@ import { HiStar } from "react-icons/hi";
 import { IoFilterSharp, IoPlay } from "react-icons/io5";
 import { MdBookmarkAdded } from "react-icons/md";
 import { useSearchParams } from "react-router-dom";
+import { BrowserRecommendator } from "../enclaves/components/BrowserRecommendator";
 import { CreateOrConfigureEnclaveDrawer } from "../enclaves/components/configuration/drawer/CreateOrConfigureEnclaveDrawer";
 import { EnclavesContextProvider } from "../enclaves/EnclavesContext";
 import { useCatalogContext } from "./CatalogContext";
-import {BrowserRecommendator} from "../enclaves/components/BrowserRecommendator";
 
 type SearchState = {
   term: string;
