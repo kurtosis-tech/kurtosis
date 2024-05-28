@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.89.12](https://github.com/kurtosis-tech/kurtosis/compare/0.89.11...0.89.12) (2024-05-28)
+
+
+### Features
+
+* adding the `BrowserRecommendator` component in Kurtosis cloud ([#2462](https://github.com/kurtosis-tech/kurtosis/issues/2462)) ([747538f](https://github.com/kurtosis-tech/kurtosis/commit/747538fa945b2358e24a71bcd320e338c00212df))
+
 ## [0.89.11](https://github.com/kurtosis-tech/kurtosis/compare/0.89.10...0.89.11) (2024-05-22)
 
 
