@@ -40,6 +40,7 @@ import { HiStar } from "react-icons/hi";
 import { IoFilterSharp, IoPlay } from "react-icons/io5";
 import { MdBookmarkAdded } from "react-icons/md";
 import { useSearchParams } from "react-router-dom";
+import { BrowserRecommendator } from "../enclaves/components/BrowserRecommendator";
 import { CreateOrConfigureEnclaveDrawer } from "../enclaves/components/configuration/drawer/CreateOrConfigureEnclaveDrawer";
 import { EnclavesContextProvider } from "../enclaves/EnclavesContext";
 import { useCatalogContext } from "./CatalogContext";
@@ -325,6 +326,7 @@ const CatalogDefaultView = ({ catalog, onPackageRunClicked, onSearchStateChanged
 
   return (
     <>
+      <BrowserRecommendator />
       {savedPackages.length > 0 && (
         <Box as={"section"}>
           <Card>

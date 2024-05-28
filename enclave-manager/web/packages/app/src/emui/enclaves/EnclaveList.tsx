@@ -2,6 +2,7 @@ import { Button, ButtonGroup, Flex } from "@chakra-ui/react";
 import { AppPageLayout, KurtosisAlert, PageTitle } from "kurtosis-ui-components";
 import { useEffect, useMemo, useState } from "react";
 import { useExperiments } from "../experiments/ExperimentsContext";
+import { BrowserRecommendator } from "./components/BrowserRecommendator";
 import { KurtosisUpgrader } from "./components/KurtosisUpgrader";
 import { EnclavesTable } from "./components/tables/EnclavesTable";
 import { CreateEnclaveButton } from "./components/widgets/CreateEnclaveButton";
@@ -48,6 +49,7 @@ export const EnclaveList = () => {
       </Flex>
       <Flex direction="column" pt={"24px"} width={"100%"} gap={8}>
         {experiments.enableCloudVersionUpgrade && <KurtosisUpgrader />}
+        <BrowserRecommendator />
         {enclaves.isOk && (
           <EnclavesTable
             enclavesData={enclaves.value}
