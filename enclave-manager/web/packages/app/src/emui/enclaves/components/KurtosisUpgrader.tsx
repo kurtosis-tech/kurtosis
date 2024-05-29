@@ -81,7 +81,7 @@ export const KurtosisUpgrader = () => {
       }
       return getCloudInstanceConfigResponse;
     },
-    [],
+    [kurtosisClient],
   );
 
   // Check once on load if a new Kurtosis version is available
