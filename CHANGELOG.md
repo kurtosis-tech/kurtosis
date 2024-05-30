@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.89.13](https://github.com/kurtosis-tech/kurtosis/compare/0.89.12...0.89.13) (2024-05-30)
+
+
+### Bug Fixes
+
+* adding retry strategy in KurtosisUpgrader ([#2464](https://github.com/kurtosis-tech/kurtosis/issues/2464)) ([db899a6](https://github.com/kurtosis-tech/kurtosis/commit/db899a6ae1e58745cf883db49aa0e437e057b80b))
+
 ## [0.89.12](https://github.com/kurtosis-tech/kurtosis/compare/0.89.11...0.89.12) (2024-05-28)
 
 
