@@ -1,5 +1,6 @@
 import { Alert, AlertDescription, AlertIcon, Box, Button, Flex } from "@chakra-ui/react";
-import { PropsWithChildren, useEffect, useState } from "react";
+import { GetCloudInstanceConfigResponse } from "enclave-manager-sdk/build/kurtosis_backend_server_api_pb";
+import { PropsWithChildren, useCallback, useEffect, useState } from "react";
 import { FiDownloadCloud, FiRotateCcw } from "react-icons/fi";
 import { GoBug } from "react-icons/go";
 import { useKurtosisClient } from "../../../client/enclaveManager/KurtosisClientContext";
@@ -58,6 +59,31 @@ export const KurtosisUpgrader = () => {
     }
   };
 
+  const wait = (ms: number) => {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  };
+
+  const getCloudInstanceConfigWithRetry = useCallback(
+    async (tries: number, interval: number): Promise<GetCloudInstanceConfigResponse> => {
+      let getCloudInstanceConfigResponse: GetCloudInstanceConfigResponse = new GetCloudInstanceConfigResponse();
+      try {
+        getCloudInstanceConfigResponse = await kurtosisClient.getCloudInstanceConfig(skipCache);
+      } catch (e) {
+        const newTries = tries - 1;
+
+        if (newTries === 0) {
+          throw e;
+        }
+
+        await wait(interval);
+
+        return getCloudInstanceConfigWithRetry(newTries, interval);
+      }
+      return getCloudInstanceConfigResponse;
+    },
+    [kurtosisClient],
+  );
+
   // Check once on load if a new Kurtosis version is available
   useEffect(() => {
     if (!kurtosisClient.isRunningInCloud()) return;
@@ -74,7 +100,8 @@ export const KurtosisUpgrader = () => {
 
     const interval = setInterval(async () => {
       try {
-        const getCloudInstanceConfigResponse = await kurtosisClient.getCloudInstanceConfig(skipCache);
+        // Calling it with retries because when the engine is restarted it won't return a response for a few seconds
+        const getCloudInstanceConfigResponse = await getCloudInstanceConfigWithRetry(5, 2000);
         const instanceStatus = getCloudInstanceConfigResponse.status;
         if (instanceStatus === "running") {
           setUpgradeStatus(UpgradeStatus.SUCCESS);
@@ -88,7 +115,7 @@ export const KurtosisUpgrader = () => {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [upgradeStatus, kurtosisClient]);
+  }, [upgradeStatus, kurtosisClient, getCloudInstanceConfigWithRetry]);
 
   if (upgradeStatus === UpgradeStatus.NONE) {
     return null;
