@@ -11,7 +11,7 @@ export const BrowserRecommendator = () => {
       <Alert status="warning">
         <AlertIcon />
         <AlertDescription width={"100%"}>
-          We suggest you use Kurtosis Cloud with Google Chrome otherwise your experience may be degraded.
+          We recommend using Kurtosis Cloud with Google Chrome otherwise your experience may be degraded.
         </AlertDescription>
       </Alert>
     </Box>
