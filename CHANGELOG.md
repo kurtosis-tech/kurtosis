@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.89.14](https://github.com/kurtosis-tech/kurtosis/compare/0.89.13...0.89.14) (2024-05-31)
+
+
+### Bug Fixes
+
+* Browser recommendator message improved ([#2466](https://github.com/kurtosis-tech/kurtosis/issues/2466)) ([1cf3eac](https://github.com/kurtosis-tech/kurtosis/commit/1cf3eac786b63255bdf27bd74c97cc07dd5b6de7))
+
 ## [0.89.13](https://github.com/kurtosis-tech/kurtosis/compare/0.89.12...0.89.13) (2024-05-30)
 
 
