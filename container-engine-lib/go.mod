@@ -6,7 +6,7 @@ replace github.com/kurtosis-tech/kurtosis/path-compression => ./../path-compress
 
 require (
 	github.com/dmarkham/enumer v1.5.5
-	github.com/docker/docker v24.0.7+incompatible
+	github.com/docker/docker v24.0.9+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/gammazero/workerpool v1.1.2
