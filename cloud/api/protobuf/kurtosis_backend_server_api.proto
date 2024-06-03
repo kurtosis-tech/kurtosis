@@ -34,6 +34,7 @@ service KurtosisCloudBackendServer {
   rpc DeleteAlias(DeleteAliasRequest) returns (google.protobuf.Empty){};
   rpc IsNewKurtosisVersionAvailable(IsNewKurtosisVersionAvailableRequest) returns(IsNewKurtosisVersionAvailableResponse){};
   rpc UpgradeKurtosisVersion(UpgradeKurtosisVersionRequest) returns(google.protobuf.Empty){};
+  rpc GetInstanceMetrics(GetInstanceMetricsRequest) returns(GetInstanceMetricsResponse){};
 }
 
 message GetOrCreateApiKeyRequest {
@@ -309,3 +310,22 @@ message IsNewKurtosisVersionAvailableResponse {
 message UpgradeKurtosisVersionRequest {
   string access_token = 1;
 }
+
+message GetInstanceMetricsRequest {
+  string access_token = 1;
+  string instance_id = 2;
+  int32 interval = 3;
+  int32 utc_offset = 4;
+
+  enum Theme {
+    LIGHT = 0;
+    DARK = 1;
+  }
+
+  Theme theme = 5;
+}
+
+message GetInstanceMetricsResponse {
+  string metrics = 1;
+}
+
