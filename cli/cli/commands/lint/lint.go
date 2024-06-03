@@ -4,6 +4,12 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
+
 	"github.com/kurtosis-tech/kurtosis-package-indexer/server/crawler"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -11,11 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
-	"os"
-	"os/exec"
-	"path"
-	"path/filepath"
 )
 
 const (
@@ -29,7 +30,7 @@ const (
 
 	checkDocStringFlagKey      = "check-docstring"
 	checkDocStringFlagShortKey = "c"
-	checkDocStringDefaultValue = "true"
+	checkDocStringDefaultValue = "false"
 
 	pyBlackDockerImage      = "pyfound/black:23.9.1"
 	dockerRunCmd            = "run"
