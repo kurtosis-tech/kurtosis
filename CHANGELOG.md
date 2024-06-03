@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.89.15](https://github.com/kurtosis-tech/kurtosis/compare/0.89.14...0.89.15) (2024-06-03)
+
+
+### Bug Fixes
+
+* dont validate doc strings by default ([#2470](https://github.com/kurtosis-tech/kurtosis/issues/2470)) ([39ec9ce](https://github.com/kurtosis-tech/kurtosis/commit/39ec9cecb00b85b9106521454fe3139eb733903d))
+
 ## [0.89.14](https://github.com/kurtosis-tech/kurtosis/compare/0.89.13...0.89.14) (2024-05-31)
 
 
