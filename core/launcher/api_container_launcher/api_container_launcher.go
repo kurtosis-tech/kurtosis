@@ -21,7 +21,9 @@ const (
 	enclaveDataVolumeDirpath = "/kurtosis-data"
 
 	// TODO This should come from the same logic that builds the server image!!!!!
-	containerImage = "kurtosistech/core"
+	defaultImageAuthor       = "kurtosistech"
+	authorImageNameSeparator = "/"
+	containerImage           = "core"
 )
 
 type ApiContainerLauncher struct {
@@ -91,6 +93,45 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
 ) {
+	return launcher.LaunchWithCustomImageAuthor(
+		ctx,
+		imageVersionTag,
+		defaultImageAuthor,
+		logLevel,
+		enclaveUuid,
+		grpcPortNum,
+		backendConfigSupplier,
+		enclaveEnvVars,
+		isProductionEnclave,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
+		isCI,
+		cloudUserID,
+		cloudInstanceID,
+		shouldStartInDebugMode,
+	)
+}
+
+func (launcher ApiContainerLauncher) LaunchWithCustomImageAuthor(
+	ctx context.Context,
+	imageVersionTag string,
+	imageAuthor string,
+	logLevel logrus.Level,
+	enclaveUuid enclave.EnclaveUUID,
+	grpcPortNum uint16,
+	backendConfigSupplier KurtosisBackendConfigSupplier,
+	enclaveEnvVars string,
+	isProductionEnclave bool,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
+	isCI bool,
+	cloudUserID metrics_client.CloudUserID,
+	cloudInstanceID metrics_client.CloudInstanceID,
+	shouldStartInDebugMode bool,
+) (
+	resultApiContainer *api_container.APIContainer,
+	resultErr error,
+) {
 	kurtosisBackendType, kurtosisBackendConfig := backendConfigSupplier.getKurtosisBackendConfig()
 	argsObj, err := args.NewAPIContainerArgs(
 		imageVersionTag,
@@ -107,6 +148,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		isCI,
 		cloudUserID,
 		cloudInstanceID,
+		imageAuthor,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
@@ -119,7 +161,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 
 	containerImageAndTag := fmt.Sprintf(
 		"%v:%v",
-		containerImage,
+		imageAuthor+authorImageNameSeparator+containerImage,
 		imageVersionTag,
 	)
 

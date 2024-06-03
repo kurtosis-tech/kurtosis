@@ -66,7 +66,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) SetupTest() {
 	apiContainerInfo := service_network.NewApiContainerInfo(
 		net.IP{},
 		mockApicPortNum,
-		mockApicVersion)
+		mockApicVersion,
+		testImageAuthor)
 	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Return(apiContainerInfo)
 
 	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, nil, "", suite.interpretationTimeValueStore)

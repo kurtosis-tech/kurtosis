@@ -219,6 +219,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 	ctx context.Context,
 	engineImageVersionTag string,
+	engineAuthor string,
 	logLevel logrus.Level,
 	poolSize uint8,
 	shouldStartInDebugMode bool,
@@ -238,6 +239,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
 		engineImageVersionTag,
+		engineAuthor,
 		logLevel,
 		engineVersion,
 		clusterType,
@@ -343,6 +345,7 @@ func (manager *EngineManager) RestartEngineIdempotently(
 	ctx context.Context,
 	logLevel logrus.Level,
 	optionalVersionToUse string,
+	engineAuthor string,
 	restartEngineOnSameVersionIfAnyRunning bool,
 	poolSize uint8,
 	shouldStartInDebugMode bool,
@@ -373,7 +376,7 @@ func (manager *EngineManager) RestartEngineIdempotently(
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	if versionOfNewEngine != defaultEngineVersion {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers)
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, engineAuthor, logLevel, poolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers)
 	} else {
 		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize, githubAuthTokenOverride, shouldRestartAPIContainers)
 	}

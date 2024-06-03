@@ -37,6 +37,7 @@ func newEnclaveCreator(
 
 func (creator *EnclaveCreator) CreateEnclave(
 	setupCtx context.Context,
+	imageAuthor string,
 	// If blank, will use the default
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
@@ -101,6 +102,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	}
 
 	apiContainer, err := creator.LaunchApiContainer(setupCtx,
+		imageAuthor,
 		apiContainerImageVersionTag,
 		apiContainerLogLevel,
 		enclaveUuid,
@@ -187,6 +189,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 
 func (creator *EnclaveCreator) LaunchApiContainer(
 	ctx context.Context,
+	imageAuthor string,
 	apiContainerImageVersionTag string,
 	logLevel logrus.Level,
 	enclaveUuid enclave.EnclaveUUID,
@@ -207,9 +210,10 @@ func (creator *EnclaveCreator) LaunchApiContainer(
 		creator.kurtosisBackend,
 	)
 	if apiContainerImageVersionTag != "" {
-		apiContainer, err := apiContainerLauncher.LaunchWithCustomVersion(
+		apiContainer, err := apiContainerLauncher.LaunchWithCustomImageAuthor(
 			ctx,
 			apiContainerImageVersionTag,
+			imageAuthor,
 			logLevel,
 			enclaveUuid,
 			grpcListenPort,

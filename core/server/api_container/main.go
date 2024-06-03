@@ -285,6 +285,7 @@ func createServiceNetwork(
 		ownIpAddress,
 		args.GrpcListenPortNum,
 		args.Version,
+		args.ImageAuthor,
 	)
 
 	serviceNetwork, err := service_network.NewDefaultServiceNetwork(

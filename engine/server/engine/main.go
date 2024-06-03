@@ -285,6 +285,7 @@ func runMain() error {
 
 	engineConnectServer := server.NewEngineConnectServerService(
 		serverArgs.ImageVersionTag,
+		serverArgs.ImageAuthor,
 		enclaveManager,
 		serverArgs.MetricsUserID,
 		serverArgs.DidUserAcceptSendingMetrics,
@@ -449,6 +450,7 @@ func restApiServer(
 		EnclaveManager:  enclave_manager,
 		LogFileManager:  logFileManager,
 		MetricsClient:   metricsClient,
+		ImageAuthor:     serverArgs.ImageAuthor,
 	}
 	engineApi.RegisterHandlers(echoApiRouter, engineApi.NewStrictHandler(engineRuntime, nil))
 

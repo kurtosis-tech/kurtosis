@@ -35,6 +35,8 @@ const (
 	errorDelimiter = ", "
 
 	enclaveNameNotFound = "Name Not Found"
+
+	defaultImageAuthor = "kurtosistech"
 )
 
 // TODO Move this to the KurtosisBackend to calculate!!
@@ -132,6 +134,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
 	// If blank, will use the default
 	engineVersion string,
+	imageAuthor string,
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
 	//If blank, will use a random one
@@ -167,7 +170,9 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	// TODO(victor.colombo): Extend enclave pool to have warm production enclaves
-	if !isProduction && manager.enclavePool != nil {
+	// if the image author is default only then we use the pooling
+	// TODO(gm) fix t his
+	if (imageAuthor == defaultImageAuthor) && !isProduction && manager.enclavePool != nil {
 		enclaveInfo, err = manager.enclavePool.GetEnclave(
 			setupCtx,
 			enclaveName,
@@ -181,9 +186,16 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}
 
+	// if the api container version isn't set and the engine author isn't kurtosistech we set it to the
+	// engine version passed; otherwise try user passed version with custom author
+	if imageAuthor != defaultImageAuthor && apiContainerImageVersionTag == "" {
+		apiContainerImageVersionTag = engineVersion
+	}
+
 	if enclaveInfo == nil {
 		enclaveInfo, err = manager.enclaveCreator.CreateEnclave(
 			setupCtx,
+			imageAuthor,
 			apiContainerImageVersionTag,
 			apiContainerLogLevel,
 			enclaveName,
@@ -414,6 +426,7 @@ func (manager *EnclaveManager) RestartAllEnclaveAPIContainers(ctx context.Contex
 
 	// this way we are going to use always the same engine's version
 	useDefaultApiContainerVersionTag := ""
+	useDefaultImageAuthor := "kurtosistech"
 
 	//TODO check if we can get this one from any place, just using the default for now
 	restartAPIContainerDefaultLogLevel := logrus.DebugLevel
@@ -424,6 +437,7 @@ func (manager *EnclaveManager) RestartAllEnclaveAPIContainers(ctx context.Contex
 
 		_, err := manager.enclaveCreator.LaunchApiContainer(
 			ctx,
+			useDefaultImageAuthor,
 			useDefaultApiContainerVersionTag,
 			restartAPIContainerDefaultLogLevel,
 			enclaveUuid,
