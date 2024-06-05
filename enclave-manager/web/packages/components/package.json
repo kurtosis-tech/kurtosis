@@ -1,6 +1,6 @@
 {
   "name": "kurtosis-ui-components",
-  "version": "0.89.15",
+  "version": "0.89.16",
   "private": false,
   "main": "build/index",
   "description": "This repo contains components used by Kurtosis UI applications.",
