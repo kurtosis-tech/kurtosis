@@ -43,6 +43,7 @@ var (
 
 // generateRegex creates a regex string based on the provided constraints (RFC-1035 and RFC-6335).
 func generateRegex(maxLen int) string {
+	// nolint: gomnd
 	return "^[a-z]([-a-z0-9]{0," + strconv.Itoa(maxLen-2) + "}[a-z0-9])?$"
 }
 
