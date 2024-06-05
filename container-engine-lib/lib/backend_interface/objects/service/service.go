@@ -99,9 +99,9 @@ func (service *Service) GetMaybePublicPorts() map[string]*port_spec.PortSpec {
 }
 
 func IsServiceNameValid(serviceName ServiceName) bool {
-	return serviceNameRegex.MatchString(string(serviceName))
+	return ServiceNameRegex.MatchString(string(serviceName))
 }
 
 func IsPortNameValid(portName string) bool {
-	return portNameRegex.MatchString(portName)
+	return PortNameRegex.MatchString(portName)
 }
