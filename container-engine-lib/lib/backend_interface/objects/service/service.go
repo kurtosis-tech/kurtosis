@@ -21,6 +21,7 @@ var (
 	// We use this over RFC-1035 as Service Names require 1035 to be followed
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 	// https://kubernetes.io/docs/concepts/services-networking/service/
+	// nolint: gomnd
 	ServiceNameRegex = regexp.MustCompile(generateRegex(63))
 
 	// PortNameRegex implements RFC-6335 for naming ports, namely:
@@ -33,6 +34,7 @@ var (
 	// The adpoption of RFC-6335 is to maintain compatability with current Kubernetes port naming standards:
 	// We use this over RFC-6335 as Port Names require 6335 to be followed
 	// https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L326-L351
+	// nolint: gomnd
 	PortNameRegex = regexp.MustCompile(generateRegex(15))
 )
 
