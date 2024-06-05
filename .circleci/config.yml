@@ -537,13 +537,9 @@ jobs:
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
-      # Install goreleaser
       # we need to update the apt key, otherwise imports fails due to unrecognized key
       - run: |
-          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
           curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-          apt update
-          apt install -y goreleaser
 
       # Cache our dependencies
       - restore_cache:
