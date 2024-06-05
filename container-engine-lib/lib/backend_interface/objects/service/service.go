@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
-const (
+var (
 	// ServiceNameRegex implements RFC-1035 for naming services, namely:
 	// * contain at least 1 character
 	// * contain at most 63 characters
@@ -21,7 +21,7 @@ const (
 	// We use this over RFC-1035 as Service Names require 1035 to be followed
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 	// https://kubernetes.io/docs/concepts/services-networking/service/
-	serviceNameMaxLength = 63
+	ServiceNameRegex = regexp.MustCompile(generateRegex(63))
 
 	// PortNameRegex implements RFC-6335 for naming ports, namely:
 	// * contain at least 1 character
@@ -33,12 +33,7 @@ const (
 	// The adpoption of RFC-6335 is to maintain compatability with current Kubernetes port naming standards:
 	// We use this over RFC-6335 as Port Names require 6335 to be followed
 	// https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L326-L351
-	portNameMaxLength = 15
-)
-
-var (
-	ServiceNameRegex = regexp.MustCompile(generateRegex(serviceNameMaxLength))
-	PortNameRegex    = regexp.MustCompile(generateRegex(portNameMaxLength))
+	PortNameRegex = regexp.MustCompile(generateRegex(15))
 )
 
 // generateRegex creates a regex string based on the provided constraints (RFC-1035 and RFC-6335).
