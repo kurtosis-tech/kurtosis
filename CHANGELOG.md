@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.89.16](https://github.com/kurtosis-tech/kurtosis/compare/0.89.15...0.89.16) (2024-06-05)
+
+
+### Features
+
+* Add cloud endpoint to retrieve the instance metrics ([#2469](https://github.com/kurtosis-tech/kurtosis/issues/2469)) ([52bbc1b](https://github.com/kurtosis-tech/kurtosis/commit/52bbc1be2eeec2b37ee82fbd2f4e2717b2c11849))
+* KurtosisUpgrader component release ([#2473](https://github.com/kurtosis-tech/kurtosis/issues/2473)) ([f458e9f](https://github.com/kurtosis-tech/kurtosis/commit/f458e9f2538de0cb0219054b3c6c4ebaa0bad642))
+
+
+### Bug Fixes
+
+* doc error in starlark.plan ([#2468](https://github.com/kurtosis-tech/kurtosis/issues/2468)) ([473bed8](https://github.com/kurtosis-tech/kurtosis/commit/473bed82c5925e5133a31d4c19e035068926442c))
+
 ## [0.89.15](https://github.com/kurtosis-tech/kurtosis/compare/0.89.14...0.89.15) (2024-06-03)
 
 
