@@ -92,12 +92,12 @@ fi
     else
         goreleaser_verb_and_flags="build --clean --snapshot --single-target"
     fi
-    if ! goreleaser -v; then
-        echo "Error: Couldn't print the goreleaser version" >&2
+    if ! export GORELEASER_CURRENT_TAG=$(cat $root_dirpath/version.txt); then
+        echo "Error: Couldn't export the GORELEASER_CURRENT_TAG to set the Kurtosis version" >&2
         exit 1
     fi
     # Executing goreleaser v1.26.2 without needing to install it
-    if ! GORELEASER_CURRENT_TAG=$(cat $root_dirpath/version.txt) curl -sfL https://goreleaser.com/static/run | VERSION=v1.26.2 DISTRIBUTION=oss bash -s -- ${goreleaser_verb_and_flags}; then
+    if ! curl -sfL https://goreleaser.com/static/run | VERSION=v1.26.2 DISTRIBUTION=oss bash -s -- ${goreleaser_verb_and_flags}; then
         echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
         exit 1
     fi
