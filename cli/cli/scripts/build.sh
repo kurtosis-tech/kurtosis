@@ -92,6 +92,10 @@ fi
     else
         goreleaser_verb_and_flags="build --clean --snapshot --single-target"
     fi
+    if ! goreleaser -v; then
+        echo "Error: Couldn't print the goreleaser version" >&2
+        exit 1
+    fi
     if ! GORELEASER_CURRENT_TAG=$(cat $root_dirpath/version.txt) goreleaser ${goreleaser_verb_and_flags}; then
         echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
         exit 1
