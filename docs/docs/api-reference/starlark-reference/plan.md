@@ -438,9 +438,9 @@ http_response = plan.request(
     # OPTIONAL (Default: Running 'REQUEST_TYPE' request on service 'SERVICE_NAME')
     description = "making a request"
 )
-plan.print(get_response["body"]) # Prints the body of the request
-plan.print(get_response["code"]) # Prints the result code of the request (e.g. 200, 500)
-plan.print(get_response["extract.extracted-field"]) # Prints the result of running ".name.id" query, that is saved with key "extracted-field"
+plan.print(http_response["body"]) # Prints the body of the request
+plan.print(http_response["code"]) # Prints the result code of the request (e.g. 200, 500)
+plan.print(http_response["extract.extracted-field"]) # Prints the result of running ".name.id" query, that is saved with key "extracted-field"
 ```
 
 The instruction returns a response, which is a `dict` with following key-value pair; the values are a [future reference][future-references-reference] 
