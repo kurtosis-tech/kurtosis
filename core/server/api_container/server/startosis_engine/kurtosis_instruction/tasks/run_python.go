@@ -61,6 +61,11 @@ func NewRunPythonService(
 
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
+					Name:              TaskNameArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+				},
+				{
 					Name:              RunArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
@@ -163,8 +168,16 @@ type RunPythonCapabilities struct {
 }
 
 func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	randomUuid := uuid.NewRandom()
-	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
+	if arguments.IsSet(TaskNameArgName) {
+		taskName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, TaskNameArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", TaskNameArgName)
+		}
+		builtin.name = taskName.GoString()
+	} else {
+		randomUuid := uuid.NewRandom()
+		builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
+	}
 
 	pythonScript, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {

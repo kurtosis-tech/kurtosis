@@ -32,6 +32,7 @@ import (
 // shared constants
 const (
 	ImageNameArgName  = "image"
+	TaskNameArgName   = "name"
 	RunArgName        = "run"
 	StoreFilesArgName = "store"
 	WaitArgName       = "wait"
