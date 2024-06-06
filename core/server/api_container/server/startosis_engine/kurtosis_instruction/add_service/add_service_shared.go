@@ -117,6 +117,9 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 
 	var portIds []string
 	for portId := range serviceConfig.GetPrivatePorts() {
+		if isValidPortName := service.IsPortNameValid(portId); !isValidPortName {
+			return startosis_errors.NewValidationError(invalidPortNameErrorText(portId))
+		}
 		portIds = append(portIds, portId)
 	}
 	validatorEnvironment.AddPrivatePortIDForService(portIds, serviceName)
@@ -131,7 +134,17 @@ func invalidServiceNameErrorText(
 	return fmt.Sprintf(
 		"Service name '%v' is invalid as it contains disallowed characters. Service names must adhere to the RFC 1035 standard, specifically implementing this regex and be 1-63 characters long: %s. This means the service name must only contain lowercase alphanumeric characters or '-', and must start with a lowercase alphabet and end with a lowercase alphanumeric character.",
 		serviceName,
-		service.WordWrappedServiceNameRegex,
+		service.ServiceNameRegex,
+	)
+}
+
+func invalidPortNameErrorText(
+	portName string,
+) string {
+	return fmt.Sprintf(
+		"Port name '%v' is invalid as it contains disallowed characters. Service names must adhere to the RFC 6335 standard, specifically implementing this regex and be 1-15 characters long: %s. This means the service name must only contain lowercase alphanumeric characters or '-', and must start with a lowercase alphabet and end with a lowercase alphanumeric character.",
+		portName,
+		service.PortNameRegex,
 	)
 }
 
