@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.89.17](https://github.com/kurtosis-tech/kurtosis/compare/0.89.16...0.89.17) (2024-06-07)
+
+
+### Features
+
+* add optional names to tasks ([#2477](https://github.com/kurtosis-tech/kurtosis/issues/2477)) ([5d7bb67](https://github.com/kurtosis-tech/kurtosis/commit/5d7bb677ba7ac854c61b78247432bfd8da55e920))
+* port name validation RFC-6335 ([#2474](https://github.com/kurtosis-tech/kurtosis/issues/2474)) ([ffbd30b](https://github.com/kurtosis-tech/kurtosis/commit/ffbd30bbb55bf7d4c5cf3d955d221c1c48f67ce4))
+
 ## [0.89.16](https://github.com/kurtosis-tech/kurtosis/compare/0.89.15...0.89.16) (2024-06-05)
 
 
