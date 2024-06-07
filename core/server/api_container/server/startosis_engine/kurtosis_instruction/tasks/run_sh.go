@@ -24,7 +24,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -151,17 +150,6 @@ func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsB
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to get task name from args.")
 	}
 	builtin.name = taskName
-
-	if arguments.IsSet(TaskNameArgName) {
-		taskName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, TaskNameArgName)
-		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", TaskNameArgName)
-		}
-		builtin.name = taskName.GoString()
-	} else {
-		randomUuid := uuid.NewRandom()
-		builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
-	}
 
 	runCommand, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {
