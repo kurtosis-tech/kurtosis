@@ -146,6 +146,12 @@ type RunShCapabilities struct {
 }
 
 func (builtin *RunShCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	taskName, err := getTaskNameFromArgs(arguments)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to get task name from args.")
+	}
+	builtin.name = taskName
+
 	if arguments.IsSet(TaskNameArgName) {
 		taskName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, TaskNameArgName)
 		if err != nil {

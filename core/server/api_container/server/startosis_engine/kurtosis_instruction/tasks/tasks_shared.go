@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_registry_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/nix_build_spec"
+	"github.com/xtgo/uuid"
 	"reflect"
 	"strings"
 	"time"
@@ -312,4 +313,17 @@ func extractEnvVarsIfDefined(arguments *builtin_argument.ArgumentValuesSet) (*ma
 		}
 	}
 	return &envVars, nil
+}
+
+func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string, error) {
+	if arguments.IsSet(TaskNameArgName) {
+		taskName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, TaskNameArgName)
+		if err != nil {
+			return "", startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", TaskNameArgName)
+		}
+		return taskName.GoString(), nil
+	} else {
+		randomUuid := uuid.NewRandom()
+		return fmt.Sprintf("task-%v", randomUuid.String()), nil
+	}
 }
