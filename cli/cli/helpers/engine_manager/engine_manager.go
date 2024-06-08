@@ -182,6 +182,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 	poolSize uint8,
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
+	domain string,
 ) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
@@ -205,6 +206,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(
 		doNotStartTheEngineInDebugModeForDefaultVersion,
 		githubAuthTokenOverride,
 		restartAPIContainers,
+		domain,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -224,6 +226,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 	shouldStartInDebugMode bool,
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
+	domain string,
 ) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
@@ -248,6 +251,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(
 		shouldStartInDebugMode,
 		githubAuthTokenOverride,
 		restartAPIContainers,
+		domain,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
@@ -348,6 +352,7 @@ func (manager *EngineManager) RestartEngineIdempotently(
 	shouldStartInDebugMode bool,
 	githubAuthTokenOverride string,
 	shouldRestartAPIContainers bool,
+	domain string,
 ) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	var versionOfNewEngine string
 	// We try to do our best to restart an engine on the same version the current on is on
@@ -373,9 +378,9 @@ func (manager *EngineManager) RestartEngineIdempotently(
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	if versionOfNewEngine != defaultEngineVersion {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers)
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain)
 	} else {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize, githubAuthTokenOverride, shouldRestartAPIContainers)
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize, githubAuthTokenOverride, shouldRestartAPIContainers, domain)
 	}
 	if restartEngineErr != nil {
 		return nil, nil, stacktrace.Propagate(restartEngineErr, "An error occurred starting a new engine")

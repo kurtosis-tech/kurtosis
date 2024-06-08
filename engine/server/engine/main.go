@@ -8,7 +8,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
+	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -17,6 +17,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
@@ -85,6 +87,9 @@ const (
 	pathToEnclaveSpecs   = "/specs/enclave"
 	pathToEngineSpecs    = "/specs/engine"
 	pathToWebsocketSpecs = "/specs/websocket"
+
+	envJsFilename = "env.js"
+	envJsFilePerm = 0644
 )
 
 var (
@@ -196,6 +201,16 @@ func runMain() error {
 	}
 
 	go func() {
+		if serverArgs.Domain != "" {
+			envJsFilePath := filepath.Join(pathToStaticFolder, envJsFilename)
+			envJsFilePathPerm := envJsFilePerm
+			envJsFileContent := []byte(fmt.Sprintf("window.env = {}; window.env.domain = '%s'", serverArgs.Domain))
+			if err = os.WriteFile(envJsFilePath, envJsFileContent, fs.FileMode(envJsFilePathPerm)); err != nil {
+				logrus.Errorf("Failed to create the environment js file: '%v'", err)
+				return
+			}
+		}
+
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path, err := filepath.Abs(r.URL.Path)

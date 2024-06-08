@@ -3,6 +3,7 @@ package engine_manager
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/github_auth_store"
 
 	"github.com/Masterminds/semver/v3"
@@ -84,6 +85,9 @@ type engineExistenceGuarantor struct {
 
 	// To restart the current API containers after the engine has been restarted
 	restartAPIContainers bool
+
+	// Enclave manager UI domain name
+	domain string
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -102,6 +106,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	shouldRunInDebugMode bool,
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
+	domain string,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -120,6 +125,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		shouldRunInDebugMode,
 		githubAuthTokenOverride,
 		restartAPIContainers,
+		domain,
 	)
 }
 
@@ -140,6 +146,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	shouldRunInDebugMode bool,
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
+	domain string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -160,6 +167,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		shouldRunInDebugMode:                      shouldRunInDebugMode,
 		githubAuthTokenOverride:                   githubAuthTokenOverride,
 		restartAPIContainers:                      restartAPIContainers,
+		domain:                                    domain,
 	}
 }
 
@@ -219,6 +227,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.shouldRunInDebugMode,
 			githubAuthToken,
 			guarantor.restartAPIContainers,
+			guarantor.domain,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -239,6 +248,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.shouldRunInDebugMode,
 			githubAuthToken,
 			guarantor.restartAPIContainers,
+			guarantor.domain,
 		)
 	}
 	if engineLaunchErr != nil {
