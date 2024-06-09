@@ -7,7 +7,10 @@ import { KurtosisClient } from "./KurtosisClient";
 export class LocalKurtosisClient extends KurtosisClient {
   constructor() {
     const defaultUrl = new URL(`${window.location.protocol}//${window.location.host}`);
-    const baseUrl = "https://" + window.env.domain || KURTOSIS_EM_API_DEFAULT_URL;
+    var baseUrl = KURTOSIS_EM_API_DEFAULT_URL;
+    if (window.env !== undefined && window.env.domain !== undefined) {
+      baseUrl = "https://" + window.env.domain
+    }
     super(
       createPromiseClient(KurtosisEnclaveManagerServer, createConnectTransport({ baseUrl: baseUrl })),
       defaultUrl,
