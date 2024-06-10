@@ -87,26 +87,20 @@ def run(plan):
     # we define the recipe first
     exec_recipe = ExecRecipe(
         command = ["echo '{"key":"Hi}'],
-		extract = {
-			"value": "fromjson | .key,
-		}
 	)
 
     ready_conditions_config = ReadyCondition(
         recipe = exec_recipe,
         # note how the possible fields are based on the result of executing the ExecRecipe - in this case, .extract
-        field = "extract.value", 
-        assertion = "==",
-        target_value = "Hi",
+        field = "output"
+        assertion = "!=",
+        target_value = "",
         interval = "10s",
         timeout = "200s",
     )
 
     service_config = ServiceConfig(
-		image = "mendhak/http-https-echo:26",
-		ports = {
-			"http-port": PortSpec(number = 8080, transport_protocol = "TCP")
-		},
+		image = "ubuntu",
         ready_conditions= ready_conditions_config,
 	)
 
