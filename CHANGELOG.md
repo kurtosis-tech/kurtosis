@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.89.18](https://github.com/kurtosis-tech/kurtosis/compare/0.89.17...0.89.18) (2024-06-10)
+
+
+### Bug Fixes
+
+* exec recipe in ready condition ([#2479](https://github.com/kurtosis-tech/kurtosis/issues/2479)) ([288ddba](https://github.com/kurtosis-tech/kurtosis/commit/288ddba53468a376d10ef720f9ab197633237201))
+
 ## [0.89.17](https://github.com/kurtosis-tech/kurtosis/compare/0.89.16...0.89.17) (2024-06-07)
 
 
