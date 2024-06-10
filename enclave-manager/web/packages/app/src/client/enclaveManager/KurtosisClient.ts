@@ -27,6 +27,7 @@ import {
   GetStarlarkRunRequest,
   InspectFilesArtifactContentsRequest,
   LockUnlockPortRequest,
+  PublishPackageRequest,
   RunStarlarkPackageRequest,
   RunStarlarkScriptRequest,
   StarlarkPackagePlanYamlArgs as StarlarkPackagePlanYamlArgsRequest,
@@ -100,6 +101,26 @@ export abstract class KurtosisClient {
     return asyncResult(
       this.client.destroyEnclave(new DestroyEnclaveArgs({ enclaveIdentifier: enclaveUUID }), this.getHeaderOptions()),
       `KurtosisClient could not destroy enclave ${enclaveUUID}`,
+    );
+  }
+
+  async publishPackageRequest(
+    githubAuthCode: string,
+    packageName: string,
+    serializedStarlarkScript: string,
+    serializedPackageIcon?: Uint8Array,
+  ) {
+    return asyncResult(
+      this.client.publishPackageRepository(
+        new PublishPackageRequest({
+          authCode: githubAuthCode,
+          packageName: packageName,
+          serializedStarlarkScript: serializedStarlarkScript,
+          serializedPackageIcon: serializedPackageIcon,
+        }),
+        this.getHeaderOptions(),
+      ),
+      `KurtosisClient could not public package result for ${packageName}`,
     );
   }
 

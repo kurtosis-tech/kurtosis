@@ -7,6 +7,8 @@ type VariableContextState = {
   variables: Variable[];
   updateData: (id: string, data: KurtosisNodeData | ((oldData: KurtosisNodeData) => KurtosisNodeData)) => void;
   removeData: (id: { id: string }[]) => void;
+  initialImportedPackageData: null | Record<string, KurtosisNodeData>;
+  setInitialImportedPackageData: (data: Record<string, KurtosisNodeData>) => void;
 };
 
 const VariableContext = createContext<VariableContextState>({
@@ -14,6 +16,8 @@ const VariableContext = createContext<VariableContextState>({
   variables: [],
   updateData: () => null,
   removeData: () => null,
+  initialImportedPackageData: null,
+  setInitialImportedPackageData: () => null,
 });
 
 type VariableContextProviderProps = {
@@ -22,6 +26,11 @@ type VariableContextProviderProps = {
 
 export const VariableContextProvider = ({ initialData, children }: PropsWithChildren<VariableContextProviderProps>) => {
   const [data, setData] = useState<Record<string, KurtosisNodeData>>(initialData);
+  // A snapshot of the imported package data so we can compare changes the user
+  // makes to the original configuration and generate the appropriate Starlark code
+  const [initialImportedPackageData, setInitialImportedPackageData] = useState<Record<string, KurtosisNodeData> | null>(
+    null,
+  );
 
   const variables = useMemo((): Variable[] => {
     return getVariablesFromNodes(data);
@@ -45,7 +54,11 @@ export const VariableContextProvider = ({ initialData, children }: PropsWithChil
   }, []);
 
   return (
-    <VariableContext.Provider value={{ data, variables, updateData, removeData }}>{children}</VariableContext.Provider>
+    <VariableContext.Provider
+      value={{ data, variables, updateData, removeData, setInitialImportedPackageData, initialImportedPackageData }}
+    >
+      {children}
+    </VariableContext.Provider>
   );
 };
 

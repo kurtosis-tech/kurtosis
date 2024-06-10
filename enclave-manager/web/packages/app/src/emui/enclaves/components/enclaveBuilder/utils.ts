@@ -256,6 +256,7 @@ export function generateStarlarkFromGraph(
   nodes: Node[],
   edges: Edge[],
   data: Record<string, KurtosisNodeData>,
+  initialImportedPackageData: Record<string, KurtosisNodeData> | null,
   existingEnclave?: RemoveFunctions<EnclaveFullInfo>,
 ): string {
   const nodeLookup = nodes.reduce((acc: Record<string, Node>, cur) => ({ ...acc, [cur.id]: cur }), {});
@@ -504,9 +505,35 @@ export function generateStarlarkFromGraph(
     }
 
     if (nodeData.type === "package") {
+      let setServiceCalls = "";
+      // If package is imported, we detect any service images that were edited
+      // by the user by comparing the current data to the upstream (initial) data
+      // TODO(skylar): Make this more generic / handle other fields other than container image
+      if (initialImportedPackageData != null) {
+        const initialServiceNodeData = Object.fromEntries(
+          Object.entries(initialImportedPackageData).filter(
+            ([, n]) => n.type === "service" && n.isFromPackage && n.image.type === "image",
+          ),
+        );
+        Object.entries(data).forEach(([id, node]) => {
+          if (initialServiceNodeData[id] != null) {
+            const initialImageName = (initialServiceNodeData[id] as KurtosisServiceNodeData).image.image;
+            const currentImageName = (node as KurtosisServiceNodeData).image.image;
+            if (initialImageName !== currentImageName) {
+              // plan.set_service(name = "asdfasfd", config = ServiceConfig(image = "image-name"))
+              setServiceCalls += `    plan.set_service(\n`;
+              setServiceCalls += `        name = "${node.name}",\n`;
+              setServiceCalls += `        config = ServiceConfig(image = "${currentImageName}"),\n`;
+              setServiceCalls += `    )\n`;
+            }
+          }
+        });
+      }
+
       const packageName = normaliseNameToStarlarkVariable(nodeData.name);
-      starlark += `    ${packageName} = ${packageName}_module.run(plan, **${objectToStarlark(nodeData.args, 8)}`;
-      starlark += `    )\n\n`;
+      starlark += `    ${packageName} = ${packageName}_module.run(plan, **${objectToStarlark(nodeData.args, 8)}\n`;
+      starlark += `    )\n`;
+      starlark += `\n${setServiceCalls}\n`;
     }
   }
 

@@ -31,6 +31,7 @@ service KurtosisEnclaveManagerServer {
   rpc AddAlias(AddAliasRequest) returns(google.protobuf.Empty){}
   rpc IsNewKurtosisVersionAvailable(google.protobuf.Empty) returns(kurtosis_cloud.IsNewKurtosisVersionAvailableResponse){}
   rpc UpgradeKurtosisVersion(google.protobuf.Empty) returns(google.protobuf.Empty){};
+  rpc PublishPackageRepository(PublishPackageRequest) returns(google.protobuf.Empty){};
 }
 
 message GetCloudInstanceConfigRequest {
@@ -109,6 +110,12 @@ message AddAliasRequest {
   string enclave_short_uuid=4;
 }
 
+message PublishPackageRequest {
+  string authCode=1;
+  string packageName=2;
+  string serializedStarlarkScript=3;
+  optional string serializedPackageIcon=4;
+}
 
 // ==============================================================================================
 //                               Get Starlark Plan Yaml
