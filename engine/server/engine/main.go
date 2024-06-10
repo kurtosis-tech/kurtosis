@@ -201,14 +201,15 @@ func runMain() error {
 	}
 
 	go func() {
+		envJsFilePath := filepath.Join(pathToStaticFolder, envJsFilename)
+		envJsFilePathPerm := envJsFilePerm
+		envJsFileContent := "window.env = {};"
 		if serverArgs.Domain != "" {
-			envJsFilePath := filepath.Join(pathToStaticFolder, envJsFilename)
-			envJsFilePathPerm := envJsFilePerm
-			envJsFileContent := []byte(fmt.Sprintf("window.env = {}; window.env.domain = '%s'", serverArgs.Domain))
-			if err = os.WriteFile(envJsFilePath, envJsFileContent, fs.FileMode(envJsFilePathPerm)); err != nil {
-				logrus.Errorf("Failed to create the environment js file: '%v'", err)
-				return
-			}
+			envJsFileContent += fmt.Sprintf("window.env.domain = '%s';", serverArgs.Domain)
+		}
+		if err = os.WriteFile(envJsFilePath, []byte(envJsFileContent), fs.FileMode(envJsFilePathPerm)); err != nil {
+			logrus.Errorf("Failed to create the environment js file: '%v'", err)
+			return
 		}
 
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
