@@ -52,7 +52,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 ) {
 	resultApiContainer, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		kurtosis_version.KurtosisVersion,
+		"latest",
 		logLevel,
 		enclaveId,
 		grpcListenPort,
