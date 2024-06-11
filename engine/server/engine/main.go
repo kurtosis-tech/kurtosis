@@ -211,6 +211,7 @@ func runMain() error {
 			logrus.Errorf("Failed to create the environment js file: '%v'", err)
 			return
 		}
+		logrus.Debugf("Created environment js file with content: \n%s", envJsFileContent)
 
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
