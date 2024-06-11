@@ -48,8 +48,7 @@ export const getPortTableRows = (
           `.${KURTOSIS_CLOUD_HOST}`;
       }
     } else if (window.env !== undefined && window.env.domain !== undefined) {
-      link =
-        `https://` + `${port.number}-${shortUUID(serviceUUID)}-${shortUUID(enclaveUUID)}` + `.${window.env.domain}`;
+      link = `https://${port.number}-${shortUUID(serviceUUID)}-${shortUUID(enclaveUUID)}.${window.env.domain}`;
     } else {
       link = `${port.maybeApplicationProtocol ? port.maybeApplicationProtocol + "://" : ""}${publicIp}:${
         publicPorts[name].number
