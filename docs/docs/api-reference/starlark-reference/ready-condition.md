@@ -80,6 +80,32 @@ def run(plan):
     # finally we execute the add_service instruction using all the pre-configured data
     plan.add_service(name = "web-server", config = service_config)
 ```
+and with an `ExecRecipe`:
+
+```python
+def run(plan):
+    # we define the recipe first
+    exec_recipe = ExecRecipe(
+        command = ["echo '{"key":"Hi}'],
+	)
+
+    ready_conditions_config = ReadyCondition(
+        recipe = exec_recipe,
+        # note how the possible fields are based on the result of executing the ExecRecipe - in this case, .extract
+        field = "output"
+        assertion = "!=",
+        target_value = "",
+        interval = "10s",
+        timeout = "200s",
+    )
+
+    service_config = ServiceConfig(
+		image = "ubuntu",
+        ready_conditions= ready_conditions_config,
+	)
+
+    plan.add_service(name = "web-server", config = service_config)
+```
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 

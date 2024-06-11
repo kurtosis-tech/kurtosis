@@ -102,7 +102,7 @@ brews:
     commit_msg_template: "Automated formula update for the CLI, version {{ .Tag }}"
     homepage: "https://www.kurtosistech.com"
     description: "CLI for managing Kurtosis environments."
-    license: "BSL"
+    license: "Apache-2.0"
 
     # NOTE: Goreleaser *should* automatically detect the binaries packaged inside the archives being installed by the Homebrew formula, but it doesn't due to:
     #  https://github.com/goreleaser/goreleaser/issues/2488

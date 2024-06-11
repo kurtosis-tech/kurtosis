@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.90.0](https://github.com/kurtosis-tech/kurtosis/compare/0.89.18...0.90.0) (2024-06-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* change license to apache 2.0 ([#2481](https://github.com/kurtosis-tech/kurtosis/issues/2481))
+
+### Features
+
+* change license to apache 2.0 ([#2481](https://github.com/kurtosis-tech/kurtosis/issues/2481)) ([d884144](https://github.com/kurtosis-tech/kurtosis/commit/d88414497e38c32982cf52ac41a5c08ee5927298))
+
+## [0.89.18](https://github.com/kurtosis-tech/kurtosis/compare/0.89.17...0.89.18) (2024-06-10)
+
+
+### Bug Fixes
+
+* exec recipe in ready condition ([#2479](https://github.com/kurtosis-tech/kurtosis/issues/2479)) ([288ddba](https://github.com/kurtosis-tech/kurtosis/commit/288ddba53468a376d10ef720f9ab197633237201))
+
+## [0.89.17](https://github.com/kurtosis-tech/kurtosis/compare/0.89.16...0.89.17) (2024-06-07)
+
+
+### Features
+
+* add optional names to tasks ([#2477](https://github.com/kurtosis-tech/kurtosis/issues/2477)) ([5d7bb67](https://github.com/kurtosis-tech/kurtosis/commit/5d7bb677ba7ac854c61b78247432bfd8da55e920))
+* port name validation RFC-6335 ([#2474](https://github.com/kurtosis-tech/kurtosis/issues/2474)) ([ffbd30b](https://github.com/kurtosis-tech/kurtosis/commit/ffbd30bbb55bf7d4c5cf3d955d221c1c48f67ce4))
+
 ## [0.89.16](https://github.com/kurtosis-tech/kurtosis/compare/0.89.15...0.89.16) (2024-06-05)
 
 
