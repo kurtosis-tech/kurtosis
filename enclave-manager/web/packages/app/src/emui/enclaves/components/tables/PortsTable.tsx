@@ -47,10 +47,14 @@ export const getPortTableRows = (
           `${port.number}-${shortUUID(serviceUUID)}-${shortUUID(enclaveUUID)}-${shortUUID(instanceUUID)}` +
           `.${KURTOSIS_CLOUD_HOST}`;
       }
+    } else if (window.env !== undefined && window.env.domain !== undefined) {
+      link =
+        `https://` +
+        `${port.number}-${shortUUID(serviceUUID)}-${shortUUID(enclaveUUID)}` +
+        `.${window.env.domain}`;
     } else {
-      link = `${port.maybeApplicationProtocol ? port.maybeApplicationProtocol + "://" : ""}${publicIp}:${
-        publicPorts[name].number
-      }`;
+      link = `${port.maybeApplicationProtocol ? port.maybeApplicationProtocol + "://" : ""}${publicIp}:${publicPorts[name].number
+        }`;
     }
     return {
       port: {
