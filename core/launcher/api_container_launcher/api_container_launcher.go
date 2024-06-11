@@ -67,7 +67,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		shouldStartInDebugMode,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", kurtosis_version.KurtosisVersion)
+		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", "latest")
 	}
 	return resultApiContainer, nil
 }
