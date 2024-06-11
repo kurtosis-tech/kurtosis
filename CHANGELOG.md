@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.90.0](https://github.com/kurtosis-tech/kurtosis/compare/0.89.18...0.90.0) (2024-06-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* change license to apache 2.0 ([#2481](https://github.com/kurtosis-tech/kurtosis/issues/2481))
+
+### Features
+
+* change license to apache 2.0 ([#2481](https://github.com/kurtosis-tech/kurtosis/issues/2481)) ([d884144](https://github.com/kurtosis-tech/kurtosis/commit/d88414497e38c32982cf52ac41a5c08ee5927298))
+
 ## [0.89.18](https://github.com/kurtosis-tech/kurtosis/compare/0.89.17...0.89.18) (2024-06-10)
 
 
