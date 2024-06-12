@@ -148,7 +148,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", restartAPIContainersFlagKey)
 	}
-	
+
 	domain, err := flags.GetString(domainFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine enclave manager UI domain name using the flag with key '%v'; this is a bug in Kurtosis", domainFlagKey)

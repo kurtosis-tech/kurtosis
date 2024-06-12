@@ -72,7 +72,7 @@ type EngineServerArgs struct {
 var skipValidation = map[string]bool{
 	"cloud_instance_id": true,
 	"cloud_user_id":     true,
-	"domain":     true,
+	"domain":            true,
 }
 
 func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
