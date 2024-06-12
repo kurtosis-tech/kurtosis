@@ -613,6 +613,10 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # MANDATORY
         run = "mkdir -p kurtosis && echo $(ls)",
 
+        # The name of the container, as a string
+        # OPTIONAL (Default: task--UUID)
+        name = "curl-job"
+
         # Image the command will be run on
         # OPTIONAL (Default: badouralix/curl-jq)
         image = "badouralix/curl-jq",
