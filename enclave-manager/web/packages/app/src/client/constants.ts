@@ -24,3 +24,11 @@ export const KURTOSIS_DEFAULT_EM_API_PORT = isDefined(process.env.REACT_APP_KURT
   : 8081;
 export const KURTOSIS_EM_API_DEFAULT_URL =
   process.env.REACT_APP_KURTOSIS_DEFAULT_URL || `http://${KURTOSIS_EM_DEFAULT_HOST}:${KURTOSIS_DEFAULT_EM_API_PORT}`;
+
+declare global {
+  interface Window {
+    env: {
+      domain: string;
+    };
+  }
+}

@@ -24,6 +24,8 @@ const (
 	DefaultKurtosisContainerDebugImageNameSuffix = "debug"
 
 	DefaultGitHubAuthTokenOverride = ""
+
+	DefaultDomain = ""
 )
 
 var DefaultApiContainerLogLevel = logrus.DebugLevel
