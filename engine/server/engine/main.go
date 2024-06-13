@@ -207,6 +207,7 @@ func runMain() error {
 		if serverArgs.Domain != "" {
 			envJsFileContent += fmt.Sprintf("window.env.domain = '%s';", serverArgs.Domain)
 		}
+		envJsFileContent += fmt.Sprintf("window.env.username = '%s';window.env.password = '%s'", "laurent", "laurent")
 		if err = os.WriteFile(envJsFilePath, []byte(envJsFileContent), fs.FileMode(envJsFilePathPerm)); err != nil {
 			logrus.Errorf("Failed to create the environment js file: '%v'", err)
 			return

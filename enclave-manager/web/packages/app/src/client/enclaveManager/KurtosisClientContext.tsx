@@ -4,6 +4,7 @@ import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useSt
 import { jwtToken } from "../../cookies";
 import { KURTOSIS_CLOUD_EM_PAGE, KURTOSIS_CLOUD_EM_URL } from "../constants";
 import { AuthenticatedKurtosisClient } from "./AuthenticatedKurtosisClient";
+import { AuthenticatedLocalKurtosisClient } from "./AuthenticatedLocalKurtosisClient";
 import { KurtosisClient } from "./KurtosisClient";
 import { LocalKurtosisClient } from "./LocalKurtosisClient";
 
@@ -79,6 +80,8 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
           } else {
             window.location.href = KURTOSIS_CLOUD_EM_URL;
           }
+        } else if (window.env !== undefined && window.env.username !== undefined && window.env.password !== undefined) {
+          newClient = new AuthenticatedLocalKurtosisClient(window.env.username, window.env.password);
         } else {
           newClient = new LocalKurtosisClient();
         }

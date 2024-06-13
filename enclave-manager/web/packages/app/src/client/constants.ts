@@ -29,6 +29,8 @@ declare global {
   interface Window {
     env: {
       domain: string;
+      username: string;
+      password: string;
     };
   }
 }
