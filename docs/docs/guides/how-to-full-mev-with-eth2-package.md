@@ -8,29 +8,29 @@ sidebar_position: 12
 
 :::tip
 Here are some quick short-cuts for folks who would prefer:
-* To get going right away: install Kurtosis & Docker and then run: `kurtosis run github.com/kurtosis-tech/ethereum-package '{"mev_type": "full"}'`
-* To dive into the code example: visit the repository [here](https://github.com/kurtosis-tech/ethereum-package).
-* Not to run this package on their local machine: try it out on the [Kurtosis playground](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/ethereum-package)
+* To get going right away: install Kurtosis & Docker and then run: `kurtosis run github.com/ethpandaops/ethereum-package '{"mev_type": "full"}'`
+* To dive into the code example: visit the repository [here](https://github.com/ethpandaops/ethereum-package).
+* Not to run this package on their local machine: try it out on the [Kurtosis playground](https://gitpod.io/?autoStart=true&editor=code#https://github.com/ethpandaops/ethereum-package)
 :::
 
-We're elated to share that the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) now supports the Flashbot's implementation of [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using [MEV-Boost](https://boost.flashbots.net) protocol.
+We're elated to share that the [`ethereum-package`](https://github.com/ethpandaops/ethereum-package) now supports the Flashbot's implementation of [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using [MEV-Boost](https://boost.flashbots.net) protocol.
 
 This milestone marks a huge step forward in the journey towards a full, in-protocol PBS implementation for Proof-of-Stake Ethereum as developers across the ecosystem now have a way to instantiate fully functioning testnets to validate functionality, behvaior, and scales across all client combinations with a Builder API implementation (Flashbots', in this case).
 
 Keep reading to learn [how it all works](#brief-overview-of-the-architecture) & [how to get started with the `ethereum-package`](#quickstart).
 
 #### Why `ethereum-package`?
-As a reminder, the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) is a reproducible and portable environment definition that should be used to bootstrap & deploy private testnets. The package will function the exact same way locally or in the cloud over Docker or Kubernetes, supports all major Execution Layer (EL) and Consensus Layer (CL) client implementations, and can be scaled to whatever size your team needs - limited only by your underlying hardware/backend.
+As a reminder, the [`ethereum-package`](https://github.com/ethpandaops/ethereum-package) is a reproducible and portable environment definition that should be used to bootstrap & deploy private testnets. The package will function the exact same way locally or in the cloud over Docker or Kubernetes, supports all major Execution Layer (EL) and Consensus Layer (CL) client implementations, and can be scaled to whatever size your team needs - limited only by your underlying hardware/backend.
 
 #### What if I only want the MEV parts?
 And if that wasn't enough, Kurtosis environment definitions (known as [Packages](https://docs.kurtosis.com/advanced-concepts/packages/)) are entirely composable, meaning you can define and build-your-own private testnet using only the parts you need and with the option of adding your own services (e.g. MEV searcher tools). Feel free to check out the following [code example](https://github.com/kurtosis-tech/2-el-cl-mev-package/blob/main/main.star).
 
 ## Brief overview of the architecture
-Explicitly, the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) supports two modes: `full-mev` and `mock-mev`. 
+Explicitly, the [`ethereum-package`](https://github.com/ethpandaops/ethereum-package) supports two modes: `full-mev` and `mock-mev`.
 
 The former mode is valuable for validating behavior between the protocol and out-of-protocol middle-ware infrastructure (e.g. searchers, relayer) and instantiates [`mev-boost`](https://github.com/flashbots/mev-boost), [`mev-relay`](https://github.com/flashbots/mev-boost-relay), [`mev-flood`](https://github.com/flashbots/mev-flood) and Flashbot's Geth-based block builder called [`mev-builder`](https://github.com/flashbots/builder). The latter mode will only spin up [`mev-boost`](https://github.com/flashbots/mev-boost) and a [`mock-builder`](https://github.com/marioevz/mock-builder), which is useful for testing in-protocol behavior like testing if clients are able to call the relayer for a payload via `mev-boost`, reject invalid payloads, or trigger the [circuit breaker](https://hackmd.io/@ralexstokes/BJn9N6Thc) to ensure functionality of the beacon chain.
 
-The `ethereum-package` with MEV emulation are already in use by client teams to help uncover bugs (examples [here](https://github.com/prysmaticlabs/prysm/pull/12736) and [here](https://github.com/NethermindEth/nethermind/commit/4d805769159dc0717aa1ba38cc3ebc53f9a375cf)). 
+The `ethereum-package` with MEV emulation are already in use by client teams to help uncover bugs (examples [here](https://github.com/prysmaticlabs/prysm/pull/12736) and [here](https://github.com/NethermindEth/nethermind/commit/4d805769159dc0717aa1ba38cc3ebc53f9a375cf)).
 
 Everything you see below in the architecture diagram gets configured, initialized, and bootstrapped together by Kurtosis.
 
@@ -45,11 +45,11 @@ Everything you see below in the architecture diagram gets configured, initialize
 
 :::note
 Quick aside on what `mev-flood` does:
-Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provision liquidity on UniV2 pairs, & begin to send a constant stream of UniV2 swap transactions to the network's public mempool. Depending on the mode you're running, either the `mock-builder` or Flashbot's `mev-builder`, the transactions will be bundled into payloads for downstream use by the relayer or by validators themselves. It is important to note that `mev-flood` will only be initialized with the `full-mev` set up and will send transactions with a non-zero block value. Read more about [`mev-flood` here](https://github.com/flashbots/mev-flood). 
+Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provision liquidity on UniV2 pairs, & begin to send a constant stream of UniV2 swap transactions to the network's public mempool. Depending on the mode you're running, either the `mock-builder` or Flashbot's `mev-builder`, the transactions will be bundled into payloads for downstream use by the relayer or by validators themselves. It is important to note that `mev-flood` will only be initialized with the `full-mev` set up and will send transactions with a non-zero block value. Read more about [`mev-flood` here](https://github.com/flashbots/mev-flood).
 :::
 
 ## Quickstart
-Leveraging the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) is simple. In this short quickstart, you will:
+Leveraging the [`ethereum-package`](https://github.com/ethpandaops/ethereum-package) is simple. In this short quickstart, you will:
 1. Install Docker & Kurtosis locally.
 2. Configure your network using a `.yaml` file.
 3. Run a single command to launch your network with `full MEV`.
@@ -92,7 +92,7 @@ You will use the above file by passing it in at runtime, effectively enabling yo
 #### Launch the network with `full MEV`
 Great! You're now ready to bring up your own network. Simply run:
 ```bash
-kurtosis run --enclave eth-network github.com/kurtosis-tech/ethereum-package "$(cat ~/ethereum-package-params.yaml)"
+kurtosis run --enclave eth-network github.com/ethpandaops/ethereum-package "$(cat ~/ethereum-package-params.yaml)"
 ```
 Kurtosis will then begin to spin up your private Ethereum testnet with `full MEV`. You will see a stream of text get printed in your terminal as Kurtosis begins to generate genesis files, configure the Ethereum nodes, launch a Grafana and Prometheus instance, and bootstrap the network together with the full suite of MEV products from Flashbots. In ~2 minutes, you should see the following output at the end:
 ```bash
@@ -179,14 +179,14 @@ Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.
 
 Lastly, there is a section called `User Services` which display the number of services (running in Docker containers) that make up your network. You will notice that there are 2 Ethereum nodes, each with a `MEV-Boost` instance spun up & connected to it. In addition to this, you will see the rest of the Flashbots MEV infrastructure including the `mev-relay` suite of services (read more about the `mev-relay` services [here](https://github.com/flashbots/mev-boost-relay/blob/main/ARCHITECTURE.md)) and `mev-flood`. By default, the `ethereum-package` also comes with supporting services which include a fork monitor, redis, postgres, grafana, prometheus, a transaction spammer, a testnet-verifier, and the services used to generate genesis data. Both of the Redis and Postgres instances are required for `mev-relay` to function properly. Each of these services are running in Docker containers inside your local enclave & Kurtosis has automatically mapped each container port to your machine's ephemeral ports for seamless interaction with the services running in your enclave.
 
-#### Visit the website to see registered validators and delivered payloads 
+#### Visit the website to see registered validators and delivered payloads
 Now that your network is online, you can visit the relay website using the local port mapped to that endpoint. For this example, it will be `127.0.0.1:62930`, but it will be different for you.
 
 ![flashbots-website](/img/guides/full-mev-flashbots-website.png)
 
 The screenshot above is what the website looks like after the 4th epoch. You can see that all 128 validators (2 nodes, each with 64 validators) are registered. The table below will display recently delivered and verified payloads from `mev-relay` to the `mev-boost` sidecar on each node.
 
-And there you have it! You've now spun up a private Ethereum testnet over Docker with the Flashbot's implementation of PBS! 
+And there you have it! You've now spun up a private Ethereum testnet over Docker with the Flashbot's implementation of PBS!
 
 ## Roadmap
 The inclusion of a Proposer Builder Separation (PBS) implemention was in support of the Ethereum Foundation's efforts to validate functionality and behavior in end-to-end testing (between in-protocol and out-of-protocol infrastructure), as well as the functionality of the beacon chain for in-protocol code paths (e.g. can clients: call for payloads reject invalid payloads, and trigger the circuit breaker when necessary).
@@ -205,7 +205,7 @@ The `ethereum-package` is available for anyone to use, will work the same way on
 
 You saw first-hand how packages, effectively environment definitions, are written once and then can be used by anyone in a very trivial way to reproduce the environment. This accelerates developer velocity by enabling engineers to spend less time on configuring and setting up development and testing frameworks, and more time instead on building the unique features and capabilities for their projects.
 
-Additionally, we hope you also enjoyed the parameterizability aspect of Kurtosis Packages. By changing the `ethereum-package-params.yaml`, you can get a fine-tune your testnet however you see fit. 
+Additionally, we hope you also enjoyed the parameterizability aspect of Kurtosis Packages. By changing the `ethereum-package-params.yaml`, you can get a fine-tune your testnet however you see fit.
 
 We hope this guide was helpful and we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using [`kurtosis feedback`](../cli-reference/feedback.md) from the CLI to file an issue in our [Github](https://github.com/kurtosis-tech/eth-kurtosis/issues) or post your question in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions).
 

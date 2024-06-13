@@ -269,8 +269,8 @@ func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommit(t *testing.T
 	githubAuthProvider := NewGitHubPackageAuthProvider(githubAuthDir)
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
-	absoluteLocatorStr := "github.com/kurtosis-tech/ethereum-package/src/package_io/input_parser.star"
-	commitHash := "da55be84861e93ce777076e545abee35ff2d51ce"
+	absoluteLocatorStr := "github.com/ethpandaops/ethereum-package/src/package_io/input_parser.star"
+	commitHash := "fcaa2c23301c0f7012301fe019a75b0fa369961b"
 
 	absoluteLocatorWithCommit := startosis_packages.NewPackageAbsoluteLocator(absoluteLocatorStr, commitHash)
 
@@ -466,13 +466,13 @@ func TestGetAbsoluteLocator_AnotherPackageWithCommitReplaceSucceeds(t *testing.T
 
 	packageId := "github.com/kurtosis-tech/sample-startosis-load/sample-package"
 	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
-	maybeRelativeLocator := "github.com/kurtosis-tech/ethereum-package/src/package_io/input_parser.star"
+	maybeRelativeLocator := "github.com/ethpandaops/ethereum-package/src/package_io/input_parser.star"
 	packageReplaceOptions := map[string]string{
-		"github.com/kurtosis-tech/ethereum-package": "github.com/kurtosis-tech/ethereum-package@da55be84861e93ce777076e545abee35ff2d51ce",
+		"github.com/ethpandaops/ethereum-package": "github.com/ethpandaops/ethereum-package@da55be84861e93ce777076e545abee35ff2d51ce",
 	}
 	absoluteLocator, err := provider.GetAbsoluteLocator(packageId, parentModuleId, maybeRelativeLocator, packageReplaceOptions)
 
-	expectedAbsoluteLocator := "github.com/kurtosis-tech/ethereum-package/src/package_io/input_parser.star"
+	expectedAbsoluteLocator := "github.com/ethpandaops/ethereum-package/src/package_io/input_parser.star"
 	require.Nil(t, err)
 	require.Equal(t, expectedAbsoluteLocator, absoluteLocator.GetLocator())
 }
