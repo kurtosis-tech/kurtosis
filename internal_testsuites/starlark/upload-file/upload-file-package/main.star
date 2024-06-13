@@ -1,4 +1,3 @@
-
 # The test using this package will generate a 90MB file and place it at the root of this package
 # named large-file.bin. This file is generated on the spot to avoid checking it into GitHub
 def run(plan, args):
@@ -11,16 +10,14 @@ def run(plan, args):
         name="dummy",
         config=ServiceConfig(
             image="docker/getting-started",
-            files={
-                "/home/file/": large_file_artifact_id
-            }
-        )
+            files={"/home/file/": large_file_artifact_id},
+        ),
     )
     result = plan.exec(
         service_name="dummy",
         recipe=ExecRecipe(
             command=["sh", "-c", "md5sum /home/file/large-file.bin | awk '{print $1}'"]
-        )
+        ),
     )
 
     expected_file_hash = args["file_hash"]
