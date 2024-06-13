@@ -18,7 +18,7 @@ description: |
   Some words to describe the package.
 replace:
   github.com/kurtosis-tech/sample-dependency-package: github.com/kurtosis-tech/another-sample-dependency-package
-  github.com/kurtosis-tech/ethereum-package: github.com/my-forked/ethereum-package
+  github.com/ethpandaops/ethereum-package: github.com/my-forked/ethereum-package
 `)
 	sampleInCorrectKeyYaml         = []byte(`incorrect_name_key: github.com/test/test`)
 	sampleDuplicatedReplaceKeyYaml = []byte(`
