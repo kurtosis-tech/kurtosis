@@ -270,7 +270,7 @@ func TestGitPackageProvider_GetContentFromAbsoluteLocatorWithCommit(t *testing.T
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir, githubAuthProvider, nil)
 
 	absoluteLocatorStr := "github.com/ethpandaops/ethereum-package/src/package_io/input_parser.star"
-	commitHash := "da55be84861e93ce777076e545abee35ff2d51ce"
+	commitHash := "fcaa2c23301c0f7012301fe019a75b0fa369961b"
 
 	absoluteLocatorWithCommit := startosis_packages.NewPackageAbsoluteLocator(absoluteLocatorStr, commitHash)
 
