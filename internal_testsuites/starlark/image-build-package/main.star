@@ -7,9 +7,9 @@ def run(plan, args):
                 build_context_dir="./",
                 build_args={
                     "BUILD_ARG": "VALUE",
-                }
+                },
             ),
-        )
+        ),
     )
 
     plan.add_service(
@@ -20,5 +20,5 @@ def run(plan, args):
                 build_context_dir="./test",
                 build_file="test.Dockerfile",
             )
-        )
+        ),
     )

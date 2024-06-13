@@ -251,7 +251,7 @@ Now that you've use the Kurtosis CLI to run a package, inspect the resulting env
 [cassandra-package-example]: https://github.com/kurtosis-tech/cassandra-package
 [go-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/go-test
 [ts-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/ts-test
-[ethereum-package]: https://github.com/kurtosis-tech/ethereum-package/
+[ethereum-package]: https://github.com/ethpandaops/ethereum-package/
 
 <!-- Misc -->
 [homepage]: get-started.md
