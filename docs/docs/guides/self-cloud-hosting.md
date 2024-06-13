@@ -11,7 +11,7 @@ I. Prerequisites
 -----------------
 
 1. Public facing gateway supporting your domain with certificate. The certificate should support your domain name and a wildcard subdomain prefix `*.domain` since the service port URLs format is `port-service-enclave.domain`. The gateway should terminate TLS.
-2. Host running Ubuntu to install and configure Kurtosis. The host should be on a private subnet receiving traffic from the Gateway on port 80. Healthchecks should use the `/status` URL.
+2. Host running Ubuntu to install and configure Kurtosis on. The host should be on a private subnet receiving traffic from the Gateway on port 80. Healthchecks should use the `/status` URL.
 
 ![overview](/img/guides/self-hosting-overview.png)
 
