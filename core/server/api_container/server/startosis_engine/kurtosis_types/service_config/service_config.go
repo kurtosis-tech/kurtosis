@@ -52,6 +52,7 @@ const (
 	NodeSelectorsAttr               = "node_selectors"
 	FilesToBeMovedAttr              = "files_to_be_moved"
 	TiniEnabledAttr                 = "tini_enabled"
+	CapabilitiesAttr                = "capabilities"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -227,6 +228,14 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Bool],
 					Validator:         nil,
 				},
+				{
+					Name:              CapabilitiesAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return nil
+					},
+				},
 			},
 		},
 
@@ -239,6 +248,8 @@ func instantiateServiceConfig(arguments *builtin_argument.ArgumentValuesSet) (bu
 	if err != nil {
 		return nil, err
 	}
+
+	// Create the ServiceConfig object
 	return &ServiceConfig{
 		KurtosisValueTypeDefault: kurtosisValueType,
 	}, nil
@@ -540,6 +551,19 @@ func (config *ServiceConfig) ToKurtosisType(
 		tiniEnabled = bool(tiniEnabledStarlark)
 	}
 
+	// Extract capabilities
+	var capabilities []string
+	capabilitiesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, CapabilitiesAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && capabilitiesStarlark.Len() > 0 {
+		capabilities, interpretationErr = kurtosis_types.SafeCastToStringSlice(capabilitiesStarlark, CapabilitiesAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		maybeImageBuildSpec,
@@ -563,6 +587,7 @@ func (config *ServiceConfig) ToKurtosisType(
 		nodeSelectors,
 		imageDownloadMode,
 		tiniEnabled,
+		capabilities,
 	)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
