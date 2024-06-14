@@ -18,7 +18,7 @@ I. Prerequisites
 II. Kurtosis Installation
 -----------------
 
-We provide an install script setting up Docker, Nginx and Kurtosis. The script takes as arguments your domain name, a username and password for HTTP basic authentication.
+We provide an install script setting up Docker, Nginx and Kurtosis. The script takes as arguments your subdomain name, a username and password for HTTP basic authentication.
 
 ```bash
 curl -s https://raw.githubusercontent.com/kurtosis-tech/kurtosis-cloud-config/main/self-hosting-setup.sh | bash -s <domain name> <username> <password>
