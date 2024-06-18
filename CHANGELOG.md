@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.90.1](https://github.com/kurtosis-tech/kurtosis/compare/0.90.0...0.90.1) (2024-06-13)
+
+
+### Features
+
+* Self cloud hosting ([#2485](https://github.com/kurtosis-tech/kurtosis/issues/2485)) ([343dbbd](https://github.com/kurtosis-tech/kurtosis/commit/343dbbd037d5070815836d7fd8386a00b5061e07))
+
+
+### Bug Fixes
+
+* migration of ethereum-package to ethpandaops ([#2489](https://github.com/kurtosis-tech/kurtosis/issues/2489)) ([170584e](https://github.com/kurtosis-tech/kurtosis/commit/170584e86d124f372dd60d641d07757249e01a68))
+
 ## [0.90.0](https://github.com/kurtosis-tech/kurtosis/compare/0.89.18...0.90.0) (2024-06-11)
 
 
