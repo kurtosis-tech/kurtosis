@@ -55,9 +55,11 @@ const (
 
 	//  enables init mode on containers; cleaning up any zombie processes
 	tiniEnabled = true
+
+	taskLogFilePath = "/tmp/task.log"
 )
 
-var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
+var runTailCommandToPreventContainerToStopOnCreating = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %v && tail -F %v", taskLogFilePath, taskLogFilePath)}
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
 	var result []*store_spec.StoreSpec

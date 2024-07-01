@@ -279,7 +279,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	//fullCommandToRun := []string{shellWrapperCommand, "-c", fmt.Sprintf("%v \"$(%v)\" %v %v", "printf \"%s\\n\"", commandToRun, ">>", "/proc/1/fd/1")}
 	//fullCommandToRun := []string{shellWrapperCommand, "-c", fmt.Sprintf("%v | while IFS= read -r line; do %v \"$line\"; done %v %v", commandToRun, "printf \"%s\\n\"", ">>", "/proc/1/fd/1")}
 	// create the log file
-	fullCommandToRun := []string{"touch /tmp/task.log &&", shellWrapperCommand, "-c", fmt.Sprintf("\"%v\" %v %v %v", commandToRun, ">> /tmp/task.log", " && ", "tail -F /tmp/task.log")}
+	fullCommandToRun := []string{shellWrapperCommand, "-c", fmt.Sprintf("\"%v\" %v %v", commandToRun, ">>", taskLogFilePath)}
 	// create the log file
 	// tail the log file
 
