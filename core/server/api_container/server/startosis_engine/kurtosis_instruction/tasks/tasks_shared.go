@@ -57,7 +57,8 @@ const (
 	tiniEnabled = true
 )
 
-var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
+// var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
+var runTailCommandToPreventContainerToStopOnCreating = []string{shellWrapperCommand, "-c", "touch /tmp/task.log && tail -F /tmp/task.log"}
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
 	var result []*store_spec.StoreSpec
@@ -334,5 +335,6 @@ func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string,
 // Redirects output to /proc/1/fd/1 (init process's stdout) for Docker to pick up.
 // Redirects stderr to stdout (can be disabled if not needed).
 func getFullCommandToRun(commandToRun string) []string {
-	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; echo; } %v %v %v", commandToRun, ">>", "/proc/1/fd/1", "2>&1")}
+	//return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; echo; } %v %v %v", commandToRun, ">>", "/proc/1/fd/1", "2>&1")}
+	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v %v", commandToRun, "2>&1", "|", "tee", "/tmp/task.log")}
 }
