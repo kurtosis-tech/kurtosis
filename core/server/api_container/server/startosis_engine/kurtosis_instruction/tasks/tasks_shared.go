@@ -57,7 +57,7 @@ const (
 	tiniEnabled = true
 )
 
-var runTailCommandToPreventContainerToStopOnCreating = []string{shellWrapperCommand, "-c", "touch /tmp/task.log && tail -F /tmp/task.log"}
+var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
 	var result []*store_spec.StoreSpec

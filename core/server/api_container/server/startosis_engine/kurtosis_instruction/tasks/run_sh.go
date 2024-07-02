@@ -276,7 +276,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while preparing the sh command to execute on the image")
 	}
-	fullCommandToRun := []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v", commandToRun, ">>", "/tmp/task.log", "2>&1")}
+	fullCommandToRun := []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; echo; } %v %v %v", commandToRun, ">>", "/proc/1/fd/1", "2>&1")}
 
 	// run the command passed in by user in the container
 	createDefaultDirectoryResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
