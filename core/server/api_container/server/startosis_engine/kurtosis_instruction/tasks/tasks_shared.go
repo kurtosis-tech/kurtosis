@@ -62,9 +62,9 @@ var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf
 
 // Wraps [commandToRun] to enable streaming logs from tasks.
 // Uses curly braces to execute the command(s) in the current shell.
-// Adds an extra echo to ensure each log ends with a newline (may add an extra line at the end).
-// Uses tee to direct output to the task log file
-// Redirects stderr to stdout (can be disabled if not needed).
+// Adds an extra echo to ensure each log ends with a newline.
+// Uses tee to direct output to the task log file while maintaining output to stdout.
+// Redirects stderr to stdout.
 func getCommandToRunForStreamingLogs(commandToRun string) []string {
 	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v %v %v %v %v %v", commandToRun, "2>&1", "|", "tee", taskLogFilePath, "&&", "echo", ">>", taskLogFilePath)}
 }
