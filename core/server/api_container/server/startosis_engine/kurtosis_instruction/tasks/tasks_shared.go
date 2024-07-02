@@ -328,6 +328,11 @@ func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string,
 	}
 }
 
+// Wraps [commandToRun] to enable streaming logs from tasks.
+// Uses curly braces to execute the command(s) in the current shell.
+// Adds an extra echo to ensure each log ends with a newline (may add an extra line at the end).
+// Redirects output to /proc/1/fd/1 (init process's stdout) for Docker to pick up.
+// Redirects stderr to stdout (can be disabled if not needed).
 func getFullCommandToRun(commandToRun string) []string {
 	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; echo; } %v %v %v", commandToRun, ">>", "/proc/1/fd/1", "2>&1")}
 }
