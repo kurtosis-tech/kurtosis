@@ -206,6 +206,7 @@ Now that you've use the Kurtosis CLI to run a package, inspect the resulting env
 [write-your-first-package]: ../get-started/write-your-first-package.md
 [running-in-k8s]: ../guides/running-in-k8s.md
 [running-docker-compose]: ../guides/running-docker-compose.md
+[self-cloud-hosting]: ../guides/self-cloud-hosting.md
 
 <!--------------------------- Advanced Concepts ------------------------------------>
 [architecture-explanation]: ../advanced-concepts/architecture.md
