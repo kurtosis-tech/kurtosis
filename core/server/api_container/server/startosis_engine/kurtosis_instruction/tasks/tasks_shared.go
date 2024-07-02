@@ -327,3 +327,7 @@ func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string,
 		return fmt.Sprintf("task-%v", randomUuid.String()), nil
 	}
 }
+
+func getFullCommandToRun(commandToRun string) []string {
+	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; echo; } %v %v %v", commandToRun, ">>", "/proc/1/fd/1", "2>&1")}
+}
