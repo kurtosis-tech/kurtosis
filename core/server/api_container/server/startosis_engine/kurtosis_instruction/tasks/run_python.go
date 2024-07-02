@@ -418,7 +418,7 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, spaceDelimiter)
 	runEscaped := strings.ReplaceAll(builtin.run, `"`, `\"`)
 	if len(argumentsAsString) > 0 {
-		return fmt.Sprintf(`python -c "%s" %s`, runEscaped, argumentsAsString), nil
+		return fmt.Sprintf(`python -u -c "%s" %s`, runEscaped, argumentsAsString), nil
 	}
-	return fmt.Sprintf(`python -c "%s"`, runEscaped), nil
+	return fmt.Sprintf(`python -u -c "%s"`, runEscaped), nil
 }

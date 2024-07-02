@@ -50,7 +50,7 @@ const (
 	runFilesArtifactsKey = "files_artifacts"
 
 	shellWrapperCommand = "/bin/sh"
-	taskLogFileNamePath = "/tmp/kurtosis/task.log"
+	taskLogFilePath     = "/tmp/kurtosis-task.log"
 	noNameSet           = ""
 	uniqueNameGenErrStr = "error occurred while generating unique name for the file artifact"
 
@@ -58,7 +58,7 @@ const (
 	tiniEnabled = true
 )
 
-var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %s && tail -F %s", taskLogFileNamePath, taskLogFileNamePath)}
+var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %s && tail -F %s", taskLogFilePath, taskLogFilePath)}
 
 // Wraps [commandToRun] to enable streaming logs from tasks.
 // Uses curly braces to execute the command(s) in the current shell.
@@ -66,7 +66,7 @@ var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf
 // Uses tee to direct output to the task log file
 // Redirects stderr to stdout (can be disabled if not needed).
 func getCommandToRunForStreamingLogs(commandToRun string) []string {
-	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v %v %v %v %v %v", commandToRun, "2>&1", "|", "tee", taskLogFileNamePath, "&&", "echo", ">>", taskLogFileNamePath)}
+	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v %v %v %v %v %v", commandToRun, "2>&1", "|", "tee", taskLogFilePath, "&&", "echo", ">>", taskLogFilePath)}
 }
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
