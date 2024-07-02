@@ -50,6 +50,7 @@ const (
 	runFilesArtifactsKey = "files_artifacts"
 
 	shellWrapperCommand = "/bin/sh"
+	taskLogFileNamePath = "/tmp/kurtosis/task.log"
 	noNameSet           = ""
 	uniqueNameGenErrStr = "error occurred while generating unique name for the file artifact"
 
@@ -57,8 +58,16 @@ const (
 	tiniEnabled = true
 )
 
-// var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
-var runTailCommandToPreventContainerToStopOnCreating = []string{shellWrapperCommand, "-c", "touch /tmp/task.log && tail -F /tmp/task.log"}
+var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %s && tail -F %s", taskLogFileNamePath, taskLogFileNamePath)}
+
+// Wraps [commandToRun] to enable streaming logs from tasks.
+// Uses curly braces to execute the command(s) in the current shell.
+// Adds an extra echo to ensure each log ends with a newline (may add an extra line at the end).
+// Uses tee to direct output to the task log file
+// Redirects stderr to stdout (can be disabled if not needed).
+func getCommandToRunForStreamingLogs(commandToRun string) []string {
+	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v %v %v %v %v %v", commandToRun, "2>&1", "|", "tee", taskLogFileNamePath, "&&", "echo", ">>", taskLogFileNamePath)}
+}
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
 	var result []*store_spec.StoreSpec
@@ -277,7 +286,7 @@ func getServiceConfig(
 	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
 	envVars *map[string]string,
 ) (*service.ServiceConfig, error) {
-	serviceConfig, err := service.CreateServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, nil, nil, runTailCommandToPreventContainerToStopOnCreating, nil, *envVars, filesArtifactExpansion, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, tiniEnabled)
+	serviceConfig, err := service.CreateServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, nil, nil, runCommandToStreamTaskLogs, nil, *envVars, filesArtifactExpansion, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, tiniEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
 	}
@@ -327,14 +336,4 @@ func getTaskNameFromArgs(arguments *builtin_argument.ArgumentValuesSet) (string,
 		randomUuid := uuid.NewRandom()
 		return fmt.Sprintf("task-%v", randomUuid.String()), nil
 	}
-}
-
-// Wraps [commandToRun] to enable streaming logs from tasks.
-// Uses curly braces to execute the command(s) in the current shell.
-// Adds an extra echo to ensure each log ends with a newline (may add an extra line at the end).
-// Redirects output to /proc/1/fd/1 (init process's stdout) for Docker to pick up.
-// Redirects stderr to stdout (can be disabled if not needed).
-func getFullCommandToRun(commandToRun string) []string {
-	//return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; echo; } %v %v %v", commandToRun, ">>", "/proc/1/fd/1", "2>&1")}
-	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v %v", commandToRun, "2>&1", "|", "tee", "/tmp/task.log")}
 }

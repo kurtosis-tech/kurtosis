@@ -320,7 +320,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while preparing the sh command to execute on the image")
 	}
-	fullCommandToRun := getFullCommandToRun(commandToRun)
+	fullCommandToRun := getCommandToRunForStreamingLogs(commandToRun)
 
 	// run the command passed in by user in the container
 	runPythonExecutionResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
