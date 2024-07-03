@@ -50,6 +50,7 @@ const (
 	runFilesArtifactsKey = "files_artifacts"
 
 	shellWrapperCommand = "/bin/sh"
+	taskLogFilePath     = "/tmp/kurtosis-task.log"
 	noNameSet           = ""
 	uniqueNameGenErrStr = "error occurred while generating unique name for the file artifact"
 
@@ -57,7 +58,16 @@ const (
 	tiniEnabled = true
 )
 
-var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
+var runCommandToStreamTaskLogs = []string{shellWrapperCommand, "-c", fmt.Sprintf("touch %s && tail -F %s", taskLogFilePath, taskLogFilePath)}
+
+// Wraps [commandToRun] to enable streaming logs from tasks.
+// Uses curly braces to execute the command(s) in the current shell.
+// Adds an extra echo to ensure each log ends with a newline.
+// Uses tee to direct output to the task log file while maintaining output to stdout.
+// Redirects stderr to stdout.
+func getCommandToRunForStreamingLogs(commandToRun string) []string {
+	return []string{shellWrapperCommand, "-c", fmt.Sprintf("{ %v; } %v %v %v %v %v %v %v %v", commandToRun, "2>&1", "|", "tee", taskLogFilePath, "&&", "echo", ">>", taskLogFilePath)}
+}
 
 func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
 	var result []*store_spec.StoreSpec
@@ -276,7 +286,7 @@ func getServiceConfig(
 	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
 	envVars *map[string]string,
 ) (*service.ServiceConfig, error) {
-	serviceConfig, err := service.CreateServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, nil, nil, runTailCommandToPreventContainerToStopOnCreating, nil, *envVars, filesArtifactExpansion, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, tiniEnabled)
+	serviceConfig, err := service.CreateServiceConfig(maybeImageName, maybeImageBuildSpec, maybeImageRegistrySpec, maybeNixBuildSpec, nil, nil, runCommandToStreamTaskLogs, nil, *envVars, filesArtifactExpansion, nil, 0, 0, service_config.DefaultPrivateIPAddrPlaceholder, 0, 0, map[string]string{}, nil, nil, map[string]string{}, image_download_mode.ImageDownloadMode_Missing, tiniEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
 	}

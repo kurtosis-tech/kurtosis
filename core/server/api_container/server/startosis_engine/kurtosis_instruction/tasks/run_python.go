@@ -320,7 +320,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while preparing the sh command to execute on the image")
 	}
-	fullCommandToRun := []string{shellWrapperCommand, "-c", commandToRun}
+	fullCommandToRun := getCommandToRunForStreamingLogs(commandToRun)
 
 	// run the command passed in by user in the container
 	runPythonExecutionResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
@@ -418,7 +418,7 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, spaceDelimiter)
 	runEscaped := strings.ReplaceAll(builtin.run, `"`, `\"`)
 	if len(argumentsAsString) > 0 {
-		return fmt.Sprintf(`python -c "%s" %s`, runEscaped, argumentsAsString), nil
+		return fmt.Sprintf(`python -u -c "%s" %s`, runEscaped, argumentsAsString), nil
 	}
-	return fmt.Sprintf(`python -c "%s"`, runEscaped), nil
+	return fmt.Sprintf(`python -u -c "%s"`, runEscaped), nil
 }
