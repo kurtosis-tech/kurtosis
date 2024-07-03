@@ -16,6 +16,7 @@ type ViewStarlarkModalProps = {
   onClose: () => void;
   starlark?: string;
 };
+
 export const ViewStarlarkModal = ({ isOpen, onClose, starlark }: ViewStarlarkModalProps) => {
   return (
     <Modal closeOnOverlayClick={true} isOpen={isOpen} onClose={onClose} isCentered>

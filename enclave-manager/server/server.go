@@ -425,6 +425,25 @@ func (c *WebServer) AddAlias(ctx context.Context, req *connect.Request[kurtosis_
 
 }
 
+func (c *WebServer) PublishPackageRepository(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.PublishPackageRequest]) (*connect.Response[emptypb.Empty], error) {
+	isValidRequest, _, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !isValidRequest {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+
+	err = PublishPackageRepository(ctx, req.Msg.AuthCode, req.Msg.PackageName, req.Msg.SerializedStarlarkScript, req.Msg.SerializedPackageIcon)
+	if err != nil {
+		logrus.Errorf("An error occurred publishing package: %v", err)
+		return nil, stacktrace.Propagate(err, "An error occurred publishing package repo")
+	}
+	logrus.Info("Successfully published package.")
+
+	return &connect.Response[emptypb.Empty]{}, nil
+}
+
 func (c *WebServer) LockPort(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.LockUnlockPortRequest]) (*connect.Response[emptypb.Empty], error) {
 	if !c.enforceAuth {
 		return nil, stacktrace.NewError("This method is only available in the cloud")
@@ -983,7 +1002,7 @@ func RunEnclaveManagerApiServer(enforceAuth bool) error {
 	)
 
 	emCors := cors.AllowAll()
-	emCors.Log = logrus.StandardLogger()
+	//emCors.Log = logrus.StandardLogger()
 
 	if err := apiServer.RunServerUntilInterruptedWithCors(emCors); err != nil {
 		logrus.Error("An error occurred running the server", err)
