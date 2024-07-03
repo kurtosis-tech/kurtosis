@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.0](https://github.com/kurtosis-tech/kurtosis/compare/0.90.1...1.0.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* release version 1 ([#2487](https://github.com/kurtosis-tech/kurtosis/issues/2487))
+
+### Features
+
+* add maintainers ([#2502](https://github.com/kurtosis-tech/kurtosis/issues/2502)) ([713e7dd](https://github.com/kurtosis-tech/kurtosis/commit/713e7dd9f8cbfc8a3f6647e3be930582760a0d98))
+* release version 1 ([#2487](https://github.com/kurtosis-tech/kurtosis/issues/2487)) ([b9e2427](https://github.com/kurtosis-tech/kurtosis/commit/b9e2427ceafa119056ed0cd3db872f9915db9405))
+
+
+### Bug Fixes
+
+* Fix self hosting overview image ([#2500](https://github.com/kurtosis-tech/kurtosis/issues/2500)) ([36065a8](https://github.com/kurtosis-tech/kurtosis/commit/36065a853db8a1bc76a852873aaa14949220ae59))
+* logs for tasks ([#2499](https://github.com/kurtosis-tech/kurtosis/issues/2499)) ([e7ef915](https://github.com/kurtosis-tech/kurtosis/commit/e7ef91556671cf20e670b87b478acd5d9d813613))
+
 ## [0.90.1](https://github.com/kurtosis-tech/kurtosis/compare/0.90.0...0.90.1) (2024-06-13)
 
 
