@@ -329,4 +329,4 @@ The `tolerations` field expects a list of [`Toleration`][toleration] objects bei
 [user]: ./user.md
 [toleration]: ./toleration.md
 [nix-build-spec]: ./nix-build-spec.md
-[port-ip-doc]: ../../advanced-concepts/public-and-private-ips-and-ports.md
+[port-ip-doc]: ../../advanced-concepts/public-and-private-ips-and-ports.md#gotchas
