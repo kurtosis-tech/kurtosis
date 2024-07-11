@@ -270,6 +270,15 @@ See [`NixBuildSpec`][nix-build-spec] for more information on how to use the Nix 
 
 You can view more information on [configuring the `ReadyCondition` type here][ready-condition].
 
+:::note
+If you are experiencing issues with unsuccessful port check, try exposing the port on all network interfaces via `0.0.0.0` eg `--rpc.laddr tcp://0.0.0.0:36657`). See [here][port-ip-doc] for an in depth explanation.
+```bash
+  == FINISHED SERVICE 'service-a' LOGS ===================================
+  Caused by: An error occurred while waiting for all TCP and UDP ports to be open
+  Caused by: Unsuccessful ports check for IP '172.16.0.10' and port spec '{privatePortSpec:0x400071d0b0}', even after '240' retries with '500' milliseconds in between retries. Timeout '2m0s' has been reached
+```
+:::
+
 :::tip
 If you are trying to use a more complex versions of `cmd` and are running into issues, we recommend using `cmd` in combination with `entrypoint`. You can
 set the `entrypoint` to `["/bin/sh", "-c"]` and then set the `cmd` to the command as you would type it in your shell. For example, `cmd = ["echo foo | grep foo"]`
@@ -320,3 +329,4 @@ The `tolerations` field expects a list of [`Toleration`][toleration] objects bei
 [user]: ./user.md
 [toleration]: ./toleration.md
 [nix-build-spec]: ./nix-build-spec.md
+[port-ip-doc]: ../../advanced-concepts/public-and-private-ips-and-ports.md

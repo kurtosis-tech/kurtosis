@@ -42,3 +42,9 @@ grafana-1670597488       grafana       http: 3000/tcp -> 127.0.0.1:55998        
 The IP address used to reach these containers is your localhost address, `127.0.0.1`. This is the "public IP address" of each container in the cluster.
 
 The combination of public IP + port _will_ allow you to connect to a container from your command line. For example, from the output above, `curl 127.0.0.1:55947` on your command line would make a request to private port `4000` on the `cl-client-0-beacon` service.
+
+### Gotchas
+
+When exposing a port on a `ServiceConfig` via the `ports` field, the container responsible for managing the enclave, APIContainer (APIC), will perform an availability check (`nc -vz <service ip> <port>`) to ensure the port is exposed.
+Some services by default expose ports on `localhost:<port num>` or `127.0.0.1:<port num>`. This would cause the availability check (eg. `nc -vz 172.0.0.3 9612`) to fail as the APIC communicates with the service on a subnetwork created by Kurtosis for that enclave,
+whilst the port is only exposed on the localhost network interface. The workaround is to expose the port on all network interfaces via `0.0.0.0` eg. `--rpc.laddr tcp://0.0.0.0:36657`.
