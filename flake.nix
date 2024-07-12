@@ -7,7 +7,7 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { nixpkgs, unstable, flake-utils, ... }:
+  outputs = { self, nixpkgs, unstable, flake-utils, ... }:
     let utils = flake-utils;
     in utils.lib.eachDefaultSystem (system:
       let
@@ -17,8 +17,14 @@
           inherit pkgs system;
           nodejs = pkgs.nodejs_20;
         };
-      in {
+      in
+      {
         formatter = pkgs.nixpkgs-fmt;
+
+        packages = rec {
+          default = kurtosis;
+          kurtosis = unstable_pkgs.callPackage ./package.nix { };
+        };
 
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs;
@@ -27,7 +33,8 @@
                 import ./nix-pkgs/openapi-codegen.nix { inherit pkgs; };
               grpc-tools-node =
                 import ./nix-pkgs/grpc-tools-node.nix { inherit pkgs; };
-            in [
+            in
+            [
               goreleaser
               go_1_20
               gopls
