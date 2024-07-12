@@ -481,6 +481,21 @@ func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map
 
 	result := []*volume.Volume{}
 	if resp.Volumes != nil {
+		// Podman API inconsistency - filter out the union matches that podman returns while docker only returns the intersect matches when filtering by label
+		for _, vol := range resp.Volumes {
+			allLabelsMatch := true
+
+			for label, val := range labels {
+				if volValue, exists := vol.Labels[label]; !exists || volValue != val {
+					allLabelsMatch = false
+					break
+				}
+			}
+
+			if allLabelsMatch {
+				result = append(result, vol)
+			}
+		}
 		result = resp.Volumes
 	}
 
