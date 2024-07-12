@@ -819,8 +819,17 @@ func (manager *DockerManager) GetContainerIps(ctx context.Context, containerId s
 		return nil, stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
 	}
 	allNetworkInfo := resp.NetworkSettings.Networks
-	for _, networkInfo := range allNetworkInfo {
-		containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
+	// for _, networkInfo := range allNetworkInfo {
+	// 	containerIps[networkInfo.NetworkID] = networkInfo.IPAddress
+	// }
+	for networkKey, networkInfo := range allNetworkInfo {
+		// podman does not return the networkID properly and as such we need to make sure we get it.
+		network, err := manager.dockerClient.NetworkInspect(ctx, networkInfo.NetworkID, types.NetworkInspectOptions{})
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred inspecting network: '%v'", networkKey)
+		}
+
+		containerIps[network.ID] = networkInfo.IPAddress
 	}
 	return containerIps, nil
 }
