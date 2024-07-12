@@ -1762,7 +1762,7 @@ func (manager *DockerManager) getContainerHostConfig(
 			portMap[containerPort] = []nat.PortBinding{
 				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
 				{
-					HostIP:   "",
+					HostIP:   "0.0.0.0",
 					HostPort: "",
 				},
 			}
