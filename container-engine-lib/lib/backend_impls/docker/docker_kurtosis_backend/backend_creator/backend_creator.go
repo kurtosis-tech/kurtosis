@@ -3,11 +3,10 @@ package backend_creator
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"net"
 	"os"
 	"path"
-
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
@@ -28,7 +27,7 @@ import (
 
 const (
 	unixSocketPrefix    = "unix://"
-	systemDaemonSocket  = "/var/run/podman/podman.sock"
+	systemDaemonSocket  = "/var/run/docker.sock"
 	userOwnDaemonSocket = "/.docker/run/docker.sock"
 
 	noTempDirPrefix    = ""

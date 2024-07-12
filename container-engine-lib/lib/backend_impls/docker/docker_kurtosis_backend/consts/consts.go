@@ -22,17 +22,14 @@ const (
 	EngineTransportProtocol = port_spec.TransportProtocol_TCP
 
 	// This needs to be bind-mounted into the engine & API containers so they can manipulate Docker
-	DockerSocketFilepath = "/var/run/podman/podman.sock"
+	DockerSocketFilepath = "/var/run/docker.sock"
 
 	// The host engine config directory to mount and its local mapping
 	HostEngineConfigDirToMount = "/root/engine_config"
 	EngineConfigLocalDir       = "/run/engine"
 
 	//The Docker network name where all the containers in the engine and logs service context will be added
-	// NameOfNetworkToStartEngineAndLogServiceContainersIn = "bridge"
-	// HttpApplicationProtocol                             = "http"
-	// The Docker network name where all the containers in the engine and logs service context will be added
-	NameOfNetworkToStartEngineAndLogServiceContainersIn = "podman"
+	NameOfNetworkToStartEngineAndLogServiceContainersIn = "bridge"
 	HttpApplicationProtocol                             = "http"
 
 	GitHubAuthStorageDirPath = "/kurtosis-data/github-auth/"
