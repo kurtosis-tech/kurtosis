@@ -413,6 +413,32 @@ func (manager *DockerManager) RemoveNetwork(context context.Context, networkId s
 	return nil
 }
 
+func (manager *DockerManager) GetDefaultNetwork(ctx context.Context) (*docker_manager_types.Network, error) {
+
+	matchingNetworks, err := manager.GetNetworksByName(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
+			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+		)
+	}
+	numMatchingNetworks := len(matchingNetworks)
+	if numMatchingNetworks > 1 {
+		return nil, stacktrace.NewError(
+			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
+			consts.NameOfNetworkToStartEngineAndLogServiceContainersIn,
+			numMatchingNetworks,
+		)
+	}
+
+	if numMatchingNetworks == 0 {
+		return nil, stacktrace.NewError(fmt.Sprintf("No matching network found with the configured name: %v", consts.NameOfNetworkToStartEngineAndLogServiceContainersIn))
+	}
+
+	return matchingNetworks[0], nil
+}
+
 /*
 CreateVolume
 Creates a Docker volume identified by the given name.
