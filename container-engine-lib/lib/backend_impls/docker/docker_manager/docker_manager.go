@@ -624,7 +624,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 	}
 	containerHostConfigPtr, err := manager.getContainerHostConfig(
 		args.addedCapabilities,
-		args.securityOpts,
+		//args.securityOpts,
+
 		args.networkMode,
 		args.bindMounts,
 		args.volumeMounts,
@@ -1823,6 +1824,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		securityOptStr := string(securityOpt)
 		securityOptsSlice = append(securityOptsSlice, securityOptStr)
 	}
+	securityOptsSlice = append(securityOptsSlice, "")
 
 	extraHosts := []string{}
 	if needsToAccessDockerHostMachine {
@@ -1925,21 +1927,25 @@ func (manager *DockerManager) getContainerHostConfig(
 		Privileged:      false,
 		PublishAllPorts: false,
 		ReadonlyRootfs:  false,
-		SecurityOpt:     securityOptsSlice,
-		StorageOpt:      nil,
-		Tmpfs:           nil,
-		UTSMode:         "",
-		UsernsMode:      "",
-		ShmSize:         0,
-		Sysctls:         nil,
-		Runtime:         "",
-		ConsoleSize:     [2]uint{},
-		Isolation:       "",
-		Resources:       resources,
-		Mounts:          nil,
-		MaskedPaths:     nil,
-		ReadonlyPaths:   nil,
-		Init:            &useInit,
+		//SecurityOpt:     securityOptsSlice,
+		SecurityOpt: []string{
+			"label=disable",       // Disables SELinux
+			"apparmor:unconfined", // Disables AppArmor
+		},
+		StorageOpt:    nil,
+		Tmpfs:         nil,
+		UTSMode:       "",
+		UsernsMode:    "",
+		ShmSize:       0,
+		Sysctls:       nil,
+		Runtime:       "",
+		ConsoleSize:   [2]uint{},
+		Isolation:     "",
+		Resources:     resources,
+		Mounts:        nil,
+		MaskedPaths:   nil,
+		ReadonlyPaths: nil,
+		Init:          &useInit,
 	}
 	return containerHostConfigPtr, nil
 }
