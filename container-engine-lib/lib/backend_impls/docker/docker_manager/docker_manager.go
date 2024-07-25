@@ -624,8 +624,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 	}
 	containerHostConfigPtr, err := manager.getContainerHostConfig(
 		args.addedCapabilities,
-		//args.securityOpts,
-
+		args.securityOpts,
 		args.networkMode,
 		args.bindMounts,
 		args.volumeMounts,
