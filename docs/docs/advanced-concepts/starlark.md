@@ -3,7 +3,7 @@ title: Starlark
 sidebar_label: Starlark
 ---
 
-[Starlark](https://github.com/bazelbuild/starlark) is a minimal programming language, halfway between a configuration language and a general-purpose programming language. It was developed by Google to do configurations for the [Bazel build tool](https://bazel.build/rules/language), and has since [been adopted by Facebook for the Buck build system as well](https://github.com/facebookexperimental/starlark-rust). Starlark's syntax is a minimal subset of of Python, with a focus on readability. [This page](https://bazel.build/rules/language#differences_with_python) lists the differences between Starlark and Python.
+[Starlark](https://github.com/bazelbuild/starlark) is a minimal programming language, halfway between a configuration language and a general-purpose programming language. It was developed by Google to do configurations for the [Bazel build tool](https://bazel.build/rules/language), and has since [been adopted by Facebook for the Buck build system as well](https://github.com/facebookexperimental/starlark-rust). Starlark's syntax is a minimal subset of Python, with a focus on readability. [This page](https://bazel.build/rules/language#differences_with_python) lists the differences between Starlark and Python.
 
 Kurtosis uses Starlark as the way for users to express manipulations to [enclave][enclaves-reference]. Users submit Starlark scripts to Kurtosis, the Starlark is interpreted, and the instructions in the script are executed.
 
