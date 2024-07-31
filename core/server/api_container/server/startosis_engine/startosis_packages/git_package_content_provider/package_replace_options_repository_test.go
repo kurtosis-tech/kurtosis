@@ -10,7 +10,7 @@ import (
 
 var allPackageReplaceOptionsForTest = map[string]string{
 	"github.com/kurtosis-tech/sample-dependency-package": "github.com/kurtosis-tech/another-sample-dependency-package",
-	"github.com/kurtosis-tech/ethereum-package":          "github.com/another-org/ethereum-package",
+	"github.com/ethpandaops/ethereum-package":            "github.com/another-org/ethereum-package",
 }
 
 func TestSaveAnGet_Success(t *testing.T) {
@@ -41,7 +41,7 @@ func TestSaveAnGet_OverwriteSuccess(t *testing.T) {
 	expectedReplacePackageOptions := map[string]string{
 		"github.com/kurtosis-tech/sample-dependency-package": "github.com/kurtosis-tech/random-package",
 		"github.com/kurtosis-tech/avalanche-package":         "github.com/another-org/avalanche-package",
-		"github.com/kurtosis-tech/ethereum-package":          "github.com/another-org/ethereum-package",
+		"github.com/ethpandaops/ethereum-package":            "github.com/another-org/ethereum-package",
 	}
 
 	existingReplacePackageOptions, err := repository.Get()

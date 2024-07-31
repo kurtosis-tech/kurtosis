@@ -1,5 +1,88 @@
 # Changelog
 
+## [1.0.0](https://github.com/kurtosis-tech/kurtosis/compare/0.90.1...1.0.0) (2024-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* release version 1 ([#2487](https://github.com/kurtosis-tech/kurtosis/issues/2487))
+
+### Features
+
+* add maintainers ([#2502](https://github.com/kurtosis-tech/kurtosis/issues/2502)) ([713e7dd](https://github.com/kurtosis-tech/kurtosis/commit/713e7dd9f8cbfc8a3f6647e3be930582760a0d98))
+* release version 1 ([#2487](https://github.com/kurtosis-tech/kurtosis/issues/2487)) ([b9e2427](https://github.com/kurtosis-tech/kurtosis/commit/b9e2427ceafa119056ed0cd3db872f9915db9405))
+
+
+### Bug Fixes
+
+* Fix self hosting overview image ([#2500](https://github.com/kurtosis-tech/kurtosis/issues/2500)) ([36065a8](https://github.com/kurtosis-tech/kurtosis/commit/36065a853db8a1bc76a852873aaa14949220ae59))
+* logs for tasks ([#2499](https://github.com/kurtosis-tech/kurtosis/issues/2499)) ([e7ef915](https://github.com/kurtosis-tech/kurtosis/commit/e7ef91556671cf20e670b87b478acd5d9d813613))
+
+## [0.90.1](https://github.com/kurtosis-tech/kurtosis/compare/0.90.0...0.90.1) (2024-06-13)
+
+
+### Features
+
+* Self cloud hosting ([#2485](https://github.com/kurtosis-tech/kurtosis/issues/2485)) ([343dbbd](https://github.com/kurtosis-tech/kurtosis/commit/343dbbd037d5070815836d7fd8386a00b5061e07))
+
+
+### Bug Fixes
+
+* migration of ethereum-package to ethpandaops ([#2489](https://github.com/kurtosis-tech/kurtosis/issues/2489)) ([170584e](https://github.com/kurtosis-tech/kurtosis/commit/170584e86d124f372dd60d641d07757249e01a68))
+
+## [0.90.0](https://github.com/kurtosis-tech/kurtosis/compare/0.89.18...0.90.0) (2024-06-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* change license to apache 2.0 ([#2481](https://github.com/kurtosis-tech/kurtosis/issues/2481))
+
+### Features
+
+* change license to apache 2.0 ([#2481](https://github.com/kurtosis-tech/kurtosis/issues/2481)) ([d884144](https://github.com/kurtosis-tech/kurtosis/commit/d88414497e38c32982cf52ac41a5c08ee5927298))
+
+## [0.89.18](https://github.com/kurtosis-tech/kurtosis/compare/0.89.17...0.89.18) (2024-06-10)
+
+
+### Bug Fixes
+
+* exec recipe in ready condition ([#2479](https://github.com/kurtosis-tech/kurtosis/issues/2479)) ([288ddba](https://github.com/kurtosis-tech/kurtosis/commit/288ddba53468a376d10ef720f9ab197633237201))
+
+## [0.89.17](https://github.com/kurtosis-tech/kurtosis/compare/0.89.16...0.89.17) (2024-06-07)
+
+
+### Features
+
+* add optional names to tasks ([#2477](https://github.com/kurtosis-tech/kurtosis/issues/2477)) ([5d7bb67](https://github.com/kurtosis-tech/kurtosis/commit/5d7bb677ba7ac854c61b78247432bfd8da55e920))
+* port name validation RFC-6335 ([#2474](https://github.com/kurtosis-tech/kurtosis/issues/2474)) ([ffbd30b](https://github.com/kurtosis-tech/kurtosis/commit/ffbd30bbb55bf7d4c5cf3d955d221c1c48f67ce4))
+
+## [0.89.16](https://github.com/kurtosis-tech/kurtosis/compare/0.89.15...0.89.16) (2024-06-05)
+
+
+### Features
+
+* Add cloud endpoint to retrieve the instance metrics ([#2469](https://github.com/kurtosis-tech/kurtosis/issues/2469)) ([52bbc1b](https://github.com/kurtosis-tech/kurtosis/commit/52bbc1be2eeec2b37ee82fbd2f4e2717b2c11849))
+* KurtosisUpgrader component release ([#2473](https://github.com/kurtosis-tech/kurtosis/issues/2473)) ([f458e9f](https://github.com/kurtosis-tech/kurtosis/commit/f458e9f2538de0cb0219054b3c6c4ebaa0bad642))
+
+
+### Bug Fixes
+
+* doc error in starlark.plan ([#2468](https://github.com/kurtosis-tech/kurtosis/issues/2468)) ([473bed8](https://github.com/kurtosis-tech/kurtosis/commit/473bed82c5925e5133a31d4c19e035068926442c))
+
+## [0.89.15](https://github.com/kurtosis-tech/kurtosis/compare/0.89.14...0.89.15) (2024-06-03)
+
+
+### Bug Fixes
+
+* dont validate doc strings by default ([#2470](https://github.com/kurtosis-tech/kurtosis/issues/2470)) ([39ec9ce](https://github.com/kurtosis-tech/kurtosis/commit/39ec9cecb00b85b9106521454fe3139eb733903d))
+
+## [0.89.14](https://github.com/kurtosis-tech/kurtosis/compare/0.89.13...0.89.14) (2024-05-31)
+
+
+### Bug Fixes
+
+* Browser recommendator message improved ([#2466](https://github.com/kurtosis-tech/kurtosis/issues/2466)) ([1cf3eac](https://github.com/kurtosis-tech/kurtosis/commit/1cf3eac786b63255bdf27bd74c97cc07dd5b6de7))
+
 ## [0.89.13](https://github.com/kurtosis-tech/kurtosis/compare/0.89.12...0.89.13) (2024-05-30)
 
 

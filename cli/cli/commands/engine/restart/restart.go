@@ -3,6 +3,9 @@ package restart
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -14,8 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -29,6 +30,9 @@ const (
 
 	defaultShouldRestartAPIContainers = "false"
 	restartAPIContainersFlagKey       = "restart-api-containers"
+
+	domainFlagKey = "domain"
+	defaultDomain = ""
 )
 
 var RestartCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -80,6 +84,13 @@ var RestartCmd = &lowlevel.LowlevelKurtosisCommand{
 			Shorthand: "",
 			Type:      flags.FlagType_Bool,
 			Default:   defaultShouldRestartAPIContainers,
+		},
+		{
+			Key:       domainFlagKey,
+			Usage:     "The domain name of the enclave manager UI if self-hosting (blank defaults to localhost for the local use case and cloud.kurtosis.com for the Kurtosis cloud use case)",
+			Shorthand: "",
+			Type:      flags.FlagType_String,
+			Default:   defaultDomain,
 		},
 	},
 	PreValidationAndRunFunc:  nil,
@@ -142,9 +153,14 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", restartAPIContainersFlagKey)
 	}
 
+	domain, err := flags.GetString(domainFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine enclave manager UI domain name using the flag with key '%v'; this is a bug in Kurtosis", domainFlagKey)
+	}
+
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize, shouldStartInDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}

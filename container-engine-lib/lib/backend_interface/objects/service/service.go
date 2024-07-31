@@ -1,30 +1,48 @@
 package service
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"net"
 	"regexp"
+	"strconv"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
-const (
+var (
 	// ServiceNameRegex implements RFC-1035 for naming services, namely:
+	// * contain at least 1 character
 	// * contain at most 63 characters
 	// * contain only lowercase alphanumeric characters or '-'
+	// * contain at least one letter ('A'-'Z' or 'a'-'z')
 	// * start with an alphabetic character
 	// * end with an alphanumeric character
 	// The adoption of RFC-1035 is to maintain compatability with current Kubernetes service and pod naming standards:
 	// We use this over RFC-1035 as Service Names require 1035 to be followed
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 	// https://kubernetes.io/docs/concepts/services-networking/service/
-	ServiceNameRegex            = "[a-z]([-a-z0-9]{0,61}[a-z0-9])?"
-	WordWrappedServiceNameRegex = "^" + ServiceNameRegex + "$"
-	serviceNameMaxLength        = 63
+	// nolint: gomnd
+	ServiceNameRegex = regexp.MustCompile(generateRegex(63))
+
+	// PortNameRegex implements RFC-6335 for naming ports, namely:
+	// * contain at least 1 character
+	// * contain at most 15 characters
+	// * contain only lowercase alphanumeric characters or '-'
+	// * contain at least one letter ('A'-'Z' or 'a'-'z')
+	// * start with an alphabetic character
+	// * end with an alphanumeric character
+	// The adpoption of RFC-6335 is to maintain compatability with current Kubernetes port naming standards:
+	// We use this over RFC-6335 as Port Names require 6335 to be followed
+	// https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L326-L351
+	// nolint: gomnd
+	PortNameRegex = regexp.MustCompile(generateRegex(15))
 )
 
-var (
-	compiledWordWrappedServiceNameRegex = regexp.MustCompile(WordWrappedServiceNameRegex)
-)
+// generateRegex creates a regex string based on the provided constraints (RFC-1035 and RFC-6335).
+func generateRegex(maxLen int) string {
+	// nolint: gomnd
+	return "^[a-z]([-a-z0-9]{0," + strconv.Itoa(maxLen-2) + "}[a-z0-9])?$"
+}
 
 type ServiceName string
 type ServiceUUID string
@@ -79,5 +97,9 @@ func (service *Service) GetMaybePublicPorts() map[string]*port_spec.PortSpec {
 }
 
 func IsServiceNameValid(serviceName ServiceName) bool {
-	return compiledWordWrappedServiceNameRegex.MatchString(string(serviceName))
+	return ServiceNameRegex.MatchString(string(serviceName))
+}
+
+func IsPortNameValid(portName string) bool {
+	return PortNameRegex.MatchString(portName)
 }

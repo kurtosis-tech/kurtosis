@@ -438,9 +438,9 @@ http_response = plan.request(
     # OPTIONAL (Default: Running 'REQUEST_TYPE' request on service 'SERVICE_NAME')
     description = "making a request"
 )
-plan.print(get_response["body"]) # Prints the body of the request
-plan.print(get_response["code"]) # Prints the result code of the request (e.g. 200, 500)
-plan.print(get_response["extract.extracted-field"]) # Prints the result of running ".name.id" query, that is saved with key "extracted-field"
+plan.print(http_response["body"]) # Prints the body of the request
+plan.print(http_response["code"]) # Prints the result code of the request (e.g. 200, 500)
+plan.print(http_response["extract.extracted-field"]) # Prints the result of running ".name.id" query, that is saved with key "extracted-field"
 ```
 
 The instruction returns a response, which is a `dict` with following key-value pair; the values are a [future reference][future-references-reference] 
@@ -612,6 +612,10 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # For example: 'sh -c "mkdir -p kurtosis && echo $(ls)"'
         # MANDATORY
         run = "mkdir -p kurtosis && echo $(ls)",
+
+        # The name of the container, as a string
+        # OPTIONAL (Default: task--UUID)
+        name = "curl-job"
 
         # Image the command will be run on
         # OPTIONAL (Default: badouralix/curl-jq)

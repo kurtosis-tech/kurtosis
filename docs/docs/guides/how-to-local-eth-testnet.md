@@ -11,7 +11,7 @@ sidebar_position: 10
 This guide walks you through the process of instantiating a configurable local Ethereum testnet, deploying a smart contract to it, and using the testnet to run tests against your dApp. This guide is designed for dApp developers who want to develop and test their dApps locally against different network configurations before deploying to a live testnet or the mainnet.
 
 In this guide, you will:
-* Instantiate a local Ethereum testnet with the [`ethereum-package`](https://github.com/kurtosis-tech/ethereum-package) using [Kurtosis](https://github.com/kurtosis-tech/kurtosis),
+* Instantiate a local Ethereum testnet with the [`ethereum-package`](https://github.com/ethpandaops/ethereum-package) using [Kurtosis](https://github.com/kurtosis-tech/kurtosis),
 * Connect your Hardhat dApp development environment to the local testnet to compile, deploy, and test a dApp, and
 * Configure the local testnet, including parameters like number of nodes and specific EL/CL client pairings, to enable development and testing workflows against various network configurations.
 
@@ -32,13 +32,13 @@ Before you proceed, make sure you have:
 
 To spin up a local Ethereum testnet, run:
 ```bash
-kurtosis --enclave local-eth-testnet run github.com/kurtosis-tech/ethereum-package
+kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package
 ```
 :::info
 This command names your network: "local-eth-testnet” using the `--enclave` flag.
 :::
 
-Kurtosis will print the steps its taking under the hood as it works to interpret, validate, and then execute the instructions. At the end, you should see an output that resembles the following: 
+Kurtosis will print the steps its taking under the hood as it works to interpret, validate, and then execute the instructions. At the end, you should see an output that resembles the following:
 ```bash
 INFO[2023-04-04T18:09:44-04:00] ======================================================
 INFO[2023-04-04T18:09:44-04:00] ||          Created enclave: local-eth-testnet      ||
@@ -81,7 +81,7 @@ Congratulations! You used Kurtosis to instantiate a local Ethereum testnet, with
 
 ### Review
 
-In this section, you executed a command that directed Kurtosis to use the [`ethereum-package` hosted remotely on GitHub](https://github.com/kurtosis-tech/ethereum-package) to spin up a local Ethereum testnet within a Kurtosis [Enclave](https://docs.kurtosis.com/advanced-concepts/enclaves/). Inside your enclave, you will find both "file artifacts" and "user services".
+In this section, you executed a command that directed Kurtosis to use the [`ethereum-package` hosted remotely on GitHub](https://github.com/ethpandaops/ethereum-package) to spin up a local Ethereum testnet within a Kurtosis [Enclave](https://docs.kurtosis.com/advanced-concepts/enclaves/). Inside your enclave, you will find both "file artifacts" and "user services".
 
 The [File Artifacts](https://docs.kurtosis.com/advanced-concepts/files-artifacts/) in your enclave include all the data generated and utilized to bootstrap the EL and CL clients. The data was created using the `prelaunch-data-generator` service built from this [Docker image](https://github.com/ethpandaops/ethereum-genesis-generator)
 
@@ -114,7 +114,7 @@ localnet: {
 url: 'http://127.0.0.1:<$YOUR_PORT>',// TODO: REPLACE $YOUR_PORT WITH THE PORT OF A NODE URI PRODUCED BY THE ETH NETWORK KURTOSIS PACKAGE
 
 // These are private keys associated with prefunded test accounts created by the ethereum-package
-// <https://github.com/kurtosis-tech/ethereum-package/blob/main/src/prelaunch_data_generator/genesis_constants/genesis_constants.star>
+// <https://github.com/ethpandaops/ethereum-package/blob/main/src/prelaunch_data_generator/genesis_constants/genesis_constants.star>
 accounts: [
     "ef5177cd0b6b21c87db5a0bf35d4084a8a57a9d6a064f86d51ac85f2b873a4e2",
     "48fcc39ae27a0e8bf0274021ae6ebd8fe4a0e12623d61464c498900b28feb567",
@@ -139,7 +139,7 @@ The output should look something like this:
 0x1F6298457C5d76270325B724Da5d1953923a6B88 has balance 10000000000000000000000000
 ```
 
-This confirms that Hardhat is using your local testnet and detects the pre-funded accounts created by the `ethereum-package`. 
+This confirms that Hardhat is using your local testnet and detects the pre-funded accounts created by the `ethereum-package`.
 
 ### Deploy and test your dApp locally
 With the dApp development environment fully connected to the local Ethereum testnet, you can now run development and testing workflows against your dApp using the local testnet.
@@ -245,7 +245,7 @@ The `network_params` struct configures the network settings that are used to cre
 Save your edited params file in any directory you wish (in the example below, it is saved to the desktop) and then use it to run your Kurtosis package by running:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/kurtosis-tech/ethereum-package --args-file ~/eth-network-params.yaml
+kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/ethpandaops/ethereum-package --args-file ~/eth-network-params.yaml
 ```
 :::TIP
 Note that the `kurtosis clean -a` command is used here to instruct Kurtosis to destroy the old testnet and its contents before starting a new one up.

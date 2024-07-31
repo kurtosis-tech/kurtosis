@@ -98,6 +98,9 @@ const (
 	// KurtosisCloudBackendServerUpgradeKurtosisVersionProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's UpgradeKurtosisVersion RPC.
 	KurtosisCloudBackendServerUpgradeKurtosisVersionProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/UpgradeKurtosisVersion"
+	// KurtosisCloudBackendServerGetInstanceMetricsProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's GetInstanceMetrics RPC.
+	KurtosisCloudBackendServerGetInstanceMetricsProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetInstanceMetrics"
 )
 
 // KurtosisCloudBackendServerClient is a client for the kurtosis_cloud.KurtosisCloudBackendServer
@@ -124,6 +127,7 @@ type KurtosisCloudBackendServerClient interface {
 	DeleteAlias(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.DeleteAliasRequest]) (*connect.Response[emptypb.Empty], error)
 	IsNewKurtosisVersionAvailable(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error)
 	UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error)
+	GetInstanceMetrics(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsResponse], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -244,6 +248,11 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerUpgradeKurtosisVersionProcedure,
 			opts...,
 		),
+		getInstanceMetrics: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsRequest, kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerGetInstanceMetricsProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -270,6 +279,7 @@ type kurtosisCloudBackendServerClient struct {
 	deleteAlias                   *connect.Client[kurtosis_backend_server_rpc_api_bindings.DeleteAliasRequest, emptypb.Empty]
 	isNewKurtosisVersionAvailable *connect.Client[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest, kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse]
 	upgradeKurtosisVersion        *connect.Client[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest, emptypb.Empty]
+	getInstanceMetrics            *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsRequest, kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsResponse]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -381,6 +391,11 @@ func (c *kurtosisCloudBackendServerClient) UpgradeKurtosisVersion(ctx context.Co
 	return c.upgradeKurtosisVersion.CallUnary(ctx, req)
 }
 
+// GetInstanceMetrics calls kurtosis_cloud.KurtosisCloudBackendServer.GetInstanceMetrics.
+func (c *kurtosisCloudBackendServerClient) GetInstanceMetrics(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsResponse], error) {
+	return c.getInstanceMetrics.CallUnary(ctx, req)
+}
+
 // KurtosisCloudBackendServerHandler is an implementation of the
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
@@ -405,6 +420,7 @@ type KurtosisCloudBackendServerHandler interface {
 	DeleteAlias(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.DeleteAliasRequest]) (*connect.Response[emptypb.Empty], error)
 	IsNewKurtosisVersionAvailable(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.IsNewKurtosisVersionAvailableResponse], error)
 	UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error)
+	GetInstanceMetrics(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsResponse], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -521,6 +537,11 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.UpgradeKurtosisVersion,
 		opts...,
 	)
+	kurtosisCloudBackendServerGetInstanceMetricsHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerGetInstanceMetricsProcedure,
+		svc.GetInstanceMetrics,
+		opts...,
+	)
 	return "/kurtosis_cloud.KurtosisCloudBackendServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
@@ -565,6 +586,8 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerIsNewKurtosisVersionAvailableHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerUpgradeKurtosisVersionProcedure:
 			kurtosisCloudBackendServerUpgradeKurtosisVersionHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerGetInstanceMetricsProcedure:
+			kurtosisCloudBackendServerGetInstanceMetricsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -656,4 +679,8 @@ func (UnimplementedKurtosisCloudBackendServerHandler) IsNewKurtosisVersionAvaila
 
 func (UnimplementedKurtosisCloudBackendServerHandler) UpgradeKurtosisVersion(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.UpgradeKurtosisVersionRequest]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.UpgradeKurtosisVersion is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) GetInstanceMetrics(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetInstanceMetricsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetInstanceMetrics is not implemented"))
 }

@@ -21,7 +21,7 @@ const (
 
 	alwaysCreateExecutablePackage = true
 
-	validPackageNameExample = "github.com/kurtosis-tech/ethereum-package"
+	validPackageNameExample = "github.com/ethpandaops/ethereum-package"
 )
 
 // InitCmd we only fill in the required struct fields, hence the others remain nil

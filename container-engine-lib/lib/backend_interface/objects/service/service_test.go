@@ -1,34 +1,65 @@
 package service
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-func TestValidServiceName(t *testing.T) {
-	require.True(t, IsServiceNameValid(ServiceName("a")))
-	require.True(t, IsServiceNameValid(ServiceName("abc")))
-	require.True(t, IsServiceNameValid(ServiceName("abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef123")))
+func TestServiceNameValidation(t *testing.T) {
+	validServiceNames := []string{
+		"a",
+		"abc",
+		"abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef123", // 63 characters
+		"a-b",
+	}
+
+	invalidServiceNames := []string{
+		"1-geth-lighthouse", // 17 characters
+		"-bc",
+		"a--",
+		"a_b",
+		"a%b",
+		"a:b",
+		"a/b",
+		"",
+		"abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef1234", // 64 characters
+	}
+
+	for _, name := range validServiceNames {
+		require.True(t, IsServiceNameValid(ServiceName(name)), "expected valid service name: %s", name)
+	}
+
+	for _, name := range invalidServiceNames {
+		require.False(t, IsServiceNameValid(ServiceName(name)), "expected invalid service name: %s", name)
+	}
 }
 
-func TestInvalidServiceName(t *testing.T) {
-	require.False(t, IsServiceNameValid(ServiceName("1-geth-lighthouse")))
-}
+func TestPortNameValidation(t *testing.T) {
+	validPortNames := []string{
+		"a",
+		"abc",
+		"abcdefabcdef123", // 15 characters
+		"a-b",
+	}
 
-func TestServiceNameWithSpecialChars(t *testing.T) {
-	require.True(t, IsServiceNameValid(ServiceName("a-b")))
-	require.False(t, IsServiceNameValid(ServiceName("-bc")))
-	require.False(t, IsServiceNameValid(ServiceName("a--")))
-	require.False(t, IsServiceNameValid(ServiceName("a_b")))
-	require.False(t, IsServiceNameValid(ServiceName("a%b")))
-	require.False(t, IsServiceNameValid(ServiceName("a:b")))
-	require.False(t, IsServiceNameValid(ServiceName("a/b")))
-}
+	invalidPortNames := []string{
+		"1-dummy-port", // 12 characters
+		"-bc",
+		"a--",
+		"a_b",
+		"a%b",
+		"a:b",
+		"a/b",
+		"",
+		"abcdefabcdef1234", // 16 characters
+	}
 
-func TestServiceNameLength(t *testing.T) {
-	require.False(t, IsServiceNameValid(ServiceName("")))
-	require.True(t, IsServiceNameValid(ServiceName("a")))
-	require.True(t, IsServiceNameValid(ServiceName("abc")))
-	require.True(t, IsServiceNameValid(ServiceName("abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef123")))
-	require.False(t, IsServiceNameValid(ServiceName("abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef1234")))
+	for _, name := range validPortNames {
+		require.True(t, IsPortNameValid(name), "expected valid port name: %s", name)
+	}
+
+	for _, name := range invalidPortNames {
+		require.False(t, IsPortNameValid(name), "expected invalid port name: %s", name)
+	}
 }

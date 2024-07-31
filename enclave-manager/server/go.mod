@@ -11,7 +11,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20240325164203-1197d5589b85
 	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang v0.0.0-20230828153722-32770ca96513
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
-	github.com/rs/cors v1.9.0
+	github.com/rs/cors v1.11.0
 	github.com/sirupsen/logrus v1.9.3
 	google.golang.org/protobuf v1.33.0
 )

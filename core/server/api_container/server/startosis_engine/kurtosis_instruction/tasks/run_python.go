@@ -25,7 +25,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"strings"
@@ -60,6 +59,11 @@ func NewRunPythonService(
 			Name: RunPythonBuiltinName,
 
 			Arguments: []*builtin_argument.BuiltinArgument{
+				{
+					Name:              TaskNameArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+				},
 				{
 					Name:              RunArgName,
 					IsOptional:        false,
@@ -163,8 +167,11 @@ type RunPythonCapabilities struct {
 }
 
 func (builtin *RunPythonCapabilities) Interpret(locatorOfModuleInWhichThisBuiltinIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	randomUuid := uuid.NewRandom()
-	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
+	taskName, err := getTaskNameFromArgs(arguments)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to get task name from args.")
+	}
+	builtin.name = taskName
 
 	pythonScript, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {
@@ -313,7 +320,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while preparing the sh command to execute on the image")
 	}
-	fullCommandToRun := []string{shellWrapperCommand, "-c", commandToRun}
+	fullCommandToRun := getCommandToRunForStreamingLogs(commandToRun)
 
 	// run the command passed in by user in the container
 	runPythonExecutionResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
@@ -411,7 +418,7 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, spaceDelimiter)
 	runEscaped := strings.ReplaceAll(builtin.run, `"`, `\"`)
 	if len(argumentsAsString) > 0 {
-		return fmt.Sprintf(`python -c "%s" %s`, runEscaped, argumentsAsString), nil
+		return fmt.Sprintf(`python -u -c "%s" %s`, runEscaped, argumentsAsString), nil
 	}
-	return fmt.Sprintf(`python -c "%s"`, runEscaped), nil
+	return fmt.Sprintf(`python -u -c "%s"`, runEscaped), nil
 }
