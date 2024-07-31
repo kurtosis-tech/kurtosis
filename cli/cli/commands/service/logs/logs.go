@@ -298,7 +298,6 @@ func run(
 			logrus.Infof("CLI [logs.go] TOTAL TIME TO PRINT LOGS: %v", totalLogPrintDuration)
 			return nil
 		}
-		logrus.Infof("CLI [logs.go] TOTAL TIME TO PRINT LOGS: %v", totalLogPrintDuration)
 	}
 }
 

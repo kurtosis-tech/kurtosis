@@ -348,6 +348,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 	}()
 
 	var totalLogStreamDuration time.Duration
+	var counter int
 	for {
 		select {
 		//stream case
@@ -358,12 +359,20 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 				logrus.Infof("ENGINE [engine_connect_server_service.go] TOTAL TIME TO STREAM LOGS IN ENGINE: %v", totalLogStreamDuration)
 				return nil
 			}
-			startTime := time.Now()
 
+			// print out num log lines every 100 lines times
+			//for serviceUUID, logs := range serviceLogsByServiceUuid {
+			//	if counter%100 == 0 {
+			//		logrus.Infof("NUM LOG LINES FOR SERVICE '%v' CHECK IN ENGINE CONNECT SERVICE: %v", serviceUUID, len(logs))
+			//	}
+			//}
+
+			startTime := time.Now()
 			getServiceLogsResponse := newLogsResponse(requestedServiceUuids, serviceLogsByServiceUuid, notFoundServiceUuids)
 			if err := stream.Send(getServiceLogsResponse); err != nil {
 				return stacktrace.Propagate(err, "An error occurred sending the stream logs for service logs response '%+v'", getServiceLogsResponse)
 			}
+			counter += 1
 			endTime := time.Now()
 			totalLogStreamDuration += endTime.Sub(startTime)
 		//client cancel ctx case
