@@ -183,14 +183,17 @@ func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
+	var totalLogFileReadDuration time.Duration
 	for {
 		select {
 		case <-ctx.Done():
 			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v'", serviceUuid)
+			logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO READ FILES: %v", totalLogFileReadDuration)
 			return nil
 		default:
 			jsonLogStr, err := getCompleteJsonLogString(logsReader)
 			if isValidJsonEnding(jsonLogStr) {
+				startTime := time.Now()
 				jsonLog, err := convertStringToJson(jsonLogStr)
 				if err != nil {
 					return stacktrace.Propagate(err, "An error occurred converting the json log string '%v' into json.", jsonLogStr)
@@ -198,13 +201,17 @@ func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
 				if err = strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 					return err
 				}
+				endTime := time.Now()
+				totalLogFileReadDuration += endTime.Sub(startTime)
 			}
 
 			if err != nil {
 				// if we've reached end of logs, return success, otherwise return the error
 				if errors.Is(err, io.EOF) {
+					logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO READ FILES: %v", totalLogFileReadDuration)
 					return nil
 				} else {
+					logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO READ FILES: %v", totalLogFileReadDuration)
 					return err
 				}
 			}
