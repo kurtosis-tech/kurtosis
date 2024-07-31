@@ -1222,6 +1222,15 @@ func (manager *DockerManager) ConnectContainerToNetwork(ctx context.Context, net
 
 	config := getEndpointSettingsForIpAddress(staticIpAddressStr, alias)
 
+	logrus.Infof("Listing all networks right before attempting to connect to network...")
+	networkResources, err := manager.dockerClient.NetworkList(ctx, types.NetworkListOptions{})
+	for _, networkResource := range networkResources {
+		logrus.Infof("Information about network '%v' that exists: %v", networkResource.Name, networkResource)
+		if networkResource.ID == networkId {
+			logrus.Infof("The network we are trying to connect to exists right before connection.")
+		}
+	}
+
 	err = manager.dockerClient.NetworkConnect(
 		ctx,
 		networkId,
