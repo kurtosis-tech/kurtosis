@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	logLineBufferSize = 100
+	logLineBufferSize = 300
 	oneSenderAdded    = 1
 )
 
@@ -64,7 +64,7 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	streamErrChan := make(chan error)
 
 	// this channel will return the user service log lines by service UUID
-	logsByKurtosisUserServiceUuidChan := make(chan map[service.ServiceUUID][]logline.LogLine, logLineBufferSize) // MAKE IT A BUFFERED CHANNEL SEE HOW THAT IMPROVES THINGS
+	logsByKurtosisUserServiceUuidChan := make(chan map[service.ServiceUUID][]logline.LogLine, logLineBufferSize)
 
 	wgSenders := &sync.WaitGroup{}
 	for serviceUuid := range userServiceUuids {
