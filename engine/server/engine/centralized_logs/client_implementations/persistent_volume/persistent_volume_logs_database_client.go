@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	oneSenderAdded = 1
+	logLineBufferSize = 100
+	oneSenderAdded    = 1
 )
 
 // persistentVolumeLogsDatabaseClient pulls logs from a Docker volume the engine is mounted to
@@ -63,7 +64,7 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	streamErrChan := make(chan error)
 
 	// this channel will return the user service log lines by service UUID
-	logsByKurtosisUserServiceUuidChan := make(chan map[service.ServiceUUID][]logline.LogLine)
+	logsByKurtosisUserServiceUuidChan := make(chan map[service.ServiceUUID][]logline.LogLine, logLineBufferSize) // MAKE IT A BUFFERED CHANNEL SEE HOW THAT IMPROVES THINGS
 
 	wgSenders := &sync.WaitGroup{}
 	for serviceUuid := range userServiceUuids {
