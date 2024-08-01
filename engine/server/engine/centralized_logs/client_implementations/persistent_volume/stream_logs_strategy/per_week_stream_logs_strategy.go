@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	oneWeek = 7 * 24 * time.Hour
+	oneWeek         = 7 * 24 * time.Hour
+	batchLogsAmount = 50
 )
 
 // PerWeekStreamLogsStrategy pulls logs from filesystem where there is a log file per year, per week, per enclave, per service
@@ -89,10 +90,12 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	}()
 
 	if shouldReturnAllLogs {
+		startTime := time.Now()
 		if err := strategy.streamAllLogs(ctx, logsReader, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 			streamErrChan <- stacktrace.Propagate(err, "An error occurred streaming all logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 			return
 		}
+		logrus.Infof("TOTAL TIME IN STREAM ALL LOGS FUNCTION: %v", time.Now().Sub(startTime))
 	} else {
 		if err := strategy.streamTailLogs(ctx, logsReader, numLogLines, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 			streamErrChan <- stacktrace.Propagate(err, "An error occurred streaming '%v' logs for service '%v' in enclave '%v'", numLogLines, serviceUuid, enclaveUuid)
@@ -183,28 +186,92 @@ func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
+
+	var totalLogFileReadDuration time.Duration
+	var totalTimeToGetJsonStrings time.Duration
+	var totalTimeToSendJsonLogs time.Duration
+
+	var totalTimeToSendLogsGranular time.Duration
+	var totalTimeProcessLinesInSend time.Duration
+	var totalTimestampParsing time.Duration
+	var totalFilterCheck time.Duration
+	var totalRetentionCheck time.Duration
+
+	var ltm SendLogLineTimeMeasurements
+	var logLineBuffer []logline.LogLine
 	for {
 		select {
 		case <-ctx.Done():
 			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v'", serviceUuid)
+			logTimes(totalLogFileReadDuration, totalTimeToGetJsonStrings, totalTimeToSendJsonLogs, SendLogLineTimeMeasurements{
+				processDuration:              totalTimeProcessLinesInSend,
+				sendDuration:                 totalTimeToSendLogsGranular,
+				parseTimestampDuratoin:       totalTimestampParsing,
+				filterCheckDuration:          totalFilterCheck,
+				retentionPeriodCheckDuration: totalRetentionCheck,
+			})
 			return nil
 		default:
+			startTime := time.Now()
+
+			getJsonStartTime := time.Now()
 			jsonLogStr, err := getCompleteJsonLogString(logsReader)
+			totalTimeToGetJsonStrings += time.Now().Sub(getJsonStartTime)
+
 			if isValidJsonEnding(jsonLogStr) {
+				var logLine logline.LogLine
 				jsonLog, err := convertStringToJson(jsonLogStr)
 				if err != nil {
 					return stacktrace.Propagate(err, "An error occurred converting the json log string '%v' into json.", jsonLogStr)
 				}
-				if err = strategy.sendJsonLogLine(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+
+				sendJsonLogLineStartTime := time.Now()
+				logLine, err, ltm = strategy.sendJsonLogLineWithTimes(jsonLog, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
+				if err != nil {
 					return err
 				}
+				logLineBuffer = append(logLineBuffer, logLine)
+				totalTimeToSendJsonLogs += time.Now().Sub(sendJsonLogLineStartTime)
+
+				//totalTimeToSendLogsGranular += ltm.sendDuration
+				totalTimeProcessLinesInSend += ltm.processDuration
+				totalTimestampParsing += ltm.parseTimestampDuratoin
+				totalFilterCheck += ltm.filterCheckDuration
+				totalRetentionCheck += ltm.retentionPeriodCheckDuration
+
+				endTime := time.Now()
+				totalLogFileReadDuration += endTime.Sub(startTime)
+			}
+
+			if len(logLineBuffer)%batchLogsAmount == 0 {
+				sendAcrossChannelStartTime := time.Now()
+				userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
+					serviceUuid: logLineBuffer,
+				}
+				logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
+				logLineBuffer = []logline.LogLine{}
+				totalTimeToSendLogsGranular += time.Now().Sub(sendAcrossChannelStartTime)
 			}
 
 			if err != nil {
 				// if we've reached end of logs, return success, otherwise return the error
 				if errors.Is(err, io.EOF) {
+					logTimes(totalLogFileReadDuration, totalTimeToGetJsonStrings, totalTimeToSendJsonLogs, SendLogLineTimeMeasurements{
+						processDuration:              totalTimeProcessLinesInSend,
+						sendDuration:                 totalTimeToSendLogsGranular,
+						parseTimestampDuratoin:       totalTimestampParsing,
+						filterCheckDuration:          totalFilterCheck,
+						retentionPeriodCheckDuration: totalRetentionCheck,
+					})
 					return nil
 				} else {
+					logTimes(totalLogFileReadDuration, totalTimeToGetJsonStrings, totalTimeToSendJsonLogs, SendLogLineTimeMeasurements{
+						processDuration:              totalTimeProcessLinesInSend,
+						sendDuration:                 totalTimeToSendLogsGranular,
+						parseTimestampDuratoin:       totalTimestampParsing,
+						filterCheckDuration:          totalFilterCheck,
+						retentionPeriodCheckDuration: totalRetentionCheck,
+					})
 					return err
 				}
 			}
@@ -347,6 +414,115 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	return nil
 }
 
+type SendLogLineTimeMeasurements struct {
+	processDuration              time.Duration
+	sendDuration                 time.Duration
+	parseTimestampDuratoin       time.Duration
+	filterCheckDuration          time.Duration
+	retentionPeriodCheckDuration time.Duration
+}
+
+func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLineWithTimes(
+	jsonLog JsonLog,
+	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	serviceUuid service.ServiceUUID,
+	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) (logline.LogLine, error, SendLogLineTimeMeasurements) {
+	// each logLineStr is of the following structure: {"enclave_uuid": "...", "service_uuid":"...", "log": "...",.. "timestamp":"..."}
+	// eg. {"container_type":"api-container", "container_id":"8f8558ba", "container_name":"/kurtosis-api--ffd",
+	// "log":"hi","timestamp":"2023-08-14T14:57:49Z"}
+	var processDuration time.Duration
+	var sendDuration time.Duration
+	var parseTimestampDuration time.Duration
+	var filterCheckDuration time.Duration
+	var retentionPeriodCheckDuration time.Duration
+
+	processStart := time.Now()
+	// Then extract the actual log message using the vectors log field
+	logMsgStr, found := jsonLog[volume_consts.LogLabel]
+	if !found {
+		return logline.LogLine{}, stacktrace.NewError("An error retrieving the log field '%v' from json log: %v\n", volume_consts.LogLabel, jsonLog), SendLogLineTimeMeasurements{
+			processDuration:              processDuration,
+			sendDuration:                 sendDuration,
+			parseTimestampDuratoin:       parseTimestampDuration,
+			filterCheckDuration:          filterCheckDuration,
+			retentionPeriodCheckDuration: retentionPeriodCheckDuration,
+		}
+	}
+
+	timestampStart := time.Now()
+	// Extract the timestamp using vectors timestamp field
+	logTimestamp, err := parseTimestampFromJsonLogLine(jsonLog)
+	if err != nil {
+		return logline.LogLine{}, stacktrace.Propagate(err, "An error occurred parsing timestamp from json log line."), SendLogLineTimeMeasurements{
+			processDuration:              processDuration,
+			sendDuration:                 sendDuration,
+			parseTimestampDuratoin:       parseTimestampDuration,
+			filterCheckDuration:          filterCheckDuration,
+			retentionPeriodCheckDuration: retentionPeriodCheckDuration,
+		}
+	}
+	logLine := logline.NewLogLine(logMsgStr, *logTimestamp)
+	parseTimestampDuration += time.Now().Sub(timestampStart)
+
+	filterStart := time.Now()
+	// Then filter by checking if the log message is valid based on requested filters
+	validLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
+	if err != nil {
+		return logline.LogLine{}, stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex), SendLogLineTimeMeasurements{
+			processDuration:              processDuration,
+			sendDuration:                 sendDuration,
+			parseTimestampDuratoin:       parseTimestampDuration,
+			filterCheckDuration:          filterCheckDuration,
+			retentionPeriodCheckDuration: retentionPeriodCheckDuration,
+		}
+	}
+	if !validLogLine {
+		return logline.LogLine{}, nil, SendLogLineTimeMeasurements{
+			processDuration:              processDuration,
+			sendDuration:                 sendDuration,
+			parseTimestampDuratoin:       parseTimestampDuration,
+			filterCheckDuration:          filterCheckDuration,
+			retentionPeriodCheckDuration: retentionPeriodCheckDuration,
+		}
+	}
+	filterCheckDuration += time.Now().Sub(filterStart)
+
+	retentionCheckStart := time.Now()
+	// ensure this log line is within the retention period if it has a timestamp
+	withinRetentionPeriod, err := strategy.isWithinRetentionPeriod(logLine)
+	if err != nil {
+		return logline.LogLine{}, stacktrace.Propagate(err, "An error occurred determining whether log line '%+v' is within the retention period.", logLine), SendLogLineTimeMeasurements{}
+	}
+	if !withinRetentionPeriod {
+		return logline.LogLine{}, nil, SendLogLineTimeMeasurements{
+			processDuration:              processDuration,
+			sendDuration:                 sendDuration,
+			parseTimestampDuratoin:       parseTimestampDuration,
+			filterCheckDuration:          filterCheckDuration,
+			retentionPeriodCheckDuration: retentionPeriodCheckDuration,
+		}
+	}
+	retentionPeriodCheckDuration += time.Now().Sub(retentionCheckStart)
+
+	// send the log line
+	//logLines := []logline.LogLine{*logLine}
+	//userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
+	//	serviceUuid: logLines,
+	//}
+	processDuration += time.Now().Sub(processStart)
+
+	sendStart := time.Now()
+	//logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
+	sendDuration += time.Now().Sub(sendStart)
+	return *logLine, nil, SendLogLineTimeMeasurements{
+		processDuration:              processDuration,
+		sendDuration:                 sendDuration,
+		parseTimestampDuratoin:       parseTimestampDuration,
+		filterCheckDuration:          filterCheckDuration,
+		retentionPeriodCheckDuration: retentionPeriodCheckDuration,
+	}
+}
+
 // Returns true if [logLine] has no timestamp
 func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine *logline.LogLine) (bool, error) {
 	retentionPeriod := strategy.time.Now().Add(time.Duration(-strategy.logRetentionPeriodInWeeks) * oneWeek)
@@ -426,4 +602,15 @@ func parseTimestampFromJsonLogLine(logLine JsonLog) (*time.Time, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the timestamp string '%v' from UTC to a time.Time object.", timestampStr)
 	}
 	return &timestamp, nil
+}
+
+func logTimes(totalDuration, getLineDuration, totalSendLineDuration time.Duration, sendLogLineTM SendLogLineTimeMeasurements) {
+	logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO READ FILES: %v", totalDuration)
+	logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO GET JSON LINES: %v", getLineDuration)
+	logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO SEND JSON LINES: %v", totalSendLineDuration)
+	logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO SEND JSON LINES ACROSS CHANNEL: %v", sendLogLineTM.sendDuration)
+	logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO PROCESS JSON LINES BEFORE SENDING: %v", sendLogLineTM.processDuration)
+	logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO PARSE TIMESTAMPS: %v", sendLogLineTM.parseTimestampDuratoin)
+	logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO FILTER LINES BASED ON REGEXES: %v", sendLogLineTM.filterCheckDuration)
+	logrus.Infof("LOGS DB CLIENT [per_week_stream_logs_strategy] TOTAL TIME TO CHECK RETENTION PERIOD: %v", sendLogLineTM.retentionPeriodCheckDuration)
 }
