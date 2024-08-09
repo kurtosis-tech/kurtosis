@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	logLineBufferSize = 300
-	oneSenderAdded    = 1
+	oneSenderAdded = 1
 )
 
 // persistentVolumeLogsDatabaseClient pulls logs from a Docker volume the engine is mounted to

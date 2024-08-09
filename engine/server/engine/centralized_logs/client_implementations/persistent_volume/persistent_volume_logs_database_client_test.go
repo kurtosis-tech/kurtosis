@@ -670,9 +670,9 @@ func TestStreamUserServiceLogsPerFileReturnsTimestampedLogLines(t *testing.T) {
 	}
 }
 
-// // ====================================================================================================
-// //
-// //	Private helper functions
+// ====================================================================================================
+//
+//	Private helper functions
 //
 // ====================================================================================================
 func executeStreamCallAndGetReceivedServiceLogLines(

@@ -27,7 +27,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"time"
 )
 
 const (
@@ -263,16 +262,13 @@ func run(
 	interruptChan := make(chan os.Signal, interruptChanBufferSize)
 	signal.Notify(interruptChan, os.Interrupt)
 
-	var totalLogPrintDuration time.Duration
 	for {
 		select {
 		case serviceLogsStreamContent, isChanOpen := <-serviceLogsStreamContentChan:
 			if !isChanOpen {
-				logrus.Infof("CLI [logs.txt] TOTAL TIME TO PRINT LOGS: %v", totalLogPrintDuration)
 				return nil
 			}
 
-			startTime := time.Now()
 			notFoundServiceUuids := serviceLogsStreamContent.GetNotFoundServiceUuids()
 
 			for notFoundServiceUuid := range notFoundServiceUuids {
@@ -291,11 +287,8 @@ func run(
 					out.PrintOutLn(fmt.Sprintf("[%v] %v", colorPrinter(serviceIdentifier), serviceLog.GetContent()))
 				}
 			}
-			endTime := time.Now()
-			totalLogPrintDuration = endTime.Sub(startTime)
 		case <-interruptChan:
 			logrus.Debugf("Received signal interruption in service logs Kurtosis CLI command")
-			logrus.Infof("CLI [logs.go] TOTAL TIME TO PRINT LOGS: %v", totalLogPrintDuration)
 			return nil
 		}
 	}

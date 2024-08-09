@@ -197,8 +197,7 @@ func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
 					return stacktrace.Propagate(err, "An error occurred converting the json log string '%v' into json.", jsonLogStr)
 				}
 
-				err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid)
-				if err != nil {
+				if err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid); err != nil {
 					return err
 				}
 			}
@@ -258,8 +257,7 @@ func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred converting the json log string '%v' into json.", jsonLogStr)
 		}
-		err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid)
-		if err != nil {
+		if err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid); err != nil {
 			return err
 		}
 	}
@@ -394,8 +392,7 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 				// if tail package fails to parse a valid new line, fail fast
 				return stacktrace.NewError("hpcloud/tail returned the following line: '%v' that was not valid json.\nThis is potentially a bug in tailing package.", logLine.Text)
 			}
-			err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid)
-			if err != nil {
+			if err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid); err != nil {
 				return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
 			}
 		}

@@ -347,8 +347,6 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		}
 	}()
 
-	var totalLogStreamDuration time.Duration
-	var counter int
 	for {
 		select {
 		//stream case
@@ -356,39 +354,24 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 			//If the channel is closed means that the logs database client won't continue sending streams
 			if !isChanOpen {
 				logrus.Debug("Exiting the stream loop after receiving a close signal from the service logs by service UUID channel")
-				logrus.Infof("ENGINE [engine_connect_server_service.go] TOTAL TIME TO STREAM LOGS IN ENGINE: %v", totalLogStreamDuration)
 				return nil
 			}
 
-			// print out num log lines every 100 lines times
-			//for serviceUUID, logs := range serviceLogsByServiceUuid {
-			//	if counter%100 == 0 {
-			//		logrus.Infof("NUM LOG LINES FOR SERVICE '%v' CHECK IN ENGINE CONNECT SERVICE: %v", serviceUUID, len(logs))
-			//	}
-			//}
-
-			startTime := time.Now()
 			getServiceLogsResponse := newLogsResponse(requestedServiceUuids, serviceLogsByServiceUuid, notFoundServiceUuids)
 			if err := stream.Send(getServiceLogsResponse); err != nil {
 				return stacktrace.Propagate(err, "An error occurred sending the stream logs for service logs response '%+v'", getServiceLogsResponse)
 			}
-			counter += 1
-			endTime := time.Now()
-			totalLogStreamDuration += endTime.Sub(startTime)
 		//client cancel ctx case
 		case <-contextWithCancel.Done():
 			logrus.Debug("The user service logs stream has done")
-			logrus.Infof("ENGINE [engine_connect_server_service.go] TOTAL TIME TO STREAM LOGS IN ENGINE: %v", totalLogStreamDuration)
 			return nil
 		//error from logs database case
 		case err, isChanOpen := <-errChan:
 			if isChanOpen {
 				logrus.Debug("Exiting the stream because an error from the logs database client was received through the error chan.")
-				logrus.Infof("ENGINE [engine_connect_server_service.go] TOTAL TIME TO STREAM LOGS IN ENGINE: %v", totalLogStreamDuration)
 				return stacktrace.Propagate(err, "An error occurred streaming user service logs.")
 			}
 			logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
-			logrus.Infof("ENGINE [engine_connect_server_service.go] TOTAL TIME TO STREAM LOGS IN ENGINE: %v", totalLogStreamDuration)
 			return nil
 		}
 	}
