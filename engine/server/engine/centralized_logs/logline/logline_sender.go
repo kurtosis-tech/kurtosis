@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	batchLogsAmount    = 1
-	logsChanBufferSize = 1
+	batchLogsAmount    = 500
+	logsChanBufferSize = 300
 )
 
 type LogLineSender struct {
@@ -20,7 +20,7 @@ type LogLineSender struct {
 
 func NewLogLineSender() *LogLineSender {
 	return &LogLineSender{
-		logsChan:      make(chan map[service.ServiceUUID][]LogLine),
+		logsChan:      make(chan map[service.ServiceUUID][]LogLine, logsChanBufferSize),
 		logLineBuffer: map[service.ServiceUUID][]LogLine{},
 	}
 }
@@ -44,4 +44,19 @@ func (sender *LogLineSender) SendLogLine(serviceUuid service.ServiceUUID, logLin
 
 func (sender *LogLineSender) GetLogsChannel() chan map[service.ServiceUUID][]LogLine {
 	return sender.logsChan
+}
+
+// sends all logs remaining in the buffers through the channel
+// this should be called at the end of processing to send the remainder of logs
+func (sender *LogLineSender) Flush() {
+	sender.Mutex.Lock()
+	defer sender.Mutex.Unlock()
+
+	for uuid, logLines := range sender.logLineBuffer {
+		serviceUuid := uuid
+		userServiceLogLinesMap := map[service.ServiceUUID][]LogLine{
+			serviceUuid: logLines,
+		}
+		sender.logsChan <- userServiceLogLinesMap
+	}
 }

@@ -89,7 +89,11 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 		//wait for stream go routine to end
 		wgSenders.Wait()
 
-		close(logsByKurtosisUserServiceUuidChan)
+		// send all buffered log lines
+		logLineSender.Flush()
+
+		// wait until the channel has been fully read/empty before closing it
+		closeChannelWhenEmpty(logsByKurtosisUserServiceUuidChan)
 		close(streamErrChan)
 
 		//then cancel the context
@@ -153,4 +157,13 @@ func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 		shouldFollowLogs,
 		shouldReturnAllLogs,
 		numLogLines)
+}
+
+func closeChannelWhenEmpty(logsChan chan map[service.ServiceUUID][]logline.LogLine) {
+	for {
+		if len(logsChan) == 0 {
+			close(logsChan)
+			return
+		}
+	}
 }
