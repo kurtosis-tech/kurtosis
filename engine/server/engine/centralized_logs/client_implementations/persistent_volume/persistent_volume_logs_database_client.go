@@ -64,7 +64,8 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	streamErrChan := make(chan error)
 
 	// this channel will return the user service log lines by service UUID
-	logsByKurtosisUserServiceUuidChan := make(chan map[service.ServiceUUID][]logline.LogLine, logLineBufferSize)
+	logLineSender := logline.NewLogLineSender()
+	logsByKurtosisUserServiceUuidChan := logLineSender.GetLogsChannel()
 
 	wgSenders := &sync.WaitGroup{}
 	for serviceUuid := range userServiceUuids {
@@ -72,7 +73,7 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 		go client.streamServiceLogLines(
 			ctx,
 			wgSenders,
-			logsByKurtosisUserServiceUuidChan,
+			logLineSender,
 			streamErrChan,
 			enclaveUuid,
 			serviceUuid,
@@ -131,7 +132,7 @@ func (client *persistentVolumeLogsDatabaseClient) FilterExistingServiceUuids(
 func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 	ctx context.Context,
 	wgSenders *sync.WaitGroup,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	logLineSender *logline.LogLineSender,
 	streamErrChan chan error,
 	enclaveUuid enclave.EnclaveUUID,
 	serviceUuid service.ServiceUUID,
@@ -144,7 +145,7 @@ func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 	client.streamStrategy.StreamLogs(
 		ctx,
 		client.filesystem,
-		logsByKurtosisUserServiceUuidChan,
+		logLineSender,
 		streamErrChan,
 		enclaveUuid,
 		serviceUuid,

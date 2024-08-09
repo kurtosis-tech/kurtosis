@@ -25,8 +25,7 @@ import (
 )
 
 const (
-	oneWeek         = 7 * 24 * time.Hour
-	batchLogsAmount = 50
+	oneWeek = 7 * 24 * time.Hour
 )
 
 // PerWeekStreamLogsStrategy pulls logs from filesystem where there is a log file per year, per week, per enclave, per service
@@ -49,7 +48,7 @@ func NewPerWeekStreamLogsStrategy(time logs_clock.LogsClock, logRetentionPeriodI
 func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	ctx context.Context,
 	fs volume_filesystem.VolumeFilesystem,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	logLineSender *logline.LogLineSender,
 	streamErrChan chan error,
 	enclaveUuid enclave.EnclaveUUID,
 	serviceUuid service.ServiceUUID,
@@ -58,7 +57,6 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	shouldReturnAllLogs bool,
 	numLogLines uint32,
 ) {
-	logLineSender := logline.NewLogLineSender(logsByKurtosisUserServiceUuidChan)
 	paths, err := strategy.getLogFilePaths(fs, strategy.logRetentionPeriodInWeeks, string(enclaveUuid), string(serviceUuid))
 	if err != nil {
 		streamErrChan <- stacktrace.Propagate(err, "An error occurred retrieving log file paths for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)

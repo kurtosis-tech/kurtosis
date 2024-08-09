@@ -3,7 +3,8 @@ package logline
 import "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 
 const (
-	batchLogsAmount = 500
+	batchLogsAmount    = 500
+	logsChanBufferSize = 300
 )
 
 type LogLineSender struct {
@@ -12,8 +13,11 @@ type LogLineSender struct {
 	logLineBuffer []LogLine
 }
 
-func NewLogLineSender(logsChan chan map[service.ServiceUUID][]LogLine) *LogLineSender {
-	return &LogLineSender{logsChan: logsChan}
+func NewLogLineSender() *LogLineSender {
+	return &LogLineSender{
+		logsChan:      make(chan map[service.ServiceUUID][]LogLine, logsChanBufferSize),
+		logLineBuffer: []LogLine{},
+	}
 }
 
 func (sender *LogLineSender) SendLogLine(serviceUuid service.ServiceUUID, logLine LogLine) {
@@ -24,6 +28,12 @@ func (sender *LogLineSender) SendLogLine(serviceUuid service.ServiceUUID, logLin
 			serviceUuid: sender.logLineBuffer,
 		}
 		sender.logsChan <- userServicesLogLinesMap
+
+		// clear buffer after flushing it through the channel
 		sender.logLineBuffer = []LogLine{}
 	}
+}
+
+func (sender *LogLineSender) GetLogsChannel() chan map[service.ServiceUUID][]LogLine {
+	return sender.logsChan
 }
