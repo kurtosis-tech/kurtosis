@@ -1,36 +1,44 @@
 package logline
 
-import "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"sync"
+)
 
 const (
-	batchLogsAmount    = 500
-	logsChanBufferSize = 300
+	batchLogsAmount    = 1
+	logsChanBufferSize = 1
 )
 
 type LogLineSender struct {
 	logsChan chan map[service.ServiceUUID][]LogLine
 
-	logLineBuffer []LogLine
+	logLineBuffer map[service.ServiceUUID][]LogLine
+
+	sync.Mutex
 }
 
 func NewLogLineSender() *LogLineSender {
 	return &LogLineSender{
-		logsChan:      make(chan map[service.ServiceUUID][]LogLine, logsChanBufferSize),
-		logLineBuffer: []LogLine{},
+		logsChan:      make(chan map[service.ServiceUUID][]LogLine),
+		logLineBuffer: map[service.ServiceUUID][]LogLine{},
 	}
 }
 
 func (sender *LogLineSender) SendLogLine(serviceUuid service.ServiceUUID, logLine LogLine) {
-	sender.logLineBuffer = append(sender.logLineBuffer, logLine)
+	sender.Mutex.Lock()
+	defer sender.Mutex.Unlock()
 
-	if len(sender.logLineBuffer)%batchLogsAmount == 0 {
+	sender.logLineBuffer[serviceUuid] = append(sender.logLineBuffer[serviceUuid], logLine)
+
+	if len(sender.logLineBuffer[serviceUuid])%batchLogsAmount == 0 {
 		userServicesLogLinesMap := map[service.ServiceUUID][]LogLine{
-			serviceUuid: sender.logLineBuffer,
+			serviceUuid: sender.logLineBuffer[serviceUuid],
 		}
 		sender.logsChan <- userServicesLogLinesMap
 
 		// clear buffer after flushing it through the channel
-		sender.logLineBuffer = []LogLine{}
+		sender.logLineBuffer[serviceUuid] = []LogLine{}
 	}
 }
 

@@ -192,17 +192,15 @@ func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
 			jsonLogStr, err := getCompleteJsonLogString(logsReader)
 
 			if isValidJsonEnding(jsonLogStr) {
-				var logLine logline.LogLine
 				jsonLog, err := convertStringToJson(jsonLogStr)
 				if err != nil {
 					return stacktrace.Propagate(err, "An error occurred converting the json log string '%v' into json.", jsonLogStr)
 				}
 
-				logLine, err = strategy.processJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex)
+				err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid)
 				if err != nil {
 					return err
 				}
-				logLineSender.SendLogLine(serviceUuid, logLine)
 			}
 
 			if err != nil {
@@ -260,11 +258,10 @@ func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred converting the json log string '%v' into json.", jsonLogStr)
 		}
-		logLine, err := strategy.processJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex)
+		err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid)
 		if err != nil {
 			return err
 		}
-		logLineSender.SendLogLine(serviceUuid, logLine)
 	}
 
 	return nil
@@ -305,9 +302,7 @@ func isValidJsonEnding(line string) bool {
 	return endOfLine == volume_consts.EndOfJsonLine
 }
 
-func (strategy *PerWeekStreamLogsStrategy) processJsonLogLine(
-	jsonLog JsonLog,
-	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) (logline.LogLine, error) {
+func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(jsonLog JsonLog, conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex, logLineSender *logline.LogLineSender, serviceUuid service.ServiceUUID) error {
 	// each logLineStr is of the following structure: {"enclave_uuid": "...", "service_uuid":"...", "log": "...",.. "timestamp":"..."}
 	// eg. {"container_type":"api-container", "container_id":"8f8558ba", "container_name":"/kurtosis-api--ffd",
 	// "log":"hi","timestamp":"2023-08-14T14:57:49Z"}
@@ -315,35 +310,36 @@ func (strategy *PerWeekStreamLogsStrategy) processJsonLogLine(
 	// Then extract the actual log message using the vectors log field
 	logMsgStr, found := jsonLog[volume_consts.LogLabel]
 	if !found {
-		return logline.LogLine{}, stacktrace.NewError("An error retrieving the log field '%v' from json log: %v\n", volume_consts.LogLabel, jsonLog)
+		return stacktrace.NewError("An error retrieving the log field '%v' from json log: %v\n", volume_consts.LogLabel, jsonLog)
 	}
 
 	// Extract the timestamp using vectors timestamp field
 	logTimestamp, err := parseTimestampFromJsonLogLine(jsonLog)
 	if err != nil {
-		return logline.LogLine{}, stacktrace.Propagate(err, "An error occurred parsing timestamp from json log line.")
+		return stacktrace.Propagate(err, "An error occurred parsing timestamp from json log line.")
 	}
 	logLine := logline.NewLogLine(logMsgStr, *logTimestamp)
 
 	// Then filter by checking if the log message is valid based on requested filters
 	validLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
 	if err != nil {
-		return logline.LogLine{}, stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
+		return stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 	}
 	if !validLogLine {
-		return logline.LogLine{}, nil
+		return nil
 	}
 
 	// ensure this log line is within the retention period if it has a timestamp
 	withinRetentionPeriod, err := strategy.isWithinRetentionPeriod(logLine)
 	if err != nil {
-		return logline.LogLine{}, stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
+		return stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 	}
 	if !withinRetentionPeriod {
-		return logline.LogLine{}, nil
+		return nil
 	}
 
-	return *logLine, nil
+	logLineSender.SendLogLine(serviceUuid, *logLine)
+	return nil
 }
 
 // Returns true if [logLine] has no timestamp
@@ -398,11 +394,10 @@ func (strategy *PerWeekStreamLogsStrategy) followLogs(
 				// if tail package fails to parse a valid new line, fail fast
 				return stacktrace.NewError("hpcloud/tail returned the following line: '%v' that was not valid json.\nThis is potentially a bug in tailing package.", logLine.Text)
 			}
-			processedLogLine, err := strategy.processJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex)
+			err = strategy.sendJsonLogLine(jsonLog, conjunctiveLogLinesFiltersWithRegex, logLineSender, serviceUuid)
 			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
 			}
-			logLineSender.SendLogLine(serviceUuid, processedLogLine)
 		}
 	}
 }
