@@ -22,6 +22,7 @@ func NewLogLineSender() *LogLineSender {
 	return &LogLineSender{
 		logsChan:      make(chan map[service.ServiceUUID][]LogLine, logsChanBufferSize),
 		logLineBuffer: map[service.ServiceUUID][]LogLine{},
+		mu:            sync.Mutex{},
 	}
 }
 
