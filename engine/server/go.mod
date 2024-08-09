@@ -63,7 +63,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0-20230803130419-099ee7a4e3dc
 	github.com/kurtosis-tech/kurtosis/metrics-library/golang v0.0.0-20231206095907-9bdf0d02cb90
 	github.com/labstack/echo/v4 v4.11.3
-	github.com/rs/cors v1.9.0
+	github.com/rs/cors v1.11.0
 	github.com/spf13/afero v1.10.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	k8s.io/apimachinery v0.27.2
