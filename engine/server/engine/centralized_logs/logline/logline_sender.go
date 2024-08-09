@@ -15,7 +15,7 @@ type LogLineSender struct {
 
 	logLineBuffer map[service.ServiceUUID][]LogLine
 
-	sync.Mutex
+	mu sync.Mutex
 }
 
 func NewLogLineSender() *LogLineSender {
@@ -26,8 +26,8 @@ func NewLogLineSender() *LogLineSender {
 }
 
 func (sender *LogLineSender) SendLogLine(serviceUuid service.ServiceUUID, logLine LogLine) {
-	sender.Mutex.Lock()
-	defer sender.Mutex.Unlock()
+	sender.mu.Lock()
+	defer sender.mu.Unlock()
 
 	sender.logLineBuffer[serviceUuid] = append(sender.logLineBuffer[serviceUuid], logLine)
 
@@ -49,8 +49,8 @@ func (sender *LogLineSender) GetLogsChannel() chan map[service.ServiceUUID][]Log
 // sends all logs remaining in the buffers through the channel
 // this should be called at the end of processing to send the remainder of logs
 func (sender *LogLineSender) Flush() {
-	sender.Mutex.Lock()
-	defer sender.Mutex.Unlock()
+	sender.mu.Lock()
+	defer sender.mu.Unlock()
 
 	for uuid, logLines := range sender.logLineBuffer {
 		serviceUuid := uuid
