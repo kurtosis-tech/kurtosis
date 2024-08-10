@@ -100,6 +100,8 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 		}
 	}
 
+	// need to flush before following logs
+	logLineSender.Flush()
 	if shouldFollowLogs {
 		latestLogFile := paths[len(paths)-1]
 		logrus.Debugf("Following logs...")
