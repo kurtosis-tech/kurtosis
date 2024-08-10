@@ -122,7 +122,7 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 				break
 			}
 
-			logLineSender.SendLogLine(serviceUuid, *logLine)
+			logLineSender.Send(serviceUuid, *logLine)
 		}
 	}
 }

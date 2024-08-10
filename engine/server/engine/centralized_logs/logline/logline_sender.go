@@ -26,7 +26,7 @@ func NewLogLineSender() *LogLineSender {
 	}
 }
 
-func (sender *LogLineSender) SendLogLine(serviceUuid service.ServiceUUID, logLine LogLine) {
+func (sender *LogLineSender) Send(serviceUuid service.ServiceUUID, logLine LogLine) {
 	sender.mu.Lock()
 	defer sender.mu.Unlock()
 

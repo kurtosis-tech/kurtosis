@@ -336,7 +336,7 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(jsonLog JsonLog, conj
 		return nil
 	}
 
-	logLineSender.SendLogLine(serviceUuid, *logLine)
+	logLineSender.Send(serviceUuid, *logLine)
 	return nil
 }
 
