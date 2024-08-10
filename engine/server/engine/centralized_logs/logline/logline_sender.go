@@ -59,5 +59,7 @@ func (sender *LogLineSender) Flush() {
 			serviceUuid: logLines,
 		}
 		sender.logsChan <- userServiceLogLinesMap
+
+		sender.logLineBuffer[serviceUuid] = []LogLine{}
 	}
 }
