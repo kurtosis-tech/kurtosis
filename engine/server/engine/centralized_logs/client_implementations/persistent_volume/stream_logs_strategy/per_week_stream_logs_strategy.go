@@ -102,11 +102,11 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 
 	if shouldFollowLogs {
 		latestLogFile := paths[len(paths)-1]
+		logrus.Debugf("Following logs...")
 		if err := strategy.followLogs(ctx, latestLogFile, logLineSender, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 			streamErrChan <- stacktrace.Propagate(err, "An error occurred creating following logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 			return
 		}
-		logrus.Debugf("Following logs...")
 	}
 }
 
