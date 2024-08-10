@@ -32,7 +32,7 @@ const (
 	thirdLogLine  = "running"
 	lastLogLine   = "successfully"
 
-	secondsToWaitForLogs = 2 * time.Second
+	secondsToWaitForLogs = 1 * time.Second
 )
 
 var (
