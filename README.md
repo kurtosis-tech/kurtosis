@@ -38,7 +38,7 @@ Because of this additional layer of abstraction, we are able to introduce severa
 
 How do I get going?
 ===================
-To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install) or visit [Kurtosis Cloud](https://cloud.kurtosis.com/) to provision a remote host.
+To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install).
 
 Then, run the [Redis voting app Kurtosis package](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app):
 

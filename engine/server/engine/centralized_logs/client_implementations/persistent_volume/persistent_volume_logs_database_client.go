@@ -63,7 +63,8 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	streamErrChan := make(chan error)
 
 	// this channel will return the user service log lines by service UUID
-	logsByKurtosisUserServiceUuidChan := make(chan map[service.ServiceUUID][]logline.LogLine)
+	logLineSender := logline.NewLogLineSender()
+	logsByKurtosisUserServiceUuidChan := logLineSender.GetLogsChannel()
 
 	wgSenders := &sync.WaitGroup{}
 	for serviceUuid := range userServiceUuids {
@@ -71,7 +72,7 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 		go client.streamServiceLogLines(
 			ctx,
 			wgSenders,
-			logsByKurtosisUserServiceUuidChan,
+			logLineSender,
 			streamErrChan,
 			enclaveUuid,
 			serviceUuid,
@@ -87,7 +88,11 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 		//wait for stream go routine to end
 		wgSenders.Wait()
 
-		close(logsByKurtosisUserServiceUuidChan)
+		// send all buffered log lines
+		logLineSender.Flush()
+
+		// wait until the channel has been fully read/empty before closing it
+		closeChannelWhenEmpty(logsByKurtosisUserServiceUuidChan)
 		close(streamErrChan)
 
 		//then cancel the context
@@ -130,7 +135,7 @@ func (client *persistentVolumeLogsDatabaseClient) FilterExistingServiceUuids(
 func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 	ctx context.Context,
 	wgSenders *sync.WaitGroup,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	logLineSender *logline.LogLineSender,
 	streamErrChan chan error,
 	enclaveUuid enclave.EnclaveUUID,
 	serviceUuid service.ServiceUUID,
@@ -143,7 +148,7 @@ func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 	client.streamStrategy.StreamLogs(
 		ctx,
 		client.filesystem,
-		logsByKurtosisUserServiceUuidChan,
+		logLineSender,
 		streamErrChan,
 		enclaveUuid,
 		serviceUuid,
@@ -151,4 +156,13 @@ func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 		shouldFollowLogs,
 		shouldReturnAllLogs,
 		numLogLines)
+}
+
+func closeChannelWhenEmpty(logsChan chan map[service.ServiceUUID][]logline.LogLine) {
+	for {
+		if len(logsChan) == 0 {
+			close(logsChan)
+			return
+		}
+	}
 }

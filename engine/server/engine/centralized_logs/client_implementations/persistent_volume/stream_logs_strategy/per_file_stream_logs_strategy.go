@@ -30,7 +30,7 @@ type JsonLog map[string]string
 func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 	ctx context.Context,
 	fs volume_filesystem.VolumeFilesystem,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	logLineSender *logline.LogLineSender,
 	streamErrChan chan error,
 	enclaveUuid enclave.EnclaveUUID,
 	serviceUuid service.ServiceUUID,
@@ -122,12 +122,7 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 				break
 			}
 
-			// send the log line
-			logLines := []logline.LogLine{*logLine}
-			userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
-				serviceUuid: logLines,
-			}
-			logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
+			logLineSender.Send(serviceUuid, *logLine)
 		}
 	}
 }
