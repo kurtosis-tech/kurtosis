@@ -18,5 +18,5 @@ type LogFileLayout interface {
 	// GetLogFilePaths Retrieves a list of filepaths [filesystem] for [serviceUuid] in [enclaveUuid]
 	// If [retentionPeriodIntervals] is set to -1, retrieves all filepaths from the currentTime till [retentionPeriod]
 	// If [retentionPeriodIntervals] is positive, retrieves all filepaths within the range [currentTime - retentionPeriod] and [currentTime - (retentionPeriodIntervals) * retentionPeriod]
-	GetLogFilePaths(filesystem volume_filesystem.VolumeFilesystem, retentionPeriod time.Duration, retentionPeriodIntervals int, enclaveUuid, serviceUuid string) []string
+	GetLogFilePaths(filesystem volume_filesystem.VolumeFilesystem, retentionPeriod time.Duration, retentionPeriodIntervals int, enclaveUuid, serviceUuid string) ([]string, error)
 }

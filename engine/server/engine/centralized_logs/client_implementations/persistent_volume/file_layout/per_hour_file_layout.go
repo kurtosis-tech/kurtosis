@@ -22,6 +22,6 @@ func (phf *PerHourFileLayout) GetLogFilePaths(
 	filesystem volume_filesystem.VolumeFilesystem,
 	retentionPeriod time.Duration,
 	retentionPeriodIntervals int,
-	enclaveUuid, serviceUuid string) []string {
-	return []string{}
+	enclaveUuid, serviceUuid string) ([]string, error) {
+	return []string{}, nil
 }
