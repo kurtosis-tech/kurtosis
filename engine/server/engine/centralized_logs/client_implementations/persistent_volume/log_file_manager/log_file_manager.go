@@ -132,6 +132,9 @@ func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
 	year, weekToRemove := manager.time.Now().Add(time.Duration(-manager.logRetentionPeriodInWeeks) * oneWeek).ISOWeek()
 
 	// remove directory for that week
+	// enclaveToServiceMaps := getEnclaveAndServiceInfo)
+	// filepathsToRemove, err := manager.layout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, enclaveUuid, serviceUuid)
+	// for _, path := range filepaths { manager.filesystem.Remove(file) }
 	oldLogsDirPath := getLogsDirPathForWeek(year, weekToRemove)
 	if err := manager.filesystem.RemoveAll(oldLogsDirPath); err != nil {
 		logrus.Warnf("An error occurred removing old logs at the following path '%v': %v\n", oldLogsDirPath, err)
@@ -186,8 +189,8 @@ func (manager *LogFileManager) getEnclaveAndServiceInfo(ctx context.Context) (ma
 func (manager *LogFileManager) createLogFileIdempotently(logFilePath string) error {
 	var err error
 	if _, err = manager.filesystem.Stat(logFilePath); os.IsNotExist(err) {
+		return stacktrace.Propagate(err, "An error occurred creating a log file path at '%v'", logFilePath)
 		if _, err = manager.filesystem.Create(logFilePath); err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating a log file path at '%v'", logFilePath)
 		}
 		logrus.Tracef("Created log file: '%v'", logFilePath)
 		return nil

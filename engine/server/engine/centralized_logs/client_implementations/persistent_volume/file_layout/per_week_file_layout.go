@@ -14,6 +14,12 @@ import (
 
 const (
 	oneWeek = 7 * 24 * time.Hour
+
+	// basepath /year/week
+	PerWeekDirPathStr = "%s%s/%s/"
+
+	// ... enclave uuid/service uuid <filetype>
+	PerWeekFilePathFmtStr = PerWeekDirPathStr + "%s/%s%s"
 )
 
 type PerWeekFileLayout struct {
@@ -25,9 +31,17 @@ func NewPerWeekFileLayout(time logs_clock.LogsClock) *PerWeekFileLayout {
 }
 
 func (phf *PerWeekFileLayout) GetLogFileLayoutFormat() string {
-	return ""
+	return "/var/log/kurtosis/%%Y/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json"
 }
 
+func (phf *PerWeekFileLayout) GetLogFilePath(time time.Time, enclaveUuid, serviceUuid string) string {
+	year, week := time.ISOWeek()
+
+	formattedWeekNum := fmt.Sprintf("%02d", week)
+	return fmt.Sprintf(PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
+}
+
+// TODO: adjust to support getting log file paths beyond retention period
 func (phf *PerWeekFileLayout) GetLogFilePaths(
 	filesystem volume_filesystem.VolumeFilesystem,
 	retentionPeriod time.Duration,
