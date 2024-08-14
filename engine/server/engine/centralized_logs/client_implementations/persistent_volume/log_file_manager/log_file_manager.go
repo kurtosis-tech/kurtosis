@@ -213,7 +213,6 @@ func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLo
 	return nil
 }
 
-// TODO: Implement a FilePath Builder to centralize log file path creation across the entire module
 // creates a filepath of format /<filepath_base>/year/week/<enclave>/serviceIdentifier.<filetype>
 func getFilepathStr(year, week int, enclaveUuid, serviceIdentifier string) string {
 	formattedWeekNum := fmt.Sprintf("%02d", week)

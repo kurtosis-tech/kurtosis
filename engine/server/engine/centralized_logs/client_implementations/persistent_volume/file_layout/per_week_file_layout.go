@@ -30,11 +30,11 @@ func NewPerWeekFileLayout(time logs_clock.LogsClock) *PerWeekFileLayout {
 	return &PerWeekFileLayout{time: time}
 }
 
-func (phf *PerWeekFileLayout) GetLogFileLayoutFormat() string {
+func (pwf *PerWeekFileLayout) GetLogFileLayoutFormat() string {
 	return "/var/log/kurtosis/%%Y/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json"
 }
 
-func (phf *PerWeekFileLayout) GetLogFilePath(time time.Time, enclaveUuid, serviceUuid string) string {
+func (pwf *PerWeekFileLayout) GetLogFilePath(time time.Time, enclaveUuid, serviceUuid string) string {
 	year, week := time.ISOWeek()
 
 	formattedWeekNum := fmt.Sprintf("%02d", week)
@@ -42,13 +42,13 @@ func (phf *PerWeekFileLayout) GetLogFilePath(time time.Time, enclaveUuid, servic
 }
 
 // TODO: adjust to support getting log file paths beyond retention period
-func (phf *PerWeekFileLayout) GetLogFilePaths(
+func (pwf *PerWeekFileLayout) GetLogFilePaths(
 	filesystem volume_filesystem.VolumeFilesystem,
 	retentionPeriod time.Duration,
 	retentionPeriodIntervals int,
 	enclaveUuid, serviceUuid string) ([]string, error) {
 	var paths []string
-	currentTime := phf.time.Now()
+	currentTime := pwf.time.Now()
 
 	retentionPeriodInWeeks := DurationToWeeks(retentionPeriod)
 
