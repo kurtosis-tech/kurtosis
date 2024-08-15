@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"io/fs"
 	"net"
 	"net/http"
@@ -180,7 +181,8 @@ func runMain() error {
 	// TODO: Move log file management into LogsDatabaseClient
 	osFs := volume_filesystem.NewOsVolumeFilesystem()
 	realTime := logs_clock.NewRealClock()
-	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime, volume_consts.LogRetentionPeriodInWeeks)
+	perWeekFileLayout := file_layout.NewPerWeekFileLayout(realTime)
+	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perWeekFileLayout, realTime, volume_consts.LogRetentionPeriodInWeeks)
 	logFileManager.StartLogFileManagement(ctx)
 
 	enclaveManager, err := getEnclaveManager(

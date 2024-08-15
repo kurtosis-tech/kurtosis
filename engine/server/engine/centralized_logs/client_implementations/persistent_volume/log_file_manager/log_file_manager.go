@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
@@ -28,6 +29,8 @@ type LogFileManager struct {
 
 	filesystem volume_filesystem.VolumeFilesystem
 
+	fileLayout file_layout.LogFileLayout
+
 	time logs_clock.LogsClock
 
 	logRetentionPeriodInWeeks int
@@ -36,11 +39,13 @@ type LogFileManager struct {
 func NewLogFileManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	filesystem volume_filesystem.VolumeFilesystem,
+	fileLayout file_layout.LogFileLayout,
 	time logs_clock.LogsClock,
 	logRetentionPeriodInWeeks int) *LogFileManager {
 	return &LogFileManager{
 		kurtosisBackend:           kurtosisBackend,
 		filesystem:                filesystem,
+		fileLayout:                fileLayout,
 		time:                      time,
 		logRetentionPeriodInWeeks: logRetentionPeriodInWeeks,
 	}
@@ -51,12 +56,12 @@ func (manager *LogFileManager) StartLogFileManagement(ctx context.Context) {
 	// Schedule thread for removing log files beyond retention period
 	go func() {
 		logrus.Debugf("Scheduling log removal for log retention every '%v' hours...", volume_consts.RemoveLogsWaitHours)
-		manager.RemoveLogsBeyondRetentionPeriod()
+		manager.RemoveLogsBeyondRetentionPeriod(ctx)
 
 		logRemovalTicker := time.NewTicker(volume_consts.RemoveLogsWaitHours)
 		for range logRemovalTicker.C {
 			logrus.Debug("Attempting to remove old log file paths...")
-			manager.RemoveLogsBeyondRetentionPeriod()
+			manager.RemoveLogsBeyondRetentionPeriod(ctx)
 		}
 	}()
 
@@ -127,7 +132,7 @@ func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 }
 
 // RemoveLogsBeyondRetentionPeriod implements the Job cron interface. It removes logs a week older than the log retention period.
-func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
+func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod(ctx context.Context) {
 	// compute the next oldest week
 	year, weekToRemove := manager.time.Now().Add(time.Duration(-manager.logRetentionPeriodInWeeks) * oneWeek).ISOWeek()
 
@@ -136,6 +141,21 @@ func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
 	// filepathsToRemove, err := manager.layout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, enclaveUuid, serviceUuid)
 	// for _, path := range filepaths { manager.filesystem.Remove(file) }
 	oldLogsDirPath := getLogsDirPathForWeek(year, weekToRemove)
+	//
+	//var pathsToRemove []string
+	//enclaveToServicesMap, err := manager.getEnclaveAndServiceInfo(ctx)
+	//if err != nil {
+	//	// already wrapped with propagate
+	//	return err
+	//}
+	//for enclaveUuid, serviceRegistrations := range enclaveToServicesMap {
+	//	for _, serviceRegistration := range serviceRegistrations {
+	//		retentionPeriod := manager.logRetentionPeriodInWeeks * oneWeek
+	//		oldLogFiles := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, enclaveUuid, serviceRegistration.GetName())
+	//
+	//	}
+	//}
+
 	if err := manager.filesystem.RemoveAll(oldLogsDirPath); err != nil {
 		logrus.Warnf("An error occurred removing old logs at the following path '%v': %v\n", oldLogsDirPath, err)
 	}
@@ -189,8 +209,8 @@ func (manager *LogFileManager) getEnclaveAndServiceInfo(ctx context.Context) (ma
 func (manager *LogFileManager) createLogFileIdempotently(logFilePath string) error {
 	var err error
 	if _, err = manager.filesystem.Stat(logFilePath); os.IsNotExist(err) {
-		return stacktrace.Propagate(err, "An error occurred creating a log file path at '%v'", logFilePath)
 		if _, err = manager.filesystem.Create(logFilePath); err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating a log file path at '%v'", logFilePath)
 		}
 		logrus.Tracef("Created log file: '%v'", logFilePath)
 		return nil

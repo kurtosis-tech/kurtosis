@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/file_layout"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/stretchr/testify/require"
@@ -25,8 +26,10 @@ const (
 )
 
 func TestRemoveLogsBeyondRetentionPeriod(t *testing.T) {
+	ctx := context.Background()
 	mockKurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 	mockTime := logs_clock.NewMockLogsClock(2023, 2, defaultDay)
+	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
 
 	// setup filesystem
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
@@ -44,8 +47,8 @@ func TestRemoveLogsBeyondRetentionPeriod(t *testing.T) {
 	_, _ = mockFs.Create(week1filepath)
 	_, _ = mockFs.Create(week2filepath)
 
-	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, mockTime, 5)
-	logFileManager.RemoveLogsBeyondRetentionPeriod() // should remove week 49 logs
+	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5)
+	logFileManager.RemoveLogsBeyondRetentionPeriod(ctx) // should remove week 49 logs
 
 	_, err := mockFs.Stat(week49filepath)
 	require.Error(t, err)
@@ -55,6 +58,7 @@ func TestRemoveLogsBeyondRetentionPeriod(t *testing.T) {
 func TestRemoveEnclaveLogs(t *testing.T) {
 	mockKurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 	mockTime := logs_clock.NewMockLogsClock(2022, 52, defaultDay)
+	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
 
 	// setup filesystem
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
@@ -69,7 +73,7 @@ func TestRemoveEnclaveLogs(t *testing.T) {
 	_, _ = mockFs.Create(week52filepath)
 	_, _ = mockFs.Create(week52filepathDiffService)
 
-	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, mockTime, 5)
+	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5)
 	err := logFileManager.RemoveEnclaveLogs(testEnclaveUuid) // should remove only all log files for enclave one
 
 	require.NoError(t, err)
@@ -93,6 +97,7 @@ func TestRemoveEnclaveLogs(t *testing.T) {
 func TestRemoveAllLogs(t *testing.T) {
 	mockKurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 	mockTime := logs_clock.NewMockLogsClock(2022, 52, defaultDay)
+	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
 
 	// setup filesystem
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
@@ -107,7 +112,7 @@ func TestRemoveAllLogs(t *testing.T) {
 	_, _ = mockFs.Create(week52filepath)
 	_, _ = mockFs.Create(week52filepathDiffService)
 
-	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, mockTime, 5)
+	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5)
 	err := logFileManager.RemoveAllLogs()
 
 	require.NoError(t, err)
@@ -132,6 +137,7 @@ func TestRemoveAllLogs(t *testing.T) {
 func TestCreateLogFiles(t *testing.T) {
 	mockTime := logs_clock.NewMockLogsClock(2022, 52, defaultDay)
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
+	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
 
 	// setup kurtosis backend
 	ctx := context.Background()
@@ -165,7 +171,7 @@ func TestCreateLogFiles(t *testing.T) {
 	expectedServiceNameFilePath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Name)
 	expectedServiceShortUuidFilePath := getFilepathStr(2022, 52, testEnclaveUuid, uuid_generator.ShortenedUUIDString(testUserService1Uuid))
 
-	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, mockTime, 5)
+	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5)
 	err := logFileManager.CreateLogFiles(ctx)
 	require.NoError(t, err)
 
