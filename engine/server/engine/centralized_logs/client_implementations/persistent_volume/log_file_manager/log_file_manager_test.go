@@ -34,12 +34,12 @@ func TestRemoveLogsBeyondRetentionPeriod(t *testing.T) {
 
 	// setup filesystem
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
-	week49filepath := getFilepathStr(2022, 49, testEnclaveUuid, testUserService1Uuid)
-	week50filepath := getFilepathStr(2022, 50, testEnclaveUuid, testUserService1Uuid)
-	week51filepath := getFilepathStr(2022, 51, testEnclaveUuid, testUserService1Uuid)
-	week52filepath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Uuid)
-	week1filepath := getFilepathStr(2023, 1, testEnclaveUuid, testUserService1Uuid)
-	week2filepath := getFilepathStr(2023, 2, testEnclaveUuid, testUserService1Uuid)
+	week49filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 49, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week50filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 50, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week51filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 51, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week1filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2023, 1, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week2filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2023, 2, 0).Now(), testEnclaveUuid, testUserService1Uuid)
 
 	_, _ = mockFs.Create(week49filepath)
 	_, _ = mockFs.Create(week50filepath)
@@ -64,10 +64,10 @@ func TestRemoveEnclaveLogs(t *testing.T) {
 	// setup filesystem
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
 
-	week51filepath := getFilepathStr(2022, 51, testEnclaveUuid, testUserService1Uuid)
-	week52filepathDiffEnclave := getFilepathStr(2022, 52, "enclaveOne", "serviceTwo")
-	week52filepath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Uuid)
-	week52filepathDiffService := getFilepathStr(2022, 52, testEnclaveUuid, "serviceThree")
+	week51filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 51, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week52filepathDiffEnclave := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), "enclaveOne", "serviceTwo")
+	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week52filepathDiffService := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, "serviceThree")
 
 	_, _ = mockFs.Create(week51filepath)
 	_, _ = mockFs.Create(week52filepathDiffEnclave)
@@ -103,10 +103,10 @@ func TestRemoveAllLogs(t *testing.T) {
 	// setup filesystem
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
 
-	week51filepath := getFilepathStr(2022, 51, testEnclaveUuid, testUserService1Uuid)
-	week52filepathDiffEnclave := getFilepathStr(2022, 52, "enclaveOne", "serviceTwo")
-	week52filepath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Uuid)
-	week52filepathDiffService := getFilepathStr(2022, 52, testEnclaveUuid, "serviceThree")
+	week51filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 51, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week52filepathDiffEnclave := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), "enclaveOne", "serviceTwo")
+	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week52filepathDiffService := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, "serviceThree")
 
 	_, _ = mockFs.Create(week51filepath)
 	_, _ = mockFs.Create(week52filepathDiffEnclave)
@@ -144,9 +144,9 @@ func TestCreateLogFiles(t *testing.T) {
 	ctx := context.Background()
 	mockKurtosisBackend := getMockedKurtosisBackendWithEnclavesAndServices(ctx, t, mockTime)
 
-	expectedServiceUuidFilePath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Uuid)
-	expectedServiceNameFilePath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Name)
-	expectedServiceShortUuidFilePath := getFilepathStr(2022, 52, testEnclaveUuid, uuid_generator.ShortenedUUIDString(testUserService1Uuid))
+	expectedServiceUuidFilePath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	expectedServiceNameFilePath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, testUserService1Name)
+	expectedServiceShortUuidFilePath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, uuid_generator.ShortenedUUIDString(testUserService1Uuid))
 
 	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5)
 	err := logFileManager.CreateLogFiles(ctx)

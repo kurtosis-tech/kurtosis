@@ -31,6 +31,8 @@ func NewPerWeekFileLayout(time logs_clock.LogsClock) *PerWeekFileLayout {
 }
 
 func (pwf *PerWeekFileLayout) GetLogFileLayoutFormat() string {
+	// Right now this format is specifically made for Vector Logs Aggregators format
+	// This wil be used my Vector LogsAggregator to determine the path to output to
 	return "/var/log/kurtosis/%%Y/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json"
 }
 

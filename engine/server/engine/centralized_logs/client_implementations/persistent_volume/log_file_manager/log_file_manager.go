@@ -95,8 +95,6 @@ func (manager *LogFileManager) StartLogFileManagement(ctx context.Context) {
 func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 	var err error
 
-	year, week := manager.time.Now().ISOWeek()
-
 	enclaveToServicesMap, err := manager.getEnclaveAndServiceInfo(ctx)
 	if err != nil {
 		// already wrapped with propagate
@@ -109,18 +107,18 @@ func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 			serviceNameStr := string(serviceRegistration.GetName())
 			serviceShortUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
 
-			serviceUuidFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceUuidStr)
+			serviceUuidFilePathStr := manager.fileLayout.GetLogFilePath(manager.time.Now(), string(enclaveUuid), serviceUuidStr)
 			if err = manager.createLogFileIdempotently(serviceUuidFilePathStr); err != nil {
 				return err
 			}
 
-			serviceNameFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceNameStr)
+			serviceNameFilePathStr := manager.fileLayout.GetLogFilePath(manager.time.Now(), string(enclaveUuid), serviceNameStr)
 			if err = manager.createSymlinkLogFile(serviceUuidFilePathStr, serviceNameFilePathStr); err != nil {
 				return err
 			}
 			logrus.Tracef("Created symlinked log file: '%v'", serviceNameFilePathStr)
 
-			serviceShortUuidFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceShortUuidStr)
+			serviceShortUuidFilePathStr := manager.fileLayout.GetLogFilePath(manager.time.Now(), string(enclaveUuid), serviceShortUuidStr)
 			if err = manager.createSymlinkLogFile(serviceUuidFilePathStr, serviceShortUuidFilePathStr); err != nil {
 				return err
 			}
@@ -253,12 +251,6 @@ func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLo
 		return stacktrace.Propagate(err, "An error occurred creating a symlink file path '%v' for target file path '%v'.", targetLogFilePath, targetLogFilePath)
 	}
 	return nil
-}
-
-// creates a filepath of format /<filepath_base>/year/week/<enclave>/serviceIdentifier.<filetype>
-func getFilepathStr(year, week int, enclaveUuid, serviceIdentifier string) string {
-	formattedWeekNum := fmt.Sprintf("%02d", week)
-	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceIdentifier, volume_consts.Filetype)
 }
 
 // creates a directory path of format /<filepath_base>/year/week/<enclave>/
