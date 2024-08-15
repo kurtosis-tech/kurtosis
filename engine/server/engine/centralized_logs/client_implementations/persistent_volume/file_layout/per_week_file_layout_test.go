@@ -104,8 +104,8 @@ func TestGetLogFilePathsAcrossNewYearWith53Weeks(t *testing.T) {
 	fileLayout := NewPerWeekFileLayout(currentTime)
 
 	// According to ISOWeek, 2015 has 53 weeks
-	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2015, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
-	week53filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2015, 53, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2015, 51, 3).Now(), testEnclaveUuid, testUserService1Uuid)
+	week53filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2015, 52, 3).Now(), testEnclaveUuid, testUserService1Uuid)
 	week1filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2016, 1, 0).Now(), testEnclaveUuid, testUserService1Uuid)
 	week2filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2016, 2, 0).Now(), testEnclaveUuid, testUserService1Uuid)
 	week3filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2016, 3, 0).Now(), testEnclaveUuid, testUserService1Uuid)
