@@ -133,33 +133,55 @@ func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 
 // RemoveLogsBeyondRetentionPeriod implements the Job cron interface. It removes logs a week older than the log retention period.
 func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod(ctx context.Context) {
-	// compute the next oldest week
-	year, weekToRemove := manager.time.Now().Add(time.Duration(-manager.logRetentionPeriodInWeeks) * oneWeek).ISOWeek()
-
-	// remove directory for that week
-	// enclaveToServiceMaps := getEnclaveAndServiceInfo)
-	// filepathsToRemove, err := manager.layout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, enclaveUuid, serviceUuid)
-	// for _, path := range filepaths { manager.filesystem.Remove(file) }
-	oldLogsDirPath := getLogsDirPathForWeek(year, weekToRemove)
-	//
-	//var pathsToRemove []string
-	//enclaveToServicesMap, err := manager.getEnclaveAndServiceInfo(ctx)
-	//if err != nil {
-	//	// already wrapped with propagate
-	//	return err
-	//}
-	//for enclaveUuid, serviceRegistrations := range enclaveToServicesMap {
-	//	for _, serviceRegistration := range serviceRegistrations {
-	//		retentionPeriod := manager.logRetentionPeriodInWeeks * oneWeek
-	//		oldLogFiles := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, enclaveUuid, serviceRegistration.GetName())
-	//
-	//	}
-	//}
-
-	if err := manager.filesystem.RemoveAll(oldLogsDirPath); err != nil {
-		logrus.Warnf("An error occurred removing old logs at the following path '%v': %v\n", oldLogsDirPath, err)
+	var pathsToRemove []string
+	enclaveToServicesMap, err := manager.getEnclaveAndServiceInfo(ctx)
+	if err != nil {
+		logrus.Errorf("An error occurred getting enclave and service info while removing logs beyond retention: %v", err)
+		return
 	}
-	logrus.Debugf("Removed logs beyond retention period at the following path: '%v'", oldLogsDirPath)
+	for enclaveUuid, serviceRegistrations := range enclaveToServicesMap {
+		for _, serviceRegistration := range serviceRegistrations {
+			serviceUuidStr := string(serviceRegistration.GetUUID())
+			serviceNameStr := string(serviceRegistration.GetName())
+			serviceShortUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
+
+			retentionPeriod := time.Duration(manager.logRetentionPeriodInWeeks) * oneWeek
+			oldServiceLogFilesByUuid, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, string(enclaveUuid), serviceUuidStr)
+			if err != nil {
+				logrus.Errorf("An error occurred getting log file paths for service '%v' in enclave '%v' logs beyond retention: %v", serviceUuidStr, enclaveUuid, err)
+			} else {
+				pathsToRemove = append(pathsToRemove, oldServiceLogFilesByUuid...)
+			}
+
+			oldServiceLogFilesByName, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, string(enclaveUuid), serviceNameStr)
+			if err != nil {
+				logrus.Errorf("An error occurred getting log file paths for service '%v' in enclave '%v' logs beyond retention: %v", serviceNameStr, enclaveUuid, err)
+			} else {
+				pathsToRemove = append(pathsToRemove, oldServiceLogFilesByName...)
+			}
+
+			oldServiceLogFilesByShortUuid, err := manager.fileLayout.GetLogFilePaths(manager.filesystem, retentionPeriod, 1, string(enclaveUuid), serviceShortUuidStr)
+			if err != nil {
+				logrus.Errorf("An error occurred getting log file paths for service '%v' in enclave '%v' logs beyond retention: %v", serviceShortUuidStr, enclaveUuid, err)
+			} else {
+				pathsToRemove = append(pathsToRemove, oldServiceLogFilesByShortUuid...)
+			}
+		}
+	}
+
+	successfullyRemovedLogFiles := []string{}
+	failedToRemoveLogFiles := []string{}
+	for _, pathToRemove := range pathsToRemove {
+		if err := manager.filesystem.Remove(pathToRemove); err != nil {
+			logrus.Warnf("An error occurred removing old log file at the following path '%v': %v\n", pathsToRemove, err)
+			failedToRemoveLogFiles = append(failedToRemoveLogFiles, pathToRemove)
+		}
+		successfullyRemovedLogFiles = append(successfullyRemovedLogFiles, pathToRemove)
+	}
+	logrus.Debugf("Successfully removed the following logs beyond retention period at the following path: '%v'", successfullyRemovedLogFiles)
+	if len(failedToRemoveLogFiles) > 0 {
+		logrus.Errorf("Failed to remove the following logs beyond retention period at the following path: '%v'", failedToRemoveLogFiles)
+	}
 }
 
 func (manager *LogFileManager) RemoveAllLogs() error {

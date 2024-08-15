@@ -27,9 +27,10 @@ const (
 
 func TestRemoveLogsBeyondRetentionPeriod(t *testing.T) {
 	ctx := context.Background()
-	mockKurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 	mockTime := logs_clock.NewMockLogsClock(2023, 2, defaultDay)
 	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
+
+	mockKurtosisBackend := getMockedKurtosisBackendWithEnclavesAndServices(ctx, t, mockTime)
 
 	// setup filesystem
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
@@ -141,6 +142,27 @@ func TestCreateLogFiles(t *testing.T) {
 
 	// setup kurtosis backend
 	ctx := context.Background()
+	mockKurtosisBackend := getMockedKurtosisBackendWithEnclavesAndServices(ctx, t, mockTime)
+
+	expectedServiceUuidFilePath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Uuid)
+	expectedServiceNameFilePath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Name)
+	expectedServiceShortUuidFilePath := getFilepathStr(2022, 52, testEnclaveUuid, uuid_generator.ShortenedUUIDString(testUserService1Uuid))
+
+	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5)
+	err := logFileManager.CreateLogFiles(ctx)
+	require.NoError(t, err)
+
+	_, err = mockFs.Stat(expectedServiceUuidFilePath)
+	require.NoError(t, err)
+
+	_, err = mockFs.Stat(expectedServiceNameFilePath)
+	require.NoError(t, err)
+
+	_, err = mockFs.Stat(expectedServiceShortUuidFilePath)
+	require.NoError(t, err)
+}
+
+func getMockedKurtosisBackendWithEnclavesAndServices(ctx context.Context, t *testing.T, mockTime logs_clock.LogsClock) *backend_interface.MockKurtosisBackend {
 	mockKurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 
 	// mock enclave
@@ -166,21 +188,5 @@ func TestCreateLogFiles(t *testing.T) {
 		EXPECT().
 		GetUserServices(ctx, enclaveUuid, &service.ServiceFilters{Names: nil, UUIDs: nil, Statuses: nil}).
 		Return(servicesMap, nil)
-
-	expectedServiceUuidFilePath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Uuid)
-	expectedServiceNameFilePath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Name)
-	expectedServiceShortUuidFilePath := getFilepathStr(2022, 52, testEnclaveUuid, uuid_generator.ShortenedUUIDString(testUserService1Uuid))
-
-	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, fileLayout, mockTime, 5)
-	err := logFileManager.CreateLogFiles(ctx)
-	require.NoError(t, err)
-
-	_, err = mockFs.Stat(expectedServiceUuidFilePath)
-	require.NoError(t, err)
-
-	_, err = mockFs.Stat(expectedServiceNameFilePath)
-	require.NoError(t, err)
-
-	_, err = mockFs.Stat(expectedServiceShortUuidFilePath)
-	require.NoError(t, err)
+	return mockKurtosisBackend
 }
