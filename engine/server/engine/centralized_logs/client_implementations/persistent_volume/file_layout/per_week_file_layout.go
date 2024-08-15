@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	oneWeek = 7 * 24 * time.Hour
+	oneWeekInHours  = 7 * 24
+	oneWeekDuration = oneWeekInHours * time.Hour
 
 	// basepath /year/week
 	PerWeekDirPathStr = "%s%s/%s/"
@@ -65,7 +66,7 @@ func (pwf *PerWeekFileLayout) getLogFilePathsFromNowTillRetentionPeriod(fs volum
 	// scan for first existing log file
 	firstWeekWithLogs := 0
 	for i := 0; i < retentionPeriodInWeeks; i++ {
-		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
+		year, week := currentTime.Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
 		filePathStr := getLogFilePath(year, week, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err == nil {
 			paths = append(paths, filePathStr)
@@ -81,7 +82,7 @@ func (pwf *PerWeekFileLayout) getLogFilePathsFromNowTillRetentionPeriod(fs volum
 
 	// scan for remaining files as far back as they exist before the retention period
 	for i := firstWeekWithLogs + 1; i < retentionPeriodInWeeks; i++ {
-		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
+		year, week := currentTime.Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
 		filePathStr := getLogFilePath(year, week, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err != nil {
 			break
@@ -102,7 +103,7 @@ func (pwf *PerWeekFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_fil
 	// scan for log files just beyond the retention period
 	for i := 0; i < retentionPeriodIntervals; i++ {
 		numWeeksToGoBack := retentionPeriodInWeeks + i
-		year, weekToRemove := currentTime.Add(time.Duration(-numWeeksToGoBack) * oneWeek).ISOWeek()
+		year, weekToRemove := currentTime.Add(time.Duration(-numWeeksToGoBack) * oneWeekDuration).ISOWeek()
 		filePathStr := getLogFilePath(year, weekToRemove, enclaveUuid, serviceUuid)
 		if _, err := fs.Stat(filePathStr); err != nil {
 			continue
@@ -114,7 +115,7 @@ func (pwf *PerWeekFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_fil
 }
 
 func DurationToWeeks(d time.Duration) int {
-	return int(math.Round(d.Hours() / float64(7*24)))
+	return int(math.Round(d.Hours() / float64(oneWeekInHours)))
 }
 
 func getLogFilePath(year, week int, enclaveUuid, serviceUuid string) string {

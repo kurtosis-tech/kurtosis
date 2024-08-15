@@ -460,6 +460,7 @@ func restApiServer(
 	engineRuntime := restApi.EngineRuntime{
 		ImageVersionTag: serverArgs.ImageVersionTag,
 		EnclaveManager:  enclave_manager,
+		LogsDbClient:    logsDatabaseClient,
 		MetricsClient:   metricsClient,
 	}
 	engineApi.RegisterHandlers(echoApiRouter, engineApi.NewStrictHandler(engineRuntime, nil))
