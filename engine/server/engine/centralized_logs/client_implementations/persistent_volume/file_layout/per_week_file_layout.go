@@ -39,23 +39,33 @@ func (pwf *PerWeekFileLayout) GetLogFilePath(time time.Time, enclaveUuid, servic
 	return getLogFilePath(year, week, enclaveUuid, serviceUuid)
 }
 
-// TODO: adjust to support getting log file paths beyond retention period
 func (pwf *PerWeekFileLayout) GetLogFilePaths(
 	filesystem volume_filesystem.VolumeFilesystem,
 	retentionPeriod time.Duration,
 	retentionPeriodIntervals int,
 	enclaveUuid, serviceUuid string) ([]string, error) {
 	var paths []string
-	currentTime := pwf.time.Now()
-
 	retentionPeriodInWeeks := DurationToWeeks(retentionPeriod)
+
+	if retentionPeriodIntervals < 0 {
+		return pwf.getLogFilePathsFromNowTillRetentionPeriod(filesystem, retentionPeriodInWeeks, enclaveUuid, serviceUuid)
+	} else {
+		paths = pwf.getLogFilePathsBeyondRetentionPeriod(filesystem, retentionPeriodInWeeks, retentionPeriodIntervals, enclaveUuid, serviceUuid)
+	}
+
+	return paths, nil
+}
+
+func (pwf *PerWeekFileLayout) getLogFilePathsFromNowTillRetentionPeriod(fs volume_filesystem.VolumeFilesystem, retentionPeriodInWeeks int, enclaveUuid, serviceUuid string) ([]string, error) {
+	var paths []string
+	currentTime := pwf.time.Now()
 
 	// scan for first existing log file
 	firstWeekWithLogs := 0
 	for i := 0; i < retentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
 		filePathStr := getLogFilePath(year, week, enclaveUuid, serviceUuid)
-		if _, err := filesystem.Stat(filePathStr); err == nil {
+		if _, err := fs.Stat(filePathStr); err == nil {
 			paths = append(paths, filePathStr)
 			firstWeekWithLogs = i
 			break
@@ -67,11 +77,11 @@ func (pwf *PerWeekFileLayout) GetLogFilePaths(
 		}
 	}
 
-	// scan for remaining files as far back as they exist
+	// scan for remaining files as far back as they exist before the retention period
 	for i := firstWeekWithLogs + 1; i < retentionPeriodInWeeks; i++ {
 		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
 		filePathStr := getLogFilePath(year, week, enclaveUuid, serviceUuid)
-		if _, err := filesystem.Stat(filePathStr); err != nil {
+		if _, err := fs.Stat(filePathStr); err != nil {
 			break
 		}
 		paths = append(paths, filePathStr)
@@ -81,6 +91,24 @@ func (pwf *PerWeekFileLayout) GetLogFilePaths(
 	slices.Reverse(paths)
 
 	return paths, nil
+}
+
+func (pwf *PerWeekFileLayout) getLogFilePathsBeyondRetentionPeriod(fs volume_filesystem.VolumeFilesystem, retentionPeriodInWeeks int, retentionPeriodIntervals int, enclaveUuid, serviceUuid string) []string {
+	var paths []string
+	currentTime := pwf.time.Now()
+
+	// scan for log files just beyond the retention period
+	for i := 0; i < retentionPeriodIntervals; i++ {
+		numWeeksToGoBack := retentionPeriodInWeeks + i
+		year, weekToRemove := currentTime.Add(time.Duration(-numWeeksToGoBack) * oneWeek).ISOWeek()
+		filePathStr := getLogFilePath(year, weekToRemove, enclaveUuid, serviceUuid)
+		if _, err := fs.Stat(filePathStr); err != nil {
+			continue
+		}
+		paths = append(paths, filePathStr)
+	}
+
+	return paths
 }
 
 func DurationToWeeks(d time.Duration) int {

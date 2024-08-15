@@ -221,7 +221,6 @@ func TestGetLogFilePathsReturnsCorrectPathsIfWeeksMissingInBetween(t *testing.T)
 }
 
 func TestGetLogFilePathsReturnsCorrectPathsIfCurrentWeekHasNoLogsYet(t *testing.T) {
-
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
 
 	currentWeek := 3
@@ -246,6 +245,137 @@ func TestGetLogFilePathsReturnsCorrectPathsIfCurrentWeekHasNoLogsYet(t *testing.
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
+	require.Equal(t, len(expectedLogFilePaths), len(logFilePaths))
+	for i, filePath := range expectedLogFilePaths {
+		require.Equal(t, filePath, logFilePaths[i])
+	}
+}
+
+func TestGetLogFilePathsOneIntervalBeyondRetentionPeriod(t *testing.T) {
+	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
+
+	mockTime := logs_clock.NewMockLogsClock(2023, 2, defaultDay)
+	fileLayout := NewPerWeekFileLayout(mockTime)
+
+	week49filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 49, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week50filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 50, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week51filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 51, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week1filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2023, 1, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week2filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2023, 2, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+
+	_, _ = filesystem.Create(week49filepath)
+	_, _ = filesystem.Create(week50filepath)
+	_, _ = filesystem.Create(week51filepath)
+	_, _ = filesystem.Create(week52filepath)
+	_, _ = filesystem.Create(week1filepath)
+	_, _ = filesystem.Create(week2filepath)
+
+	retentionPeriod := 5 * oneWeekInHours
+	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, 1, testEnclaveUuid, testUserService1Uuid)
+	require.NoError(t, err)
+	require.Len(t, logFilePaths, 1)
+	require.Equal(t, logFilePaths[0], week49filepath)
+}
+
+func TestGetLogFilePathsTwoIntervalBeyondRetentionPeriod(t *testing.T) {
+	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
+
+	mockTime := logs_clock.NewMockLogsClock(2023, 2, defaultDay)
+	fileLayout := NewPerWeekFileLayout(mockTime)
+
+	week48filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 48, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week49filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 49, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week50filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 50, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week51filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 51, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week1filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2023, 1, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week2filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2023, 2, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+
+	_, _ = filesystem.Create(week48filepath)
+	_, _ = filesystem.Create(week49filepath)
+	_, _ = filesystem.Create(week50filepath)
+	_, _ = filesystem.Create(week51filepath)
+	_, _ = filesystem.Create(week52filepath)
+	_, _ = filesystem.Create(week1filepath)
+	_, _ = filesystem.Create(week2filepath)
+
+	expectedLogFilePaths := []string{
+		week49filepath,
+		week48filepath,
+	}
+
+	retentionPeriod := 5 * oneWeekInHours
+	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, 2, testEnclaveUuid, testUserService1Uuid)
+
+	require.NoError(t, err)
+	require.Len(t, logFilePaths, 2)
+	require.Equal(t, len(expectedLogFilePaths), len(logFilePaths))
+	for i, filePath := range expectedLogFilePaths {
+		require.Equal(t, filePath, logFilePaths[i])
+	}
+}
+
+func TestGetLogFilePathsWithNoPathsBeyondRetentionPeriod(t *testing.T) {
+	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
+
+	mockTime := logs_clock.NewMockLogsClock(2023, 2, defaultDay)
+	fileLayout := NewPerWeekFileLayout(mockTime)
+
+	week50filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 50, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week51filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 51, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week1filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2023, 1, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week2filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2023, 2, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+
+	_, _ = filesystem.Create(week50filepath)
+	_, _ = filesystem.Create(week51filepath)
+	_, _ = filesystem.Create(week52filepath)
+	_, _ = filesystem.Create(week1filepath)
+	_, _ = filesystem.Create(week2filepath)
+
+	retentionPeriod := 5 * oneWeekInHours
+	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, 1, testEnclaveUuid, testUserService1Uuid)
+
+	require.NoError(t, err)
+	require.Len(t, logFilePaths, 0)
+}
+
+func TestGetLogFilePathsWithMissingPathBetweenIntervals(t *testing.T) {
+	filesystem := volume_filesystem.NewMockedVolumeFilesystem()
+
+	mockTime := logs_clock.NewMockLogsClock(2023, 2, defaultDay)
+	fileLayout := NewPerWeekFileLayout(mockTime)
+
+	week47filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 48, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week49filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 49, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week50filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 50, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week51filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 51, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week52filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2022, 52, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week1filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2023, 1, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+	week2filepath := fileLayout.GetLogFilePath(logs_clock.NewMockLogsClock(2023, 2, 0).Now(), testEnclaveUuid, testUserService1Uuid)
+
+	_, _ = filesystem.Create(week47filepath)
+	// 48 is missing
+	_, _ = filesystem.Create(week49filepath)
+	_, _ = filesystem.Create(week50filepath)
+	_, _ = filesystem.Create(week50filepath)
+	_, _ = filesystem.Create(week51filepath)
+	_, _ = filesystem.Create(week52filepath)
+	_, _ = filesystem.Create(week1filepath)
+	_, _ = filesystem.Create(week2filepath)
+
+	expectedLogFilePaths := []string{
+		week49filepath,
+		week47filepath,
+	}
+
+	retentionPeriod := 5 * oneWeekInHours
+	// the expected behavior is return all filepaths, even if some are missing
+	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, 3, testEnclaveUuid, testUserService1Uuid)
+
+	require.NoError(t, err)
+	require.Len(t, logFilePaths, 2)
 	require.Equal(t, len(expectedLogFilePaths), len(logFilePaths))
 	for i, filePath := range expectedLogFilePaths {
 		require.Equal(t, filePath, logFilePaths[i])
