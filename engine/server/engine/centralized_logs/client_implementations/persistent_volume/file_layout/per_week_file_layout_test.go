@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 const (
@@ -13,7 +12,6 @@ const (
 	testUserService1Uuid = "test-user-service-1"
 
 	retentionPeriodInWeeksForTesting = 5
-	oneWeekInHours                   = 7 * 24 * time.Hour
 
 	defaultYear = 2023
 	defaultDay  = 0 // sunday
@@ -48,7 +46,7 @@ func TestGetLogFilePaths(t *testing.T) {
 		week17filepath,
 	}
 
-	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekInHours
+	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekDuration
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -86,7 +84,7 @@ func TestGetLogFilePathsAcrossNewYear(t *testing.T) {
 		week2filepath,
 	}
 
-	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekInHours
+	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekDuration
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -124,7 +122,7 @@ func TestGetLogFilePathsAcrossNewYearWith53Weeks(t *testing.T) {
 		week3filepath,
 	}
 
-	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekInHours
+	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekDuration
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -155,7 +153,7 @@ func TestGetLogFilePathsWithDiffRetentionPeriod(t *testing.T) {
 		week1filepath,
 		week2filepath,
 	}
-	retentionPeriod := 3 * oneWeekInHours
+	retentionPeriod := 3 * oneWeekDuration
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -187,7 +185,7 @@ func TestGetLogFilePathsReturnsAllAvailableWeeks(t *testing.T) {
 		week1filepath,
 		week2filepath,
 	}
-	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekInHours
+	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekDuration
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -212,7 +210,7 @@ func TestGetLogFilePathsReturnsCorrectPathsIfWeeksMissingInBetween(t *testing.T)
 	_, _ = filesystem.Create(week52filepath)
 	_, _ = filesystem.Create(week1filepath)
 	_, _ = filesystem.Create(week3filepath)
-	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekInHours
+	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekDuration
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -241,7 +239,7 @@ func TestGetLogFilePathsReturnsCorrectPathsIfCurrentWeekHasNoLogsYet(t *testing.
 		week2filepath,
 	}
 
-	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekInHours
+	retentionPeriod := retentionPeriodInWeeksForTesting * oneWeekDuration
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, -1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -271,7 +269,7 @@ func TestGetLogFilePathsOneIntervalBeyondRetentionPeriod(t *testing.T) {
 	_, _ = filesystem.Create(week1filepath)
 	_, _ = filesystem.Create(week2filepath)
 
-	retentionPeriod := 5 * oneWeekInHours
+	retentionPeriod := 5 * oneWeekDuration
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, 1, testEnclaveUuid, testUserService1Uuid)
 	require.NoError(t, err)
 	require.Len(t, logFilePaths, 1)
@@ -305,7 +303,7 @@ func TestGetLogFilePathsTwoIntervalBeyondRetentionPeriod(t *testing.T) {
 		week48filepath,
 	}
 
-	retentionPeriod := 5 * oneWeekInHours
+	retentionPeriod := 5 * oneWeekDuration
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, 2, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -334,7 +332,7 @@ func TestGetLogFilePathsWithNoPathsBeyondRetentionPeriod(t *testing.T) {
 	_, _ = filesystem.Create(week1filepath)
 	_, _ = filesystem.Create(week2filepath)
 
-	retentionPeriod := 5 * oneWeekInHours
+	retentionPeriod := 5 * oneWeekDuration
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, 1, testEnclaveUuid, testUserService1Uuid)
 
 	require.NoError(t, err)
@@ -370,7 +368,7 @@ func TestGetLogFilePathsWithMissingPathBetweenIntervals(t *testing.T) {
 		week47filepath,
 	}
 
-	retentionPeriod := 5 * oneWeekInHours
+	retentionPeriod := 5 * oneWeekDuration
 	// the expected behavior is return all filepaths, even if some are missing
 	logFilePaths, err := fileLayout.GetLogFilePaths(filesystem, retentionPeriod, 3, testEnclaveUuid, testUserService1Uuid)
 
