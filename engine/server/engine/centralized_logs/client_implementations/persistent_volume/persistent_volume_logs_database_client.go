@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
@@ -22,17 +23,21 @@ type persistentVolumeLogsDatabaseClient struct {
 
 	filesystem volume_filesystem.VolumeFilesystem
 
+	logFileManager *log_file_manager.LogFileManager
+
 	streamStrategy stream_logs_strategy.StreamLogsStrategy
 }
 
 func NewPersistentVolumeLogsDatabaseClient(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	filesystem volume_filesystem.VolumeFilesystem,
+	logFileManager *log_file_manager.LogFileManager,
 	streamStrategy stream_logs_strategy.StreamLogsStrategy,
 ) *persistentVolumeLogsDatabaseClient {
 	return &persistentVolumeLogsDatabaseClient{
 		kurtosisBackend: kurtosisBackend,
 		filesystem:      filesystem,
+		logFileManager:  logFileManager,
 		streamStrategy:  streamStrategy,
 	}
 }
@@ -125,6 +130,18 @@ func (client *persistentVolumeLogsDatabaseClient) FilterExistingServiceUuids(
 		}
 	}
 	return filteredServiceUuidsSet, nil
+}
+
+func (client *persistentVolumeLogsDatabaseClient) StartLogFileManagement(ctx context.Context) {
+	client.logFileManager.StartLogFileManagement(ctx)
+}
+
+func (client *persistentVolumeLogsDatabaseClient) RemoveEnclaveLogs(enclaveUuid string) error {
+	return client.logFileManager.RemoveEnclaveLogs(enclaveUuid)
+}
+
+func (client *persistentVolumeLogsDatabaseClient) RemoveAllLogs() error {
+	return client.logFileManager.RemoveAllLogs()
 }
 
 // ====================================================================================================
