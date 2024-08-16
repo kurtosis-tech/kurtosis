@@ -156,6 +156,20 @@ func (client *kurtosisBackendLogsDatabaseClient) FilterExistingServiceUuids(
 	return filteredServiceUuidsSet, nil
 }
 
+func (client *kurtosisBackendLogsDatabaseClient) StartLogFileManagement(ctx context.Context) {
+	// no log file management needs to be done for this logs db client
+}
+
+func (client *kurtosisBackendLogsDatabaseClient) RemoveEnclaveLogs(enclaveUuid string) error {
+	// no log file management needs to be done for this logs db client
+	return nil
+}
+
+func (client *kurtosisBackendLogsDatabaseClient) RemoveAllLogs() error {
+	// no log file management needs to be done for this logs db client
+	return nil
+}
+
 // ====================================================================================================
 //
 //	Private helper functions
