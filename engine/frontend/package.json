@@ -19,7 +19,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/react-router-dom": "^5.3.3",
     "ansi-to-html": "^0.7.2",
-    "axios": "^1.6.0",
+    "axios": "^1.7.4",
     "cors": "^2.8.5",
     "enclave-manager-sdk": "../../enclave-manager/api/typescript/",
     "framer-motion": "^10.16.1",
