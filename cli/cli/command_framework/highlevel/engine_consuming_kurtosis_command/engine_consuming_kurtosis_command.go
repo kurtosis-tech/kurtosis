@@ -187,7 +187,7 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 		kurtosisBackend := engineManager.GetKurtosisBackend()
 
 		dontRestartAPIContainers := false
-		engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultGitHubAuthTokenOverride, dontRestartAPIContainers, defaults.DefaultDomain)
+		engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultGitHubAuthTokenOverride, dontRestartAPIContainers, defaults.DefaultDomain, "")
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 		}

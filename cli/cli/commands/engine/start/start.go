@@ -24,6 +24,8 @@ const (
 	logLevelFlagKey                = "log-level"
 	enclavePoolSizeFlagKey         = "enclave-pool-size"
 	githubAuthTokenOverrideFlagKey = "github-auth-token"
+	logRetentionPeriodFlagKey      = "log-retention-period"
+	defaultLogRetentionPeriod      = "1week"
 
 	defaultEngineVersion          = ""
 	kurtosisTechEngineImagePrefix = "kurtosistech/engine"
@@ -93,6 +95,13 @@ var StartCmd = &lowlevel.LowlevelKurtosisCommand{
 			Type:      flags.FlagType_String,
 			Default:   defaultDomain,
 		},
+		{
+			Key:       logRetentionPeriodFlagKey,
+			Usage:     "The length of time that Kurtosis should keep logs for. Eg. if set to 1week, Kurtosis will remove all logs beyond 1 week.",
+			Shorthand: "",
+			Type:      flags.FlagType_String,
+			Default:   defaultLogRetentionPeriod,
+		},
 	},
 	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
@@ -154,16 +163,21 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 		return stacktrace.Propagate(err, "An error occurred while getting the Kurtosis engine enclave manager UI domain name using the flag with key '%v'; this is a bug in Kurtosis", domainFlagKey)
 	}
 
+	logRetentionPeriodStr, err := flags.GetString(logRetentionPeriodFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting the log retention period string from flag: '%v'", logRetentionPeriodStr)
+	}
+
 	if engineVersion == defaultEngineVersion && isDebugMode {
 		engineDebugVersion := fmt.Sprintf("%s-%s", kurtosis_version.KurtosisVersion, defaults.DefaultKurtosisContainerDebugImageNameSuffix)
 		logrus.Infof("Starting Kurtosis engine in debug mode from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineDebugVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineDebugVersion, logLevel, enclavePoolSize, true, githubAuthTokenOverride, shouldRestartAPIContainers, domain)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineDebugVersion, logLevel, enclavePoolSize, true, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr)
 	} else if engineVersion == defaultEngineVersion {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.KurtosisVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize, githubAuthTokenOverride, shouldRestartAPIContainers, domain)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr)
 	} else {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel, enclavePoolSize, defaults.DefaultEnableDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel, enclavePoolSize, defaults.DefaultEnableDebugMode, githubAuthTokenOverride, shouldRestartAPIContainers, domain, logRetentionPeriodStr)
 	}
 	if startEngineErr != nil {
 		return stacktrace.Propagate(startEngineErr, "An error occurred starting the Kurtosis engine")
