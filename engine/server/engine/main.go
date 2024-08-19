@@ -177,7 +177,7 @@ func runMain() error {
 
 	logRetentionPeriodDuration, err := time.ParseDuration(serverArgs.LogRetentionPeriod)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing a Duration from provided log retention period string: %v", serverArgs.LogRetentionPeriod)
+		return stacktrace.Propagate(err, "An error occurred parsing a duration from provided log retention period string: %v", serverArgs.LogRetentionPeriod)
 	}
 	logsDatabaseClient := getLogsDatabaseClient(serverArgs.KurtosisBackendType, kurtosisBackend, logRetentionPeriodDuration)
 	logsDatabaseClient.StartLogFileManagement(ctx)
@@ -411,6 +411,9 @@ func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosi
 		realTime := logs_clock.NewRealClock()
 
 		logRetentionPeriodInWeeks := int(math.Round(logRetentionPeriod.Hours() / float64(7*24*time.Hour)))
+		if logRetentionPeriodInWeeks < 1 {
+			logRetentionPeriodInWeeks = 1
+		}
 		osFs := volume_filesystem.NewOsVolumeFilesystem()
 		perWeekFileLayout := file_layout.NewPerWeekFileLayout(realTime)
 		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perWeekFileLayout, realTime, logRetentionPeriodInWeeks)

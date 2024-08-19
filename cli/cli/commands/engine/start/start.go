@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -25,7 +26,7 @@ const (
 	enclavePoolSizeFlagKey         = "enclave-pool-size"
 	githubAuthTokenOverrideFlagKey = "github-auth-token"
 	logRetentionPeriodFlagKey      = "log-retention-period"
-	defaultLogRetentionPeriod      = "1week"
+	defaultLogRetentionPeriod      = "168h"
 
 	defaultEngineVersion          = ""
 	kurtosisTechEngineImagePrefix = "kurtosistech/engine"
@@ -166,6 +167,10 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 	logRetentionPeriodStr, err := flags.GetString(logRetentionPeriodFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the log retention period string from flag: '%v'", logRetentionPeriodStr)
+	}
+	_, err = time.ParseDuration(logRetentionPeriodStr)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing provided log retention period '%v' into a duration. Ensure the provided value has the proper format. Valid time units are \"ns\", \"us\" (or \"µs\"), \"ms\", \"s\", \"m\", \"h\".", logRetentionPeriodStr)
 	}
 
 	if engineVersion == defaultEngineVersion && isDebugMode {
