@@ -124,7 +124,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	// TODO - fix the idempotent starter longer term
 	if engineStatus == engine_manager.EngineStatus_Stopped {
 		dontRestartAPIContainers := false
-		_, engineClientCloseFunc, err := engineManagerNewCluster.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultGitHubAuthTokenOverride, dontRestartAPIContainers, defaults.DefaultDomain, "")
+		_, engineClientCloseFunc, err := engineManagerNewCluster.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize, defaults.DefaultGitHubAuthTokenOverride, dontRestartAPIContainers, defaults.DefaultDomain, defaults.DefaultLogRetentionPeriod)
 		if err != nil {
 			return stacktrace.Propagate(err, "Engine could not be started after cluster was updated. Its status can be retrieved "+
 				"running 'kurtosis %s %s' and it can potentially be started running 'kurtosis %s %s'",
