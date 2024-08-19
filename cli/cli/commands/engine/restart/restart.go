@@ -26,7 +26,6 @@ const (
 	enclavePoolSizeFlagKey         = "enclave-pool-size"
 	githubAuthTokenOverrideFlagKey = "github-auth-token"
 	logRetentionPeriodFlagKey      = "log-retention-period"
-	defaultLogRetentionPeriod      = "168h"
 
 	defaultEngineVersion                   = ""
 	restartEngineOnSameVersionIfAnyRunning = false
@@ -100,7 +99,7 @@ var RestartCmd = &lowlevel.LowlevelKurtosisCommand{
 			Usage:     "The length of time that Kurtosis should keep logs for. Eg. if set to 1week, Kurtosis will remove all logs beyond 1 week.",
 			Shorthand: "",
 			Type:      flags.FlagType_String,
-			Default:   defaultLogRetentionPeriod,
+			Default:   defaults.DefaultLogRetentionPeriod,
 		},
 	},
 	PreValidationAndRunFunc:  nil,

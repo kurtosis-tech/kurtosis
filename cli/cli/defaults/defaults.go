@@ -26,6 +26,8 @@ const (
 	DefaultGitHubAuthTokenOverride = ""
 
 	DefaultDomain = ""
+
+	DefaultLogRetentionPeriod = "168h"
 )
 
 var DefaultApiContainerLogLevel = logrus.DebugLevel
