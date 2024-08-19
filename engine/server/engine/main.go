@@ -414,6 +414,7 @@ func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosi
 		if logRetentionPeriodInWeeks < 1 {
 			logRetentionPeriodInWeeks = 1
 		}
+		logrus.Infof("Setting log retention period to '%v' weeks.", logRetentionPeriodInWeeks)
 		osFs := volume_filesystem.NewOsVolumeFilesystem()
 		perWeekFileLayout := file_layout.NewPerWeekFileLayout(realTime)
 		logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, perWeekFileLayout, realTime, logRetentionPeriodInWeeks)
