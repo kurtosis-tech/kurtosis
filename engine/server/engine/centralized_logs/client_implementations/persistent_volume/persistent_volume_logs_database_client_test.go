@@ -131,7 +131,7 @@ func TestStreamUserServiceLogsPerWeek_WithFilters(t *testing.T) {
 	}
 
 	underlyingFs := createFilledPerWeekFilesystem(startingWeek)
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay, 0)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -214,7 +214,7 @@ func TestStreamUserServiceLogsPerWeek_NoLogsFromPersistentVolume(t *testing.T) {
 	}
 
 	underlyingFs := createEmptyPerWeekFilesystem(startingWeek)
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay, 0)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -319,7 +319,7 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 	_, err = file1.WriteString(logLinesStr)
 	require.NoError(t, err)
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay, 0)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -406,7 +406,7 @@ func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
 	_, err = file1.WriteString(logLinesStr)
 	require.NoError(t, err)
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay, 0)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -473,7 +473,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 	_, err = week3.WriteString(week3logLinesStr)
 	require.NoError(t, err)
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay, 0)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -542,7 +542,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 	_, err = week3.WriteString(week3logLinesStr)
 	require.NoError(t, err)
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay, 0)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -593,7 +593,7 @@ func TestStreamUserServiceLogsPerWeekReturnsTimestampedLogLines(t *testing.T) {
 	_, err = file.WriteString(timestampedLogLinesStr)
 	require.NoError(t, err)
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay, 0)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime, retentionPeriodInWeeksForTesting)
 
 	expectedTime, err := time.Parse(utcFormat, defaultUTCTimestampStr)
@@ -697,7 +697,7 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 	kurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 
 	// no log file management is done in these tests so values for logFileManager aren't important
-	mockTime := logs_clock.NewMockLogsClock(0, 0, 0)
+	mockTime := logs_clock.NewMockLogsClock(0, 0, 0, 0)
 	fileLayout := file_layout.NewPerWeekFileLayout(mockTime)
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, underlyingFs, fileLayout, mockTime, 0)
 	logsDatabaseClient := NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, underlyingFs, logFileManager, streamStrategy)

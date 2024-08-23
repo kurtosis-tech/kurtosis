@@ -16,11 +16,11 @@ const (
 	oneWeekInHours  = 7 * 24
 	oneWeekDuration = oneWeekInHours * time.Hour
 
-	// basepath /year/week
-	PerWeekDirPathStr = "%s%s/%s/"
+	// basepath year/week
+	perWeekDirPathFmtStr = "%s%s/%s/"
 
 	// ... enclave uuid/service uuid <filetype>
-	PerWeekFilePathFmtStr = PerWeekDirPathStr + "%s/%s%s"
+	perWeekFilePathFmtStr = perWeekDirPathFmtStr + "%s/%s%s"
 )
 
 type PerWeekFileLayout struct {
@@ -34,7 +34,8 @@ func NewPerWeekFileLayout(time logs_clock.LogsClock) *PerWeekFileLayout {
 func (pwf *PerWeekFileLayout) GetLogFileLayoutFormat() string {
 	// Right now this format is specifically made for Vector Logs Aggregators format
 	// This wil be used my Vector LogsAggregator to determine the path to output to
-	return "/var/log/kurtosis/%%Y/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json"
+	// is there a way to get rid of the /var/log/kurtosis?
+	return fmt.Sprintf("%s%%Y/%%V/{{ enclave_uuid }}/{{ service_uuid }}.json", volume_consts.LogsStorageDirpath)
 }
 
 func (pwf *PerWeekFileLayout) GetLogFilePath(time time.Time, enclaveUuid, serviceUuid string) string {
@@ -120,5 +121,5 @@ func DurationToWeeks(d time.Duration) int {
 
 func getLogFilePath(year, week int, enclaveUuid, serviceUuid string) string {
 	formattedWeekNum := fmt.Sprintf("%02d", week)
-	return fmt.Sprintf(PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
+	return fmt.Sprintf(perWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), formattedWeekNum, enclaveUuid, serviceUuid, volume_consts.Filetype)
 }
