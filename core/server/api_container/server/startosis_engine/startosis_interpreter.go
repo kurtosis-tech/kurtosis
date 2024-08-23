@@ -358,6 +358,7 @@ func (interpreter *StartosisInterpreter) buildBindings(
 	packageReplaceOptions map[string]string,
 ) (*starlark.StringDict, *startosis_errors.InterpretationError) {
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
+		logrus.Infof("PACKAGE DEPENDENCY: %v", moduleId)
 		result, err := interpreter.interpretInternal(packageId, moduleId, serializedStartosis, instructionPlan, moduleGlobalCache, packageReplaceOptions)
 		if err != nil {
 			return nil, err
