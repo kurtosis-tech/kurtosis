@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	batchLogsAmount    = 500
+	batchLogsAmount    = 1
 	logsChanBufferSize = 300
 )
 
