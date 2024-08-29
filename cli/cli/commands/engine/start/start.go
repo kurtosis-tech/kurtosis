@@ -97,7 +97,7 @@ var StartCmd = &lowlevel.LowlevelKurtosisCommand{
 		},
 		{
 			Key:       logRetentionPeriodFlagKey,
-			Usage:     "The length of time that Kurtosis should keep logs for. Eg. if set to 168h, Kurtosis will remove all logs beyond 1 week. Valid time units are \"ns\", \"us\" (or \"µs\"), \"ms\", \"s\", \"m\", \"h\" however Kurtosis currently only supports setting retention on a weekly basis.",
+			Usage:     "The length of time that Kurtosis should keep logs for. Eg. if set to 168h, Kurtosis will remove all logs beyond 1 week. You can specify hours using \"h\" however Kurtosis currently only supports setting retention on a weekly basis.",
 			Shorthand: "",
 			Type:      flags.FlagType_String,
 			Default:   defaults.DefaultLogRetentionPeriod,
