@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/kurtosis-tech/kurtosis/compare/1.1.0...1.2.0) (2024-08-29)
+
+
+### Features
+
+* [log retention improvements pt. 2] add flag for configuring log retention period ([#2536](https://github.com/kurtosis-tech/kurtosis/issues/2536)) ([185dc6f](https://github.com/kurtosis-tech/kurtosis/commit/185dc6fe60f47495f4e314a012e2d87d8e28f979))
+
 ## [1.1.0](https://github.com/kurtosis-tech/kurtosis/compare/1.0.0...1.1.0) (2024-08-16)
 
 
