@@ -63,6 +63,7 @@ const (
 	successExitCode = 0
 	failureExitCode = 1
 
+	numHoursInAWeek           = 7 * 24
 	grpcServerStopGracePeriod = 5 * time.Second
 
 	forceColors   = true
@@ -410,7 +411,7 @@ func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosi
 	case args.KurtosisBackendType_Docker:
 		realTime := logs_clock.NewRealClock()
 
-		logRetentionPeriodInWeeks := int(math.Ceil(logRetentionPeriod.Hours() / float64(7*24)))
+		logRetentionPeriodInWeeks := int(math.Ceil(logRetentionPeriod.Hours() / float64(numHoursInAWeek)))
 		if logRetentionPeriodInWeeks < 1 {
 			logRetentionPeriodInWeeks = 1
 		}
