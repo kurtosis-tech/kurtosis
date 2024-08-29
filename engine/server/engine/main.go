@@ -410,7 +410,7 @@ func getLogsDatabaseClient(kurtosisBackendType args.KurtosisBackendType, kurtosi
 	case args.KurtosisBackendType_Docker:
 		realTime := logs_clock.NewRealClock()
 
-		logRetentionPeriodInWeeks := int(math.Round(logRetentionPeriod.Hours() / float64(7*24*time.Hour)))
+		logRetentionPeriodInWeeks := int(math.Round(logRetentionPeriod.Hours() / float64(7*24)))
 		if logRetentionPeriodInWeeks < 1 {
 			logRetentionPeriodInWeeks = 1
 		}
