@@ -169,7 +169,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, _ *args.ParsedArgs) error 
 	}
 	_, err = time.ParseDuration(logRetentionPeriodStr)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing provided log retention period '%v' into a duration. Ensure the provided value has the proper format. Valid time units are \"ns\", \"us\" (or \"µs\"), \"ms\", \"s\", \"m\", \"h\".", logRetentionPeriodStr)
+		return stacktrace.Propagate(err, "An error occurred parsing provided log retention period '%v' into a duration. Ensure the provided value has the proper format of hours using \"h\".", logRetentionPeriodStr)
 	}
 
 	if engineVersion == defaultEngineVersion && isDebugMode {
