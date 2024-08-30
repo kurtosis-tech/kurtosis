@@ -532,6 +532,10 @@ func (enclaveCtx *EnclaveContext) GetStarlarkRun(ctx context.Context) (*kurtosis
 }
 
 func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context, packageId string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	serializedParams, err := maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%v'", serializedParams)
+	}
 	response, err := enclaveCtx.client.GetStarlarkPackagePlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
 		PackageId:              packageId,
 		SerializedParams:       &serializedParams,
@@ -545,6 +549,10 @@ func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context
 }
 
 func (enclaveCtx *EnclaveContext) GetStarlarkScriptPlanYaml(ctx context.Context, serializedScript string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	serializedParams, err := maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%v'", serializedParams)
+	}
 	response, err := enclaveCtx.client.GetStarlarkScriptPlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs{
 		SerializedScript: serializedScript,
 		SerializedParams: &serializedParams,

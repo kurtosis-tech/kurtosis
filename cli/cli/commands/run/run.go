@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/user_support_constants"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/plan_yaml"
 	"io"
 	"net/http"
 	"net/url"
@@ -635,19 +634,19 @@ func getPackageDependencyYamlStr(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
 	}
-	var planYaml plan_yaml.PlanYaml
-	if err = yaml.Unmarshal([]byte(packageYaml.PlanYaml), &planYaml); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred unmarshaling plan yaml string: %v.", packageYaml.PlanYaml)
-	}
-	planYaml.Tasks = nil
-	planYaml.FilesArtifacts = nil
-	planYaml.Services = nil
-	packageDependencyYamlBytes, err := yaml.Marshal(&planYaml)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "")
-	}
-	return string(packageDependencyYamlBytes), nil
-	//return packageYaml.PlanYaml, nil
+	//var planYaml plan_yaml.PlanYaml
+	//if err = yaml.Unmarshal([]byte(packageYaml.PlanYaml), &planYaml); err != nil {
+	//	return "", stacktrace.Propagate(err, "An error occurred unmarshaling plan yaml string: %v.", packageYaml.PlanYaml)
+	//}
+	//planYaml.Tasks = nil
+	//planYaml.FilesArtifacts = nil
+	//planYaml.Services = nil
+	//packageDependencyYamlBytes, err := yaml.Marshal(&planYaml)
+	//if err != nil {
+	//	return "", stacktrace.Propagate(err, "")
+	//}
+	//return string(packageDependencyYamlBytes), nil
+	return packageYaml.PlanYaml, nil
 }
 
 // validatePackageArgs just validates the args is a valid JSON or YAML string
