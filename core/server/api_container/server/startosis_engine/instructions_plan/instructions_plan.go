@@ -23,7 +23,7 @@ type InstructionsPlan struct {
 	instructionsSequence []ScheduledInstructionUuid
 
 	// list of package names that this instructions plan relies on
-	packageDependencies []string
+	packageDependencies map[string]bool
 }
 
 func NewInstructionsPlan() *InstructionsPlan {
@@ -31,7 +31,7 @@ func NewInstructionsPlan() *InstructionsPlan {
 		indexOfFirstInstruction:    0,
 		scheduledInstructionsIndex: map[ScheduledInstructionUuid]*ScheduledInstruction{},
 		instructionsSequence:       []ScheduledInstructionUuid{},
-		packageDependencies:        []string{},
+		packageDependencies:        map[string]bool{},
 	}
 }
 
@@ -97,7 +97,7 @@ func (plan *InstructionsPlan) GenerateYaml(planYaml *plan_yaml.PlanYaml) (string
 }
 
 func (plan *InstructionsPlan) AddPackageDependency(packageDependency string) {
-	plan.packageDependencies = append(plan.packageDependencies, packageDependency)
+	plan.packageDependencies[packageDependency] = true
 }
 
 func (plan *InstructionsPlan) Size() int {

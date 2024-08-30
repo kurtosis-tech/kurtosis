@@ -834,9 +834,8 @@ tasks:
   - echo {{ kurtosis.4.code }} {{ kurtosis.4.output }}
   image: badouralix/curl-jq
 images:
+- badouralix/curl-jq
 - postgres:latest
-- badouralix/curl-jq
-- badouralix/curl-jq
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }

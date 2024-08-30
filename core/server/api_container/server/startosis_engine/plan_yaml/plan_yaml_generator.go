@@ -29,8 +29,7 @@ type PlanYaml struct {
 	futureReferenceIndex map[string]string
 	filesArtifactIndex   map[string]*FilesArtifact
 	latestUuid           int
-	images               []string
-	packageDependencies  []string
+	imageSet             map[string]bool
 }
 
 func CreateEmptyPlan(packageId string) *PlanYaml {
@@ -43,6 +42,7 @@ func CreateEmptyPlan(packageId string) *PlanYaml {
 			Images:              []string{},
 			PackageDependencies: []string{},
 		},
+		imageSet:             map[string]bool{},
 		futureReferenceIndex: map[string]string{},
 		filesArtifactIndex:   map[string]*FilesArtifact{},
 		latestUuid:           0,
@@ -50,6 +50,7 @@ func CreateEmptyPlan(packageId string) *PlanYaml {
 }
 
 func (planYaml *PlanYaml) GenerateYaml() (string, error) {
+	planYaml.AddImages()
 	yamlBytes, err := yaml.Marshal(planYaml.privatePlanYaml)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred generating plan yaml.")
@@ -383,8 +384,18 @@ func (planYaml *PlanYaml) RemoveService(serviceName string) {
 	}
 }
 
-func (planYaml *PlanYaml) AddPackageDependencies(packageDependency []string) {
-	planYaml.privatePlanYaml.PackageDependencies = append(planYaml.privatePlanYaml.PackageDependencies, packageDependency...)
+func (planYaml *PlanYaml) AddPackageDependencies(packageDependency map[string]bool) {
+	for dependency := range packageDependency {
+		planYaml.privatePlanYaml.PackageDependencies = append(planYaml.privatePlanYaml.PackageDependencies, dependency)
+	}
+	slices.Sort(planYaml.privatePlanYaml.PackageDependencies)
+}
+
+func (planYaml *PlanYaml) AddImages() {
+	for img := range planYaml.imageSet {
+		planYaml.privatePlanYaml.Images = append(planYaml.privatePlanYaml.Images, img)
+	}
+	slices.Sort(planYaml.privatePlanYaml.Images)
 }
 
 // getFileMountsFromFilesArtifacts turns filesArtifactExpansions into FileMount's
@@ -446,7 +457,7 @@ func (planYaml *PlanYaml) addTaskYaml(task *Task) {
 }
 
 func (planYaml *PlanYaml) addImage(img string) {
-	planYaml.privatePlanYaml.Images = append(planYaml.privatePlanYaml.Images, img)
+	planYaml.imageSet[img] = true
 }
 
 // yaml future reference format: {{ kurtosis.<assigned uuid>.<future reference type }}
