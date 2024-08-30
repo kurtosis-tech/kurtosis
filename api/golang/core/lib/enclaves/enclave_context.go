@@ -531,6 +531,31 @@ func (enclaveCtx *EnclaveContext) GetStarlarkRun(ctx context.Context) (*kurtosis
 	return response, nil
 }
 
+func (enclaveCtx *EnclaveContext) GetStarlarkPackagePlanYaml(ctx context.Context, packageId string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	response, err := enclaveCtx.client.GetStarlarkPackagePlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkPackagePlanYamlArgs{
+		PackageId:              packageId,
+		SerializedParams:       &serializedParams,
+		RelativePathToMainFile: nil,
+		MainFunctionName:       nil,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the starlark package plan yaml run.")
+	}
+	return response, nil
+}
+
+func (enclaveCtx *EnclaveContext) GetStarlarkScriptPlanYaml(ctx context.Context, serializedScript string, serializedParams string) (*kurtosis_core_rpc_api_bindings.PlanYaml, error) {
+	response, err := enclaveCtx.client.GetStarlarkScriptPlanYaml(ctx, &kurtosis_core_rpc_api_bindings.StarlarkScriptPlanYamlArgs{
+		SerializedScript: serializedScript,
+		SerializedParams: &serializedParams,
+		MainFunctionName: nil,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the last starlark script plan yaml run.")
+	}
+	return response, nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods
