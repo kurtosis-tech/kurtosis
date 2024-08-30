@@ -350,6 +350,10 @@ func (interpreter *StartosisInterpreter) interpretInternal(
 	return globalVariables, nil
 }
 
+func getModulePrefix(moduleId string) string {
+	return strings.Join(strings.SplitN(moduleId, "/", 4)[:3], "/")
+}
+
 func (interpreter *StartosisInterpreter) buildBindings(
 	packageId string,
 	thread *starlark.Thread,
@@ -357,9 +361,12 @@ func (interpreter *StartosisInterpreter) buildBindings(
 	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
 	packageReplaceOptions map[string]string,
 ) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+	packagePrefix := getModulePrefix(packageId)
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
-		logrus.Infof("PACKAGE DEPENDENCY: %v", moduleId)
-		instructionPlan.AddPackageDependency(moduleId)
+		modulePrefix := getModulePrefix(moduleId)
+		if modulePrefix != packagePrefix {
+			instructionPlan.AddPackageDependency(modulePrefix)
+		}
 		result, err := interpreter.interpretInternal(packageId, moduleId, serializedStartosis, instructionPlan, moduleGlobalCache, packageReplaceOptions)
 		if err != nil {
 			return nil, err
