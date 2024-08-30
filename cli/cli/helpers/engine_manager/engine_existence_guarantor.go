@@ -88,6 +88,9 @@ type engineExistenceGuarantor struct {
 
 	// Enclave manager UI domain name
 	domain string
+
+	// Length of time Kurtosis will keep logs for
+	logRetentionPeriod string
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -107,6 +110,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
 	domain string,
+	logRetentionPeriod string,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -126,6 +130,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		githubAuthTokenOverride,
 		restartAPIContainers,
 		domain,
+		logRetentionPeriod,
 	)
 }
 
@@ -147,6 +152,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	githubAuthTokenOverride string,
 	restartAPIContainers bool,
 	domain string,
+	logRetentionPeriod string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -168,6 +174,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		githubAuthTokenOverride:                   githubAuthTokenOverride,
 		restartAPIContainers:                      restartAPIContainers,
 		domain:                                    domain,
+		logRetentionPeriod:                        logRetentionPeriod,
 	}
 }
 
@@ -228,6 +235,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			githubAuthToken,
 			guarantor.restartAPIContainers,
 			guarantor.domain,
+			guarantor.logRetentionPeriod,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -249,6 +257,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			githubAuthToken,
 			guarantor.restartAPIContainers,
 			guarantor.domain,
+			guarantor.logRetentionPeriod,
 		)
 	}
 	if engineLaunchErr != nil {
