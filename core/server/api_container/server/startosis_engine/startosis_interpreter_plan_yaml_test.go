@@ -147,6 +147,8 @@ services:
 filesArtifacts:
 - uuid: "2"
   name: hi-file
+images:
+- kurtosistech/example-datastore-server
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -212,6 +214,8 @@ tasks:
   envVar:
   - key: HELLO
     value: Hello!
+images:
+- badouralix/curl-jq
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -288,6 +292,8 @@ tasks:
   - requests
   pythonArgs:
   - something
+images:
+- python:3.11-alpine
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -362,6 +368,8 @@ tasks:
   serviceName: db
   acceptableCodes:
   - 0
+images:
+- postgres:latest
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -428,6 +436,8 @@ tasks:
     filesArtifacts:
     - uuid: "1"
       name: bye-file
+images:
+- badouralix/curl-jq
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -490,6 +500,8 @@ services:
 filesArtifacts:
 - uuid: "2"
   name: hi-file
+images:
+- kurtosistech/example-datastore-server
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -550,6 +562,8 @@ services:
 filesArtifacts:
 - uuid: "2"
   name: hi-file
+images:
+- kurtosistech/example-datastore-server
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -610,6 +624,8 @@ tasks:
     filesArtifacts:
     - uuid: "1"
       name: dockerfile
+images:
+- badouralix/curl-jq
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -673,6 +689,8 @@ filesArtifacts:
   name: bye-file
   files:
   - bye.txt
+images:
+- postgres:latest
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -717,6 +735,8 @@ func (suite *StartosisIntepreterPlanYamlTestSuite) TestRemoveService() {
 filesArtifacts:
 - uuid: "2"
   name: hi-file
+images:
+- postgres:latest
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
@@ -813,6 +833,10 @@ tasks:
   command:
   - echo {{ kurtosis.4.code }} {{ kurtosis.4.output }}
   image: badouralix/curl-jq
+images:
+- postgres:latest
+- badouralix/curl-jq
+- badouralix/curl-jq
 `
 	require.Equal(suite.T(), expectedYaml, planYaml)
 }
