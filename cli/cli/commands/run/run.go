@@ -55,6 +55,9 @@ const (
 	dryRunFlagKey = "dry-run"
 	defaultDryRun = "false"
 
+	dependenciesFlagKey = "dependencies"
+	defaultDependencies = "false"
+
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
 
@@ -127,6 +130,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Usage:   "If true, the Kurtosis instructions will not be executed, they will just be printed to the output of the CLI",
 			Type:    flags.FlagType_Bool,
 			Default: defaultDryRun,
+		},
+		{
+			Key:     dependenciesFlagKey,
+			Usage:   "If true, a yaml will be returned with a list of images and packages that this run depends on.",
+			Type:    flags.FlagType_Bool,
+			Default: defaultDependencies,
 		},
 		{
 			Key: enclaveIdentifierFlagKey,
@@ -262,6 +271,11 @@ func run(
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", dryRunFlagKey)
 	}
 
+	dependencies, err := flags.GetBool(dependenciesFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expectew a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", dependencies)
+	}
+
 	parallelism, err := flags.GetUint32(parallelismFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a integer flag with key '%v' but none was found; this is an error in Kurtosis!", parallelismFlagKey)
@@ -366,6 +380,17 @@ func run(
 		defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
 	}
 
+	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
+
+	if dependencies {
+		packageDependencyYamlStr, err := getPackageDependencyYamlStr(ctx, enclaveCtx, starlarkScriptOrPackagePath, isRemotePackage, packageArgs)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting package dependencies")
+		}
+		fmt.Printf("%v\n", packageDependencyYamlStr)
+		return nil
+	}
+
 	var responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine
 	var cancelFunc context.CancelFunc
 	var errRunningKurtosis error
@@ -375,7 +400,6 @@ func run(
 		connect = kurtosis_core_rpc_api_bindings.Connect_NO_CONNECT
 	}
 
-	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
 	if isRemotePackage {
 		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
 	} else {
@@ -586,6 +610,44 @@ func getOrCreateEnclaveContext(
 	}
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil
+}
+
+type PackageDependency struct {
+	Packages []string `yaml:"packages,omitempty"`
+	Images   []string `yaml:"images,omitempty"`
+}
+
+func getPackageDependencyYamlStr(
+	ctx context.Context,
+	enclaveCtx *enclaves.EnclaveContext,
+	starlarkScriptOrPackageId string,
+	isRemote bool,
+	packageArgs string,
+) (string, error) {
+	var packageYaml *kurtosis_core_rpc_api_bindings.PlanYaml
+	var err error
+	if isRemote {
+		packageYaml, err = enclaveCtx.GetStarlarkPackagePlanYaml(ctx, starlarkScriptOrPackageId, packageArgs)
+	} else {
+		packageYaml, err = enclaveCtx.GetStarlarkScriptPlanYaml(ctx, starlarkScriptOrPackageId, packageArgs)
+	}
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred retrieving plan yaml for provided package.")
+	}
+	//var dependencies map[string][]string
+	//if err = yaml.Unmarshal([]byte(packageYaml.PlanYaml), dependencies); err != nil {
+	//	return "", stacktrace.Propagate(err, "An error occurred unmarshaling plan yaml string: %v.", packageYaml.PlanYaml)
+	//}
+	//pd := PackageDependency{
+	//	Packages: dependencies["packageDependencies"],
+	//	Images:   dependencies["images"],
+	//}
+	//packageDependencyYamlBytes, err := yaml.Marshal(&pd)
+	//if err != nil {
+	//	return "", stacktrace.Propagate(err, "")
+	//}
+	//return string(packageDependencyYamlBytes), nil
+	return packageYaml.PlanYaml, nil
 }
 
 // validatePackageArgs just validates the args is a valid JSON or YAML string
